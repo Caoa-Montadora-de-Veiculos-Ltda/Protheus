@@ -597,7 +597,7 @@ Begin Sequence
     bSair  := {|| nBTOP  := 0,_oDlg:END()}
 
     DEFINE MSDIALOG _oDlg TITLE "Manutenção Itens Picking ---> " + cXPICKI FROM 180,180 TO 450,800 OF oMainWnd PIXEL
-    @ _nLin, 13 SAY 'Cod. Operacao' PIXEL Of _oDlg  
+    @ _nLin, 13 SAY 'Cod. Operacao' PIXEL Of _oDlg
 	@ _nLin, 110 SAY 'Regra Fiscal' PIXEL Of _oDlg
 	@ _nLin, 190 SAY 'Código TES'    PIXEL Of _oDlg  
 	//@ _nLin, 70 MSGET cFORPAG PICTURE PesqPict("SE4","E4_CODIGO") VALID (cFORPAG) F3 "SE4" WHEN .T. SIZE 35, 08 WHEN Eval( _bXTPIMPGWhen ) Of _oDlg PIXEL FONT _oCourierNw
@@ -1305,6 +1305,7 @@ Local nPesos    	:= 0
 Local cAliasVEC 	:= GetNextAlias()
 Local cAliasVS3 	:= GetNextAlias()
 Local _cAliasPesq 	:= GetNextAlias()
+Local _cAliasNF		:= GetNextAlias()
 
 Local _cStatus		:= "F"
 Local _nRegSZK		:= SZK->(Recno())
@@ -1315,7 +1316,9 @@ Local _cMarca   	:= ""
 Local _aRegVS1
 Local _nPos
 Local _nTentativas
-Local _cMens		
+Local _cMens
+Local _cLike		:= "PEDIDO: "+cZK_XPICKI+"%"
+Local _cDtEpi		:= " "
 
 
 //Private TRBNF   //:= GetNextAlias()
@@ -1560,7 +1563,83 @@ Begin Sequence
 
 	_aVarVS3 := Aclone(aOrcs)  //guardando dados esta processando somente um orçamento apesar de mandar mais de um DAC 17/02/2022
 	nVerParFat := 2
-	OFIXX004("VS1",3,aOrcs) 
+
+	//Bloqueio de Faturamento duplicado
+	_cDtEpi := VS1->VS1_XDTEPI
+	BeginSql Alias _cAliasNF
+		SELECT DISTINCT	F2_FILIAL, F2_DOC, F2_SERIE, F2_CLIENTE, F2_LOJA, D2_PEDIDO 
+  		FROM %table:SD2% SD2
+		INNER JOIN %table:SF2% SF2
+			ON SF2.%notDel%
+			AND SF2.F2_FILIAL = SD2.D2_FILIAL
+			AND SF2.F2_EMISSAO >= %exp:_cDtEpi%
+			AND SF2.F2_MENNOTA LIKE %exp:_cLike%
+		WHERE SD2.%notDel%	
+			AND SD2.D2_FILIAL  	= %XFilial:SD2%
+		  	AND SD2.D2_DOC = SF2.F2_DOC
+			AND SD2.D2_SERIE = SF2.F2_SERIE	  
+	EndSql
+
+	If !Empty((_cAliasNF)->F2_DOC)
+		MsgInfo("Já existe NF "+(_cAliasNF)->F2_DOC+" Serie: "+(_cAliasNF)->F2_SERIE+" emitida para o Picking "+cZK_XPICKI+" !","Atenção") 
+		_cDoc     	:= (_cAliasNF)->F2_DOC
+        _cSerie   	:= (_cAliasNF)->F2_SERIE
+		_cCliente 	:= (_cAliasNF)->F2_CLIENTE
+        _cLoja    	:= (_cAliasNF)->F2_LOJA
+		_cTipPag	:= VS1->VS1_FORPAG
+		_cPedido	:= (_cAliasNF)->D2_PEDIDO
+		_lTransf	:= .T.
+		_lReserva   := .T.
+
+		//For Next da desreserva 
+		For nCntFor := 1 to Len(aOrcs)
+		//retirar reserva 
+			If _lReserva
+				aResDel		:= {}
+				_aVS3Reg	:= {}
+				VS3->(DbsetOrder(1))
+				If VS3->(MsSeek(XFilial("VS3")+aOrcs[nCntFor]))
+					While VS3->(!Eof()) .and.  VS3->VS3_FILIAL == XFilial("VS3") .and. VS3->VS3_NUMORC == aOrcs[nCntFor]
+						If !Empty(VS3->VS3_DOCSDB) //VS3->VS3_RESERV == "1"
+							aAdd(aResDel,VS3->VS3_SEQUEN)
+							AAdd(_aVS3Reg, VS3->(Recno()))
+						EndIf	
+						VS3->(DbSkip())
+					EndDo
+				Endif	
+				//retirar a reserva
+				If Len(aResDel) > 0
+					Private _aReservaCAOA := {aOrcs[nCntFor],.F.,_aVS3Reg}	// Variavel utilizada no PE OX001RES
+					_cDocto := OX001RESITE(aOrcs[nCntFor], .F., aResDel)
+					//Alterado para utilizar reserva CAOA - DAC 16/08/2022
+					//_cDocto := U_XRESCAOAPEC(_cNumOrc, .F., aResDel)
+					If Empty(_cDocto) .or. _cDocto == "NA"
+						Msginfo("Não foi localizado reservas para retirar !")
+						_lRet := .F. 
+						Break
+					Else
+						//Msginfo("Reserva retirada com o numero do docto "+_cDocto+" !")
+						//Fazer transferencia Padrão
+						If _lTransf
+							//Reverte Fase do Orçamento
+							If !VS1->(OXI001REVF(aOrcs[nCntFor], "X" ))
+								Msginfo( "Não foi possivel reverter Status do orçamento !")
+								_lRet := .F.
+								Break
+							Else
+								//Msginfo("Realizado Transferência para reversão do orçamento !")
+							EndIf
+						EndIf	
+					EndIf
+				Else
+					Msginfo("Não existe reservas para retirar de acordo com VS3_DOCSDB !")
+				EndIf
+			Endif
+		Next
+		_lPrcZPECF013 := .T.
+	Else
+		OFIXX004("VS1",3,aOrcs) 
+	Endif
 	//indica que processaraa fatura caso de um cancelamento na tela inicial não tem como saber a informação de processado sera colocada no PE OX004APV
 	//DAC 20/02/2022
 	If !_lPrcZPECF013
@@ -1605,6 +1684,7 @@ Begin Sequence
 		VS1->(RecLock("VS1",.F.))
 		VS1->VS1_OBSAGL		:= Upper(_cMens) + CRLF + AllTrim(VS1->VS1_OBSAGLU)
 		SM0->(dbSetOrder(1))
+
 		If SM0->(dbSeek(cEmpAnt + VS1->VS1_FILIAL))  //FWSM0Util():setSM0PositionBycFilAnt()
 			VS1->VS1_XCGCEM := AllTrim(SM0->M0_CGC)
 			VS1->VS1_DATALT := Date()
@@ -1618,7 +1698,7 @@ Begin Sequence
 		if VS1->(FieldPos("VS1_STARES")) > 0 
 			VS1->VS1_STARES := "3"
 		Endif
-		_cMens := "Orçamento Faturado com fatura nr. " +_cDoc+ " Serie " +_cSerie+ " em " +DtoC(date()) + " as " + Time() + CRLF 
+		_cMens := "Orçamento Faturado com fatura nr. " +_cDoc+ " Serie " +_cSerie+ " em " +DtoC(date()) + " as " + Time() + CRLF
 		VS1->VS1_OBSAGL		:= Upper(_cMens) + CRLF + AllTrim(VS1->VS1_OBSAGLU)
 		//VS1->VS1_STARES 	:= U_XRCAOVS3(_cNumOrc)  //Retorna o Status
 		VS1->(MsUnLock()) 
@@ -1673,7 +1753,7 @@ Begin Sequence
 				VEC->(MsUnLock())
 			Endif
 			//implementado para gravar informações sobre reservas DAC 23/08/2022
-			VS3->(DbGoto(( cAliasVS3 )->NREGVS3)) 
+			VS3->(DbGoto(( cAliasVS3 )->NREGVS3))
 			VS3->(RecLock("VS3",.F.))
 			VS3->VS3_RESERV := "0"
 			VS3->VS3_QTDRES	:= 0
