@@ -555,8 +555,14 @@ Static Function ZTmpRadio1()
 	cQuery += "	B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NBM, "								  			+ CRLF
 	cQuery += "	F1_ESPECIE, F1_CODNFE, F1_MENNOTA, F1_DOC, F1_SERIE, F1_STATUS, F1_TIPO, FT_CHVNFE, "								+ CRLF
 	cQuery += " FT_VALCONT, D1_CONTA, D1_ITEMCTA, D1_NFORI, D1_SERIORI, D1_VUNIT, D1_TOTAL, "										+ CRLF
-    cQuery += " ROUND(((D1_TOTAL / F1_VALMERC)*F1_DESCONT),2) F1_DESCONT, FT_CLASFIS, FT_BASERET, FT_ICMSRET, D1_DESCZFP, D1_DESCZFC,"+ CRLF
-	cQuery += " F1_UFORITR, F1_MUORITR, F1_UFDESTR, F1_MUDESTR,  "																	+ CRLF
+	cQuery += " CASE " + CRLF
+    cQuery += "     WHEN F1_DESCONT > 0 THEN " + CRLF
+    cQuery += "         ROUND(((D1_TOTAL / F1_DESCONT) * F1_DESCONT),2)" + CRLF
+    cQuery += "     WHEN F1_DESCONT = 0 THEN " + CRLF
+    cQuery += "         F1_DESCONT " + CRLF
+    cQuery += " END AS F1_DESCONT, " + CRLF
+    cQuery += " FT_CLASFIS, FT_BASERET, FT_ICMSRET, D1_DESCZFP, D1_DESCZFC,"+ CRLF
+    cQuery += " F1_UFORITR, F1_MUORITR, F1_UFDESTR, F1_MUDESTR,  "																	+ CRLF
 	cQuery += " FT_BASEICM, FT_ALIQICM, FT_VALICM, FT_BRETPIS, FT_ARETPIS, FT_VRETPIS, FT_BRETCOF, FT_ARETCOF, FT_VRETCOF, " 		+ CRLF
 	cQuery += " FT_BASEIPI, FT_ALIQIPI, FT_VALIPI, " 																				+ CRLF
 	cQuery += " D1_BASIMP6, D1_ALQIMP6, D1_VALIMP6, " 																				+ CRLF
@@ -686,8 +692,15 @@ Static Function ZTmpRadio1()
 	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NBM, "											+ CRLF
 	cQuery += "	F1_ESPECIE, F1_CODNFE, F1_MENNOTA, F1_DOC, F1_SERIE, F1_STATUS, F1_TIPO, FT_CHVNFE,"								+ CRLF
 	cQuery += " FT_VALCONT, D1_CONTA, D1_ITEMCTA, D1_NFORI, D1_SERIORI, D1_VUNIT, D1_TOTAL, "										+ CRLF
-    cQuery += " ((D1_TOTAL / F1_VALMERC)*F1_DESCONT), FT_CLASFIS, FT_BASERET, FT_ICMSRET, D1_DESCZFP, D1_DESCZFC,  "				+ CRLF
-	cQuery += " F1_UFORITR, F1_MUORITR, F1_UFDESTR, F1_MUDESTR,  "																	+ CRLF
+    cQuery += " CASE "
+    cQuery += "     WHEN F1_DESCONT > 0 THEN "
+    cQuery += "         ROUND(((D1_TOTAL / F1_DESCONT) * F1_DESCONT),2)"
+    cQuery += "     WHEN F1_DESCONT = 0 THEN "
+    cQuery += "         F1_DESCONT "
+    cQuery += " END  "
+    cQuery += " , FT_CLASFIS, FT_BASERET, FT_ICMSRET, D1_DESCZFP, D1_DESCZFC,  "				+ CRLF
+	
+    cQuery += " F1_UFORITR, F1_MUORITR, F1_UFDESTR, F1_MUDESTR,  "																	+ CRLF
 	cQuery += " FT_BASEICM, FT_ALIQICM, FT_VALICM, FT_BRETPIS, FT_ARETPIS, FT_VRETPIS, FT_BRETCOF, FT_ARETCOF, FT_VRETCOF, "        + CRLF
 	cQuery += " FT_BASEIPI, FT_ALIQIPI, FT_VALIPI, " 																				+ CRLF
 	cQuery += " D1_BASIMP6, D1_ALQIMP6, D1_VALIMP6, " 																				+ CRLF
