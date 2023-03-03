@@ -1,0 +1,786 @@
+#Include "TOTVS.CH" // IMPORTA DEFINICOES DA PROTHEUS.CH (EVOLUCAO DE RWMAKE.CH) E FUTUROS DEFINES PADRAO
+#Include "XMLxFun.CH" // Biblioteca com recursos para integracao com arquivos XML, como por exemplo a funcao XMLDelNode()
+
+/* :: TDN :: 
+ * * Classes e métodos
+ *   https://tdn.totvs.com/pages/viewpage.action?pageId=22480532
+ *     <codModulo><pacote><tipoClasse><nomeClasse>
+ *     FL BW C ProcessInstance
+ *     FLBWCProcessInstance // NAO 
+ *     FluigProcessClass // SIM 
+ */
+
+/*/{Protheus.doc} FluigProcessClass
+    Interface para integração com plataforma Fluig via webservices
+    @type Class
+    @author CAOA - Sistemas - Sandro Ferreira
+    @since 05/11/2021
+    @version 1.0
+    @history 09/11/2021, Sandro Ferreira, Adicionada propriedades de Classe para dados de ambiente fluig
+    @history 09/11/2021, Sandro Ferreira,  (URL de servidor, ID empresa, credenciais padrão para autenticar no webservice)
+    @history 12/02/2022, Sandro Ferreira, Novo método `cancelInstance` para cancelar solicitação de processo fluig BPM.
+    /*/
+Class FluigProcessClass
+    // PROPRIEDADES DA CLASSE /* TIPAGEM (As) - PERMITE APENAS INDICADO OU NULO (Nil) */
+    Data ServiceType    As Character
+    Data _ServiceURL    As Character
+    Data _TenantId      As Numeric
+    Data _UserPass      As Array
+    Data _StartObs      As Character
+    Data _TaskObs       As Character
+
+    // METODOS DA CLASSE
+    Method New(tenantId,userLogin,userPasswd) Constructor
+    Method Start(processId,idUserInit,usersTask,choosedTask,isSendTask,formValues,isManager)
+    Method SaveAndSend(numProcessId,choosedTask,usersTask,taskObs,userId,isSendTask,formValues,isManager,threadSequence)
+    Method _Send(operation,xmlToSend,userTask)
+    Method CancelInstance(instanceId,userId,cancelText)
+EndClass
+ 
+/*/{Protheus.doc} New
+    Retorna objeto da Classe com principais propriedades configuradas
+    @type Method
+    @author CAOA - Sistemas - Sandro Ferreira
+    @since 05/11/2020
+    @version 1.0
+    @param serviceURL   , character , URL para webservice fluig * ECMWorkflowEngineService*
+    @param tenantId     , numeric   , Id da empresa fluig (Tenant ID)
+    @param userLogin    , character , Login do colaborador fluig para autenticação no serviço (webservice)
+    @param userPasswd   , character , Senha do colaborador. Texto plano ou "md5:<userPasswd>"
+
+    @history 09/11/2021, Sandro Ferreira, Parâmetros - Definição de tipagem dos parâmetros
+    @history 09/11/2021, Sandro Ferreira, Parâmetros - Adicionado *(serviceURL)* URL para serviço WSDL
+    @history 13/11/2021, Sandro Ferreira, Parâmetros - Validação do paràmetro *tenantId*, obrigatório inteiro positivo
+    @return object, Objeto da classe
+    /*/
+Method New(serviceURL As Character,tenantId As Numeric,userLogin As Character,userPasswd As Character) Class FluigProcessClass
+    // Local nHashType := HEX_DIGEST // ENCRYPT FORMAT :: 1=RAW_DIGEST (BINARY) ; 2=HEX_DIGEST (HEXADECIMAL)
+    Local cPassMd5  := "" // ENCRYPT DATA AS "md5:"+MD5(<userPasswd>,nHashType)
+
+   
+    //Default serviceURL := Alltrim(GetMV("ES_XFLUIG5",,"https://caoatst-fluig.totvscloud.com.br:8143/webdesk/ECMWorkflowEngineService?wsdl"))
+    Default serviceURL := Alltrim(GetMV("ES_XFLUIG5",,"https://caoa-fluig.totvscloud.com.br/webdesk/ECMWorkflowEngineService?wsdl"))
+    Default tenantId   := GetMV("ES_XFLUIG4",,1) 
+    Default userLogin  := Alltrim(GetMV("ES_XFLUIG1",,"admin"))
+    Default userPasswd := Alltrim(GetMV("ES_XFLUIG2",,"adm"))
+
+    If ValType(tenantId) # "N" .Or. Int(tenantId) < 1 .Or. tenantId # Int(tenantId) /* OBRIGATORIO - INTEIRO POSITIVO */
+        Return NIL
+    EndIf
+
+    // CRIPTOGRAFAR SENHA PARA NAO EXPOR NAS CHAMADAS AO WEBSERVICE
+    If At(Upper(userPasswd),"MD5:") != 0 
+        // MD5 FORMAT :: 1=RAW_DIGEST (BINARY) ; 2=HEX_DIGEST (HEXADECIMAL)
+        cPassMd5 := "md5:"
+        // cPassMd5 += MD5(userPasswd,HEX_DIGEST) // ERRORLOG:: "variable does not defined"
+        cPassMd5 += MD5(userPasswd,2)
+    else
+        cPassMd5 := userPasswd
+    EndIf
+
+    Self:ServiceType := "SOAP"
+    Self:_ServiceURL := serviceURL
+    Self:_TenantId   := Int(tenantId)
+    Self:_UserPass   := { userLogin,cPassMd5 }
+    Self:_StartObs   := "Solicitação iniciada via CAOATEC." // Encode UTF8 ON SELF:_Send()
+    Self:_TaskObs    := "Solicitação movimentada via CAOATEC." // Encode UTF8 ON SELF:_Send()
+Return Self
+
+/*/{Protheus.doc} Start
+    Inicia uma solicitação de processo fluig BPM - principais propriedades
+    @type Method
+    @author CAOA - Sistemas - Sandro Ferreira
+    @since 05/11/2020
+    @version 1.0
+    @param processId    , character , Código do processo fluig BPM
+    @param idUserInit   , character , Matrícula do colaborador (usuário fluig) responsável por iniciar a solicitação
+    @param usersTask    , array     , Lista de colaboradores responsáveis na tarefa destino
+    @param choosedTask  , numeric   , Código da tarefa no processo - destino. Valor zero (0) ou inteiro positivo
+    @param isSendTask   , logical   , Completa tarefa (true) ou salva (false) - mantém na tarefa inicial
+    @param formValues   , array     , Dados do formulário (ficha). Matriz { {<fieldName>,<fieldValue>} }
+    @param isManager    , logical   , Colaborador inicia solicitação como gestor do processo
+    @history 09/11/2021, Sandro Ferreira, Parâmetros - Definição de tipagem dos parâmetros
+    @history 10/11/2021, Sandro Ferreira, Envio automático da requisição formada ao final por *SELF:_Send()*
+    @history 12/11/2021, Sandro Ferreira, Parâmetros - Validação do *choosedTask* se valor zero (0) inteiro positivo
+    @history 13/11/2021, Sandro Ferreira, Método - Validação do objeto (propriedades da obrigatórias da Classe)
+    @return array, Matriz com retorno da execução. Conteúdo:
+                            * aRet[1] - Executado com sucesso *(`.T.`)* ou não *(`.F.`)*;
+                            * aRet[2] - Tipo de retorno - erros *FATAL* / *ERROR* / *WARN* e sucesso *IPROCESS*;
+                            * aRet[3] - Mensagem de retorno de erro ou sucesso número da solicitação iniciada (*IPROCESS*);
+                            * aRet[4] - XML da mensagem de requisição;
+                            * aRet[5] - XML da mensagem de retorno;
+    @obs Documentação: 
+        [Utilização de Webservices](https://tdn.totvs.com/pages/releaseview.action?pageId=73084007)
+        * Link curto: https://tdn.totvs.com/x/ZyxbB
+        * Tópico: ECMWorkflowsEngineService;
+        * Quadro 24: Métodos da WorkflowEngineService;
+        * Item: startProcess
+    /*/
+Method Start(processId As Character,idUserInit As Character,usersTask As Array,choosedTask As Numeric,isSendTask As Logical,;
+    formValues As Array,isManager As Logical) Class FluigProcessClass
+
+    Local nI := 0
+    Local aRet := {}
+    Local xmlRequest := ""
+    
+    Default idUserInit := Self:_UserPass[1]
+    Default usersTask := {}
+    Default choosedTask := 0 // ID TAREFA NO DIAGRAMA BPM - INICIAL / FLUXO PADRAO / UNICO / PROXIMO
+    Default isSendTask := .F. //.T.
+    Default formValues := {}
+    Default isManager := .F.
+
+    #Define OPERATION "startProcess"
+
+    xmlRequest := ""
+    
+    // PARAMETROS OBRIGATORIOS
+    Do Case
+        Case ValType(Self:_UserPass) # "A"
+            aRet := {.F.,"FATAL","INVALID OBJECT CONSTRUCT"     ,NIL,NIL}
+        Case Empty(::_UserPass[1]) .Or. Empty(::_UserPass[2])
+            aRet := {.F.,"FATAL","CREDENTIALS NOT SET"          ,NIL,NIL}
+        Case Empty(processId)
+            aRet := {.F.,"FATAL","INVALID PROCESS ID"           ,NIL,NIL}
+        Case Empty(idUserInit)
+            aRet := {.F.,"FATAL","INVALID USER STARTER"         ,NIL,NIL}
+        Case Int(choosedTask) < 0 .Or. Int(choosedTask) # choosedTask /* ZERO OU INTEIRO POSITIVO */
+            aRet := {.F.,"FATAL","INVALID CHOOSED STATE"        ,NIL,NIL}
+    EndCase
+    If Len(aRet) > 0
+        Return aRet
+    EndIf
+
+    // XML - Webservice ECMWorkflowEngineService - Método startProcess
+    /* <!-- comments>Solicitacao iniciada automaticamente</comments --> */
+    BeginContent var xmlRequest
+        <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://ws.workflow.ecm.technology.totvs.com/">
+            <soapenv:Header/>
+            <soapenv:Body>
+                <ws:startProcess>
+                    <username    >%Exp:(Self:_UserPass[1])          %</username>
+                    <password    ><![CDATA[%Exp:(Self:_UserPass[2]) %]]></password>
+                    <companyId   >%Exp:Transform(Self:_TenantId,"") %</companyId>
+                    <processId   >%Exp:processId                    %</processId>
+                    <choosedState>%Exp:Transform(choosedTask,"")    %</choosedState>
+                    <colleagueIds>%Exp:toItemList(usersTask)        %</colleagueIds>
+                    <comments    >%Exp:If(Empty(::_StartObs),"","<![CDATA[" + ::_StartObs + "]]>")%</comments>
+                    <userId      >%Exp:idUserInit                   %</userId>
+                    <completeTask>%Exp:If(isSendTask,"true","false")%</completeTask>
+                    <attachments/>
+                    <cardData    >%Exp:toItemList(formValues)       %</cardData>
+                    <appointment/>
+                    <managerMode >%Exp:If(isManager,"true","false") %</managerMode>
+                </ws:startProcess>
+            </soapenv:Body>
+        </soapenv:Envelope>
+    EndContent
+
+    // REPLACE SPACES IN NODE NAME
+    For nI := 6 To 1 Step -1 ; xmlRequest := Replace(xmlRequest,Space(nI)+">",">") ; Next nI
+    // TODO: NAO IDENTAR E VERIFICAR VALIDADE DA ESTURURA BASICA DE REQUISCAO SOAP (XML)
+    // -- REMOVER ESPACOS EXCEDENTES
+    xmlRequest := Alltrim(xmlRequest)
+    // -- REMOVER ULTIMA QUEBRA DE LINHA
+    xmlRequest := Substring(xmlRequest,1,Len(xmlRequest)-Len(CRLF))
+    // -- FECHAR TAG XML FINAL SOAP ENVELOPE
+    If ">" # Substring(xmlRequest,RAt("</soapenv:Envelope",xmlRequest)+18,1)
+        xmlRequest += ">"
+    EndIf
+    // -- REMOVER TABULACAO EXCEDENTE
+    xmlRequest := Replace(xmlRequest, Chr(10)+Space(04), Chr(10))
+    /* // -- CORRIGIR IDENTACAO DE TAG "ITEM"
+    xmlRequest := Replace(xmlRequest, Chr(10)+Space(04 * 3)+"<item>", Chr(10)+Space(04 * 4)+"<item>") */
+
+    /* cardData - Example 
+                        <item>	<item>tipoProcesso</item>		    <item>solicitacao</item>	                </item>
+                        <item>	<item>numERP</item>		            <item>000461</item>	                        </item>
+                        <item>	<item>dataAbertura</item>		    <item>29/03/2020</item>	                    </item>
+                        <item>	<item>codSolicitante</item>		    <item>usuario1</item>	                    </item>
+                        <item>	<item>nomeSolicitante</item>		<item>Usuario 01 Protheus - Postman</item>	</item>
+                        <item>	<item>codEmpresa</item>		        <item>01</item>	                            </item>
+                        <item>	<item>descEmpresa</item>		    <item>GRUPO CAOA</item>	                    </item>
+                        <item>	<item>codFilial</item>		        <item>2010022001</item>	                    </item>
+                        <item>	<item>descFilial</item>		        <item>MONTADORA ANAPOLIS</item>	            </item>
+                        <item>	<item>codFornecedor</item>		    <item></item>	                            </item>
+                        <item>	<item>descFornecedor</item>		    <item></item>	                            </item>
+                        <item>	<item>codCondPagamento</item>		<item></item>	                            </item>
+                        <item>	<item>descCondPagamento</item>		<item></item>	                            </item>
+                        <item>	<item>observacoesCab</item>		    <item>DES DESENV1</item>	                </item>
+                        <item>	<item>txtCentroCusto</item>		    <item>12040177MA</item>	                    </item>
+                        <item>	<item>txtDescCentroCusto</item>		<item>GERENCIA DE MARKETING</item>	        </item>
+                        <item>	<item>txtContaContabil</item>		<item></item>	                            </item>
+                        <item>	<item>txtDescContaContabil</item>	<item></item>	                            </item>
+                        <item>	<item>txtItemContabil</item>		<item></item>	                            </item>
+                        <item>	<item>txtDescItemContabil</item>	<item></item>	                            </item>
+                        <item>	<item>txtClasseValor</item>		    <item></item>	                            </item>
+                        <item>	<item>txtDescClasseValor</item>		<item></item>	                            </item>
+                        <!-- MATRICULA USUARIO FLUIG - RESPONSAVEL PELA TAREFA "APROVA" -->
+                        <!--<item>	<item>proximoAprovador</item>		<item>rafael.mgriggio</item>	            </item>--> <!-- USUARIO CADASTRADO :: LOGIN E MATRICULA IGUAIS -->
+                        <!--<item>	<item>proximoAprovador</item>		<item>TOTVS-DAN</item>	                    </item>--> <!-- USUARIO CADASTRADO :: LOGIN "totvs-dan", MATRICULA "000100" -->
+                        <!--<item>	<item>proximoAprovador</item>		<item>totvs-dan</item>	                    </item>--> <!-- USUARIO CADASTRADO :: LOGIN "totvs-dan", MATRICULA "000100" -->
+                        <item>	<item>proximoAprovador</item>		<item>000100</item>	                        </item> <!-- USUARIO CADASTRADO :: LOGIN "totvs-dan", MATRICULA "000100" -->
+                        <item>	<item>codigoAprovador</item>		<item>000004</item>	                        </item>
+                        <item>	<item>grupoaprovacao</item>		    <item>000003</item>	                        </item>
+                        <item>	<item>itemaprovacao</item>		    <item>01</item>	                            </item>
+                        <item>	<item>valAprovacao</item>		    <item>732124.91</item>	                    </item>
+                        <item>	<item>txtLinhaDestaque</item>		<item>0001</item>	                        </item>
+                        <item>	<item>sequencia___1</item>		    <item>0001</item>	                        </item>
+                        <item>	<item>codProduto___1</item>		    <item>MAN0000001</item>	                    </item>
+                        <item>	<item>descProduto___1</item>		<item>VALVULA SOLENOIDE 24VDC 6 2 WA</item>	</item>
+                        <item>	<item>unidadeMedida___1</item>		<item>UN</item>	                            </item>
+                        <item>	<item>quantidade___1</item>		    <item>461.001</item>	                    </item>
+                        <item>	<item>valorUnitario___1</item>		<item>0.00</item>	                        </item>
+                        <item>	<item>valorTotal___1</item>		    <item>0.00</item>	                        </item>
+                        <item>	<item>dataEntrega___1</item>		<item>29/03/2020</item>	                    </item>
+                        <item>	<item>observacao___1</item>		    <item>DES DESENV1</item>	                </item>
+                        <item>	<item>desconto</item>		        <item>0.00</item>	                        </item>
+                        <item>	<item>despesa</item>		        <item>0.00</item>	                        </item>
+                        <item>	<item>seguro</item>		            <item>0.00</item>	                        </item>
+                        <item>	<item>frete</item>		            <item>0.00</item>	                        </item>
+                        <item>	<item>totalItem</item>		        <item>0.00</item>	                        </item>
+                        <item>	<item>totalGeral</item>		        <item>0.00</item>	                        </item>
+    */
+
+    // --- ENVIAR REQUISICAO AO METODO DE WEBSERVICE --------------------------
+    aRet := Self:_Send(OPERATION,xmlRequest)
+
+    // TODO: TRATAR/DEVOLVER RESPOSTA DA REQUISICAO
+Return aRet
+
+/*/{Protheus.doc} SaveAndSend
+    Movimenta ou atualiza formulário da solicitação de processo fluig BPM - principais propriedades.
+        A tarefa atual pode ser completada e a solicitação movimentada para próxima tarefa no fluxo, ou,
+        mantida na tarefa atual, todos os dados do formulário atualizados pelo responsável da tarefa ou gestor do processo.
+    @type Method
+    @author CAOA - Sistemas - Sandro Ferreira
+    @since 12/11/2020
+    @version 1.0
+    @param numprocessId , numeric   , Número da solicitação de processo fluig BPM
+    @param choosedTask  , numeric   , Código da tarefa no processo - destino. Valor zero (0) ou inteiro positivo
+    @param usersTask    , array     , Lista de colaboradores responsáveis na tarefa destino
+    @param comments     , character , Texto de inclusão em *Complementos* do histórico da solicitação de processo
+    @param userId       , character , Matrícula do usuário fluig executor da tarefa atual
+    @param isSendTask   , logical   , Completa tarefa (true) ou salva (false) - mantém na tarefa atual
+    @param formValues   , array     , Dados do formulário (ficha). Matriz { {<fieldName>,<fieldValue>} }
+    @param isManager    , logical   , Movimentação realizada pelo gestor do processo
+    @param threadSequence, numeric  , Número da atividade paralela no processo. Valores:
+                         ,          ,     * 0 - Não exitem tarefas paralelas;
+                         ,          ,     * 1 a N - Sequência da atividade paralela na solicitação.
+    @history 12/11/2021, Sandro Ferreira, Envio automático da requisição formada ao final por *SELF:_Send()*
+    @return array, Matriz com retorno da execução. Conteúdo:
+                            * aRet[1] - Executado com sucesso *(`.T.`)* ou não *(`.F.`)*;
+                            * aRet[2] - Tipo de retorno - erros *FATAL* / *ERROR* / *WARN* e sucesso *IPROCESS*;
+                            * aRet[3] - Mensagem de retorno de erro ou sucesso número da solicitação iniciada (*IPROCESS*);
+                            * aRet[4] - XML da mensagem de requisição;
+                            * aRet[5] - XML da mensagem de retorno;
+    @obs Documentação: 
+        [Utilização de Webservices](https://tdn.totvs.com/pages/releaseview.action?pageId=73084007)
+        * Link curto: https://tdn.totvs.com/x/ZyxbB
+        * Tópico: ECMWorkflowsEngineService;
+        * Quadro 24: Métodos da WorkflowEngineService;
+        * Item: saveAndSendTask
+    /*/
+Method SaveAndSend(numProcessId As Numeric,choosedTask As Numeric,usersTask As Array,comments As Character,userId As Character,;
+    isSendTask As Logical,formValues As Array,isManager As Logical,threadSequence As Numeric) Class FluigProcessClass
+
+    Local nI := 0
+    Local aRet := {}
+    Local xmlRequest := ""
+    
+    Default choosedTask     := 0 // ID TAREFA NO DIAGRAMA BPM - INICIAL / FLUXO PADRAO / UNICO / PROXIMO
+    Default usersTask       := {}
+    Default comments        := Self:_TaskObs
+    Default userId          := Self:_UserPass[1]
+    Default isSendTask      := .T.
+    Default formValues      := {}
+    Default isManager       := .F.
+    Default threadSequence  := 0 // 0 - SEM ATIVIDADES PARALELAS
+
+    #Define OPERATION "saveAndSendTask"
+
+    xmlRequest := ""
+    
+    // PARAMETROS OBRIGATORIOS
+    Do Case
+        Case Empty(::_UserPass[1]) .Or. Empty(::_UserPass[2])
+            aRet := {.F.,"FATAL","CREDENTIALS NOT SET"          ,NIL,NIL}
+        Case Empty(numProcessId) .Or. ( Int(numProcessId) < 1 .Or. Int(numProcessId) # numProcessId ) /* ZERO OU INTEIRO POSITIVO */
+            aRet := {.F.,"FATAL","INVALID PROCESS INSTANCE ID" + " (" + IIF(Empty(numProcessId),"NULO",CValToChar(numProcessId) + ")")  ,NIL,NIL}
+        Case Int(choosedTask) < 0 .Or. Int(choosedTask) # choosedTask /* ZERO OU INTEIRO POSITIVO */
+            aRet := {.F.,"FATAL","INVALID CHOOSED STATE"        ,NIL,NIL}
+    EndCase
+    If Len(aRet) > 0
+        Return aRet
+    EndIf
+
+    // XML - Webservice ECMWorkflowEngineService - Método saveAndSendTask
+    /* <!-- comments>Solicitacao movimentada automaticamente</comments --> */
+    BeginContent var xmlRequest
+        <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://ws.workflow.ecm.technology.totvs.com/">
+        <soapenv:Header/>
+        <soapenv:Body>
+            <ws:saveAndSendTask>
+                <username           >%Exp:(Self:_UserPass[1])               %</username>
+                <password           ><![CDATA[%Exp:(Self:_UserPass[2])      %]]></password>
+                <companyId          >%Exp:Transform(Self:_TenantId,"")      %</companyId>
+                <processInstanceId  >%Exp:Transform(numProcessId,"")        %</processInstanceId>
+                <choosedState       >%Exp:Transform(choosedTask,"")         %</choosedState>
+                <colleagueIds       >%Exp:toItemList(usersTask)             %</colleagueIds>
+                <comments           >%Exp:If(Empty(comments),"","<![CDATA[" + comments + "]]>")%</comments>
+                <userId             >%Exp:userId                            %</userId> 
+                <completeTask       >%Exp:If(isSendTask,"true","false")     %</completeTask>
+                <attachments/>
+                <cardData           >%Exp:toItemList(formValues)            %</cardData>
+                <appointment/>
+                <managerMode        >%Exp:If(isManager,"true","false")      %</managerMode>
+                <threadSequence     >%Exp:Transform(threadSequence,"")      %</threadSequence> 
+            </ws:saveAndSendTask>
+        </soapenv:Body>
+        </soapenv:Envelope>
+    EndContent
+
+    // REPLACE SPACES IN NODE NAME
+    For nI := 13 To 1 Step -1 ; xmlRequest := Replace(xmlRequest,Space(nI)+">",">") ; Next nI
+    // TODO: NAO IDENTAR E VERIFICAR VALIDADE DA ESTURURA BASICA DE REQUISCAO SOAP (XML)
+    // -- REMOVER ESPACOS EXCEDENTES
+    xmlRequest := Alltrim(xmlRequest)
+    // -- REMOVER ULTIMA QUEBRA DE LINHA
+    xmlRequest := Substring(xmlRequest,1,Len(xmlRequest)-Len(CRLF))
+    // -- FECHAR TAG XML FINAL SOAP ENVELOPE
+    If ">" # Substring(xmlRequest,RAt("</soapenv:Envelope",xmlRequest)+18,1)
+        xmlRequest += ">"
+    EndIf
+    // -- REMOVER TABULACAO EXCEDENTE
+    xmlRequest := Replace(xmlRequest, Chr(10)+Space(04), Chr(10))
+    /* // -- CORRIGIR IDENTACAO DE TAG "ITEM"
+    xmlRequest := Replace(xmlRequest, Chr(10)+Space(04 * 3)+"<item>", Chr(10)+Space(04 * 4)+"<item>") */
+
+    /* cardData - Example 
+                        <item>	<item>tipoProcesso</item>		    <item>solicitacao</item>	                </item>
+                        <item>	<item>numERP</item>		            <item>000461</item>	                        </item>
+                        <item>	<item>dataAbertura</item>		    <item>29/03/2020</item>	                    </item>
+                        <item>	<item>codSolicitante</item>		    <item>usuario1</item>	                    </item>
+                        <item>	<item>nomeSolicitante</item>		<item>Usuario 01 Protheus - Postman</item>	</item>
+                        <item>	<item>codEmpresa</item>		        <item>01</item>	                            </item>
+                        <item>	<item>descEmpresa</item>		    <item>GRUPO CAOA</item>	                    </item>
+                        <item>	<item>codFilial</item>		        <item>2010022001</item>	                    </item>
+                        <item>	<item>descFilial</item>		        <item>MONTADORA ANAPOLIS</item>	            </item>
+                        <item>	<item>codFornecedor</item>		    <item></item>	                            </item>
+                        <item>	<item>descFornecedor</item>		    <item></item>	                            </item>
+                        <item>	<item>codCondPagamento</item>		<item></item>	                            </item>
+                        <item>	<item>descCondPagamento</item>		<item></item>	                            </item>
+                        <item>	<item>observacoesCab</item>		    <item>DES DESENV1</item>	                </item>
+                        <item>	<item>txtCentroCusto</item>		    <item>12040177MA</item>	                    </item>
+                        <item>	<item>txtDescCentroCusto</item>		<item>GERENCIA DE MARKETING</item>	        </item>
+                        <item>	<item>txtContaContabil</item>		<item></item>	                            </item>
+                        <item>	<item>txtDescContaContabil</item>	<item></item>	                            </item>
+                        <item>	<item>txtItemContabil</item>		<item></item>	                            </item>
+                        <item>	<item>txtDescItemContabil</item>	<item></item>	                            </item>
+                        <item>	<item>txtClasseValor</item>		    <item></item>	                            </item>
+                        <item>	<item>txtDescClasseValor</item>		<item></item>	                            </item>
+                        <!-- MATRICULA USUARIO FLUIG - RESPONSAVEL PELA TAREFA "APROVA" -->
+                        <!--<item>	<item>proximoAprovador</item>		<item>rafael.mgriggio</item>	            </item>--> <!-- USUARIO CADASTRADO :: LOGIN E MATRICULA IGUAIS -->
+                        <!--<item>	<item>proximoAprovador</item>		<item>TOTVS-DAN</item>	                    </item>--> <!-- USUARIO CADASTRADO :: LOGIN "totvs-dan", MATRICULA "000100" -->
+                        <!--<item>	<item>proximoAprovador</item>		<item>totvs-dan</item>	                    </item>--> <!-- USUARIO CADASTRADO :: LOGIN "totvs-dan", MATRICULA "000100" -->
+                        <item>	<item>proximoAprovador</item>		<item>000100</item>	                        </item> <!-- USUARIO CADASTRADO :: LOGIN "totvs-dan", MATRICULA "000100" -->
+                        <item>	<item>codigoAprovador</item>		<item>000004</item>	                        </item>
+                        <item>	<item>grupoaprovacao</item>		    <item>000003</item>	                        </item>
+                        <item>	<item>itemaprovacao</item>		    <item>01</item>	                            </item>
+                        <item>	<item>valAprovacao</item>		    <item>732124.91</item>	                    </item>
+                        <item>	<item>txtLinhaDestaque</item>		<item>0001</item>	                        </item>
+                        <item>	<item>sequencia___1</item>		    <item>0001</item>	                        </item>
+                        <item>	<item>codProduto___1</item>		    <item>MAN0000001</item>	                    </item>
+                        <item>	<item>descProduto___1</item>		<item>VALVULA SOLENOIDE 24VDC 6 2 WA</item>	</item>
+                        <item>	<item>unidadeMedida___1</item>		<item>UN</item>	                            </item>
+                        <item>	<item>quantidade___1</item>		    <item>461.001</item>	                    </item>
+                        <item>	<item>valorUnitario___1</item>		<item>0.00</item>	                        </item>
+                        <item>	<item>valorTotal___1</item>		    <item>0.00</item>	                        </item>
+                        <item>	<item>dataEntrega___1</item>		<item>29/03/2020</item>	                    </item>
+                        <item>	<item>observacao___1</item>		    <item>DES DESENV1</item>	                </item>
+                        <item>	<item>desconto</item>		        <item>0.00</item>	                        </item>
+                        <item>	<item>despesa</item>		        <item>0.00</item>	                        </item>
+                        <item>	<item>seguro</item>		            <item>0.00</item>	                        </item>
+                        <item>	<item>frete</item>		            <item>0.00</item>	                        </item>
+                        <item>	<item>totalItem</item>		        <item>0.00</item>	                        </item>
+                        <item>	<item>totalGeral</item>		        <item>0.00</item>	                        </item>
+    */
+
+    // --- ENVIAR REQUISICAO AO METODO DE WEBSERVICE --------------------------
+    aRet := Self:_Send(OPERATION,xmlRequest)
+
+    // TODO: TRATAR/DEVOLVER RESPOSTA DA REQUISICAO
+Return aRet
+
+/*/{Protheus.doc} _Send
+    Envia requisição ao webservice. Método executado automaticamente pelo método de criação
+      da requisição - *`Sefl:Start`, *`SaveAndSend`*
+    @type Method
+    @author CAOA - Sistemas - Sandro Ferreira
+    @since 09/11/2020
+    @version 1.0
+    @param operation    , character , Método do webservice fluig. *startProcess* | *saveAndSendTask*
+    @param xmlToSend    , character , Corpo da XML da requisição ao webservice
+    @param userTask     , character , Usuário fluig responsável pela tarefa destino - matrícula do usuário.
+                        ,           ,  Tarefa conjunta lista de usuários separada por vírgula.
+    @return character, Corpo da XML da requisição ao webservice
+    @history 12/11/2020, Sandro Ferreira, Correção - Retorno incluir XML de retorno quando envio falha
+    /*/
+Method _Send(operation As Character,xmlToSend As Character,userTask As Character) Class FluigProcessClass
+    Local oWsManager := TwsdlManager():New()
+    Local xmlRequest := ""
+    Local xmlResponse:= ""
+    Local cWarn := cError := ""
+    Local oXml       := Nil
+
+    Local nI         := 0
+    Local aItems     := {}
+
+    Local aRet       := {}
+    Local codeReturn := ""
+    Local aWsMethos  := {"startProcess","saveAndSendTask","cancelInstance"}
+    
+    // Local errStart   := { "Usuário destino não foi informado!" , "Falha de login" , "Colaborador Inexistente" ;
+    //                         , "Processo informado não foi encontrado.", "O processo Compras_AlcadaDeAprovacao não está ativo!" }
+    // Local errSaveSend:= { "Não foi possível encontrar histórico de processo para empresa" ;
+    //                         , "Usuário destino não foi informado!" , "Falha de login" , "Colaborador Inexistente" }
+
+
+    // PARAMETROS OBRIGATORIOS
+    Do Case
+        Case Empty(operation) ;
+          .Or. AScan(aWsMethos,{|cMethod| Upper(cMethod) == Upper(operation) }) == 0
+            aRet := {.F.,"FATAL","INVALID METHOD OPERATION"}
+        Case Empty(xmlToSend)
+            aRet := {.F.,"FATAL","XML EMPTY IS INVALID"}
+    EndCase
+    If Len(aRet) > 0
+        Return aRet
+    EndIf
+
+    Begin Sequence
+    // --- OBTER STATUS DE SUCESSO OU FALHA (.T./.F.) AO REALIZAR OPERACAO -----
+        oWsManager:lStatus := .T.
+        
+    // --- CRIAR ARQUIVOS DE LOG (REQUEST E RESPONSE) NA PASTA DO APPSERVER ----
+        oWsManager:lVerbose := .T.
+
+    // --- CONEXAO ANOMIMA, SEM VERIFICAR CERFIFICADO OU CHAVES ----------------
+        oWsManager:lSSLInsecure := GetMV("ES_SSLANON",,.T.)
+
+    // --- VALIDAR CONTRATO WSDL DO WEBSERVICE DE SERVICO ----------------------
+        If .NOT. oWsManager:ParseURL( Self:_ServiceURL )
+            Conout("FluigProcessClass :: Falha no parse do WSDL" ;
+                + " - Service URL (SELF:_ServiceURL) = " + ::_ServiceURL )
+            aRet := {.F.,"ERROR",oWsManager:cError,NIL,NIL}
+            // aRet := {.F.,"FATAL","PARSE ERROR TO PARSE WSDL URL"}
+            BREAK // SEQUENCE
+        EndIf
+
+    // --- CONFIGURAR METODO PARA EXECUTAR WEBSERVICE DE SERVICO ---------------
+        If .NOT. oWsManager:SetOperation( operation )
+            Conout("FluigProcessClass :: Falha ao configurar metodo" ;
+                + ": " + operation)
+            aRet := {.F.,"ERROR",oWsManager:cError,NIL,NIL}
+            // aRet := {.F.,"FATAL","FAIL TO SET METHOD"}
+            BREAK // SEQUENCE
+        EndIf
+
+    // --- CONVERTER PARA CODIFICAO UTF-8 -------------------------------------
+    xmlRequest := EncodeUTF8(xmlToSend) // -- TODO: (?) VALIDAR REAL NECESSIDADE DE APLICAR ENCODE UTF8
+
+    // --- EXECUCAO DA REQUISICAO ---------------------------------------------
+        If .NOT. oWsManager:SendSoapMsg( xmlRequest ) ;
+          .AND. !(Upper("Unknown element " + operation + "Response") $ Upper(oWsManager:cError))
+            Conout("FluigProcessClass :: Falha na execucao do metodo" ;
+                + ": " + operation)
+            aRet := {.F.,"ERROR",oWsManager:cError,xmlRequest,oWsManager:GetSoapResponse()}
+            // aRet := {.F.,"FATAL","FAIL ON METHOD EXECUTE"}
+            BREAK // SEQUENCE
+        EndIf
+    
+    // --- RETORNO DA REQUISICAO EXECUTADA ------------------------------------
+        xmlResponse := oWsManager:GetSoapResponse()
+
+    // --- PARSE NO RETORNO DA REQUISICAO PROCESSADA --------------------------
+        oXml := XmlParser(xmlResponse,"_",@cError,@cWarn)
+
+        If .NOT. Empty( cError )
+            Conout("FluigProcessClass :: Falha no XML de retorno" ;
+                + ": " + cError)
+            aRet := {.F.,"ERROR",cError,xmlRequest,xmlResponse}
+            // aRet := {.F.,"FATAL","ERROR ON PARSE RESPONSE XML"}
+        EndIf
+        If .NOT. Empty( cWarn )
+            Conout("FluigProcessClass :: Aviso sobre XML de retorno" ;
+                + ": " + cWarn)
+            Aadd(aRet, {.F.,"WARN",cWarn,xmlRequest,xmlResponse})
+            // Aadd(aRet, {.F.,"WARN","WARN ON PARSE RESPONSE XML"})
+        EndIf
+        If Len(aRet) > 1
+            BREAK // SEQUENCE
+        EndIf
+
+    // --- EXTRAIR CONTEUDO RETORNADO DA REQUISICAO ---------------------------
+        /* <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+         *   <soap:Body>
+         *      <ns1:startProcessResponse xmlns:ns1="http://ws.workflow.ecm.technology.totvs.com/">
+         *          <result>
+         *              <item>
+         *                  ....
+         * </soap:Envelope> */
+        // NODE result:item{ item, item }
+        /* Do Case
+            Case Upper(operation) == Upper("startProcess")
+                oResultItem := oXml:_soap_Envelope:_soap_Body:_ns1_startProcessResponse:_result:_item
+            Case Upper(operation) == Upper("saveAndSendTask")
+                oResultItem := oXml:_soap_Envelope:_soap_Body:_ns1_saveAndSendTaskResponse:_result:_item
+        EndCase */
+        If Upper(operation) == Upper("cancelInstance")
+            cResultTEXT := &( "oXml:_soap_Envelope:_soap_Body:_ns1_" + operation + "Response:_result:TEXT" )
+        Else /* operation $ "startProcess;saveAndSendTask" */
+            aItems := &( "oXml:_soap_Envelope:_soap_Body:_ns1_" + operation + "Response:_result:_item" )
+
+            If ValType( aItems ) # "A"
+                aItems := { aItems }
+            EndIf
+        EndIf
+
+    // --- VERIFICAR CONTEUDO DO RETORNO - ERRO -------------------------------
+        /* If operation == "cancelInstance" */
+        If Upper(operation) == Upper("cancelInstance") ;
+            .AND. .NOT.("OK" $ cResultTEXT) // oXml:_soap_Envelope:_soap_Body:_ns1_cancelInstanceResponse:_result:TEXT != "OK"
+
+            Conout("FluigProcessClass<" + operation + "> :: Requisicao retornou erro" ;
+              + ": " + cResultTEXT)
+            
+            // aRet := {.F.,"RESPONSE",cResultTEXT,userTask}
+            aRet := {.F.,"RESPONSE",cResultTEXT,xmlRequest,xmlResponse} // -- TODO: VALIDAR se XMLs com Encode UTF8 e Decodificar ao gravar em LOG (ou op??o para gravar em LOG nas duas codificacoes)
+            
+            BREAK // SEQUENCE
+
+        ElseIf Upper(operation) != Upper("cancelInstance") .AND. Len(aItems) > 0 ;
+            .AND. "ERROR" $ aItems[1]:_item[1]:text // oXml:_soap_Envelope:_soap_Body:_ns1_startProcessResponse:_result:_item:_item[1]:text == "ERROR"
+            Conout("FluigProcessClass<" + operation + "> :: Requisicao retornou erro" ;
+              + ": " + aItems[1]:_item[2]:text)
+            
+            // aRet := {.F.,"RESPONSE",aItems[1]:_item[2]:text,userTask}
+            aRet := {.F.,"RESPONSE",aItems[1]:_item[2]:text,xmlRequest,xmlResponse}
+            
+            BREAK // SEQUENCE
+        EndIf
+
+    // // --- VERIFICAR CONTEUDO DO RETORNO - ERRO - startProcess -----------------
+    //         If AScan(errStart,{|cMsg| cMsg $ aItems[1]:_item[2]:text }) > 0 ;
+    //           .AND. operation == "startProcess"
+    //             // aRet := {.F.,"RESPONSE",aItems[1]:_item[2]:text,userTask}
+    //             aRet := {.F.,"RESPONSE",aItems[1]:_item[2]:text,xmlRequest,xmlResponse}
+    //         // EndIf
+
+    // // --- VERIFICAR CONTEUDO DO RETORNO - ERRO - saveAndSendTask --------------
+    //         ElseIf AScan(errSaveSend,{|cMsg| cMsg $ aItems[1]:_item[2]:text }) > 0 ;
+    //           .AND. operation == "saveAndSendTask"
+    //             // aRet := {.F.,"RESPONSE",aItems[1]:_item[2]:text,userTask}
+    //             aRet := {.F.,"RESPONSE",aItems[1]:_item[2]:text,xmlRequest,xmlResponse}
+    //         EndIf
+
+    //         BREAK // SEQUENCE
+    //     EndIf
+
+    // --- VERIFICAR CONTEUDO DO RETORNO - SUCESSO - startProcess --------------
+        If Upper(operation) == Upper("cancelInstance")
+            codeReturn := cResultTEXT
+            
+            Conout("FluigProcessClass<" + operation + "> :: Solicitacao de processo fluig cancelada" ;
+            + ": " + codeReturn ) // aItems[1]:_item[2]:text)
+            
+            aRet := {.T.,"RESULT",codeReturn,xmlRequest,xmlResponse}
+        // EndIf
+
+    // --- VERIFICAR CONTEUDO DO RETORNO - SUCESSO - startProcess --------------
+        ElseIf Upper(operation) == Upper("startProcess")
+            For nI := 1 To Len(aItems)
+                If Upper(aItems[nI]:_item[1]:text) == Upper("iProcess")
+                    // nFluigProc := Int(Val(aItems[nI]:_item[1]:text))
+                    codeReturn := aItems[nI]:_item[2]:text
+                    Exit // For
+                EndIf
+            Next nI
+            
+            Conout("FluigProcessClass<" + operation + "> :: Solicitacao de processo fluig iniciada" ;
+            + ": " + codeReturn ) // aItems[1]:_item[2]:text)
+            
+            aRet := {.T.,"IPROCESS",codeReturn,xmlRequest,xmlResponse}
+        // EndIf
+
+    // --- VERIFICAR CONTEUDO DO RETORNO - SUCESSO - saveAndSendTask -----------
+        ElseIf Upper(operation) == Upper("saveAndSendTask")
+            For nI := 1 To Len(aItems)
+                If Upper(aItems[nI]:_item[1]:text) == Upper("WDNrDocto")
+                    // nFluigProc := Int(Val(aItems[nI]:_item[1]:text))
+                    codeReturn := aItems[nI]:_item[2]:text
+                    Exit // For
+                EndIf
+            Next nI
+            
+            Conout("FluigProcessClass<" + operation + "> :: Solicitacao de processo fluig movimentada" ;
+            + ": " + codeReturn ) // aItems[1]:_item[2]:text)
+            
+            aRet := {.T.,"WDNRDOCTO",codeReturn,xmlRequest,xmlResponse}
+            // ??? FLUIG040:359~366 // ? Empty(codeReturn) X cStatus == "03" /* CR_STATUS == "03"
+        EndIf
+
+    Recover
+        If Len(aRet) == 0
+            aRet := {.F.,"FATAL","FATAL ERROR ON EXECUTE ROTINE",xmlRequest,xmlResponse}
+        EndIf
+    End Sequence
+
+Return aRet
+
+/*/{Protheus.doc} toItemList
+    Converte array para string. Valores de itens ou matriz em string XML. 
+    Formato `<item>value</item>` e `<item> <item>field</item> <item>value</item> </item>`, respectivamente.
+    @type  Function
+    @author CAOA - Sistemas - Sandro Ferreira
+    @since 05/11/2020
+    @version 1.0
+    @param aItemsMap    , array     , Itens em vetor unidemencional *(`string[]`)* ou itens como matriz campo e valor *(`string[][]`)*
+    @param identCount   , numeric   , Total de tabulações para identação das entrada da tag *<item>*. Default 5
+    @return character, Vetor convertido para texto - propriedades e valores para nós/tag <item>
+    @example
+        toItemList( {"item1","item2","itemN"} )
+        toItemList( { {"field1","value"},{"field2","value"},{"field___N","value"} } )
+    @history 03/12/2020, Sandro Ferreira, Correção no uso do parâmetro *aItemsMap* para não ser alterado pois alterava variável passada.
+    /*/
+Static Function toItemList(aItemsMap,identCount)
+    Local cItems := ""
+    Default identCount := 5
+
+    // -- IDENTACAO COM TAB KEY (CHARCODE 9)
+    // #Define LF_TAB Chr(10) + Replicate(Chr(09),identCount)
+    // #Define LF_TAB_END Chr(10) + Replicate(Chr(09),identCount-1)
+    // -- IDENTACAO COM SPACE KEY - TAB == 4 SPACES
+    #Define LF_TAB Chr(10) + Space(04 * identCount)
+    #Define LF_TAB_END Chr(10) + Space(04 * (identCount-1))
+
+    // aItemsMap == {{"a","1"},{"b","2"},{"c","3"}}
+    If !Empty(aItemsMap)
+
+        // <item> <item>fieldName1> <item>value1</item> </item>
+        // <item> <item>fieldNameN> <item>valueN</item> </item>
+        // CORRECAO - NAO ALTERAR PARAMETRO aItemsMap POIS MUDA CONTEUDO DA VARIAVEL NA ROTINA EXECUTORA
+        // AEval(aItemsMap,{|item| item := " <item>" + item[1] + "</item><item>" + item[2] + "</item> " })
+        AEval(aItemsMap,{|aItem| cItems += LF_TAB + "<item> " ;
+            + "<item>" + aItem[1] + "</item><item>" + aItem[2] + "</item>" ;
+            + " </item>" })
+        cItems += LF_TAB_END
+    EndIf
+
+Return cItems
+
+/*/{Protheus.doc} CancelInstance
+    Cancela uma solicitação de processo fluig BPM. Apenas parâmetros obrigatórios, e uso de parâmetros de autenticação do objeto da Classe
+    @type method
+    @author CAOA - Sistemas - Sandro Ferreira
+    @since 11/02/2021
+    @version 1.0
+    @param instanceId   , numeric   , Número da solicitação de processo - valor inteiro positivo
+    @param userId       , character , Matrícula do colaborador (usuário fluig) responsável pelo cancelamento - requisitante inicial ou gestor do processo
+    @param cancelText   , character , Comentários (motivo) do cancelamento da solicitação de processo fluig BPM
+    @return array, Matriz com retorno da execução. Conteúdo:
+                            * aRet[1] - Executado com sucesso *(`.T.`)* ou não *(`.F.`)*;
+                            * aRet[2] - Tipo de retorno - erros *FATAL* / *ERROR* / *WARN* e sucesso *RESULT*;
+                            * aRet[3] - Mensagem de retorno de erro ou sucesso (apenas _"OK"_);
+                            * aRet[4] - XML da mensagem de requisição;
+                            * aRet[5] - XML da mensagem de retorno;
+    @obs Documentação:
+        [Utilização de Webservices](https://tdn.totvs.com/pages/releaseview.action?pageId=73084007)
+        * Link curto: https://tdn.totvs.com/x/ZyxbB
+        * Tópico: ECMWorkflowsEngineService;
+        * Quadro 24: Métodos da WorkflowEngineService;
+        * Item: cancelInstance
+    @example
+        > Estrutura de retorno com sucesso (XML SOAP):
+        > > `<result>OK</result>`
+
+        > Estrutura de retorno com erro (XML SOAP):
+        > > - `<result>Processo não encontrado.</result>`
+        > > - `<result>A solicitação é invalida ou está inativa.</result>`
+    /*/
+Method CancelInstance(instanceId As Numeric,userId As Character,cancelText As Character) Class FluigProcessClass
+
+    Local nI := 0
+    Local aRet := {}
+    Local xmlRequest := ""
+
+    Default userAuth := Self:_UserPass[1]
+    Default userPass := Self:_UserPass[2]
+    Default tenantId := Self:_TenantId
+
+    Default userId     := userAuth
+    Default cancelText := "Cancelamento automático pelo sistema CAOATEC - integração TOTVS | Protheus"
+    
+    #Define OPERATION "cancelInstance"
+
+    // xmlRequest := ""
+
+    // PARAMETROS OBRIGATORIOS
+    /* <cancelText><![CDATA[Cancelamento automático pelo sistema CAOATEC - integração TOTVS | Protheus]]></cancelText */
+    Do Case
+        Case ValType(Self:_UserPass) # "A"
+            aRet := {.F.,"FATAL","INVALID OBJECT CONSTRUCT"     ,NIL,NIL}
+        Case Empty(::_UserPass[1]) .Or. Empty(::_UserPass[2])
+            aRet := {.F.,"FATAL","CREDENTIALS NOT SET"          ,NIL,NIL}
+        Case ValType(Self:_TenantId) # "N"
+            aRet := {.F.,"FATAL","INVALID OBJECT CONSTRUCT"     ,NIL,NIL}
+        Case Int(Val(Transform(Self:_TenantId,""))) < 1         /* INTEIRO POSITIVO */
+            aRet := {.F.,"FATAL","INVALID TENANT ID"            ,NIL,NIL}
+        // VALIDACAO DOS PARAMETROS DA FUNCAO
+        Case Int(Val(Transform(instanceId,""))) < 1             /* INTEIRO POSITIVO */
+            aRet := {.F.,"FATAL","INVALID PROCESS INSTANCE ID"  ,NIL,NIL}
+        Case Empty(userId) .OR. At(" ",Trans(userId,"")) > 0    /* ALFANUMERO NAO VAZIO */
+            aRet := {.F.,"FATAL","INVALID USERID CHARACTERS"    ,NIL,NIL}
+        Case Empty(cancelText)                                  /* NAO VAZIO */
+            aRet := {.F.,"FATAL","REQUIRED TEXT OF CANCEL"      ,NIL,NIL}
+    EndCase
+    If Len(aRet) > 0
+        Return aRet
+    EndIf
+
+    // XML - Webservice ECMWorkflowEngineService - Método cancelInstance
+    BeginContent var xmlRequest
+        <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://ws.workflow.ecm.technology.totvs.com/">
+        <soapenv:Header/>
+        <soapenv:Body>
+            <ws:cancelInstance>
+                <username           >%Exp:(Self:_UserPass[1])           %</username>
+                <password           ><![CDATA[%Exp:(Self:_UserPass[2])  %]]></password>
+                <companyId          >%Exp:Transform(Self:_TenantId,"")  %</companyId>
+                <processInstanceId  >%Exp:cValToChar(instanceId)        %</processInstanceId>
+                <userId             >%Exp:userId                        %</userId>
+                <cancelText         ><![CDATA[%Exp:cancelText           %]]></cancelText>
+            </ws:cancelInstance>
+        </soapenv:Body>
+        </soapenv:Envelope>
+    EndContent
+
+    // FIXME: TODO: Converter string para objeto XML, devolta para string para validação e remoção automática da identação
+    // REPLACE SPACES IN NODE NAME
+    For nI := 13 To 2 Step -1 ; xmlRequest := Replace(xmlRequest,Space(nI)+">",">") ; Next nI
+    // -- REMOVER ESPACOS EXCEDENTES
+    xmlRequest := Alltrim(xmlRequest)
+    // -- REMOVER ULTIMA QUEBRA DE LINHA
+    xmlRequest := Substring(xmlRequest,1,Len(xmlRequest)-Len(CRLF))
+    // -- REMOVER ULTIMA QUEBRA DE LINHA E FECHAR TAG XML FINAL SOAP ENVELOPE
+    If ">" # Substring(xmlRequest,RAt("</soapenv:Envelope",xmlRequest)+18,1)
+        xmlRequest += ">"
+    EndIf
+    // -- REMOVER TABULACAO EXCEDENTE
+    xmlRequest := Replace(xmlRequest, Chr(10)+Space(04), Chr(10))
+
+    // --- ENVIAR REQUISICAO AO METODO DE WEBSERVICE --------------------------
+    aRet := Self:_Send(OPERATION,xmlRequest)
+
+    // FIXME: TODO: TRATAR/RETORNAR RESPOSTA DA REQUISICAO
+Return aRet

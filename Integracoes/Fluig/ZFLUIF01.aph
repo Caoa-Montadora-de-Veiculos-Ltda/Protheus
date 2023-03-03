@@ -1,0 +1,34 @@
+<% Local nA := 0 %>
+
+<soapenv:Envelope xmlns:soapenv= "http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://ws.workflow.ecm.technology.totvs.com/">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <ws:startProcess>
+         <username><%=cFUsuario %></username>
+         <password><%=cFSenha %></password>
+         <companyId><%=cFEmpresa %></companyId>
+         <processId>Compras_AlcadaDeAprovacao</processId>
+         <choosedState>7</choosedState>
+         <colleagueIds>
+            <item></item>
+         </colleagueIds>
+         <comments>Solicitacao iniciada automaticamente pelo Protheus.</comments>
+         <userId><%=cFIdUsuario %></userId>
+<!--Usuario requisitante-->
+         <completeTask>true</completeTask>
+         <attachments>
+         </attachments>
+         <cardData>
+<% For nA := 1 to Len(aCardData) %>
+            <item>
+                <item><%=aCardData[nA][1] %></item>
+                <item><%=aCardData[nA][2] %></item>
+            </item>
+<% Next nA %>
+           </cardData>
+         <appointment>
+         </appointment>
+         <managerMode>false</managerMode>
+      </ws:startProcess>
+   </soapenv:Body>
+</soapenv:Envelope>

@@ -1,0 +1,13 @@
+<soapenv:Envelope xmlns:soapenv= "http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://ws.workflow.ecm.technology.totvs.com/">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <ws:cancelInstance>
+         <username><%=cFUsuario %></username>
+         <password><%=cFSenha %></password>
+         <companyId><%=cFEmpresa %></companyId>
+         <processInstanceId><%=cFNumFluig%></processInstanceId>
+         <userId><%=cFIdUsuario %></userId>
+         <cancelText><%=cFMensagem %></cancelText>
+      </ws:cancelInstance>
+   </soapenv:Body>
+</soapenv:Envelope>

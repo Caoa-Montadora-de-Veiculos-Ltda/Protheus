@@ -1,0 +1,179 @@
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <title>CAOA - Pedido de Compra</title>
+    <meta http-equiv=”Content-Type” content=”text/html; charset=utf-8?>
+    <style>
+        body {
+            font-family: Calibri;
+            font-size: 14pt;
+        }
+
+        table.body {
+            margin-top: 14pt;
+            margin-bottom: 24pt;
+        }
+
+        th {
+            text-align: center;
+            vertical-align: middle;
+            height: 50pt;
+        }
+
+        th.header {
+            font-size: 20pt;
+            font-weight: bold;
+            font-variant: small-caps;
+        }
+
+        th.logo img {
+            margin-top: 14pt;
+            margin-bottom: 14pt;
+        }
+
+        th, td, .marginLeft, .marginRight {
+            min-width: 200px;
+        }
+        
+        td {
+            font-size: 12pt;
+        }
+
+        /* th.header,
+        td.lineBorder1 {
+            width: 515px;
+        } */
+
+        td.lineBorder1 {
+            border-left: 3px solid #004375;
+            padding-left: 5pt;
+            padding-top: 0pt;
+        }
+
+        td.lineBorder1 p {
+            padding-left: 5pt;
+        }
+
+        div.lineBorder2 {
+            border-left: 3px solid #28aa76;
+            padding-left: 5pt;
+        }
+
+        /* EMAIL OUTLOOK - ELEMENTO HTML DEVE RECEBER APENAS UMA CLASSE DE ESTILO */
+        .highlight-blue {
+            color: black;
+            background-color: #00ffff;
+        }
+
+        .highlight-yellow {
+            background-color: yellow;
+        }
+
+        .highlight-lightgreen {
+            background-color: lightgreen;
+        }
+
+        p.topic-item {
+            margin-top: 1.5em;
+            margin-bottom: 0;
+            font-style: italic;
+        }
+
+        p.topic-list {
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <table class="body">
+        <thead>
+            <tr>
+                <th class="marginLeft logo">
+                    <img alt="logotipo" src="lg_caoa.png" width="118" height="40"/>
+                </th>
+                <th class="header">Pedido de Compra</th>
+                <th class="marginRight">
+                    <div style="width:200px">&nbsp;</div>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="marginLeft">
+                    &nbsp;<!-- <img alt="margin" width="200" height="1"/> -->
+                </td>
+                <td class="lineBorder1">
+                    <!-- INFORMACOES AO FORNECEDOR - INICIO -->
+                    <div class="lineBorder2">
+                        <p>
+                            <b>Sr. Fornecedor,</b>
+                        </p>
+                        <p>
+                            <!-- EMAIL OUTLOOK - ELEMENTO HTML DEVE RECEBER APENAS UMA CLASSE DE ESTILO -->
+                            <span class="highlight-yellow">
+                                Por favor, leia com aten&ccedil;&atilde;o as recomenda&ccedil;&otilde;es abaixo, para que seu pagamento ocorra dentro do prazo acordado.<br>
+                                &Eacute; imprescind&iacute;vel que sua nota fiscal esteja de acordo com o pedido de compra.
+                            </span>
+                            <p>
+                                <b>
+                                    <span class="highlight-blue">
+                                        &Eacute; obrigat&oacute;rio que o motorista que realizar&aacute; a entrega esteja usando m&aacute;scara e sapatos de seguran&ccedil;a para adentrar na f&aacute;brica, caso contr&aacute;rio, o material n&atilde;o ser&aacute; recebido.
+                                    </span>
+                                </b>
+                            </p>                                
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="topic-list">${DADOS_ADICIONAIS}</p>
+
+                        <p class="topic-item">1) Confer&ecirc;ncia:</p>
+                        <p class="topic-list">1.1 - Ao receber o pedido de compra, confira se sua nota fiscal ser&aacute; espelho do pedido de compra.</p>
+                        <p class="topic-list">1.2 - Caso o pedido de compra n&atilde;o esteja de acordo com o faturamento da nota fiscal, entre em contato com o comprador que enviou o seu pedido, antes da emiss&atilde;o da NF.</p>
+                        <p class="topic-list">1.3 - Lembrando que ser&aacute; solicitado o cancelamento da Nota Fiscal, caso houver diverg&ecirc;ncia com o pedido de compra. O frete de retorno ser&aacute; de responsabilidade do fornecedor.</p>
+
+                        <p class="topic-item">2) Emiss&atilde;o de NF:</p>
+                        <p class="topic-list">2.1 - &Eacute; imprescind&iacute;vel que o n&uacute;mero do pedido de compra seja informado no campo observa&ccedil;&atilde;o da sua nota fiscal.</p>
+                        <p class="topic-list">2.2 - Confira se a Nota Fiscal a ser faturada est&aacute; correta e de acordo com o pedido de compra recebido, considere verificar: Quantidades, Impostos, e c&oacute;digo de servi&ccedil;o ISS (em caso de presta&ccedil;&atilde;o de servi&ccedil;o).</p>
+                        <p class="topic-list"><b>2.3 - A emiss&atilde;o da nota fiscal deve ser gerada obrigatoriamente at&eacute; o dia 20 do m&ecirc;s atual. Caso seja emitida ap&oacute;s a data informada, ser&aacute; devolvida para cancelamento e refaturamento no m&ecirc;s seguinte.</b></p>
+                        <p class="topic-list">2.4 - Assim que a nota fiscal for gerada, dever&aacute; ser enviado o arquivo XML (em caso de Material) e o arquivo PDF para o e-mail <a href="nfe@caoamontadora.com.br">nfe@caoamontadora.com.br</a></p>
+                        <p class="topic-list">2.5 - Encaminhe tamb&eacute;m o arquivo PDF da nota fiscal para o e-mail informado nos Dados de Entrega.</p>
+
+                        <p class="topic-item">3) Realiza&ccedil;&atilde;o do Servi&ccedil;o:</p>
+                        <p class="topic-list">3.1 - Alinhamento de data e hora com a &aacute;rea de neg&oacute;cio/t&eacute;cnica respons&aacute;vel pela solicita&ccedil;&atilde;o do servi&ccedil;o. Contatos atrav&eacute;s dos Dados de Entrega no formul&aacute;rio do pedido.</p>
+
+                        <p class="topic-item">4) Entrega de material:</p>
+                        <p class="topic-list">4.1 - Recebimento ocorre apenas de segunda &agrave; sexta-feira.</p>
+                        <p class="topic-list">4.2 - Hor&aacute;rio de recebimento das 08:00 &agrave;s 13:00 horas.</p>
+                        <p class="topic-list">4.3 - Confirme com a &aacute;rea solicitante, atrav&eacute;s dos Dados de Entrega no formul&aacute;rio do pedido, o dia e hor&aacute;rio que realizar&aacute; a entrega para n&atilde;o ocasionar transtornos.</p>
+
+                        <p class="topic-item">5) Pagamento:</p>
+                        <p class="topic-list">5.1 - Ser&aacute; providenciado o pagamento pela &aacute;rea solicitante, ap&oacute;s a realiza&ccedil;&atilde;o do servi&ccedil;o ou entrega do material e recebimento do PDF da nota fiscal por e-mail, conforme informado nos itens anteriores.</p>
+                        <p class="topic-list">5.2 - Os pagamentos ser&atilde;o efetivados atrav&eacute;s de dep&oacute;sito banc&aacute;rio em conta corrente jur&iacute;dica (no mesmo CNPJ e Raz&atilde;o Social do pedido emitido), conforme forma de pagamento negociada.</p>
+                        <!-- EMAIL OUTLOOK - ELEMENTO HTML DEVE RECEBER APENAS UMA CLASSE DE ESTILO -->
+                        <p class="topic-list"><span class="highlight-lightgreen">
+                            5.3 - Os pagamentos est&atilde;o sendo realizados exclusivamente &agrave;s segundas, quartas e sextas-feiras. Para vencimentos que coincidam com as ter&ccedil;as e quintas-feiras, os pagamentos ser&atilde;o realizados no dia subsequente.
+                        </span></p>
+                        
+                    </div>
+                    <!-- INFORMACOES AO FORNECEDOR - FIM -->
+                </td>
+                <td class="marginRight">
+                    <div style="width:200px">&nbsp;</div>
+                </td>
+            </tr>
+        </tbody>
+
+    </table>
+
+    <p style="color: #CCCCCC; font-size: 9pt; font-family: Courier; text-transform: uppercase; text-align: right;">
+        template zcomr001.aph v.1.0
+    </p>
+
+</body>
+
+</html>
