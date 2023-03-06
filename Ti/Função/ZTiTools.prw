@@ -16,7 +16,7 @@ Return
 
 /*{Protheus.doc} TIDev
 Ferramentas úteis ao desenvolvimento.
-@author Evandro Mariano dos Santos
+@author DAC
 @since 18/01/2018
 @version 1.0
 */
