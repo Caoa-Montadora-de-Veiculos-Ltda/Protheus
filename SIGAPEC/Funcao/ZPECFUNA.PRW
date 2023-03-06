@@ -1381,14 +1381,16 @@ Responsável por validar a Limite de Crédito FASE 3
 @menu       Nao Informado
 @return		_cFaseRet - Fase atualizada
 @ Obs		Deverá ser enviada fase  e validara e verificara se o mesmo esta ou não na fase 2 retornando a fase correta
-@history    
+@history    DAC 02/03/2023
+			GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (Revitalização Limite de Crédito)
+            Revitalição processo limite de crédito, ajuste na informação de LOJA anteriormente estava fixo
 
 /*/
 
 Static Function XFASLIMCRE(_cMsg, _nLimAvalia)
 	Local _cFaseRet	:= VS1->VS1_STATUS
 	Local _cTpPgto	:= GetMv("MV_CPNCLC")
-	Local _cLoja	:= StrZero(1,Len(VS1->VS1_LOJA))
+	Local _cLoja	:= ""  //StrZero(1,Len(VS1->VS1_LOJA))
 	Local _cCliente	:= VS1->VS1_CLIFAT
 	//Local _nRegVS1 	:= VS1->(Recno())
 
@@ -1410,6 +1412,12 @@ Static Function XFASLIMCRE(_cMsg, _nLimAvalia)
 
 		//Verificar se o Cliente possui cadastrado a loja inicial caso sim sempre avaliar Forplan pela loja inicial 01 - DAC - 24/05/2022
 		//Conforme Toninho deverá sempre verificar pela loja 1
+		_cLoja := U_XLJLCREDito(_cCliente)
+		If Empty(_cLoja)
+			_cMsg 		:=  "Não localizado cliente contendo Limite de Crédito com código "+_cCliente+" !"		
+			_cFaseRet 	:= "3"
+			Break
+		Endif
 		SA1->(DbSetOrder(1))
 		If !SA1->(DbSeek(XFilial("SA1") + _cCliente + _cLoja ))   
 			_cMsg 		:=  "Não localizado cliente com código "+_cCliente+" com a loja "+_cLoja		
@@ -1465,14 +1473,17 @@ Responsável por verificar limite de crédito Floor Plan
 @ Obs		
 @history    24/05/2022 DAC	- Alterado para verificar pela loja principal (01) conforme solicitação Antonio o 
 							  limite referente a Forplan será verificado na loja principal	
+    		DAC 02/03/2023
+			GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (Revitalização Limite de Crédito)
+            Revitalição processo limite de crédito, ajuste na informação de LOJA anteriormente estava fixo
+
 /*/
 Static Function XFLCREDITO(_cFaseRet, _cMsg, _nLimAvalia)
-
 	Local _aAreaSA1   	:= SA1->(GetArea())
 	Local _aArea	   	:= GetArea()
 	Local _lRet 		:= .T.
 	Local _cForplan		:= AllTrim( GetMV('CMV_PEC018') ) //condição de pagamento Forplan = 005
-	Local _cLoja		:= StrZero(1,Len(VS1->VS1_LOJA))
+	Local _cLoja		:= "" //StrZero(1,Len(VS1->VS1_LOJA))
 	Local _cCliente		:= VS1->VS1_CLIFAT
 	Local _nLcUsado  	:= 0
 	Local _aMsg			:= {}
@@ -1490,6 +1501,14 @@ Static Function XFLCREDITO(_cFaseRet, _cMsg, _nLimAvalia)
 		_nLimAvalia := 0   //Zero a avaliação de crédito onde constará o limite a ser utilizado
 		//Verificar se o Cliente possui cadastrado a loja inicial caso sim sempre avaliar Forplan pela loja inicial 01 - DAC - 24/05/2022
 		//Conforme Toninho deverá sempre verificar pela loja 1
+		//Alterado para procurar por limite de crédito
+		_cLoja := U_XLJLCREDito(_cCliente)
+		If Empty(_cLoja)
+			Aadd(_aMsg, "Não localizado cliente contendo Limite de Crédito com código "+_cCliente+" com a loja "+_cLoja )		
+			_cFaseRet := "3"
+			_lRet := .F.
+			Break
+		Endif
 		SA1->(DbSetOrder(1))
 		If !SA1->(DbSeek(XFilial("SA1") + _cCliente + _cLoja ))   
 			Aadd(_aMsg, "Não localizado cliente com a loja "+_cLoja+", reavaliar o Cadastro e incluir a Loja"+_cLoja )		
@@ -1518,7 +1537,7 @@ Static Function XFLCREDITO(_cFaseRet, _cMsg, _nLimAvalia)
 
 		Aadd(_aMsg,"Avaliando Limite de Credito para o cliente "+_cCliente+" loja "+_cLoja+" - Matriz")
 
-		_aRetLc := U_ZFATF014(_cCliente, SA1->A1_XTPCRED)
+		_aRetLc := U_ZFATF014(_cCliente, SA1->A1_XTPCRED, _cLoja)
 		//1=Credito Disponivel;2=Falta de Saldo;3=Titulos Em Atraso;4=Credito Vencido;5=Bloqueado                                         
 		If _aRetLc[01] == "2"
 			//enviar o limite para ser avaliado DAC 14/11/2022
@@ -1594,6 +1613,44 @@ Static Function XFLCREDITO(_cFaseRet, _cMsg, _nLimAvalia)
 	RestArea(_aArea)
 
 Return(_lRet)
+
+
+
+/*/{Protheus.doc} XLJLCREDito
+localizar loja do cliente que esteja cadastrada com limite de crédito
+@param      _cCliFat 	- Codigo do cliente  
+@return     _cLoja
+@author     DAC Denilso
+@version    12.1.17 / Superior
+@project	GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (Revitalização Limite de Crédito)
+@since      02/03/2023
+/*/
+User Function XLJLCREDito(_cCliente)
+Local _cLoja		:= ""
+Local _cAliasPesq 	:= GetNextAlias()
+
+Begin Sequence
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT ISNULL(SA1.R_E_C_N_O_,0) NREGSA1
+		FROM  %Table:SA1% SA1
+		WHERE SA1.A1_FILIAL 	= %XFilial:SA1%
+			AND SA1.A1_COD  	= %Exp:_cCliente%
+			AND SA1.A1_XTPCRED NOT IN ( '0 ',' ') 
+			AND SA1.%notDel%
+	EndSQL
+	(_cAliasPesq)->(DbGotop())	
+	If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGSA1 == 0
+		Break
+	EndIf
+	SA1->(DbGoto((_cAliasPesq)->NREGSA1))
+	_cLoja := SA1->A1_LOJA
+End Sequence
+If Select(_cAliasPesq) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif  
+Return _cLoja
+
 
 
 /*/{Protheus.doc} XFLPESQVSW
@@ -4811,7 +4868,7 @@ User Function CAOA_OCTrannsfer(_cNumOrc, _cFilAtu, _cFilTransfer)
 		_cOrcNovo 		:= VS1->(GetSXENum("VS1","VS1_NUMORC"))
 		_cOrcConf		:= U_XVERNUMeracao("VS1", "VS1_NUMORC", _cOrcNovo )
 		If AllTrim(_cOrcNovo) <> AllTrim(_cOrcConf)
-			_cObsVS1	:=  "ATENCAO [XOFUNCLO]"
+			_cObsVS1	:=  "ATENCAO [CAOA_OCTrannsfer]"
 			_cObsVS1 	+= "- NUMERACAO AUTOMATICA DO ORÇAMENTO "  +_cOrcNovo+" ESTA APRESENTANDO PROBLEMAS  !"
 			_cObsVS1	+= "- ASSUMIDO NUMERACAO PARA O ORÇAMENTO "+_cOrcConf+" AJUSTAR NUMERACAO AUTOMATICA !" +CRLF
 			_cOrcNovo := _cOrcConf

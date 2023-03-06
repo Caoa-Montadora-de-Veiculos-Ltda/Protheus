@@ -231,6 +231,7 @@ Local _dFinal
 Local _cHsFinal
 Local _cCdEmpWIS
 Local _lValCred  := .T. 	
+Local _cLojaCredito
 
 Default _lArmFDR := .F.
 
@@ -451,7 +452,9 @@ Begin Sequence
 
 	//TCSetField(_cAliasTRB,'ZD0_DATPRF','D',8,0)
 	If (_cAliasTRB)->(Eof())  
-		Aviso("AVISO","Não foram encontrados Orçamentos ! ",{"Ok"})
+		If !_lArmFDR
+			Aviso("AVISO","Não foram encontrados Orçamentos ! ",{"Ok"})
+		EndIf	
 		_lRet := .F.
 		Break	
 	Endif
@@ -595,17 +598,22 @@ Begin Sequence
 							//Utilizar limite de crédito Parcial
 							//PEC031 - Limite de Credito - Revitalização
 							If "3" $ _cFaseOrc  .And. VS1->VS1_STATUS == "3" //somente se estiver na fase do orçamento conforme alinhado com Zé 30/11/2021
+								_cLojaCredito := U_XLJLCREDito(_cCliFat)  //função ja posiciona SA1
 								//"1=Credito Disponivel;2=Falta de Saldo;3=Titulos Em Atraso;4=Credito Vencido;5=Bloqueado
-								If  (SA1->A1_XSTAFP $ "1|2" .OR. (SA1->A1_XSTAFP == "3" .AND. SA1->A1_XBLQVEN == "2") ) //.AND. _nLimAvalia > 0 
-									//Caso ainda esteja bloqueado deverá tentar liberar o limite de crédito que possui
-									VS1->(DbGoto((_cAliasTRB)->NREGVS1))
-									If !ZPECF08LCC(VS1->VS1_NUMORC,_nLimAvalia, _aBackOrder)
-										_lRet     := .F.
-										_lValCred := .F.
-										Disarmtransaction()	
-									EndIf
-								Else
+								If Empty(_cLojaCredito)
 									_lRet     := .F.
+								Else	
+									If  (SA1->A1_XSTAFP $ "1|2" .OR. (SA1->A1_XSTAFP == "3" .AND. SA1->A1_XBLQVEN == "2") ) //.AND. _nLimAvalia > 0 
+										//Caso ainda esteja bloqueado deverá tentar liberar o limite de crédito que possui
+										VS1->(DbGoto((_cAliasTRB)->NREGVS1))
+										If !ZPECF08LCC(VS1->VS1_NUMORC,_nLimAvalia, _aBackOrder)
+											_lRet     := .F.
+										EndIf
+									Else
+										_lRet     := .F.
+									EndIf
+								EndIf
+								If !_lRet
 									_lValCred := .F.
 									Disarmtransaction()	
 								EndIf
