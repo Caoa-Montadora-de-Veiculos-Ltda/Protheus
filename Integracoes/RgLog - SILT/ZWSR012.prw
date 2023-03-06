@@ -263,7 +263,7 @@ Static Function zGeraTransf()
 
 			(cAliasZD1)->(DbGoTop())
 			If (cAliasZD1)->(Eof())
-				_cErro := "Nota Fiscal não encontrada para conferencia." 
+				_cErro := "Nota Fiscal nao encontrada para conferencia." 
 				_lRet := .F.
 				//Break
 				Return .F.
