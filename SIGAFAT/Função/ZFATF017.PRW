@@ -7,11 +7,11 @@
 Programa.:              ZFATF017
 Autor....:              CAOA - Evandro A Mariano dos Santos 
 Data.....:              28/07/2022
-Descricao / Objetivo:   Ajusta os limites de CrÈdito
+Descricao / Objetivo:   Ajusta os limites de Cr√©dito
 Doc. Origem:            
 Solicitante:            Faturamento/Pecas
 Uso......:              
-Obs......:
+Obs......:              TESTE DE COMMIT
 =====================================================================================
 */
 
@@ -28,7 +28,7 @@ User Function ZFATF017( _cCodCli )
 
 	Default _cCodCli		:= ""
 
-	If ! IsBlind()  //interface com o usu·rio
+	If ! IsBlind()  //interface com o usu√°rio
 		_lJob := .F.
 	Endif
 
@@ -56,13 +56,13 @@ User Function ZFATF017( _cCodCli )
 		(_cAlsTmp01)->(DbCloseArea())
 	EndIf
 
-	// Verifica os clientes que possuem limite de crÈdito habilidado.
+	// Verifica os clientes que possuem limite de cr√©dito habilidado.
 	// A1_XTPCRED = 1 // FloorPlan
 	// A1_XTPCRED = 2 // Caoa
 	_cQryTmp01 := ""
 	_cQryTmp01 += " SELECT A1_COD, A1_LOJA, A1_XTPCRED FROM " + RetSqlName("SA1") + " SA1 "	+ CRLF
 	_cQryTmp01 += " WHERE SA1.D_E_L_E_T_ = ' ' "									+ CRLF
-	//Implementado possibilidade de informar somente o cliente e n„o todos DAC 27/02/2023	
+	//Implementado possibilidade de informar somente o cliente e n√£o todos DAC 27/02/2023	
 	If !Empty(_cCodCli)
 		_cQryTmp01 += " AND  SA1.A1_COD = '"+_cCodCli +"' "							+ CRLF
 	Endif
