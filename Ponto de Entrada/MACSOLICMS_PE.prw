@@ -65,7 +65,7 @@ Local aDev 			:= {}
 Do Case
 Case FWIsInCallStack("MAPVLNFS") // rotina de documento de saida
 	//Conout(" MACSOLICMS - MAPVLNFS - C6_XBASST - " + SC6->C6_NUM + "-" + SC6->C6_ITEM + "-" + SC6->C6_PRODUTO + " - " +  cValToChar(SC6->C6_VALOR) + "-" + cValToChar(SC6->C6_XBASST))
-	If (isInCallStack("VEIA060") .or. isInCallStack("VEIXX002")) .And. ;
+	If (isInCallStack("VEIA060") .or. isInCallStack("VEIXX002") .Or. Upper(Alltrim(FunName())) == "ZFATF019") .And. ;
 		cOperacao == 'S' .And.;
 		nItem > 0  
 			nValIC   := MaFisRet(nItem,"IT_VALICM" )
