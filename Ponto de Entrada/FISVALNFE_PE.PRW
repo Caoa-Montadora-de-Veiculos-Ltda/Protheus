@@ -4,7 +4,7 @@
 User Function FISVALNFE()
 	Local lRes := .T.
 
-	If Findfunction("U_ZFATF011")
+	If Findfunction("U_ZFATF011") .And. Upper(Alltrim(FunName())) <> "ZFATF019"
 		lRes := U_ZFATF011()
 	Endif
 	
