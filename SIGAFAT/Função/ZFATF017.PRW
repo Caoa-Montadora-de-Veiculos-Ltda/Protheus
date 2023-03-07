@@ -34,8 +34,8 @@ User Function ZFATF017( _cCodCli )
 
 	CONOUT("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZFATF017] Iniciado: Ajuste de Credito")
 
+	//Avaliar tera que rodar Anapolis e Franco da Rocha  DAC 06/08/2023
 	If _lJob
-		
 		_cEmpresa	:=	"02"
 		_cFilial	:=  "2020012001"
 
@@ -77,7 +77,7 @@ User Function ZFATF017( _cCodCli )
 		(_cAlsTmp01)->(DbSkip())
 	EndDo
 
-	(_cAlsTmp01)->(DbCloseArea())
+	//(_cAlsTmp01)->(DbCloseArea())
 
 	RestArea(_aArea)
 
@@ -86,5 +86,10 @@ User Function ZFATF017( _cCodCli )
 	If 	_lAbre	
 		Reset Environment
 	EndIf
+
+If Select(_cAlsTmp01) <> 0
+	(_cAlsTmp01)->(DbCloseArea())
+	Ferase(_cAlsTmp01+GetDBExtension())
+Endif  
 
 Return()

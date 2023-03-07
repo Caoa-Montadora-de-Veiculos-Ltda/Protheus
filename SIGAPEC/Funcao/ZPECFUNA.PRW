@@ -579,6 +579,19 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 				//caso não localizou o campo foi enciado campo novo	
 				If _cCampo $ "VS3_NUMORC"
 					_xValor := _cOrcNovo
+				ElseIf _cCampo $ "VS3_LOCAL"
+					(_nPosCPo := Ascan(_aOrc[_nCount],{|x| AllTrim(x[1]) == _cCampo}))
+					If _nPosCPo > 0
+						_xValor := _aOrc[_nCount,_nPosCPo,2]
+					Else
+						_xValor	:= VS3->(FieldGet(FieldPos(_aEstruVS3[_nPos,1])))			
+					Endif	
+					//DAC 07/03/2023
+					//Conforme alinhado com Zé quando BO o armazém tem que ser 01
+					//No processo da onda no armazém 11 esta gerando BO com local 11
+					If _lXBO .And. AllTrim(_xValor) <> "01"
+						_xValor := "01"
+					Endif
 				ElseIf _cCampo $ "VS3_OPER"  
 					If Empty(_cOper)
 						_xValor := U_zTpOper( _cCliente, _cLoja, _cTipoPed )	

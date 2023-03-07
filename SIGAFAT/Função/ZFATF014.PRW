@@ -24,12 +24,14 @@ User Function ZFATF014(_cCliFat, _cTpCred, _cLoja)
 	Local _nValBo 		:= 0
 	Local _nValPed 		:= 0
 	Local _cRet			:= ""
-	
-	Private _cPgNAval	:= SuperGetMV( "MV_CPNCLC" ,,"'003','011','025'") //condição de pagamento não será avaliado LC
-	Private _cPgFP 		:= AllTrim( GetMV('CMV_PEC018') ) //condição de pagamento Forplan = 005 	
+
+	//Private _cPgNAval	:= AllTrim(SuperGetMV( "MV_CPNCLC" ,,"'003','011','025'")) //condição de pagamento não será avaliado LC
+	Private _cPgNAval	:= AllTrim(SuperGetMV( "MV_CPNCLC" 	,,"")) 	//condição de pagamento não será avaliado LC
+	Private _cPgFP 		:= AllTrim(SuperGetMV( "CMV_PEC018" ,,""))  //condição de pagamento Forplan = 005 	
+	Private _cPgSAP		:= AllTrim(SuperGetMV( "CMV_FAT007" ,,"")) 	//condição de pagamento SAP 
 
 	Default _cLoja := ""
-
+	
 	_nValAtr := ZProc001(_cCliFat, _cTpCred) //Verifica os Titulos Em Atraso a mais de 3 dias.
 	_nValAbe := ZProc010(_cCliFat, _cTpCred) //Verifica os Titulos Em Aberto
 	_nValBo  := ZProc020(_cCliFat, _cTpCred) //Verifica os Pedidos Em Bo
@@ -54,12 +56,11 @@ Obs......:
 =====================================================================================
 */
 Static Function ZProc001(_cCliFat, _cTpCred)
-
-	Local _cQrySE1    	:= " "
-	Local _cAls01SE1  	:= GetNextAlias()
-	Local _nValAtr	  	:= 0
-	Local _nDiasAtrFp	:= SuperGetMV( "CMV_PEC027"  ,,3 ) 
-	Local _DtAtraso		:= Date()
+Local _cQrySE1    	:= " "
+Local _cAls01SE1  	:= GetNextAlias()
+Local _nValAtr	  	:= 0
+Local _nDiasAtrFp	:= SuperGetMV( "CMV_PEC027"  ,,3 ) 
+Local _DtAtraso		:= Date()
 
 	_DtAtraso := ( _DtAtraso - _nDiasAtrFp )
 	
@@ -77,11 +78,19 @@ Static Function ZProc001(_cCliFat, _cTpCred)
 	_cQrySE1 += " 		AND SF2.F2_CLIENTE = SE1.E1_CLIENTE "												+ CRLF
 	_cQrySE1 += " 		AND SF2.F2_LOJA = SE1.E1_LOJA "														+ CRLF
 	_cQrySE1 += " 		AND SF2.F2_EMISSAO = SE1.E1_EMISSAO "												+ CRLF
+	//para garantir não deixo passar confição igual a branco DAC 07/03/2023
+	_cQrySE1 += " 		AND SF2.F2_COND <> ' ' "
 	If _cTpCred == '1' //FloorPlan
 		_cQrySE1 += " 	AND SF2.F2_COND IN "+ FormatIn(_cPgFP,";") + " "									+ CRLF
 	//Else
-	//	_cQrySE1 += " AND SF2.F2_COND NOT IN  "+ FormatIn(_cPgNAval,";") + " " 								+ CRLF
+	//	_cQrySE1 += " AND SF2.F2_COND NOT IN  "+ FormatIn(_cPgNAval,";") + " " 		
+	ElseIf _cTpCred == '2'  //SAP  DAC 07/03/2023
+		_cQrySE1 += " 	AND SF2.F2_COND IN "+ FormatIn(_cPgSAP,";") + " "									+ CRLF
 	EndIf
+	//Caso esteja informado condição de pgto a vista não computar nos valores DAC 07/03/2023
+	If !Empty(_cPgNAval) //Cond. de pagto. p/ venda a vista sem limite Credit
+		_cQrySE1 += " 	AND SF2.F2_COND NOT IN  "+ FormatIn(_cPgNAval,";") + " "
+	Endif	 		
 	_cQrySE1 += " 		AND SF2.D_E_L_E_T_ = ' ' "															+ CRLF
 	_cQrySE1 += " WHERE SE1.D_E_L_E_T_ = ' '  "																+ CRLF
 	_cQrySE1 += " AND SE1.E1_FILIAL 	= '" + FwXFilial("SE1") + "' "										+ CRLF
@@ -91,20 +100,19 @@ Static Function ZProc001(_cCliFat, _cTpCred)
 	_cQrySE1 += " AND SE1.E1_TIPO NOT IN ('NCC') "															+ CRLF
 	_cQrySE1 += " GROUP BY SE1.E1_CLIENTE "																	+ CRLF
 	_cQrySE1 += " ORDER BY SE1.E1_CLIENTE "																	+ CRLF
-
 	DbUseArea( .T., "TOPCONN", TcGenQry( ,, _cQrySE1 ), _cAls01SE1, .F., .T. )
 
 	_nValAtr := 0
-	
 	DbSelectArea((_cAls01SE1)) 
 	(_cAls01SE1)->(dbGoTop())
 	If (_cAls01SE1)->(!Eof())
-
 		_nValAtr := (_cAls01SE1)->TIT_VENC
-
 	EndIf
-
+	//(_cAls01SE1)->(DbCloseArea())
+If Select(_cAls01SE1) <> 0
 	(_cAls01SE1)->(DbCloseArea())
+	Ferase(_cAls01SE1+GetDBExtension())
+Endif  
 
 Return(_nValAtr)
 
@@ -121,11 +129,10 @@ Obs......:
 =====================================================================================
 */
 Static Function ZProc010(_cCliFat,_cTpCred)
-	
-	Local _cQrySE1    	:= " "
-	Local _cAls02SE1   	:= GetNextAlias()
-	Local _nValAbe  	:= 0
-	
+Local _cQrySE1    	:= " "
+Local _cAls02SE1   	:= GetNextAlias()
+Local _nValAbe  	:= 0
+
 	If Select(_cAls02SE1) > 0
 		(_cAls02SE1)->(DbCloseArea())
 	EndIf
@@ -141,11 +148,24 @@ Static Function ZProc010(_cCliFat,_cTpCred)
 	_cQrySE1 += " 		AND SF2.F2_LOJA = SE1.E1_LOJA "						+ CRLF
 	_cQrySE1 += " 		AND SF2.F2_EMISSAO = SE1.E1_EMISSAO "				+ CRLF
 	_cQrySE1 += " 		AND SF2.F2_PREFORI = SE1.E1_PREFORI "				+ CRLF
+	/*
 	If _cTpCred == '1' //FloorPlan
 		_cQrySE1 += " 	AND SF2.F2_COND IN "+ FormatIn(_cPgFP,";") + " "		+ CRLF
 	//Else
 	//	_cQrySE1 += " AND SF2.F2_COND NOT IN  "+ FormatIn(_cPgNAval,";") + " "			+ CRLF
 	EndIf
+	*/
+	//para garantir não deixo passar confição igual a branco DAC 07/03/2023
+	_cQrySE1 += " 		AND SF2.F2_COND <> ' ' "
+	If _cTpCred == '1' //FloorPlan
+		_cQrySE1 += " 	AND SF2.F2_COND IN "+ FormatIn(_cPgFP,";") + " "									+ CRLF
+	ElseIf _cTpCred == '2'  //SAP  DAC 07/03/2023
+		_cQrySE1 += " 	AND SF2.F2_COND IN "+ FormatIn(_cPgSAP,";") + " "									+ CRLF
+	EndIf
+	//Caso esteja informado condição de pgto a vista não computar nos valores DAC 07/03/2023
+	If !Empty(_cPgNAval) //Cond. de pagto. p/ venda a vista sem limite Credit
+		_cQrySE1 += " 	AND SF2.F2_COND NOT IN  "+ FormatIn(_cPgNAval,";") + " "
+	Endif	 		
 	_cQrySE1 += " 		AND SF2.D_E_L_E_T_ = ' ' "							+ CRLF 
 	_cQrySE1 += " WHERE SE1.D_E_L_E_T_ = ' ' "								+ CRLF  
 	_cQrySE1 += " AND SE1.E1_FILIAL 	= '" + FwXFilial("SE1") + "' "		+ CRLF
@@ -161,12 +181,14 @@ Static Function ZProc010(_cCliFat,_cTpCred)
 	dbSelectArea((_cAls02SE1)) 
 	(_cAls02SE1)->(dbGoTop())
 	If (_cAls02SE1)->(!Eof())
-
 		_nValAbe := (_cAls02SE1)->VAL_SE1
-
 	EndIf
 
-	(_cAls02SE1)->(DbCloseArea())
+//	(_cAls02SE1)->(DbCloseArea())
+If Select(_cAls01SE1) <> 0
+	(_cAls01SE1)->(DbCloseArea())
+	Ferase(_cAls01SE1+GetDBExtension())
+Endif  
 	
 Return(_nValAbe)
 
@@ -183,11 +205,10 @@ Obs......:
 =====================================================================================
 */
 Static Function ZProc020(_cCliFat,_cTpCred)
-	
-	Local _cQryVS1    	:= " "
-	Local _cAls01VS1  	:= GetNextAlias()
-	Local _nValBO		:= 0
-	Local _nRedBO       := SuperGetMV("CMV_PEC035",,100)
+Local _cQryVS1    	:= " "
+Local _cAls01VS1  	:= GetNextAlias()
+Local _nValBO		:= 0
+Local _nRedBO       := SuperGetMV("CMV_PEC035",,100)
 
 	If _nRedBO > 100
 		_nRedBO := 100
@@ -203,26 +224,39 @@ Static Function ZProc020(_cCliFat,_cTpCred)
 	_cQryVS1 += " WHERE VS1.VS1_FILIAL  = '" + xFilial("VS1") + "' "		+ CRLF
 	_cQryVS1 += " AND VS1.VS1_CLIFAT = '" +_cCliFat+"' "					+ CRLF
 	_cQryVS1 += " AND VS1.VS1_STATUS IN ('0','3') "							+ CRLF
+	/*
 	//_cQryVS1 += " AND VS1.VS1_XBO = 'S' "									+ CRLF //Solicitado Caoa - Somar todos Orc integrados não enviados St 4 12/2022
 	If _cTpCred = '1' //FloorPlan
 		_cQryVS1 += " AND VS1.VS1_FORPAG IN "+ FormatIn(_cPgFP,";") + "  "	+ CRLF
 	//Else
 	//	_cQryVS1 += " AND VS1.VS1_FORPAG NOT IN  "+ FormatIn(_cPgNAval,";") + " "		+ CRLF
 	EndIf
+	*/
+	_cQryVS1 += " 		AND VS1.VS1_FORPAG <> ' ' "
+	If _cTpCred == '1' //FloorPlan
+		_cQryVS1 += " 	AND VS1.VS1_FORPAG IN "+ FormatIn(_cPgFP,";") + " "									+ CRLF
+	ElseIf _cTpCred == '2'  //SAP  DAC 07/03/2023
+		_cQryVS1 += " 	AND VS1.VS1_FORPAG IN "+ FormatIn(_cPgSAP,";") + " "									+ CRLF
+	EndIf
+	//Caso esteja informado condição de pgto a vista não computar nos valores DAC 07/03/2023
+	If !Empty(_cPgNAval) //Cond. de pagto. p/ venda a vista sem limite Credit
+		_cQryVS1 += " 	AND VS1.VS1_FORPAG NOT IN  "+ FormatIn(_cPgNAval,";") + " "
+	Endif	 		
 	_cQryVS1 += " AND VS1.D_E_L_E_T_ = ' ' "								+ CRLF
-
 	DbUseArea( .T., "TOPCONN", TcGenQry( ,, _cQryVS1 ), _cAls01VS1, .F., .T. )
 	
 	_nValBO		:= 0
-
 	DbSelectArea((_cAls01VS1)) 
 	(_cAls01VS1)->(dbGoTop())
 	If (_cAls01VS1)->(!Eof())
-
 		_nValBO := (_cAls01VS1)->VAL_VS1 * (_nRedBO / 100)
-
 	EndIf
+	
+	//(_cAls01VS1)->(DbCloseArea())
+If Select(_cAls01VS1) <> 0
 	(_cAls01VS1)->(DbCloseArea())
+	Ferase(_cAls01VS1+GetDBExtension())
+Endif  
 
 Return(_nValBO)
 
@@ -239,10 +273,9 @@ Obs......:
 =====================================================================================
 */
 Static Function ZProc030(_cCliFat,_cTpCred)
-	
-	Local _cQryVS1    	:= " "
-	Local _cAls02VS1  	:= GetNextAlias()
-	Local _nValPed		:= 0
+Local _cQryVS1    	:= " "
+Local _cAls02VS1  	:= GetNextAlias()
+Local _nValPed		:= 0
 	
 	//Verifica os orçamentos que já consumiram saldo do LimCredito FP
 	If Select(_cAls02VS1) > 0
@@ -260,11 +293,23 @@ Static Function ZProc030(_cCliFat,_cTpCred)
 	_cQryVS1 += " WHERE VS1.VS1_FILIAL  = '" + xFilial("VS1") + "' "		+ CRLF
 	_cQryVS1 += " AND VS1.VS1_CLIFAT = '" +_cCliFat+"' "					+ CRLF
 	_cQryVS1 += " AND VS1.VS1_STATUS IN ('R','F','4') "						+ CRLF
+	/*
 	If _cTpCred = '1' //FloorPlan
 		_cQryVS1 += " AND VS1.VS1_FORPAG IN "+ FormatIn(_cPgFP,";") + "  "	+ CRLF
 	//Else
 	//	_cQryVS1 += " AND VS1.VS1_FORPAG NOT IN  "+ FormatIn(_cPgNAval,";") + " "		+ CRLF
 	EndIf
+	*/
+	_cQryVS1 += " 		AND VS1.VS1_FORPAG <> ' ' "
+	If _cTpCred == '1' //FloorPlan
+		_cQryVS1 += " 	AND VS1.VS1_FORPAG IN "+ FormatIn(_cPgFP,";") + " "									+ CRLF
+	ElseIf _cTpCred == '2'  //SAP  DAC 07/03/2023
+		_cQryVS1 += " 	AND VS1.VS1_FORPAG IN "+ FormatIn(_cPgSAP,";") + " "									+ CRLF
+	EndIf
+	//Caso esteja informado condição de pgto a vista não computar nos valores DAC 07/03/2023
+	If !Empty(_cPgNAval) //Cond. de pagto. p/ venda a vista sem limite Credit
+		_cQryVS1 += " 	AND VS1.VS1_FORPAG NOT IN  "+ FormatIn(_cPgNAval,";") + " "
+	Endif	 		
 	_cQryVS1 += " AND VS1.D_E_L_E_T_ = ' ' "								+ CRLF
 
 	DbUseArea( .T., "TOPCONN", TcGenQry( ,, _cQryVS1 ), _cAls02VS1, .F., .T. )
@@ -279,7 +324,11 @@ Static Function ZProc030(_cCliFat,_cTpCred)
 
 	EndIf
 
-	(_cAls02VS1)->(DbCloseArea())
+	//(_cAls02VS1)->(DbCloseArea())
+If Select(_cAls01VS1) <> 0
+	(_cAls01VS1)->(DbCloseArea())
+	Ferase(_cAls01VS1+GetDBExtension())
+Endif  
 
 Return(_nValPed)
 
