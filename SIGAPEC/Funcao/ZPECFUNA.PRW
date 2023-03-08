@@ -3520,7 +3520,7 @@ User Function XAPAVM5VM6Carregamento(_cNumOrc, _aMsg)
 		VS3->(DbSetOrder(1))
 		If VS3->(DbSeek(XFilial("VS3")+_cNumOrc))
 			While VS3->(!Eof()) .and. VS3->VS3_NUMORC ==  _cNumOrc
-				If !Empty(VS3-VS3_SQCONF)
+				If !Empty(VS3->VS3_SQCONF)
 					VS3->(RecLock("VS3",.F.))
 					VS3->VS3_SQCONF := ""
 					VS3->(MsUnlock())
