@@ -900,14 +900,14 @@ Begin Sequence
 
 //	TCSetField(_cAliasPesq,'VS3_CODITE','C',TamSx3("B2_COD")[1],0)
 
+	_lSepara	:= .F.  //indica se tera algum item que será separado
+	_aBackOrder := {}
+
  	If (_cAliasPesq)->(Eof())  
 		_lRet := .F.
 		Aadd(_aMensAglu,"Orçamento não possui itens localizados !")
 		Break	
 	Endif
-	
-	_lSepara	:= .F.  //indica se tera algum item que será separado
-	_aBackOrder := {}
 	
 	While (_cAliasPesq)->(!Eof())
 		//Ajustar tamanho código produto
