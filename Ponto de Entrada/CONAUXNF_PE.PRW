@@ -118,6 +118,17 @@ If Upper(Alltrim(FunName())) == "ZFATF019"
                 If lMsErroAuto ; MostraErro() ; EndIf
             EndIf
 
+            SDB->(DbSetOrder(1))
+            If SDB->(DbSeek(xFilial("SDB")+SD2->D2_COD+SD2->D2_LOCAL+SD2->D2_NUMSEQ))
+                VV1->(DbSetOrder(2))
+                If VV1->(DbSeek(xFilial("VV1")+SDB->DB_NUMSERI))
+                    VV1->(RecLock("VV1",.F.))
+                    VV1->VV1_SITVEI := "0"
+                    VV1->VV1_ULTMOV := "E"
+                    VV1->(MsUnLock())
+                EndIf
+            EndIf
+
             SDA->(DbSeek(xFilial("SDA")+SD1->D1_COD+SD1->D1_LOCAL+SD1->D1_NUMSEQ+SD1->D1_DOC+SD1->D1_SERIE+SD1->D1_FORNECE+SD1->D1_LOJA))
             If SDA->(Found()) .And. !lMsErroAutoVal .And. ValType(lGerPVDev) <> "U" .And. lGerPVDev .And. SDA->DA_SALDO == 0
                 /*/

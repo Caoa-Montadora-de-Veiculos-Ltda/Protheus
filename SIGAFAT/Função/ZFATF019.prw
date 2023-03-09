@@ -54,8 +54,6 @@ Local nLinha        As Numeric
 Local nColuna       As Numeric
 
 Local oFWL          As Object
-Local oPnlWnd1      As Object
-Local oPnlWnd2      As Object
 Local oSize1        As Object
 Local oSize2        As Object
 Local aCabStru      As Array
@@ -288,8 +286,8 @@ oFWL:AddLine( 'TOTAL', 90 , .F.)
 // Cria colunas
 oFWL:AddCollumn( 'DIR', 100, .F., 'TOTAL' )
 	
-oFWL:AddWindow( 'DIR' , 'Wnd1', "Pedidos de Venda"       ,  80, .F., .T.,, 'TOTAL' )
-oFWL:AddWindow( 'DIR' , 'Wnd2', "Totais para faturamento",  20, .F., .T.,, 'TOTAL' )
+oFWL:AddWindow( 'DIR' , 'Wnd1', "Pedidos de Venda"   ,  60, .F., .T.,, 'TOTAL' )
+oFWL:AddWindow( 'DIR' , 'Wnd2', "Totais Por Cliente" ,  20, .F., .T.,, 'TOTAL' )
 
 oPnlWnd1:= oFWL:getWinPanel( 'DIR', 'Wnd1', 'TOTAL' )
 oPnlWnd2:= oFWL:getWinPanel( 'DIR', 'Wnd2', 'TOTAL' )
@@ -1113,6 +1111,7 @@ Local   lUsaNewKey  As Logical
 Local   lContinua   As Logical
 Local   cSerieId    As Character
 Local   aDadosDoc   As Array
+Local   nStatus     As Numeric 
 
 Private cSerie      As Character
 Private cNotaSer    As Character
@@ -1171,13 +1170,47 @@ While (cCabAlias)->(!Eof()) .And. lContinua
 	                ******************************
 	                *'Gera nota fiscal de saída.'*
 	                ******************************
-	                cNotaSer  := MAPVLNFS(aPVlNFs,cSerie,.F.,.F.,.F.,.F.,.F.,1,0,.T.,.F.,,,)
+	                cNotaSer  := MAPVLNFS(aPVlNFs,cSerie,.F.,.F.,.T.,.F.,.F.,1,0,.T.,.F.,,,)
                     
                     SF2->(DbSetOrder(1))
 					If SF2->(DbSeek(xFilial("SF2")+cNotaSer+cSerie))
                         SA1->(DbSetOrder(1))
                         SA1->(DbSeek(xFilial("SA1")+SF2->F2_CLIENTE+SF2->F2_LOJA))
                         Aadd(aDadosDoc,{SF2->F2_SERIE,SF2->F2_DOC,SF2->F2_EMISSAO,SF2->F2_CLIENTE,SF2->F2_LOJA,SA1->A1_NOME,SF2->F2_VALBRUT,SF2->F2_VALMERC})
+
+                        SD2->(DbSetOrder(3))
+                        SD2->(DbSeek(xFilial("SD2")+SF2->F2_DOC+SF2->F2_SERIE+SF2->F2_CLIENTE+SF2->F2_LOJA))
+                        While SD2->(!Eof()) .And. SD2->D2_DOC       = SF2->F2_DOC     ;
+                                            .And. SD2->D2_SERIE     = SF2->F2_SERIE   ;
+                                            .And. SD2->D2_CLIENTE   = SF2->F2_CLIENTE ;
+                                            .And. SD2->D2_LOJA      = SF2->F2_LOJA
+                            SDB->(DbSetOrder(1))
+                            If SDB->(DbSeek(xFilial("SDB")+SD2->D2_COD+SD2->D2_LOCAL+SD2->D2_NUMSEQ))
+                                VV1->(DbSetOrder(2))
+                                If VV1->(DbSeek(xFilial("VV1")+SDB->DB_NUMSERI))
+                                    VV1->(RecLock("VV1",.F.))
+                                    VV1->VV1_SITVEI := "1"
+                                    VV1->VV1_ULTMOV := "S"
+                                    VV1->(MsUnLock())
+
+                                    U_VM011DNF() //Gera a Tabela CD9
+                                    cQuery := ""
+                                    cQuery += " UPDATE "+RetSqlName("VRJ")
+                                    cQuery += " SET VRJ_STATUS = 'F' ,                          "
+                                    cQuery += "     VRJ_XINTEG = 'F'                            "
+                                  //cQuery += " FROM "+RetSqlName("VRJ")
+                                    cQuery += " WHERE  VRJ_FILIAL = '"+xFilial("VRJ")        +"'" 
+                                    cQuery += "    AND VRJ_PEDCOM = '"+(cCabAlias)->C6_PEDCLI+"'"
+                                    cQuery += "    AND D_E_L_E_T_ = ' '"
+                                    nStatus := TCSqlExec(cQuery)
+
+                                    If (nStatus < 0)
+                                        MsgStop("TCSQLError() " + TCSQLError(), "Erro atualizacao VRJ")                                    
+                                    EndIf
+                                EndIf
+                            EndIf
+                            SD2->(DbSkip())
+                        End
                     EndIf
                 EndIf
             EndIf
@@ -1305,6 +1338,10 @@ If RecLock( cAlias, .F. )
 	( cAlias )->( MsUnlock() )
 EndIf  
 
+//fResFat()
+//oBrowse:Refresh()
+//oDlg01:Refresh()
+
 Return 
 
 //---------------------------------------------------------------------
@@ -1336,9 +1373,53 @@ While ( cAlias )->( !Eof() )
 End
 
 ( cAlias )->( DBGoTo( nRecno ) )
-oBrowse:Refresh()
+
+//fResFat()
+//oBrowse:Refresh()
+//oDlg01:Refresh()
 
 Return()
+
+*************************
+Static Function fResFat()
+*************************
+
+Local   aObjects  As Array
+Local   aInfo     As Array
+Local   aSizeAut  As Array
+Local   aPosObj   As Array
+Local   aButtons  As Array
+
+Private aListDocs As Array
+Private lMarkAll  As Logical
+Public  oResFat   As Object
+
+aObjects  := {}
+aInfo     := {}
+aSizeAut  := MsAdvSize()
+aPosObj   := {}
+aButtons  := {}
+
+Aadd( aObjects, { 50, 40, .T., .T., .T. } )
+Aadd( aObjects, { 60, 70, .T., .T. ,.T.} )
+
+aInfo := { aSizeAut[ 1 ], aSizeAut[ 2 ], aSizeAut[ 3 ], aSizeAut[ 4 ], 2, 2 }
+aPosObj := MsObjSize( aInfo, aObjects, , .T. )
+   
+aDadosDoc := {{"000001","01","CARLOS LEOANRDO FERREIRA DE MIRANDA","100.000.000,00"}}
+fwfreeobj(oResFat)
+oResFat := Nil
+
+@ aSizeAut[2],aSizeAut[1] LISTBOX oResFat FIELDS HEADER "Cliente","Loja","Nome","Valor"  SIZE aSizeAut[3],aSizeAut[4]-21.5 PIXEL OF oPnlWnd2
+
+oResFat:SetArray( aDadosDoc )
+/*
+oResFat:bLine := {||{aDadosDoc[oResFat:nAt,1],;
+                     aDadosDoc[oResFat:nAt,2],;
+                     aDadosDoc[oResFat:nAt,3],;
+                     aDadosDoc[oResFat:nAt,4]}}
+*/
+Return
 
 *********************************
 Static Function Boleto(cCabAlias)
