@@ -53,6 +53,7 @@ Return
 @history    Tela de visualização e processamento da montagem de unitizadores    
 /*/
 Static Function TelaUnit()
+
 	Local aCoors 		:= FWGetDialogSize( oMainWnd )
 	Local oPanelUp, oFWLayer, oPanelLeft, oRelacVS3 //,oPanelRight , oBrowseLeft, oBrowseRight, oRelacZA5
 	//Local _cUsuario		:= AllTrim(SuperGetMV( "CMV_WSR015"  ,,"RG LOG" )) 
@@ -71,7 +72,6 @@ Static Function TelaUnit()
 		MsgAlert("Este registro esta finalizado, selecione um registro pendente para geração de Picking!")
 		Return
 	EndIf 	
-
 	If lJobAtivo .And. nOpc == 3
 		MsgAlert("Este botão esta desabilitado porque o processamento via Job esta ativo, " + CRLF +;
 				 "solicite ao administrador do sistema a parada do Job para habilitar o processamento" )
