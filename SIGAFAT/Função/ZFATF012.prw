@@ -301,11 +301,13 @@ Static Function zBuscaCli(_cCnpj)
 	EndIf
 
     _cQrySA1 := " "
-    _cQrySA1 += " SELECT SA1.A1_CGC FROM " + RetSqlName("SA1") + " SA1 "   + CRLF
-    _cQrySA1 += " WHERE SA1.A1_FILIAL = '" + xFilial("SA1") + "' "         + CRLF
-    _cQrySA1 += " AND SUBSTR(SA1.A1_CGC, 1, 8) = '" +_cCnpj+"' "          + CRLF 
-    _cQrySA1 += " AND SA1.A1_LOJA = '01' "                                 + CRLF
-    _cQrySA1 += " AND SA1.D_E_L_E_T_ = ' ' "                               + CRLF
+    _cQrySA1 += " SELECT SA1.A1_CGC FROM " + RetSqlName("SA1") + " SA1 "    + CRLF
+    _cQrySA1 += " WHERE SA1.A1_FILIAL = '" + xFilial("SA1") + "' "          + CRLF
+    _cQrySA1 += " AND SUBSTR(SA1.A1_CGC, 1, 8) = '" +_cCnpj+"' "            + CRLF 
+    //Alteração FIN100 Limite de crédito revitalização DAC 09/03/2022    
+    //_cQrySA1 += " AND SA1.A1_LOJA = '01' "                                 + CRLF
+  	_cQrySA1 += " AND SA1.A1_XTPCRED NOT IN ('0',' ') "						+ CRLF
+    _cQrySA1 += " AND SA1.D_E_L_E_T_ = ' ' "                                + CRLF
 
     DbUseArea( .T., "TOPCONN", TcGenQry( ,, _cQrySA1 ), _cAlsSA1, .F., .T. )
 	
