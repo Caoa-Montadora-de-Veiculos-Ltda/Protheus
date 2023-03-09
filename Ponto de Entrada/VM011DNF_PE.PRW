@@ -18,41 +18,60 @@ Static Function GrvCD9()
 	Local cCliente  := GetMv("CAOADSCLI",,"000184") 
 	Local cProd     := GetMv("CAOADSPRO",,"HEH76B857DA10AESWAS    ") //deve ter a mesma quantidade de caracteres do sx3 - CD2_CODPRO
 
-	VV0->(dbSetOrder(4))
-	If ! VV0->(dbSeek(xFilial( "VV0" ) + SF2->F2_DOC + SF2->F2_SERIE))
-		CONOUT("Atendimento nao encontrado")
-		RestArea(aArea)
-		Return
+	If Upper(Alltrim(FunName())) <> "ZFATF019"
+		VV0->(dbSetOrder(4))
+		If ! VV0->(dbSeek(xFilial( "VV0" ) + SF2->F2_DOC + SF2->F2_SERIE))
+			CONOUT("Atendimento nao encontrado")
+			RestArea(aArea)
+			Return
+		EndIf
+	
+		SD2->(dbSetOrder(3))
+		If ! SD2->(dbSeek(xFilial("SD2") + SF2->F2_DOC + SF2->F2_SERIE + SF2->F2_CLIENTE + SF2->F2_LOJA ))
+			CONOUT("Item da Nota fiscal não encontrada")
+			RestArea(aArea)
+			Return
+		EndIf
+
+		//If VV0->VV0_TIPFAT  == "1"
+		//	cEstadoVei := "9" // Usado
+		//Else
+		//	cEstadoVei := "0" //Novo
+		//Endif
+		cEstadoVei := tpvenda(VV0->VV0_NUMTRA)
+
+		VVA->(dbSetOrder(1))
+		If ! VVA->(dbSeek(xFilial("VVA") + VV0->VV0_NUMTRA))
+			Conout("Item do atendimento nao encontrado.")
+			Return .f.
+		EndIf
+
+		DbSelectArea( "VV1" )
+		VV1->( DbSetOrder(1) )
+		If ! VV1->( DbSeek( xFilial("VV1") + VVA->VVA_CHAINT ) )
+			Conout("Item do atendimento nao encontrado.")
+			Return .f.
+		EndIf
+
+		FGX_VV2() // Posiciona na tabela de modelos 
+	ElseIf Upper(Alltrim(FunName())) == "ZFATF019" .And. !Empty(Alltrim(SDB->DB_NUMSERI))
+		DbSelectArea( "VV1" )
+		VV1->( DbSetOrder(2) )
+		If ! VV1->( DbSeek( xFilial("VV1") + SDB->DB_NUMSERI ) )
+			Conout("Item do atendimento nao encontrado.")
+			Return .f.
+		EndIf
+	
+		SC5->(DbSetOrder(1))
+		IF SC5->(DbSeek(xFilial("SC5")+SD2->D2_PEDIDO))
+			If C5_XTIPVEN $ "02/03/04"
+				cEstadoVei := "1"
+			Else
+				cEstadoVei := "0"
+			Endif
+		EndIf
+		FGX_VV2() // Posiciona na tabela de modelos 
 	EndIf
-
-	SD2->(dbSetOrder(3))
-	If ! SD2->(dbSeek(xFilial("SD2") + SF2->F2_DOC + SF2->F2_SERIE + SF2->F2_CLIENTE + SF2->F2_LOJA ))
-		CONOUT("Item da Nota fiscal não encontrada")
-		RestArea(aArea)
-		Return
-	EndIf
-
-	//If VV0->VV0_TIPFAT  == "1"
-	//	cEstadoVei := "9" // Usado
-	//Else
-	//	cEstadoVei := "0" //Novo
-	//Endif
-	cEstadoVei := tpvenda(VV0->VV0_NUMTRA)
-
-	VVA->(dbSetOrder(1))
-	If ! VVA->(dbSeek(xFilial("VVA") + VV0->VV0_NUMTRA))
-		Conout("Item do atendimento nao encontrado.")
-		Return .f.
-	EndIf
-
-	DbSelectArea( "VV1" )
-	VV1->( DbSetOrder(1) )
-	If ! VV1->( DbSeek( xFilial("VV1") + VVA->VVA_CHAINT ) )
-		Conout("Item do atendimento nao encontrado.")
-		Return .f.
-	EndIf
-
-	FGX_VV2() // Posiciona na tabela de modelos 
 
 	DbSelectArea( "CD9" )
 
@@ -66,33 +85,33 @@ Static Function GrvCD9()
 	CD9->CD9_LOJA   := SD2->D2_LOJA
 	CD9->CD9_ITEM   := SD2->D2_ITEM
 	CD9->CD9_COD    := SD2->D2_COD
-	CD9->CD9_TPOPER := cEstadoVei//Tipo de Operação
-	CD9->CD9_CHASSI := VV1->VV1_CHASSI //Chassi
+	CD9->CD9_TPOPER := cEstadoVei																							//Tipo de Operação
+	CD9->CD9_CHASSI := VV1->VV1_CHASSI 																						//Chassi
 	CD9->CD9_CORDE  := AllTrim( POSICIONE( "VVC", 1, xFilial( "VVC" ) + VV1->VV1_CODMAR + VV1->VV1_CORVEI, "VVC_GRUCOR" ) ) //Código da Cor segundo as regras de pré-cadastro do DENATRAN.
 	CD9->CD9_CODCOR := AllTrim( POSICIONE( "VVC", 1, xFilial( "VVC" ) + VV1->VV1_CODMAR + VV1->VV1_CORVEI, "VVC_GRUCOR" ) ) //Codigo da cor definido pela montadora
 	CD9->CD9_DSCCOR := AllTrim( POSICIONE( "VVC", 1, xFilial( "VVC" ) + VV1->VV1_CODMAR + VV1->VV1_CORVEI, "VVC_DESCRI" ) ) //Descrição da Cor
-	CD9->CD9_POTENC := cValToChar( VV2->VV2_POTMOT ) //Potência máxima do motor do veículo em cavalo vapor (CV - potência veículo).
-	CD9->CD9_CM3POT := VV2->VV2_CM3 //Capacidade voluntária do motor expressa em centímetros cúbicos (CC - cilindradas).
-	CD9->CD9_PESOLI := SF2->F2_PLIQUI //Peso Liquido
-	CD9->CD9_PESOBR := SF2->F2_PBRUTO //Peso Bruto
-	CD9->CD9_SERIAL := VV1->VV1_SERMOT //Serial (série)
-	CD9->CD9_TPCOMB := DeParaComb( VV1->VV1_COMVEI ) //Tipo Combustível
-	CD9->CD9_NMOTOR := VV1->VV1_NUMMOT //Numero do Motor
-	CD9->CD9_CMKG   := cValToChar( VV2->VV2_CAPTRA ) //CMT - Capacidade máxima de tração - em toneladas.
-	CD9->CD9_DISTEI := cValToChar( VV2->VV2_DISEIX ) //Distancia entre eixos
-	CD9->CD9_RENAVA := Val( VV1->VV1_RENAVA ) //Renavam
-	CD9->CD9_ANOMOD := Val( AllTrim( SubStr( VV1->VV1_FABMOD, 5, 4 ) ) ) //Ano Modelo
-	CD9->CD9_ANOFAB := Val( AllTrim( SubStr( VV1->VV1_FABMOD, 1, 4 ) ) ) //Ano Frabricação
+	CD9->CD9_POTENC := cValToChar( VV2->VV2_POTMOT ) 																		//Potência máxima do motor do veículo em cavalo vapor (CV - potência veículo).
+	CD9->CD9_CM3POT := VV2->VV2_CM3 																						//Capacidade voluntária do motor expressa em centímetros cúbicos (CC - cilindradas).
+	CD9->CD9_PESOLI := SF2->F2_PLIQUI 																						//Peso Liquido
+	CD9->CD9_PESOBR := SF2->F2_PBRUTO 																						//Peso Bruto
+	CD9->CD9_SERIAL := VV1->VV1_SERMOT 																						//Serial (série)
+	CD9->CD9_TPCOMB := DeParaComb( VV1->VV1_COMVEI ) 																		//Tipo Combustível
+	CD9->CD9_NMOTOR := VV1->VV1_NUMMOT 																						//Numero do Motor
+	CD9->CD9_CMKG   := cValToChar( VV2->VV2_CAPTRA ) 																		//CMT - Capacidade máxima de tração - em toneladas.
+	CD9->CD9_DISTEI := cValToChar( VV2->VV2_DISEIX ) 																		//Distancia entre eixos
+	CD9->CD9_RENAVA := Val( VV1->VV1_RENAVA ) 																				//Renavam
+	CD9->CD9_ANOMOD := Val( AllTrim( SubStr( VV1->VV1_FABMOD, 5, 4 ) ) ) 													//Ano Modelo
+	CD9->CD9_ANOFAB := Val( AllTrim( SubStr( VV1->VV1_FABMOD, 1, 4 ) ) ) 													//Ano Frabricação
 	CD9->CD9_TPPINT := AllTrim( POSICIONE( "VVC", 1, xFilial( "VVC" ) + VV1->VV1_CODMAR + VV1->VV1_CORVEI, "VVC_TIPCOR" ) ) //Tipo de Pintura 1 = Solida; 2 = Metalica
-	CD9->CD9_TPVEIC := VV2->VV2_TIPVEI //Tipo de Veículo 06 = Automovel; 14 = Caminhao; 07 = Microonibus; 08 = Onibus; 10 = Reboque; 17 = C Trator
-	CD9->CD9_ESPVEI := AllTrim( POSICIONE( "VVE", 1, xFilial( "VVE" ) + VV2->VV2_ESPVEI, "VVE_ESPREN") ) //Espécie de Veículo 02 = Carga; 04 = Corrida; 06 = Especial; 03 = Misto; 01 = Passageiro; 05 = Tracao
-	CD9->CD9_CONVIN := IIF( VV1->VV1_PROVEI $ "01", "N", "R" ) //Informe se o veículo tem VIN (chassi) remarcado. 0 = Nacional; 1 = Importado; 
-	CD9->CD9_CONVEI := "1" //Condição do Veículo 1 = Acabado; 2 = Inacabado; 3 = Semi-acabado
+	CD9->CD9_TPVEIC := VV2->VV2_TIPVEI 																						//Tipo de Veículo 06 = Automovel; 14 = Caminhao; 07 = Microonibus; 08 = Onibus; 10 = Reboque; 17 = C Trator
+	CD9->CD9_ESPVEI := AllTrim( POSICIONE( "VVE", 1, xFilial( "VVE" ) + VV2->VV2_ESPVEI, "VVE_ESPREN") ) 					//Espécie de Veículo 02 = Carga; 04 = Corrida; 06 = Especial; 03 = Misto; 01 = Passageiro; 05 = Tracao
+	CD9->CD9_CONVIN := IIF( VV1->VV1_PROVEI $ "01", "N", "R" ) 																//Informe se o veículo tem VIN (chassi) remarcado. 0 = Nacional; 1 = Importado; 
+	CD9->CD9_CONVEI := "1" 																									//Condição do Veículo 1 = Acabado; 2 = Inacabado; 3 = Semi-acabado
 	CD9->CD9_CODMOD := VV2->VV2_MODFAB
-	CD9->CD9_CILIND := cValToChar( VV2->VV2_CILMOT ) //Cilindradas
-	CD9->CD9_TRACAO := cValToChar( VV2->VV2_CAPTRA ) //Máxima Tração
-	CD9->CD9_LOTAC  := VV2->VV2_QTDPAS //Quantidade máxima permitida de passageiros sentados, inclusive motorista.
-	CD9->CD9_RESTR  := "0" //Restrição
+	CD9->CD9_CILIND := cValToChar( VV2->VV2_CILMOT ) 																		//Cilindradas
+	CD9->CD9_TRACAO := cValToChar( VV2->VV2_CAPTRA ) 																		//Máxima Tração
+	CD9->CD9_LOTAC  := VV2->VV2_QTDPAS 																						//Quantidade máxima permitida de passageiros sentados, inclusive motorista.
+	CD9->CD9_RESTR  := "0" 																									//Restrição
 	CD9->( MsUnLock() )
 
 	//Paleativo CD2 Para tratamento desoneracao ICMS venda Zona Franca - Convenio 66/88
@@ -110,8 +129,9 @@ Static Function GrvCD9()
 				CD2->(MsUnLock())
 
 				aParam := {"1",,SD2->D2_SERIE,SD2->D2_DOC,SD2->D2_CLIENTE,SD2->D2_LOJA}
-
-				ExecBlock("XmlNfeSef",.F.,.F.,aParam)
+				If Upper(Alltrim(FunName())) <> "ZFATF019"
+					ExecBlock("XmlNfeSef",.F.,.F.,aParam)
+				EndIf
 			EndIf
 
 		EndIf
