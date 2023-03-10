@@ -56,10 +56,10 @@ User Function ZPECF008()
 	Local _cLocal		:= "01"  //iniciar com armazem 01
 	Local _cObsPrc		:= ""
 	Local _nPos
-	
+
 	Private _cAglutina 	:= ""
 	Private _aMensAglu	:= {}
-
+	
 	Begin Sequence
 		//teste para validar envio
 		//Caso não seja para executar a rotina sair

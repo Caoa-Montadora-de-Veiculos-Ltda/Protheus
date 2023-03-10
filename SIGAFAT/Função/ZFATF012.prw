@@ -90,7 +90,7 @@ Static Function zImporta(_cArqSel)
     Local _cLinAtu      := ""
     Local _nLinhaAtu    := 0
     Local _aLinha       := {}
-    Local _cCnpjMatriz  := ""
+    //Local _cCnpjMatriz  := ""
     Local _cSeparador	:= ";"
     Local _cMsgLog      := ""
     Local _cTitLog      := "[ZFATF012] - Log Importação Crédito Floor Plan"
@@ -99,6 +99,9 @@ Static Function zImporta(_cArqSel)
     Local _nVlrLim      := 0
     Local _oArquivo
     Local _aLinhas
+    Local _nRegSA1
+    
+    
     Private _cLog       := ""
 
     //Abre as tabelas que serão usadas
@@ -183,6 +186,25 @@ Static Function zImporta(_cArqSel)
                             If !(AllTrim(_aLinha[01])) $ "CODUSUARIOINT"
 
                                 //Busca o Cnpj da cliente Matriz do Floor Plan.
+                                //Alterado FIN100
+                                _nRegSA1    := zBuscaCli(Substring(StrZero(Val(AllTrim(_aLinha[08]) ),14),01,08))
+
+                                If  _nRegSA1 == Nil
+                                    _cMsgLog += "Linha:"+PADR(" ", 3 - Len(AllTrim(cValToChar(_nLinhaAtu))))+AllTrim(cValToChar(_nLinhaAtu))+" |Matriz CNPJ não encontrado no Cadastro de Cliente |Excel: " + AllTrim(_aLinha[08]) + CRLF
+                                ElseIf  _nRegSA1 > 0
+                                    SA1->(DbGoto(_nRegSA1)) 
+                                    _dDataVenc  := CToD(_aLinha[26]) //DATFIM
+                                    _nVlrLim    := Val(StrTran(StrTran(_aLinha[24],".",""),",",".")) //VLRDISPONIVELMAT
+                                    RecLock("SA1",.F.)                      
+                                    SA1->A1_XLC	    := Iif(_nVlrLim > 0, _nVlrLim, 0 )
+                                    SA1->A1_XDTLC	:= _dDataVenc
+                                    SA1->A1_XBLQLC	:= "0"
+                                    SA1->(MsUnlock())
+                                    _lRet := .T.
+                                Else                                    
+                                    _cMsgLog += "Linha:"+PADR(" ", 3 - Len(AllTrim(cValToChar(_nLinhaAtu))))+AllTrim(cValToChar(_nLinhaAtu))+" |Esse cliente não esta habilitado como FloorPlan (1) CNPJ: " + AllTrim(_aLinha[08]) + CRLF
+                                Endif  
+                                /* 
                                 _cCnpjMatriz := zBuscaCli(Substring(StrZero(Val(AllTrim(_aLinha[08]) ),14),01,08))
 
                                 SA1->(DbSetOrder(3)) //A1_FILIAL+A1_CGC                                                                                                                                                
@@ -207,6 +229,7 @@ Static Function zImporta(_cArqSel)
                                 Else
                                     _cMsgLog += "Linha:"+PADR(" ", 3 - Len(AllTrim(cValToChar(_nLinhaAtu))))+AllTrim(cValToChar(_nLinhaAtu))+" |Matriz CNPJ não encontrado no Cadastro de Cliente |Excel: " + AllTrim(_aLinha[08]) + CRLF
                                 EndIf 
+                                */
                             EndIf                                            
                         Else
                             _cMsgLog += "O Arquivo não possui informações para atualização." + CRLF
@@ -291,36 +314,57 @@ Obs......:
 =====================================================================================
 */ 
 Static Function zBuscaCli(_cCnpj)
-
+Local _cAliasPesq 	:= GetNextAlias()
+Local _nReg         
+/*   
     Local _cRet         := " "
     Local _cQrySA1    	:= " "
 	Local _cAlsSA1 	  	:= GetNextAlias()
-
+ 
     If Select(_cAlsSA1) > 0
 		(_cAlsSA1)->(DbCloseArea())
 	EndIf
 
     _cQrySA1 := " "
-    _cQrySA1 += " SELECT SA1.A1_CGC FROM " + RetSqlName("SA1") + " SA1 "    + CRLF
+    //_cQrySA1 += " SELECT SA1.A1_CGC FROM " + RetSqlName("SA1") + " SA1 "    + CRLF
+    SELECT 	ISNULL(SA1.R_E_C_N_O_,0) NREGSA1
     _cQrySA1 += " WHERE SA1.A1_FILIAL = '" + xFilial("SA1") + "' "          + CRLF
     _cQrySA1 += " AND SUBSTR(SA1.A1_CGC, 1, 8) = '" +_cCnpj+"' "            + CRLF 
-    //Alteração FIN100 Limite de crédito revitalização DAC 09/03/2022    
-    //_cQrySA1 += " AND SA1.A1_LOJA = '01' "                                 + CRLF
-  	_cQrySA1 += " AND SA1.A1_XTPCRED NOT IN ('0',' ') "						+ CRLF
+    _cQrySA1 += " AND SA1.A1_LOJA = '01' "                                 + CRLF
     _cQrySA1 += " AND SA1.D_E_L_E_T_ = ' ' "                                + CRLF
-
     DbUseArea( .T., "TOPCONN", TcGenQry( ,, _cQrySA1 ), _cAlsSA1, .F., .T. )
-	
 	DbSelectArea((_cAlsSA1)) 
 	(_cAlsSA1)->(dbGoTop())
 	If (_cAlsSA1)->(!Eof())
-
 	    _cRet   := (_cAlsSA1)->A1_CGC
-
 	EndIf
 	
 	(_cAlsSA1)->(DbCloseArea())
-    
-Return(_cRet)
+*/
+    //Alteração FIN100 Limite de crédito revitalização DAC 09/03/2022    
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT 	ISNULL(SA1.R_E_C_N_O_,0) NREGSA1, SA1.A1_XTPCRED 
+		FROM  %Table:SA1% SA1
+		WHERE SA1.A1_FILIAL 	= %XFilial:SA1%
+            AND SUBSTR(SA1.A1_CGC, 1, 8) = %Exp:_cCnpj%
+			AND SA1.%notDel%    
+            ORDER BY SA1.A1_XTPCRED
+	EndSQL	
+	If (_cAliasPesq)->(!Eof()) 
+        _nReg   := 0
+        While (_cAliasPesq)->(!Eof())
+            If (_cAliasPesq)->A1_XTPCRED == "1"
+                _nReg   := (_cAliasPesq)->NREGSA1
+                Exit
+            EndIf 
+            (_cAliasPesq)->(DbSkip()) 
+        EndDo    
+	EndIf
+
+If Select(_cAliasPesq) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif  
+Return _nReg 
 
 
