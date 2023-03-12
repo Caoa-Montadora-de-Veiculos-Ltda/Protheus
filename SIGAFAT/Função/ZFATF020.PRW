@@ -12,6 +12,7 @@
 @param nOpcx, numeric, opcao selecionada
 @type function
 /*/
+
 *****************************************
 User Function ZFATF020(cAlias,nReg,nOpcx)
 *****************************************

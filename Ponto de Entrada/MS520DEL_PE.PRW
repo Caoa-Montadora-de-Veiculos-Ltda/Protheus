@@ -31,7 +31,7 @@ User Function MS520DEL()
                 VV1->(MsUnLock())
 
 				SC6->(DbSetOrder(1))
-				If SC6->(DbSeek(xFilial("SC6")+SD2->D2_PEDIDO+SD2->D2_ITEMPV))
+				If SC6->(DbSeek(xFilial("SC6")+SD2->D2_PEDIDO+SD2->D2_ITEMPV)) .And. !Empty(Alltrim(SC6->C6_PEDCLI))
                 	cQuery := ""
                 	cQuery += " UPDATE "+RetSqlName("VRJ")
                 	cQuery += " SET VRJ_STATUS = 'A' ,                          "

@@ -78,6 +78,8 @@ Local aValidCmp     As Array
 
 Private oPnlWnd1      As Object
 Private oPnlWnd2      As Object
+Private oPnlWnd3      As Object
+Private oPnlWnd4      As Object
 Private aParamBox   As Array
 Private oModel      As Object
 Private cCabAlias   As Character
@@ -281,16 +283,24 @@ oFWL := FWLayer():New()
 // Inicia o Layer
 oFWL:Init( oNwFat001, .F. )
 // Cria uma linha unica para o Layer
-oFWL:AddLine( 'TOTAL', 90 , .F.)
+oFWL:AddLine( 'TOTAL' , 70 , .F.)
+oFWL:AddLine( 'TOTAIS', 20 , .F.)
 
 // Cria colunas
-oFWL:AddCollumn( 'DIR', 100, .F., 'TOTAL' )
-	
-oFWL:AddWindow( 'DIR' , 'Wnd1', "Pedidos de Venda"   ,  60, .F., .T.,, 'TOTAL' )
-oFWL:AddWindow( 'DIR' , 'Wnd2', "Totais Por Cliente" ,  20, .F., .T.,, 'TOTAL' )
+oFWL:AddCollumn( 'DIR' , 100, .F., 'TOTAL'  )
+oFWL:AddCollumn( 'DIR2', 040, .F., 'TOTAIS' )
+oFWL:AddCollumn( 'DIR3', 040, .F., 'TOTAIS' )
+oFWL:AddCollumn( 'DIR4', 020, .F., 'TOTAIS' )
 
-oPnlWnd1:= oFWL:getWinPanel( 'DIR', 'Wnd1', 'TOTAL' )
-oPnlWnd2:= oFWL:getWinPanel( 'DIR', 'Wnd2', 'TOTAL' )
+oFWL:AddWindow( 'DIR' , 'Wnd1', "Pedidos de Venda"   ,  090, .F., .T.,, 'TOTAL' )
+oFWL:AddWindow( 'DIR2', 'Wnd2', "Totais Por Cliente" ,  190, .F., .T.,, 'TOTAIS' )
+oFWL:AddWindow( 'DIR3', 'Wnd3', "Totais Por Produto" ,  190, .F., .T.,, 'TOTAIS' )
+oFWL:AddWindow( 'DIR4', 'Wnd4', "Total Geral"        ,  190, .F., .T.,, 'TOTAIS' )
+
+oPnlWnd1:= oFWL:getWinPanel( 'DIR' , 'Wnd1', 'TOTAL'  )
+oPnlWnd2:= oFWL:getWinPanel( 'DIR2', 'Wnd2', 'TOTAIS' )
+oPnlWnd3:= oFWL:getWinPanel( 'DIR3', 'Wnd3', 'TOTAIS' )
+oPnlWnd4:= oFWL:getWinPanel( 'DIR4', 'Wnd4', 'TOTAIS' )
 
 //- Recupera coordenadas da area superior da linha e coluna a direita do container
 oSize1 := FWDefSize():New(.F.)
@@ -831,6 +841,28 @@ While (cCabAlias)->(!Eof())
             (cCabAlias)->(MsUnLock())
         EndIf
 
+        cQuery := ""
+        cQuery += " UPDATE "+RetSqlName("VRK")                                                                           +(Chr(13)+Chr(10))
+        cQuery += " SET VRK_CHASSI = '"+SC6->C6_NUMSERI+"'                                                              "+(Chr(13)+Chr(10))
+        cQuery += " WHERE VRK_FILIAL = '"+xFilial("VRK")+"'                                                             "+(Chr(13)+Chr(10))
+        cQuery += " AND VRK_PEDIDO||VRK_ITEPED = (SELECT VRK.VRK_PEDIDO||VRK.VRK_ITEPED                                 "+(Chr(13)+Chr(10))
+        cQuery += "                               FROM "+RetSqlName("VRJ")+" VRJ                                        "+(Chr(13)+Chr(10))
+        cQuery += "                               INNER JOIN                                                            "+(Chr(13)+Chr(10))
+        cQuery += "                               "+RetSqlName("VRK")+" VRK ON VRK.VRK_FILIAL = '"+xFilial("VRK")+"'    "+(Chr(13)+Chr(10))
+        cQuery += "                                                        AND VRJ.VRJ_PEDIDO = VRK.VRK_PEDIDO          "+(Chr(13)+Chr(10))
+        cQuery += "                                                        AND VRJ.D_E_L_E_T_ = VRK.D_E_L_E_T_          "+(Chr(13)+Chr(10))
+        cQuery += "                               WHERE VRJ.VRJ_FILIAL  = '"+xFilial("VRJ")                         +"' "+(Chr(13)+Chr(10))  
+        cQuery += "                                 AND VRJ.VRJ_CODCLI  = '"+SC5->C5_CLIENTE                        +"' "+(Chr(13)+Chr(10))
+        cQuery += "                                 AND VRJ.VRJ_LOJA    = '"+SC5->C5_LOJACLI                        +"' "+(Chr(13)+Chr(10))
+        cQuery += "                                 AND VRJ.VRJ_PEDCOM  = '"+SC6->C6_PEDCLI                         +"' "+(Chr(13)+Chr(10))
+        cQuery += "                                 AND VRK.VRK_ITEPED  = '"+StrZero(Val(Alltrim(SC6->C6_ITEM)),3)  +"' "+(Chr(13)+Chr(10))
+        cQuery += "                                 AND VRJ.D_E_L_E_T_  = ' ')                                          "+(Chr(13)+Chr(10))
+        nStatus := TCSqlExec(cQuery)
+
+        If (nStatus < 0)
+            MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Chasi VRK")
+        EndIf
+
         (cCabAlias)->(DbSkip())
         Loop
     EndIf
@@ -1021,6 +1053,28 @@ While (cCabAlias)->(!Eof())
                 SC9->C9_XGRPMOD := ""
                 SC6->(MsUnLock())
 
+                cQuery := "" 
+                cQuery += " UPDATE "+RetSqlName("VRK")                                                                           +(Chr(13)+Chr(10))
+                cQuery += " SET VRK_CHASSI = '"+(cTmpAlias)->VV1_CHASSI+"'                                                      "+(Chr(13)+Chr(10))
+                cQuery += " WHERE VRK_FILIAL = '"+xFilial("VRK")+"'                                                             "+(Chr(13)+Chr(10))
+                cQuery += " AND VRK_PEDIDO||VRK_ITEPED = (SELECT VRK.VRK_PEDIDO||VRK.VRK_ITEPED                                 "+(Chr(13)+Chr(10))
+                cQuery += "                               FROM "+RetSqlName("VRJ")+" VRJ                                        "+(Chr(13)+Chr(10))
+                cQuery += "                               INNER JOIN                                                            "+(Chr(13)+Chr(10))
+                cQuery += "                               "+RetSqlName("VRK")+" VRK ON VRK.VRK_FILIAL = '"+xFilial("VRK")+"'    "+(Chr(13)+Chr(10))
+                cQuery += "                                                        AND VRJ.VRJ_PEDIDO = VRK.VRK_PEDIDO          "+(Chr(13)+Chr(10))
+                cQuery += "                                                        AND VRJ.D_E_L_E_T_ = VRK.D_E_L_E_T_          "+(Chr(13)+Chr(10))
+                cQuery += "                               WHERE VRJ.VRJ_FILIAL  = '"+xFilial("VRJ")                         +"' "+(Chr(13)+Chr(10))  
+                cQuery += "                                 AND VRJ.VRJ_CODCLI  = '"+SC5->C5_CLIENTE                        +"' "+(Chr(13)+Chr(10))
+                cQuery += "                                 AND VRJ.VRJ_LOJA    = '"+SC5->C5_LOJACLI                        +"' "+(Chr(13)+Chr(10))
+                cQuery += "                                 AND VRJ.VRJ_PEDCOM  = '"+SC6->C6_PEDCLI                         +"' "+(Chr(13)+Chr(10))
+                cQuery += "                                 AND VRK.VRK_ITEPED  = '"+StrZero(Val(Alltrim(SC6->C6_ITEM)),3)  +"' "+(Chr(13)+Chr(10))
+                cQuery += "                                 AND VRJ.D_E_L_E_T_  = ' ')                                          "+(Chr(13)+Chr(10))
+                nStatus := TCSqlExec(cQuery)
+
+                If (nStatus < 0)
+                    MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Chasi VRK")
+                EndIf
+
                 DBCommitAll()
             Else
                 //DisarmTransaction()
@@ -1194,18 +1248,20 @@ While (cCabAlias)->(!Eof()) .And. lContinua
                                     VV1->(MsUnLock())
 
                                     U_VM011DNF() //Gera a Tabela CD9
-                                    cQuery := ""
-                                    cQuery += " UPDATE "+RetSqlName("VRJ")
-                                    cQuery += " SET VRJ_STATUS = 'F' ,                          "
-                                    cQuery += "     VRJ_XINTEG = 'F'                            "
-                                  //cQuery += " FROM "+RetSqlName("VRJ")
-                                    cQuery += " WHERE  VRJ_FILIAL = '"+xFilial("VRJ")        +"'" 
-                                    cQuery += "    AND VRJ_PEDCOM = '"+(cCabAlias)->C6_PEDCLI+"'"
-                                    cQuery += "    AND D_E_L_E_T_ = ' '"
-                                    nStatus := TCSqlExec(cQuery)
+                                    If !Empty(Alltrim((cCabAlias)->C6_PEDCLI))
+                                        cQuery := ""
+                                        cQuery += " UPDATE "+RetSqlName("VRJ")
+                                        cQuery += " SET VRJ_STATUS = 'F' ,                          "
+                                        cQuery += "     VRJ_XINTEG = 'F'                            "
+                                        //cQuery += " FROM "+RetSqlName("VRJ")
+                                        cQuery += " WHERE  VRJ_FILIAL = '"+xFilial("VRJ")        +"'" 
+                                        cQuery += "    AND VRJ_PEDCOM = '"+(cCabAlias)->C6_PEDCLI+"'"
+                                        cQuery += "    AND D_E_L_E_T_ = ' '"
+                                        nStatus := TCSqlExec(cQuery)
 
-                                    If (nStatus < 0)
-                                        MsgStop("TCSQLError() " + TCSQLError(), "Erro atualizacao VRJ")                                    
+                                        If (nStatus < 0)
+                                            MsgStop("TCSQLError() " + TCSQLError(), "Erro atualizacao VRJ")                                    
+                                        EndIf
                                     EndIf
                                 EndIf
                             EndIf
