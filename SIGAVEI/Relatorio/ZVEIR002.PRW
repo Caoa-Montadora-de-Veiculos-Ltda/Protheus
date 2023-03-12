@@ -114,7 +114,7 @@ User Function ZVEIR2CB_ConfigBrowse(oDMSBrwStru)
 
 	Local nTamSX3 := TamSX3("VX5_DESCRI")[1]
 
-	oDMSBrwStru := OFBrowseStruct():New({"CC2", "SA1", "SA3", "SF2", "VRJ", "VRK", "VV0", "VV2", "VV3", "VV9","SE4"})
+	oDMSBrwStru := OFBrowseStruct():New({"CC2", "SA1", "SA3", "SF2", "SDB", "VRJ", "VRK", "VV0", "VV2", "VV3", "VV9","SE4"})
 
 	oDMSBrwStru:AddField( "VRJ_PEDIDO" )
 	oDMSBrwStru:AddField( "VRJ_PEDCOM" )
@@ -241,23 +241,19 @@ Static Function ZVEIR2QR_Query()
 					"  ON VRK.VRK_FILIAL = '" + FWxFilial("VRK") + "'" +;
 					" AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO" +;
 					" AND VRK.D_E_L_E_T_ = ' '" +;
-			" JOIN " + RetSQLName("VV9") + " VV9" +;
-					"  ON VV9.VV9_FILIAL = '" + FWxFilial("VV9") + "'" +;
-					" AND VV9.VV9_NUMATE = VRK.VRK_NUMTRA" +;
-					" AND VV9.D_E_L_E_T_ = ' '" +;
-					" AND VV9.VV9_STATUS IN ('F','T') " +;
-			" JOIN " + RetSQLName("VV0") + " VV0" +;
-					"  ON VV0.VV0_FILIAL = '" + FWxFilial("VV0") + "'" +;
-					" AND VV0.VV0_NUMTRA = VV9.VV9_NUMATE" +;
-					" AND VV0.D_E_L_E_T_ = ' '" +;
-					" AND VV0.VV0_OPEMOV = '0' " +;
-					" AND VV0.VV0_SITNFI = '1' " +;
+    		" JOIN " + RetSqlName("SDB") + " SDB "+;
+					" ON SDB.DB_FILIAL   = '" + FWxFilial('SDB')+ "'" +;
+    				" AND LTRIM(RTRIM(VRK.VRK_MODVEI))||LTRIM(RTRIM(VRK.VRK_SEGMOD)) = LTRIM(RTRIM(SDB.DB_PRODUTO))" +;
+    				" AND VRK.VRK_CHASSI   = SDB.DB_NUMSERI" +;
+    				" AND ' '              = SDB.DB_ESTORNO" +;
+    				" AND 'SC6'            = SDB.DB_ORIGEM"  +;
+    				" AND SDB.D_E_L_E_T_   = ' '" +;
 			" JOIN " + RetSQLName("SF2") + " F2 " +;
 					"  ON F2.F2_FILIAL = '" + FWxFilial("SF2") + "'" +;
-					" AND F2.F2_DOC = VV0.VV0_NUMNFI" +;
-					" AND F2.F2_SERIE = VV0.VV0_SERNFI" +;
-					" AND F2.F2_CLIENTE = VV0.VV0_CODCLI" +;
-					" AND F2.F2_LOJA = VV0.VV0_LOJA" +;
+					" AND F2.F2_DOC = SDB.DB_DOC" +;
+					" AND F2.F2_SERIE = SDB.DB_SERIE" +;
+					" AND F2.F2_CLIENTE = SDB.DB_CLIFOR" +;
+					" AND F2.F2_LOJA = SDB.DB_LOJA" +;
 					" AND F2.D_E_L_E_T_ = ' '" +;
 			" JOIN " + RetSQLName("SA1") + " A1" +;
 					"  ON A1.A1_FILIAL = '" + FWxFilial("SA1") + "'" +;
