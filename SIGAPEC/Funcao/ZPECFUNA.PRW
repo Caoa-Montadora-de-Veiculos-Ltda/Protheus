@@ -1397,14 +1397,15 @@ Responsável por validar a Limite de Crédito FASE 3
 @history    DAC 02/03/2023
 			GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (Revitalização Limite de Crédito)
             Revitalição processo limite de crédito, ajuste na informação de LOJA anteriormente estava fixo
-
+			Alteração incluindo tipo de pgto diferenciado que não irá verificar limite de crédito solicitação Aline, DAC - 13/03/2023
 /*/
 
 Static Function XFASLIMCRE(_cMsg, _nLimAvalia)
-	Local _cFaseRet	:= VS1->VS1_STATUS
-	Local _cTpPgto	:= GetMv("MV_CPNCLC")
-	Local _cLoja	:= ""  //StrZero(1,Len(VS1->VS1_LOJA))
-	Local _cCliente	:= VS1->VS1_CLIFAT
+	Local _cFaseRet		:= VS1->VS1_STATUS
+	Local _cTpPgto		:= GetMv("MV_CPNCLC")
+	Local _cTpPgtoEsp	:= SuperGetMV( "CMV_PEC039"  ,,"" )  //Condição de Pagamento a qual liberará sem avaliação do Limite de Crédito
+	Local _cLoja		:= ""  //StrZero(1,Len(VS1->VS1_LOJA))
+	Local _cCliente		:= VS1->VS1_CLIFAT
 	//Local _nRegVS1 	:= VS1->(Recno())
 
 	Default _nLimAvalia	:= 0
@@ -1422,6 +1423,12 @@ Static Function XFASLIMCRE(_cMsg, _nLimAvalia)
 				Break	
 			Endif
 		Endif
+		//Condição de Pagamento a qual liberará sem avaliação do Limite de Crédito DAC 13/03/2023
+		//caso esteja no parâmetro não bloquear
+		If !Empty(_cTpPgtoEsp) .and. AllTrim(VS1->VS1_FORPAG) $ AllTrim(_cTpPgtoEsp) 
+			Break
+		Endif
+
 
 		//Verificar se o Cliente possui cadastrado a loja inicial caso sim sempre avaliar Forplan pela loja inicial 01 - DAC - 24/05/2022
 		//Conforme Toninho deverá sempre verificar pela loja 1
@@ -4919,4 +4926,45 @@ User Function CAOA_OCTrannsfer(_cNumOrc, _cFilAtu, _cFilTransfer)
 		(_cAliasPesq)->(DbCloseArea())
 		Ferase(_cAliasPesq+GetDBExtension())
 	Endif  
+Return _lRet
+
+
+/*/{Protheus.doc} ZPECWFLC
+Validação para permitir o Usuário alterar ou não a condição especial quando a mesma existir e estiver cadastrado
+Esta funcionalidade deve ser utilizada na valiação do campo VS1_FORPAG em X3_WHEN 
+@param      _cForPagVS1 	- Forma de Pagamento  
+@return     Logico
+@author     DAC Denilso
+@version    12.1.17 / Superior
+@project	GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (Revitalização Limite de Crédito)
+@since      13/03/2023
+/*/
+User Function ZPECWFLC(_cForPagVS1)
+Local _lRet 		:= .T. 
+Local _cTpPgtoEsp	:= SuperGetMV( "CMV_PEC039"  ,,"" )  //Condição de Pagamento a qual liberará sem avaliação do Limite de Crédito
+
+Default _cForPagVS1	:= If(Type("M->VS1_FORPAG") 	== "C",M->VS1_FORPAG	,VS1->VS1_FORPAG)
+
+Begin Sequence
+	//somente ateração
+	If (!INCLUI .And. !ALTERA) .Or. Empty(_cTpPgtoEsp)
+		Break
+	EndIf
+
+	If AllTrim(_cForPagVS1) $ AllTrim(_cTpPgtoEsp)
+		//colocado controle de usuários DAC 13/05/2022
+		_lRet := U_ZGENUSER( RetCodUsr() ,"ZPECWFLC" ,.F.)	
+		If !_lRet 
+			If ALTERA 
+				M->VS1_FORPAG	:= VS1->VS1_FORPAG
+			ElseIf INCLUI
+				M->VS1_FORPAG	:= Space(Len(VS1->VS1_FORPAG))
+			Endif	
+		EnDif
+		//Caso não deixe alterar e voltando a confição antiga
+		If Empty(M->VS1_FORPAG) .Or. !AllTrim(M->VS1_FORPAG) $ AllTrim(_cTpPgtoEsp)
+			_lRet := .T.
+		Endif
+	Endif
+End Begin
 Return _lRet

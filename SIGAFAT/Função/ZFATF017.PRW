@@ -22,7 +22,7 @@ User Function ZFATF017( _cCodCli )
 	Local _cAlsTmp01 	  	:= GetNextAlias()
 	Local _cQryTmp01     	:= " "
 	Local _aArea	   		:= GetArea()
-	Local _lAbre			:= .F.
+	//Local _lAbre			:= .F.
 	Local _cEmpresa 		
 	Local _cFilial 	
 
@@ -35,10 +35,11 @@ User Function ZFATF017( _cCodCli )
 	CONOUT("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZFATF017] Iniciado: Ajuste de Credito")
 
 	//Avaliar tera que rodar Anapolis e Franco da Rocha  DAC 06/08/2023
+	CONOUT("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZFATF017] Iniciado: Ajuste Credito")
 	If _lJob
-		_cEmpresa	:=	"02"
-		_cFilial	:=  "2020012001"
-
+		_cEmpresa	:=	FWCodEmp()	//"02"
+		_cFilial	:=  FWFilial()  //"2020012001"
+		/*
 		CONOUT("INICIANDO EMPRESA "+_cEmpresa)
 		CONOUT("INICIANDO FILIAL "+_cFilial)
 		RpcClearEnv()
@@ -49,7 +50,7 @@ User Function ZFATF017( _cCodCli )
 
 		CONOUT("INICIADA EMPRESA "+cEmpAnt)
 		CONOUT("INICIADA FILIAL "+cFilAnt)
-	
+		*/
 	EndIf
 
 	If Select(_cAlsTmp01) > 0
@@ -82,11 +83,11 @@ User Function ZFATF017( _cCodCli )
 	RestArea(_aArea)
 
 	CONOUT("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZFATF017] Finalizado: Ajuste Credito")
-	
+	/*
 	If 	_lAbre	
 		Reset Environment
 	EndIf
-
+	*/
 If Select(_cAlsTmp01) <> 0
 	(_cAlsTmp01)->(DbCloseArea())
 	Ferase(_cAlsTmp01+GetDBExtension())

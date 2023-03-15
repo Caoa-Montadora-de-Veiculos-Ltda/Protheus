@@ -566,7 +566,7 @@ Begin Sequence
 							_lInconSaldo := .T.
            					Disarmtransaction()
 						EndIf  
-					Else
+					ElseIf _lRet
 						If !ZPECF08VS3(VS1->VS1_NUMORC, VS1->VS1_XMARCA, @_aBackOrder, _cConectWis, _cCdEmpWIS, _cLocal, _cTPedTransfFDR)
 							_lRet 		 := .F.
 							_lInconSaldo := .T.
