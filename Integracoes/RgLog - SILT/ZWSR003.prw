@@ -19,7 +19,7 @@ User Function ZWSR003(aParam)   //({"02", "2020012001"})
     Local dData         := CTOD('  /  /  ') 
     Private __cChvCTE   := ""
     Private __dData     := CTOD('  /  /  ') 
-
+    Private __lCalcul   := .F.
    
     ConOut("ZWSF003 - inicio de Importação de Romaneios")
     
@@ -29,7 +29,7 @@ User Function ZWSR003(aParam)   //({"02", "2020012001"})
 
         RpcSetType(3)
 	    RpcSetEnv( cEmpJob , cFilJob )
-
+        __lCalcul  := .T.
         Return zProcessa(lJob)
     Else
 
@@ -40,7 +40,8 @@ User Function ZWSR003(aParam)   //({"02", "2020012001"})
 
             __cChvCTE := aRet[1]
             __dData   := aRet[2]
-
+            __lCalcul := !Empty(DtoS(__dData))
+ 
             if !Empty(__cChvCTE) .or. !Empty(__dData)
                 Processa({|| zProcessa(lJob) }, "[ZWSR003] - Geracao automatica de romaneio", "Aguarde .... Realizando a carga dos registros...." ) 
             else
@@ -612,7 +613,7 @@ Static Function zGeraRom(_tp_ope_01, _modal_01, _percu_01, cCodTpVei, _codtra_01
     GFEA050LIB(.T.,,dDtColeta, cHrColeta ,.T.)
 
     //--Efetua Calculo do frete
-    if lJob
+    if lJob .or. __lCalcul
         GFE050CALC(,,,,.T.,)
     else
         GFE050CALC(,,,,.F.,)
