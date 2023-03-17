@@ -581,9 +581,22 @@ Begin Sequence
 								U_XFASEORC("3" /*_cFase*/, /*_cGrupo*/, /*_cCodPro*/, @_nLimAvalia) //Verifica se passa pela Fase Limite de Crédito
 								//Atualização para utilizar limite de crédito Parcial
 								//conforme alinhamento com Zé o processo será imprementado caso o status volte 3 não processar DAC 04/03/3022		
-								//If VS1->VS1_STATUS == "3" .and. _nLimAvalia <= 0
-								//	_lRet := .F.   //não abortarei será necessário verificar se no limite posso utilizar itens de produto até atingir o mesmo DAC 08/12/2022
-								//EndIf	
+								/*
+								If VS1->VS1_STATUS == "3" .and. _nLimAvalia <= 0
+									_lRet 		:= .F.   //não abortarei será necessário verificar se no limite posso utilizar itens de produto até atingir o mesmo DAC 08/12/2022
+									_lValCred 	:= .F.
+									Disarmtransaction()	
+								EndIf
+								*/	
+								//Implementado validação do campo pois apesar de ter que continuar validando limite parcial existe condições que não permitem validação de limite e tem que prosseguir devido a lógica montada DAC 17/03/2023
+								If VS1->VS1_STATUS == "3" .And. ValType(_nLimAvalia) <> "N" //não conseguiu avaliar crédito pois não retornou limite para avaliar parcial mesmo que seja 0
+									_lRet 		:= .F.   //não abortarei será necessário verificar se no limite posso utilizar itens de produto até atingir o mesmo DAC 08/12/2022
+									_lValCred 	:= .F.
+									Disarmtransaction()	
+								//manter a integridade	
+								ElseIf ValType(_nLimAvalia) <> "N" //não conseguiu avaliar crédito pois não retornou limite para avaliar parcial mesmo que seja 0
+									_nLimAvalia	:= 0
+								EndIf
 							Else
 								//Conforme José TOTVS caso esteja nesta fase voltar para zero se não 01/12/2021 
 								If VS1->VS1_STATUS == "3"
@@ -597,11 +610,12 @@ Begin Sequence
 						
 							//Utilizar limite de crédito Parcial
 							//PEC031 - Limite de Credito - Revitalização
-							If "3" $ _cFaseOrc  .And. VS1->VS1_STATUS == "3" //somente se estiver na fase do orçamento conforme alinhado com Zé 30/11/2021
+							If _lRet .And. "3" $ _cFaseOrc  .And. VS1->VS1_STATUS == "3" //somente se estiver na fase do orçamento conforme alinhado com Zé 30/11/2021
 								_cLojaCredito := U_XLJLCREDito(_cCliFat)  //função ja posiciona SA1
 								//"1=Credito Disponivel;2=Falta de Saldo;3=Titulos Em Atraso;4=Credito Vencido;5=Bloqueado
 								If Empty(_cLojaCredito)
 									_lRet     := .F.
+									_lValCred := .F.
 								Else	
 									If  (SA1->A1_XSTAFP $ "1|2" .OR. (SA1->A1_XSTAFP == "3" .AND. SA1->A1_XBLQVEN == "2") ) //.AND. _nLimAvalia > 0 
 										//Caso ainda esteja bloqueado deverá tentar liberar o limite de crédito que possui
@@ -2593,9 +2607,9 @@ Return _nEnviados
 //Tratar limite de crédito Parcial avaliando se bloqueia e ou libera parcialmente
 //========================================
 Static Function ZPECF08LCC(_cNumOrc,_nLimAvalia, _aBackOrder)
-	Local _lAvaliaOrc   := SuperGetMV( "CMV_PEC032"  ,,.F. )   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
-	Local _lAvaliaItem  := SuperGetMV( "CMV_PEC033"  ,,.F. )   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
-	Local _lAvaNeg      := SuperGetMV( "CMV_PEC034"  ,,.F. )   //Avalia Credito limite de Credito Negativo
+	Local _lAvaliaOrc   := SuperGetMV( "CMV_PEC032"  ,,.F. )   //Avalia limite de crédito por orçamento na Onda baseado pelos valores mais baixos e pendentes     
+	Local _lAvaliaItem  := SuperGetMV( "CMV_PEC033"  ,,.F. )   //Avalia limite de crédito por itens orçamento Onda baseado pelos valores mais baixos e pendentes     
+	Local _lAvaNeg      := SuperGetMV( "CMV_PEC034"  ,,.F. )   //Sigapec Analisa ORC parcial c/ Sld Lim.Credito neg
 	Local _lRet			:= .T. 
 	//Local _nReduc       := 0.10
 
@@ -2633,16 +2647,12 @@ Static Function ZPECF08LCC(_cNumOrc,_nLimAvalia, _aBackOrder)
 			
 			//Verificar o valor total do orçamento em relação ao limite de crédito
 			If _lAvaliaOrc .and. _lRet
-
 				_lRet 	:= ZPECF8LCAO(_cNumOrc, _nLimAvalia, _aBackOrder)
-				
 			EndIf
 
 			//Verifica por item e pode realizar o item parcial
 			If _lAvaliaItem  .and. (!_lAvaliaOrc .or. !_lRet)
-			
 				_lRet	:= ZPECF8LCAI(_cNumOrc, _nLimAvalia, VS1->(Recno()), _aBackOrder)
-						
 			EndIf
 
 			If !_lRet

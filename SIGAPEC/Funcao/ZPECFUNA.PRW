@@ -1071,7 +1071,7 @@ User Function XFASEORC(_cFase, _cGrupo, _cCodPro, _nLimAvalia)
 
 	Default _cGrupo 	:= ""
 	Default _cCodPro	:= ""
-	Default _nLimAvalia	:= 0 
+	//Default _nLimAvalia	:= Nil
 
 	Begin Sequence
 		//esta variavel é utilizada em algumas funções caso seja função que nao preve a mesma criara para não dar erro
@@ -1408,9 +1408,13 @@ Static Function XFASLIMCRE(_cMsg, _nLimAvalia)
 	Local _cCliente		:= VS1->VS1_CLIFAT
 	//Local _nRegVS1 	:= VS1->(Recno())
 
-	Default _nLimAvalia	:= 0
-
 	Begin Sequence
+		_nLimAvalia		:= Nil  //iniciar como Nil pois este retorno será validado no ZPECF08 para não dar continuidade DAC 17/03/2023
+		If Empty(VS1->VS1_FORPAG)
+			_cMsg 		:=  "Não informado condição de pagamento !"		
+			_cFaseRet 	:= "3"
+			Break
+		Endif	
 		//003;011;025                                                                                                                                                                                                                                           
 		If !Empty(GetNewPar("MV_CPNCLC","")) 
 			If !AllTrim(VS1->VS1_FORPAG) $ _cTpPgto  //GetMv("MV_CPNCLC") 
@@ -1428,8 +1432,6 @@ Static Function XFASLIMCRE(_cMsg, _nLimAvalia)
 		If !Empty(_cTpPgtoEsp) .and. AllTrim(VS1->VS1_FORPAG) $ AllTrim(_cTpPgtoEsp) 
 			Break
 		Endif
-
-
 		//Verificar se o Cliente possui cadastrado a loja inicial caso sim sempre avaliar Forplan pela loja inicial 01 - DAC - 24/05/2022
 		//Conforme Toninho deverá sempre verificar pela loja 1
 		_cLoja := U_XLJLCREDito(_cCliente)
@@ -1510,6 +1512,8 @@ Static Function XFLCREDITO(_cFaseRet, _cMsg, _nLimAvalia)
 	Local _aRetLc		:= {}
 	Local _nPos
 	Local _nRedBO       := SuperGetMV("CMV_PEC035",,100)
+	Local _cTpPgtoEsp	:= AllTrim(SuperGetMV( "CMV_PEC039"  ,,"" ))  //Condição de Pagamento a qual liberará sem avaliação do Limite de Crédito
+
 
 	If _nRedBO > 100
 		_nRedBO := 100
@@ -1518,7 +1522,7 @@ Static Function XFLCREDITO(_cFaseRet, _cMsg, _nLimAvalia)
 	Default _cMsg	:= ""
 
 	Begin Sequence
-		_nLimAvalia := 0   //Zero a avaliação de crédito onde constará o limite a ser utilizado
+		_nLimAvalia := Nil   //não associar pois caso não esteja associado não avaliara os demais processos
 		//Verificar se o Cliente possui cadastrado a loja inicial caso sim sempre avaliar Forplan pela loja inicial 01 - DAC - 24/05/2022
 		//Conforme Toninho deverá sempre verificar pela loja 1
 		//Alterado para procurar por limite de crédito
@@ -1545,18 +1549,33 @@ Static Function XFLCREDITO(_cFaseRet, _cMsg, _nLimAvalia)
 		ElseIf SA1->A1_XTPCRED == "1" //floorplan
 			//Se não estiver preenchido não validar
 			If Empty(_cForplan)
+				_cFaseRet := "3"
 				_lRet := .F.
+				Aadd(_aMsg, "Não informado condições de pgto no parâmetro ForPlan !")
 				Break
 			Endif
-
+			/* Alterado conforme alinhamento Evandro/Aline quando indicado Forplan só é valido o que estiver no parametro DAC 17/03/2023
 			If AllTrim(VS1->VS1_FORPAG) <> _cForplan
 				_cFaseRet := "0"
+				Break
+			EndIf
+			*/
+			//quando indicado forplan no parametro tem que ter a mesma condição pgto e não estar na condição de pgto especial
+			If !AllTrim(VS1->VS1_FORPAG) $ _cForplan  
+				If !Empty(_cTpPgtoEsp) .And. AllTrim(VS1->VS1_FORPAG) $ _cTpPgtoEsp
+					_lRet := .T.  //neste caso posso sair sem validar pois a condição especial não deve avaliar crédito
+				Else
+					_cFaseRet := "3"
+					_lRet := .F.
+					Aadd(_aMsg, "Condição de pgto "+VS1->VS1_FORPAG+" ForPlan não esta informada no parâmetro CMV_PEC018 !")
+				Endif	
 				Break
 			EndIf
 		EndIf
 
 		Aadd(_aMsg,"Avaliando Limite de Credito para o cliente "+_cCliente+" loja "+_cLoja+" - Matriz")
 
+		_nLimAvalia := 0   //Zero a avaliação de crédito onde constará o limite a ser utilizado
 		_aRetLc := U_ZFATF014(_cCliente, SA1->A1_XTPCRED, _cLoja)
 		//1=Credito Disponivel;2=Falta de Saldo;3=Titulos Em Atraso;4=Credito Vencido;5=Bloqueado                                         
 		If _aRetLc[01] == "2"
