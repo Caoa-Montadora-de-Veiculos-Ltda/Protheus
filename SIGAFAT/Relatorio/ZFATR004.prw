@@ -44,11 +44,11 @@ User Function ZFATR004() // u_ZFATR004()
 
     Private aRet        := {}
 
-    aAdd(aPergs, {1 ,"Dt Emissùo De (Faturamento) " ,CtoD('')                           ,""	        ,".T."	,""	    ,"Eval(bVldDt)"	    ,50	    ,.F.    })
-    aAdd(aPergs, {1 ,"Dt Emissùo Atù (Faturamento)" ,CtoD('')	                        ,""	        ,".T."	,""	    ,"Eval(bVldDt)"	    ,50	    ,.F.    })
+    aAdd(aPergs, {1 ,"Dt Emiss„o De (Faturamento) " ,CtoD('')                           ,""	        ,".T."	,""	    ,"Eval(bVldDt)"	    ,50	    ,.F.    })
+    aAdd(aPergs, {1 ,"Dt Emiss„o AtÈ (Faturamento)" ,CtoD('')	                        ,""	        ,".T."	,""	    ,"Eval(bVldDt)"	    ,50	    ,.F.    })
     aAdd(aPergs, {1 ,"Cliente"                      ,Space( TamSX3('A1_COD')[1] )       ,""         ,""     ,"SA1"  ,"Eval(bVldCli)"    ,0      ,.F.    })
     aAdd(aPergs, {1 ,"Loja"                         ,Space( TamSX3('A1_LOJA')[1] )      ,""         ,""     ,""     ,"Eval(bVldLoj)"    ,0      ,.F.    })
-    aAdd(aPergs, {2 ,"Situaùùo dos titulos"         ,"Ambos"                            ,aCombo     ,50     ,""     ,.F.                                })
+    aAdd(aPergs, {2 ,"SituaÁ„p dos titulos"         ,"Ambos"                            ,aCombo     ,50     ,""     ,.F.                                })
     aAdd(aPergs, {1 ,"Num. NF"                      ,Space( TamSX3('VV0_NUMNFI')[1] )   ,""         ,""     ,"VV0"  ,""                 ,0      ,.F.    })
     aAdd(aPergs, {1 ,"Serie NF"                     ,Space( TamSX3('VV0_SERNFI')[1] )   ,""         ,""     ,""     ,VV0->VV0_SERNFI    ,0      ,.F.    })
     aAdd(aPergs, {1 ,"Nr. Chassi"                   ,Space( TamSX3('VRK_CHASSI')[1] )   ,""	        ,".T."	,""	    ,".T."	            ,80	    ,.F.    })
@@ -56,7 +56,7 @@ User Function ZFATR004() // u_ZFATR004()
     If ParamBox( aPergs ,"Parametros ZFISR004" ,aRet )
     	cArquivo := cGetFile(cExtens,cTitulo,,cMainPath,.F.)
 		If !Empty(cArquivo)
-            Processa({|| zRel0004(cArquivo)}	,"Gerando Relatùrio de Titulos Liquidados..."	)
+            Processa({|| zRel0004(cArquivo)}	,"Gerando RelatÛrio de Titulos Liquidados..."	)
         EndIf
     EndIf
 
@@ -79,130 +79,22 @@ Static Function zRel0004(cArquivo)
 	Local cQuery		:= ""
 	Local cAliasTRB		:= GetNextAlias()
 	Local cAba1			:= "Titulos Liquidados"
-	Local cTabela1		:= "Relaùùo de Titulos Liquidados"
+	Local cTabela1		:= "RelaÁ„o de Titulos Liquidados"
 	Local oFWMsExcel
 	Local oExcel
 	Local nTotReg		:= 0
 
+    /*
 	If !ApOleClient( "MSExcel" )
-		MsgAlert( "Microsoft Excel nùo instalado!!" )
+		MsgAlert( "Microsoft Excel nÑo instalado!!" )
 		Return
 	EndIf
-
+    */
 	If Select( (cAliasTRB) ) > 0
 		(cAliasTRB)->(DbCloseArea())
 	EndIf
 
-	cQuery += " SELECT  VRJ_FILIAL, VRJ_PEDIDO, VRJ_FORPAG, VV3_DESCRI, VRK_CHASSI, VRK_OPCION, VX5.VX5_DESCRI, "       + CRLF
-    cQuery += "         VX5B.VX5_DESCRI AS COREXT, VRK_MODVEI, VRK_FABMOD, VV0_NUMNFI, VV0_SERNFI, VV0_DATEMI, "        + CRLF
-    cQuery += "         VRK_VALTAB, F2_VALFAT, F2_CHVNFE, E1_EMISSAO, E1_VENCTO, E1_BAIXA, E1_VALOR, E1_PARCELA, "      + CRLF
-    cQuery += "         E1_SALDO, A1_CGC, A1_NOME, A1_MUN, A1_EST, E4_DESCRI, D1_NFORI, D1_DOC, D1_SERIE, F2_EMISSAO,"  + CRLF
-	cQuery += "         VV0_CODMAR, A1_NREDUZ, D1_EMISSAO															 "  + CRLF
-
-	cQuery += " FROM " + RetSQLName('VRJ') + " VRJ "														            + CRLF
-    
-	cQuery += " INNER JOIN " + RetSQLName('VRK') + " VRK "                                                              + CRLF
-	cQuery += "         ON VRK_FILIAL = '" + FWxFilial('VRK') + "' "                                                    + CRLF	
-	cQuery += "         AND VRK_PEDIDO = VRJ_PEDIDO " 														            + CRLF
-	cQuery += "         AND VRK.D_E_L_E_T_ = ' ' " 			        										            + CRLF
-    
-    If !Empty( aRet[8] )    
-        cQuery += " 	    AND VRK_CHASSI = '" + aRet[8] + "' "	                                                    + CRLF
-    EndIf   
-    
-    cQuery += " INNER JOIN " + RetSQLName('VX5') + " VX5 "                                                              + CRLF
-    cQuery += "         ON VX5.VX5_FILIAL = '" + FWxFilial('VX5') + "' "                                                + CRLF
-    //-- Tabela Genùrica SIGAVEI <-> Cùd 068 - Opcional		    
-	cQuery += "         AND VX5.VX5_CHAVE = '068' "                                                                     + CRLF
-	cQuery += " 	    AND VX5.VX5_CODIGO = VRK_OPCION " 													            + CRLF
-	cQuery += " 	    AND VX5.D_E_L_E_T_ = ' ' " 			        										            + CRLF
-    
-    cQuery += " INNER JOIN " + RetSQLName('VX5') + " VX5B "                                                             + CRLF
-    cQuery += "         ON VX5.VX5_FILIAL = '" + FWxFilial('VX5') + "' "                                                + CRLF
-    //-- Tabela Genùrica SIGAVEI <-> Cùd 067 - Cor Externa  
-	cQuery += "         AND VX5B.VX5_CHAVE = '067' "                                                                    + CRLF 
-	cQuery += " 	    AND VX5B.VX5_CODIGO = VRK_COREXT " 													            + CRLF
-	cQuery += " 	    AND VX5B.D_E_L_E_T_ = ' ' " 			        									            + CRLF
-    
-    cQuery += " INNER JOIN " + RetSQLName('VV0') + " VV0 "                                                              + CRLF
-    cQuery += "         ON VV0_FILIAL = '" + FWxFilial('VV0') + "' "                                                    + CRLF
-    cQuery += "         AND VV0_NUMTRA = VRK_NUMTRA "                                                                   + CRLF
-    
-    If Empty( aRet[6] ) 
-        If  !Empty( aRet[1] )   
-            cQuery += " 	    AND VV0_DATEMI BETWEEN '" + DToS( aRet[1] ) + "' AND '" + DToS( aRet[2] ) + "' "	    + CRLF
-        EndIf   
-    Else    
-        cQuery += " 	    AND VV0_NUMNFI = '" + aRet[6] + "' "	                                                    + CRLF
-        cQuery += " 	    AND VV0_SERNFI = '" + aRet[7] + "' "	                                                    + CRLF
-    EndIf   
-    
-	cQuery += " 	    AND VV0.D_E_L_E_T_ = ' ' " 			        										            + CRLF
-    
-    cQuery += " INNER JOIN " + RetSQLName('SF2') + " SF2 "                                                              + CRLF
-    cQuery += "         ON F2_FILIAL = '" + FWxFilial('SF2') + "' "                                                     + CRLF	
-	cQuery += "         AND F2_DOC = VV0_NUMNFI "                                                                       + CRLF
-	cQuery += "         AND F2_SERIE = VV0_SERNFI "                                                                     + CRLF
-    cQuery += "         AND F2_CLIENTE = VV0_CODCLI "                                                                   + CRLF
-    cQuery += "         AND F2_LOJA = VV0_LOJA "                                                                        + CRLF
-	cQuery += " 	    AND SF2.D_E_L_E_T_ = ' ' " 			        										            + CRLF
-    
-    cQuery += " INNER JOIN " + RetSQLName('SA1') + " SA1 "                                                              + CRLF
-    cQuery += "         ON A1_FILIAL = '" + FWxFilial('SA1') + "' "                                                     + CRLF
-    cQuery += "         AND A1_COD = VV0_CODCLI "                                                                       + CRLF
-    cQuery += "         AND A1_LOJA = VV0_LOJA "                                                                        + CRLF
-    cQuery += " 	    AND SA1.D_E_L_E_T_ = ' ' " 			        										            + CRLF
-    
-    cQuery += " INNER JOIN " + RetSQLName('SE1') + " SE1 "                                                              + CRLF
-    cQuery += "         ON E1_FILIAL = '" + FWxFilial('SE1') + "' "                                                     + CRLF	
-	cQuery += "         AND E1_CLIENTE = VV0_CODCLI "                                                                   + CRLF
-    cQuery += "         AND E1_LOJA = VV0_LOJA "                                                                        + CRLF
-    cQuery += "         AND E1_PREFIXO = VV0_SERNFI "                                                                   + CRLF
-    cQuery += "         AND E1_NUM = VV0_NUMNFI "                                                                       + CRLF
-	cQuery += " 	    AND SE1.D_E_L_E_T_ = ' ' " 			        										            + CRLF
-    
-    cQuery += " INNER JOIN " + RetSQLName('SE4') + " SE4 "                                                              + CRLF
-    cQuery += "         ON E4_FILIAL = '" + FWxFilial('SE4') + "' "                                                     + CRLF	
-	cQuery += "         AND E4_CODIGO = VRJ_FORPAG "                                                                    + CRLF
-	cQuery += " 	    AND SE4.D_E_L_E_T_ = ' ' " 			        										            + CRLF
-    
-    If aRet[5] == "Em aberto"   
-        cQuery += "         AND E1_BAIXA = ' ' "                                                                        + CRLF
-    ElseIf aRet[5] == "Liquidados"  
-        cQuery += "         AND E1_BAIXA <> ' ' "                                                                       + CRLF
-    EndIf   
-    
-    cQuery += " LEFT JOIN " + RetSQLName('VV3') + " VV3 "                                                               + CRLF
-    cQuery += "         ON VV3_FILIAL = '" + FWxFilial('VV3') + "' "                                                    + CRLF	
-	cQuery += "         AND VV3_TIPVEN = VV0_TIPVEN "                                                                   + CRLF
-	cQuery += " 	    AND VV3.D_E_L_E_T_ = ' ' " 			        										            + CRLF
-    
-    cQuery += " LEFT JOIN " + RetSQLName('SD1') + " SD1 "                                                               + CRLF
-    cQuery += "         ON D1_FILIAL = '" + FWxFilial('SD1') + "' "                                                     + CRLF
-    cQuery += "         AND D1_TIPO = 'D' "                                                                             + CRLF	
-    cQuery += "         AND D1_NFORI = VV0_NUMNFI "                                                                     + CRLF
-    cQuery += "         AND D1_SERIORI = VV0_SERNFI "                                                                   + CRLF
-    cQuery += " 	    AND SD1.D_E_L_E_T_ = ' ' " 			        										            + CRLF
-    
-	cQuery += " WHERE VRJ_FILIAL = '" + FWxFilial('VRJ') + "' "                                                         + CRLF
-        
-    If !Empty(aRet[3])  
-        cQuery += "         AND VRJ_CODCLI = '" + aRet[3] + "' "                                                        + CRLF
-        cQuery += "         AND VRJ_LOJA = '" + aRet[4] + "' "                                                          + CRLF
-    EndIf   
-    
-	cQuery += " 	    AND VRJ.D_E_L_E_T_ = ' ' "	 														            + CRLF
-    
-	cQuery += " GROUP BY VRJ_FILIAL, VRJ_PEDIDO, VRJ_FORPAG, VV3_DESCRI, VRK_CHASSI, VRK_OPCION, VX5.VX5_DESCRI, "      + CRLF
-    cQuery += "         VX5B.VX5_DESCRI, VRK_MODVEI, VRK_FABMOD, VV0_NUMNFI, VV0_SERNFI, VV0_DATEMI, VRK_VALTAB, "      + CRLF
-    cQuery += "         F2_VALFAT, F2_CHVNFE, E1_EMISSAO, E1_VENCTO, E1_BAIXA, E1_VALOR, E1_PARCELA, E1_SALDO, "        + CRLF
-    cQuery += "         A1_CGC, A1_NOME, A1_MUN, A1_EST, E4_DESCRI, D1_NFORI, D1_DOC, D1_SERIE, F2_EMISSAO,"            + CRLF
-	cQuery += "         VV0_CODMAR, A1_NREDUZ, D1_EMISSAO												   "            + CRLF
-
-	cQuery += " ORDER BY VRJ_FILIAL, VRJ_PEDIDO, VV0_NUMNFI, VV0_SERNFI "		                                    + CRLF
-
-	//cQuery := ChangeQuery(cQuery)
-
+	cQuery := fQuery()
 	// Executa a consulta.
 	DbUseArea( .T., "TOPCONN", TcGenQry(,,cQuery), cAliasTRB, .T., .T. )
 
@@ -211,11 +103,11 @@ Static Function zRel0004(cArquivo)
 	(cAliasTRB)->(dbGoTop())
 	If (cAliasTRB)->(!Eof())
 
-		// Criando o objeto que irù gerar o conteùdo do Excel.
+		// Criando o objeto que ir∑ gerar o conte?do do Excel.
 		oFWMsExcel := FWMSExcelEx():New()
 
 		// Aba 01
-		oFWMsExcel:AddworkSheet(cAba1) // Nùo utilizar nùmero junto com sinal de menos. Ex.: 1-.
+		oFWMsExcel:AddworkSheet(cAba1) // NÑo utilizar n?mero junto com sinal de menos. Ex.: 1-.
 
 		// Criando a Tabela.
 		oFWMsExcel:AddTable( cAba1	,cTabela1	)
@@ -231,14 +123,14 @@ Static Function zRel0004(cArquivo)
         oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Ano Fabr/Mod"                 ,2	,1	,.F.	) // Center - Texto
         oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Numero NF"                    ,2	,1	,.F.	) // Center - Texto
         oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Serie NF"                     ,2	,1	,.F.	) // Center - Texto
-        oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Dt Emissùo Pedido"            ,2	,4	,.F.	) // Center - Data
+        oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Dt Emiss„o Pedido"            ,2	,4	,.F.	) // Center - Data
         oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Vlr Tabela"                   ,3	,2	,.F.	) // Right - Number
         oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Vlr Faturado"                 ,3	,2	,.F.	) // Right - Number
         oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Chave NF"                     ,2	,1	,.F.	) // Center - Texto
-        oFWMsExcel:AddColumn( cAba1 ,cTabela1   ,"Dt Emissùo Nota Fiscal"       ,2	,4	,.F.	) // Center - Data
+        oFWMsExcel:AddColumn( cAba1 ,cTabela1   ,"Dt Emiss„o Nota Fiscal"       ,2	,4	,.F.	) // Center - Data
         oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Cond. Pagto"                  ,2	,1	,.F.	) // Center - Texto
         oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Desc. Cond. Pagto"            ,1	,1	,.F.	) // Center - Texto
-        oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Dt Emissùo Tit."              ,2	,4	,.F.	) // Center - Data
+        oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Dt Emiss„o Tit."              ,2	,4	,.F.	) // Center - Data
         oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Dt Vencimento Tit."           ,2	,4	,.F.	) // Center - Data
         oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Dt Baixa Financeira"          ,2	,4	,.F.	) // Center - Data
         oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Valor Tit."                   ,3	,2	,.F.	) // Right - Number
@@ -248,43 +140,43 @@ Static Function zRel0004(cArquivo)
         oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Nome"                         ,2	,1	,.F.	) // Center - Texto
         oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Municipio"                    ,2	,1	,.F.	) // Center - Texto
         oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Estado"                       ,2	,1	,.F.	) // Center - Texto
-        oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Devoluùùo"                    ,2	,1	,.F.	) // Center - Texto
+        oFWMsExcel:AddColumn( cAba1	,cTabela1	,"DevoluÁ„o"                    ,2	,1	,.F.	) // Center - Texto
         oFWMsExcel:AddColumn( cAba1	,cTabela1	,"NF Devolucao"                 ,2	,1	,.F.	) // Center - Texto
-        oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Serie NF Devolucao"           ,2	,1	,.F.	) // Center - Texto
-		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Data NF Devolucao"            ,2	,4	,.F.	) // Center - Data
-		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Cùd. Marca"                   ,2	,1	,.F.	) // Center - Texto
+        oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Serie NF DevoluÁ„o"           ,2	,1	,.F.	) // Center - Texto
+		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Data NF DevoluÁ„o"            ,2	,4	,.F.	) // Center - Data
+		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"CÛd. Marca"                   ,2	,1	,.F.	) // Center - Texto
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Nome Fantasia"                ,2	,1	,.F.	) // Center - Texto
 		
-		// Conta quantos registros existem, e seta no tamanho da rùgua.
+		// Conta quantos registros existem, e seta no tamanho da r»gua.
 		ProcRegua( nTotReg )
 
 		DbSelectArea((cAliasTRB))
 		(cAliasTRB)->(dbGoTop())
 		While (cAliasTRB)->(!EoF())
 
-			// Incrementa a mensagem na rùgua.
-			IncProc("Exportando informaùùes para Excel...")
+			// Incrementa a mensagem na r»gua.
+			IncProc("Exportando informa¡?es para Excel...")
 
-			oFWMSExcel:AddRow( cAba1	,cTabela1	,{ 	(cAliasTRB)->VRJ_PEDIDO,;    //--Num. Pedido
+			oFWMSExcel:AddRow( cAba1	,cTabela1	,{ 	IIF( !EMPTY((cAliasTRB)->VRJ_PEDIDO) , (cAliasTRB)->VRJ_PEDIDO , (cAliasTRB)->SD2_PEDIDO ),;    //--Num. Pedido
 														(cAliasTRB)->VV3_DESCRI,;    //--Rede
                                                         (cAliasTRB)->VRK_CHASSI,;    //--Chassi
                                                         (cAliasTRB)->VRK_OPCION,;    //--Opcional	
                                                         (cAliasTRB)->VX5_DESCRI,;    //--Descr. Opcional	
                                                         (cAliasTRB)->COREXT,;    //--Descr. Cor Externa
-                                                        (cAliasTRB)->VRK_MODVEI,;    //--Modelo           
-                                                        (cAliasTRB)->VRK_FABMOD,;    //--Ano Fabr/Mod
+                                                        IIF(!Empty( (cAliasTRB)->VRK_MODVEI ) , (cAliasTRB)->VRK_MODVEI , (cAliasTRB)->C6_XFABMOD ) ,;    //--Modelo           
+                                                        IIF(!Empty( (cAliasTRB)->VRK_FABMOD ) , (cAliasTRB)->VRK_FABMOD , (cAliasTRB)->C6_XMODVEI ) ,;    //--Ano Fabr/Mod
                                                         (cAliasTRB)->VV0_NUMNFI,;    //--Numero NF             
                                                         (cAliasTRB)->VV0_SERNFI,;    //--Serie NF                
-                                                        IIF( Empty( SToD( (cAliasTRB)->VV0_DATEMI ) ), "", SToD( (cAliasTRB)->VV0_DATEMI ) ),;    //--Dt Emissùo Pedido
+                                                        IIF( Empty( SToD( (cAliasTRB)->VV0_DATEMI ) ), "", SToD( (cAliasTRB)->VV0_DATEMI ) ),;    //--Dt EmissÑo Pedido
                                                         (cAliasTRB)->VRK_VALTAB,;    //--Vlr Tabela
                                                         (cAliasTRB)->F2_VALFAT,;    //--Vlr Faturado
                                                         (cAliasTRB)->F2_CHVNFE,;    //--Chave NF
-                                                        IIF( Empty( SToD( (cAliasTRB)->F2_EMISSAO ) ), "", SToD( (cAliasTRB)->F2_EMISSAO ) ),;  //--Dt Emissùo Nota Fiscal
+                                                        IIF( Empty( SToD( (cAliasTRB)->F2_EMISSAO ) ), "", SToD( (cAliasTRB)->F2_EMISSAO ) ),;  //--Dt EmissÑo Nota Fiscal
                                                         (cAliasTRB)->VRJ_FORPAG,;
                                                         (cAliasTRB)->E4_DESCRI,;                                                        
-                                                        IIF( Empty( SToD( (cAliasTRB)->E1_EMISSAO ) ), "", SToD( (cAliasTRB)->E1_EMISSAO ) ),;    //--Dt Emissùo Tit.
-                                                        IIF( Empty( SToD( (cAliasTRB)->E1_VENCTO ) ), "", SToD( (cAliasTRB)->E1_VENCTO ) ),;    //--Dt Vencimento Tit.
-                                                        IIF( Empty( SToD( (cAliasTRB)->E1_BAIXA ) ), "", SToD( (cAliasTRB)->E1_BAIXA ) ),;    //--Dt Baixa Financeira  
+                                                        IIF( Empty( SToD( (cAliasTRB)->E1_EMISSAO ) ), "", SToD( (cAliasTRB)->E1_EMISSAO ) ),;    //--Dt EmissÑo Tit.
+                                                        IIF( Empty( SToD( (cAliasTRB)->E1_VENCTO  ) ), "", SToD( (cAliasTRB)->E1_VENCTO  ) ),;    //--Dt Vencimento Tit.
+                                                        IIF( Empty( SToD( (cAliasTRB)->E1_BAIXA   ) ), "", SToD( (cAliasTRB)->E1_BAIXA   ) ),;    //--Dt Baixa Financeira  
                                                         (cAliasTRB)->E1_VALOR,;    //--Valor Tit.
                                                         (cAliasTRB)->E1_PARCELA,;    //--Parcela
                                                         (cAliasTRB)->E1_SALDO,;    //--Saldo
@@ -292,11 +184,11 @@ Static Function zRel0004(cArquivo)
                                                         (cAliasTRB)->A1_NOME,;    //--Nome
                                                         (cAliasTRB)->A1_MUN,;   //--Municipio
                                                         (cAliasTRB)->A1_EST,;   //--Estado
-                                                        IIF( !Empty( (cAliasTRB)->D1_NFORI ), "Sim", "Nùo" ),;  //--Devoluùùo
+                                                        IIF( !Empty( (cAliasTRB)->D1_NFORI ), "Sim", "N„o" ),;  //--Devolu¡Ño
                                                         (cAliasTRB)->D1_DOC,;   //--NF Devolucao
                                                         (cAliasTRB)->D1_SERIE,;  //--Serie NF Devolucao
 														IIF( Empty( SToD( (cAliasTRB)->D1_EMISSAO ) ), "", SToD( (cAliasTRB)->D1_EMISSAO ) ),;    //--Dt NF Devolucao
-														(cAliasTRB)->VV0_CODMAR,;  //--Cùd. Marca
+														(cAliasTRB)->VV0_CODMAR,;  //--C€d. Marca
 														(cAliasTRB)->A1_NREDUZ })  //--Nome Fantasia
 			(cAliasTRB)->(DbSkip())
 		EndDo
@@ -309,15 +201,189 @@ Static Function zRel0004(cArquivo)
 		FreeObj(oFWMsExcel)
 
 		// Abrindo o excel e abrindo o arquivo xml.
-		oExcel := MsExcel():New()           // Abre uma nova conexùo com Excel.
+		oExcel := MsExcel():New()           // Abre uma nova conexÑo com Excel.
 		oExcel:WorkBooks:Open(cArquivo)     // Abre uma planilha.
 		oExcel:SetVisible(.T.)              // Visualiza a planilha.
 		oExcel:Destroy()                    // Encerra o processo do gerenciador de tarefas.
 
 	Else
-		ApMsgAlert( "Nùo foi encontrado nenhuma nota fiscal com os parùmetros informados!!" )
+		ApMsgAlert( "N„o foi encontrado nenhuma nota fiscal com os parametros informados!!" )
 	EndIf
 
 	(cAliasTRB)->(DbCloseArea())
 
 Return()
+//-------------------------------------------------
+//--------------------------------------------------
+Static Function fQuery()
+	Local cQuery := ""	
+
+	cQuery += CRLF + " SELECT   SE1.E1_FILIAL, "
+	cQuery += CRLF + "          VRK.VRK_PEDIDO AS VRJ_PEDIDO,"
+	cQuery += CRLF + "          SD2.D2_PEDIDO ,"
+	cQuery += CRLF + "          SF2.F2_COND AS VRJ_FORPAG,"
+	cQuery += CRLF + "          VV3.VV3_DESCRI,"
+	cQuery += CRLF + "          SD2.D2_NUMSERI AS VRK_CHASSI,"
+	cQuery += CRLF + "          VRK.VRK_OPCION,"
+	cQuery += CRLF + "          VX5.VX5_DESCRI, "
+	cQuery += CRLF + "          VX5B.VX5_DESCRI AS COREXT,"
+	cQuery += CRLF + "          VRK.VRK_MODVEI, "
+	cQuery += CRLF + "			SC6.C6_XMODVEI, "
+	cQuery += CRLF + "          VRK.VRK_FABMOD, "
+	cQuery += CRLF + "			SC6.C6_XFABMOD, "
+	cQuery += CRLF + "          SF2.F2_DOC     AS VV0_NUMNFI,"
+	cQuery += CRLF + "          SF2.F2_SERIE   AS VV0_SERNFI,"
+	cQuery += CRLF + "          SF2.F2_EMISSAO AS VV0_DATEMI, "
+	cQuery += CRLF + "          VRK.VRK_VALTAB,"
+	cQuery += CRLF + "          SF2.F2_VALFAT,"
+	cQuery += CRLF + "          SF2.F2_CHVNFE,"
+	cQuery += CRLF + "          SE1.E1_EMISSAO,"
+	cQuery += CRLF + "          SE1.E1_VENCTO,"
+	cQuery += CRLF + "          SE1.E1_BAIXA,"
+	cQuery += CRLF + "          SE1.E1_VALOR,"
+	cQuery += CRLF + "          SE1.E1_PARCELA, "
+	cQuery += CRLF + "          SE1.E1_SALDO,"
+	cQuery += CRLF + "          SA1.A1_CGC,"
+	cQuery += CRLF + "          SA1.A1_NOME,"
+	cQuery += CRLF + "          SA1.A1_MUN,"
+	cQuery += CRLF + "          SA1.A1_EST,"
+	cQuery += CRLF + "          SE4.E4_DESCRI,"
+	cQuery += CRLF + "          COALESCE( SD1.D1_NFORI,'         ') AS D1_NFORI,"
+	cQuery += CRLF + "          COALESCE( SD1.D1_DOC  ,'         ') AS D1_DOC,"
+	cQuery += CRLF + "          COALESCE( SD1.D1_SERIE,'   '      ) AS D1_SERIE,"
+	cQuery += CRLF + "          SF2.F2_EMISSAO,"
+	cQuery += CRLF + "          VV0.VV0_CODMAR,"
+	cQuery += CRLF + "          SA1.A1_NREDUZ,"
+	cQuery += CRLF + "          COALESCE( SD1.D1_EMISSAO,'      ') AS D1_EMISSAO,"
+	cQuery += CRLF + "          SD2.D2_COD															 "
+	cQuery += CRLF + "  FROM " + RetSqlName( "SE1" ) + " SE1 "
+	
+	cQuery += CRLF + "  INNER JOIN " + RetSqlName( "SF2" ) + " SF2 "
+	cQuery += CRLF + "          ON  SF2.F2_FILIAL  = '" + FWxFilial( "SF2" ) + "' "
+	cQuery += CRLF + "          AND SF2.F2_DOC     = SE1.E1_NUM--VV0_NUMNFI "
+	cQuery += CRLF + "          AND SF2.F2_SERIE   = SE1.E1_PREFIXO--VV0_SERNFI "
+	cQuery += CRLF + "          AND SF2.F2_CLIENTE = SE1.E1_CLIENTE--VV0_CODCLI "
+	cQuery += CRLF + "          AND SF2.F2_LOJA    = SE1.E1_LOJA --VV0_LOJA "
+	cQuery += CRLF + "  	    AND SF2.D_E_L_E_T_ = ' '"
+
+	cQuery += CRLF + " INNER JOIN " + RetSqlName( "SD2" ) + " SD2"
+	cQuery += CRLF + "          ON  SD2.D2_FILIAL  = '" + FWxFilial( "SD2" ) + "'"
+	cQuery += CRLF + "          AND SD2.D2_DOC     = SF2.F2_DOC "
+	cQuery += CRLF + "          AND SD2.D2_SERIE   = SF2.F2_SERIE "
+	cQuery += CRLF + "          AND SD2.D2_CLIENTE = SF2.F2_CLIENTE "
+	cQuery += CRLF + "          AND SD2.D2_LOJA    = SF2.F2_LOJA"
+	cQuery += CRLF + "          AND SD2.D_E_L_E_T_ = ' ' "
+	
+	cQuery += CRLF + " 	LEFT JOIN " + RetSqlName( "SC6" ) + "  SC6 "
+    cQuery += CRLF + " 			ON  C6_FILIAL       = '" + FWxFilial( "Sc6" ) + "' "
+    cQuery += CRLF + " 			AND SC6.C6_NUM      = SD2.D2_PEDIDO "
+    cQuery += CRLF + " 			AND SC6.C6_ITEM     = SD2.D2_ITEMPV "
+    cQuery += CRLF + " 			AND SC6.D_E_L_E_T_  = ' ' "
+	
+	cQuery += CRLF + "   LEFT JOIN " + RetSqlName( "VV0" ) + " VV0 "
+	cQuery += CRLF + "          ON  VV0.VV0_FILIAL = '" + FWxFilial( "VV0" ) + "' "
+	cQuery += CRLF + "          AND VV0.VV0_CODCLI = SE1.E1_CLIENTE "
+	cQuery += CRLF + "          AND VV0.VV0_LOJA   = SE1.E1_LOJA "
+	cQuery += CRLF + "          AND VV0.VV0_SERNFI = SE1.E1_PREFIXO "
+	cQuery += CRLF + "          AND VV0.VV0_NUMNFI = SE1.E1_NUM "
+	cQuery += CRLF + "			AND VV0.D_E_L_E_T_ = ' ' "
+
+	cQuery += CRLF + "  LEFT JOIN " + RetSqlName( "VRK" ) + " VRK "
+	cQuery += CRLF + "          ON  VRK.VRK_FILIAL  = '" + FWxFilial( "VRK" ) + "' "
+	cQuery += CRLF + "          AND VRK.VRK_NUMTRA  = VV0.VV0_NUMTRA"
+	cQuery += CRLF + "          AND VRK.D_E_L_E_T_ = ' ' "
+
+	cQuery += CRLF + "  INNER JOIN " + RetSqlName( "SA1" ) + " SA1 "
+	cQuery += CRLF + "          ON  SA1.A1_FILIAL = '" + FWxFilial( "SA1" ) + "' "
+	cQuery += CRLF + "          AND SA1.A1_COD   = SE1.E1_CLIENTE"
+	cQuery += CRLF + "          AND SA1.A1_LOJA  = SE1.E1_LOJA "
+	cQuery += CRLF + "  	    AND SA1.D_E_L_E_T_ = ' ' "
+
+	cQuery += CRLF + "  INNER JOIN " + RetSqlName( "SE4" ) + " SE4 "
+	cQuery += CRLF + "          ON  E4_FILIAL = '" + FWxFilial( "SE4" ) + "' "
+	cQuery += CRLF + "          AND E4_CODIGO = SF2.F2_COND "
+	cQuery += CRLF + "  	    AND SE4.D_E_L_E_T_ = ' ' "
+
+	cQuery += CRLF + "  LEFT JOIN " + RetSqlName( "VV3" ) + " VV3 "
+	cQuery += CRLF + "          ON  VV3_FILIAL     = '" + FWxFilial( "VV3" ) + "' "
+	cQuery += CRLF + "          AND VV3_TIPVEN     = VV0_TIPVEN "
+	cQuery += CRLF + "  	    AND VV3.D_E_L_E_T_ = ' ' "
+
+	cQuery += CRLF + "  LEFT JOIN " + RetSqlName( "SD1" ) + " SD1 "
+	cQuery += CRLF + "          ON  D1_FILIAL  = '" + FWxFilial( "SD1" ) + "' "
+	cQuery += CRLF + "          AND D1_TIPO    = 'D' "
+	cQuery += CRLF + "          AND D1_NFORI   = SF2.F2_DOC "
+	cQuery += CRLF + "          AND D1_SERIORI = SF2.F2_SERIE "
+	cQuery += CRLF + "  	    AND SD1.D_E_L_E_T_ = ' ' "
+
+	cQuery += CRLF + "  INNER JOIN " + RetSqlName( "VX5" ) + " VX5  ON  VX5.VX5_FILIAL = '" + FWxFilial( "VX5" ) + "' AND  VX5.VX5_CHAVE = '068' AND  VX5.VX5_CODIGO = VRK_OPCION AND  VX5.D_E_L_E_T_ = ' ' "
+	cQuery += CRLF + "  INNER JOIN " + RetSqlName( "VX5" ) + " VX5B ON VX5B.VX5_FILIAL = '" + FWxFilial( "VX5" ) + "' AND VX5B.VX5_CHAVE = '067' AND VX5B.VX5_CODIGO = VRK_COREXT AND VX5B.D_E_L_E_T_ = ' ' "
+
+	cQuery += CRLF + "  WHERE SE1.E1_FILIAL = '" + FWxFilial( "SE1" ) + "' "
+	cQuery += CRLF + "		AND SE1.D_E_L_E_T_ = ' '"
+
+
+	If Empty( aRet[6] ) 
+		If  !Empty( aRet[1] )   
+			cQuery +=  CRLF + "		AND SE1.E1_EMISSAO BETWEEN '" + DToS( aRet[1] ) + "' AND '" + DToS( aRet[2] ) + "' "
+		EndIf   
+	Else    
+		cQuery += CRLF + "		AND SE1.E1_NUM     = '" + aRet[6] + "' "
+		cQuery += CRLF + "		AND SE1.E1_PREFIXO = '" + aRet[7] + "' "
+	EndIf   
+
+	If !Empty(aRet[3])  
+		cQuery += CRLF + "         AND SE1.E1_CLIENTE = '" + aRet[3] + "' "
+		cQuery += CRLF + "         AND SE1.E1_LOJA    = '" + aRet[4] + "' "
+	EndIf   
+	
+	If aRet[5] == "Em aberto"   
+		cQuery += CRLF + "         AND SE1.E1_BAIXA = ' ' "
+	ElseIf aRet[5] == "Liquidados"  
+		cQuery += CRLF + "         AND SE1.E1_BAIXA <> ' ' "
+	EndIf   
+
+	If !Empty( aRet[8] )    
+    	cQuery += CRLF + " 	    AND SD2.D2_NUMSERI   = '" + aRet[8] + "' "
+    EndIf   
+	
+	cQuery += CRLF + "        GROUP BY E1_FILIAL,"
+	cQuery += CRLF + "                 VRK_PEDIDO,SD2.D2_PEDIDO,"
+	cQuery += CRLF + "                 F2_COND,"
+	cQuery += CRLF + "                 VV3_DESCRI,"
+	cQuery += CRLF + "                 SD2.D2_NUMSERI,"
+	cQuery += CRLF + "                 VRK_OPCION,"
+	cQuery += CRLF + "                 VX5.VX5_DESCRI,"
+	cQuery += CRLF + "                 VX5B.VX5_DESCRI,"
+	cQuery += CRLF + "                 VRK_MODVEI,"
+	cQuery += CRLF + "                 VRK_FABMOD,"
+	cQuery += CRLF + "				   SC6.C6_XMODVEI,
+	cQuery += CRLF + "				   SC6.C6_XFABMOD,
+	cQuery += CRLF + "                 SF2.F2_DOC,"
+	cQuery += CRLF + "                 SF2.F2_SERIE, "
+	cQuery += CRLF + "                 SF2.F2_EMISSAO,"
+	cQuery += CRLF + "                 VRK_VALTAB, "
+	cQuery += CRLF + "                 F2_VALFAT,"
+	cQuery += CRLF + "                 F2_CHVNFE,"
+	cQuery += CRLF + "                 E1_EMISSAO,"
+	cQuery += CRLF + "                 E1_VENCTO,"
+	cQuery += CRLF + "                 E1_BAIXA,"
+	cQuery += CRLF + "                 E1_VALOR,"
+	cQuery += CRLF + "                 E1_PARCELA,"
+	cQuery += CRLF + "                 E1_SALDO, "
+	cQuery += CRLF + "                 A1_CGC,"
+	cQuery += CRLF + "                 A1_NOME,"
+	cQuery += CRLF + "                 A1_MUN,"
+	cQuery += CRLF + "                 A1_EST,"
+	cQuery += CRLF + "                 E4_DESCRI,"
+	cQuery += CRLF + "                 D1_NFORI,"
+	cQuery += CRLF + "                 D1_DOC,"
+	cQuery += CRLF + "                 D1_SERIE,"
+	cQuery += CRLF + "                 F2_EMISSAO,"
+	cQuery += CRLF + "                 VV0_CODMAR,"
+	cQuery += CRLF + "                 A1_NREDUZ,"
+	cQuery += CRLF + "                 D1_EMISSAO,"
+	cQuery += CRLF + "                 D2_COD	"
+	cQuery += CRLF + " ORDER BY 1, 2, 11, 12 " 
+
+Return cQuery

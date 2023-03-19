@@ -1,4 +1,4 @@
-#Include "Protheus.ch"
+#Include "Protheus.ch"                                                                                                                                     
 
 /*/{Protheus.doc} MS520DEL
 //TODO Descrição auto-gerada.
@@ -9,50 +9,12 @@
 @type function
 /*/
 
-User Function MS520DEL()
+User Function MS520DEL() 
 
-	Local _cEmp		:= FWCodEmp()
-	Local aArea		:= GetArea()
-	Local cQuery	:= ""
-	Local nStatus 	:= 0
-
-	If _cEmp == "2010" //Executa o p.e. Anapolis.
-		If Findfunction("U_CMVSAP14")
-			U_CMVSAP14("0")
-		EndIf
-
-        SDB->(DbSetOrder(1))
-        If SDB->(DbSeek(xFilial("SDB")+SD2->D2_COD+SD2->D2_LOCAL+SD2->D2_NUMSEQ))
-            VV1->(DbSetOrder(2))
-            If VV1->(DbSeek(xFilial("VV1")+SDB->DB_NUMSERI))
-                VV1->(RecLock("VV1",.F.))
-                VV1->VV1_SITVEI := "0"
-                VV1->VV1_ULTMOV := "E"
-                VV1->(MsUnLock())
-
-				SC6->(DbSetOrder(1))
-				If SC6->(DbSeek(xFilial("SC6")+SD2->D2_PEDIDO+SD2->D2_ITEMPV)) .And. !Empty(Alltrim(SC6->C6_PEDCLI))
-                	cQuery := ""
-                	cQuery += " UPDATE "+RetSqlName("VRJ")
-                	cQuery += " SET VRJ_STATUS = 'A' ,                          "
-                	cQuery += "     VRJ_XINTEG = 'A'                            "
-                	cQuery += " WHERE  VRJ_FILIAL = '"+xFilial("VRJ")        +"'" 
-                	cQuery += "    AND VRJ_PEDCOM = '"+SC6->C6_PEDCLI+"'"
-                	cQuery += "    AND D_E_L_E_T_ = ' '"
-                	nStatus := TCSqlExec(cQuery)
-
-                	If (nStatus < 0)
-                    	MsgStop("TCSQLError() " + TCSQLError(), "Erro atualizacao VRJ")                                    
-                	EndIf
-				EndIf
-            EndIf
-        EndIf
-	Else
-		If Findfunction("U_ZSAPF014")
-			U_ZSAPF014("0")
-		EndIf
+	If Findfunction("U_CMVSAP14")
+		//lRet := U_CMVSAP11(6)
+		U_CMVSAP14("0")
 	EndIf
 
-	RestArea(aArea)
+Return 
 
-Return()

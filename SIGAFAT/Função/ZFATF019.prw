@@ -61,12 +61,6 @@ Local aCabCol       As Array
 Local cCabTable     As Character
 Local aCords        As Array
 Local cTipCpo       As Character
-
-Local oBrwIte       As Object
-Local aIteCampos    As Array
-Local aIteStru      As Array
-Local aIteCol       As Array
-Local oIteTable     As Object
 Local cIteTable     As Character
 
 Local aTamSx3       As Array
@@ -76,10 +70,10 @@ Local cQuery        As Character
 Local nStatus       As Numeric
 Local aValidCmp     As Array
 
-Private oPnlWnd1      As Object
-Private oPnlWnd2      As Object
-Private oPnlWnd3      As Object
-Private oPnlWnd4      As Object
+Private oPnlWnd1    As Object
+Private oPnlWnd2    As Object
+Private oPnlWnd3    As Object
+Private oPnlWnd4    As Object
 Private aParamBox   As Array
 Private oModel      As Object
 Private cCabAlias   As Character
@@ -88,6 +82,12 @@ Private oNwFat001   As Object
 Private oBrwCab     As Object
 Private oCabTable   As Object
 Private aCabCampos  As Object
+Private oTBrwsCli   As Object
+Private oTBrwsPrd   As Object
+Private oTBrwsTot   As Object
+Private aBrwCli     As Array
+Private aBrwPrd     As Array
+Private aBrwTot     As Array
 
 bRet        := .F.
 aRet        := {}
@@ -134,7 +134,7 @@ aCabCampos  := {"C6_OK"     ,"CC_STATUS" ,"C6_FILIAL" ,"C6_NUM"    ,"C6_PEDCLI" 
                 "C6_CHASSI" ,"C6_NUMSERI","C6_LOCALIZ","C6_XCODMAR","C6_XDESMAR","C6_XGRPMOD","C6_XDGRMOD","C6_XMODVEI",;
                 "C6_XDESMOD","C6_XSEGMOD","C6_XDESSEG","C6_XFABMOD","C6_XCORINT","C6_XCOREXT","C6_QTDVEN" ,"C6_PRCVEN" ,;
                 "C6_VALOR"  ,"C6_OPER"   ,"C6_TES"    ,"C6_XVLRVDA","C6_PRUNIT" ,"C6_XPRCTAB","C6_XVLRPRD","C6_XVLRMVT",;
-                "C6_XBASST" ,"C9_SEQUEN" ,"C9_NFISCAL","C9_SERIENF","C5_XTIPVEN"}
+                "C6_XBASST" ,"C9_SEQUEN" ,"C9_NFISCAL","C9_SERIENF","C5_XTIPVEN","VRJ_STATUS"}
 aValidCmp   := {{"C5_CONDPAG","{ || fVldCampo(cCabAlias,oSay,cCabTable,oCabTable)}"},;
                 {"C5_NATUREZ","{ || fVldCampo(cCabAlias,oSay,cCabTable,oCabTable)}"},;
                 {"C5_XMENSER","{ || fVldCampo(cCabAlias,oSay,cCabTable,oCabTable)}"},;
@@ -153,7 +153,7 @@ Next
 aCabCol := {}
 For nY := 02 To Len(aCabStru)
     //Columas Cabeçalho
-    If !aCabStru[nY][1] $ "C6_FILIAL|CC_STATUS|C9_SEQUEN|C9_NFISCAL|C9_SERIENF|C6_PRUNIT|C6_XGRPMOD|C6_XDGRMOD|C6_XCORINT|C6_XCOREXT|C5_XTIPVEN|C6_NUMSERI|C5_XMENSER"
+    If !aCabStru[nY][1] $ "C6_FILIAL|CC_STATUS|C9_SEQUEN|C9_NFISCAL|C9_SERIENF|C6_PRUNIT|C6_XGRPMOD|C6_XDGRMOD|C6_XCORINT|C6_XCOREXT|C5_XTIPVEN|C6_NUMSERI|C5_XMENSER|VRJ_STATUS"
         cTipCpo    := GetSx3Cache(aCabStru[nY][1], "X3_TIPO" )
         cPictAlias := "S"+Left(aCabStru[nY][1],2)
         Aadd(aCabCol,FWBrwColumn():New())
@@ -202,7 +202,8 @@ For nY := 1 To Len(aCabCampos)
         Upper(Alltrim(aCabCampos[nY])) <> "C9_SEQUEN"  .And.;
         Upper(Alltrim(aCabCampos[nY])) <> "C9_NFISCAL" .And.;
         Upper(Alltrim(aCabCampos[nY])) <> "C9_SERIENF" .And.;
-        Upper(Alltrim(aCabCampos[nY])) <> "C5_XMENSER"
+        Upper(Alltrim(aCabCampos[nY])) <> "C5_XMENSER" .And.;
+        Upper(Alltrim(aCabCampos[nY])) <> "VRJ_STATUS" 
         If Left(aCabCampos[nY],3) == "C6_" ; cQryAlias := "SC6." ; EndIf
         If Left(aCabCampos[nY],3) == "C5_" ; cQryAlias := "SC5." ; EndIf
         If Left(aCabCampos[nY],3) == "A1_" ; cQryAlias := "SA1." ; EndIf
@@ -211,6 +212,18 @@ For nY := 1 To Len(aCabCampos)
         cQuery += " "+(cQryAlias+aCabCampos[nY])+",                                                                       "+(Chr(13)+Chr(10))"
     EndIf
 Next
+cQuery += " 	    (SELECT VRJ.VRJ_STATUS                                                                                "+(Chr(13)+Chr(10))
+cQuery += "          FROM "+RetSqlName("VRJ")+" VRJ                                                                       "+(Chr(13)+Chr(10))
+cQuery += "          INNER JOIN                                                                                           "+(Chr(13)+Chr(10))
+cQuery += "               "+RetSqlName("VRK")+" VRK ON VRK.VRK_FILIAL = '"+xFilial("VRK")+"'                              "+(Chr(13)+Chr(10))
+cQuery += "                                        AND VRJ.VRJ_PEDIDO = VRK.VRK_PEDIDO                                    "+(Chr(13)+Chr(10))
+cQuery += "                                        AND VRJ.D_E_L_E_T_ = VRK.D_E_L_E_T_                                    "+(Chr(13)+Chr(10))
+cQuery += "          WHERE VRJ.VRJ_FILIAL  = '"+xFilial("VRJ")                         +"'                                "+(Chr(13)+Chr(10))  
+cQuery += "            AND VRJ.VRJ_CODCLI  = SC5.C5_CLIENTE                                                               "+(Chr(13)+Chr(10))
+cQuery += "            AND VRJ.VRJ_LOJA    = SC5.C5_LOJACLI                                                               "+(Chr(13)+Chr(10))
+cQuery += "            AND VRJ.VRJ_PEDCOM  = SC6.C6_PEDCLI                                                                "+(Chr(13)+Chr(10))
+cQuery += "            AND VRK.VRK_ITEPED  = LPad(SC6.C6_ITEM,3,'0')                                                      "+(Chr(13)+Chr(10))
+cQuery += "            AND VRJ.D_E_L_E_T_  = ' ')                                                           VRJ_STATUS  , "+(Chr(13)+Chr(10))
 cQuery += "        ' '                                                                                      D_E_L_E_T_  , "+(Chr(13)+Chr(10))
 cQuery += "        ROW_NUMBER() OVER (ORDER BY SC6.C6_FILIAL,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO)  R_E_C_N_O_    "+(Chr(13)+Chr(10))
 cQuery += " FROM "+RetSqlName("SC6")+" SC6                                                                                "+(Chr(13)+Chr(10))
@@ -255,6 +268,7 @@ cQuery += "     AND SC6.C6_XCORINT          >= '"+aRet[20]+"'                   
 cQuery += "     AND SC6.C6_XCORINT          <= '"+aRet[21]+"'                                                             "+(Chr(13)+Chr(10))
 cQuery += "     AND SC6.C6_XCOREXT          >= '"+aRet[22]+"'                                                             "+(Chr(13)+Chr(10))
 cQuery += "     AND SC6.C6_XCOREXT          <= '"+aRet[23]+"'                                                             "+(Chr(13)+Chr(10))
+cQuery += "     AND SC6.C6_PEDCLI           <> ' '                                                                        "+(Chr(13)+Chr(10))
 cQuery += "     AND SB1.B1_GRUPO            = 'VEIA'                                                                      "+(Chr(13)+Chr(10))
 cQuery += "     AND SF4.F4_DUPLIC           = 'S'                                                                         "+(Chr(13)+Chr(10))
 cQuery += " 	AND SC6.D_E_L_E_T_			= ' '                                                                         "+(Chr(13)+Chr(10))
@@ -301,6 +315,26 @@ oPnlWnd1:= oFWL:getWinPanel( 'DIR' , 'Wnd1', 'TOTAL'  )
 oPnlWnd2:= oFWL:getWinPanel( 'DIR2', 'Wnd2', 'TOTAIS' )
 oPnlWnd3:= oFWL:getWinPanel( 'DIR3', 'Wnd3', 'TOTAIS' )
 oPnlWnd4:= oFWL:getWinPanel( 'DIR4', 'Wnd4', 'TOTAIS' )
+
+aBrwCli   := {}
+oTBrwsCli := TSBrowse():New(01,01,275,050,oPnlWnd2,,16,,1)    
+oTBrwsCli:AddColumn( TCColumn():New('Cliente' ,,,{|| },{|| }) )    
+oTBrwsCli:AddColumn( TCColumn():New('Nome'    ,,,{|| },{|| }) )    
+oTBrwsCli:AddColumn( TCColumn():New('Valor'   ,,,{|| },{|| }) )    
+oTBrwsCli:SetArray(aBrwCli) 
+
+aBrwPrd   := {}
+oTBrwsPrd := TSBrowse():New(01,01,275,050,oPnlWnd3,,16,,1)    
+oTBrwsPrd:AddColumn( TCColumn():New('Produto'  ,,,{|| },{|| }) )    
+oTBrwsPrd:AddColumn( TCColumn():New('Descrição',,,{|| },{|| }) )    
+oTBrwsPrd:AddColumn( TCColumn():New('Valor'    ,,,{|| },{|| }) )    
+oTBrwsPrd:SetArray(aBrwPrd) 
+
+aBrwTot   := {}
+oTBrwsTot := TSBrowse():New(01,01,275,050,oPnlWnd4,,16,,1)    
+oTBrwsTot:AddColumn( TCColumn():New('Valor'    ,,,{|| },{|| }) )    
+oTBrwsTot:SetArray(aBrwTot) 
+
 
 //- Recupera coordenadas da area superior da linha e coluna a direita do container
 oSize1 := FWDefSize():New(.F.)
@@ -354,18 +388,130 @@ oBrwCab:Refresh()
 ACTIVATE DIALOG oNwFat001 ON INIT EnchoiceBar(oNwFat001, { || FWMsgRun(, {|oSay| fGeraDocs(cCabAlias,cIteAlias,oSay,cIteTable) },;
                                                                        "Faturamento", "Processando geração de notas"), oNwFat001:End() }, ;
 { || oNwFat001:End() },,{{"BMPINCLUIR",{|| MsgRun('Visualizando Pedido','Consulta' ,{|| fVisuPed(cCabAlias,aRotina,2,oSay,cCabTable,oCabTable) })},"Consulta" },;
-                         {"BMPINCLUIR",{|| MsgRun('Inclusão Pedido'    ,'Inclusão' ,{|| fVisuPed(cCabAlias,aRotina,3,oSay,cCabTable,oCabTable) })},"Inclusão"},;
+                         {"BMPINCLUIR",{|| MsgRun('Inclusão Pedido'    ,'Inclusão' ,{|| fVisuPed(cCabAlias,aRotina,3,oSay,cCabTable,oCabTable) })},"Inclusão" },;
                          {"BMPALTERAR",{|| MsgRun('Alteração Pedido'   ,'Alteração',{|| fVisuPed(cCabAlias,aRotina,4,oSay,cCabTable,oCabTable) })},"Alteração"},;
                          {"BMPEXCLUIR",{|| MsgRun('Exclusão Pedido'    ,'Exclusão' ,{|| fVisuPed(cCabAlias,aRotina,5,oSay,cCabTable,oCabTable) })},"Exclusão" },;
                          {"BMPEXCLUIR",{|| MsgRun('Boleto'             ,'Boleto'   ,{|| Boleto(cCabAlias)                                      })},"Boleto"   }},,,,,.F.) CENTERED
 
+
+MsgRun('Estornando Empenhos','Processo' ,{|| fAtuEmp(oSay,cCabAlias,cIteAlias) })
+
 If Select(cCabAlias) <> 0 ; (cCabAlias)->(DbCloseArea()) ; EndIf
 If Select(cIteAlias) <> 0 ; (cIteAlias)->(DbCloseArea()) ; EndIf
 
-oCabTable:Delete()
-//oIteTable:Delete()
+oCabTable:Delete(oSay,cCabAlias,cIteAlias)
 
 Return Nil
+
+*************************************************
+Static Function fAtuEmp(oSay,cCabAlias,cIteAlias)
+*************************************************
+
+Local aCabPed   As Array
+Local nY        As Numeric
+Local cCampo    As Character
+Local nPosicao  As Numeric
+Local cConteudo As Character
+Local aItePed   As Array
+Local aLinha    As Array
+Local cQuery    As Character
+Local nStatus   As Numeric
+Local nOpc      As Numercic
+
+nOPc  := 4
+(cCabAlias)->(DbGoTop())
+While (cCabAlias)->(!Eof())
+
+    oSay:SetText("Estornoando Empenho pedido: " + (cCabAlias)->C6_NUM+" ...") 
+    
+    SD2->(DbSetOrder(8))
+    If !SD2->(DbSeek(xFilial("SD2")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))  
+        SC5->(DbSetOrder(1))        
+        SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
+    
+        SC6->(DbSetOrder(1))        
+        SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
+ 
+        SC5->(DbSetOrder(1))        
+        SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
+        aCabPed := {}
+        For nY := 1 To SC5->(FCount())
+            cCampo   := SC5->(FieldName(nY))
+            nPosicao := (cCabAlias)->(FieldPos(cCampo))
+            If nPosicao <> 0
+            cConteudo := (cCabAlias)->(FieldGet(nPosicao))
+            Else
+            cConteudo := &("SC5->"+cCampo)
+            EndIf
+            Aadd(aCabPed, {cCampo,cConteudo, Nil})
+        Next
+
+        SBF->(DbSetOrder(1))
+        SBF->(DbSeek(xFilial("SBF")+(cCabAlias)->C6_LOCAL+(cCabAlias)->C6_LOCALIZ+(cCabAlias)->C6_PRODUTO+(cCabAlias)->C6_NUMSERI))
+
+        SC6->(DbSetOrder(1))        
+        SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
+
+        aItePed := {}
+        aLinha  := {}
+
+        Aadd(aLinha,{"LINPOS"    ,"C6_ITEM"              ,SC6->C6_ITEM});Aadd(aLinha,{"AUTDELETA" ,"N"                    ,Nil         })
+        Aadd(aLinha,{"C6_PRODUTO",SC6->C6_PRODUTO        ,Nil         });Aadd(aLinha,{"C6_QTDVEN" ,SC6->C6_QTDVEN         ,Nil         })
+        Aadd(aLinha,{"C6_PRCVEN" ,(cCabAlias)->C6_PRCVEN ,Nil         });Aadd(aLinha,{"C6_VALOR"  ,(cCabAlias)->C6_VALOR  ,Nil         })
+        Aadd(aLinha,{"C6_PRUNIT" ,SC6->C6_PRUNIT         ,Nil         });Aadd(aLinha,{"C6_OPER"   ,(cCabAlias)->C6_OPER   ,Nil         })
+        Aadd(aLinha,{"C6_TES"    ,(cCabAlias)->C6_TES    ,Nil         });Aadd(aLinha,{"C6_QTDLIB" ,0                      ,Nil         })
+        Aadd(aLinha,{"C6_CHASSI" ,CriaVar("C6_CHASSI" )  ,Nil         });Aadd(aLinha,{"C6_LOCALIZ",CriaVar("C6_LOCALIZ")  ,Nil         })
+        Aadd(aLinha,{"C6_NUMSERI",CriaVar("C6_NUMSERI")  ,Nil         });Aadd(aLinha,{"C6_XVLRMVT",(cCabAlias)->C6_XVLRMVT,Nil         })
+        Aadd(aLinha,{"C6_XVLRVDA",(cCabAlias)->C6_XVLRVDA,Nil         });Aadd(aLinha,{"C6_XVLRPRD",(cCabAlias)->C6_XVLRVDA,Nil         })
+        Aadd(aItePed, aLinha)
+
+        lMsHelpAuto := .T.
+        lMsErroAuto := .F.
+        MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, aCabPed, aItePed, nOPc, .F.)
+        If lMsErroAuto
+            MostraErro()
+        Else
+            SC6->(DbSetOrder(1))        
+            SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
+            /* 
+            SC6->(RecLock("SC6",.F.))
+            SC6->C6_C6_LOCALIZ := CriaVar("C6_LOCALIZ")
+            SC6->C6_CHASSI     := CriaVar("C6_CHASSI" )
+            SC6->C6_C6_NUMSERI := CriaVar("C6_NUMSERI")
+            SC6->(MsUnLock())
+            */
+            If (cCabAlias)->VRJ_STATUS == "A"
+                SDC->(DbSetOrder(3))
+                If !SDC->(DbSeek(xFilial("SDC")+SC6->C6_PRODUTO+SC6->C6_LOCAL+SC6->C6_LOTECTL+SC6->C6_NUMLOTE+SC6->C6_LOCALIZ+SC6->C6_NUMSERI+"SC6"))
+                    cQuery := ""
+                    cQuery += " UPDATE "+RetSqlName("VRK")                                                                           +(Chr(13)+Chr(10))
+                    cQuery += " SET VRK_CHASSI = '"+CriaVar("C6_CHASSI" )+"'                                                        "+(Chr(13)+Chr(10))
+                    cQuery += " WHERE VRK_FILIAL = '"+xFilial("VRK")+"'                                                             "+(Chr(13)+Chr(10))
+                    cQuery += " AND VRK_PEDIDO||VRK_ITEPED = (SELECT VRK.VRK_PEDIDO||VRK.VRK_ITEPED                                 "+(Chr(13)+Chr(10))
+                    cQuery += "                               FROM "+RetSqlName("VRJ")+" VRJ                                        "+(Chr(13)+Chr(10))
+                    cQuery += "                               INNER JOIN                                                            "+(Chr(13)+Chr(10))
+                    cQuery += "                               "+RetSqlName("VRK")+" VRK ON VRK.VRK_FILIAL = '"+xFilial("VRK")+"'    "+(Chr(13)+Chr(10))
+                    cQuery += "                                                        AND VRJ.VRJ_PEDIDO = VRK.VRK_PEDIDO          "+(Chr(13)+Chr(10))
+                    cQuery += "                                                        AND VRJ.D_E_L_E_T_ = VRK.D_E_L_E_T_          "+(Chr(13)+Chr(10))
+                    cQuery += "                               WHERE VRJ.VRJ_FILIAL  = '"+xFilial("VRJ")                         +"' "+(Chr(13)+Chr(10))  
+                    cQuery += "                                 AND VRJ.VRJ_CODCLI  = '"+SC5->C5_CLIENTE                        +"' "+(Chr(13)+Chr(10))
+                    cQuery += "                                 AND VRJ.VRJ_LOJA    = '"+SC5->C5_LOJACLI                        +"' "+(Chr(13)+Chr(10))
+                    cQuery += "                                 AND VRJ.VRJ_PEDCOM  = '"+SC6->C6_PEDCLI                         +"' "+(Chr(13)+Chr(10))
+                    cQuery += "                                 AND VRK.VRK_ITEPED  = '"+StrZero(Val(Alltrim(SC6->C6_ITEM)),3)  +"' "+(Chr(13)+Chr(10))
+                    cQuery += "                                 AND VRJ.D_E_L_E_T_  = ' ')                                          "+(Chr(13)+Chr(10))
+                    nStatus := TCSqlExec(cQuery)
+
+                    If (nStatus < 0)
+                        MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Empenho VRK")
+                    EndIf
+                EndIf
+            EndIf
+        EndIf
+    EndIf
+    (cCabAlias)->(DbSkip())
+End
+
+Return(.T.)
 
 **************************************************************
 Static Function fConsNSeri(cCabAlias,cCabTable,oCabTable,oSay)
@@ -1182,6 +1328,21 @@ Dbselectarea("SE4") ; SE4->(DbSetOrder(1))
 Dbselectarea("SB1") ; SB1->(DbSetOrder(1)) 
 Dbselectarea("SB2") ; SB2->(DbSetOrder(1))
 
+lContinua := .F.
+(cCabAlias)->(DbGotop())
+While (cCabAlias)->(!Eof()) 
+    If !Empty(Alltrim((cCabAlias)->C6_OK))
+        lContinua := .T.
+        Exit
+    EndIf
+
+    (cCabAlias)->(DbSkip())
+End
+
+If !lContinua
+    Return(.T.)
+EndIf
+
 lContinua := Sx5NumNota(@cSerie,SuperGetMV("MV_TPNRNFS"),,,,@cSerieId,dDataBase ) // O parametro cSerieId deve ser passado para funcao Sx5NumNota afim de tratar a existencia ou nao do mesmo numero na funcao VldSx5Num do MATXFUNA.PRX
 (cCabAlias)->(DbGotop())
 While (cCabAlias)->(!Eof()) .And. lContinua
@@ -1388,11 +1549,56 @@ Static function FMark(oBrowse)
 
 Local cAlias	:=	oBrowse:Alias()
 Local cMark	    :=	cMarca //oBrowse:Mark()
+Local nRecno    := 0
+Local nPos      := 0
 
-If RecLock( cAlias, .F. )
-    ( cAlias )->C6_OK := Iif( ( cAlias )->C6_OK == cMark, "  ", cMark )
-	( cAlias )->( MsUnlock() )
+nRecno := (cAlias)->(Recno()) 
+If RecLock(cAlias, .F. )
+    (cAlias)->C6_OK := Iif( (cAlias)->C6_OK == cMark, "  ", cMark )
+	(cAlias)->(MsUnlock())
 EndIf  
+
+aBrwCli := {}
+aBrwPrd := {}
+aBrwTot := {}
+
+(cAlias)->(DbGoTop())
+While (cAlias)->(!Eof())
+    If !Empty((cAlias)->C6_OK)
+        nPos := aScan(aBrwCli,{|x| x[1] == (cAlias)->C5_CLIENTE+(cAlias)->C5_LOJACLI})
+        If nPos <> 0
+            aBrwCli[nPos,03] := Transform(Val(StrTran(StrTran(alltrim(aBrwCli[nPos,03]),".",""),",","."))+(cAlias)->C6_XVLRVDA,"@E 99,999,999.99")
+            
+        Else
+            Aadd(aBrwCli,{(cAlias)->C5_CLIENTE+(cAlias)->C5_LOJACLI,(cAlias)->A1_NOME,Transform((cAlias)->C6_XVLRVDA,"@E 99,999,999.99")})
+        EndIf
+
+        nPos := aScan(aBrwPrd,{|x| x[1] == (cAlias)->C6_PRODUTO})
+        If nPos <> 0
+            aBrwPrd[nPos,03] := Transform(Val(StrTran(StrTran(alltrim(aBrwPrd[nPos,03]),".",""),",","."))+(cAlias)->C6_XVLRVDA,"@E 99,999,999.99")            
+        Else
+            Aadd(aBrwPrd,{(cAlias)->C6_PRODUTO,(cAlias)->B1_DESC,Transform((cAlias)->C6_XVLRVDA,"@E 99,999,999.99")})
+        EndIf
+
+        If Len(aBrwTot) == 0
+            Aadd(aBrwTot,{Transform((cAlias)->C6_XVLRVDA,"@E 99,999,999.99")})
+        Else
+            aBrwTot[01,01] := Transform(Val(StrTran(StrTran(alltrim(aBrwTot[01,01]),".",""),",","."))+(cAlias)->C6_XVLRVDA,"@E 99,999,999.99")            
+        EndIf
+
+    EndIf
+    (cAlias)->(DbSkip())
+End
+
+(cAlias)->(DbGoTo(nRecno))
+oTBrwsCli:SetArray(aBrwCli) 
+//oTBrwsCli:Refresh()
+
+oTBrwsPrd:SetArray(aBrwPrd)
+//oTBrwsPrd:Refresh()
+
+oTBrwsTot:SetArray(aBrwTot)
+//oTBrwsTot:Refresh()
 
 //fResFat()
 //oBrowse:Refresh()
@@ -1418,6 +1624,9 @@ Local nRecno	as numeric
 cAlias	:=	oBrowse:Alias()
 cMark	:=	cMarca //oBrowse:Mark()
 nRecno	:=	( cAlias )->( Recno() )
+aBrwCli := {}
+aBrwPrd := {}
+aBrwTot := {}
 
 ( cAlias )->( DBGoTop() )
 While ( cAlias )->( !Eof() )
@@ -1425,10 +1634,43 @@ While ( cAlias )->( !Eof() )
 		( cAlias )->C6_OK := Iif( alltrim(( cAlias )->C6_OK) == cMark, "  ", cMark )
 		( cAlias )->( MsUnlock() ) 
 	EndIf
+
+    If !Empty((cAlias)->C6_OK)
+        nPos := aScan(aBrwCli,{|x| x[1] == (cAlias)->C5_CLIENTE+(cAlias)->C5_LOJACLI})
+        If nPos <> 0
+            aBrwCli[nPos,03] := Transform(Val(StrTran(StrTran(alltrim(aBrwCli[nPos,03]),".",""),",","."))+(cAlias)->C6_XVLRVDA,"@E 99,999,999.99")
+            
+        Else
+            Aadd(aBrwCli,{(cAlias)->C5_CLIENTE+(cAlias)->C5_LOJACLI,(cAlias)->A1_NOME,Transform((cAlias)->C6_XVLRVDA,"@E 99,999,999.99")})
+        EndIf
+
+        nPos := aScan(aBrwPrd,{|x| x[1] == (cAlias)->C6_PRODUTO})
+        If nPos <> 0
+            aBrwPrd[nPos,03] := Transform(Val(StrTran(StrTran(alltrim(aBrwPrd[nPos,03]),".",""),",","."))+(cAlias)->C6_XVLRVDA,"@E 99,999,999.99")            
+        Else
+            Aadd(aBrwPrd,{(cAlias)->C6_PRODUTO,(cAlias)->B1_DESC,Transform((cAlias)->C6_XVLRVDA,"@E 99,999,999.99")})
+        EndIf
+
+        If Len(aBrwTot) == 0
+            Aadd(aBrwPrd,{Transform((cAlias)->C6_XVLRVDA,"@E 99,999,999.99")})
+        Else
+            aBrwTot[01,03] := Transform(Val(StrTran(StrTran(alltrim(aBrwPrd[01,01]),".",""),",","."))+(cAlias)->C6_XVLRVDA,"@E 99,999,999.99")            
+        EndIf
+
+    EndIf
 	( cAlias )->( DBSkip() )
 End
 
 ( cAlias )->( DBGoTo( nRecno ) )
+
+oTBrwsCli:SetArray(aBrwCli) 
+//oTBrwsCli:Refresh()
+
+oTBrwsPrd:SetArray(aBrwPrd)
+//oTBrwsPrd:Refresh()
+
+oTBrwsTot:SetArray(aBrwPrd)
+//oTBrwsTot:Refresh()
 
 //fResFat()
 //oBrowse:Refresh()
