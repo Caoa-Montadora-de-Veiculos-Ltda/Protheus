@@ -53,7 +53,6 @@ Return
 @history    Tela de visualização e processamento da montagem de unitizadores    
 /*/
 Static Function TelaUnit()
-
 	Local aCoors 		:= FWGetDialogSize( oMainWnd )
 	Local oPanelUp, oFWLayer, oPanelLeft, oRelacVS3 //,oPanelRight , oBrowseLeft, oBrowseRight, oRelacZA5
 	//Local _cUsuario		:= AllTrim(SuperGetMV( "CMV_WSR015"  ,,"RG LOG" )) 
@@ -72,6 +71,7 @@ Static Function TelaUnit()
 		MsgAlert("Este registro esta finalizado, selecione um registro pendente para geração de Picking!")
 		Return
 	EndIf 	
+
 	If lJobAtivo .And. nOpc == 3
 		MsgAlert("Este botão esta desabilitado porque o processamento via Job esta ativo, " + CRLF +;
 				 "solicite ao administrador do sistema a parada do Job para habilitar o processamento" )
@@ -1476,6 +1476,8 @@ Begin Sequence
 	aAdd(_aPesos,{"PESO LIQUIDO",0,0})                     
 	aAdd(_aPesos,{"PESO BRUTO  ",0,0})                     
 	aAdd(_aPesos,{"PESO CUBADO ",0,0})
+	_cCliente := (_cAliasPesq)->VS1_CLIFAT
+	_cLoja := (_cAliasPesq)->VS1_LOJA
 	While (_cAliasPesq)->(!Eof())
     	nValpec := 0
     	//cSequen := Val(VS3->VS3_SEQUEN)      //STRZERO(SZK->(SZK_SEQREG),3)
@@ -1492,7 +1494,7 @@ Begin Sequence
 				//nPesos := SKZ->SKZ_PESOC
 				//SKZ->(dbSkip())
 	        	//ENDIF
-				cTES := MaTesInt(2,VS3->VS3_OPER, VS1->VS1_CLIFAT, VS1->VS1_LOJA,"C", VS3->VS3_CODITE) 
+				cTES := MaTesInt(2,VS3->VS3_OPER, _cCliente, _cLoja,"C", VS3->VS3_CODITE) 
 				If (VS3->VS3_XREGFI != "T") .and. VS3->VS3_CODTES != cTES .and. !Empty(cTES)
 					VS1->(RecLock("VS1",.F.))
 					VS3->(RecLock("VS3",.F.))
@@ -1501,9 +1503,13 @@ Begin Sequence
 					VS3->VS3_CODTES := cTES
 					VS3->VS3_SITTRI := U_XFUNSITT(cTES, VS3->VS3_CODITE, VS3->VS3_GRUITE)
 					VS3->(MsUnlock())
+				Elseif Empty(cTES)
+					_cMens := "Erro no retorno da TES Inteligente -> Tes: "+cTES+" Oper: " +AllTrim(VS3->VS3_OPER)+ " Cliente: "+_cCliente+" Loja: "+_cLoja+" Cod: "+VS3->VS3_CODITE +DtoC(date()) + " às " + Time() + CRLF
 				EndIf	
 	        	VS3->(dbSkip())
 			EndDo
+		Else
+			_cMens := "Erro na Busca dos itens do ORC: " +(_cAliasPesq)->VS1_NUMORC+ " às " + Time() + CRLF
 		EndIf
 		U_ORCCALFIS(VS1_NUMORC,.F./*atualiza o preço*/) 
 		aAdd(	_aIntIte,{;
