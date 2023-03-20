@@ -19,20 +19,21 @@ User Function ZPECR022()
 	Local aArea		  	:= GetArea()
 	Local cQuery	  	:= ""
 	Local cAliasTRB		:= GetNextAlias()
-	Local cArquivo	  	:= GetTempPath()+'Packing'+SUBSTRING(dtoc(date()),1,2)+SUBSTRING(dtoc(date()),4,2)+SUBSTRING(dtoc(date()),9,2)+'_'+SUBSTRING(time(),1,2) +SUBSTRING(time(),4,2) +SUBSTRING(time(),7,2)+'.xml'
+	Local cArquivo	  	:= GetTempPath()+'Invoice_itens_'+SUBSTRING(dtoc(date()),1,2)+SUBSTRING(dtoc(date()),4,2)+SUBSTRING(dtoc(date()),9,2)+'_'+SUBSTRING(time(),1,2) +SUBSTRING(time(),4,2) +SUBSTRING(time(),7,2)+'.xml'
 	Local oFWMsExcel
 	Local oExcel
 	Local aParamBox 	:= {}
 	Local aRet 			:= {}
 	Local nTotReg		:= 0
 
-	aAdd(aParamBox,{1 ,"Invoice De:" 	,Space(TamSX3("ZM_INVOICE")[1])	,"@!","","SW9_1","",80	,.F.}) // Tipo caractere
-	aAdd(aParamBox,{1 ,"Invoice Ate:" 	,Space(TamSX3("ZM_INVOICE")[1])	,"@!","","SW9_1","",80	,.T.}) // Tipo caractere
-	aAdd(aParamBox,{1 ,"Lote:" 			,Space(TamSX3("ZM_LOTE")[1])	,"@!","","","",80		,.F.}) // Tipo caractere
-	aAdd(aParamBox,{1 ,"BL:" 			,Space(TamSX3("ZM_BL")[1])		,"@!","","","",80		,.F.}) // Tipo caractere
-	aAdd(aParamBox,{1 ,"Produto:" 		,Space(TamSX3("ZM_PROD")[1])	,"@!","","","",80		,.F.}) // Tipo caractere
-	aAdd(aParamBox,{1 ,"Processo:" 		,Space(TamSX3("W9_HAWB")[1])	,"@!","","","",80		,.F.}) // Tipo caractere
-
+	aAdd(aParamBox,{1 ,"Data De:" 		,Space(TamSX3("D1_DTDIGIT")[1])	,"@!","","SD1",""	,80	,.F.}) // Tipo caractere
+	aAdd(aParamBox,{1 ,"Data Ate:" 		,Space(TamSX3("D1_DTDIGIT")[1])	,"@!","","SD1",""	,80	,.T.}) // Tipo caractere
+	aAdd(aParamBox,{1 ,"Produto:" 		,Space(TamSX3("B1_COD")[1])		,"@!","","",""		,80	,.F.}) // Tipo caractere
+	aAdd(aParamBox,{1 ,"Nota Fiscal:"	,Space(TamSX3("D1_DOC")[1])		,"@!","","",""		,80	,.F.}) // Tipo caractere
+	aAdd(aParamBox,{1 ,"Serie:"			,Space(TamSX3("D1_SERIE")[1])	,"@!","","",""		,80	,.F.}) // Tipo caractere
+	aAdd(aParamBox,{1 ,"Invoice:"		,Space(TamSX3("W9_INVOICE")[1])	,"@!","","",""		,80	,.F.}) // Tipo caractere
+	aAdd(aParamBox,{1 ,"Caixa:"			,Space(TamSX3("ZD1_XCASE")[1])	,"@!","","",""		,80	,.F.}) // Tipo caractere
+	aAdd(aParamBox,{1 ,"Container:"		,Space(TamSX3("D1_XCONT")[1])	,"@!","","",""		,80	,.F.}) // Tipo caractere
 
 	If ParamBox(aParamBox,"Parametros para geração do Arquivo...",@aRet)
 
@@ -40,72 +41,86 @@ User Function ZPECR022()
 		oFWMsExcel := FWMSExcel():New()
 
 		//Aba - Gympass
-		oFWMsExcel:AddworkSheet("Packing List")
+		oFWMsExcel:AddworkSheet("Relatorio")
 	
 		//Criando a Tabela
-		oFWMsExcel:AddTable("Packing List","Packing")
-		oFWMsExcel:AddColumn("Packing List","Packing","INVOICE"              	,1)
-		oFWMsExcel:AddColumn("Packing List","Packing","NAVIO"                	,1)
-		oFWMsExcel:AddColumn("Packing List","Packing","BL"                   	,1)
-		oFWMsExcel:AddColumn("Packing List","Packing","CONTAINER"            	,1)
-		oFWMsExcel:AddColumn("Packing List","Packing","LOTE"                 	,1)
-		oFWMsExcel:AddColumn("Packing List","Packing","CASE"                 	,1)
-		oFWMsExcel:AddColumn("Packing List","Packing","PRODUTO"              	,1)
-		oFWMsExcel:AddColumn("Packing List","Packing","DESCRIÇÃO DO PRODUTO" 	,1)
-		oFWMsExcel:AddColumn("Packing List","Packing","QUANTIDADE"           	,1)
-		oFWMsExcel:AddColumn("Packing List","Packing","UNITIZADOR" 		,1)
-		oFWMsExcel:AddColumn("Packing List","Packing","DATA DE EMISSAO"      	,1)
-		oFWMsExcel:AddColumn("Packing List","Packing","PROCESSO"      		,1)
-		oFWMsExcel:AddColumn("Packing List","Packing","DATA_ENDER"      	,1)
+
+		oFWMsExcel:AddTable("Relatorio","Planilha01")
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Produto"              		,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Qtde NFiscal"                ,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Qtde Pendente"               ,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Nota Fiscal"                	,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Serie"                		,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Emissao NFiscal"             ,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Digitacao NFiscal"           ,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Invoice"                		,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Data Invoice"                ,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Caixa"                		,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Container"                	,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Armaz Rec"                	,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Saldo Armaz Rec"             ,1)
 		
 		If Select( (cAliasTRB) ) > 0
 			(cAliasTRB)->(DbCloseArea())
 		EndIf
 
 		cQuery := "	"
-		cQuery += " SELECT SZM.ZM_INVOICE		AS INVOICE, "
-		cQuery += " 		SZM.ZM_NAVIO     	AS NAVIO, "
-		cQuery += " 		SZM.ZM_BL        	AS BL, "   
-		cQuery += " 		SZM.ZM_CONT      	AS CONTAINER, "
-		cQuery += " 		SZM.ZM_LOTE      	AS LOTE, "
-		cQuery += " 		SZM.ZM_CASE      	AS XCASE, "
-		cQuery += " 		SZM.ZM_PROD      	AS PRODUTO, "
-		cQuery += " 		SB1.B1_DESC      	AS DESCRICAO, "
-		cQuery += " 		SZM.ZM_QTDE      	AS QUANTIDADE, "
-		cQuery += " 		SZM.ZM_UNIT      	AS UNITIZADOR, "
-		cQuery += " 		SW9.W9_DT_EMIS   	AS EMISSAO, "
-		cQuery += " 		SW9.W9_HAWB 	   	AS PROCESSO, "
-		cQuery += " 		(SELECT DCF.DCF_DATA "
-		cQuery += "			FROM " +  RetSQLName("DCF") +" DCF "
-		cQuery += "			WHERE DCF.DCF_UNITIZ = SZM.ZM_UNIT " 
-		cQuery += "				AND DCF.D_E_L_E_T_= ' ' "
-		cQuery += "				AND DCF.DCF_FILIAL = SZM.ZM_FILIAL " 
-		cQuery += "				AND DCF.DCF_CLIFOR = SZM.ZM_FORNEC "
-		cQuery += "				AND DCF.DCF_LOCAL = '907') AS DATA_ENDER "
-		cQuery += " FROM " +  RetSQLName("SZM") +" SZM "
-		cQuery += " 	LEFT JOIN " +  RetSQLName("SW9") +" SW9 "
-		cQuery += " 	ON SW9.W9_FILIAL = SZM.ZM_FILIAL "
-		cQuery += " 	AND SW9.W9_INVOICE = SZM.ZM_INVOICE "
-		cQuery += " 	AND SW9.D_E_L_E_T_ = ' ' "
-		cQuery += " INNER JOIN " +  RetSQLName("SB1") +" SB1 "
-		cQuery += " 	ON SB1.B1_FILIAL = '" + FWxFilial('SB1') + "' "
-		cQuery += " 	AND SB1.B1_COD =  SZM.ZM_PROD "
-		cQuery += " 	AND SB1.D_E_L_E_T_ = ' ' "
-		cQuery += " WHERE SZM.ZM_FILIAL = '" + FWxFilial('SZM') + "' "
-		cQuery += " AND SZM.ZM_INVOICE BETWEEN '" + aRet[1] + "' AND '" + aRet[2] + "' "
+		cQuery += " SELECT DISTINCT REPLACE(ZD1.ZD1_COD,' ','') AS COD "
+		cQuery += " 				, ZD1.ZD1_QUANT QTD "
+		cQuery += " 				, ZD1_SLDIT QTD_PEND "
+		cQuery += " 				, ZD1.ZD1_DOC NF "
+		cQuery += " 				, ZD1.ZD1_SERIE SERIE "
+		cQuery += "     			, TO_DATE(W9.W9_DT_EMIS, 'YYYYMMDD' ) AS DT_INV "
+		cQuery += "     			, TO_DATE(D1.D1_EMISSAO, 'YYYYMMDD' ) AS DT_EMIS "
+		cQuery += "     			, TO_DATE(D1.D1_DTDIGIT, 'YYYYMMDD' ) AS DT_ENT "
+		cQuery += " 				, REPLACE(NVL(W9.W9_INVOICE,'ND'),' ','') AS INVOICE "
+		cQuery += " 				, REPLACE(ZD1.ZD1_XCASE,' ','') AS CAIXA "
+		cQuery += " 				, REPLACE(D1.D1_XCONT,' ','') AS CONT "
+		cQuery += " 				, ZD1.ZD1_LOCAL ARMZ_REC "
+		cQuery += " 				, B2.B2_QATU SLD_ARMZ_REC "
+		cQuery += " FROM " +  RetSQLName("ZD1") +" ZD1 "
+		cQuery += " LEFT JOIN " +  RetSQLName("SD1") +" D1 "
+		cQuery += " 	ON D1.D_E_L_E_T_ = ' ' "
+		cQuery += " 	AND D1.D1_FILIAL = ZD1.ZD1_FILIAL "
+		cQuery += " 	AND D1.D1_DOC = ZD1.ZD1_DOC "
+		cQuery += " 	AND D1.D1_SERIE = ZD1.ZD1_SERIE "
+		cQuery += "     AND D1.D1_COD = ZD1.ZD1_COD "
+		cQuery += "     AND D1.D1_FORNECE = ZD1.ZD1_FORNEC "
+		cQuery += " 	AND D1.D1_LOJA = ZD1.ZD1_LOJA "
+		cQuery += "     AND D1.D1_XCASE = ZD1.ZD1_XCASE "
+		cQuery += " LEFT JOIN " +  RetSQLName("SW9") +" W9 "
+		cQuery += " 	ON W9.D_E_L_E_T_ = ' ' "
+		cQuery += " 	AND W9.W9_FILIAL = ZD1.ZD1_FILIAL "
+		cQuery += " 	AND W9.W9_HAWB = D1.D1_XCONHEC "
+		cQuery += " LEFT JOIN " +  RetSQLName("SB2") +" B2 "
+		cQuery += " 	ON B2.D_E_L_E_T_ = ' ' "
+		cQuery += " 	AND B2.B2_FILIAL = ZD1.ZD1_FILIAL "
+		cQuery += " 	AND B2.B2_COD = ZD1.ZD1_COD "
+		cQuery += " 	AND B2.B2_LOCAL = ZD1.ZD1_LOCAL "
+		cQuery += " WHERE ZD1.ZD1_FILIAL = '" + FWxFilial('SZM') + "' "
+		cQuery += " AND ZD1.D_E_L_E_T_ = ' ' "
+		cQuery += " AND ZD1.ZD1_SLDIT >= 0 "
+		cQuery += " AND B2.B2_QATU > 0 "
+		cQuery += " AND D1.D1_DTDIGIT BETWEEN '" + aRet[1] + "' AND '" + aRet[2] + "' "
 		If !Empty(aRet[3])
-			cQuery += " AND SZM.ZM_LOTE = '" + aRet[3] + " ' "
+			cQuery += " AND ZD1.ZD1_COD = '" + aRet[3] + " ' "
 		EndIf
 		If !Empty(aRet[4])
-			cQuery += " AND SZM.ZM_BL = '" + aRet[4] + " ' "
+			cQuery += " AND ZD1.ZD1_DOC = '" + aRet[4] + " ' "
 		EndIf
 		If !Empty(aRet[5])
-			cQuery += " AND SZM.ZM_PROD = '" + aRet[5] + " ' "
+			cQuery += " AND ZD1.ZD1_SERIE = '" + aRet[5] + " ' "
 		EndIf
 		If !Empty(aRet[6])
-			cQuery += " AND SW9.W9_HAWB = '" + aRet[6] + " ' "
+			cQuery += " AND W9.W9_INVOICE = '" + aRet[6] + " ' "
 		EndIf
-		cQuery += " AND SZM.D_E_L_E_T_ = ' ' "
+		If !Empty(aRet[7])
+			cQuery += " AND ZD1.ZD1_XCASE = '" + aRet[7] + " ' "
+		EndIf
+		If !Empty(aRet[8])
+			cQuery += " AND D1.D1_XCONT = '" + aRet[8] + " ' "
+		EndIf
+		cQuery += " ORDER BY ZD1.ZD1_SLDIT DESC, TO_DATE(W9.W9_DT_EMIS, 'YYYYMMDD' ) "
 
 		cQuery := ChangeQuery(cQuery)
 
@@ -121,20 +136,34 @@ User Function ZPECR022()
 			// Incrementa a mensagem na régua.
 			IncProc("Exportando informações para Excel...")
 
-			oFWMsExcel:AddRow(	"Packing List","Packing",{;
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Produto"              		,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Qtde NFiscal"                ,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Qtde Pendente"               ,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Nota Fiscal"                	,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Serie"                		,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Emissao NFiscal"             ,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Digitacao NFiscal"           ,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Invoice"                		,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Data Invoice"                ,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Caixa"                		,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Container"                	,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Armaz Rec"                	,1)
+		oFWMsExcel:AddColumn("Relatorio","Planilha01","Saldo Armaz Rec"             ,1)
+
+			oFWMsExcel:AddRow(	"Relatorio","Planilha01",{;
+								(cAliasTRB)->COD,;
+								(cAliasTRB)->QTD,;
+								(cAliasTRB)->QTD_PEND,;
+								(cAliasTRB)->NF,;
+								(cAliasTRB)->SERIE,;
+								(cAliasTRB)->DT_EMIS,;
+								(cAliasTRB)->DT_ENT,;
 								(cAliasTRB)->INVOICE,;
-								(cAliasTRB)->NAVIO,;
-								(cAliasTRB)->BL,;
-								(cAliasTRB)->CONTAINER,;
-								(cAliasTRB)->LOTE,;
-								(cAliasTRB)->XCASE,;
-								(cAliasTRB)->PRODUTO,;
-								(cAliasTRB)->DESCRICAO,;
-								(cAliasTRB)->QUANTIDADE,;
-								(cAliasTRB)->UNITIZADOR,;
-								(cAliasTRB)->EMISSAO,;
-								(cAliasTRB)->PROCESSO,;
-								SToD((cAliasTRB)->DATA_ENDER)	})
+								(cAliasTRB)->DT_INV,;
+								(cAliasTRB)->CAIXA,;
+								(cAliasTRB)->CONT,;
+								(cAliasTRB)->ARMZ_REC,;
+								(cAliasTRB)->SLD_ARMZ_REC})
 		
 			(cAliasTRB)->(DbSkip()) 
 		EndDo
