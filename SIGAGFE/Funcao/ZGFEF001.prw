@@ -194,12 +194,16 @@ User Function zAtuPesGW8( aDadosRat )
             //--Guarda valor e recno GW8 para calculo de sobra no rateio    
             AaDD( aRatCub, {Round( nPesCub, TamSX3("F2_XPESOC")[2] )    , nRecGW8} )
             AaDD( aRatBru, {Round( nPesReal, TamSX3("F2_PBRUTO")[2] )   , nRecGW8} )
-
-            GW8->( DbGoTo(nRecGW8) )
-            RecLock("GW8", .F.)
-            GW8->GW8_PESOC := Round( nPesCub, TamSX3("F2_XPESOC")[2] )
-            GW8->GW8_PESOR := Round( nPesReal, TamSX3("F2_PBRUTO")[2] )
-            GW8->( MsUnLock() )                
+            
+            if nRecGW8 > 0
+                GW8->( DbGoTo(nRecGW8) )
+                IF GW8->(!eof()) .and. GW8->(!bof())
+                    RecLock("GW8", .F.)
+                        GW8->GW8_PESOC := Round( nPesCub, TamSX3("F2_XPESOC")[2] )
+                        GW8->GW8_PESOR := Round( nPesReal, TamSX3("F2_PBRUTO")[2] )
+                    GW8->( MsUnLock() )
+                EndIf
+            EndIf
         
         ElseIf cCriRat == '2'
 
@@ -210,11 +214,15 @@ User Function zAtuPesGW8( aDadosRat )
             AaDD( aRatCub, {Round( nPesCub, TamSX3("F2_XPESOC")[2] )    , nRecGW8} )
             AaDD( aRatBru, {Round( nPesReal, TamSX3("F2_PBRUTO")[2] )   , nRecGW8} )
 
-            GW8->( DbGoTo(nRecGW8) )
-            RecLock("GW8", .F.)
-            GW8->GW8_PESOC := Round( nPesCub, TamSX3("F2_XPESOC")[2] )
-            GW8->GW8_PESOR := Round( nPesReal, TamSX3("F2_PBRUTO")[2] )
-            GW8->( MsUnLock() )
+            If nRecGW8 > 0
+                GW8->( DbGoTo(nRecGW8) )
+                IF GW8->(!eof()) .and. GW8->(!bof())
+                    RecLock("GW8", .F.)
+                    GW8->GW8_PESOC := Round( nPesCub, TamSX3("F2_XPESOC")[2] )
+                    GW8->GW8_PESOR := Round( nPesReal, TamSX3("F2_PBRUTO")[2] )
+                    GW8->( MsUnLock() )
+                EndIf
+            EndIf
 
         EndIf
 
@@ -238,19 +246,22 @@ User Function zAtuPesGW8( aDadosRat )
     aRecno := aTail(aRatCub) 
 
     //--Realiza o acerto no ultimo registro da GW8 se houver sobra
-    If nSobCub <> 0 .Or. nSobBru <> 0
-        GW8->( DbGoTo(aRecno[RECNOGW8]) )
-        RecLock("GW8", .F.)
+    If (nSobCub <> 0 .Or. nSobBru <> 0 ) .and. aRecno[RECNOGW8] > 0
         
-        If nSobCub <> 0
-            GW8->GW8_PESOC := GW8->GW8_PESOC + nSobCub
-        EndIf
+        GW8->( DbGoTo(aRecno[RECNOGW8]) )
+        IF GW8->(!eof()) .and. GW8->(!BOF())
+            RecLock("GW8", .F.)
+            
+                If nSobCub <> 0
+                    GW8->GW8_PESOC := GW8->GW8_PESOC + nSobCub
+                EndIf
 
-        If nSobBru <> 0
-            GW8->GW8_PESOR := GW8->GW8_PESOR + nSobBru
-        EndIf
+                If nSobBru <> 0
+                    GW8->GW8_PESOR := GW8->GW8_PESOR + nSobBru
+                EndIf
 
-        GW8->( MsUnLock() )
+            GW8->( MsUnLock() )
+        EndIf
 
     EndIf
 
