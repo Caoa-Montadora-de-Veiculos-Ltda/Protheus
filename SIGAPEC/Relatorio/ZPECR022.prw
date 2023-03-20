@@ -25,13 +25,13 @@ User Function ZPECR022()
 	Local aParamBox 	:= {}
 	Local aRet 			:= {}
 	Local nTotReg		:= 0
-
-	aAdd(aParamBox,{1 ,"Data De:" 		,Space(TamSX3("D1_DTDIGIT")[1])	,"@!","","SD1",""	,80	,.F.}) // Tipo caractere
-	aAdd(aParamBox,{1 ,"Data Ate:" 		,Space(TamSX3("D1_DTDIGIT")[1])	,"@!","","SD1",""	,80	,.T.}) // Tipo caractere
-	aAdd(aParamBox,{1 ,"Produto:" 		,Space(TamSX3("B1_COD")[1])		,"@!","","",""		,80	,.F.}) // Tipo caractere
-	aAdd(aParamBox,{1 ,"Nota Fiscal:"	,Space(TamSX3("D1_DOC")[1])		,"@!","","",""		,80	,.F.}) // Tipo caractere
+	
+	aAdd(aParamBox,{1 ,"Data De:" 		,cTod("")						,"","","",""	,80	,.T.}) // Tipo caractere
+	aAdd(aParamBox,{1 ,"Data Ate:" 		,cTod("")						,"","","",""	,80	,.T.}) // Tipo caractere
+	aAdd(aParamBox,{1 ,"Produto:" 		,Space(TamSX3("B1_COD")[1])		,"@!","","SB1",""	,80	,.F.}) // Tipo caractere
+	aAdd(aParamBox,{1 ,"Nota Fiscal:"	,Space(TamSX3("D1_DOC")[1])		,"@!","","SD1",""	,80	,.F.}) // Tipo caractere
 	aAdd(aParamBox,{1 ,"Serie:"			,Space(TamSX3("D1_SERIE")[1])	,"@!","","",""		,80	,.F.}) // Tipo caractere
-	aAdd(aParamBox,{1 ,"Invoice:"		,Space(TamSX3("W9_INVOICE")[1])	,"@!","","",""		,80	,.F.}) // Tipo caractere
+	aAdd(aParamBox,{1 ,"Invoice:"		,Space(TamSX3("W9_INVOICE")[1])	,"@!","","SW9",""	,80	,.F.}) // Tipo caractere
 	aAdd(aParamBox,{1 ,"Caixa:"			,Space(TamSX3("ZD1_XCASE")[1])	,"@!","","",""		,80	,.F.}) // Tipo caractere
 	aAdd(aParamBox,{1 ,"Container:"		,Space(TamSX3("D1_XCONT")[1])	,"@!","","",""		,80	,.F.}) // Tipo caractere
 
@@ -65,19 +65,19 @@ User Function ZPECR022()
 		EndIf
 
 		cQuery := "	"
-		cQuery += " SELECT DISTINCT REPLACE(ZD1.ZD1_COD,' ','') AS COD "
-		cQuery += " 				, ZD1.ZD1_QUANT QTD "
-		cQuery += " 				, ZD1_SLDIT QTD_PEND "
-		cQuery += " 				, ZD1.ZD1_DOC NF "
-		cQuery += " 				, ZD1.ZD1_SERIE SERIE "
-		cQuery += "     			, TO_DATE(W9.W9_DT_EMIS, 'YYYYMMDD' ) AS DT_INV "
-		cQuery += "     			, TO_DATE(D1.D1_EMISSAO, 'YYYYMMDD' ) AS DT_EMIS "
-		cQuery += "     			, TO_DATE(D1.D1_DTDIGIT, 'YYYYMMDD' ) AS DT_ENT "
-		cQuery += " 				, REPLACE(NVL(W9.W9_INVOICE,'ND'),' ','') AS INVOICE "
-		cQuery += " 				, REPLACE(ZD1.ZD1_XCASE,' ','') AS CAIXA "
-		cQuery += " 				, REPLACE(D1.D1_XCONT,' ','') AS CONT "
-		cQuery += " 				, ZD1.ZD1_LOCAL ARMZ_REC "
-		cQuery += " 				, B2.B2_QATU SLD_ARMZ_REC "
+		cQuery += " SELECT 	DISTINCT NVL(ZD1.ZD1_COD,' ') 	AS COD  				"
+		cQuery += " 		, NVL(ZD1.ZD1_QUANT,0) 			AS QTD  				"
+		cQuery += " 		, NVL(ZD1_SLDIT,0)				AS QTD_PEND  			"	
+		cQuery += " 		, ZD1.ZD1_DOC 					AS NF  					"
+		cQuery += " 		, ZD1.ZD1_SERIE 				AS SERIE      			"
+		cQuery += " 		, NVL(W9.W9_DT_EMIS, '' ) 		AS DT_INV      			"
+		cQuery += " 		, NVL(D1.D1_EMISSAO, '' ) 		AS DT_EMIS      		"	
+		cQuery += " 		, NVL(D1.D1_DTDIGIT, '' ) 		AS DT_ENT  				"
+		cQuery += " 		, NVL(W9.W9_INVOICE,'ND') 		AS INVOICE  			"	
+		cQuery += " 		, NVL(ZD1.ZD1_XCASE,' ') 		AS CAIXA  				"
+		cQuery += " 		, NVL(D1.D1_XCONT,' ') 			AS CONT  				"
+		cQuery += " 		, ZD1.ZD1_LOCAL 				AS ARMZ_REC  			"	
+		cQuery += " 		, NVL(B2.B2_QATU,0) 			AS SLD_ARMZ_REC  		"
 		cQuery += " FROM " +  RetSQLName("ZD1") +" ZD1 "
 		cQuery += " LEFT JOIN " +  RetSQLName("SD1") +" D1 "
 		cQuery += " 	ON D1.D_E_L_E_T_ = ' ' "
@@ -101,7 +101,7 @@ User Function ZPECR022()
 		cQuery += " AND ZD1.D_E_L_E_T_ = ' ' "
 		cQuery += " AND ZD1.ZD1_SLDIT >= 0 "
 		cQuery += " AND B2.B2_QATU > 0 "
-		cQuery += " AND D1.D1_DTDIGIT BETWEEN '" + aRet[1] + "' AND '" + aRet[2] + "' "
+		cQuery += " AND D1.D1_DTDIGIT BETWEEN '" + DTos(aRet[1]) + "' AND '" + DToS(aRet[2]) + "' "
 		If !Empty(aRet[3])
 			cQuery += " AND ZD1.ZD1_COD = '" + aRet[3] + " ' "
 		EndIf
@@ -120,9 +120,9 @@ User Function ZPECR022()
 		If !Empty(aRet[8])
 			cQuery += " AND D1.D1_XCONT = '" + aRet[8] + " ' "
 		EndIf
-		cQuery += " ORDER BY ZD1.ZD1_SLDIT DESC, TO_DATE(W9.W9_DT_EMIS, 'YYYYMMDD' ) "
+		cQuery += " ORDER BY 3,6"
 
-		cQuery := ChangeQuery(cQuery)
+		//cQuery := ChangeQuery(cQuery)
 
 		// Executa a consulta.
 		DbUseArea( .T., "TOPCONN", TcGenQry(,,cQuery), cAliasTRB, .T., .T. )
@@ -136,30 +136,16 @@ User Function ZPECR022()
 			// Incrementa a mensagem na régua.
 			IncProc("Exportando informações para Excel...")
 
-		oFWMsExcel:AddColumn("Relatorio","Planilha01","Produto"              		,1)
-		oFWMsExcel:AddColumn("Relatorio","Planilha01","Qtde NFiscal"                ,1)
-		oFWMsExcel:AddColumn("Relatorio","Planilha01","Qtde Pendente"               ,1)
-		oFWMsExcel:AddColumn("Relatorio","Planilha01","Nota Fiscal"                	,1)
-		oFWMsExcel:AddColumn("Relatorio","Planilha01","Serie"                		,1)
-		oFWMsExcel:AddColumn("Relatorio","Planilha01","Emissao NFiscal"             ,1)
-		oFWMsExcel:AddColumn("Relatorio","Planilha01","Digitacao NFiscal"           ,1)
-		oFWMsExcel:AddColumn("Relatorio","Planilha01","Invoice"                		,1)
-		oFWMsExcel:AddColumn("Relatorio","Planilha01","Data Invoice"                ,1)
-		oFWMsExcel:AddColumn("Relatorio","Planilha01","Caixa"                		,1)
-		oFWMsExcel:AddColumn("Relatorio","Planilha01","Container"                	,1)
-		oFWMsExcel:AddColumn("Relatorio","Planilha01","Armaz Rec"                	,1)
-		oFWMsExcel:AddColumn("Relatorio","Planilha01","Saldo Armaz Rec"             ,1)
-
 			oFWMsExcel:AddRow(	"Relatorio","Planilha01",{;
 								(cAliasTRB)->COD,;
 								(cAliasTRB)->QTD,;
 								(cAliasTRB)->QTD_PEND,;
 								(cAliasTRB)->NF,;
 								(cAliasTRB)->SERIE,;
-								(cAliasTRB)->DT_EMIS,;
-								(cAliasTRB)->DT_ENT,;
+								STod((cAliasTRB)->DT_EMIS),;
+								STod((cAliasTRB)->DT_ENT),;
 								(cAliasTRB)->INVOICE,;
-								(cAliasTRB)->DT_INV,;
+								STod((cAliasTRB)->DT_INV),;
 								(cAliasTRB)->CAIXA,;
 								(cAliasTRB)->CONT,;
 								(cAliasTRB)->ARMZ_REC,;
