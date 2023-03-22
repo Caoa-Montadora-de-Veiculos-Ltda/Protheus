@@ -1469,7 +1469,7 @@ Static Function ZGRVSZZ(aMsgErro, _cStatus, _aBackFlush, nQtdOP, _cSeqSD3)
 			If _cStatus == "A"
 				SZZ->ZZ_DTAPONT	:= Date()
 				SZZ->ZZ_HRAPONT	:= Time()
-				SZZ->ZZ_USUAPON	:= RetCodUsr()	
+				SZZ->ZZ_USUAPON	:= iif( _lJob , "JOB" , RetCodUsr() )
 				SZZ->ZZ_NSEQD3 	:= _cSeqSD3
 			ElseIf _cStatus == "E"
 				SZZ->ZZ_OBSPRC := _cErro
