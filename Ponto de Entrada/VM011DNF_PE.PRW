@@ -64,7 +64,7 @@ Static Function GrvCD9()
 	
 		SC5->(DbSetOrder(1))
 		IF SC5->(DbSeek(xFilial("SC5")+SD2->D2_PEDIDO))
-			If C5_XTIPVEN $ "02/03/04"
+			If SC5->C5_XTIPVEN $ "02/03/04"
 				cEstadoVei := "1"
 			Else
 				cEstadoVei := "0"

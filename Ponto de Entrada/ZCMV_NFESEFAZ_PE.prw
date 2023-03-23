@@ -221,6 +221,17 @@ User Function ZCMV_NFESEFAZ()
 		If Substr(cCondAlp,1,3) $ VV0->VV0_FORPAG
 			lAlpha  := .T.
 		Endif
+	Else
+		IF SD2->(DbSeek(xFilial("SD2")+aNota[2]+aNota[1]+cCodCli+cLoja))
+			IF SC5->(DbSeek(xFilial("SC5")+SD2->D2_PEDIDO)) .And. SC5->C5_XTIPVEN == "01"
+				lVeic := .T.
+				If Substr(cCondAlp,1,3) $ SC5->C5_CONDPAG
+					lAlpha  := .T.
+				EndIf
+			EndIf
+		EndIf
+		RestArea(aAreaSD2)
+		RestArea(aAreaSC5)		
 	Endif
 
 	If aNota[5] == "N" .And. lVeic
