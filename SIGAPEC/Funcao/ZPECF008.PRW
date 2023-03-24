@@ -2737,7 +2737,7 @@ Begin Sequence
 		_nRedBO := 100
 	Endif
 
-	_nFatorLimite := _nValPrd * (_nRedBO/100)
+	_nFatorLimite := _nValPrd //* (_nRedBO/100) conforme alinhado com Zé avaliar o valor total DAC 24/01/2023
 	If _nLimAvalia < _nFatorLimite
 		_lAvalia := .F.
 	Endif

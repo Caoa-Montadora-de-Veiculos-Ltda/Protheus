@@ -1580,7 +1580,7 @@ Begin Sequence
 			_nLimAvalia +=  (VS1->VS1_VTOTNF * (_nRedBO/100))
 		EndIf
 		Aadd(_aMsg, "Cliente não possui limite de crédito disponível Status [2]")
-		_cFaseRet 	:= "" 
+		_cFaseRet 	:= "3" 
 		Break
 	ElseIf _aRetLc[01] == "3"
 		Aadd(_aMsg, "Cliente possui algum titulo com mais de 3 dias em atraso Status[3]")
@@ -1602,13 +1602,13 @@ Begin Sequence
 	//DAC 06/12/2022
 	_nLimAvalia := SA1->A1_XLC - _nLcUsado
 	//Quando for B.o. deduzu o valor pois já somou no acumulado de B.o.
-	/* Não deduzir ja esta na somatória dos BOs com fator de redução validar com o orçamento em questão DAC 21/03/2023
+	// não utilizar no momento/* Não deduzir ja esta na somatória dos BOs com fator de redução validar com o orçamento em questão DAC 21/03/2023
+
 	If ( VS1->VS1_STATUS == "0" .OR. VS1->VS1_STATUS == "3" ) //.And. VS1->VS1_XBO == 'S'
-		_nLcUsado 	:= _nLcUsado - (VS1->VS1_VTOTNF * (_nRedBO/100) 
+		_nLcUsado 	:= _nLcUsado - (VS1->VS1_VTOTNF * (_nRedBO/100) ) 
 		//somo o valor novamente pois estara na somatória dos BO's e necessitarei utilizar o valor do mesmo para compor a diferença DAC 15/12
-		_nLimAvalia +=  (VS1->VS1_VTOTNF * (_nRedBO/100)
+		_nLimAvalia +=  ( VS1->VS1_VTOTNF * (_nRedBO/100) ) 
 	EndIf
-	*/
 
 	//Conforme JC se for condição de pagamento verificar ForPlan
 	//If SA1->A1_XLC > 0 .And. (VS1->VS1_VTOTNF > SA1->A1_XLC .Or. SA1->A1_XDTLC < DATE())	
@@ -1632,10 +1632,6 @@ Begin Sequence
 	//neste caso tenho que somar o titulo para que tenha o valor do limite de crédito correto se passou pela linha acima existe valores ainda no limite que podem ou não ser utilizados
 	//tenho que somar todo o processo pois tem que retornar como bloqueado fase 3 para verificar se pode utilizar parcial
 	ElseIf (_nLcUsado + VS1->VS1_VTOTNF) > SA1->A1_XLC   
-		//neste caso deduzo o limite para que possa avaliar, pois na somatório dos BO's o mesmo foi somado
-		If ( VS1->VS1_STATUS == "0" .OR. VS1->VS1_STATUS == "3" )
-			_nLimAvalia +=  (VS1->VS1_VTOTNF * (_nRedBO/100))
-		EndIf	
 		_cFaseRet 	:= "3"
 		Break
 	EndIf
