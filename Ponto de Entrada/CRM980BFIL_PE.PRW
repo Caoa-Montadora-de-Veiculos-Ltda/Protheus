@@ -18,7 +18,7 @@ Ponto de Entrada referente a filtro do Browse de Clientes SA1
 User Function CRM980BFIL()
 Local _cRet := ""
     //If FWCodEmp() = '2020' .AND. FWFilial() = '2001'
-    If FWCodEmp() = '2020' .OR. FWCodEmp() = '2010'  
+    If FWCodEmp() = '2020' //.OR. FWCodEmp() = '2010'  
         MsgRun("Atualizando Limite de Crédito Caoa","Aguarde...",{|| u_ZFATF017() })
     EndIf
 Return _cRet

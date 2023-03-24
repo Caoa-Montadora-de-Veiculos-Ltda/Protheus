@@ -64,7 +64,8 @@ Static Function zMontadora()
            //U_ZF10GENSAP("SA1",SA1->A1_COD+SA1->A1_LOJA,"A1_XCDSAP", _nOpc)
            U_ZF10GENSAP("SA1", _cCodCli+_cLoja, "A1_XCDSAP", _nOpcx)
         EndIf
-        MsgRun("Atualizando Limite de Crédito Caoa","Aguarde...",{|| ZAtLCredito(_cCodCli) })
+        //aguardar implementação da montadora
+        //MsgRun("Atualizando Limite de Crédito Caoa","Aguarde...",{|| ZAtLCredito(_cCodCli) })
     EndIf
 Return(_lRet)
 
