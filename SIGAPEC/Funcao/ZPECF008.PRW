@@ -31,8 +31,8 @@ User Function ZPECF008()
 	Local _aRet    	    := {}
 	Local _nRet			:= 0
 	Local _lZPECF008    := SuperGetMV( "CMV_PEC009"  ,,.T. )   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
-	Local _lAvaliaOrc   := SuperGetMV( "CMV_PEC032"  ,,.F. )   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
-	Local _lAvaliaItem  := SuperGetMV( "CMV_PEC033"  ,,.F. )   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
+	//Local _lAvaliaOrc   := SuperGetMV( "CMV_PEC032"  ,,.F. )   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
+	//Local _lAvaliaItem  := SuperGetMV( "CMV_PEC033"  ,,.F. )   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
 	Local _cArmazemFDR 	:= AllTrim(SuperGetMV( "CMV_PEC036" ,,"" ))   //Parâmetro para indicação de utilização de validação armazem Franco da Rocha
 
 	//Local _cFilDe 	:= Space(TamSx3("VS1_FILIAL")[1])
@@ -56,22 +56,23 @@ User Function ZPECF008()
 	Local _cLocal		:= "01"  //iniciar com armazem 01
 	Local _cObsPrc		:= ""
 	Local _nPos
-	
+
 	Private _cAglutina 	:= ""
 	Private _aMensAglu	:= {}
-
+	
 	Begin Sequence
 		//teste para validar envio
 		//Caso não seja para executar a rotina sair
 		If !_lZPECF008                             
 			Break
 		Endif        
+		/* Retirado para utilizar as duas situações onde o orçamento total avalia fator de redução e o de item não  DAC 21/03/2023
 		If _lAvaliaOrc  .And. _lAvaliaItem  
 			Help( , ,"Atenção",,"Não é permitido avaliação de Crédito Total e por Item, rever parametrização com o ADM Sistemas !",4,1) //Atenção / Necessário informar os parâmetros 
 			_lRet := .F.
 			Break
 		Endif
-
+		*/
 		//If U_ZGENUSER( RetCodUsr() ,"ZPECF008" ,.T.)
 		BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
 			SELECT 	VX5.VX5_CHAVE,
@@ -195,21 +196,21 @@ Local _aWherePed		:= {}
 Local _aWhereTra		:= {}
 Local _aVS1				:= {}
 Local _lRet				:= .T.
+Local _lSepara			:= .F.
+Local _lValCred  		:= .T. 	
+
 Local _cFaseConf 		:= Alltrim(GetNewPar("MV_MIL0095","4")) // Fase de Conferencia e Separacao
 Local _cFaseOrc 		:= AllTrim(GetNewPar("MV_FASEORC","023R45F"))
-Local _nRegProcess		:= 0
-Local _nProcessado		:= 0
-//Local _nEnviado 		:= 0
-Local _nGerado			:= 0
-Local _nTotByPass		:= 0
-Local _nGeradoErr		:= 0
-//Local _nReprocessado  	:= 0
-Local _lSepara			:= .F.
-//Local _cLocal			:= "01"
 Local _cConectWis  		:= AllTrim(SuperGetMV( "CMV_PEC031"  ,,"WIS.V_ENDERECO_ESTOQUE@DBLINK_WISPROD")) 
 Local _cTPedTransfFDR 	:= AllTrim(SuperGetMV( "CMV_PEC038" ,,"" ))   //Parâmetro para indicação de tipo de pedido de transferencia
 
+Local _nRegProcess		:= 0
+Local _nProcessado		:= 0
+Local _nGerado			:= 0
+Local _nTotByPass		:= 0
+Local _nGeradoErr		:= 0
 Local _nLimAvalia		:= 0
+
 Local _lInconSaldo		
 Local _cStatus
 Local _nPos
@@ -230,7 +231,8 @@ Local _cHsInicio
 Local _dFinal 
 Local _cHsFinal
 Local _cCdEmpWIS
-Local _lValCred  := .T. 	
+Local _cLojaCredito
+Local _cFaseRet
 
 Default _lArmFDR := .F.
 
@@ -451,7 +453,9 @@ Begin Sequence
 
 	//TCSetField(_cAliasTRB,'ZD0_DATPRF','D',8,0)
 	If (_cAliasTRB)->(Eof())  
-		Aviso("AVISO","Não foram encontrados Orçamentos ! ",{"Ok"})
+		If !_lArmFDR
+			Aviso("AVISO","Não foram encontrados Orçamentos ! ",{"Ok"})
+		EndIf	
 		_lRet := .F.
 		Break	
 	Endif
@@ -563,7 +567,7 @@ Begin Sequence
 							_lInconSaldo := .T.
            					Disarmtransaction()
 						EndIf  
-					Else
+					ElseIf _lRet
 						If !ZPECF08VS3(VS1->VS1_NUMORC, VS1->VS1_XMARCA, @_aBackOrder, _cConectWis, _cCdEmpWIS, _cLocal, _cTPedTransfFDR)
 							_lRet 		 := .F.
 							_lInconSaldo := .T.
@@ -575,12 +579,12 @@ Begin Sequence
 							//Verifica Limite de Crédito
 							//AJUSTE PARA UTILIZAR LIMITE DE CRÉDITO PARCIAL - RETIRADO CALCULO DAC 09/12/2022
 							If "3" $ _cFaseOrc  //somente se estiver na fase do orçamento conforme alinhado com Zé 30/11/2021
-								U_XFASEORC("3" /*_cFase*/, /*_cGrupo*/, /*_cCodPro*/, @_nLimAvalia) //Verifica se passa pela Fase Limite de Crédito
-								//Atualização para utilizar limite de crédito Parcial
-								//conforme alinhamento com Zé o processo será imprementado caso o status volte 3 não processar DAC 04/03/3022		
-								//If VS1->VS1_STATUS == "3" .and. _nLimAvalia <= 0
-								//	_lRet := .F.   //não abortarei será necessário verificar se no limite posso utilizar itens de produto até atingir o mesmo DAC 08/12/2022
-								//EndIf	
+								_cFaseRet := U_XFASEORC("3" /*_cFase*/, /*_cGrupo*/, /*_cCodPro*/, @_nLimAvalia) //Verifica se passa pela Fase Limite de Crédito
+								If Empty(_cFaseRet)  //quando retorna em branco não conseguiu definir limite de crédito
+									_lRet 		:= .F.   
+									_lValCred 	:= .F.
+									Disarmtransaction()
+								EndIf
 							Else
 								//Conforme José TOTVS caso esteja nesta fase voltar para zero se não 01/12/2021 
 								If VS1->VS1_STATUS == "3"
@@ -594,18 +598,24 @@ Begin Sequence
 						
 							//Utilizar limite de crédito Parcial
 							//PEC031 - Limite de Credito - Revitalização
-							If "3" $ _cFaseOrc  .And. VS1->VS1_STATUS == "3" //somente se estiver na fase do orçamento conforme alinhado com Zé 30/11/2021
+							If _lRet .And. "3" $ _cFaseOrc  .And. _cFaseRet == "3" //somente se estiver na fase do orçamento conforme alinhado com Zé 30/11/2021
+								_cLojaCredito := U_XLJLCREDito(_cCliFat)  //função ja posiciona SA1
 								//"1=Credito Disponivel;2=Falta de Saldo;3=Titulos Em Atraso;4=Credito Vencido;5=Bloqueado
-								If  (SA1->A1_XSTAFP $ "1|2" .OR. (SA1->A1_XSTAFP == "3" .AND. SA1->A1_XBLQVEN == "2") ) //.AND. _nLimAvalia > 0 
-									//Caso ainda esteja bloqueado deverá tentar liberar o limite de crédito que possui
-									VS1->(DbGoto((_cAliasTRB)->NREGVS1))
-									If !ZPECF08LCC(VS1->VS1_NUMORC,_nLimAvalia, _aBackOrder)
-										_lRet     := .F.
-										_lValCred := .F.
-										Disarmtransaction()	
-									EndIf
-								Else
+								If Empty(_cLojaCredito)
 									_lRet     := .F.
+									_lValCred := .F.
+								Else	
+									If  (SA1->A1_XSTAFP $ "1|2" .OR. (SA1->A1_XSTAFP == "3" .AND. SA1->A1_XBLQVEN == "2") ) //.AND. _nLimAvalia > 0 
+										//Caso ainda esteja bloqueado deverá tentar liberar o limite de crédito que possui
+										VS1->(DbGoto((_cAliasTRB)->NREGVS1))
+										If !ZPECF08LCC(VS1->VS1_NUMORC,_nLimAvalia, _aBackOrder)
+											_lRet     := .F.
+										EndIf
+									Else
+										_lRet     := .F.
+									EndIf
+								EndIf
+								If !_lRet
 									_lValCred := .F.
 									Disarmtransaction()	
 								EndIf
@@ -892,14 +902,14 @@ Begin Sequence
 
 //	TCSetField(_cAliasPesq,'VS3_CODITE','C',TamSx3("B2_COD")[1],0)
 
+	_lSepara	:= .F.  //indica se tera algum item que será separado
+	_aBackOrder := {}
+
  	If (_cAliasPesq)->(Eof())  
 		_lRet := .F.
 		Aadd(_aMensAglu,"Orçamento não possui itens localizados !")
 		Break	
 	Endif
-	
-	_lSepara	:= .F.  //indica se tera algum item que será separado
-	_aBackOrder := {}
 	
 	While (_cAliasPesq)->(!Eof())
 		//Ajustar tamanho código produto
@@ -2577,286 +2587,318 @@ Return _nEnviados
 
 
 
-//Analisar se vai chamar a funcionalidade de verificação do credito no transaction ou como esta atualmente
-//poderá interferir na procura dos valores e dedução dos mesmos
-//========================================
-//DAC 06/12/2022 
-//PEC031 - Limite de Credito - Revitalização
-//Tratar limite de crédito Parcial avaliando se bloqueia e ou libera parcialmente
-//========================================
+/*/{Protheus.doc} ZPECF08LCC
+Liberação de Limite de Crédito Parcial
+@since      06/12/2022
+@param      _cNumOrc 	- Numero de Orçamento
+			_nLimAvalia - Limite parcial para liberação
+			_aBackOrder - Registros ja grvados para backorder caso os tenha
+@return     _lRet
+@author     DAC Denilso
+@version    12.1.17 / Superior
+@project	GRUPO CAOA - Liberação de Limite de Crédito Parcial
+@since      06/12/2022
+@ Obs		
+@history    06/12/2022 DAC	- PEC031 - Limite de Credito - Revitalização 
+			Tratar limite de crédito Parcial avaliando se bloqueia e ou libera parcialment
+			21/03/2022 DAC	- GAP FIN100 - Revitalização Limite de Crédito V2	
+			Incluído fator para calculo percentual do orçamento para liberação de crédito parcial
+/*/
+
 Static Function ZPECF08LCC(_cNumOrc,_nLimAvalia, _aBackOrder)
-	Local _lAvaliaOrc   := SuperGetMV( "CMV_PEC032"  ,,.F. )   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
-	Local _lAvaliaItem  := SuperGetMV( "CMV_PEC033"  ,,.F. )   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
-	Local _lAvaNeg      := SuperGetMV( "CMV_PEC034"  ,,.F. )   //Avalia Credito limite de Credito Negativo
-	Local _lRet			:= .T. 
-	//Local _nReduc       := 0.10
+Local _lAvaliaOrc   := SuperGetMV( "CMV_PEC032"  ,,.F. )   //Avalia limite de crédito por orçamento na Onda baseado pelos valores mais baixos e pendentes     
+Local _lAvaliaItem  := SuperGetMV( "CMV_PEC033"  ,,.F. )   //Avalia limite de crédito por itens orçamento Onda baseado pelos valores mais baixos e pendentes     
+Local _lRet			:= .T. 
 
-	Default _cNumOrc 	:= ""
-	Default _nLimAvalia	:= 0
-	Default _aBackOrder	:= {}
+Default _cNumOrc 	:= ""
+Default _nLimAvalia	:= 0
+Default _aBackOrder	:= {}
+	
+Begin Sequence
+	//Se não existe saldo não validar processo
+	If _nLimAvalia <= 0
+		_lRet	:= .F.
+		Break
+	Endif
 
-	if _nLimAvalia < 0 .and. _lAvaNeg
-		
-		Begin Sequence
-			//Não faz validações de limite de crédito
-			If !_lAvaliaOrc .And. !_lAvaliaItem
-				Break
-			Endif
-			//Caso não esteja bloqueao nçao validar
-			If VS1->VS1_STATUS <> "3"
-				Break
-			EndIf
-			//tem que informar o numero do orçamento senão é erro
-			If Empty(_cNumOrc)
-				Aadd(_aMensAglu,"[ZPECF08LCC] Orçamento  não Informado na validação do limite de crédito !")
-				_lRet := .F.
-				Break
-			EndIf
-			
-			//Reposicionar orçamento, caso não localize aborta
-			If AllTrim(_cNumOrc) <> AllTrim(VS1->VS1_NUMORC)
-				VS1->(DbSetOrder(1))
-				If !VS1->(DbSeek(XFilial("VS1")+_cNumOrc))
-					Aadd(_aMensAglu,"[ZPECF08LCC] Orçamento "+ AllTrim(_cNumOrc) +" não localizado na calidação do limite de crédito !")
-					_lRet := .F.
-					Break
-				Endif
-			Endif
-			
-			//Verificar o valor total do orçamento em relação ao limite de crédito
-			If _lAvaliaOrc .and. _lRet
-
-				_lRet 	:= ZPECF8LCAO(_cNumOrc, _nLimAvalia, _aBackOrder)
-				
-			EndIf
-
-			//Verifica por item e pode realizar o item parcial
-			If _lAvaliaItem  .and. (!_lAvaliaOrc .or. !_lRet)
-			
-				_lRet	:= ZPECF8LCAI(_cNumOrc, _nLimAvalia, VS1->(Recno()), _aBackOrder)
-						
-			EndIf
-
-			If !_lRet
-				Aadd(_aMensAglu,"[ZPECF08LCC] Problemas na avaliação de Crédito, contactar o ADM SISTEMAS !")
-				Break
-			EndIf
-		End Sequence
-	else
-		if _nLimAvalia < 0 .and. !_lAvaNeg
-			_lRet := .F.
-		Else
-			_lRet := .T.
-		EndIf
+	//Não faz validações de limite de crédito
+	If !_lAvaliaOrc .And. !_lAvaliaItem
+		_lRet	:= .F.
+		Break
+	Endif
+	//Caso não esteja bloqueao nçao validar
+	If VS1->VS1_STATUS <> "3"
+		_lRet	:= .F.
+		Break
 	EndIf
-
+	//tem que informar o numero do orçamento senão é erro
+	If Empty(_cNumOrc)
+		Aadd(_aMensAglu,"[ZPECF08LCC] Orçamento  não Informado na validação do limite de crédito !")
+		_lRet := .F.
+		Break
+	EndIf
+	
+	//Reposicionar orçamento, caso não localize aborta
+	If AllTrim(_cNumOrc) <> AllTrim(VS1->VS1_NUMORC)
+		VS1->(DbSetOrder(1))
+		If !VS1->(DbSeek(XFilial("VS1")+_cNumOrc))
+			Aadd(_aMensAglu,"[ZPECF08LCC] Orçamento "+ AllTrim(_cNumOrc) +" não localizado na calidação do limite de crédito !")
+			_lRet := .F.
+			Break
+		Endif
+	Endif
+	
+	//Verificar o valor total do orçamento em relação ao limite de crédito
+	If _lAvaliaOrc 		
+		_lRet 	:= ZPECF8LCAO(_cNumOrc, _nLimAvalia, _aBackOrder)
+	EndIf
+	//Verifica por item e pode realizar o item parcial
+	//If _lAvaliaItem  .and. (!_lAvaliaOrc .or. !_lRet)
+	If !_lRet .and. _lAvaliaItem   
+		_lRet	:= ZPECF8LCAI(_cNumOrc, _nLimAvalia, VS1->(Recno()), _aBackOrder)
+	EndIf
+	If !_lRet
+		Aadd(_aMensAglu,"[ZPECF08LCC] Não foi possivel utilizar crédito parciarl de "+AllTrim(STR(_nLimAvalia))+", não se enquadrando aos valores existentes !")
+		Break
+	EndIf
+End Sequence
 Return _lRet
 
 
-//Avaliação de limite de crédito por orçamento
-Static Function ZPECF8LCAO(_cNumOrc, _nLimAvalia, _aBackOrder)
-	Local _cAliasPesq   := GetNextAlias()
-	//Local _lRet 	:= .T.
-	Local _lAvalia	:= .T.
-	Local _cObs		:= ""
-	Local _nQtdePrd := 0
-	Begin Sequence
-		//Necessario fazer o select e avaliar se gerou orçamentos que atendam os limites
-		BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
-			SELECT NVL(VS3.R_E_C_N_O_,0) NREGVS3 	
-			FROM %Table:VS3% VS3
-			WHERE VS3.VS3_FILIAL 		= %xFilial:VS3%
-				AND VS3.VS3_NUMORC 		= %Exp:_cNumOrc%
-				AND VS3.VS3_QTDITE		> 0
-				AND VS3.%notDel%
-			ORDER BY VS3.VS3_VALTOT	
-		EndSql
-		(_cAliasPesq)->(DbGotop())
-		If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGVS3 == 0
-			Break
-		EndIf 
-		While (_cAliasPesq)->(!Eof()) 
-			VS3->(DbGoto( (_cAliasPesq)->NREGVS3))
-			//Verifica se o item esta no Backorder
-			_nPosCpo := Ascan(_aBackOrder,{|x| AllTrim(x[2]) == AllTrim(VS3->VS3_CODITE)}) 	 
-			//Caso esteja no BackOrder e não tenha referencia ao item que substitui e ou se é normal não possui saldo e será apagado
-			If _nPosCpo > 0 .And. Empty(VS3->VS3_XTPSUB)
-				(_cAliasPesq)->(DbSkip())
-				Loop	
-			EndIf
-			_nQtdePrd += VS3->VS3_VALTOT
-			(_cAliasPesq)->(DbSkip())
-		EndDo	
-		If _nQtdePrd == 0
-			Break 
-		Endif	
+/*/{Protheus.doc} ZPECF8LCAO
+Avaliação de limite de crédito por orçamento
+@since      06/12/2022
+@param      _cNumOrc 	- Numero de Orçamento
+			_nLimAvalia - Limite parcial para liberação
+			_aBackOrder - Registros ja grvados para backorder caso os tenha
+@return     _lAvalia
+@author     DAC Denilso
+@version    12.1.17 / Superior
+@project	GRUPO CAOA - Liberação de Limite de Crédito Parcial
+@since      06/12/2022
+@ Obs		Foi implementado o fator de calculo percentual para avaliar o limite nesta funcionalidade, 
+			pois a mesma tem que ser para todo o orçamento não podendo ser utilizada na avaliação de itens
+@history    06/12/2022 DAC	- PEC031 - Limite de Credito - Revitalização 
+			Tratar limite de crédito Parcial avaliando se bloqueia e ou libera parcialment
+			21/03/2022 DAC	- GAP FIN100 - Revitalização Limite de Crédito V2	
+			Incluído fator para calculo percentual do orçamento para liberação de crédito parcial
+/*/
 
-		If _nLimAvalia < _nQtdePrd
-			_lAvalia := .F.
-		Endif
-	End Sequence
+Static Function ZPECF8LCAO(_cNumOrc, _nLimAvalia, _aBackOrder)
+Local _cAliasPesq   := GetNextAlias()
+Local _nRedBO       := SuperGetMV("CMV_PEC035",,100)
+Local _lAvalia		:= .T.
+Local _cObs			:= ""
+Local _nValPrd 		:= 0
+Local _nFatorLimite	:= 0
+
+Begin Sequence
 	_cObs 	:= "[ZPECF08LCC] ORÇAMENTO COM LIMITE DE CRÉDITO "+AllTrim(Transform(_nLimAvalia,PesqPict("VS1","VS1_VTOTNF ")))+" AVALIANDO LIBERAÇÃO POR LIMITE DE CRÉDITO"
 	_cObs 	+= CRLF
-	If _lAvalia
-		_cObs += "Orçamento com valor total "+AllTrim(Transform(_nLimAvalia,PesqPict("VS1","VS1_VTOTNF ")))+" Aprovado Limite de Crédito" 
-	Else
-		_cObs += "Orçamento com valor total "+AllTrim(Transform(_nLimAvalia,PesqPict("VS1","VS1_VTOTNF ")))+" não Aprovado pelo Limite de Crédito" 
+	//Necessario fazer o select e avaliar se gerou orçamentos que atendam os limites
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT NVL(VS3.R_E_C_N_O_,0) NREGVS3 	
+		FROM %Table:VS3% VS3
+		WHERE VS3.VS3_FILIAL 		= %xFilial:VS3%
+			AND VS3.VS3_NUMORC 		= %Exp:_cNumOrc%
+			AND VS3.VS3_QTDITE		> 0
+			AND VS3.%notDel%
+		ORDER BY VS3.VS3_VALTOT	
+	EndSql
+	(_cAliasPesq)->(DbGotop())
+	If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGVS3 == 0
+		_cObs += "Não localizado itens do orçamento "+_cNumOrc
+			_cObs 	+= CRLF
+		Break
+	EndIf 
+	While (_cAliasPesq)->(!Eof()) 
+		VS3->(DbGoto( (_cAliasPesq)->NREGVS3))
+		//Verifica se o item esta no Backorder
+		_nPosCpo := Ascan(_aBackOrder,{|x| AllTrim(x[2]) == AllTrim(VS3->VS3_CODITE)}) 	 
+		//Caso esteja no BackOrder e não tenha referencia ao item que substitui e ou se é normal não possui saldo e será apagado
+		If _nPosCpo > 0 .And. Empty(VS3->VS3_XTPSUB)
+			(_cAliasPesq)->(DbSkip())
+			Loop	
+		EndIf
+		_nValPrd += VS3->VS3_VALTOT
+		(_cAliasPesq)->(DbSkip())
+	EndDo	
+	If _nValPrd == 0
+		_lAvalia := .F.
+		Break 
+	Endif	
+	//DAC 21/03/2023
+	//aplicado o percentual para verificar se poderá ou não utilizar o limite para o total da nota
+	//este fator foi criado tendo em consideração que poderá liberar um orçamento que ja esteja parado baseado num percentua informado no parâmetro
+	//caso atinja este valor no limite existente para utilização de crédito a nota será liberada no seu valor total (maior que o fator) conforme alinhado equipe CAOA
+
+	//Fator de redução do orçamento percentual aceitavel para liberação do orçamento no seu valor total DAC 21/03/2023
+	If _nRedBO > 100
+		_nRedBO := 100
 	Endif
-	//Gravo informações do processo
-	VS1->(RecLock("VS1",.F.))
-	If !Empty(_cObs)
-		VS1->VS1_OBSAGL	:= Upper(_cObs) + CRLF  + AllTrim(VS1->VS1_OBSAGL)
-	EndIf
-	//Se o Status esta igual a 3 e liberei algum parcial atualizo o status para 0 Normal
-	If _lAvalia .And. VS1->VS1_STATUS == "3"
-		VS1->VS1_STATUS := "0"
+
+	_nFatorLimite := _nValPrd //* (_nRedBO/100) conforme alinhado com Zé avaliar o valor total DAC 24/01/2023
+	If _nLimAvalia < _nFatorLimite
+		_lAvalia := .F.
 	Endif
+End Sequence
+If _lAvalia
+	_cObs += "Produtos com valor total "+AllTrim(Transform(_nValPrd,PesqPict("VS1","VS1_VTOTNF ")))+" Limite Parcial de " +AllTrim(Transform(_nLimAvalia,PesqPict("VS1","VS1_VTOTNF ")))+" Aprovado Limite de Crédito Parcial" 
+Else
+	_cObs += "Produtos com valor total "+AllTrim(Transform(_nValPrd,PesqPict("VS1","VS1_VTOTNF ")))+" Limite Parcial de " +AllTrim(Transform(_nLimAvalia,PesqPict("VS1","VS1_VTOTNF ")))+" não Aprovado pelo Limite de Crédito Parcial" 
+Endif
+_cObs 	+= CRLF
+_cObs	:= Upper(_cObs)
+Aadd(_aMensAglu,Upper(_cObs))
+//Gravo informações do processo
+VS1->(RecLock("VS1",.F.))
+//Se o Status esta igual a 3 e liberei algum parcial atualizo o status para 0 Normal
+If _lAvalia .And. VS1->VS1_STATUS == "3"
+	VS1->VS1_STATUS := "0"
+Endif
+VS1->(MsUnlock())
 Return _lAvalia  //neste caso sempre volto vervadeiro
 
-//Avaliação do limite de crédito por item
+
+
+/*/{Protheus.doc} ZPECF8LCAI
+Avaliação de limite de crédito orçamento item a item
+@since      06/12/2022
+@param      _cNumOrc 	- Numero de Orçamento
+			_nLimAvalia - Limite parcial para liberação
+			_aBackOrder - Registros ja grvados para backorder caso os tenha
+@return     _lAvalia
+@author     DAC Denilso
+@version    12.1.17 / Superior
+@project	GRUPO CAOA - Liberação de Limite de Crédito Parcial
+@since      06/12/2022
+@ Obs		Esta função não irá utilizar fator de redução para avaliar limite a mesma avalia item a item 
+			para liberar limite parcial DAC 21/03/2023
+@history    06/12/2022 DAC	- PEC031 - Limite de Credito - Revitalização 
+			Tratar limite de crédito Parcial avaliando se bloqueia e ou libera parcialment
+			21/03/2022 DAC	- GAP FIN100 - Revitalização Limite de Crédito V2	
+			Incluído fator para calculo percentual do orçamento para liberação de crédito parcial
+/*/
+
 Static Function	ZPECF8LCAI(_cNumOrc, _nLimAvalia, _nRegVS1, _aBackOrder)
-	Local _cAliasPesq   := GetNextAlias()
-	Local _lRet 		:= .F.  //indica se foi utilizado o limite de crédito
-	Local _nLimCredito	:=	0
-	Local _aObs			:= {}
-	Local _aBak			:= {}
-	Local _lParcial		:= .F.
-	Local _lZera		:= .F.
-	Local _cObs			:= ""		
-	Local _nQtdePrd
-	Local _nValorPrd
-	Local _nPos 
-	Local _nQtdeBak
-	Local _nItemTotal 	:= 0
-	Local _nPercBo      := SuperGetMV("CMV_PEC035",,100)
+Local _cAliasPesq   := GetNextAlias()
+Local _lRet 		:= .F.  //indica se foi utilizado o limite de crédito
+Local _nLimCredito	:=	0
+Local _aObs			:= {}
+Local _aBak			:= {}
+Local _lParcial		:= .F.
+Local _lZera		:= .F.
+Local _cObs			:= ""		
+Local _nQtdePrd
+Local _nValorPrd
+Local _nPos 
+Local _nQtdeBak
 
-	if _nPercBo > 100
-		_nPercBo := 100
-	Endif
-
-	Begin Sequence
-		//Guardo o valor do limite de crédito pois será alterado caso possa utilizar o mesmo
-		_nLimCredito	:= _nLimAvalia + ( VS1->VS1_VTOTNF*(_nPercBo/100) )
-		
-		If _nLimCredito <= 0
-			Aadd( _aObs,"[ZPECF08LCC] ORÇAMENTO COM LIMITE DE CRÉDITO "+AllTrim(Transform(_nLimAvalia,PesqPict("VS3","VS3_VALTOT")))+" NÃO SERÁ ATENDIDO POR FALTA DE LIMITE DE CRÉDITO")
-			_lRet := .F.
-			Break
-		ENDIF
-		
-		BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
-			SELECT NVL(VS3.R_E_C_N_O_,0) NREGVS3 	
-			FROM %Table:VS3% VS3
-			WHERE VS3.VS3_FILIAL 		= %xFilial:VS3%
-				AND VS3.VS3_NUMORC 		= %Exp:_cNumOrc%
-				AND VS3.VS3_QTDITE		> 0
-				AND VS3.%notDel%
-			ORDER BY VS3.VS3_VALTOT	
-		EndSql
-		(_cAliasPesq)->(DbGotop())
-		If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGVS3 == 0
-			Break
-		EndIf 
-		Aadd( _aObs,"[ZPECF08LCC] ORÇAMENTO COM LIMITE DE CRÉDITO "+AllTrim(Transform(_nLimAvalia,PesqPict("VS3","VS3_VALTOT")))+" AVALIANDO LIBERAÇÃO POR LIMITE DE CRÉDITO")
-		While (_cAliasPesq)->(!Eof()) 
-			VS3->(DbGoto( (_cAliasPesq)->NREGVS3))
-			//Verifica se o item esta no Backorder
-			_nPosCpo := Ascan(_aBackOrder,{|x| AllTrim(x[2]) == AllTrim(VS3->VS3_CODITE)}) 	 
-			//Caso esteja no BackOrder e não tenha referencia ao item que substitui e ou se é normal não possui saldo e será apagado
-			If _nPosCpo > 0 .And. Empty(VS3->VS3_XTPSUB)
-				(_cAliasPesq)->(DbSkip())
-				Loop	
-			EndIf
-			//Avaliar crédito se  é possivel utilizar  para todo o produto
-			_nQtdePrd 	:= 0
-			_lParcial	:= .F.
-			_nItemTotal := VS3->VS3_VALTOT + VS3->VS3_VICMSB
-			If _nItemTotal <= _nLimCredito
-				_nLimCredito 	-= _nItemTotal
-				_nQtdePrd		:= VS3->VS3_QTDITE 
-				_lRet 			:= .T.
-			//Neste caso verificar por unidade o quanto atende	
-			ElseIf VS3->VS3_QTDITE > 1   
-				_nValorPrd 	:=  VS3->VS3_VALPEC
-				For _nPos := 1 To VS3->VS3_QTDITE
-					If _nValorPrd <= _nLimCredito
-						_nLimCredito 	-= _nValorPrd
-						_nQtdePrd 		++
-						_lParcial		:= .T.
-						_lRet 			:= .T.
-					Else
-						Exit
-					Endif	
-				Next
-			Endif
-			//Caso atenda verificar se ja existe BakOrder  caso sim atualizar o processo deve ser com o parcial
-			If _nQtdePrd > 0
-				If _lParcial	
-					_lZera 		:= .F.
-					_nQtdeBak	:= VS3->VS3_QTDITE - _nQtdePrd
-					if _nQtdeBak > 0
-						Aadd( _aObs,"GERADO BAKORDER PROD "+AllTrim((VS3->VS3_CODITE))+ " NA QUANTIDADE " +AllTrIm(STR(_nQtdeBak))+" LIMITE DE CREDITO ATUALIZADO "+AllTrim(Transform(_nLimCredito,PesqPict("VS3","VS3_VALTOT"))) ) 
-						aAdd(_aBak, { 	VS3->(Recno()),;
-										_nQtdeBak,;
-										_aObs[Len(_aObs)],;
-										_lZera,;
-										VS3->VS3_QTDITE;
-									})
-					EndIf
+Begin Sequence
+	//Guardo o valor do limite de crédito pois será alterado caso possa utilizar o mesmo
+	_nLimCredito	:= _nLimAvalia
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT NVL(VS3.R_E_C_N_O_,0) NREGVS3 	
+		FROM %Table:VS3% VS3
+		WHERE VS3.VS3_FILIAL 		= %xFilial:VS3%
+			AND VS3.VS3_NUMORC 		= %Exp:_cNumOrc%
+			AND VS3.VS3_QTDITE		> 0
+			AND VS3.%notDel%
+		ORDER BY VS3.VS3_VALTOT	
+	EndSql
+	(_cAliasPesq)->(DbGotop())
+	If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGVS3 == 0
+		Break
+	EndIf 
+	Aadd( _aObs,"[ZPECF08LCC] ORÇAMENTO COM LIMITE DE CRÉDITO PARCIAL "+AllTrim(Transform(_nLimAvalia,PesqPict("VS3","VS3_VALTOT")))+" AVALIANDO LIBERAÇÃO POR LIMITE DE CRÉDITO")
+	While (_cAliasPesq)->(!Eof()) 
+		VS3->(DbGoto( (_cAliasPesq)->NREGVS3))
+		//Verifica se o item esta no Backorder
+		_nPosCpo := Ascan(_aBackOrder,{|x| AllTrim(x[2]) == AllTrim(VS3->VS3_CODITE)}) 	 
+		//Caso esteja no BackOrder e não tenha referencia ao item que substitui e ou se é normal não possui saldo e será apagado
+		If _nPosCpo > 0 .And. Empty(VS3->VS3_XTPSUB)
+			(_cAliasPesq)->(DbSkip())
+			Loop	
+		EndIf
+		//Avaliar crédito se  é possivel utilizar  para todo o produto
+		_nQtdePrd 	:= 0
+		_lParcial	:= .F.
+		If VS3->VS3_VALTOT <= _nLimCredito
+			_nLimCredito 	-= VS3->VS3_VALTOT
+			_nQtdePrd		:= VS3->VS3_QTDITE 
+			_lRet 			:= .T.
+		//Neste caso verificar por unidade o quanto atende	
+		ElseIf VS3->VS3_QTDITE > 1   
+			_nValorPrd 	:=  VS3->VS3_VALPEC
+			For _nPos := 1 To VS3->VS3_QTDITE
+				If _nValorPrd <= _nLimCredito
+					_nLimCredito 	-= _nValorPrd
+					_nQtdePrd 		++
+					_lParcial		:= .T.
+					_lRet 			:= .T.
 				Else
-					_nQtdeBak	:= VS3->VS3_QTDITE 
-				Endif
-				Aadd( _aObs,"PROD "+AllTrim(VS3->VS3_CODITE)+" LIBERADO POR L.C. UTILIZADO QTDE "+AllTrIm(STR(_nQtdePrd))+" DE "+AllTrIm(STR(VS3->VS3_QTDITE))+" LIMITE DE CREDITO ATUALIZADO "+AllTrim(Transform(_nLimCredito,PesqPict("VS3","VS3_VALTOT"))) ) 
-				
-				//tenho que ajustar a quantidade
-				VS3->(RecLock("VS3",.F.))
-				VS3->VS3_QTDITE := _nQtdePrd
-				//VS3->VS3_VALTOT := _nQtdePrd * VS3->VS3_VALPEC 
-				VS3->VS3_VALTOT := _nQtdePrd * (ROUND(VS3->VS3_VALPEC*(1-(VS3->VS3_PERDES/100)),2))//Ajuste realizado 26/01/2023 José Carlos - erro valor total Orc Orig em desmbr por LC
-				VS3->VS3_OBSAGL	:= VS3->VS3_OBSAGL + CRLF  + _aObs[Len(_aObs)]
-				VS3->(MsUnlock())
-			Else
-				//Caso não atenda tenho que jogar para o Backorder	 
-				//Neste caso se o item ja estiver em backorder somar a quantidade de item pois o mesmo não esta com saldo e deverá ficar fora do pedido
-				_lZera	:= .T.   //neste caso zero para tirar o item do pedido pois caso possa utilizar os itens de limite de crédito este não poderá existir
-				Aadd( _aObs,"PROD "+AllTrim(VS3->VS3_CODITE)+" NÃO UTILIZADA QTDE "+AllTrIm(STR(VS3->VS3_QTDITE))+" DEVIDO NÃO TER LIMITE "+AllTrim(Transform(_nLimAvalia,PesqPict("VS3","VS3_VALTOT"))))
+					Exit
+				Endif	
+			Next
+		Endif
+		//Caso atenda verificar se ja existe BakOrder  caso sim atualizar o processo deve ser com o parcial
+		If _nQtdePrd > 0
+			If _lParcial	
+				_lZera 		:= .F.
+				_nQtdeBak	:= VS3->VS3_QTDITE - _nQtdePrd
+				Aadd( _aObs,"GERADO BAKORDER PROD "+AllTrim((VS3->VS3_CODITE))+ " NA QUANTIDADE " +AllTrIm(STR(_nQtdeBak))+" LIMITE DE CREDITO PARCIAL ATUALIZADO "+AllTrim(Transform(_nLimCredito,PesqPict("VS3","VS3_VALTOT"))) ) 
 				aAdd(_aBak, { 	VS3->(Recno()),;
-								VS3->VS3_QTDITE,;
+								_nQtdeBak,;
 								_aObs[Len(_aObs)],;
 								_lZera,;
 								VS3->VS3_QTDITE;
 							})
+			Else
+				_nQtdeBak	:= VS3->VS3_QTDITE 
 			Endif
-			(_cAliasPesq)->(DbSkip())
-		EndDo
-		//Caso tenha liberação e exista liberação parcial
-		If _lRet .and. Len(_aBak) > 0
-			//Criar rotina para gerar orçamento com bloqueio de crédito (lembrar de não marcar BO)
-			_lRet := ZPECF8LCGR(_aBak, _nRegVS1)
-		EnDif
-	End Sequence
-	VS1->(DbGoto(_nRegVS1))
-	_cObs := ""
-	For _nPos := 1 To Len(_aObs)
-		_cObs	+= Upper(_aObs[_nPos]) + CRLF
-	Next
+			Aadd( _aObs,"PROD "+AllTrim(VS3->VS3_CODITE)+" LIBERADO POR L.C. PARCIAL UTILIZADO QTDE "+AllTrIm(STR(_nQtdePrd))+" DE "+AllTrIm(STR(VS3->VS3_QTDITE))+" LIMITE DE CREDITO ATUALIZADO "+AllTrim(Transform(_nLimCredito,PesqPict("VS3","VS3_VALTOT"))) ) 
+			
+			//tenho que ajustar a quantidade
+			VS3->(RecLock("VS3",.F.))
+			VS3->VS3_QTDITE := _nQtdePrd
+			VS3->VS3_OBSAGL	:= VS3->VS3_OBSAGL + CRLF  + _aObs[Len(_aObs)]
+			VS3->(MsUnlock())
+		Else
+			//Caso não atenda tenho que jogar para o Backorder	 
+			//Neste caso se o item ja estiver em backorder somar a quantidade de item pois o mesmo não esta com saldo e deverá ficar fora do pedido
+			_lZera	:= .T.   //neste caso zero para tirar o item do pedido pois caso possa utilizar os itens de limite de crédito este não poderá existir
+			Aadd( _aObs,"PROD "+AllTrim(VS3->VS3_CODITE)+" NÃO UTILIZADA QTDE "+AllTrIm(STR(VS3->VS3_QTDITE))+" DEVIDO NÃO TER LIMITE "+AllTrim(Transform(_nLimAvalia,PesqPict("VS3","VS3_VALTOT"))))
+			aAdd(_aBak, { 	VS3->(Recno()),;
+							VS3->VS3_QTDITE,;
+							_aObs[Len(_aObs)],;
+							_lZera,;
+							VS3->VS3_QTDITE;
+						})
+		Endif
+		(_cAliasPesq)->(DbSkip())
+	EndDo
+	//Caso tenha liberação e exista liberação parcial
+	If _lRet .and. Len(_aBak) > 0
+		//Criar rotina para gerar orçamento com bloqueio de crédito (lembrar de não marcar BO)
+		_lRet := ZPECF8LCGR(_aBak, _nRegVS1)
+	EnDif
+End Sequence
 
-	//Gravo informações do processo
-	VS1->(RecLock("VS1",.F.))
-	If !Empty(_cObs)
-		VS1->VS1_OBSAGL	:= Upper(_cObs) + CRLF  + AllTrim(VS1->VS1_OBSAGL)
-	EndIf
-	//Se o Status esta igual a 3 e liberei algum parcial atualizo o status para 0 Normal
-	If _lRet .And. VS1->VS1_STATUS == "3"
-		VS1->VS1_STATUS := "0"
-		VS1->VS1_XBO	:= "N"
-	Endif
-	VS1->(MsUnlock())
-
-	U_XFUNIPOSTO(VS1->VS1_NUMORC , '02'/*cEmpAnt*/, cFilAnt, .T. /*_lJob*/)
-	
+VS1->(DbGoto(_nRegVS1))
+_cObs := ""
+For _nPos := 1 To Len(_aObs)
+	_cObs	+= Upper(_aObs[_nPos]) + CRLF
+Next
+Aadd(_aMensAglu,Upper(_cObs))
+//Gravo informações do processo
+VS1->(RecLock("VS1",.F.))
+//Se o Status esta igual a 3 e liberei algum parcial atualizo o status para 0 Normal
+If _lRet .And. VS1->VS1_STATUS == "3"
+	VS1->VS1_STATUS := "0"
+	VS1->VS1_XBO	:= "N"
+Endif
+VS1->(MsUnlock())
 Return _lRet
-
 
 
 
