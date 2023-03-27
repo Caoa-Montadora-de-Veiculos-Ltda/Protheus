@@ -20,12 +20,12 @@ F2_HORA    = HORA DE EMISSAO
 F2_DAUTNFE = DATA DA AUTORIZAÇÃO
 F2_HAUTNFE = HORA DA AUTORIZAÇÃO
 --------------------------------
-CMV_FAT007 = Parametro se indica se processa a rotina ou não .T. = Valida a Exclusão ou .F. = Não Valida a Exclusão
+CMV_FAT008 = Parametro se indica se processa a rotina ou não .T. = Valida a Exclusão ou .F. = Não Valida a Exclusão
 
 */
 
 User Function MS520VLD()
-Local cProcessa  := GetMV("CMV_FAT007",,.T.)
+Local cProcessa  := GetMV("CMV_FAT008",,.T.)
 Local cRet       := .F.
 Local dDtLim     := DaySum(SF2->F2_DAUTNFE, 1)
 Local hHrAtu     := Time()
