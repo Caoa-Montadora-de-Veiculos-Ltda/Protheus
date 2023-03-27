@@ -2,7 +2,7 @@
 
 /*
 =====================================================================================
-Programa.:              PE_MACSOLICMS
+Programa.:              MACSOLICMS_PE
 Autor....:              
 Data.....:              01/07/2019
 Descricao / Objetivo:   PE para alterar o ICMS ST da MATFIS - Calculo Reverso
@@ -61,7 +61,7 @@ Local lVeia060 		:= .F.
 Local lMata410 		:= .F.
 Local lDev 			:= .F.
 Local aDev 			:= {}
-
+Local _F4MKPSOL		:= ""
 Do Case
 Case FWIsInCallStack("MAPVLNFS") // rotina de documento de saida
 	//Conout(" MACSOLICMS - MAPVLNFS - C6_XBASST - " + SC6->C6_NUM + "-" + SC6->C6_ITEM + "-" + SC6->C6_PRODUTO + " - " +  cValToChar(SC6->C6_VALOR) + "-" + cValToChar(SC6->C6_XBASST))
@@ -69,7 +69,14 @@ Case FWIsInCallStack("MAPVLNFS") // rotina de documento de saida
 		cOperacao == 'S' .And.;
 		nItem > 0  
 			nValIC   := MaFisRet(nItem,"IT_VALICM" )
-			nBaseSol := SC6->C6_XBASST
+			//nBaseSol := SC6->C6_XBASST
+			If (isInCallStack("VEIA060") .or. isInCallStack("VEIXX002"))
+				_F4MKPSOL:= Posicione("SF4",1,xFilial("SF4")+M->VVA_CODTES,"F4_MKPSOL")
+				nBaseSol := If(_F4MKPSOL == "1",0,M->VVA_XBASST)      //FWFldGet("VRK_XBASST")
+			Else
+				_F4MKPSOL:= Posicione("SF4",1,xFilial("SF4")+SC6->C6_TES,"F4_MKPSOL")
+				nBaseSol := If(_F4MKPSOL == "1",0,SC6->C6_XBASST)
+			EndIf
 			//nBaseSolAnt := nBaseSol
 			/*
 			If nBaseSol > 0 .and. nAliqSol > 0 .and. ((nBaseSol*(nAliqSol/100)) - nValIC) > 0
