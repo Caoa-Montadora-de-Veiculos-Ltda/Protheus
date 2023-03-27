@@ -226,259 +226,47 @@ Static Function ZVEIR2QR_Query()
 	Local _MV_PAR05
 	Local _MV_PAR06
 	Local _MV_PAR07
-/*
-	cQuery := ;
-		"SELECT 'SIGAVEI' as Origem ," +(Chr(13)+Chr(10))+(Chr(13)+Chr(10))+;
-			" VRJ_PEDIDO, VRJ_PEDCOM, VRJ_DATDIG" +(Chr(13)+Chr(10))+(Chr(13)+Chr(10))+;
-			", COALESCE( VV3_DESCRI , ' ' ) VV3_DESCRI" +(Chr(13)+Chr(10))+(Chr(13)+Chr(10))+;
-			", VRK_CHASSI, VRK_MODVEI "+(Chr(13)+Chr(10))+(Chr(13)+Chr(10))+;
-			", VV2_DESMOD" +(Chr(13)+Chr(10))+;
-			", VRK_OPCION, COALESCE( RTRIM( VX5OPC.VX5_DESCRI ) , ' ' ) DESCOPCION"+(Chr(13)+Chr(10))+;
-			", VRK_COREXT, COALESCE( RTRIM( VX5EXT.VX5_DESCRI ) , ' ' ) DESCCOREXT "+(Chr(13)+Chr(10))+;
-			", VRK_CORINT, COALESCE( RTRIM( VX5INT.VX5_DESCRI ) , ' ' ) DESCCORINT "+(Chr(13)+Chr(10))+;
-			", VRK_FABMOD" +(Chr(13)+Chr(10))+;
-			", F2_SERIE, F2_DOC, F2_EMISSAO, F2_CHVNFE" +(Chr(13)+Chr(10))+;
-			", VRK_VALTAB, VRK_VALVDA" +(Chr(13)+Chr(10))+;
-			", VRJ_CODVEN" +(Chr(13)+Chr(10))+;
-			", COALESCE( A3_NOME , ' ' ) A3_NOME" +(Chr(13)+Chr(10))+;
-			", VRJ_CODCLI, VRJ_LOJA, A1_CGC, A1_NOME, A1_NREDUZ" +(Chr(13)+Chr(10))+;
-			", CC2_MUN" +(Chr(13)+Chr(10))+;
-			", A1_EST" +(Chr(13)+Chr(10))+;
-			", VRJ_CLIRET, VRJ_LOJRET" +(Chr(13)+Chr(10))+;
-			", VRJ_FORPAG,E4_DESCRI " +(Chr(13)+Chr(10))+;
-		" FROM " + RetSQLName("VRJ") + " VRJ " +(Chr(13)+Chr(10))+;
-			" JOIN " + RetSQLName("VRK") + " VRK" +(Chr(13)+Chr(10))+;
-					"  ON VRK.VRK_FILIAL = '" + FWxFilial("VRK") + "'" +(Chr(13)+Chr(10))+;
-					" AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO" +(Chr(13)+Chr(10))+;
-					" AND VRK.D_E_L_E_T_ = ' '" +(Chr(13)+Chr(10))+;
-			" JOIN " + RetSQLName("VV9") + " VV9" +(Chr(13)+Chr(10))+;
-					"  ON VV9.VV9_FILIAL = '" + FWxFilial("VV9") + "'" +(Chr(13)+Chr(10))+;
-					" AND VV9.VV9_NUMATE = VRK.VRK_NUMTRA" +(Chr(13)+Chr(10))+;
-					" AND VV9.D_E_L_E_T_ = ' '" +(Chr(13)+Chr(10))+;
-					" AND VV9.VV9_STATUS IN ('F','T') " +(Chr(13)+Chr(10))+;
-			" JOIN " + RetSQLName("VV0") + " VV0" +(Chr(13)+Chr(10))+;
-					"  ON VV0.VV0_FILIAL = '" + FWxFilial("VV0") + "'" +(Chr(13)+Chr(10))+;
-					" AND VV0.VV0_NUMTRA = VV9.VV9_NUMATE" +(Chr(13)+Chr(10))+;
-					" AND VV0.D_E_L_E_T_ = ' '" +(Chr(13)+Chr(10))+;
-					" AND VV0.VV0_OPEMOV = '0' " +(Chr(13)+Chr(10))+;
-					" AND VV0.VV0_SITNFI = '1' " +(Chr(13)+Chr(10))+;
-			" JOIN " + RetSQLName("SF2") + " F2 " +(Chr(13)+Chr(10))+;
-					"  ON F2.F2_FILIAL = '" + FWxFilial("SF2") + "'" +(Chr(13)+Chr(10))+;
-					" AND F2.F2_DOC = VV0.VV0_NUMNFI" +(Chr(13)+Chr(10))+;
-					" AND F2.F2_SERIE = VV0.VV0_SERNFI" +(Chr(13)+Chr(10))+;
-					" AND F2.F2_CLIENTE = VV0.VV0_CODCLI" +(Chr(13)+Chr(10))+;
-					" AND F2.F2_LOJA = VV0.VV0_LOJA" +(Chr(13)+Chr(10))+;
-					" AND F2.D_E_L_E_T_ = ' '" +(Chr(13)+Chr(10))+;
-			" JOIN " + RetSQLName("SA1") + " A1" +(Chr(13)+Chr(10))+;
-					"  ON A1.A1_FILIAL = '" + FWxFilial("SA1") + "'" +(Chr(13)+Chr(10))+;
-					" AND A1.A1_COD = VRJ.VRJ_CODCLI" +(Chr(13)+Chr(10))+;
-					" AND A1.A1_LOJA = VRJ.VRJ_LOJA" +(Chr(13)+Chr(10))+;
-					" AND A1.D_E_L_E_T_ = ' '" +(Chr(13)+Chr(10))+;
-			" LEFT JOIN " + RetSQLName("SA3") + " A3" +(Chr(13)+Chr(10))+;
-					"  ON A3.A3_FILIAL = '" + FWxFilial("SA3") + "'" +(Chr(13)+Chr(10))+;
-					" AND A3.A3_COD = VRJ.VRJ_CODVEN" +(Chr(13)+Chr(10))+;
-					" AND A3.D_E_L_E_T_ = ' '" +(Chr(13)+Chr(10))+;
-			" LEFT JOIN " + RetSQLName("CC2") + " CC2" +(Chr(13)+Chr(10))+;
-					"  ON CC2.CC2_FILIAL = '" + FWxFilial("CC2") + "'" +(Chr(13)+Chr(10))+;
-					" AND CC2.CC2_EST = A1.A1_EST" +(Chr(13)+Chr(10))+;
-					" AND CC2.CC2_CODMUN = A1.A1_COD_MUN" +(Chr(13)+Chr(10))+;
-					" AND CC2.D_E_L_E_T_ = ' '" +(Chr(13)+Chr(10))+;
-			" JOIN " + RetSQLName("VV2") + " VV2" +(Chr(13)+Chr(10))+;
-					"  ON VV2.VV2_FILIAL = '" + FWxFilial("VV2") + "'" +(Chr(13)+Chr(10))+;
-					" AND VV2.VV2_CODMAR = VRK.VRK_CODMAR" +(Chr(13)+Chr(10))+;
-					" AND VV2.VV2_MODVEI = VRK.VRK_MODVEI" +(Chr(13)+Chr(10))+;
-					" AND VV2.VV2_SEGMOD = VRK.VRK_SEGMOD" +(Chr(13)+Chr(10))+;
-					" AND VV2.D_E_L_E_T_ = ' '" +(Chr(13)+Chr(10))+;
-			" LEFT JOIN " + RetSqlName("VX5") + " VX5INT ON VX5INT.VX5_FILIAL = '" + xFilial("VX5") + "' AND VX5INT.VX5_CHAVE = '066' AND VX5INT.VX5_CODIGO = VV2.VV2_CORINT AND VX5INT.D_E_L_E_T_ = ' ' " +(Chr(13)+Chr(10))+;
-			" LEFT JOIN " + RetSqlName("VX5") + " VX5EXT ON VX5EXT.VX5_FILIAL = '" + xFilial("VX5") + "' AND VX5EXT.VX5_CHAVE = '067' AND VX5EXT.VX5_CODIGO = VV2.VV2_COREXT AND VX5EXT.D_E_L_E_T_ = ' ' " +(Chr(13)+Chr(10))+;
-			" LEFT JOIN " + RetSqlName("VX5") + " VX5OPC ON VX5OPC.VX5_FILIAL = '" + xFilial("VX5") + "' AND VX5OPC.VX5_CHAVE = '068' AND VX5OPC.VX5_CODIGO = VV2.VV2_OPCION AND VX5OPC.D_E_L_E_T_ = ' ' " +(Chr(13)+Chr(10))+;
-			" LEFT JOIN " + RetSQLName("VV3") + " VV3" +(Chr(13)+Chr(10))+;
-					"  ON VV3.VV3_FILIAL = '" + FWxFilial("VV3") + "'" +(Chr(13)+Chr(10))+;
-					" AND VV3.VV3_TIPVEN = VRJ.VRJ_TIPVEN" +(Chr(13)+Chr(10))+;
-					" AND VV3.D_E_L_E_T_ = ' '" +(Chr(13)+Chr(10))+;
-			" LEFT JOIN " + RetSqlName("SE4") + " SE4 ON SE4.E4_FILIAL = '" + xFilial("SE4") + "' AND SE4.E4_CODIGO = VRJ.VRJ_FORPAG AND SE4.D_E_L_E_T_ = ' ' " +(Chr(13)+Chr(10))+;
-		" WHERE VRJ.VRJ_FILIAL = '" + FWxFilial("VRJ") + "'" +(Chr(13)+Chr(10))+;
-		  " AND VRJ.VRJ_STATUS <> 'C'" +(Chr(13)+Chr(10))+;
-		  " AND VRJ.D_E_L_E_T_ = ' '" +(Chr(13)+Chr(10))+;
-		  " AND VRK.VRK_CANCEL IN (' ','0')"
-*/
-cQuery := ;
-		"SELECT  " + CLRF + ;
-		"              VRJ_PEDIDO " + CLRF + ;
-		"            , VRJ_PEDCOM " + CLRF + ;
-		"            , D2_PEDIDO " + CLRF + ;
-		"            , VV0.VV0_NUMTRA " + CLRF + ;
-		"            , VRJ_DATDIG " + CLRF + ;
-		"            , COALESCE( VV3_DESCRI , ' ' ) VV3_DESCRI " + CLRF + ;
-		"            , VRK_CHASSI " + CLRF + ;
-		"            , VRK_MODVEI  " + CLRF + ;
-		"            , VV2_DESMOD " + CLRF + ;
-		"            , VRK_OPCION, COALESCE( RTRIM( VX5OPC.VX5_DESCRI ) , ' ' ) DESCOPCION " + CLRF + ;
-		"            , VRK_COREXT, COALESCE( RTRIM( VX5EXT.VX5_DESCRI ) , ' ' ) DESCCOREXT  " + CLRF + ;
-		"            , VRK_CORINT, COALESCE( RTRIM( VX5INT.VX5_DESCRI ) , ' ' ) DESCCORINT  " + CLRF + ;
-		"            , VRK_FABMOD " + CLRF + ;
-		"            , F2_SERIE " + CLRF + ;
-		"            , F2_DOC " + CLRF + ;
-		"            , F2_EMISSAO " + CLRF + ;
-		"            , F2_CHVNFE " + CLRF + ;
-		"            , VRK_VALTAB " + CLRF + ;
-		"            , VRK_VALVDA " + CLRF + ;
-		"            , VRJ_CODVEN " + CLRF + ;
-		"            , COALESCE( A3_NOME , ' ' ) A3_NOME " + CLRF + ;
-		"            , VRJ_CODCLI " + CLRF + ;
-		"            , VRJ_LOJA " + CLRF + ;
-		"            , A1.A1_CGC " + CLRF + ;
-		"            , A1.A1_NOME " + CLRF + ;
-		"            , A1.A1_NREDUZ " + CLRF + ;
-		"            , CC2_MUN " + CLRF + ;
-		"            , A1_EST " + CLRF + ;
-		"            , VRJ_CLIRET, VRJ_LOJRET " + CLRF + ;
-		"            , VRJ_FORPAG,E4_DESCRI  " + CLRF + ;
-		" FROM " + RetSQLName("VRJ") + " VRJ  " + CLRF + ;
-		"      " + CLRF + ;
-		"     INNER JOIN " + RetSQLName("VRK") + " VRK " + CLRF + ;
-		"         ON  VRK.VRK_FILIAL = '" + xFilial("VRK") + "' " + CLRF + ;
-		"         AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO " + CLRF + ;
-		"         AND VRK.D_E_L_E_T_ = ' ' " + CLRF + ;
-		"           " + CLRF + ;
-		"     LEFT JOIN " + RetSQLName("VV9") + " VV9 " + CLRF + ;
-		"         ON  VV9.VV9_FILIAL = '" + xFilial("VV9") + "' " + CLRF + ;
-		"         AND VV9.VV9_NUMATE = VRK.VRK_NUMTRA " + CLRF + ;
-		"         AND VV9.D_E_L_E_T_ = ' ' " + CLRF + ;
-		"         AND VV9.VV9_STATUS IN ('F','T')  " + CLRF + ;
-		"      " + CLRF + ;
-		"     LEFT JOIN " + RetSQLName("VV0") + " VV0 " + CLRF + ;
-		"         ON  VV0.VV0_FILIAL = '" + xFilial("VV0") + "' " + CLRF + ;
-		"         AND VV0.VV0_NUMTRA = VV9.VV9_NUMATE " + CLRF + ;
-		"         AND VV0.D_E_L_E_T_ = ' ' " + CLRF + ;
-		"         AND VV0.VV0_OPEMOV = '0'  " + CLRF + ;
-		"         AND VV0.VV0_SITNFI = '1'  " + CLRF + ;
-		"      " + CLRF + ;
-		"     LEFT JOIN " + RetSQLName("SF2") + " F2  " + CLRF + ;
-		"         ON  F2.F2_FILIAL  = '" + xFilial("SF2") + "' " + CLRF + ;
-		"         AND F2.F2_DOC     = VV0.VV0_NUMNFI " + CLRF + ;
-		"         AND F2.F2_SERIE   = VV0.VV0_SERNFI " + CLRF + ;
-		"         AND F2.F2_CLIENTE = VV0.VV0_CODCLI " + CLRF + ;
-		"         AND F2.F2_LOJA    = VV0.VV0_LOJA " + CLRF + ;
-		"         AND F2.D_E_L_E_T_ = ' ' " + CLRF + ;
-		"      " + CLRF + ;
-		"     INNER JOIN " + RetSQLName("SD2") + " SD2 " + CLRF + ;
-		"         ON  SD2.D2_FILIAL = '" + xFilial("SD2") + "' " + CLRF + ;
-		"         AND SD2.D2_DOC     = F2.F2_DOC " + CLRF + ;
-		"         AND SD2.D2_SERIE   = F2.F2_SERIE " + CLRF + ;
-		"         AND SD2.D2_CLIENTE = F2.F2_CLIENTE " + CLRF + ;
-		"         AND SD2.D2_LOJA    = F2.F2_LOJA " + CLRF + ;
-		"         AND SD2.D_E_L_E_T_ = ' ' " + CLRF + ;
-		"      " + CLRF + ;
-		"     LEFT JOIN " + RetSQLName("SA1") + " A1 " + CLRF + ;
-		"         ON  A1.A1_FILIAL  = '" + xFilial("SA1") + "' " + CLRF + ;
-		"         AND A1.A1_COD     = VRJ.VRJ_CODCLI " + CLRF + ;
-		"         AND A1.A1_LOJA    = VRJ.VRJ_LOJA " + CLRF + ;
-		"         AND A1.D_E_L_E_T_ = ' ' " + CLRF + ;
-		"      " + CLRF + ;
-		"     LEFT JOIN " + RetSQLName("SA3") + " A3 " + CLRF + ;
-		"         ON  A3.A3_FILIAL  = '" + xFilial("SA3") + "' " + CLRF + ;
-		"         AND A3.A3_COD     = VRJ.VRJ_CODVEN " + CLRF + ;
-		"         AND A3.D_E_L_E_T_ = ' ' " + CLRF + ;
-		"      " + CLRF + ;
-		"     LEFT JOIN " + RetSQLName("CC2") + " CC2 " + CLRF + ;
-		"         ON  CC2.CC2_FILIAL = '" + xFilial("CC2") + "' " + CLRF + ;
-		"         AND CC2.CC2_EST    = A1.A1_EST " + CLRF + ;
-		"         AND CC2.CC2_CODMUN = A1.A1_COD_MUN " + CLRF + ;
-		"         AND CC2.D_E_L_E_T_ = ' ' " + CLRF + ;
-		"      " + CLRF + ;
-		"     JOIN " + RetSQLName("VV2") + " VV2 " + CLRF + ;
-		"         ON  VV2.VV2_FILIAL = '" + xFilial("VV2") + "' " + CLRF + ;
-		"         AND VV2.VV2_CODMAR = VRK.VRK_CODMAR " + CLRF + ;
-		"         AND VV2.VV2_MODVEI = VRK.VRK_MODVEI " + CLRF + ;
-		"         AND VV2.VV2_SEGMOD = VRK.VRK_SEGMOD " + CLRF + ;
-		"         AND VV2.D_E_L_E_T_ = ' ' " + CLRF + ;
-		"          " + CLRF + ;
-		"     LEFT JOIN " + RetSQLName("SE4") + " SE4    ON     SE4.E4_FILIAL = '" + xFilial("SE4") + "' AND SE4.E4_CODIGO = VRJ.VRJ_FORPAG AND SE4.D_E_L_E_T_ = ' ' " + CLRF + ;
-		"     LEFT JOIN " + RetSQLName("VX5") + " VX5INT ON VX5INT.VX5_FILIAL = '" + xFilial("VX5") + "' AND VX5INT.VX5_CHAVE = '066' AND VX5INT.VX5_CODIGO = VV2.VV2_CORINT AND VX5INT.D_E_L_E_T_ = ' '  " + CLRF + ;
-		"     LEFT JOIN " + RetSQLName("VX5") + " VX5EXT ON VX5EXT.VX5_FILIAL = '" + xFilial("VX5") + "' AND VX5EXT.VX5_CHAVE = '067' AND VX5EXT.VX5_CODIGO = VV2.VV2_COREXT AND VX5EXT.D_E_L_E_T_ = ' '  " + CLRF + ;
-		"     LEFT JOIN " + RetSQLName("VX5") + " VX5OPC ON VX5OPC.VX5_FILIAL = '" + xFilial("VX5") + "' AND VX5OPC.VX5_CHAVE = '068' AND VX5OPC.VX5_CODIGO = VV2.VV2_OPCION AND VX5OPC.D_E_L_E_T_ = ' '  " + CLRF + ;
-		"     LEFT JOIN " + RetSQLName("VV3") + " VV3 " + CLRF + ;
-		"         ON  VV3.VV3_FILIAL = '" + xFilial("VV3") + "' " + CLRF + ;
-		"         AND VV3.VV3_TIPVEN = VRJ.VRJ_TIPVEN " + CLRF + ;
-		"         AND VV3.D_E_L_E_T_ = ' ' " + CLRF + ;
-		"       " + CLRF + ;
-		"    WHERE VRJ.VRJ_FILIAL = '" + xFilial("VRJ") + "' " + CLRF + ;
-		"         AND VRJ.VRJ_STATUS <> 'C' " + CLRF + ;
-		"         AND VRJ.D_E_L_E_T_ = ' ' " + CLRF + ;
-		"         AND VRK.VRK_CANCEL IN (' ','0')  " + CLRF 
-
 
 	_MV_PAR01 := MV_PAR01 ; _MV_PAR02 := MV_PAR02 ; _MV_PAR03 := MV_PAR03 ; _MV_PAR04 := MV_PAR04
 	_MV_PAR05 := MV_PAR05 ; _MV_PAR06 := MV_PAR06 ; _MV_PAR07 := MV_PAR07
 
-	If !Empty(_MV_PAR01) .AND. !EMPty(_MV_PAR02)
-		cQuery += " AND F2.F2_EMISSAO BETWEEN '" + DtoS(_MV_PAR01) + "' AND '" + DtoS(_MV_PAR02) + "' "
-	EndIf
-
-	If !Empty(_MV_PAR03)
-		cQuery += " AND VRJ.VRJ_CODCLI = '" + _MV_PAR03 + "'"
-		If !Empty(MV_PAR04)
-			cQuery += " AND VRJ.VRJ_LOJA = '" + _MV_PAR04 + "'"
-		EndIf
-	EndIf
-
-	If !Empty(_MV_PAR05)
-		cQuery += " AND VRJ.VRJ_CODVEN = '" + _MV_PAR05 + "'"
-	EndIf
-
-	If !Empty(_MV_PAR06)
-		cQuery += " AND VRJ.VRJ_TIPVEN = '" + _MV_PAR06 + "'"
-	EndIf
-
-	If lFiltroMarca .and. !Empty(_MV_PAR07)
-		cQuery += " AND VRK.VRK_CODMAR = '" + _MV_PAR07 + "' "
-	EndIf
-
-	If ( ExistBlock("VC063QRY") )
-		cQuery := ExecBlock("VC063QRY",.f.,.f.,{cQuery})
-	EndIf
-//---------------------------------------------------------------------------------------------------------------------------------------
-//Venda de Ativo não precisa neste relatorio
-/*
-cQuery += "  UNION ALL " + CLRF +;
-	" select * from ( " + CLRF + ;
+	cQuery +=  CLRF + ;
 	"     SELECT  " + CLRF + ;
-	"         COALESCE( VRK.VRK_PEDIDO , ' ' ) AS VRJ_PEDIDO " + CLRF + ;
-	"         ,SC6.C6_PEDCLI  AS VRJ_PEDCOM, " + CLRF + ;
-	"         ,SD2.D2_PEDIDO, " + CLRF + ;
-	"         ,COALESCE(VV0.VV0_NUMTRA,' ') " + CLRF + ;
-	"         ,SC6.C6_ENTREG " + CLRF + ;
-	"         ,COALESCE( VV3_DESCRI , ' ' ) VV3_DESCRI " + CLRF + ;
-	"         ,SD2.D2_NUMSERI " + CLRF + ;
-	"         ,VV1.VV1_MODVEI " + CLRF + ;
-	"         ,VV2.VV2_DESMOD " + CLRF + ;
-	"         ,VV2.VV2_OPCION " + CLRF + ;
-	"         ,COALESCE( RTRIM( VX5OPC.VX5_DESCRI ) , ' ' ) DESCOPCION " + CLRF + ;
-	"         ,VV2.VV2_COREXT " + CLRF + ;
-	"         ,COALESCE( RTRIM( VX5EXT.VX5_DESCRI ) , ' ' ) DESCCOREXT " + CLRF + ;
-	"         ,VV2.VV2_CORINT " + CLRF + ;
-	"         ,COALESCE( RTRIM( VX5INT.VX5_DESCRI ) , ' ' ) DESCCORINT " + CLRF + ;
-	"         ,VV1.VV1_FABMOD " + CLRF + ;
-	"         ,SF2.F2_SERIE " + CLRF + ;
-	"         ,SF2.F2_DOC " + CLRF + ;
-	"         ,SF2.F2_EMISSAO " + CLRF + ;
-	"         ,SF2.F2_CHVNFE " + CLRF + ;
-	"         ,SC6.C6_XPRCTAB " + CLRF + ;
-	"         ,SC6.C6_XVLRVDA " + CLRF + ;
-	"         ,SC5.C5_VEND1 " + CLRF + ;
-	"         ,COALESCE( SA3.A3_NOME , ' ' ) A3_NOME " + CLRF + ;
-	"         ,SD2.D2_CLIENTE " + CLRF + ;
-	"         ,SD2.D2_LOJA " + CLRF + ;
-	"         ,SA1.A1_CGC " + CLRF + ;
-	"         ,SA1.A1_NOME " + CLRF + ;
-	"         ,SA1.A1_NREDUZ " + CLRF + ;
-	"         ,CC2.CC2_MUN " + CLRF + ;
-	"         ,SA1.A1_EST " + CLRF + ;
-	"         ,SF2.F2_CLIRET " + CLRF + ;
-	"         ,SF2.F2_LOJARET " + CLRF + ;
-	"         ,SF2.F2_COND " + CLRF + ;
-	"         ,SE4.E4_DESCRI " + CLRF + ;
+	"          COALESCE( VRK.VRK_PEDIDO , ' ' ) AS VRJ_PEDIDO " + CLRF + ;
+	"         , SC6.C6_PEDCLI AS VRJ_PEDCOM " + CLRF + ;
+	"         , SD2.D2_PEDIDO " + CLRF + ;
+	"         , COALESCE(VV0.VV0_NUMTRA,' ') as VV0_NUMTRA" + CLRF + ;
+	"         , SC6.C6_ENTREG " + CLRF + ;
+	"         , COALESCE( VV3_DESCRI , ' ' ) as VV3_DESCRI " + CLRF + ;
+	"         , SD2.D2_NUMSERI " + CLRF + ;
+	"         , VV1.VV1_MODVEI " + CLRF + ;
+	"         , VV2.VV2_DESMOD " + CLRF + ;
+	"         , VV2.VV2_OPCION " + CLRF + ;
+	"         , COALESCE( RTRIM( VX5OPC.VX5_DESCRI ) , ' ' ) AS DESCOPCION " + CLRF + ;
+	"         , VV2.VV2_COREXT " + CLRF + ;
+	"         , COALESCE( RTRIM( VX5EXT.VX5_DESCRI ) , ' ' ) AS DESCCOREXT " + CLRF + ;
+	"         , VV2.VV2_CORINT " + CLRF + ;
+	"         , COALESCE( RTRIM( VX5INT.VX5_DESCRI ) , ' ' ) AS DESCCORINT " + CLRF + ;
+	"         , VV1.VV1_FABMOD " + CLRF + ;
+	"         , SF2.F2_SERIE " + CLRF + ;
+	"         , SF2.F2_DOC " + CLRF + ;
+	"         , SF2.F2_EMISSAO " + CLRF + ;
+	"         , SF2.F2_CHVNFE " + CLRF + ;
+	"         , COALESCE( VRK.VRK_VALTAB , SC6.C6_XPRCTAB ) AS VRK_VALTAB" + CLRF + ;
+	"         , COALESCE( VRK.VRK_VALVDA , SC6.C6_XVLRVDA ) AS VRK_VALVDA" + CLRF + ;
+	"         , SC5.C5_VEND1 " + CLRF + ;
+	"         , COALESCE( SA3.A3_NOME , ' ' ) AS A3_NOME " + CLRF + ;
+	"         , SD2.D2_CLIENTE " + CLRF + ;
+	"         , SD2.D2_LOJA " + CLRF + ;
+	"         , SA1.A1_CGC " + CLRF + ;
+	"         , SA1.A1_NOME " + CLRF + ;
+	"         , SA1.A1_NREDUZ " + CLRF + ;
+	"         , CC2.CC2_MUN " + CLRF + ;
+	"         , SA1.A1_EST " + CLRF + ;
+	"         , SF2.F2_CLIRET " + CLRF + ;
+	"         , SF2.F2_LOJARET " + CLRF + ;
+	"         , SF2.F2_COND " + CLRF + ;
+	"         , SE4.E4_DESCRI " + CLRF + ;
 	"     FROM  " + RetSQLName("SD2") + " SD2 " + CLRF + ;
 	"     INNER JOIN " + RetSQLName("SF2") + " SF2  " + CLRF + ;
 	"         ON  SF2.F2_FILIAL = '" + xFilial("SF2") + "' " + CLRF + ;
@@ -533,13 +321,11 @@ cQuery += "  UNION ALL " + CLRF +;
 	"     LEFT JOIN " + RetSQLName("VX5") + " VX5OPC ON VX5OPC.VX5_FILIAL = '" + xFilial("VX5") + "' AND VX5OPC.VX5_CODIGO = VV2.VV2_OPCION AND VX5OPC.D_E_L_E_T_ = ' ' AND VX5OPC.VX5_CHAVE  = '068'  " + CLRF + ;
 	"     WHERE   SD2.D2_FILIAL  = '" + xFilial("SD2") + "' " + CLRF + ;
 	"         AND SD2.D_E_L_E_T_ = ' '   " + CLRF + ;
-	"         AND SD2.D2_NUMSERI <> ' ' " + CLRF + ;
-	"     )  trb  " + CLRF + ;
-	" WHERE VRJ_PEDIDO = ' ' " 
+	"         AND SD2.D2_NUMSERI <> ' ' " + CLRF 
 	
 
 	If !Empty(_MV_PAR01) .AND. !EMPty(_MV_PAR02)
-		cQuery += " AND F2.F2_EMISSAO BETWEEN '" + DtoS(_MV_PAR01) + "' AND '" + DtoS(_MV_PAR02) + "' "
+		cQuery += " AND SF2.F2_EMISSAO BETWEEN '" + DtoS(_MV_PAR01) + "' AND '" + DtoS(_MV_PAR02) + "' "
 	EndIf
 
 	If !Empty(_MV_PAR03)
@@ -564,7 +350,6 @@ cQuery += "  UNION ALL " + CLRF +;
 	If ( ExistBlock("VC063QRY") )
 		cQuery := ExecBlock("VC063QRY",.f.,.f.,{cQuery})
 	EndIf
-*/
 
 
 Return cQuery
@@ -624,6 +409,7 @@ User Function ZVEIR2PE_PlanilhaEstoque()
 	ProcRegua(1000)
 	nX := 0
 	nY := 0
+	
 	While .T.
 		nLoopRec := oBrwZVEI2:At()
 
