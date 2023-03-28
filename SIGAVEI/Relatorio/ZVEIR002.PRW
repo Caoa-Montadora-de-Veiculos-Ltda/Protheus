@@ -313,7 +313,11 @@ Static Function ZVEIR2QR_Query()
 	"         ON  VRK.VRK_FILIAL  = '" + xFilial("VRK") + "' " + CLRF + ;
 	"         AND VRK.VRK_NUMTRA = VV0.VV0_NUMTRA " + CLRF + ;
 	"         AND VRK.D_E_L_E_T_ = ' ' " + CLRF + ;
-	"     LEFT JOIN " + RetSQLName("VV3") + " VV3    ON    VV3.VV3_FILIAL = '" + xFilial("VV3") + "' AND    VV3.VV3_TIPVEN = SC5.C5_XTIPVEN AND    VV3.D_E_L_E_T_ = ' ' " + CLRF + ;
+	"     LEFT JOIN " + RetSQLName("VRJ") + " VRJ " + CLRF + ;
+	"         ON  VRJ.VRJ_FILIAL = " + xFilial("VRK") + " " + CLRF + ;
+    "	      AND VRJ.VRJ_PEDIDO = VRK.VRK_PEDIDO " + CLRF + ;
+    "	      AND VRJ.D_E_L_E_T_ = ' ' " + CLRF + ;
+	" 	  LEFT JOIN " + RetSQLName("VV3") + " VV3    ON    VV3.VV3_FILIAL = '" + xFilial("VV3") + "' AND   (VV3.VV3_TIPVEN = SC5.C5_XTIPVEN OR VV3.VV3_TIPVEN = VRJ.VRJ_TIPVEN) AND    VV3.D_E_L_E_T_ = ' ' " + CLRF + ;
 	"     LEFT JOIN " + RetSQLName("SE4") + " SE4    ON    SE4.E4_FILIAL  = '" + xFilial("SE4") + "' AND    SE4.E4_CODIGO  = SF2.F2_COND    AND    SE4.D_E_L_E_T_ = ' ' " + CLRF + ;
 	"     LEFT JOIN " + RetSQLName("SA3") + " SA3    ON    SA3.A3_FILIAL  = '" + xFilial("SA3") + "' AND    SA3.A3_COD     = SC5.C5_VEND1   AND    SA3.D_E_L_E_T_ = ' ' " + CLRF + ;
 	"     LEFT JOIN " + RetSQLName("VX5") + " VX5INT ON VX5INT.VX5_FILIAL = '" + xFilial("VX5") + "' AND VX5INT.VX5_CODIGO = VV2.VV2_CORINT AND VX5INT.D_E_L_E_T_ = ' ' AND VX5INT.VX5_CHAVE  = '066'  " + CLRF + ;
@@ -321,6 +325,8 @@ Static Function ZVEIR2QR_Query()
 	"     LEFT JOIN " + RetSQLName("VX5") + " VX5OPC ON VX5OPC.VX5_FILIAL = '" + xFilial("VX5") + "' AND VX5OPC.VX5_CODIGO = VV2.VV2_OPCION AND VX5OPC.D_E_L_E_T_ = ' ' AND VX5OPC.VX5_CHAVE  = '068'  " + CLRF + ;
 	"     WHERE   SD2.D2_FILIAL  = '" + xFilial("SD2") + "' " + CLRF + ;
 	"         AND SD2.D_E_L_E_T_ = ' '   " + CLRF + ;
+	"		  AND SF2.F2_COND <> '025' " + CLRF + ;
+	"		  AND SD2.D2_QTDEDEV <> SD2.D2_QUANT " + CLRF + ;
 	"         AND SD2.D2_NUMSERI <> ' ' " + CLRF 
 	
 
