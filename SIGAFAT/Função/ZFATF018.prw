@@ -10,8 +10,8 @@ User Function ZFATF018()
     Local lRet     := .t.
     Local aArea    := {SD2->(GetArea()),SF2->(GetArea()),GetArea()}
     Local _cCGCFil := FWSM0Util():GetSM0Data(,,{"M0_CGC"})[1,2]
-    
-    If _cCGCFil == SA1->A1_CGC .and. SF2->F2_TIPO == 'N' 
+    Local _cTPMud  := AllTrim(SuperGetMV( "CMV_WSR047"  ,,"016"))		//Tipo Pedido Mudança
+    If _cCGCFil == SA1->A1_CGC .and. SF2->F2_TIPO == 'N' .And. _cTPMud == VS1->VS1_XTPPED
     
         Transf_ZFATF018()
     
