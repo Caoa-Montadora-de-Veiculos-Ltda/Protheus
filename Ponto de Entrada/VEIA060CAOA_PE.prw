@@ -10,7 +10,7 @@ Local cIdPonto   := ""
 Local cIdModel   := "" 
 
 Local cTpVdNaoPe := "" 
-Local _cPgNF     := AllTrim( GetMV('CMV_FAT008') )
+Local _cPgNF     := AllTrim( GetMV('CMV_FAT011') )
 
 Private _cParc   := ""
 
