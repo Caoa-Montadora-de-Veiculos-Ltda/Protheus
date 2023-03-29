@@ -254,8 +254,8 @@ Static Function ZVEIR2QR_Query()
 	"         , SF2.F2_CHVNFE " + CLRF + ;
 	"         , COALESCE( VRK.VRK_VALTAB , SC6.C6_XPRCTAB ) AS VRK_VALTAB" + CLRF + ;
 	"         , COALESCE( VRK.VRK_VALVDA , SC6.C6_XVLRVDA ) AS VRK_VALVDA" + CLRF + ;
-	"         , SC5.C5_VEND1 " + CLRF + ;
-	"         , COALESCE( SA3.A3_NOME , ' ' ) AS A3_NOME " + CLRF + ;
+	"         , COALESCE( SA3.A3_COD     , '      '       ) AS C5_VEND1 " + CLRF + ;
+	"         , COALESCE( SA3.A3_NOME    , '            ' ) AS A3_NOME " + CLRF + ;
 	"         , SD2.D2_CLIENTE " + CLRF + ;
 	"         , SD2.D2_LOJA " + CLRF + ;
 	"         , SA1.A1_CGC " + CLRF + ;
@@ -319,7 +319,7 @@ Static Function ZVEIR2QR_Query()
     "	      AND VRJ.D_E_L_E_T_ = ' ' " + CLRF + ;
 	" 	  LEFT JOIN " + RetSQLName("VV3") + " VV3    ON    VV3.VV3_FILIAL = '" + xFilial("VV3") + "' AND   (VV3.VV3_TIPVEN = SC5.C5_XTIPVEN OR VV3.VV3_TIPVEN = VRJ.VRJ_TIPVEN) AND    VV3.D_E_L_E_T_ = ' ' " + CLRF + ;
 	"     LEFT JOIN " + RetSQLName("SE4") + " SE4    ON    SE4.E4_FILIAL  = '" + xFilial("SE4") + "' AND    SE4.E4_CODIGO  = SF2.F2_COND    AND    SE4.D_E_L_E_T_ = ' ' " + CLRF + ;
-	"     LEFT JOIN " + RetSQLName("SA3") + " SA3    ON    SA3.A3_FILIAL  = '" + xFilial("SA3") + "' AND    SA3.A3_COD     = SC5.C5_VEND1   AND    SA3.D_E_L_E_T_ = ' ' " + CLRF + ;
+	"     LEFT JOIN " + RetSQLName("SA3") + " SA3    ON    SA3.A3_FILIAL  = '" + xFilial("SA3") + "' AND    SA3.A3_COD     = VRJ.VRJ_CODVEN AND    SA3.D_E_L_E_T_ = ' ' " + CLRF + ;
 	"     LEFT JOIN " + RetSQLName("VX5") + " VX5INT ON VX5INT.VX5_FILIAL = '" + xFilial("VX5") + "' AND VX5INT.VX5_CODIGO = VV2.VV2_CORINT AND VX5INT.D_E_L_E_T_ = ' ' AND VX5INT.VX5_CHAVE  = '066'  " + CLRF + ;
 	"     LEFT JOIN " + RetSQLName("VX5") + " VX5EXT ON VX5EXT.VX5_FILIAL = '" + xFilial("VX5") + "' AND VX5EXT.VX5_CODIGO = VV2.VV2_COREXT AND VX5EXT.D_E_L_E_T_ = ' ' AND VX5EXT.VX5_CHAVE  = '067'  " + CLRF + ;
 	"     LEFT JOIN " + RetSQLName("VX5") + " VX5OPC ON VX5OPC.VX5_FILIAL = '" + xFilial("VX5") + "' AND VX5OPC.VX5_CODIGO = VV2.VV2_OPCION AND VX5OPC.D_E_L_E_T_ = ' ' AND VX5OPC.VX5_CHAVE  = '068'  " + CLRF + ;
