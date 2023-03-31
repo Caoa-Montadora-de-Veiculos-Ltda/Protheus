@@ -107,6 +107,9 @@ Static Function zAtualizar()
     Local aRecW5    := {{"",-1}}
     Local aRecW7    := {{"",-1}}
     Local aRecW8    := {{"",-1}}
+    Local _aPesoT   := {}
+    Local _aPesoU   := {}
+
     Private aErr    := {}
 
     ProcRegua(Len(aIt))
@@ -178,6 +181,12 @@ Static Function zAtualizar()
             Loop
         EndIf
 
+        If Val(aIt[i, GetCp("Bpeso")]) = 0
+            Aadd(aErr, " - Linha " + cValToChar(i) + " Erro: Peso Bruto do produto zerado ")
+            Loop
+        EndIf
+
+
         // Remover do array dos produtos faltantes
         nPosPrd := aScan(aPrd, cCodProd)
         If  (nPosPrd > 0) .AND. nPosPrd <= Len(aPrd)
@@ -218,9 +227,19 @@ Static Function zAtualizar()
         zAtuW578(i, "SW7", cHawb, cCodProd, aCps, Upper(aIt[i, GetCp("codp")]), @aRecW7)
 
         // SW8
-        aPesoU[2]    := "W8_PESO_BR"
+        _aPesoT := aClone(aPesoT)
+        _aPesoU := aClone(aPesoU)
+        If MV_PAR04 = .T. 
+            aPesoT[1] := Val(aIt[i, GetCp("Bpeso")])
+            aPesoT[1] := NoRound(aPesoT[1], 5)
+
+            aPesoU[1] := aPesoT[1]
+        EndIf          
+        aPesoU[2]   := "W8_PESO_BR"
         aCps        := {aPesoU}
         zAtuW578(i, "SW8", cHawb, cCodProd, aCps, Upper(aIt[i, GetCp("codp")]), @aRecW8)
+        aPesoT := aClone(_aPesoT)
+        aPesoU := aClone(_aPesoU)
 
         // atualize o peso , rateando
         If MV_PAR04 = .T. 
@@ -391,13 +410,14 @@ Uso......:
 ===================================================================================== */
 Static Function SetCampos()
     Local aRes := {}
-    Aadd(aRes, {"codp",   "Fornecedor",      02})
-    Aadd(aRes, {"desc",   "Loja forn",       04})
-    Aadd(aRes, {"ncm",    "NCM",             06})
-    Aadd(aRes, {"qt",     "Quantidade",      07})
-    Aadd(aRes, {"Upeso",  "Peso unitario)",  08})
-    Aadd(aRes, {"Tpeso",  "Peso unitario)",  09})
+    Aadd(aRes, {"codp",   "Fornecedor"     , 02})
+    Aadd(aRes, {"desc",   "Loja forn"      , 04})
+    Aadd(aRes, {"ncm",    "NCM"            , 06})
+    Aadd(aRes, {"qt",     "Quantidade"     , 07})
+    Aadd(aRes, {"Upeso",  "Peso unitario)" , 08})
+    Aadd(aRes, {"Tpeso",  "Peso unitario)" , 09})
     Aadd(aRes, {"cdsComp","numero deserie)", 22})
+    Aadd(aRes, {"Bpeso",  "Peso Bruto)"    , 23})
 Return aRes
 
 
