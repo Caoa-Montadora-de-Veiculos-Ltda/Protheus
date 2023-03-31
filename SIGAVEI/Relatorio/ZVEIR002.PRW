@@ -28,7 +28,7 @@ User Function ZVEIR002()
 	
 	oObjSX1:AddGroup("ZVEIR002")
 	oObjSX1:SearchGroup()
-	lFiltroMarca := (Len(oObjSX1:GetGroup("ZVEIR002")[2]) >= 7)
+	lFiltroMarca := .T.//(Len(oObjSX1:GetGroup("ZVEIR002")[2]) >= 7)
 
 	If ! Pergunte("VEIC063",.t.)
 		Return
@@ -122,9 +122,10 @@ User Function ZVEIR2CB_ConfigBrowse(oDMSBrwStru)
 	oDMSBrwStru:AddField( "D2_PEDIDO"  )
 	oDMSBrwStru:AddField( "VV0_NUMTRA" )
 	oDMSBrwStru:AddField( "VRJ_DATDIG" )
-	oDMSBrwStru:AddField( "VV3_DESCRI" ,"Tipo Venda" )
+	oDMSBrwStru:AddField( "VV3_DESCRI" , "Tipo Venda" )
 	oDMSBrwStru:AddField( "VRK_CHASSI" )
 	oDMSBrwStru:AddField( "VRK_MODVEI" )
+	oDMSBrwStru:AddField( "VRK_CODMAR" , "Marca" )
 	oDMSBrwStru:AddField( "VV2_DESMOD" )
 	oDMSBrwStru:AddField( "VRK_OPCION" )
 	oDMSBrwStru:AddFieldManual( DMS_DataContainer():New({;
@@ -237,9 +238,10 @@ Static Function ZVEIR2QR_Query()
 	"         , SD2.D2_PEDIDO " + CLRF + ;
 	"         , COALESCE(VV0.VV0_NUMTRA,' ') as VV0_NUMTRA" + CLRF + ;
 	"         , SC6.C6_ENTREG " + CLRF + ;
-	"         , COALESCE( VV3_DESCRI , ' ' ) as VV3_DESCRI " + CLRF + ;
+	"         , COALESCE( VV3.VV3_DESCRI , ' ' ) as VV3_DESCRI " + CLRF + ;
 	"         , SD2.D2_NUMSERI " + CLRF + ;
 	"         , VV1.VV1_MODVEI " + CLRF + ;
+	"         , COALESCE( VRK.VRK_CODMAR , ' ' ) as MARCA " + CLRF + ;
 	"         , VV2.VV2_DESMOD " + CLRF + ;
 	"         , VV2.VV2_OPCION " + CLRF + ;
 	"         , COALESCE( RTRIM( VX5OPC.VX5_DESCRI ) , ' ' ) AS DESCOPCION " + CLRF + ;
@@ -342,15 +344,15 @@ Static Function ZVEIR2QR_Query()
 	EndIf
 
 	If !Empty(_MV_PAR05)
-		cQuery += " AND SC5.C5_VEND1 = '" + _MV_PAR05 + "'"
+		cQuery += " AND ( SC5.C5_VEND1 = '" + _MV_PAR05 + "' OR VRJ.VRJ_CODVEN = '" + _MV_PAR05 + "' )"
 	EndIf
 
 	If !Empty(_MV_PAR06)
-		cQuery += " AND SC5.C5_XTIPVEN = '" + _MV_PAR06 + "'"
+		cQuery += " AND ( VRJ.VRJ_TIPVEN = '" + _MV_PAR06 + "' OR AND SC5.C5_XTIPVEN = '" + _MV_PAR06 + "' ) "
 	EndIf
 
 	If lFiltroMarca .and. !Empty(_MV_PAR07)
-		cQuery += " AND SC6.C6_XCODMAR = '" + _MV_PAR07 + "'"
+		cQuery += " AND ( VRK.VRK_CODMAR = '" + _MV_PAR07 + "' OR SC6.C6_XCODMAR = '" + _MV_PAR07 + "' )"
 	EndIf
 
 	If ( ExistBlock("VC063QRY") )
