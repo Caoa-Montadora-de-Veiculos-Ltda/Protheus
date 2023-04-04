@@ -1,4 +1,3 @@
-#Include "Protheus.CH"
 #Include "Totvs.CH"
 
 /*/{Protheus.doc} VLDLIMIT

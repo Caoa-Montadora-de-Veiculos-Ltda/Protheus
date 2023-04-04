@@ -23,7 +23,7 @@ Local cQry01	:= ""
 Local cTabSql   := ""
 
 cUsrLogin   := RetCodUsr()
-cAutoriz    := "000000*000095*000009*000356" //"evandro.mariano; fabio.giacomozzi; antonio.poliveira"
+cAutoriz    := "000000*000095*000009*000356*000390" //"evandro.mariano; fabio.giacomozzi; antonio.poliveira"
 lUserAut    := .F.
 lAdmin      := FwIsAdmin(RetCodUsr())
 cTabSql     := GetNextAlias()

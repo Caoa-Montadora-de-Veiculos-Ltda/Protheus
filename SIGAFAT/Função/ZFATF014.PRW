@@ -1,348 +1,582 @@
-#INCLUDE "rwmake.ch"
-#INCLUDE "PROTHEUS.CH"
-#INCLUDE "DIALOG.CH"
-#INCLUDE "FONT.CH" 
-#INCLUDE "TOPCONN.CH"
+#Include "Totvs.CH"
 
 /*
 =====================================================================================
 Programa.:              ZFATF014
 Autor....:              CAOA - Evandro A Mariano dos Santos 
 Data.....:              28/07/2022
-Descricao / Objetivo:   Ajusta os limites de Crédito
+Descricao / Objetivo:   Ajusta os limites de CrÃ©dito
 Doc. Origem:            
 Solicitante:            Faturamento/Pecas
 Uso......:              
-Obs......:
+Obs......:              TESTE DE COMMIT
 =====================================================================================
 */
-User Function ZFATF014(_cCliFat, _cTpCred, _cLoja)
 
-	Local _aArea      	:= GetArea()
-	Local _nValAtr 		:= 0
-	Local _nValAbe 		:= 0
-	Local _nValBo 		:= 0
-	Local _nValPed 		:= 0
-	Local _cRet			:= ""
+User Function ZFATF014(_cCliFat, _cTpCred, _cLoja, _lZera)
+Local _aArea      	:= GetArea()
+Local _nValAtr 		:= 0
+Local _nValAbe 		:= 0
+Local _nValBo 		:= 0
+Local _nValPed 		:= 0
+Local _nValCred		:= 0   //implementar para NCC como crédito
+Local _cRet			:= ""
+Local _cPgNAval		:= AllTrim(SuperGetMV( "MV_CPNCLC" 	,,"")) 	//condição de pagamento não será avaliado LC
+Local _cPgFP 		:= AllTrim(SuperGetMV( "CMV_PEC018" ,,""))  //condição de pagamento Forplan = 005 	
+Local _cPgCAOA		:= AllTrim(SuperGetMV( "CMV_FAT007" ,,"")) 	//condição de pagamento CAOA 
+Local _cTpOper      := AllTrim(SuperGetMV("CAOA_TPLIM",,""))  //Tipos de Operação para analise do crédito - CAOA   54;91;90;67;82;93
 
-	//Private _cPgNAval	:= AllTrim(SuperGetMV( "MV_CPNCLC" ,,"'003','011','025'")) //condição de pagamento não será avaliado LC
-	Private _cPgNAval	:= AllTrim(SuperGetMV( "MV_CPNCLC" 	,,"")) 	//condição de pagamento não será avaliado LC
-	Private _cPgFP 		:= AllTrim(SuperGetMV( "CMV_PEC018" ,,""))  //condição de pagamento Forplan = 005 	
-	Private _cPgCAOA	:= AllTrim(SuperGetMV( "CMV_FAT007" ,,"")) 	//condição de pagamento CAOA 
+Default _cCliFat 	:= ""
+Default _cLoja 		:= ""
+Default _cTpCred	:= ""
+Default _lZera		:= .F.
 
-	Default _cLoja := ""
-	
-	_nValAtr := ZProc001(_cCliFat, _cTpCred) //Verifica os Titulos Em Atraso a mais de 3 dias.
-	_nValAbe := ZProc010(_cCliFat, _cTpCred) //Verifica os Titulos Em Aberto
-	_nValBo  := ZProc020(_cCliFat, _cTpCred) //Verifica os Pedidos Em Bo
-	_nValPed := ZProc030(_cCliFat, _cTpCred) //Verifica os Pedidos Em Reserva/Em Faturamento/Em Separação
-	
-	_cRet := ZGrvSA1(_cCliFat, _cTpCred, _nValAtr, _nValAbe, _nValBo, _nValPed, _cLoja) //Grava os Dados na SA1
-	
-	RestArea(_aArea)
+Begin Sequence	
+	//Tem que vir informado o Cliente
+	If Empty(_cCliFat)
+		//quando não informar o cliente faturamento avaliar todos os clientes
+		ZFAT014GER(_cCliFat ,/* _cLoja */)  //quando geral não enviar a loja
+		Break
+	Endif
+	//Caso não venha a loja informado localizo a principal que deve ter a referencias do crédito DAC 28/03/2023
+	If Empty(_cLoja) .or. Empty(_cTpCred)
+		_cLoja	:= ZFATF014LJ( _cCliFat, _cLoja, @_cTpCred)
+	Endif
+	//Se continuar vazio retorno os valores zerados
+	If Empty(_cLoja) .or. Empty(_cTpCred)
+		Break	
+	Endif	
+	_nValAtr 	:= ZFATF14TAT(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Titulos Em Atraso a mais de 3 dias.
+	_nValAbe 	:= ZFATF14TAB(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Titulos Em Aberto
+	//Na questão BO foi necessario separar pois é verificado VS1 para peças e SC6 para Fabrica
+	//para Fabrica 
+	If FWCodEmp() == "2010"
+		_nValBo  	:= ZFATF14TBF(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Pedidos Em Bo
+		_nValPed 	:= ZFATF14TPF(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Pedidos Em Reserva/Em Faturamento/Em Separação
+	//Para Peças
+	ElseIf FWCodEmp() == "2020"
+		_nValBo  	:= ZFATF14TBP(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Pedidos Em Bo
+		_nValPed 	:= ZFATF14TPP(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Pedidos Em Reserva/Em Faturamento/Em Separação
+	Endif
 
-Return({_cRet, _nValAtr, _nValAbe, _nValBo, _nValPed})
-
-/*
-=====================================================================================
-Programa.:              ZProc001
-Autor....:              CAOA - Evandro A Mariano dos Santos 
-Data.....:              28/07/2022
-Descricao / Objetivo:   Verifica os Titulos Em Atraso a mais de 3 dias.
-Doc. Origem:            
-Solicitante:            Faturamento/Pecas
-Uso......:              
-Obs......:
-=====================================================================================
-*/
-Static Function ZProc001(_cCliFat, _cTpCred)
-Local _cQrySE1    	:= " "
-Local _cAls01SE1  	:= GetNextAlias()
-Local _nValAtr	  	:= 0
-Local _nDiasAtrFp	:= SuperGetMV( "CMV_PEC027"  ,,3 ) 
-Local _DtAtraso		:= Date()
-
-	_DtAtraso := ( _DtAtraso - _nDiasAtrFp )
-	
-	If Select(_cAls01SE1) > 0
-		(_cAls01SE1)->(DbCloseArea())
+	/*
+	_nValCred 	:= ZProc040(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA)
+	*/
+	_cRet := ZFATF14SA1(_cCliFat, _cTpCred, _nValAtr, _nValAbe, _nValBo, _nValPed, _nValCred, _cLoja) //Grava os Dados na SA1
+	//Zera todas as lojas que estão com tipo de limite igaula 0=Não tem
+	If _lZera
+		ZF014ZERLC( _cCliFat , _cLoja, _cTpCred)
 	EndIf
+End Sequence	
+RestArea(_aArea)
+Return({_cRet, _nValAtr, _nValAbe, _nValBo, _nValPed, _nValCred})
+
+/*/{Protheus.doc} ZFATF014TA
+Verifica os Titulos Em Atraso a mais de 3 dias.
+@param     	_cCliFat	,código cliente
+			_cTpCred	,tipo de crédito utilizado 
+			_cTpOper	,tipo de operação a ser utilizada
+			_cPgNAval	,condição de pgto a vista 	
+			_cPgFP		,condição de pagamento Forplan  
+			_cPgCAOA,	,condição de pagamento CAO
+@return		_nValAtraso	,Valores em atraso
+@author     CAOA - Evandro A Mariano dos Santos 
+@version    12.1.17 / Superior
+@project	GRUPO CAOA 
+@since      28/07/2022
+@history 	28/03/2023	,GAP FIN108 - Revitalização Credito [ Montadora ]
+						 Ajustando funcionalidade para utilizar LC na Montadora como em Barueri
+/*/
+Static Function ZFATF14TAT(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA)
+Local _cAliasPesq  	:= GetNextAlias()
+Local _nValAtraso  	:= 0
+Local _nDiasAtraso	:= SuperGetMV( "CMV_PEC027"  ,,3 ) 
+Local _DtAtraso		:= Date()
+Local _cWhereSF2	:= ""
+Local _cWhereSE1	:= ""
+
+Begin Sequence
+	_DtAtraso := ( _DtAtraso - _nDiasAtraso )
+	//condição de pagamento Forplan = 005
+	If _cTpCred == '1' .And. !Empty(_cPgFP) 
+		_cWhereSF2 += " 	AND SF2.F2_COND IN "+ FormatIn(_cPgFP,";")		
+	//condição de pagamento CAOA
+	ElseIf _cTpCred == '2'  .And. !Empty(_cPgCAOA) 
+		_cWhereSF2 += " 	AND SF2.F2_COND IN "+ FormatIn(_cPgCAOA,";") 
+	EndIf
+	//Caso esteja informado condição de pgto a vista não computar nos valores DAC 07/03/2023
+	If !Empty(_cPgNAval) //Cond. de pagto. p/ venda a vista sem limite Credit
+		_cWhereSF2 += " 	AND SF2.F2_COND NOT IN  "+ FormatIn(_cPgNAval,";")  
+	Endif	 		
+	//verificar pelo tipo de operação utilizado em Anapolis
+	If !Empty(_cTpOper) .and. FWCodEmp() == "2010"  //somente para Anapolis
+		_cWhereSE1 += " AND SE1.E1_PEDIDO = (SELECT C6_NUM "
+		_cWhereSE1 += "						FROM "+ RetSQLName('SC6') +" SC6 "		
+		_cWhereSE1 += "						WHERE  	SC6.C6_FILIAL 	= '"+FwXFilial("SC6")+"' " 		
+		_cWhereSE1 += "							AND SC6.C6_NUM 		= SE1.E1_PEDIDO
+		_cWhereSE1 += "							AND SC6.C6_XOPER IN "+ FormatIn(_cTpOper,";") + " "
+		_cWhereSE1 += "							AND SC6.D_E_L_E_T_ 	= ' '
+		_cWhereSE1 += "							GROUP BY SC6.C6_NUM )"
+	ElseIf !Empty(_cTpOper) .and. FWCodEmp() == "2020"  //somente para 
+		_cWhereSF2 += " AND SF2.F2_DOC 	= ( SELECT VS1.VS1_NUMNFI "
+		_cWhereSF2 += "						FROM "+ RetSQLName('VS1') +" VS1 "
+		_cWhereSF2 += "						JOIN "+ RetSQLName('VS3') +" VS3 "
+		_cWhereSF2 += "							ON 	VS3.VS3_FILIAL 	= '"+FwXFilial("VS3")+"' " 		
+		_cWhereSF2 += "							AND VS3.VS3_NUMORC 	= VS1.VS1_NUMORC
+		_cWhereSF2 += "							AND VS3.VS3_OPER IN "+ FormatIn(_cTpOper,";") + " "
+		_cWhereSF2 += "							AND VS3.D_E_L_E_T_ 	= ' '
+		_cWhereSF2 += "						WHERE	VS1.VS1_FILIAL 	= '"+FwXFilial("VS1")+"' " 		
+		_cWhereSF2 += "							AND VS1.VS1_NUMNFI	= SF2.F2_DOC "
+		_cWhereSF2 += "							AND VS1.VS1_SERNFI	= SF2.F2_SERIE "
+		_cWhereSF2 += "							AND VS1.D_E_L_E_T_ 	= ' '		
+		_cWhereSF2 += "							GROUP BY VS1.VS1_NUMNFI )"
+	Endif
+
+	_cWhereSF2 := "%"+_cWhereSF2+"%"
+	_cWhereSE1 := "%"+_cWhereSE1+"%"
 
 	//Procura os titulos em aberto no financeiro.
-	_cQrySE1 := ""
-	_cQrySE1 += " SELECT SE1.E1_CLIENTE, SUM(SE1.E1_SALDO) AS TIT_VENC FROM " + RetSqlName("SE1") + " SE1 "	+ CRLF
-	_cQrySE1 += " 	INNER JOIN " + RetSqlName("SF2") + " SF2"												+ CRLF
-	_cQrySE1 += " 		ON SF2.F2_FILIAL = '" + FwXFilial("SF2") + "' "										+ CRLF
-	_cQrySE1 += " 		AND SF2.F2_DOC = SE1.E1_NUM "														+ CRLF
-	_cQrySE1 += " 		AND SF2.F2_SERIE = SE1.E1_PREFIXO "													+ CRLF
-	_cQrySE1 += " 		AND SF2.F2_CLIENTE = SE1.E1_CLIENTE "												+ CRLF
-	_cQrySE1 += " 		AND SF2.F2_LOJA = SE1.E1_LOJA "														+ CRLF
-	_cQrySE1 += " 		AND SF2.F2_EMISSAO = SE1.E1_EMISSAO "												+ CRLF
-	//para garantir não deixo passar confição igual a branco DAC 07/03/2023
-	_cQrySE1 += " 		AND SF2.F2_COND <> ' ' "
-	If _cTpCred == '1' .And. !Empty(_cPgFP) //FloorPlan
-		_cQrySE1 += " 	AND SF2.F2_COND IN "+ FormatIn(_cPgFP,";") + " "									+ CRLF
-	//Else
-	//	_cQrySE1 += " AND SF2.F2_COND NOT IN  "+ FormatIn(_cPgNAval,";") + " " 		
-	ElseIf _cTpCred == '2'  .And. !Empty(_cPgCAOA) //CAOA  DAC 07/03/2023
-		_cQrySE1 += " 	AND SF2.F2_COND IN "+ FormatIn(_cPgCAOA,";") + " "									+ CRLF
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT SE1.E1_CLIENTE, SUM(SE1.E1_SALDO) AS TIT_VENCIDO 
+		FROM %table:SE1% SE1 
+		JOIN  %Table:SF2% SF2  												
+			ON 	SF2.F2_FILIAL 	= %XFilial:SF2%										
+			AND SF2.F2_DOC 		= SE1.E1_NUM 
+			AND SF2.F2_SERIE 	= SE1.E1_PREFIXO 
+			AND SF2.F2_CLIENTE 	= SE1.E1_CLIENTE
+			AND SF2.F2_LOJA 	= SE1.E1_LOJA
+			AND SF2.F2_EMISSAO 	= SE1.E1_EMISSAO 
+			AND SF2.F2_COND 	<> ' ' 
+			AND SF2.%notDel%
+			%Exp:_cWhereSF2%
+		WHERE SE1.%notDel%																
+			AND SE1.E1_FILIAL 	= %XFilial:SE1%
+			AND SE1.E1_CLIENTE 	=  %Exp:_cCliFat%	
+			AND SE1.E1_VENCREA  < %Exp:Dtos(_DtAtraso)%
+			AND SE1.E1_SALDO 	> 0 	
+			AND SE1.E1_TIPO NOT IN ('NCC','_RA')
+			%Exp:_cWhereSE1%
+		GROUP BY SE1.E1_CLIENTE 
+		ORDER BY SE1.E1_CLIENTE 
+	EndSql
+	If (_cAliasPesq)->(Eof()) .or. (_cAliasPesq)->TIT_VENCIDO == 0
+		Break
+	EndIf	
+	_nValAtraso := (_cAliasPesq)->TIT_VENCIDO
+End Sequence
+If Select((_cAliasPesq)) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif 
+Return(_nValAtraso)
+
+
+/*/{Protheus.doc} ZFATF14TAB
+Verifica os Titulos Em Aberto
+@param     	_cCliFat	,código cliente
+			_cTpCred	,tipo de crédito utilizado 
+			_cTpOper	,tipo de operação a ser utilizada
+			_cPgNAval	,condição de pgto a vista 	
+			_cPgFP		,condição de pagamento Forplan  
+			_cPgCAOA,	,condição de pagamento CAO
+@return		_nValAberto	,Valores em aberto
+@author     CAOA - Evandro A Mariano dos Santos 
+@version    12.1.17 / Superior
+@project	GRUPO CAOA 
+@since      28/07/2022
+@history 	28/03/2023	,GAP FIN108 - Revitalização Credito [ Montadora ]
+						 Ajustando funcionalidade para utilizar LC na Montadora como em Barueri
+/*/
+Static Function ZFATF14TAB(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA)
+Local _cAliasPesq  	:= GetNextAlias()
+Local _nValAberto  	:= 0
+Local _cWhereSF2	:= ""
+Local _cWhereSE1	:= ""
+
+Begin Sequence
+	//condição de pagamento Forplan = 005
+	If _cTpCred == '1' .And. !Empty(_cPgFP) 
+		_cWhereSF2 += " 	AND SF2.F2_COND IN "+ FormatIn(_cPgFP,";")		
+	//condição de pagamento CAOA
+	ElseIf _cTpCred == '2'  .And. !Empty(_cPgCAOA) 
+		_cWhereSF2 += " 	AND SF2.F2_COND IN "+ FormatIn(_cPgCAOA,";") 
 	EndIf
 	//Caso esteja informado condição de pgto a vista não computar nos valores DAC 07/03/2023
 	If !Empty(_cPgNAval) //Cond. de pagto. p/ venda a vista sem limite Credit
-		_cQrySE1 += " 	AND SF2.F2_COND NOT IN  "+ FormatIn(_cPgNAval,";") + " "							+ CRLF
+		_cWhereSF2 += " 	AND SF2.F2_COND NOT IN  "+ FormatIn(_cPgNAval,";")  
 	Endif	 		
-	_cQrySE1 += " 		AND SF2.D_E_L_E_T_ = ' ' "															+ CRLF
-	_cQrySE1 += " WHERE SE1.D_E_L_E_T_ = ' '  "																+ CRLF
-	_cQrySE1 += " AND SE1.E1_FILIAL 	= '" + FwXFilial("SE1") + "' "										+ CRLF
-	_cQrySE1 += " AND SE1.E1_CLIENTE = '" +_cCliFat+"' " 													+ CRLF
-	_cQrySE1 += " AND SE1.E1_VENCREA < '" +Dtos(_DtAtraso)+"' "												+ CRLF
-	_cQrySE1 += " AND SE1.E1_SALDO > 0 "																	+ CRLF
-	_cQrySE1 += " AND SE1.E1_TIPO NOT IN ('NCC') "															+ CRLF
-	_cQrySE1 += " GROUP BY SE1.E1_CLIENTE "																	+ CRLF
-	_cQrySE1 += " ORDER BY SE1.E1_CLIENTE "																	+ CRLF
-	DbUseArea( .T., "TOPCONN", TcGenQry( ,, _cQrySE1 ), _cAls01SE1, .F., .T. )
+	//verificar pelo tipo de operação utilizado em Anapolis
+	If !Empty(_cTpOper) .and. FWCodEmp() == "2010"  //somente para Anapolis
+		_cWhereSE1 += " AND SE1.E1_PEDIDO = (SELECT C6_NUM "
+		_cWhereSE1 += "						FROM "+ RetSQLName('SC6') +" SC6 "		
+		_cWhereSE1 += "						WHERE  	SC6.C6_FILIAL 	= '"+FwXFilial("SC6")+"' " 		
+		_cWhereSE1 += "							AND SC6.C6_NUM 		= SE1.E1_PEDIDO
+		_cWhereSE1 += "							AND SC6.C6_XOPER IN "+ FormatIn(_cTpOper,";") + " "
+		_cWhereSE1 += "							AND SC6.D_E_L_E_T_ 	= ' '
+		_cWhereSE1 += "							GROUP BY SC6.C6_NUM )"
+	ElseIf !Empty(_cTpOper) .and. FWCodEmp() == "2020"  //somente para 
+		_cWhereSF2 += " AND SF2.F2_DOC 	= ( SELECT VS1.VS1_NUMNFI "
+		_cWhereSF2 += "						FROM "+ RetSQLName('VS1') +" VS1 "
+		_cWhereSF2 += "						JOIN "+ RetSQLName('VS3') +" VS3 "
+		_cWhereSF2 += "							ON 	VS3.VS3_FILIAL 	= '"+FwXFilial("VS3")+"' " 		
+		_cWhereSF2 += "							AND VS3.VS3_NUMORC 	= VS1.VS1_NUMORC
+		_cWhereSF2 += "							AND VS3.VS3_OPER IN "+ FormatIn(_cTpOper,";") + " "
+		_cWhereSF2 += "							AND VS3.D_E_L_E_T_ 	= ' '
+		_cWhereSF2 += "						WHERE	VS1.VS1_FILIAL 	= '"+FwXFilial("VS1")+"' " 		
+		_cWhereSF2 += "							AND VS1.VS1_NUMNFI	= SF2.F2_DOC "
+		_cWhereSF2 += "							AND VS1.VS1_SERNFI	= SF2.F2_SERIE "
+		_cWhereSF2 += "							AND VS1.D_E_L_E_T_ 	= ' '		
+		_cWhereSF2 += "							GROUP BY VS1.VS1_NUMNFI )"
+	Endif
+	_cWhereSF2 := "%"+_cWhereSF2+"%"
+	_cWhereSE1 := "%"+_cWhereSE1+"%"
 
-	_nValAtr := 0
-	DbSelectArea((_cAls01SE1)) 
-	(_cAls01SE1)->(dbGoTop())
-	If (_cAls01SE1)->(!Eof())
-		_nValAtr := (_cAls01SE1)->TIT_VENC
-	EndIf
-	//(_cAls01SE1)->(DbCloseArea())
-If Select(_cAls01SE1) <> 0
-	(_cAls01SE1)->(DbCloseArea())
-	Ferase(_cAls01SE1+GetDBExtension())
-Endif  
+	//Procura os titulos em aberto no financeiro.
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT SE1.E1_CLIENTE, SUM(SE1.E1_SALDO) AS TIT_ABERTO 
+		FROM %table:SE1% SE1 
+		JOIN  %Table:SF2% SF2  												
+			ON 	SF2.F2_FILIAL 	= %XFilial:SF2%										
+			AND SF2.F2_DOC 		= SE1.E1_NUM 
+			AND SF2.F2_SERIE 	= SE1.E1_PREFIXO 
+			AND SF2.F2_CLIENTE 	= SE1.E1_CLIENTE
+			AND SF2.F2_LOJA 	= SE1.E1_LOJA
+			AND SF2.F2_EMISSAO 	= SE1.E1_EMISSAO 
+			AND SF2.F2_COND 	<> ' ' 
+			AND SF2.%notDel%
+			%Exp:_cWhereSF2%
+		WHERE SE1.%notDel%																
+			AND SE1.E1_FILIAL 	= %XFilial:SE1%
+			AND SE1.E1_CLIENTE 	=  %Exp:_cCliFat%	
+			AND SE1.E1_SALDO 	> 0 	
+			AND SE1.E1_TIPO NOT IN ('NCC','_RA')
+			%Exp:_cWhereSE1%
+		GROUP BY SE1.E1_CLIENTE 
+		ORDER BY SE1.E1_CLIENTE 
+	EndSql
+	If (_cAliasPesq)->(Eof()) .or. (_cAliasPesq)->TIT_ABERTO == 0
+		Break
+	EndIf	
+	_nValAberto := (_cAliasPesq)->TIT_ABERTO
+End Sequence
+If Select((_cAliasPesq)) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif 
+Return(_nValAberto)
 
-Return(_nValAtr)
 
-/*
-=====================================================================================
-Programa.:              ZProc010
-Autor....:              CAOA - Evandro A Mariano dos Santos 
-Data.....:              28/07/2022
-Descricao / Objetivo:   Verifica os Titulos Em Aberto
-Doc. Origem:            
-Solicitante:            Faturamento/Pecas
-Uso......:              
-Obs......:
-=====================================================================================
-*/
-Static Function ZProc010(_cCliFat,_cTpCred)
-Local _cQrySE1    	:= " "
-Local _cAls02SE1   	:= GetNextAlias()
-Local _nValAbe  	:= 0
 
-	If Select(_cAls02SE1) > 0
-		(_cAls02SE1)->(DbCloseArea())
-	EndIf
+/*/{Protheus.doc} ZFATF14TBP
+Verifica os Pedidos Em Bo
+@param     	_cCliFat	,código cliente
+			_cTpCred	,tipo de crédito utilizado 
+			_cTpOper	,tipo de operação a ser utilizada
+			_cPgNAval	,condição de pgto a vista 	
+			_cPgFP		,condição de pagamento Forplan  
+			_cPgCAOA,	,condição de pagamento CAO
+@return		_nValBO		,Pedidos em aberto
+@author     CAOA - Evandro A Mariano dos Santos 
+@version    12.1.17 / Superior
+@project	GRUPO CAOA 
+@since      28/07/2022
+@history 	28/03/2023	,GAP FIN108 - Revitalização Credito [ Montadora ]
+						 Ajustando funcionalidade para utilizar LC na Montadora como em Barueri
+/*/
+Static Function ZFATF14TBP(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA)
+Local _cAliasPesq  	:= GetNextAlias()
+Local _nFatorRed    := SuperGetMV("CMV_PEC035",,0)
+Local _nValBO  		:= 0
+Local _cWhereVS1	:= ""
 
-	_cQrySE1 := " "
-	_cQrySE1 += " SELECT NVL(SUM(SE1.E1_SALDO),0) AS VAL_SE1 " 				+ CRLF
-	_cQrySE1 += " FROM " + RetSqlName("SE1") + " SE1 " 						+ CRLF
-	_cQrySE1 += " 	JOIN " + RetSqlName("SF2") + " SF2 "					+ CRLF
-	_cQrySE1 += " 		ON SF2.F2_FILIAL = '" + FwXFilial("SF2") + "' "		+ CRLF
-	_cQrySE1 += " 		AND SF2.F2_DOC = SE1.E1_NUM "						+ CRLF
-	_cQrySE1 += " 		AND SF2.F2_SERIE = SE1.E1_PREFIXO "					+ CRLF
-	_cQrySE1 += " 		AND SF2.F2_CLIENTE = SE1.E1_CLIENTE "				+ CRLF
-	_cQrySE1 += " 		AND SF2.F2_LOJA = SE1.E1_LOJA "						+ CRLF
-	_cQrySE1 += " 		AND SF2.F2_EMISSAO = SE1.E1_EMISSAO "				+ CRLF
-	_cQrySE1 += " 		AND SF2.F2_PREFORI = SE1.E1_PREFORI "				+ CRLF
-	/*
-	If _cTpCred == '1' //FloorPlan
-		_cQrySE1 += " 	AND SF2.F2_COND IN "+ FormatIn(_cPgFP,";") + " "		+ CRLF
-	//Else
-	//	_cQrySE1 += " AND SF2.F2_COND NOT IN  "+ FormatIn(_cPgNAval,";") + " "			+ CRLF
-	EndIf
-	*/
-	//para garantir não deixo passar confição igual a branco DAC 07/03/2023
-	_cQrySE1 += " 		AND SF2.F2_COND <> ' ' "
-	If _cTpCred == '1' .And. !Empty(_cPgFP) //FloorPlan
-		_cQrySE1 += " 	AND SF2.F2_COND IN "+ FormatIn(_cPgFP,";") + " "									+ CRLF
-	ElseIf _cTpCred == '2'  .And. !Empty(_cPgCAOA) //CAOA  DAC 07/03/2023
-		_cQrySE1 += " 	AND SF2.F2_COND IN "+ FormatIn(_cPgCAOA,";") + " "									+ CRLF
+Begin Sequence
+	//condição de pagamento Forplan = 005
+	If _cTpCred == '1' .And. !Empty(_cPgFP) 
+		_cWhereVS1 += " 	AND VS1.VS1_FORPAG  IN "+ FormatIn(_cPgFP,";")		
+	//condição de pagamento CAOA
+	ElseIf _cTpCred == '2'  .And. !Empty(_cPgCAOA) 
+		_cWhereVS1 += " 	AND VS1.VS1_FORPAG  IN "+ FormatIn(_cPgCAOA,";") 
 	EndIf
 	//Caso esteja informado condição de pgto a vista não computar nos valores DAC 07/03/2023
 	If !Empty(_cPgNAval) //Cond. de pagto. p/ venda a vista sem limite Credit
-		_cQrySE1 += " 	AND SF2.F2_COND NOT IN  "+ FormatIn(_cPgNAval,";") + " "							+ CRLF
+		_cWhereVS1 += " 	AND VS1.VS1_FORPAG  NOT IN  "+ FormatIn(_cPgNAval,";")  
 	Endif	 		
-	_cQrySE1 += " 		AND SF2.D_E_L_E_T_ = ' ' "							+ CRLF 
-	_cQrySE1 += " WHERE SE1.D_E_L_E_T_ = ' ' "								+ CRLF  
-	_cQrySE1 += " AND SE1.E1_FILIAL 	= '" + FwXFilial("SE1") + "' "		+ CRLF
-	_cQrySE1 += " AND SE1.E1_CLIENTE = '" +_cCliFat+"' "					+ CRLF
-	_cQrySE1 += " AND SE1.E1_SALDO > 0 "									+ CRLF
-	_cQrySE1 += " AND SE1.E1_TIPO NOT IN ('NCC') "							+ CRLF
-	_cQrySE1 += " GROUP BY SE1.E1_CLIENTE "									+ CRLF
+	//verificar pelo tipo de operação utilizado em Anapolis
+	If !Empty(_cTpOper)  
+		_cWhereVS1 += " AND VS1.VS1_NUMORC 	= ( SELECT VS3.VS3_NUMORC "
+		_cWhereVS1 += "						FROM "+ RetSQLName('VS3') +" VS3 "
+		_cWhereVS1 += "						WHERE VS3.D_E_L_E_T_ 	= ' ' "
+		_cWhereVS1 += "							AND	VS3.VS3_FILIAL 	= '"+FwXFilial("VS3")+"' " 		
+		_cWhereVS1 += "							AND VS3.VS3_NUMORC 	= VS1.VS1_NUMORC
+		_cWhereVS1 += "							AND VS3.VS3_OPER IN "+ FormatIn(_cTpOper,";") + " "
+		_cWhereVS1 += "							GROUP BY VS3.VS3_NUMORC )"
+	Endif
+	_cWhereVS1 := "%"+_cWhereVS1+"%"
 
-	DbUseArea( .T., "TOPCONN", TcGenQry( ,, _cQrySE1 ), _cAls02SE1, .F., .T. )
-
-	_nValAbe  	:= 0
-
-	dbSelectArea((_cAls02SE1)) 
-	(_cAls02SE1)->(dbGoTop())
-	If (_cAls02SE1)->(!Eof())
-		_nValAbe := (_cAls02SE1)->VAL_SE1
-	EndIf
-
-//	(_cAls02SE1)->(DbCloseArea())
-If Select(_cAls02SE1) <> 0
-	(_cAls02SE1)->(DbCloseArea())
-	Ferase(_cAls02SE1+GetDBExtension())
-Endif  
-	
-Return(_nValAbe)
-
-/*
-=====================================================================================
-Programa.:              ZProc020
-Autor....:              CAOA - Evandro A Mariano dos Santos 
-Data.....:              28/07/2022
-Descricao / Objetivo:   Verifica os Pedidos Em Bo
-Doc. Origem:            
-Solicitante:            Faturamento/Pecas
-Uso......:              
-Obs......:
-=====================================================================================
-*/
-Static Function ZProc020(_cCliFat,_cTpCred)
-Local _cQryVS1    	:= " "
-Local _cAls01VS1  	:= GetNextAlias()
-Local _nValBO		:= 0
-Local _nRedBO       := SuperGetMV("CMV_PEC035",,100)
-
-	If _nRedBO > 100
-		_nRedBO := 100
-	endif
-
-	If Select(_cAls01VS1) > 0
-		(_cAls01VS1)->(DbCloseArea())
-	EndIf
-
-	_cQryVS1 := " "
-	_cQryVS1 += " SELECT NVL(SUM(VS1.VS1_VTOTNF),0) AS VAL_VS1 "			+ CRLF
-	_cQryVS1 += " FROM " + RetSqlName("VS1") + " VS1 "						+ CRLF
-	_cQryVS1 += " WHERE VS1.VS1_FILIAL  = '" + xFilial("VS1") + "' "		+ CRLF
-	_cQryVS1 += " AND VS1.VS1_CLIFAT = '" +_cCliFat+"' "					+ CRLF
-	_cQryVS1 += " AND VS1.VS1_STATUS IN ('0','3') "							+ CRLF
-	/*
-	//_cQryVS1 += " AND VS1.VS1_XBO = 'S' "									+ CRLF //Solicitado Caoa - Somar todos Orc integrados não enviados St 4 12/2022
-	If _cTpCred = '1' //FloorPlan
-		_cQryVS1 += " AND VS1.VS1_FORPAG IN "+ FormatIn(_cPgFP,";") + "  "	+ CRLF
-	//Else
-	//	_cQryVS1 += " AND VS1.VS1_FORPAG NOT IN  "+ FormatIn(_cPgNAval,";") + " "		+ CRLF
-	EndIf
-	*/
-	_cQryVS1 += " 		AND VS1.VS1_FORPAG <> ' ' "
-	If _cTpCred == '1' .And. !Empty(_cPgFP) //FloorPlan
-		_cQryVS1 += " 	AND VS1.VS1_FORPAG IN "+ FormatIn(_cPgFP,";") + " "									+ CRLF
-	ElseIf _cTpCred == '2' .And. !Empty(_cPgCAOA) //CAOA  DAC 07/03/2023
-		_cQryVS1 += " 	AND VS1.VS1_FORPAG IN "+ FormatIn(_cPgCAOA,";") + " "								+ CRLF
-	EndIf
-	//Caso esteja informado condição de pgto a vista não computar nos valores DAC 07/03/2023
-	If !Empty(_cPgNAval) //Cond. de pagto. p/ venda a vista sem limite Credit
-		_cQryVS1 += " 	AND VS1.VS1_FORPAG NOT IN  "+ FormatIn(_cPgNAval,";") + " "							+ CRLF
-	Endif	 		
-	_cQryVS1 += " AND VS1.D_E_L_E_T_ = ' ' "								+ CRLF
-	DbUseArea( .T., "TOPCONN", TcGenQry( ,, _cQryVS1 ), _cAls01VS1, .F., .T. )
-	
-	_nValBO		:= 0
-	DbSelectArea((_cAls01VS1)) 
-	(_cAls01VS1)->(dbGoTop())
-	If (_cAls01VS1)->(!Eof())
-		_nValBO := (_cAls01VS1)->VAL_VS1 * (_nRedBO / 100)
-	EndIf
-	
-	//(_cAls01VS1)->(DbCloseArea())
-If Select(_cAls01VS1) <> 0
-	(_cAls01VS1)->(DbCloseArea())
-	Ferase(_cAls01VS1+GetDBExtension())
-Endif  
-
+	//Procura os titulos em aberto no financeiro.
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT NVL(SUM(VS1.VS1_VTOTNF),0) AS TIT_VS1BO
+		FROM %table:VS1% VS1 
+		WHERE VS1.%notDel%																
+			AND VS1.VS1_FILIAL 	= %XFilial:VS1%
+			AND VS1.VS1_CLIFAT 	=  %Exp:_cCliFat%	
+			AND VS1.VS1_FORPAG  <> ' '
+			AND VS1.VS1_STATUS IN ('0','3')
+			%Exp:_cWhereVS1%
+	EndSql
+	If (_cAliasPesq)->(Eof()) .or. (_cAliasPesq)->TIT_VS1BO == 0
+		Break
+	EndIf	
+	If _nFatorRed > 0
+		//para garantir que execute somente até 100 %
+		If _nFatorRed > 100
+			_nFatorRed := 100
+		Endif
+		_nValBO := (_cAliasPesq)->TIT_VS1BO * (_nFatorRed / 100)
+	Else
+		_nValBO := (_cAliasPesq)->TIT_VS1BO 
+	Endif	
+End Sequence
+If Select((_cAliasPesq)) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif 
 Return(_nValBO)
 
-/*
-=====================================================================================
-Programa.:              ZProc030
-Autor....:              CAOA - Evandro A Mariano dos Santos 
-Data.....:              28/07/2022
-Descricao / Objetivo:   Verifica os Pedidos Em Reserva/Em Faturamento/Em Separação
-Doc. Origem:            
-Solicitante:            Faturamento/Pecas
-Uso......:              
-Obs......:
-=====================================================================================
-*/
-Static Function ZProc030(_cCliFat,_cTpCred)
-Local _cQryVS1    	:= " "
-Local _cAls02VS1  	:= GetNextAlias()
-Local _nValPed		:= 0
-	
-	//Verifica os orçamentos que já consumiram saldo do LimCredito FP
-	If Select(_cAls02VS1) > 0
-		(_cAls02VS1)->(DbCloseArea())
-	EndIf
 
-	/*VS1_STATUS 
-	- R Momento da reserva
-	- F Pronto para faturar
-	- 4 Em separação */
 
-	_cQryVS1 := " "
-	_cQryVS1 += " SELECT NVL(SUM(VS1.VS1_VTOTNF),0) AS VAL_VS1 "			+ CRLF
-	_cQryVS1 += " FROM " + RetSqlName("VS1") + " VS1 "						+ CRLF
-	_cQryVS1 += " WHERE VS1.VS1_FILIAL  = '" + xFilial("VS1") + "' "		+ CRLF
-	_cQryVS1 += " AND VS1.VS1_CLIFAT = '" +_cCliFat+"' "					+ CRLF
-	_cQryVS1 += " AND VS1.VS1_STATUS IN ('R','F','4') "						+ CRLF
-	/*
-	If _cTpCred = '1' //FloorPlan
-		_cQryVS1 += " AND VS1.VS1_FORPAG IN "+ FormatIn(_cPgFP,";") + "  "	+ CRLF
-	//Else
-	//	_cQryVS1 += " AND VS1.VS1_FORPAG NOT IN  "+ FormatIn(_cPgNAval,";") + " "		+ CRLF
-	EndIf
-	*/
-	_cQryVS1 += " 		AND VS1.VS1_FORPAG <> ' ' "
-	If _cTpCred == '1' .And. !Empty(_cPgFP) //FloorPlan
-		_cQryVS1 += " 	AND VS1.VS1_FORPAG IN "+ FormatIn(_cPgFP,";") + " "									+ CRLF
-	ElseIf _cTpCred == '2' .And. !Empty(_cPgCAOA) //CAOA  DAC 07/03/2023
-		_cQryVS1 += " 	AND VS1.VS1_FORPAG IN "+ FormatIn(_cPgCAOA,";") + " "								+ CRLF
+/*/{Protheus.doc} ZFATF14TBF
+Verifica os Pedidos Em Bo
+@param     	_cCliFat	,código cliente
+			_cTpCred	,tipo de crédito utilizado 
+			_cTpOper	,tipo de operação a ser utilizada
+			_cPgNAval	,condição de pgto a vista 	
+			_cPgFP		,condição de pagamento Forplan  
+			_cPgCAOA,	,condição de pagamento CAO
+@return		_nValBO		,Pedidos em aberto
+@author     CAOA - Evandro A Mariano dos Santos 
+@version    12.1.17 / Superior
+@project	GRUPO CAOA 
+@since      28/07/2022
+@history 	28/03/2023	,GAP FIN108 - Revitalização Credito [ Montadora ]
+						 Ajustando funcionalidade para utilizar LC na Montadora como em Barueri
+/*/
+Static Function ZFATF14TBF(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA)
+Local _cAliasPesq  	:= GetNextAlias()
+Local _nFatorRed    := SuperGetMV("CMV_PEC035",,0)
+Local _nValBO  		:= 0
+Local _cWhereSC5	:= ""
+Local _cWhereSC6	:= ""
+
+Begin Sequence
+	//condição de pagamento Forplan = 005
+	If _cTpCred == '1' .And. !Empty(_cPgFP) 
+		_cWhereSC5 += " 	AND SC5.C5_CONDPAG  IN "+ FormatIn(_cPgFP,";")		
+	//condição de pagamento CAOA
+	ElseIf _cTpCred == '2'  .And. !Empty(_cPgCAOA) 
+		_cWhereSC5 += " 	AND SC5.C5_CONDPAG  IN "+ FormatIn(_cPgCAOA,";") 
 	EndIf
 	//Caso esteja informado condição de pgto a vista não computar nos valores DAC 07/03/2023
 	If !Empty(_cPgNAval) //Cond. de pagto. p/ venda a vista sem limite Credit
-		_cQryVS1 += " 	AND VS1.VS1_FORPAG NOT IN  "+ FormatIn(_cPgNAval,";") + " "							+ CRLF
+		_cWhereSC5 += " 	AND SC5.C5_CONDPAG  NOT IN  "+ FormatIn(_cPgNAval,";")  
 	Endif	 		
-	_cQryVS1 += " AND VS1.D_E_L_E_T_ = ' ' "								+ CRLF
+	//verificar pelo tipo de operação utilizado em Anapolis
+	If !Empty(_cTpOper)  
+		_cWhereSC6 += " AND SC6.C6_XOPER IN "+ FormatIn(_cTpOper,";") + " "
+	Endif
+	_cWhereSC5 := "%"+_cWhereSC5+"%"
+	_cWhereSC6 := "%"+_cWhereSC6+"%"
 
-	DbUseArea( .T., "TOPCONN", TcGenQry( ,, _cQryVS1 ), _cAls02VS1, .F., .T. )
-	
-	_nValPed		:= 0
-	
-	DbSelectArea((_cAls02VS1)) 
-	(_cAls02VS1)->(dbGoTop())
-	If (_cAls02VS1)->(!Eof())
-		_nValPed := (_cAls02VS1)->VAL_VS1
+	//Procura os titulos em aberto no financeiro.
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT NVL(SUM(SC6.C6_VALOR),0) AS TIT_SC6BO  
+		FROM %Table:SC6% SC6  		
+		JOIN %Table:SC5% SC5  		
+			ON 	SC5.C5_FILIAL 	= %XFilial:SC5%
+			AND SC5.C5_NUM		= SC6.C6_NUM	
+			AND SC5.C5_NOTA     = ' '
+			AND SC5.C5_LIBERAOK <> 'E'
+			AND SC5.C5_CONDPAG 	<> ' '
+			AND SC5.%notDel%
+			%Exp:_cWhereSC5%
+		WHERE SC6.C6_FILIAL 	= %XFilial:SC6%
+			AND SC6.C6_CLI     	= %Exp:_cCliFat%	
+			AND SC6.%notDel%
+			%Exp:_cWhereSC6%
+	EndSql
+	If (_cAliasPesq)->(Eof())  .Or. (_cAliasPesq)->TIT_SC6BO == 0
+		Break
+	EndIf	
+	If _nFatorRed > 0
+		//para garantir que execute somente até 100 %
+		If _nFatorRed > 100
+			_nFatorRed := 100
+		Endif
+		_nValBO := (_cAliasPesq)->TIT_SC6BO * (_nFatorRed / 100)
+	Else
+		_nValBO := (_cAliasPesq)->TIT_SC6BO 
+	Endif	
+End Sequence
+If Select((_cAliasPesq)) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif 
+Return(_nValBO)
+
+
+
+/*/{Protheus.doc} ZFATF14TPP
+Verifica os Pedidos Em Reserva/Em Faturamento/Em Separação Peças
+@param     	_cCliFat	,código cliente
+			_cTpCred	,tipo de crédito utilizado 
+			_cTpOper	,tipo de operação a ser utilizada
+			_cPgNAval	,condição de pgto a vista 	
+			_cPgFP		,condição de pagamento Forplan  
+			_cPgCAOA,	,condição de pagamento CAO
+@return		_nValPed	,Pedidos faturados
+@author     CAOA - Evandro A Mariano dos Santos 
+@version    12.1.17 / Superior
+@project	GRUPO CAOA 
+@since      28/07/2022
+@history 	28/03/2023	,GAP FIN108 - Revitalização Credito [ Montadora ]
+						 Ajustando funcionalidade para utilizar LC na Montadora como em Barueri
+/*/
+Static Function ZFATF14TPP(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA)
+Local _cAliasPesq  	:= GetNextAlias()
+Local _nValPed 		:= 0
+Local _cWhereVS1	:= ""
+
+Begin Sequence
+	//condição de pagamento Forplan = 005
+	If _cTpCred == '1' .And. !Empty(_cPgFP) 
+		_cWhereVS1 += " 	AND VS1.VS1_FORPAG  IN "+ FormatIn(_cPgFP,";")		
+	//condição de pagamento CAOA
+	ElseIf _cTpCred == '2'  .And. !Empty(_cPgCAOA) 
+		_cWhereVS1 += " 	AND VS1.VS1_FORPAG  IN "+ FormatIn(_cPgCAOA,";") 
 	EndIf
+	//Caso esteja informado condição de pgto a vista não computar nos valores DAC 07/03/2023
+	If !Empty(_cPgNAval) //Cond. de pagto. p/ venda a vista sem limite Credit
+		_cWhereVS1 += " 	AND VS1.VS1_FORPAG  NOT IN  "+ FormatIn(_cPgNAval,";")  
+	Endif	 		
+	//verificar pelo tipo de operação utilizado em Anapolis
+	If !Empty(_cTpOper)  
+		_cWhereVS1 += " AND VS1.VS1_NUMORC 	= ( SELECT VS3.VS3_NUMORC "
+		_cWhereVS1 += "						FROM "+ RetSQLName('VS3') +" VS3 "
+		_cWhereVS1 += "						WHERE VS3.D_E_L_E_T_ 	= ' ' "
+		_cWhereVS1 += "							AND	VS3.VS3_FILIAL 	= '"+FwXFilial("VS3")+"' " 		
+		_cWhereVS1 += "							AND VS3.VS3_NUMORC 	= VS1.VS1_NUMORC
+		_cWhereVS1 += "							AND VS3.VS3_OPER IN "+ FormatIn(_cTpOper,";") + " "
+		_cWhereVS1 += "							GROUP BY VS3.VS3_NUMORC )"
+	Endif
+	_cWhereVS1 := "%"+_cWhereVS1+"%"
 
-	//(_cAls02VS1)->(DbCloseArea())
-If Select(_cAls02VS1) <> 0
-	(_cAls02VS1)->(DbCloseArea())
-	Ferase(_cAls02VS1+GetDBExtension())
-Endif  
-
+	//Procura os titulos em aberto no financeiro.
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT NVL(SUM(VS1.VS1_VTOTNF),0) AS TIT_PEDIDO
+		FROM %table:VS1% VS1 
+		WHERE VS1.VS1_FILIAL 	= %XFilial:VS1%
+			AND VS1.VS1_CLIFAT 	=  %Exp:_cCliFat%	
+			AND VS1.VS1_FORPAG  <> ' '
+			AND VS1.VS1_STATUS IN ('R','F','4')
+			AND VS1.%notDel% 
+			%Exp:_cWhereVS1%
+	EndSql
+	If (_cAliasPesq)->(Eof()) .or. (_cAliasPesq)->TIT_PEDIDO == 0
+		Break
+	EndIf	
+	_nValPed := (_cAliasPesq)->TIT_PEDIDO 
+End Sequence
+If Select((_cAliasPesq)) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif 
 Return(_nValPed)
 
-/*
-=====================================================================================
-Programa.:              ZGrvSA1
-Autor....:              CAOA - Evandro A Mariano dos Santos 
-Data.....:              28/07/2022
-Descricao / Objetivo:   Grava os Dados do Limite de Crédito na SA1
-Doc. Origem:            
-Solicitante:            Faturamento/Pecas
-Uso......:              
-Obs......:				Ajustado para validar com loja DAC 02/03/2023
-=====================================================================================
-*/
-Static Function ZGrvSA1(_cCliFat, _cTpCred, _nValAtr, _nValAbe, _nValBo, _nValPed, _cLoja)
+
+/*/{Protheus.doc} ZFATF14TPF
+Verifica os Pedidos Em Reserva/Em Faturamento/Em Separação Peças
+@param     	_cCliFat	,código cliente
+			_cTpCred	,tipo de crédito utilizado 
+			_cTpOper	,tipo de operação a ser utilizada
+			_cPgNAval	,condição de pgto a vista 	
+			_cPgFP		,condição de pagamento Forplan  
+			_cPgCAOA,	,condição de pagamento CAO
+@return		_nValBO		,Pedidos em aberto
+@author     CAOA - Evandro A Mariano dos Santos 
+@version    12.1.17 / Superior
+@project	GRUPO CAOA 
+@since      28/07/2022
+@history 	28/03/2023	,GAP FIN108 - Revitalização Credito [ Montadora ]
+						 Ajustando funcionalidade para utilizar LC na Montadora como em Barueri
+/*/
+
+Static Function ZFATF14TPF(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA)
+Local _cAliasPesq  	:= GetNextAlias()
+Local _nValPed  	:= 0
+Local _cWhereSC5	:= ""
+Local _cWhereSC6	:= ""
+
+Begin Sequence
+	//condição de pagamento Forplan = 005
+	If _cTpCred == '1' .And. !Empty(_cPgFP) 
+		_cWhereSC5 += " 	AND SC5.C5_CONDPAG  IN "+ FormatIn(_cPgFP,";")		
+	//condição de pagamento CAOA
+	ElseIf _cTpCred == '2'  .And. !Empty(_cPgCAOA) 
+		_cWhereSC5 += " 	AND SC5.C5_CONDPAG  IN "+ FormatIn(_cPgCAOA,";") 
+	EndIf
+	//Caso esteja informado condição de pgto a vista não computar nos valores DAC 07/03/2023
+	If !Empty(_cPgNAval) //Cond. de pagto. p/ venda a vista sem limite Credit
+		_cWhereSC5 += " 	AND SC5.C5_CONDPAG  NOT IN  "+ FormatIn(_cPgNAval,";")  
+	Endif	 		
+	//verificar pelo tipo de operação utilizado em Anapolis
+	If !Empty(_cTpOper)  
+		_cWhereSC6 += " AND SC6.C6_XOPER IN "+ FormatIn(_cTpOper,";") + " "
+	Endif
+	_cWhereSC5 := "%"+_cWhereSC5+"%"
+	_cWhereSC6 := "%"+_cWhereSC6+"%"
+
+	//Procura os titulos em aberto no financeiro.
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT NVL(SUM(SC6.C6_VALOR),0) AS TIT_PEDIDO  
+		FROM %Table:SC6% SC6  		
+		JOIN %Table:SC5% SC5  		
+			ON 	SC5.C5_FILIAL 	= %XFilial:SC5%
+			AND SC5.C5_NUM		= SC6.C6_NUM	
+			AND SC5.C5_NOTA     = ' '
+			AND SC5.C5_LIBERAOK <> ' '
+			AND SC5.C5_CONDPAG 	<> ' '
+			AND SC5.%notDel%
+			%Exp:_cWhereSC5%
+		WHERE SC6.C6_FILIAL 	= %XFilial:SC6%
+			AND SC6.C6_CLI     	= %Exp:_cCliFat%	
+			AND SC6.%notDel%
+			%Exp:_cWhereSC6%
+	EndSql
+	//		AND SC5.C5_BLQ		= ' '
+	If (_cAliasPesq)->(Eof()) .or. (_cAliasPesq)->TIT_PEDIDO == 0
+		Break
+	EndIf	
+	_nValPed := (_cAliasPesq)->TIT_PEDIDO 
+End Sequence
+If Select((_cAliasPesq)) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif 
+Return(_nValPed)
+
+
+/*/{Protheus.doc} ZFATF14SA1
+Grava os Dados do Limite de Crédito na SA1
+@param      _cCliFat 	- Codigo do cliente  
+@return     _cLoja
+@author     CAOA - Evandro A Mariano dos Santos
+@version    12.1.17 / Superior
+@project	GRUPO CAOA 
+@since      28/07/2022
+@history 	28/03/2023	,GAP FIN108 - Revitalização Credito [ Montadora ]
+						 Ajustando funcionalidade para utilizar LC na Montadora como em Barueri
+/*/
+Static Function ZFATF14SA1(_cCliFat, _cTpCred, _nValAtr, _nValAbe, _nValBo, _nValPed, _nValCred, _cLoja)
 Local _cRet		:= ""
 Local _cWhere	:= ""
 Local _nSaldo	:= 0
@@ -371,10 +605,6 @@ Begin Sequence
 	(_cAliasPesq)->(DbGoTop())
 	While (_cAliasPesq)->(!Eof())
 		SA1->(DbGoto((_cAliasPesq)->NREGSA1))
-		
-		//SA1->(DbSetOrder(1))
-		//SA1->(DbGotop())
-		//If SA1->(DbSeek(FwXFilial("SA1") + _cCliFat + AllTrim(_cLoja)) )
 		If !SA1->(RecLock("SA1",.F.))
 			Break
 		EndIf
@@ -437,7 +667,57 @@ Return(_cRet)
 
 
 
+/*/{Protheus.doc} ZFATF014LJ
+Localizar a loja para processamento responável pelo Limite de Crédito
+@param      _cCliFat 	- Codigo do cliente  
+@return     _cLoja
+@author     DAC Denilso
+@version    12.1.17 / Superior
+@project	GRUPO CAOA - GAP FIN108 - Revitalização Credito [ Montadora ]
+@since      28/03/2023
+@history 	
+/*/
+Static Function ZFATF014LJ(_cCliFat, _cLoja, _cTpCred)
+Local _cAliasPesq	:= GetNextAlias()   
+Local _cWhere		:= ""
 
+Default _cLoja		:= ""
+Default _cTpCred	:= ""
+
+Begin Sequence
+	If !Empty(_cLoja)
+		_cWhere := "	AND SA1.A1_LOJA = '"+_cLoja+"'"
+	Endif
+	_cWhere := "%"+_cWhere+"%"
+	
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT 	ISNULL(SA1.R_E_C_N_O_,0) NREGSA1
+				FROM  %Table:SA1% SA1
+				WHERE 	SA1.A1_FILIAL   = %XFilial:SA1% 
+					AND SA1.A1_COD  	= %Exp:_cCliFat%
+					AND SA1.A1_XTPCRED NOT IN (' ','0') 
+					%Exp:_cWhere%
+					AND SA1.%notDel%
+	EndSQL	
+					/*AND 	(  	 SA1.A1_XTPCRED IN ('1','2') 
+							 OR (SA1.A1_XTPCRED = '0' AND A1_XLC > 0) )
+					*/	
+	If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGSA1 == 0
+		Break
+	EndIf
+	SA1->(DbGoto((_cAliasPesq)->NREGSA1))
+	_cLoja		:= SA1->A1_LOJA 
+	_cTpCred	:= SA1->A1_XTPCRED 
+End Sequence
+If Select(_cAliasPesq) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif  
+Return _cLoja
+
+
+
+//UTILIZADOS PELO DICIONÁRIO
 /*/{Protheus.doc} ZF014VTC
 Validação criado para ajustar valor do limite de crédito quando da operação alteração inclusão
 Esta funcionalidade deve ser utilizada na valiação do campo A1_XTPCRED em X3_VALID 
@@ -509,7 +789,7 @@ Begin Sequence
 	//caso exista outro registro com este tipo de crédito pego os valores do mesmo paa o atual e informo em mensagem
 	//somente mostro msg para o Usuário para saber sobre mais de um registro com definição de crédito
 	SA1->(DbGoto( _nRegTab ))
-	_cMsg := "Cliente ja possui registro com este tipo de de crédito na loja "+SA1->A1_LOJA+ " em relação a loja Atua "+M->A1_LOJA+" ! "
+	_cMsg := "Cliente ja possui registro com este tipo de de crédito na loja "+SA1->A1_LOJA+ " em relação a loja Atual "+M->A1_LOJA+" ! "
 	Conout("[ZFAT014 - ZF014VTC]  Usuário "+RetCodUsr()+ CRLF + _cMsg + CRLF)
 	If !_lJob
 		_lRet 	:= MsgYesNo(_cMsg + CRLF + "DESEJA TROCAR A LOJA DENTENTORA DO CRÉDITO ? ")
@@ -565,8 +845,7 @@ Endif
 GetDRefresh() 
 Return _lRet
 
-
-/*/{Protheus.doc} ZF014VTC
+/*/{Protheus.doc} ZF014VDUPL
 Função responsável por verificar se existe outro tipo de credito cadastrado
 caso exista retornará .F. Falso
 @param      _cCliFat 	- Codigo do cliente  
@@ -589,7 +868,7 @@ Begin Sequence
 		WHERE SA1.A1_FILIAL 	= %XFilial:SA1%
 			AND SA1.A1_COD  	= %Exp:_cCodCli%
 			AND SA1.A1_LOJA	   <> %Exp:_cLoja%	
-			AND SA1.A1_XTPCRED NOT IN ( '0 ',' ', %Exp:_cTpCred%) 
+			AND SA1.A1_XTPCRED NOT IN ( '0',' ', %Exp:_cTpCred%) 
 			AND SA1.%notDel%
 	EndSQL	
 	//		AND SA1.A1_XTPCRED NOT IN ( '0 ',' ') 
@@ -604,4 +883,119 @@ If Select(_cAliasPesq) <> 0
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif  
 Return _lRet
+
+
+
+/*/{Protheus.doc} ZF014VDUPL
+Função responsável por verificar se existe outro tipo de credito cadastrado
+caso exista retornará .F. Falso
+@param      _cCliFat 	- Codigo do cliente  
+			_cLoja 		- Loja do Cliente 
+@return     Logico
+@author     DAC Denilso
+@version    12.1.17 / Superior
+@project	GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (Revitalização Limite de Crédito)
+@since      02/03/2023
+/*/
+Static Function ZFAT014GER(_cCliFat, _cLoja)
+Local _lRet			:= .T.
+Local _cAliasPesq 	:= GetNextAlias()
+Local _cWhere 		:= ""
+
+Default _cCodCli	:= ""
+Default _cLoja		:= ""
+
+Begin Sequence
+	If !Empty(_cCliFat)
+		_cWhere += " AND  SA1.A1_COD = '"+_cCliFat +"' "
+	Endif
+	_cWhere := "%"+_cWhere+"%"
+
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT ISNULL(SA1.R_E_C_N_O_,0) NREGSA1
+		FROM  %Table:SA1% SA1
+		WHERE SA1.A1_FILIAL 	= %XFilial:SA1%
+			AND SA1.A1_XTPCRED NOT IN ( '0',' ') 
+			AND SA1.%notDel%
+			%Exp:_cWhere%
+			ORDER BY A1_COD
+	EndSQL	
+	If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGSA1 == 0
+		_lRet	:= .F.
+		Break
+	EndIf
+	While (_cAliasPesq)->(!Eof()) 
+		SA1->(DbGoto((_cAliasPesq)->NREGSA1))
+		U_ZFATF014(SA1->A1_COD, SA1->A1_XTPCRED, SA1->A1_LOJA)
+		ZF014ZERLC( SA1->A1_COD, If(!Empty(_cLoja),SA1->A1_LOJA,Nil),/*_cTpCred*/)  //atualizar todos neste código
+		(_cAliasPesq)->(DbSkip())	
+	EndDo
+End Sequence
+If Select(_cAliasPesq) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif  
+Return _lRet
+
+
+/*/{Protheus.doc} ZF014ZERLC
+Função para atualiar os valiores de limite de crédito dos clientes que não utilizam limite
+pesquisando pelo codigo e avaliando as lojas zerara os valores e dadas do limite de crédito
+@author DAC
+@since 03/04/2023
+@version 2.0
+@Obs   
+/*/
+Static Function ZF014ZERLC( _cCliFat, _cLoja, _cTpCred)
+Local _lRet         := .T.
+Local _lJob			:= IsBlind()
+Local _cQuery       := ""
+Local _nStatus
+
+Default _cCliFat    := ""
+Default _cLoja      := ""
+Default	_cTpCred	:= ""
+
+Begin Sequence
+	If Empty(_cCliFat)
+    	Break
+	Endif
+	//Limpa registro que era Matriz anteriormente diferentes dos registros que  é matriz DAC 24/02/2023
+	_cQuery += "UPDATE " +RetSqlName("SA1")+ " SA1" 						+ CRLF
+	_cQuery += "SET 	SA1.A1_XLC  	= 0 " 								+ CRLF
+	_cQuery += " 	,	SA1.A1_XDTLC 	= '" + Space(08) + "'" 		        + CRLF
+	_cQuery += " 	,	SA1.A1_XTPCRED 	= '0' " 		                    + CRLF
+	_cQuery += " 	,	SA1.A1_XFPSAL 	= 0 " 		                        + CRLF
+	_cQuery += " 	,	SA1.A1_XFPATR 	= 0 " 		                        + CRLF
+	_cQuery += " 	,	SA1.A1_XLMUSA 	= 0 " 		                        + CRLF
+	_cQuery += " 	,	SA1.A1_XSTAFP 	= '" + Space(01) + "'" 		        + CRLF
+	_cQuery += " 	,	SA1.A1_XPEDFP 	= 0 " 		                        + CRLF
+	_cQuery += " 	,	SA1.A1_XVALBO 	= 0 " 		                        + CRLF
+	_cQuery += " 	,	SA1.A1_XBLQLC 	= '0'" 	                	        + CRLF
+	_cQuery += " 	,	SA1.A1_XBLQVEN 	= '" + Space(01) + "'" 		        + CRLF
+	_cQuery += "WHERE SA1.D_E_L_E_T_    = ' '" 								+ CRLF
+	_cQuery += " 	AND SA1.A1_FILIAL   = '"	+ XFilial("SA1") +"'"  		+ CRLF	
+	_cQuery += " 	AND SA1.A1_COD      = '"	+ _cCliFat +"'"  			+ CRLF	
+	If !Empty(_cLoja) .And. !Empty(_cTpCred) .And. 	_cTpCred <> "0"
+		_cQuery += " 	AND SA1.A1_LOJA <> '"	+ _cLoja +"'"  				+ CRLF	
+	Else
+	    _cQuery += " 	AND SA1.A1_XTPCRED  IN ( '0',' ')  "  		            + CRLF
+	Endif
+ 	Begin Transaction	
+		_nStatus := TcSqlExec(_cQuery)
+		if (_nStatus < 0)
+			If !_lJob 
+				MSGINFO("Erro ao gravar dados do limite de crédito tabela SA1 "+ TCSQLError() , "[CRMA980] - Atenção" )
+			Endif
+			Conout("[CRMA980] PROBLEMAS NO SELECT "+ CRLF + TCSQLError())
+			_lRet := .F.
+        EndIf
+	End Transaction
+End Sequence
+Return _lRet
+
+
+
+
+
 

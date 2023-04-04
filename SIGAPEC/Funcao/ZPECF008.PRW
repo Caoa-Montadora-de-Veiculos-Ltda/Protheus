@@ -61,6 +61,9 @@ User Function ZPECF008()
 	Private _aMensAglu	:= {}
 	
 	Begin Sequence
+		//000360
+		//U_ZFATF014("000015" /*, _cTpCred, _cLoja*/)
+		//Return Nil
 		//teste para validar envio
 		//Caso não seja para executar a rotina sair
 		If !_lZPECF008                             
