@@ -159,7 +159,7 @@ Static Function zFBarueri()
 			
 			EndIf
 		EndIf
-	ElseIf cTabela == "" .And. (FWIsInCallStack("U_ZPECF010") .or. FWIsInCallStack("U_ZPECFUNA")) .or. FWIsInCallStack("U_ZPECF013")
+	ElseIf cTabela == "" .And. (FWIsInCallStack("U_ZPECF010") .or. FWIsInCallStack("U_ZPECFUNA") .or. FWIsInCallStack("U_ZPECF011")) .or. FWIsInCallStack("U_ZPECF013")
 		
 		bSort   := {|x,y| x[11] > y[11]} 
 		//bCond   := {||AllTrim(SB1->B1_ORIGEM ) == AllTrim((cAliasSFM)->FM_XORIGEM)  } 
