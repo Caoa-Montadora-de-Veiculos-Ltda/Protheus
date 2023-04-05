@@ -898,7 +898,7 @@ If _nRegVS1 > 0
 	VS1->(DbGoto(_nRegVS1))
 	//Caso tenha gerado BackOrder gravo dados no orçamento do back 
 	VS1->(RecLock("VS1",.F.))
-	VS1->VS1_OBSAGL		:= Upper(_cObs) + CRLF  + AllTrim(VS1->VS1_OBSAGLU)
+	VS1->VS1_OBSAGL		:= Upper(_cObs) + CRLF  + AllTrim(VS1->VS1_OBSAGL)
 	VS1->(MsUnlock())
 Endif
 If !Empty(_cObs) 
@@ -1320,7 +1320,6 @@ Local _cMens
 Local _cLike		:= "PEDIDO: "+cZK_XPICKI+"%"
 Local _cDtEpi		:= " "
 
-
 //Private TRBNF   //:= GetNextAlias()
 Private aHeaderP  		:= {}
 Private nImprRoman 		:= 0
@@ -1476,42 +1475,18 @@ Begin Sequence
 	aAdd(_aPesos,{"PESO LIQUIDO",0,0})                     
 	aAdd(_aPesos,{"PESO BRUTO  ",0,0})                     
 	aAdd(_aPesos,{"PESO CUBADO ",0,0})
-	_cCliente := (_cAliasPesq)->VS1_CLIFAT
-	_cLoja := (_cAliasPesq)->VS1_LOJA
+
 	While (_cAliasPesq)->(!Eof())
-    	nValpec := 0
-    	//cSequen := Val(VS3->VS3_SEQUEN)      //STRZERO(SZK->(SZK_SEQREG),3)
-		//cSeqSZK := STR(cSequen)+".00"
+    	nValpec 	:= 0
 		VS3->(dbSetOrder(1))
 		If VS3->(dbSeek(xFilial("VS3")+(_cAliasPesq)->VS1_NUMORC))   //+cSequen
        	 	Do While (VS3->(!EOF()) .AND. VS3->VS3_NUMORC == (_cAliasPesq)->VS1_NUMORC)
 	        	nValpec += VS3->VS3_VALPEC
-            	//SKZ->(dbSetOrder(1))     //Filial+Sequencia registro
-	        	//SKZ->(dbGotop())
-	        	//If SKZ->(dbSeek(xFilial("SKZ")+VS3->VS3_XPICKI+cSeqSZK))   
-				//nPesol := SKZ->SKZ_PLIQUI
-				//nPesob := SKZ->SKZ_PBRUTO
-				//nPesos := SKZ->SKZ_PESOC
-				//SKZ->(dbSkip())
-	        	//ENDIF
-				cTES := MaTesInt(2,VS3->VS3_OPER, _cCliente, _cLoja,"C", VS3->VS3_CODITE) 
-				If (VS3->VS3_XREGFI != "T") .and. VS3->VS3_CODTES != cTES .and. !Empty(cTES)
-					VS1->(RecLock("VS1",.F.))
-					VS3->(RecLock("VS3",.F.))
-					_cMens := "O produto " +AllTrim(VS3->VS3_CODITE)+ " teve a TES " +VS3->VS3_CODTES+ " alterada para " +cTES+ " conforme Operação " +VS3->VS3_OPER+ " no momento do faturamento em " +DtoC(date()) + " às " + Time() + CRLF
-					VS1->VS1_OBSAGL		:= Upper(_cMens) + CRLF + AllTrim(VS1->VS1_OBSAGLU)
-					VS3->VS3_CODTES := cTES
-					VS3->VS3_SITTRI := U_XFUNSITT(cTES, VS3->VS3_CODITE, VS3->VS3_GRUITE)
-					VS3->(MsUnlock())
-				Elseif Empty(cTES)
-					_cMens := "Erro no retorno da TES Inteligente -> Tes: "+cTES+" Oper: " +AllTrim(VS3->VS3_OPER)+ " Cliente: "+_cCliente+" Loja: "+_cLoja+" Cod: "+VS3->VS3_CODITE +DtoC(date()) + " às " + Time() + CRLF
-				EndIf	
+
 	        	VS3->(dbSkip())
 			EndDo
-		Else
-			_cMens := "Erro na Busca dos itens do ORC: " +(_cAliasPesq)->VS1_NUMORC+ " às " + Time() + CRLF
 		EndIf
-		U_ORCCALFIS(VS1_NUMORC,.F./*atualiza o preço*/) 
+
 		aAdd(	_aIntIte,{;
 	         	(_cAliasPesq)->VS1_NUMORC,;
 	         	(_cAliasPesq)->VS1_TIPORC,;
@@ -1569,6 +1544,14 @@ Begin Sequence
 
 	_aVarVS3 := Aclone(aOrcs)  //guardando dados esta processando somente um orçamento apesar de mandar mais de um DAC 17/02/2022
 	nVerParFat := 2
+	
+	//Atualiza TES Inteligente
+	if !(U_ZPECREGFI(cZK_XPICKI)) //cZK_XPICKI _cPedido
+		if !MsgYesNo("Erro na atualização da TES INTELIGENTE no Picking: "+cZK_XPICKI+" Deseja Faturar assim mesmo?")
+			lRet = .F.
+			Break
+		EndIf
+	EndIf
 
 	//Bloqueio de Faturamento duplicado
 	_cDtEpi := VS1->VS1_XDTEPI
@@ -1688,7 +1671,7 @@ Begin Sequence
 		_cMens		:= ""
 			//dbSelectArea("SM0")
 		VS1->(RecLock("VS1",.F.))
-		VS1->VS1_OBSAGL		:= Upper(_cMens) + CRLF + AllTrim(VS1->VS1_OBSAGLU)
+		VS1->VS1_OBSAGL		:= Upper(_cMens) + CRLF + AllTrim(VS1->VS1_OBSAGL)
 		SM0->(dbSetOrder(1))
 
 		If SM0->(dbSeek(cEmpAnt + VS1->VS1_FILIAL))  //FWSM0Util():setSM0PositionBycFilAnt()
@@ -1705,7 +1688,7 @@ Begin Sequence
 			VS1->VS1_STARES := "3"
 		Endif
 		_cMens := "Orçamento Faturado com fatura nr. " +_cDoc+ " Serie " +_cSerie+ " em " +DtoC(date()) + " as " + Time() + CRLF
-		VS1->VS1_OBSAGL		:= Upper(_cMens) + CRLF + AllTrim(VS1->VS1_OBSAGLU)
+		VS1->VS1_OBSAGL		:= Upper(_cMens) + CRLF + AllTrim(VS1->VS1_OBSAGL)
 		//VS1->VS1_STARES 	:= U_XRCAOVS3(_cNumOrc)  //Retorna o Status
 		VS1->(MsUnLock()) 
 
@@ -2207,7 +2190,7 @@ Begin Sequence
 	While (_cAliasPesq)->(!Eof())
 		VS1->(DbGoto((_cAliasPesq)->NREGVS1))
 		VS1->(RecLock("VS1",.F.))
-		VS1->VS1_OBSAGL		:= Upper(_cObs) + CRLF  + AllTrim(VS1->VS1_OBSAGLU)
+		VS1->VS1_OBSAGL		:= Upper(_cObs) + CRLF  + AllTrim(VS1->VS1_OBSAGL)
 		VS1->(MsUnlock())
 		(_cAliasPesq)->(DbSkip())
 	EndDo
