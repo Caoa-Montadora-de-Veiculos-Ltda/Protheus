@@ -4982,3 +4982,73 @@ Begin Sequence
 	Endif
 End Begin
 Return _lRet
+
+
+//Atualiza TES inteligente e recalcula Picking 29/03/2023
+User Function ZPECREGFI(cZK_XPICKI)
+	Local _lRet			:= .T.
+	Local _cAliasPesq 	:= GetNextAlias()	
+	Local _cMens
+	Local _cTESVS3		:= " "
+	Local _cCodIte		:= " "
+	Local _cNumOrc		:= " "
+	Local _cXREGFI		:= " "
+	Local _cOperVS3		:= " "
+	Local _cStatus		:= "F"
+	
+	BeginSql Alias _cAliasPesq
+		SELECT DISTINCT	VS1_CLIFAT,VS1_LOJA,VS1_NCLIFT,VS1_NUMORC,VS1_TIPORC,VS1_DATORC, VS1_XMARCA
+  		FROM %table:VS1% VS1
+   		WHERE 	VS1.VS1_FILIAL  	= %XFilial:VS1%
+			AND VS1.VS1_XPICKI  	= %Exp:cZK_XPICKI%
+			AND VS1.VS1_TIPORC 		= '1' 
+			AND VS1.VS1_STATUS  	= %Exp:_cStatus%
+			AND VS1.VS1_NUMNFI		= ' '
+		  	AND VS1.%notDel%		  
+	EndSql      
+	If (_cAliasPesq)->(Eof()) 
+		MsgInfo("Não localizado orçamentos com Picking "+cZK_XPICKI+" para recalcular !","Atenção") 
+		Break
+	EndIf	
+Begin sequence
+	While !(_cAliasPesq)->(Eof())
+		_cCliente 	:= (_cAliasPesq)->VS1_CLIFAT
+		_cLoja 		:= (_cAliasPesq)->VS1_LOJA
+		_cNumOrc 	:= (_cAliasPesq)->VS1_NUMORC
+		_cMens 		:= " "
+		VS1->(dbSetOrder(1))
+		VS3->(dbSetOrder(1))
+		If VS3->(dbSeek(xFilial("VS3")+_cNumOrc))
+			VS1->(dbSeek(xFilial("VS1")+_cNumOrc))
+       	 	Do While (VS3->(!EOF()) .AND. VS3->VS3_NUMORC == _cNumOrc)
+				cTES := " "
+				_cOperVS3 := Alltrim(VS3->VS3_OPER)
+				_cTESVS3  := Alltrim(VS3->VS3_CODTES)
+				_cCodIte  := Alltrim(VS3->VS3_CODITE)
+				_cXREGFI  := Alltrim(VS3->VS3_XREGFI)
+				cTES := Alltrim(MaTesInt(2, _cOperVS3, _cCliente, _cLoja,"C", _cCodIte))
+				_cMens := "TES Inteligente: NumOrc: "+_cNumOrc+ "/ Cliente: "+_cCliente+_cLoja+"/ Produto " +_cCodIte+"/ Oper: "+_cOperVS3+"/ Regra: "+_cXREGFI+" / TES_ORC: " +_cTESVS3+ " / Tes Intelig: " +cTES+CRLF
+				If (!(_cXREGFI = "T") .and. !(_cTESVS3 = cTES) .and. !Empty(cTES))
+					VS1->(RecLock("VS1",.F.))
+					VS3->(RecLock("VS3",.F.))
+					_cMens += "O produto " +_cCodIte+ " teve a TES " +_cTESVS3+ " alterada para " +cTES+ " conforme Operação " +_cOperVS3+ " no momento do faturamento em " +DtoC(date()) + " às " + Time() + CRLF
+					VS1->VS1_OBSAGL		:= Upper(_cMens) + CRLF + AllTrim(VS1->VS1_OBSAGL)
+					VS3->VS3_CODTES := cTES
+					VS3->VS3_SITTRI := U_XFUNSITT(cTES, VS3->VS3_CODITE, VS3->VS3_GRUITE)
+					VS3->(MsUnlock())
+				Elseif Empty(cTES)
+					_cMens += "Erro no retorno da TES Inteligente -> Tes: "+cTES+" Oper: " +_cOperVS3+ " Cliente: "+_cCliente+" Loja: "+_cLoja+" Cod: "+_cCodIte+DtoC(date()) + " às " + Time() + CRLF
+					_lRet := .F.
+				EndIf	
+	        	VS3->(dbSkip())
+			EndDo
+			VS1->(MsUnlock())
+		Else
+			_cMens := "Erro na Busca dos itens do ORC: " +(_cAliasPesq)->VS1_NUMORC+ " às " + Time() + CRLF
+			_lRet := .F.
+		EndIf
+		(_cAliasPesq)->(dbSkip())
+		U_ORCCALFIS(_cNumOrc,.F./*atualiza o preço*/)
+	EndDo
+End Sequence
+Return _lRet

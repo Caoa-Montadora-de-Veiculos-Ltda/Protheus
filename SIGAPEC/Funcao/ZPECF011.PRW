@@ -108,7 +108,7 @@ Begin Sequence
 			_lRet := .F.
 			Disarmtransaction()
 		EndIf
-	End Transaction	
+	End Transaction
 End Sequence
 //NO CASO DE ERRO E TENHA PROCESSADO ALGUM ORÇAMENTO IRA RETORNAR OS PROBLEMAS ENCONTRADOS
 If !_lRet .and. Len(_aRegVS1) > 0
@@ -138,7 +138,7 @@ If !_lRet .and. Len(_aRegVS1) > 0
 		EndIf
 		VS1->(MsUnLock())
 	Next
-EndIf	
+EndIf
 
 Return _lRet
 
@@ -215,8 +215,17 @@ Begin Sequence
 		If ! _lRet
 			Exit
 		Else
+			//Atualiza TES Inteligente
+			If !(U_ZPECREGFI(_cPedido)) //cZK_XPICKI _cPedido
+				_cObs		:= 	"ERRO NA ATUALIZAÇÃO TES INTELIGENTE NO PICKING "+_cPedido+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+ CRLF
+			EndIf
+		
 			VS1->(RecLock("VS1",.F.))
-			_cObs	:= "RETORNO DE SEPARAÇÃO REALIZADO COM SUCESSO REFERENTE PICKING "+_cPedido+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+ CRLF		
+			If Empty(_cObs)
+				_cObs	:= "RETORNO DE SEPARAÇÃO REALIZADO COM SUCESSO REFERENTE PICKING "+_cPedido+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+ CRLF
+			Else
+				_cObs	+= "RETORNO DE SEPARAÇÃO REALIZADO COM SUCESSO REFERENTE PICKING "+_cPedido+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+ CRLF
+			Endif
 			_cObs 	+= "Gravado a conferência (VM5) para os itens de separação  corretamente no recebimento do REST !"+ CRLF
 			VS1->VS1_STATUS := _cFaseFat
 			VS1->VS1_OBSAGL	:= Upper(_cObs) +CRLF+ VS1->VS1_OBSAGL
@@ -256,7 +265,7 @@ Local _cNroConf		:= ""
 
 Begin Sequence
 	//Verifica se foi gravado o numero de conferência
-	_cNroConf := OX0020071_ExisteConferencia( _cNumOrc )
+	_cNroConf := OX0020071_ExisteConferencia( _cNumOrc  )
 	If !Empty(_cNroConf)
 		If !U_XAPAVM5VM6Carregamento(_cNumOrc)	
 			ZPEC11RMsg("nosepara", "Pedido "+_cPedido+" não foi possivel atualizar carregamento no Protheus, não sera processado !")
@@ -329,11 +338,6 @@ Begin Sequence
 		Break
 	EndIf
 	While (_cAliasPesq)->(!Eof())
-		If (_cAliasPesq)->NREGVM6 == 0  //Verificar se possui numero de registro DAC 04/02/2023
-			ZPEC11RMsg("noseparaVM6", "Pedido "+_cPedido+" com problemas na sequencia do carregamento, verificar VS3_SQCONF, não sera processado !")
-			_lRet := .F.
-			Break
-		EndIf
 		_nRegVM6		:= (_cAliasPesq)->NREGVM6	
 		VM6->(DbGoto(_nRegVM6))
 		VM5->(OX0020141_GravaQtdConferida( _nRegVM6 , VM6->VM6_QTORIG, "0", (_cAliasPesq)->NREGVS3 ))
@@ -534,7 +538,6 @@ Begin Sequence
 	Aadd(_aRet, {611,	"ds_observacao"			, .T.	, .F., 	"Obs conferente"})
 	Aadd(_aRet, {612,	"nexistepick"			, .F.	, .F., 	"Não localizado numero de Pedido"})
 	Aadd(_aRet, {613,	"nostatusconf"			, .F.	, .F., 	"Status Separação invalido para conferência"})
-	Aadd(_aRet, {613,	"noseparaVM6"			, .F.	, .F., 	"Sequencia Separação invalida entre conferência e PEdido"})
 	Aadd(_aRet, {614,	"nostatusorc"			, .F.	, .F., 	"Status Separação invalido para pedido"})
 	Aadd(_aRet, {615,	"divergencia"			, .F.	, .F., 	"Divergencia na separação"})
 	Aadd(_aRet, {616,	"liberacao"				, .F.	, .F., 	"Problemas com liberação na separação"})
