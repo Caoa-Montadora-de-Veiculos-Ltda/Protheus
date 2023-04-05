@@ -1320,6 +1320,7 @@ Local _cMens
 Local _cLike		:= "PEDIDO: "+cZK_XPICKI+"%"
 Local _cDtEpi		:= " "
 
+
 //Private TRBNF   //:= GetNextAlias()
 Private aHeaderP  		:= {}
 Private nImprRoman 		:= 0
