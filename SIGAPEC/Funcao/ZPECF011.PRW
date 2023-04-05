@@ -265,7 +265,7 @@ Local _cNroConf		:= ""
 
 Begin Sequence
 	//Verifica se foi gravado o numero de conferência
-	_cNroConf := OX0020071_ExisteConferencia( _cNumOrc  )
+	_cNroConf := OX0020071_ExisteConferencia( _cNumOrc )
 	If !Empty(_cNroConf)
 		If !U_XAPAVM5VM6Carregamento(_cNumOrc)	
 			ZPEC11RMsg("nosepara", "Pedido "+_cPedido+" não foi possivel atualizar carregamento no Protheus, não sera processado !")
@@ -338,6 +338,11 @@ Begin Sequence
 		Break
 	EndIf
 	While (_cAliasPesq)->(!Eof())
+		If (_cAliasPesq)->NREGVM6 == 0  //Verificar se possui numero de registro DAC 04/02/2023
+			ZPEC11RMsg("noseparaVM6", "Pedido "+_cPedido+" com problemas na sequencia do carregamento, verificar VS3_SQCONF, não sera processado !")
+			_lRet := .F.
+			Break
+		EndIf
 		_nRegVM6		:= (_cAliasPesq)->NREGVM6	
 		VM6->(DbGoto(_nRegVM6))
 		VM5->(OX0020141_GravaQtdConferida( _nRegVM6 , VM6->VM6_QTORIG, "0", (_cAliasPesq)->NREGVS3 ))
@@ -538,6 +543,7 @@ Begin Sequence
 	Aadd(_aRet, {611,	"ds_observacao"			, .T.	, .F., 	"Obs conferente"})
 	Aadd(_aRet, {612,	"nexistepick"			, .F.	, .F., 	"Não localizado numero de Pedido"})
 	Aadd(_aRet, {613,	"nostatusconf"			, .F.	, .F., 	"Status Separação invalido para conferência"})
+	Aadd(_aRet, {613,	"noseparaVM6"			, .F.	, .F., 	"Sequencia Separação invalida entre conferência e PEdido"})
 	Aadd(_aRet, {614,	"nostatusorc"			, .F.	, .F., 	"Status Separação invalido para pedido"})
 	Aadd(_aRet, {615,	"divergencia"			, .F.	, .F., 	"Divergencia na separação"})
 	Aadd(_aRet, {616,	"liberacao"				, .F.	, .F., 	"Problemas com liberação na separação"})
@@ -619,6 +625,3 @@ Return {_nMsg,EncodeUtf8(_cMsg)}
 	}]
 }
 */
-
-
-
