@@ -24,7 +24,7 @@ User Function DPCTB102GR()
 		If Findfunction("U_CMVSAP09")
 			FwMsgRun(, { || _lRet := U_CMVSAP09(nOpc) },,"Aguarde... Grava Lançamento Contábil para ser enviado ao SAP...")
 		EndIf
-		If FindFunction("U_CMVSAP08")
+		If FindFunction("U_CMVSAP08") .and. FunName() <> "CMVCTBROF" //Ignorar o envio Para o SAP quando for rateio, será enviado peloo JOB posteriormente
 			FwMsgRun(, { || U_CMVSAP08( aPar ) },,"Aguarde... Executando a Integração Contábil com SAP...")
 		EndIf
 	Else
