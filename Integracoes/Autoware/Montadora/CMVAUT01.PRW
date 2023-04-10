@@ -441,10 +441,7 @@ Else
             cErro += mostraerro(cStartPath+'CMVAUTO01.log')
 		
         	For nX := 1 To Len(aLog)
-                If !Empty(cErro)
-                    cErro += CRLF
-                 EndIf
-				cErro += aLog[nX]
+               Conout(aLog[nX])
 			Next nX
         EndIf
     EndIf
