@@ -479,6 +479,20 @@ While (cCabAlias)->(!Eof())
             SC6->C6_C6_NUMSERI := CriaVar("C6_NUMSERI")
             SC6->(MsUnLock())
             */
+            cQuery := " UPDATE " + RetSqlName("SC6")
+            cQuery += " SET C6_LOCALIZ = '" + Criavar("C6_LOCALIZ") + "' "
+            cQuery += "    ,C6_CHASSI  = '" + Criavar("C6_CHASSI" ) + "' "
+            cQuery += "    ,C6_NUMSERI = '" + Criavar("C6_NUMSERI") + "' "
+            cQuery += " WHERE  C6_NUM      = '" + (cCabAlias)->C6_NUM + "' "
+            cQuery += "    AND C6_NOTA     = '        ' "
+            cQuery += "    AND C6_SERIE    = '   ' "
+            cQuery += "    AND D_E_L_E_T_  = ' ' "
+            nStatus := TCSqlExec(cQuery)
+            
+            If (nStatus < 0)
+                MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Empenho SC6")
+            EndIf
+
             If (cCabAlias)->VRJ_STATUS == "A"
                 SDC->(DbSetOrder(3))
                 If !SDC->(DbSeek(xFilial("SDC")+SC6->C6_PRODUTO+SC6->C6_LOCAL+SC6->C6_LOTECTL+SC6->C6_NUMLOTE+SC6->C6_LOCALIZ+SC6->C6_NUMSERI+"SC6"))
@@ -1036,6 +1050,7 @@ While (cCabAlias)->(!Eof())
     cQuery += "                                 AND VV1.D_E_L_E_T_      = SBF.D_E_L_E_T_    "+(Chr(13)+Chr(10))
     cQuery += " WHERE   VV1.VV1_FILIAL      = '"+xFilial("VV1")+"'                          "+(Chr(13)+Chr(10))
     cQuery += "     AND VV1.VV1_SITVEI      = '0'                                           "+(Chr(13)+Chr(10))
+    cQuery += "     AND VV1.VV1_IMOBI       = '0'                                           "+(Chr(13)+Chr(10))
     cQuery += "     AND SBF.BF_QUANT        > 0                                             "+(Chr(13)+Chr(10))
     cQuery += "     AND SBF.BF_EMPENHO      = 0                                             "+(Chr(13)+Chr(10))
     cQuery += "     AND SBF.BF_PRODUTO      = '"+(cCabAlias)->C6_PRODUTO+"'                 "+(Chr(13)+Chr(10))
