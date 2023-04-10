@@ -204,7 +204,7 @@ Private cErro      := ""
 Private aRet       := {}
 Private aItens     := {}
 Private aHeader    := {}
-
+Private cTipErro   := "0"
 cFilant := cWsFILIAL
 
 // O WS J tem filial parametrizada
@@ -310,7 +310,7 @@ Aadd(aCabec,{"VRJ_NATURE"   ,cWSNat     ,Nil})
 //Aadd(aCabec,{"VRJ_OBSPED" ,cWSObserv  ,Nil})
 
 If !GravaPed(aCabec, aItens )
-    Return {cWSPedido,"0",Alltrim( cErro ),""}
+    Return {cWSPedido,cTipErro,Alltrim( cErro ),""}
 EndIf
 
 Return {cWSPedido,"1","Pedido Cadastrado com Sucesso",VRJ->VRJ_PEDIDO}
@@ -319,17 +319,19 @@ Return {cWSPedido,"1","Pedido Cadastrado com Sucesso",VRJ->VRJ_PEDIDO}
 Static Function GravaPed(  aCpoVRJ, aCpoVRK )
 *********************************************
 
-Local  lRet     := .T.
-Local  aCabPed  := {}
-Local  aItePed  := {}
-Local  cQuery   := ""
-Local  cTmpAlias:= GetNextAlias()
-Local  aArea    := GetArea()
-Local  aLinha   := {}
-Local  cProduto := ""
-Local  cCorInt  := ""
-Local  cCorExt  := ""
-Local  cNumPed  := ""
+Local lRet     := .T.
+Local aCabPed  := {}
+Local aItePed  := {}
+Local cQuery   := ""
+Local cTmpAlias:= GetNextAlias()
+Local aArea    := GetArea()
+Local aLinha   := {}
+Local cProduto := ""
+Local cCorInt  := ""
+Local cCorExt  := ""
+Local cNumPed  := ""
+Local aLog     := {}
+Local nX       := 1
 
 Private oModel      
 Private oModelVRK
@@ -364,6 +366,7 @@ If lMsErroAuto .And. Upper(Alltrim(VRJ->VRJ_PEDCOM)) != Upper(Alltrim(aCpoVRJ[2]
     cErro +=  "Valor atribuido:           " + ' [' + AllToChar( aErro[8]  ) + ']'+CRLF
     cErro +=  "Valor anterior:            " + ' [' + AllToChar( aErro[9]  ) + ']'+CRLF
     lRet := .F.
+    cTipErro := "0"
 Else
     cQuery := ""
     cQuery += " SELECT *                                                                "
@@ -430,7 +433,19 @@ Else
         lMsErroAuto := .F.
         MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, aCabPed, aItePed, 3, .F.)
         If lMsErroAuto
-            MostraErro()
+            lRet     := .F.
+            cTipErro := "1"
+            cErro += "Pedido Cadastrado com Sucesso" + CRLF
+            cErro += "Algumas providencias deverar ser tomadas no Protheus para Faturar" + CRLF
+            aLog  := GetAutoGRLog()
+            cErro += mostraerro(cStartPath+'CMVAUTO01.log')
+		
+        	For nX := 1 To Len(aLog)
+                If !Empty(cErro)
+                    cErro += CRLF
+                 EndIf
+				cErro += aLog[nX]
+			Next nX
         EndIf
     EndIf
 EndIf
