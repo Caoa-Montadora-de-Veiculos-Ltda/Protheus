@@ -56,38 +56,39 @@ Local nColuna       As Numeric
 Local oFWL          As Object
 Local oSize1        As Object
 Local oSize2        As Object
-Local aCabStru      As Array
-Local aCabCol       As Array
 Local cCabTable     As Character
-Local aCords        As Array
 Local cTipCpo       As Character
 Local cIteTable     As Character
+Local aCabStru      As Array
+Local aCabCol       As Array
+Local aCords        As Array
 
-Local aTamSx3       As Array
-Local nY            As Numeric
 Local cPictAlias    As Character
 Local cQuery        As Character
+Local nY            As Numeric
 Local nStatus       As Numeric
+Local aTamSx3       As Array
 Local aValidCmp     As Array
 
+Private cCabAlias   As Character
+Private cIteAlias   As Character
+Private aParamBox   As Array
+Private aBrwCli     As Array
+Private aBrwPrd     As Array
+Private aBrwTot     As Array
+
+Private oNwFat001   As Object
 Private oPnlWnd1    As Object
 Private oPnlWnd2    As Object
 Private oPnlWnd3    As Object
 Private oPnlWnd4    As Object
-Private aParamBox   As Array
 Private oModel      As Object
-Private cCabAlias   As Character
-Private cIteAlias   As Character
-Private oNwFat001   As Object
 Private oBrwCab     As Object
 Private oCabTable   As Object
 Private aCabCampos  As Object
 Private oTBrwsCli   As Object
 Private oTBrwsPrd   As Object
 Private oTBrwsTot   As Object
-Private aBrwCli     As Array
-Private aBrwPrd     As Array
-Private aBrwTot     As Array
 
 bRet        := .F.
 aRet        := {}
@@ -479,6 +480,7 @@ While (cCabAlias)->(!Eof())
             SC6->C6_C6_NUMSERI := CriaVar("C6_NUMSERI")
             SC6->(MsUnLock())
             */
+            //Limpa os Campos de Chassi, NumSerie e Localização no Estorno do Pedido
             cQuery := " UPDATE " + RetSqlName("SC6")
             cQuery += " SET C6_LOCALIZ = '" + Criavar("C6_LOCALIZ") + "' "
             cQuery += "    ,C6_CHASSI  = '" + Criavar("C6_CHASSI" ) + "' "
@@ -543,31 +545,32 @@ Return(.T.)
 *************************************************************
 Static Function fVldCampo(cCabAlias,oSay,cCabTable,oCabTable)
 *************************************************************
+Local bAction1
+Local bAction2
+Local bWhile
+Local bCond
 
-Local   lRetorno  As Logical
-Local   cConteudo As Character
-Local   cCampo    As Character
-Local   cAliPed   As Character
-Local   cVar      As Character
+Local lRetorno  As Logical
 
-Local   cSeek     As Character
-Local   bWhile    As Array
-Local   cQuery    As Character
-Local   bCond     As Array
-Local   bAction1  As Array
-Local   bAction2  As Array
-Local   aNoFields As Array
-Local   aArea     As Array
-Local   aSC5Area  As Array
-Local   aSC6Area  As Array
-Local   cArqQry   As Array
+Local cAliPed   As Character
+Local cArqQry   As Character
+Local cCampo    As Character
+Local cCodMar   As Character
+Local cConteudo As Character
+Local cModVei   As Character
+Local cQuery    As Character
+Local cRetTES   As Character
+Local cSeek     As Character
+Local cSegMod   As Character
+Local cVar      As Character
 
-Local   cCodMar   As Character
-Local   cModVei   As Character
-Local   cSegMod   As Character
-Local   nValTab   As Numeric
-Local   nValPre   As Numeric
-Local   cRetTES   As Character
+Local nValPre   As Numeric
+Local nValTab   As Numeric
+
+Local aArea     As Array
+Local aSC5Area  As Array
+Local aSC6Area  As Array
+Local aNoFields As Array
 
 Private N         As Numeric
 Private aHeader	  As Array
