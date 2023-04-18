@@ -1065,9 +1065,12 @@ Responsável por verificar a Fase que esta sendo enviada analisando a mesma
 /*/
 User Function XFASEORC(_cFase, _cGrupo, _cCodPro, _nLimAvalia)
 Local _cMsg			:= ""
+Local _cTpOperPed   := ""
+Local _aMsg			:= {}
 Local _cFaseRet		:= VS1->VS1_STATUS
-Local _cFaseSepara 	:= Alltrim(GetNewPar("MV_MIL0095","4"))  //Fase conferencia da Separação
 Local _nRegVS1		:= VS1->(Recno())
+Local _cFaseSepara 	:= Alltrim(GetNewPar("MV_MIL0095","4"))  //Fase conferencia da Separação
+Local _nPos
 
 Default _cGrupo 	:= ""
 Default _cCodPro	:= ""
@@ -1109,7 +1112,16 @@ Begin Sequence
 	Endif
 	VS1->(DbGoto(_nRegVS1))  //reposicionar VS1 DAC 20/06/2022	
 	If _cFase == "3" // LIMITE DE CREDITO
-		_cFaseRet := XFASLIMCRE( @_cMsg,  @_nLimAvalia)
+		//Encontrar tipo de operação
+		_cTpOperPed := XLOCTPOPPE("VS3", VS1->VS1_NUMORC)  	
+		_cFaseRet := U_XFASLIMCRE( "VS1", VS1->VS1_CLIFAT, VS1->VS1_NUMORC, VS1->VS1_VTOTNF, _cTpOperPed, VS1->VS1_FORPAG, VS1->VS1_STATUS, @_nLimAvalia, @_aMsg)
+		If Len(_aMsg) > 0
+			_cMsg	:= ""
+			For _nPos := 1 To Len(_aMsg)
+				_cMsg += Upper(_aMsg[_nPos]) + CRLF
+			Next _nPos
+		EndIf
+
 		Break
 	EndIf
 	VS1->(DbGoto(_nRegVS1))  //reposicionar VS1 DAC 20/06/2022	
@@ -1381,6 +1393,32 @@ Static Function XFASMARV67(_aVS3Margem, _lProbMargem, _lProbDesc)
 	End Begin
 Return Nil	
 
+
+//Localizar o tipo de operação do pedido
+Static Function XLOCTPOPPE(_cAlias, _cNumPed) 
+Local _cRet	:= ""
+Local _nReg := (_cAlias)->(RECNO())
+
+Default _cAlias	:= ""
+Default _cNumPed	:= ""
+
+Begin Sequence
+	If Empty(_cAlias) .Or. Empty(_cNumPed)
+		Break
+	EndIf
+	_nReg := (_cAlias)->(RECNO())
+	(_cAlias)->(DbSetOrder(1))
+	(_cAlias)->(DbGotop())
+	If (_cAlias)->(DbSeek(XFilial(_cAlias)+_cNumPed))
+		_cRet	:= If(_cAlias=="VS3" ,VS3->VS3_OPER, ;
+					If(_cAlias=="SC6",SC6->C6_OPER,;
+					"")) 
+	EndIf				
+End Sequence
+(_cAlias)->(DbGoto(_nReg))
+Return _cRet
+
+
 /*/{Protheus.doc} XFASLIMCRE
 Responsável por validar a Limite de Crédito FASE 3
 @author 	DAC-Denilso
@@ -1399,28 +1437,57 @@ Responsável por validar a Limite de Crédito FASE 3
 			Alteração incluindo tipo de pgto diferenciado que não irá verificar limite de crédito solicitação Aline, DAC - 13/03/2023
 /*/
 
-Static Function XFASLIMCRE(_cMsg, _nLimAvalia)
-Local _cFaseRet		:= VS1->VS1_STATUS
-Local _cTpPgto		:= AllTrim(GetMv("MV_CPNCLC"))
+User Function XFASLIMCRE(_cTabPed, _cCliente, _cPedido, _nValTotPed, _cTpOperPed, _cCondPgtoPed, _cStatusPed, _nLimAvalia, _aMsg)
+Local _aAreaSA1   	:= SA1->(GetArea())
+Local _aArea	   	:= GetArea()
+Local _cFaseRet		:= ""
+Local _cTpPgtoVista	:= AllTrim(GetMv("MV_CPNCLC")) //Cond. de pagto. p/ venda a vista sem limite Credit
 Local _cTpPgtoEsp	:= AllTrim(SuperGetMV( "CMV_PEC039"  ,,"" ))  //Condição de Pagamento a qual liberará sem avaliação do Limite de Crédito
-Local _cLoja		:= ""  //StrZero(1,Len(VS1->VS1_LOJA))
-Local _cCliente		:= VS1->VS1_CLIFAT
+Local _cTpOper      := AllTrim(SuperGetMV( "CAOA_TPLIM" ,,""))  //Tipos de Operação para analise do crédito - CAOA   54;91;90;67;82;93
+Local _cLoja		:= ""  
+Local _lAvaliaPecas := .T.
+
+Default _cTabPed		:= ""
+Default _cCliente		:= ""
+Default _cPedido		:= ""
+Default _nValTotPed 	:= 0
+Default _cTpOperPed		:= ""
+Default _cCondPgtoPed   := ""
+Default _cStatusPed 	:= ""
+Default _nLimAvalia 	:= 0
+Default _aMsg			:= {}
 
 Begin Sequence
-	_nLimAvalia		:= 0  
-	//003;011;025                                                                                                                                                                                                                                           
-	If !Empty(GetNewPar("MV_CPNCLC","")) 
-		If !AllTrim(VS1->VS1_FORPAG) $ _cTpPgto  //GetMv("MV_CPNCLC") 
-			If Empty(VS1->VS1_FORPAG)
-				If !"B" $ GetMv("MV_CHKCRE")
+	If Empty(_cCliente) .Or. Empty(_cTabPed) .Or. Empty(_cPedido) .or. _nValTotPed <= 0 
+		_cFaseRet 	:= ""
+		Break
+	Endif 
+	_lAvaliaPecas 	:= If(AllTrim(_cTabPed) == "VS1", .T., .F.)
+	_nLimAvalia	  	:= 0
+	_cFaseRet		:= _cStatusPed 
+	//Neste caso se for informado o tipo de operações a serem validadas e não estiver no parâmetro libera o crédito DAC 05/04/2023
+	If !Empty(_cTpOper) .And. !_cTpOperPed $ _cTpOper
+		AAdd(_aMsg, "Liberado, condição de pagamento não informada Parâmetro CAOA_TPLIM !")		
+		_cFaseRet 	:= "0"
+		Break
+	EndIf                                                                                                                                                                                                                                    
+	//003;011;025       
+	If !Empty(_cTpPgtoVista)  //!Empty(GetNewPar("MV_CPNCLC","")) 
+		If !AllTrim(_cCondPgtoPed) $ _cTpPgtoVista  .And. _lAvaliaPecas //GetMv("MV_CPNCLC") 
+			//Caso não tenha informado condição pgto
+			If Empty(_cCondPgtoPed)
+				//Local onde sera validado o limite de credito      
+				If !"B" $ GetMv("MV_CHKCRE")  //ORÇAMENTO BALCÃO
 					_cFaseRet := "0"
+					AAdd(_aMsg, "Liberado, não informado condição de pagamento conforme indicação MV_CHKCRE !")		
 				Else
+					AAdd(_aMsg, "Não informado condição de pagamento conforme indicação MV_CHKCRE !")		
 					_cFaseRet := "3"
 				Endif
 				Break
 			Endif
-		ElseIf Empty(VS1->VS1_FORPAG)  
-			_cMsg 		:=  "Não informado condição de pagamento !"		
+		ElseIf Empty(_cTpPgtoVista)  
+			AAdd(_aMsg, "Não informado condição de pagamento !")		
 			_cFaseRet 	:= ""
 			Break
 		Else	//Caso esteja informado no parâmetro não passar pela rotina de bloqueio
@@ -1429,52 +1496,38 @@ Begin Sequence
 		Endif
 	Endif
 	//Condição de Pagamento Especial liberar credito automaticamente DAC 20/03/2023
-	If !Empty(_cTpPgtoEsp) .and. AllTrim(VS1->VS1_FORPAG) $ AllTrim(_cTpPgtoEsp) 
+	If !Empty(_cTpPgtoEsp) .and. AllTrim(_cTpPgtoVista) $ AllTrim(_cTpPgtoEsp) 
 		_cFaseRet := "0"
 		Break
 	Endif
 	//Verificar se o Cliente possui cadastrado a loja deve ser pesquisada conforme tipo de crédito 
 	_cLoja := U_XLJLCREDito(_cCliente)
 	If Empty(_cLoja)
-		_cMsg 		:=  "Não localizado cliente contendo Limite de Crédito com código "+_cCliente+" !"		
+		AAdd(_aMsg, "Não localizado cliente contendo Limite de Crédito com código "+_cCliente+" !")		
 		_cFaseRet 	:= ""
 		Break
 	Endif
-	SA1->(DbSetOrder(1))
-	If !SA1->(DbSeek(XFilial("SA1") + _cCliente + _cLoja ))   
-		_cMsg 		:=  "Não localizado cliente com código "+_cCliente+" com a loja "+_cLoja		
+	If SA1->A1_XBLQLC == "1" //1=Bloqueio Manual
+		AAdd(_aMsg, "Loja com Bloqueio Manual de Crédito. Cliente "+_cCliente+" loja "+_cLoja)		
 		_cFaseRet 	:= ""
 		Break
-	Else
-		If SA1->A1_XBLQLC == "1" //1=Bloqueio Manual
-			_cMsg 		:= "Loja com Bloqueio Manual de Crédito. Cliente "+_cCliente+" loja "+_cLoja		
-			_cFaseRet 	:= ""
-			Break
-		ElseIf SA1->A1_XBLQLC == "2" //2=Descredenciado  
-			_cMsg 		:= "Loja com Descredenciamento de Crédito. Cliente "+_cCliente+" loja "+_cLoja		
-			_cFaseRet 	:= ""
-			Break
-		EndIf
+	ElseIf SA1->A1_XBLQLC == "2" //2=Descredenciado  
+		AAdd(_aMsg, "Loja com Descredenciamento de Crédito. Cliente "+_cCliente+" loja "+_cLoja)		
+		_cFaseRet 	:= ""
 	EndIf
 	//Avaliação de Crédito
 	If SA1->A1_XTPCRED $ "1|2" // 1=FloorPlan 2=Caoa
-		_cFaseRet := XFLCREDITO( @_cFaseRet, @_cMsg, @_nLimAvalia, _cLoja )  //Avalia Credito FloorPlan e Caoa
+		_cFaseRet := XFLCREDITO( _lAvaliaPecas, _cCliente, _cLoja, _cPedido, _nValTotPed, _cCondPgtoPed, @_cFaseRet, @_nLimAvalia, @_aMsg )  //Avalia Credito FloorPlan e Caoa
 		Break 
 	Else
-		_cMsg 		:=  "Não definido tipo de limite de crédito para o cliente com código "+_cCliente+" com a loja "+_cLoja	
+		AAdd(_aMsg, "Não definido tipo de limite de crédito para o cliente com código "+_cCliente+" com a loja "+_cLoja	)
 		_cFaseRet 	:= ""
 		Break
 	EndIf
-	/*
-	//Caso esteja com status de restrição e não havendo mais volto o status para o inicio
-	If _cFaseRet == "3"
-		_cFaseRet := "0"
-		_cMsg	:= "Orçamento possuia bloqueio de crédito o mesmo foi liberado após avaliação realizada neste processamento !"
-		Break
-	EndIf
-	*/
-	_cMsg	:= "Orçamento sem restrição de crédito !"
+	AAdd(_aMsg, "Orçamento sem restrição de crédito !")
 End Sequence	
+RestArea(_aAreaSA1)
+RestArea(_aArea)
 Return _cFaseRet
 
 
@@ -1498,29 +1551,20 @@ Responsável por verificar limite de crédito Floor Plan
             Revitalição processo limite de crédito, ajuste na informação de LOJA anteriormente estava fixo
 
 /*/
-Static Function XFLCREDITO(_cFaseRet, _cMsg, _nLimAvalia, _cLoja)
-Local _aAreaSA1   	:= SA1->(GetArea())
-Local _aArea	   	:= GetArea()
-Local _cForplan		:= AllTrim( GetMV('CMV_PEC018') ) //condição de pagamento Forplan = 005
-Local _cCliente		:= VS1->VS1_CLIFAT
+Static Function XFLCREDITO(_lAvaliaPecas, _cCliente, _cLoja, _cPedido, _nValTotPed, _cCondPgtoPed, _cFaseRet, _nLimAvalia, _aMsg)
 Local _nLcUsado  	:= 0
-Local _aMsg			:= {}
 Local _aRetLc		:= {}
-Local _nPos
-Local _nRedBO       := SuperGetMV("CMV_PEC035",,100)
-Local _cTpPgtoEsp	:= AllTrim(SuperGetMV( "CMV_PEC039"  ,,"" ))  //Condição de Pagamento a qual liberará sem avaliação do Limite de Crédito
-
-Default _cLoja		:= ""
-Default _cMsg	:= ""
+Local _nFatorRed    := SuperGetMV( "CMV_PEC035" ,, 0 )					//Fator de redução para calculo do Limite de Crédito	
+Local _cForplan		:= AllTrim( SuperGetMV( 'CMV_PEC018' ,, "" ) ) 	//condição de pagamento Forplan = 005
+Local _cTpPgtoEsp	:= AllTrim( SuperGetMV( "CMV_PEC039" ,, "" ) ) 	//Condição de Pagamento a qual liberará sem avaliação do Limite de Crédito
 
 Begin Sequence
-	If _nRedBO > 100
-		_nRedBO := 100
+	//Não deixar ultrapassar 100 %
+	If _nFatorRed > 100
+		_nFatorRed := 100
 	Endif
 
 	_nLimAvalia := 0   
-	//Verificar se o Cliente possui cadastrado a loja inicial caso sim sempre avaliar Forplan pela loja inicial 01 - DAC - 24/05/2022
-	//Conforme Toninho deverá sempre verificar pela loja 1
 	//Alterado para procurar por limite de crédito DAC 20/03/2023
 	If EmpTy(_cLoja) .Or. SA1->A1_COD <> _cCliente .Or. SA1->A1_LOJA <> _cLoja
 		_cLoja := U_XLJLCREDito(_cCliente)
@@ -1529,12 +1573,6 @@ Begin Sequence
 			_cFaseRet := ""
 			Break
 		Endif
-		SA1->(DbSetOrder(1))
-		If !SA1->(DbSeek(XFilial("SA1") + _cCliente + _cLoja ))   
-			Aadd(_aMsg, "Não localizado cliente com a loja "+_cLoja+", reavaliar o Cadastro e incluir a Loja"+_cLoja )		
-			_cFaseRet := ""
-			Break
-		EndIf
 	EndIf	
 
 	If SA1->A1_XTPCRED == "0"
@@ -1548,19 +1586,13 @@ Begin Sequence
 			Aadd(_aMsg, "Não informado condições de pgto no parâmetro ForPlan !")
 			Break
 		Endif
-		/* Alterado conforme alinhamento Evandro/Aline quando indicado Forplan só é valido o que estiver no parametro DAC 17/03/2023
-		If AllTrim(VS1->VS1_FORPAG) <> _cForplan
-			_cFaseRet := "0"
-			Break
-		EndIf
-		*/
 		//quando indicado forplan no parametro tem que ter a mesma condição pgto e não estar na condição de pgto especial
-		If !AllTrim(VS1->VS1_FORPAG) $ _cForplan  
-			If !Empty(_cTpPgtoEsp) .And. AllTrim(VS1->VS1_FORPAG) $ _cTpPgtoEsp
+		If !AllTrim(_cCondPgtoPed) $ _cForplan  
+			If !Empty(_cTpPgtoEsp) .And. AllTrim(_cCondPgtoPed) $ _cTpPgtoEsp
 				_cFaseRet 	:= "0"  //neste caso posso sair sem validar pois a condição especial não deve avaliar crédito
 			Else
 				_cFaseRet 	:= ""
-				Aadd(_aMsg, "Condição de pgto "+VS1->VS1_FORPAG+" ForPlan não esta informada no parâmetro CMV_PEC018 !")
+				Aadd(_aMsg, "Condição de pgto "+_cCondPgtoPed+" ForPlan não esta informada no parâmetro CMV_PEC018 !")
 			Endif	
 			Break
 		EndIf
@@ -1571,13 +1603,14 @@ Begin Sequence
 	//1=Credito Disponivel;2=Falta de Saldo;3=Titulos Em Atraso;4=Credito Vencido;5=Bloqueado                                         
 	If _aRetLc[01] == "2"
 		//enviar o limite para ser avaliado DAC 14/11/2022
-		//_nValDup := ( Titulos em Aberto + Pedidos em Bo + (Em Reserva + Em faturamento + Em Separação))
-		_nLimAvalia := SA1->A1_XLC - ( _aRetLc[03] + _aRetLc[04]  + _aRetLc[05] )
+		//			 					NCC			  ( Titulos em Aberto + Pedidos em Bo + (Em Reserva + Em faturamento + Em Separação))
+		_nLimAvalia := (SA1->A1_XLC +  _aRetLc[06]) - ( _aRetLc[03] + _aRetLc[04]  + _aRetLc[05] )  ////retirar NCC (06) caso exista pois é crédito cliente DAC 05/04/2023
 		//Quando for B.o. somo novamente ao saldo que tenho a utilizar  o valor pois já somou no acumulado de B.o. e o mesmo é crédito ainda para utilizar
-		If ( VS1->VS1_STATUS == "0" .OR. VS1->VS1_STATUS == "3" ) //VS1->VS1_XBO == 'S' //BO e Em análise consomem limite de crédito 12/2022
-			//_nLimAvalia += VS1->VS1_VTOTNF 
+		//Conforme revitalização sempre somar o que está pendente será sempre B.O. DAC 02/03/2023
+		If ( _cFaseRet == "0" .OR. _cFaseRet == "3" ) //VS1->VS1_XBO == 'S' //BO e Em análise consomem limite de crédito 12/2022
+			//_nLimAvalia += _nValTotPed
 			//neste caso deduzo o limite para que possa avaliar, pois na somatório dos BO's o mesmo foi somado DAC 21/03/2023
-			_nLimAvalia +=  (VS1->VS1_VTOTNF * (_nRedBO/100))
+			_nLimAvalia +=  ( _nValTotPed * (If(_nFatorRed > 0,_nFatorRed/100,1)) )
 		EndIf
 		Aadd(_aMsg, "Cliente não possui limite de crédito disponível Status [2]")
 		_cFaseRet 	:= "3" 
@@ -1598,31 +1631,22 @@ Begin Sequence
 	//_nValDup := ( Titulos em Aberto + Pedidos em Bo + (Em Reserva + Em faturamento + Em Separação))
 	//Alterado conforme alinhamento com Zé e Reinaldo feito revitalização para validar somente quando for na Onda DAC 21/03/2023
 	//_nLcUsado := ( _aRetLc[03] + _aRetLc[04]  + _aRetLc[05] ) + (VS1->VS1_VTOTNF * (_nRedBO/100)) //************************************************ verificar avaliação
-	_nLcUsado := ( _aRetLc[03] + _aRetLc[04]  + _aRetLc[05] )  
+	_nLcUsado := ( _aRetLc[03] + _aRetLc[04]  + _aRetLc[05] ) - _aRetLc[06]  //retirar NCC caso exista pois é crédito cliente DAC 05/04/2023 
 	//DAC 06/12/2022
-	_nLimAvalia := SA1->A1_XLC - _nLcUsado
+	_nLimAvalia := SA1->A1_XLC - _nLcUsado 
 	//Quando for B.o. deduzu o valor pois já somou no acumulado de B.o.
 	// não utilizar no momento/* Não deduzir ja esta na somatória dos BOs com fator de redução validar com o orçamento em questão DAC 21/03/2023
 
-	If ( VS1->VS1_STATUS == "0" .OR. VS1->VS1_STATUS == "3" ) //.And. VS1->VS1_XBO == 'S'
-		_nLcUsado 	:= _nLcUsado - (VS1->VS1_VTOTNF * (_nRedBO/100) ) 
+	If ( _cFaseRet == "0" .OR. _cFaseRet == "3" ) //.And. VS1->VS1_XBO == 'S'
+		_nLcUsado 	:= _nLcUsado - ( _nValTotPed * (If(_nFatorRed > 0 ,_nFatorRed/100, 1)) ) 
 		//somo o valor novamente pois estara na somatória dos BO's e necessitarei utilizar o valor do mesmo para compor a diferença DAC 15/12
-		_nLimAvalia +=  ( VS1->VS1_VTOTNF * (_nRedBO/100) ) 
+		_nLimAvalia +=  ( _nValTotPed * (If(_nFatorRed > 0 , _nFatorRed/100, 1)) ) 
 	EndIf
 
-	//Conforme JC se for condição de pagamento verificar ForPlan
-	//If SA1->A1_XLC > 0 .And. (VS1->VS1_VTOTNF > SA1->A1_XLC .Or. SA1->A1_XDTLC < DATE())	
-	//SOMENTE SOMER QUANDO STATUS FOR ZERO
-	/*
-	SENDO SOMADO NO zfatf014()
-	If VS1->VS1_STATUS == "0" .OR. VS1->VS1_STATUS == "3"  
-		_nValDup += VS1->VS1_VTOTNF
-	Endif 	
-	*/
-	
-	If (_nLcUsado > SA1->A1_XLC )  //.Or. SA1->A1_XDTLC < DATE())
+	//Esta opção é somente para avaliação peças DAC 05/04/2023
+	If _lAvaliaPecas .and. (_nLcUsado > SA1->A1_XLC )  //.Or. SA1->A1_XDTLC < DATE())
 		//Faço a gravação com a loja originada do VS1 para garantir integridade das bases DAC 24/05/2022	
-		If !XFLPESQVSW(VS1->VS1_NUMORC, VS1->VS1_CLIFAT, VS1->VS1_LOJA, Iif(SA1->A1_XTPCRED=="1",.T.,.F.),  @_aMsg)  //caso passe  não tem bloqueios
+		If !XFLPESQVSW(_cPedido, _cCliente, _cLoja, Iif(SA1->A1_XTPCRED=="1",.T.,.F.),  @_aMsg)  //caso passe  não tem bloqueios
 			//_cFaseRet := XFLCREVSWG( VS1->VS1_NUMORC, VS1->VS1_CLIFAT, VS1->VS1_LOJA, "BLOQUEIO FORPLAN", @_aMsg )  //inclui registro de liberação Forplan, verifica se ja possui liberação para mudança de status	
 			_cFaseRet 	:= "3"
 			Break
@@ -1631,21 +1655,13 @@ Begin Sequence
 	//DAC 20/03/2023
 	//neste caso tenho que somar o titulo para que tenha o valor do limite de crédito correto se passou pela linha acima existe valores ainda no limite que podem ou não ser utilizados
 	//tenho que somar todo o processo pois tem que retornar como bloqueado fase 3 para verificar se pode utilizar parcial
-	ElseIf (_nLcUsado + VS1->VS1_VTOTNF) > SA1->A1_XLC   
+	ElseIf (_nLcUsado + _nValTotPed) > SA1->A1_XLC   
 		_cFaseRet 	:= "3"
 		Break
 	EndIf
 	//caso passe pela validação do limite de crédito a fase é a inicial
 	_cFaseRet := "0"
 End Sequence
-If Len(_aMsg) > 0
-	For _nPos := 1 To Len(_aMsg)
-		_cMsg += " "
-		_cMsg += _aMsg[_nPos]
-	Next
-EndIf
-RestArea(_aAreaSA1)
-RestArea(_aArea)
 Return _cFaseRet
 
 

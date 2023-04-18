@@ -10,6 +10,9 @@ Doc. Origem:
 Solicitante:            Faturamento/Pecas
 Uso......:              
 Obs......:              TESTE DE COMMIT
+@history    DAC Denilso - 06/04/2023	        
+            GRUPO CAOA GAP FIN108 - Revitalização Credito [ Montadora ]
+            Unificação Peças com Montadora
 =====================================================================================
 */
 
@@ -24,7 +27,7 @@ Local _cRet			:= ""
 Local _cPgNAval		:= AllTrim(SuperGetMV( "MV_CPNCLC" 	,,"")) 	//condição de pagamento não será avaliado LC
 Local _cPgFP 		:= AllTrim(SuperGetMV( "CMV_PEC018" ,,""))  //condição de pagamento Forplan = 005 	
 Local _cPgCAOA		:= AllTrim(SuperGetMV( "CMV_FAT007" ,,"")) 	//condição de pagamento CAOA 
-Local _cTpOper      := AllTrim(SuperGetMV("CAOA_TPLIM",,""))  //Tipos de Operação para analise do crédito - CAOA   54;91;90;67;82;93
+Local _cTpOper      := AllTrim(SuperGetMV( "CAOA_TPLIM" ,,""))  //Tipos de Operação para analise do crédito - CAOA   54;91;90;67;82;93
 
 Default _cCliFat 	:= ""
 Default _cLoja 		:= ""
@@ -114,7 +117,7 @@ Begin Sequence
 		_cWhereSE1 += "						FROM "+ RetSQLName('SC6') +" SC6 "		
 		_cWhereSE1 += "						WHERE  	SC6.C6_FILIAL 	= '"+FwXFilial("SC6")+"' " 		
 		_cWhereSE1 += "							AND SC6.C6_NUM 		= SE1.E1_PEDIDO
-		_cWhereSE1 += "							AND SC6.C6_XOPER IN "+ FormatIn(_cTpOper,";") + " "
+		_cWhereSE1 += "							AND SC6.C6_OPER IN "+ FormatIn(_cTpOper,";") + " "
 		_cWhereSE1 += "							AND SC6.D_E_L_E_T_ 	= ' '
 		_cWhereSE1 += "							GROUP BY SC6.C6_NUM )"
 	ElseIf !Empty(_cTpOper) .and. FWCodEmp() == "2020"  //somente para 
@@ -211,7 +214,7 @@ Begin Sequence
 		_cWhereSE1 += "						FROM "+ RetSQLName('SC6') +" SC6 "		
 		_cWhereSE1 += "						WHERE  	SC6.C6_FILIAL 	= '"+FwXFilial("SC6")+"' " 		
 		_cWhereSE1 += "							AND SC6.C6_NUM 		= SE1.E1_PEDIDO
-		_cWhereSE1 += "							AND SC6.C6_XOPER IN "+ FormatIn(_cTpOper,";") + " "
+		_cWhereSE1 += "							AND SC6.C6_OPER IN "+ FormatIn(_cTpOper,";") + " "
 		_cWhereSE1 += "							AND SC6.D_E_L_E_T_ 	= ' '
 		_cWhereSE1 += "							GROUP BY SC6.C6_NUM )"
 	ElseIf !Empty(_cTpOper) .and. FWCodEmp() == "2020"  //somente para 
@@ -382,7 +385,7 @@ Begin Sequence
 	Endif	 		
 	//verificar pelo tipo de operação utilizado em Anapolis
 	If !Empty(_cTpOper)  
-		_cWhereSC6 += " AND SC6.C6_XOPER IN "+ FormatIn(_cTpOper,";") + " "
+		_cWhereSC6 += " AND SC6.C6_OPER IN "+ FormatIn(_cTpOper,";") + " "
 	Endif
 	_cWhereSC5 := "%"+_cWhereSC5+"%"
 	_cWhereSC6 := "%"+_cWhereSC6+"%"
@@ -395,7 +398,7 @@ Begin Sequence
 			ON 	SC5.C5_FILIAL 	= %XFilial:SC5%
 			AND SC5.C5_NUM		= SC6.C6_NUM	
 			AND SC5.C5_NOTA     = ' '
-			AND SC5.C5_LIBERAOK <> 'E'
+			AND SC5.C5_LIBEROK NOT IN('E','S') 
 			AND SC5.C5_CONDPAG 	<> ' '
 			AND SC5.%notDel%
 			%Exp:_cWhereSC5%
@@ -530,7 +533,7 @@ Begin Sequence
 	Endif	 		
 	//verificar pelo tipo de operação utilizado em Anapolis
 	If !Empty(_cTpOper)  
-		_cWhereSC6 += " AND SC6.C6_XOPER IN "+ FormatIn(_cTpOper,";") + " "
+		_cWhereSC6 += " AND SC6.C6_OPER IN "+ FormatIn(_cTpOper,";") + " "
 	Endif
 	_cWhereSC5 := "%"+_cWhereSC5+"%"
 	_cWhereSC6 := "%"+_cWhereSC6+"%"
@@ -543,7 +546,7 @@ Begin Sequence
 			ON 	SC5.C5_FILIAL 	= %XFilial:SC5%
 			AND SC5.C5_NUM		= SC6.C6_NUM	
 			AND SC5.C5_NOTA     = ' '
-			AND SC5.C5_LIBERAOK <> ' '
+			AND SC5.C5_LIBEROK NOT IN( 'E',' ') 
 			AND SC5.C5_CONDPAG 	<> ' '
 			AND SC5.%notDel%
 			%Exp:_cWhereSC5%
@@ -553,6 +556,23 @@ Begin Sequence
 			%Exp:_cWhereSC6%
 	EndSql
 	//		AND SC5.C5_BLQ		= ' '
+	/* caso seja necessário validar item
+			SELECT
+				C9_OK,
+				C9_PEDIDO,
+				C9_CLIENTE,
+				C9_LOJA,
+				C9_BLEST
+			FROM %Table:SC9% SC9
+			WHERE
+					SC9.%NotDel%
+				AND SC9.C9_FILIAL = %xFilial:SC9%
+				AND %Exp:cWhere%
+				AND SC9.C9_NFISCAL = ' '
+			GROUP BY
+				C9_OK,C9_PEDIDO,C9_CLIENTE,C9_LOJA,C9_BLEST
+		*/
+
 	If (_cAliasPesq)->(Eof()) .or. (_cAliasPesq)->TIT_PEDIDO == 0
 		Break
 	EndIf	
@@ -577,10 +597,12 @@ Grava os Dados do Limite de Crédito na SA1
 						 Ajustando funcionalidade para utilizar LC na Montadora como em Barueri
 /*/
 Static Function ZFATF14SA1(_cCliFat, _cTpCred, _nValAtr, _nValAbe, _nValBo, _nValPed, _nValCred, _cLoja)
-Local _cRet		:= ""
-Local _cWhere	:= ""
-Local _nSaldo	:= 0
+Local _cRet			:= ""
+Local _cWhere		:= ""
+Local _nSaldo		:= 0
 Local _cAliasPesq 	:= GetNextAlias()
+Local _aGrvLog		:= {}
+Local _nPos
 
 Begin Sequence
 	//No caso de não estar informada a loja
@@ -634,27 +656,45 @@ Begin Sequence
 		
 		Else
 			_nSaldo := ( SA1->A1_XLC - ( _nValAbe + _nValBo + _nValPed ) )
-			SA1->A1_XFPATR	:= IiF(_nValAtr >= 0, _nValAtr	, 0)
-			SA1->A1_XLMUSA	:= IiF(_nValAbe >= 0, _nValAbe	, 0)
-			SA1->A1_XVALBO	:= IiF(_nValBo  >= 0, _nValBo	, 0)
-			SA1->A1_XPEDFP	:= IiF(_nValPed >= 0, _nValPed	, 0)
-			SA1->A1_XFPSAL	:= IiF(_nSaldo  >= 0, _nSaldo	, 0)
+			SA1->A1_XFPATR	:= ZFATF14DIF(SA1->A1_XFPATR, _nValAtr, "A1_XFPATR", @_aGrvLog) //IiF(_nValAtr >= 0, _nValAtr	, 0)
+			SA1->A1_XLMUSA	:= ZFATF14DIF(SA1->A1_XLMUSA, _nValAbe, "A1_XLMUSA", @_aGrvLog) //IiF(_nValAbe >= 0, _nValAbe	, 0)
+			SA1->A1_XVALBO	:= ZFATF14DIF(SA1->A1_XVALBO, _nValBo , "A1_XVALBO", @_aGrvLog) //IiF(_nValBo  >= 0, _nValBo	, 0)
+			SA1->A1_XPEDFP	:= ZFATF14DIF(SA1->A1_XPEDFP, _nValPed, "A1_XPEDFP", @_aGrvLog) //IiF(_nValPed >= 0, _nValPed	, 0)
+			SA1->A1_XFPSAL	:= ZFATF14DIF(SA1->A1_XFPSAL, _nSaldo , "A1_XFPSAL", @_aGrvLog) //IiF(_nSaldo  >= 0, _nSaldo	, 0)
 			If _nSaldo <= 0
+				If SA1->A1_XSTAFP <> "2"
+					Aadd(_aGrvLog,{ SA1->A1_XSTAFP, "2", "A1_XSTAFP"})
+				EndIf
 				SA1->A1_XSTAFP := "2" //FALTA DE SALDO
 			ElseIf SA1->A1_XDTLC < Date()
+				If SA1->A1_XSTAFP <> "4"
+					Aadd(_aGrvLog,{ SA1->A1_XSTAFP, "4", "A1_XSTAFP"})
+				EndIf
 				SA1->A1_XSTAFP := "4" //CREDITO VENCIDO
 			ElseIf SA1->A1_XFPATR > 0
 				If SA1->A1_XBLQVEN == "1" // BLOQUEIA POR ATRASO SOMENTE SE O Bloq.Vencido = "1-SIM"
+					If SA1->A1_XSTAFP <> "3"
+						Aadd(_aGrvLog,{ SA1->A1_XSTAFP, "3", "A1_XSTAFP"})
+					EndIf
 					SA1->A1_XSTAFP := "3" //TITULOS EM ATRASO
 				Else
 					SA1->A1_XSTAFP := "1" //CREDITO DISPONIVEL
 				EndIf
 			Else
+				If SA1->A1_XSTAFP <> "1"
+					Aadd(_aGrvLog,{ SA1->A1_XSTAFP, "1", "A1_XSTAFP"})
+				EndIf
 				SA1->A1_XSTAFP := "1" //CREDITO DISPONIVEL
 			EndIf
 			_cRet := SA1->A1_XSTAFP
 		EndIf
 		SA1->(MsUnlock())
+		//caso exista log para gravar
+		If Len(_aGrvLog) > 0
+			For _nPos := 1 To Len(_aGrvLog)
+				U_ZGENLZA2(_aGrvLog[_nPos,1], _aGrvLog[_nPos,2], _aGrvLog[_nPos,3], /*_cTitulo*/, "AVALIACAO L.C.",/*_cUserSol*/)
+			Next
+		Endif		
 		(_cAliasPesq)->(DbSkip())
 	EndDo	
 End Sequence
@@ -665,7 +705,21 @@ Endif
 
 Return(_cRet)
 
-
+//DAC - 13/04/2023
+//Retornar o valor a ser gravado ref L.C. e separar para gravação do Log
+Static Function ZFATF14DIF(_nValSa1, _nValCalc,_cCampo, _aGrvLog)
+Local _nValRet := Round(_nValSa1,2)
+Begin Sequence
+	If Round(_nValSa1,2) <> Round(_nValCalc,2) 
+		_nValRet := Round(IiF(_nValCalc >= 0, _nValCalc	, 0),2)
+		//Se esta zerado  o resultado da avaliação com o que já esta gravado não gravo log 
+		If _nValSa1 == 0 .And. _nValRet == 0
+			Break
+		Endif	
+		Aadd(_aGrvLog,{ _nValSa1, _nValCalc, _cCampo})
+	Endif
+End Sequence
+Return _nValRet
 
 /*/{Protheus.doc} ZFATF014LJ
 Localizar a loja para processamento responável pelo Limite de Crédito
@@ -693,11 +747,11 @@ Begin Sequence
 	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
 		SELECT 	ISNULL(SA1.R_E_C_N_O_,0) NREGSA1
 				FROM  %Table:SA1% SA1
-				WHERE 	SA1.A1_FILIAL   = %XFilial:SA1% 
+				WHERE SA1.%notDel% 	
+					AND SA1.A1_FILIAL   = %XFilial:SA1% 
 					AND SA1.A1_COD  	= %Exp:_cCliFat%
 					AND SA1.A1_XTPCRED NOT IN (' ','0') 
 					%Exp:_cWhere%
-					AND SA1.%notDel%
 	EndSQL	
 					/*AND 	(  	 SA1.A1_XTPCRED IN ('1','2') 
 							 OR (SA1.A1_XTPCRED = '0' AND A1_XLC > 0) )
@@ -993,9 +1047,5 @@ Begin Sequence
 	End Transaction
 End Sequence
 Return _lRet
-
-
-
-
 
 
