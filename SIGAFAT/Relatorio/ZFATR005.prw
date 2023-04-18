@@ -91,153 +91,157 @@ Static Function zRel0005(cArquivo)
 		(cAliasTRB)->(DbCloseArea())
 	EndIf
 
-	cQuery := " SELECT " + CRLF
-    cQuery += "     VV1_CORVEI, " + CRLF
-    cQuery += "     VX5_DESCRI, " + CRLF
-    cQuery += "     SUBSTR(VVC_DESCRI,1,20) AS COR, " + CRLF
-    cQuery += "     C6_CHASSI, " + CRLF
-    cQuery += "     VV1_NUMMOT, " + CRLF
-    cQuery += "     VV1_MODVEI, " + CRLF
-    cQuery += "     VV1_SEGMOD, " + CRLF
-    cQuery += "     VV2_MODFAB, " + CRLF
-    cQuery += "     SUBSTR(VV1_FABMOD,5,8) AS ANO_MOD, " + CRLF
-    cQuery += "     SUBSTR(VV1_FABMOD,1,4) AS ANO_FAB, " + CRLF
-    cQuery += "     F2_DOC, " + CRLF
-    cQuery += "     F2_VALFAT, " + CRLF
-    cQuery += "     F2_EMISSAO, " + CRLF
-    cQuery += "     A1_NOME, " + CRLF
-    cQuery += "     A1_CGC, " + CRLF
-    cQuery += "     A1_END, " + CRLF
-	cQuery += "     E1_BAIXA, " + CRLF
-    cQuery += "     F2_CHVNFE, " + CRLF
-    cQuery += "     CASE " + CRLF
-    cQuery += "         WHEN VRK_CODMAR = 'CHE' THEN 'CHERY' " + CRLF
-    cQuery += "         WHEN VRK_CODMAR = 'HYU' THEN 'HYUNDAI' " + CRLF
-    cQuery += "         WHEN VRK_CODMAR = 'SBR' THEN 'SUBARU' " + CRLF
-    cQuery += "         WHEN VRK_CODMAR = 'OUT' THEN 'OUTROS' " + CRLF
-    cQuery += "     END AS MARCA " + CRLF
-
-	cQuery += " FROM " + RetSQLName('VRJ') + " VRJ " + CRLF
-
-	cQuery += " INNER JOIN " + RetSQLName('VRK') + " VRK " + CRLF
-	cQuery += "     ON VRK_FILIAL = '" + FWxFilial('VRK') + "' " + CRLF	
-	cQuery += "     AND VRK_PEDIDO = VRJ_PEDIDO " + CRLF
-	cQuery += "     AND VRK.D_E_L_E_T_ = ' ' " + CRLF
-
-    cQuery += " INNER JOIN " + RetSQLName('VV0') + " VV0 " + CRLF
-    cQuery += "     ON VV0_FILIAL = '" + FWxFilial('VV0') + "' " + CRLF
-    cQuery += "     AND VV0_NUMTRA = VRK_NUMTRA " + CRLF
-	cQuery += "     AND VV0.D_E_L_E_T_ = ' ' " + CRLF
-
+	cQuery := CRLF + " SELECT "
+    cQuery += CRLF + "      VV1.VV1_CORVEI, "
+    cQuery += CRLF + "      SUBSTR(VX5.VX5_DESCRI,1,10) AS VX5_DESCRI, "
+    cQuery += CRLF + "      SUBSTR(VVC.VVC_DESCRI,1,20) AS COR, "
+    cQuery += CRLF + "      SC6.C6_CHASSI, "
+    cQuery += CRLF + "      VV1.VV1_NUMMOT, "
+    cQuery += CRLF + "      VV1.VV1_MODVEI, "
+    cQuery += CRLF + "      VV1.VV1_SEGMOD, "
+    cQuery += CRLF + "      VV2.VV2_MODFAB, "
+    cQuery += CRLF + "      SUBSTR(VV1.VV1_FABMOD,5,8) AS ANO_MOD, "
+    cQuery += CRLF + "      SUBSTR(VV1.VV1_FABMOD,1,4) AS ANO_FAB, "
+    cQuery += CRLF + "      SF2.F2_DOC, "
+    cQuery += CRLF + "      SF2.F2_VALFAT, "
+    cQuery += CRLF + "      SF2.F2_EMISSAO, "
+    cQuery += CRLF + "      SA1.A1_NOME, "
+    cQuery += CRLF + "      SA1.A1_CGC, "
+    cQuery += CRLF + "      SA1.A1_END, "
+    cQuery += CRLF + "      SE1.E1_BAIXA, "
+    cQuery += CRLF + "      SF2.F2_CHVNFE, "
+    cQuery += CRLF + "      CASE "
+    cQuery += CRLF + "          WHEN NVL(VRK.VRK_CODMAR,SC6.C6_XCODMAR) = 'CHE' THEN 'CHERY' "
+    cQuery += CRLF + "          WHEN NVL(VRK.VRK_CODMAR,SC6.C6_XCODMAR) = 'HYU' THEN 'HYUNDAI' "
+    cQuery += CRLF + "          WHEN NVL(VRK.VRK_CODMAR,SC6.C6_XCODMAR) = 'SBR' THEN 'SUBARU' "
+    cQuery += CRLF + "          WHEN NVL(VRK.VRK_CODMAR,SC6.C6_XCODMAR) = 'OUT' THEN 'OUTROS' "
+    cQuery += CRLF + "          WHEN NVL(VRK.VRK_CODMAR,SC6.C6_XCODMAR) = '   ' THEN 'INDEFINIDO'"
+    cQuery += CRLF + "          ELSE 'VERIFICAR'"
+    cQuery += CRLF + "      END AS MARCA"
+    
+    cQuery += CRLF + " FROM " + RetSQLName('SE1') + " SE1"
+    
+    cQuery += CRLF + " 	JOIN " + RetSQLName('SF2') + " SF2  "
+    cQuery += CRLF + "         ON  SF2.F2_FILIAL  = '" + FWxFilial('SF2') + "'  "
+    cQuery += CRLF + "         AND SF2.F2_DOC     = SE1.E1_NUM  "
+    cQuery += CRLF + "         AND SF2.F2_SERIE   = SE1.E1_PREFIXO  "
+    cQuery += CRLF + "         AND SF2.F2_CLIENTE = SE1.E1_CLIENTE  "
+    cQuery += CRLF + "         AND SF2.F2_LOJA    = SE1.E1_LOJA"
+    cQuery += CRLF + "         AND SF2.F2_COND     IN " + FormatIn(SuperGetMV("CMV_VEI007", ,"005" ), "/")
+    cQuery += CRLF + "         AND SF2.D_E_L_E_T_ = ' ' "
+    
+    cQuery += CRLF + " 	JOIN " + RetSQLName('SD2') + " SD2 "
+    cQuery += CRLF + "         ON  SD2.D2_FILIAL  = '" + FWxFilial('SD2') + "' "
+    cQuery += CRLF + "         AND SD2.D2_DOC     = SF2.F2_DOC  "
+    cQuery += CRLF + "         AND SD2.D2_SERIE   = SF2.F2_SERIE  "
+    cQuery += CRLF + "         AND SD2.D2_CLIENTE = SF2.F2_CLIENTE  "
+    cQuery += CRLF + "         AND SD2.D2_LOJA    = SF2.F2_LOJA "
+    cQuery += CRLF + "         AND SD2.D2_NUMSERI <>  ' ' "
+    cQuery += CRLF + "         AND SD2.D_E_L_E_T_ = ' ' "
+    
+    cQuery += CRLF + " 	JOIN " + RetSQLName('SA1') + " SA1  "
+    cQuery += CRLF + "         ON  SA1.A1_FILIAL  = '" + FWxFilial('SA1') + "'  "
+    cQuery += CRLF + "         AND SA1.A1_COD     = SE1.E1_CLIENTE "
+    cQuery += CRLF + "         AND SA1.A1_LOJA    = SE1.E1_LOJA  "
+    cQuery += CRLF + "   	   AND SA1.D_E_L_E_T_ = ' '  "
+    
+    cQuery += CRLF + " 	JOIN " + RetSQLName('SC6') + " SC6  "
+    cQuery += CRLF + " 		   ON  SC6.C6_FILIAL   = '" + FWxFilial('SC6') + "' "
+    cQuery += CRLF + "  	   AND SC6.C6_NUM      = SD2.D2_PEDIDO  "
+    cQuery += CRLF + "  	   AND SC6.C6_ITEM     = SD2.D2_ITEMPV"
+    cQuery += CRLF + " 		   AND SC6.C6_PRODUTO  = SD2.D2_COD"
+    cQuery += CRLF + "  	   AND SC6.D_E_L_E_T_  = ' '  "
+    
+    If !Empty( aRet[7] )
+        cQuery +=  CRLF + "     AND SC6.C6_CHASSI = '" + aRet[7] + "' " 
+    EndIf
+    
+    cQuery += CRLF + " 	JOIN " + RetSQLName('SC5') + " SC5  "
+    cQuery += CRLF + "         ON  SC5.C5_FILIAL  = '" + FWxFilial('SC5') + "'  "
+    cQuery += CRLF + "         AND SC5.C5_NUM     = SC6.C6_NUM "
+    cQuery += CRLF + "         AND SC5.D_E_L_E_T_ = ' ' "
+    
+    cQuery += CRLF + " 	LEFT JOIN " + RetSQLName('VV0') + " VV0  "
+    cQuery += CRLF + "         ON  VV0.VV0_FILIAL = '" + FWxFilial('VV0') + "'  "
+    cQuery += CRLF + "         AND VV0.VV0_CODCLI = SE1.E1_CLIENTE  "
+    cQuery += CRLF + "         AND VV0.VV0_LOJA   = SE1.E1_LOJA  "
+    cQuery += CRLF + "         AND VV0.VV0_SERNFI = SE1.E1_PREFIXO  "
+    cQuery += CRLF + "         AND VV0.VV0_NUMNFI = SE1.E1_NUM  "
+    cQuery += CRLF + " 		   AND VV0.D_E_L_E_T_ = ' '"
+    
+    cQuery += CRLF + " 	LEFT JOIN " + RetSQLName('VV1') + " VV1   "
+    cQuery += CRLF + "  	   ON  VV1.VV1_FILIAL = '" + FWxFilial('VV1') + "'  "
+    cQuery += CRLF + "         AND VV1.VV1_CHASSI = SD2.D2_NUMSERI  "
+    cQuery += CRLF + "         AND VV1.D_E_L_E_T_ = ' '  "
+    
+    cQuery += CRLF + " 	LEFT JOIN " + RetSQLName('VV2') + " VV2    "
+    cQuery += CRLF + "         ON  VV2.VV2_FILIAL  = '" + FWxFilial('VV2') + "'  "
+    cQuery += CRLF + "         AND VV2.VV2_CODMAR  = VV1.VV1_CODMAR    "
+    cQuery += CRLF + "         AND VV2.VV2_MODVEI  = VV1.VV1_MODVEI   "
+    cQuery += CRLF + "         AND VV2.VV2_SEGMOD  = VV1.VV1_SEGMOD   "
+    cQuery += CRLF + "         AND VV2.D_E_L_E_T_  = ' '  "
+    
+    cQuery += CRLF + " 	LEFT JOIN " + RetSQLName('VRK') + " VRK  "
+    cQuery += CRLF + "         ON  VRK.VRK_FILIAL  = '" + FWxFilial('VRK') + "'  "
+    cQuery += CRLF + "         AND VRK.VRK_NUMTRA  = VV0.VV0_NUMTRA"
+    cQuery += CRLF + " 	       AND VRK.D_E_L_E_T_  = ' '"
+    
+    cQuery += CRLF + " 	LEFT JOIN " + RetSQLName('VVC') + " VVC "
+    cQuery += CRLF + " 		   ON  VVC.VVC_FILIAL = '" + FWxFilial('VVC') + "' "
+    cQuery += CRLF + " 		   AND VVC.VVC_CODMAR = VV1.VV1_CODMAR "
+    cQuery += CRLF + " 		   AND VVC.VVC_CORVEI = VV1.VV1_CORVEI "
+    cQuery += CRLF + " 		   AND VVC.D_E_L_E_T_ = ' ' 		"
+    
+    cQuery += CRLF + " 	LEFT JOIN  " + RetSQLName('VRJ') + " VRJ "
+    cQuery += CRLF + "    	   ON  VRJ.VRJ_FILIAL  = '" + FWxFilial('VRJ') + "' "
+    cQuery += CRLF + "     	   AND (VRJ.VRJ_PEDIDO = VRK.VRK_PEDIDO OR VRJ.VRJ_PEDCOM = SC6.C6_PEDCLI)"
+    cQuery += CRLF + "         AND VRJ.VRJ_STATUS  IN " + FormatIn(SuperGetMV("CMV_VEI006", ,"F" ), "/")
+    cQuery += CRLF + "         AND VRJ.D_E_L_E_T_  = ' ' "
+    
+    cQuery += CRLF + " 	LEFT JOIN " + RetSQLName('VX5') + " VX5 "
+    cQuery += CRLF + " 		   ON VX5.VX5_FILIAL  = '" + FWxFilial('VX5') + "' "
+    cQuery += CRLF + " 		   AND VX5.VX5_CHAVE  = '076' "
+    cQuery += CRLF + " 		   AND VX5.VX5_CODIGO = VV1.VV1_COMVEI "
+    cQuery += CRLF + " 		   AND VX5.D_E_L_E_T_ = ' '"
+    
+    cQuery += CRLF + " WHERE SE1.E1_FILIAL = '" + FWxFilial('SE1') + "' "
+    cQuery += CRLF + "     AND SE1.E1_NATUREZ IN " + FormatIn(SuperGetMV( "CMV_VEI005", ,"1101" ), "/" )
+    
+    If !Empty(aRet[3])
+        cQuery += CRLF + "     AND SE1.E1_CLIENTE = '" + aRet[3] + "' "
+        cQuery += CRLF + "     AND SE1.E1_LOJA    = '" + aRet[4] + "' "
+    EndIf  
+    
     If Empty( aRet[5] )
         If  !Empty( aRet[1] )
-            cQuery += "     AND VV0_DATEMI BETWEEN '" + DToS( aRet[1] ) + "' AND '" + DToS( aRet[2] ) + "' " + CRLF
+            cQuery += CRLF + "     AND SE1.E1_EMISSAO BETWEEN '" + DToS( aRet[1] ) + "' AND '" + DToS( aRet[2] ) + "' "
         EndIf 
     Else 
-        cQuery += "     AND VV0_NUMNFI = '" + aRet[5] + "' " + CRLF
-        cQuery += "     AND VV0_SERNFI = '" + aRet[6] + "' " + CRLF
+        cQuery += CRLF + "     AND SE1.E1_NUM    = '" + aRet[5] + "' "
+        cQuery += CRLF + "     AND SE1.E1PREFIXO = '" + aRet[6] + "' "
     EndIf
 
-    cQuery += " INNER JOIN " + RetSQLName('SF2') + " SF2 " + CRLF
-    cQuery += "     ON F2_FILIAL = '" + FWxFilial('SF2') + "' " + CRLF	
-	cQuery += "     AND F2_DOC = VV0_NUMNFI " + CRLF
-	cQuery += "     AND F2_SERIE = VV0_SERNFI " + CRLF
-    cQuery += "     AND F2_CLIENTE = VV0_CODCLI " + CRLF
-    cQuery += "     AND F2_LOJA = VV0_LOJA " + CRLF
-	cQuery += "     AND SF2.D_E_L_E_T_ = ' ' " + CRLF
-
-    cQuery += " INNER JOIN " + RetSQLName('SD2') + " SD2 " + CRLF
-    cQuery += "		ON SD2.D2_FILIAL = '" + FWxFilial('SD2') + "' " + CRLF
-	cQuery += "		AND SD2.D2_DOC = SF2.F2_DOC   " + CRLF
-	cQuery += "		AND SD2.D2_SERIE = SF2.F2_SERIE   " + CRLF
-	cQuery += "		AND SD2.D2_CLIENTE = SF2.F2_CLIENTE   " + CRLF
-	cQuery += "		AND SD2.D2_LOJA = SF2.F2_LOJA   " + CRLF
-	cQuery += "		AND SD2.D2_EMISSAO = SF2.F2_EMISSAO   " + CRLF
-	cQuery += "		AND SD2.D_E_L_E_T_ = ' '   " + CRLF
-
-	cQuery += " INNER JOIN " + RetSQLName("SC6") + " SC6 " + CRLF
-	cQuery += "		ON SC6.C6_FILIAL = '" + FWxFilial('SC6') + "' " + CRLF
-	cQuery += "		AND SC6.C6_NUM = SD2.D2_PEDIDO  " + CRLF
-	cQuery += "		AND SC6.C6_ITEM = SD2.D2_ITEM  " + CRLF
-	cQuery += "		AND SC6.C6_PRODUTO = SD2.D2_COD " + CRLF
-	cQuery += "     AND SC6.D_E_L_E_T_ = ' '   " + CRLF
-	
-    If !Empty( aRet[7] )
-        cQuery += "     AND SC6.C6_CHASSI = '" + aRet[7] + "' " + CRLF
-    EndIf
-
-    cQuery += " INNER JOIN " + RetSQLName('VV1') + " VV1 " + CRLF
-    cQuery += "     ON VV1_FILIAL = '" + FWxFilial('VV1') + "' " + CRLF
-    cQuery += "     AND VV1_CHAINT = VRK_CHAINT " + CRLF
-    cQuery += "     AND VV1.D_E_L_E_T_ = ' ' " + CRLF
-
-    cQuery += " INNER JOIN " + RetSQLName('VV2') + " VV2 " + CRLF
-    cQuery += "     ON VV2_FILIAL = '" + FWxFilial('VV2') + "' " + CRLF
-    cQuery += "     AND VV2_CODMAR = VV1_CODMAR " + CRLF
-    cQuery += "     AND VV2_MODVEI = VV1_MODVEI " + CRLF
-    cQuery += "     AND VV2_SEGMOD = VV1_SEGMOD " + CRLF
-    cQuery += "     AND VV1.D_E_L_E_T_ = ' ' " + CRLF
-
-    cQuery += " INNER JOIN " + RetSQLName('VVC') + " VVC " + CRLF
-    cQuery += "     ON VVC_FILIAL = '" + FWxFilial('VVC') + "' " + CRLF
-    cQuery += "     AND VVC_CODMAR = VV1_CODMAR " + CRLF
-    cQuery += "     AND VVC_CORVEI = VV1_CORVEI " + CRLF
-    cQuery += "     AND VVC.D_E_L_E_T_ = ' ' " + CRLF
-
-    cQuery += " INNER JOIN " + RetSQLName('SA1') + " SA1 " + CRLF
-    cQuery += "     ON A1_FILIAL = '" + FWxFilial('SA1') + "' " + CRLF
-    cQuery += "     AND A1_COD = VV0_CODCLI " + CRLF
-    cQuery += "     AND A1_LOJA = VV0_LOJA " + CRLF
-    cQuery += "     AND SA1.D_E_L_E_T_ = ' ' " + CRLF
-	
-	cQuery += " INNER JOIN " + RetSQLName('SE1') + " SE1 "  + CRLF
-    cQuery += "         ON E1_FILIAL = '" + FWxFilial('SE1') + "' " + CRLF	
-	cQuery += "         AND E1_CLIENTE = VV0_CODCLI " + CRLF
-    cQuery += "         AND E1_LOJA = VV0_LOJA " + CRLF
-    cQuery += "         AND E1_PREFIXO = VV0_SERNFI " + CRLF
-    cQuery += "         AND E1_NUM = VV0_NUMNFI " + CRLF
-	cQuery += " 	    AND SE1.D_E_L_E_T_ = ' ' " + CRLF
-
-    cQuery += " INNER JOIN " + RetSQLName('VX5') + " VX5 " + CRLF
-    cQuery += "     ON VX5.VX5_FILIAL = '" + FWxFilial('VX5') + "' " + CRLF
-    //-- Tabela Genérica SIGAVEI <-> Cód 076 - Tipos de combustiveis		
-	cQuery += "     AND VX5.VX5_CHAVE = '076' " + CRLF
-	cQuery += "     AND VX5.VX5_CODIGO = VV1_COMVEI " + CRLF
-	cQuery += "     AND VX5.D_E_L_E_T_ = ' ' " + CRLF
-
-	cQuery += " WHERE VRJ_FILIAL = '" + FWxFilial('VRJ') + "' " + CRLF
-	cQuery += "     AND VRJ_NATURE IN " + FormatIn(SuperGetMV("CMV_VEI005", ,"1101" ), "/") + CRLF
-    cQuery += "     AND VRJ_STATUS IN " + FormatIn(SuperGetMV("CMV_VEI006", ,"F" ), "/") + CRLF
-    cQuery += "     AND VRJ_FORPAG IN " + FormatIn(SuperGetMV("CMV_VEI007", ,"005" ), "/") + CRLF
-
-    If !Empty(aRet[3])
-        cQuery += "     AND VRJ_CODCLI = '" + aRet[3] + "' " + CRLF
-        cQuery += "     AND VRJ_LOJA = '" + aRet[4] + "' " + CRLF
-    EndIf  
-
-	cQuery += "     AND VRJ.D_E_L_E_T_ = ' ' " + CRLF
-
-    cQuery += " GROUP BY " + CRLF
-    cQuery += "     VV1_CORVEI, " + CRLF
-    cQuery += "     VX5_DESCRI, " + CRLF
-    cQuery += "     VVC_DESCRI, " + CRLF
-    cQuery += "     C6_CHASSI, " + CRLF
-    cQuery += "     VV1_NUMMOT, " + CRLF
-    cQuery += "     VV1_MODVEI, " + CRLF
-    cQuery += "     VV1_SEGMOD, " + CRLF
-    cQuery += "     VV2_MODFAB, " + CRLF
-    cQuery += "     VV1_FABMOD, " + CRLF
-    cQuery += "     F2_DOC, " + CRLF
-    cQuery += "     F2_VALFAT, " + CRLF
-    cQuery += "     F2_EMISSAO, " + CRLF
-    cQuery += "     A1_NOME, " + CRLF
-    cQuery += "     A1_CGC, " + CRLF
-    cQuery += "     A1_END, " + CRLF
-	cQuery += "     E1_BAIXA, " + CRLF
-    cQuery += "     F2_CHVNFE, " + CRLF
-    cQuery += "     VRK_CODMAR " + CRLF
-
-	cQuery += " ORDER BY F2_EMISSAO, F2_DOC, A1_CGC " + CRLF
+    cQuery += CRLF + " GROUP BY "
+    cQuery += CRLF + "      VV1.VV1_CORVEI, "
+    cQuery += CRLF + "      VX5.VX5_DESCRI, "
+    cQuery += CRLF + "      VVC.VVC_DESCRI, "
+    cQuery += CRLF + "      SC6.C6_CHASSI, "
+    cQuery += CRLF + "      VV1.VV1_NUMMOT, "
+    cQuery += CRLF + "      VV1.VV1_MODVEI, "
+    cQuery += CRLF + "      VV1.VV1_SEGMOD, "
+    cQuery += CRLF + "      VV2.VV2_MODFAB, "
+    cQuery += CRLF + "      VV1.VV1_FABMOD, "
+    cQuery += CRLF + "      SF2.F2_DOC, "
+    cQuery += CRLF + "      SF2.F2_VALFAT, "
+    cQuery += CRLF + "      SF2.F2_EMISSAO, "
+    cQuery += CRLF + "      SA1.A1_NOME, "
+    cQuery += CRLF + "      SA1.A1_CGC, "
+    cQuery += CRLF + "      SA1.A1_END, "
+    cQuery += CRLF + "      SE1.E1_BAIXA, "
+    cQuery += CRLF + "      SF2.F2_CHVNFE, "
+    cQuery += CRLF + "      VRK.VRK_CODMAR,"
+    cQuery += CRLF + "      SC6.C6_XCODMAR"
+    cQuery += CRLF + "  ORDER BY F2_EMISSAO, F2_DOC, A1_CGC "
 
 	cQuery := ChangeQuery(cQuery)
 
