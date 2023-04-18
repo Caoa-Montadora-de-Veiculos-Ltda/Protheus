@@ -695,11 +695,16 @@ Return _lRet
 @version undefined
 @param _aMsg, array, descrição
 @type function
+@history    DAC Denilso - 18/04/2023	        
+            GRUPO CAOA - PEC039 - Criar Tipo Pedido Expresso
+            Inclusão de desconto expresso com tipo de pedido 017
 /*/
 Static Function zPercDesc(_cMarcaOrc,_cTipoPed,_cCliente,_cLoja)
 
 Local _nRet				:= 0
-Local _aTpDesc			:= Separa(AllTrim(SuperGetMV( "CMV_WSR029"  ,,"005|5")),";" )
+//Local _aTpDesc			:= Separa(AllTrim(SuperGetMV( "CMV_WSR029"  ,,"005|5;017|2")),";" )
+Local _cTpPedDes		:= AllTrim(SuperGetMV( "CMV_WSR029"  ,,"005|5;017|2"))
+Local _aTpDesc			:= Separa(_cTpPedDes,";" )
 Local _cMarcaDesc		:= AllTrim(SuperGetMV( "CMV_WSR030"  ,,"CHE"))
 Local _nX				:= 0
 Local _cTipoOrc			:= AllTrim(Posicione("VX5", 1, XFilial("VX5") + "Z02" + PadR( AllTrim(_cTipoPed), TamSX3("VX5_CODIGO")[1] ), "VX5_DESCRI")) //Tipo do Orçamento (Venda/Transferencia/Remessa)
@@ -708,13 +713,13 @@ Local _cBxInter 		:= AllTrim(SuperGetMV( "CMV_WSR027"  ,,"013"))		//Código Baixa
 Local _cZFVenda			:= AllTrim(SuperGetMV( "CMV_WSR021"  ,,"AC|93;AP|92;AM|93;RO|93;RR|93"))	//Zona Franca - Venda
 If _cTipoOrc == "VENDA"
 	SA1->(DbSetOrder(1))
-	If SA1->(DbSeek(XFilial("SA1") + _cCliente + _cLoja ))
+	If SA1->(DbSeek(XFilial("SA1") + _cCliente + _cLoja )) .and. !Empty(_cTpPedDes)
 		//1a - Regra - Prioridade Transferencia
 		If !(Substring(SA1->A1_CGC,1,8) == _cCnpjTransf) //'03471344'
 			If !(SA1->A1_EST) $ _cZFVenda
 				If !(_cTipoPed == _cBxInter) //"013"
 					If _cMarcaOrc $ _cMarcaDesc
-						If _cTipoPed $ AllTrim(SuperGetMV( "CMV_WSR029"  ,,"005|5;"))
+						If _cTipoPed+"|" $ _cTpPedDes  //AllTrim(SuperGetMV( "CMV_WSR029"  ,,"005|5;"))
 							For _nX := 1 To Len(_aTpDesc)
 								If _cTipoPed $ _aTpDesc[_nX]
 									_nRet := Val(Substr(_aTpDesc[_nX],At( "|", _aTpDesc[_nX] ) + 1 , 3 ))
