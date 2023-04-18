@@ -213,7 +213,7 @@ _cQuery += "FT_ESPECIE, "    +Chr(10)
 //SQL
 //_cQuery += "SUBSTRING(FT_EMISSAO,7,2)+'/'+SUBSTRING(FT_EMISSAO,5,2)+'/'+SUBSTRING(FT_EMISSAO,1,4) FT_EMISSAO, " +Chr(10)
 //Oracle
-_cQuery += "SUBSTRING(FT_EMISSAO,7,2)|| '/' ||SUBSTRING(FT_EMISSAO,5,2)|| '/' ||SUBSTRING(FT_EMISSAO,3,2) FT_EMISSAO, " +Chr(10)
+_cQuery += "SUBSTR(FT_EMISSAO,7,2)|| '/' ||SUBSTR(FT_EMISSAO,5,2)|| '/' ||SUBSTR(FT_EMISSAO,3,2) AS FT_EMISSAO, " +Chr(10)
 _cQuery += "FT_TIPOMOV, "    +Chr(10)
 _cQuery += "FT_CLIEFOR, "    +Chr(10)
 _cQuery += "FT_LOJA "       +Chr(10) 
@@ -251,7 +251,7 @@ _cQuery += " AND FT_DTCANC = ' ' "                                    +Chr(10)
 _cQuery += " AND FT_ESTADO IN ('AC','AM','AP','RO','RR') "            +Chr(10)
 _cQuery += " ORDER BY FT_FILIAL, FT_TIPOMOV, FT_CLIEFOR, FT_NFISCAL, FT_EMISSAO " +Chr(10)
 
-MemoWrit("C:\SQL\CMFISR01.SQL",_cQuery) //Gravei a Query em TXT p/Testes
+//MemoWrit("C:\Users\antonio.poliveira\Documents\Arquivos_Importa\CMFISR01.SQL",_cQuery) //Gravei a Query em TXT p/Testes
 _cQuery := ChangeQuery(_cQuery)
 dbUseArea( .T., "TOPCONN", TcGenQry(,,_cQuery),cAliasQry, .F., .T. ) 
 
