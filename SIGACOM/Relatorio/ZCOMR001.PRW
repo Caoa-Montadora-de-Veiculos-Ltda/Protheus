@@ -1157,11 +1157,11 @@ STATIC FUNCTION ReportCab(oReport,aElements,lEnd,nPosV,nFolha,nFolhas,nLine,nBas
 		{"S", "Sem Frete"}                ;
 		}
 	cXFCA := (cAliasSC7)->C7_XFCA
-    cText := "Frete:" + Space(1)
+    cText := "Frete: " + Space(1)
 	IF cXFCA = 'S'
 		cText += "FCA"
 	ELSE
-		cText += cText + IIF(nOptFrete > 0, aCBoxFrete[nOptFrete][02] ,"")
+		cText += IIF(nOptFrete > 0, aCBoxFrete[nOptFrete][02] ,"")
 	ENDIF
 		nOptFrete := AScan(aCBoxFrete, {|x| x[1] == (cAliasSC7)->(C7_TPFRETE)})
 		//cText    := "Frete:" + Space(1)

@@ -33,11 +33,10 @@ Local oXFCA
  	@ 008,aPosGet[3,7] Combobox cC7_XFCA ITEMS aCombo When .T. SIZE  030,006 OF oFolder:aDialogs[3] PIXEL
    
     //oXFCA:bHelp := {|| ShowHelpCpo( "C7_XFCA", {GetHlpSoluc("C7_XFCA")[1]}, 5 )}
- 
-    //Se não houver edição, desabilita os gets
-    If !lEdit
-        oXFCA:lActive := .F.
-    EndIf
+     //Se não houver edição, desabilita os gets
+    //If !lEdit
+    //    oXFCA:lActive := .F.
+    //EndIf
   
     RestArea(aArea)
  
