@@ -8,12 +8,13 @@ Ponto de Entrada Depois da Gravacao da Nota Fiscal
 @author    Leonardo Miranda
 @version   12.1.27
 @since     07/06/2022
+@param     CMV_FAT012 Liga a geração de NF automatica de entrada emergencial
 */
 //------------------------------------------------------------------------------------------
 
 User Function M460FIM()
-
-    Local _cEmp		:= FWCodEmp()
+    Local _cProcessa    := GetMV("CMV_FAT012",,.T.)
+    Local _cEmp		    := FWCodEmp()
     Local _cQuery       := ""
     Local _cTmpAlias    := GetNextAlias()
     Local aArea         := GetArea()
@@ -53,10 +54,16 @@ User Function M460FIM()
         If Select(_cTmpAlias) <> 0
             (_cTmpAlias)->(DbCloseArea())
         EndIf
-    else
-        If FindFunction("U_ZFATF018")
-			U_ZFATF018()
-		EndIf
+    else 
+
+        IF  _cProcessa 
+
+            If FindFunction("U_ZFATF018")
+                U_ZFATF018()
+            EndIf
+
+        ENDIF
+        
     EndIf
 
     RestArea(aArea   )

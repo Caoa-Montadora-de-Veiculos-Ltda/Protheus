@@ -1,17 +1,22 @@
 #INCLUDE "Totvs.ch"
 
-//------------------------------------------------------------------------------------------
-//
-//
-//
-//------------------------------------------------------------------------------------------
-
+/*/{Protheus.doc} ZFATF018
+//Função Transferência emergencial armazém Barueri
+@author A.Carlos
+@since 11/04/2023
+@version 1.0
+@return ${return}, ${return_description}
+@param cAlias, characters, Alias da tabela corrente
+@param nReg, numeric, recno do registro
+@param ALLTRIM(SuperGetMV("CMV_EST005",.T.,"11")) - Armazém Destino FDR Mudanca Emergencial  
+@type function
+/*/
 User Function ZFATF018()
     Local lRet     := .t.
     Local aArea    := {SD2->(GetArea()),SF2->(GetArea()),GetArea()}
     Local _cCGCFil := FWSM0Util():GetSM0Data(,,{"M0_CGC"})[1,2]
     Local _cTPMud  := AllTrim(SuperGetMV( "CMV_WSR047"  ,,"016"))		//Tipo Pedido Mudança
-    If _cCGCFil == SA1->A1_CGC .and. SF2->F2_TIPO == 'N' .And. _cTPMud == VS1->VS1_XTPPED
+    If _cCGCFil == SA1->A1_CGC .and. SF2->F2_TIPO == 'N' .And. (_cTPMud == VS1->VS1_XTPPED .OR. SC6->C6_OPER=='79' )
     
         Transf_ZFATF018()
     
@@ -33,14 +38,24 @@ Static Function Transf_ZFATF018()
     //Local _cOperTrans:= SuperGetMV("CMV_FAT005",.T.,"81")
     Local _cTesTrans := SuperGetMV("CMV_PEC037",.T.,"348")
     //Local _cArmPec   := ALLTRIM(SuperGetMV("MV_RESITE",.T.,"61")) 
-    Local _cArmDes   := ALLTRIM(SuperGetMV("CMV_EST004",.T.,"90"))
+    Local _cArmDes   := Space(02) //ALLTRIM(SuperGetMV("CMV_EST004",.T.,"90"))
+    Local _cTesMud   := ALLTRIM(SuperGetMV("CMV_FAT013",.T.,"777"))
     Local _nOpcAuto  := 3
+    Local _xInteg    := Space(01)    
     Local _aCab      := {}
     Local _aItens    := {}
     Local _aLinha    := {}
     Private lMsErroAuto := .F.
     Private lMsHelpAuto	:= .T.
-    
+
+    If ( cFilant = '2020012001' .AND. SC6->C6_TES = _cTesMud .AND. FWIsInCallStack("U_ZPECF013"))
+       _cArmDes  := ALLTRIM(SuperGetMV("CMV_EST004",.T.,"90")) 
+       //_xInteg   := ' ' 
+    else
+       _cArmDes  := ALLTRIM(SuperGetMV("CMV_EST005",.T.,"11")) 
+       _xInteg   := 'X' 
+    EndIf
+   
     SD2->(DbSetOrder(3))
     SD2->(DbSeek(xFilial('SD2') + SF2->F2_DOC + SF2->F2_SERIE + SF2->F2_CLIENTE + SF2->F2_LOJA,.T.,.F. ))
     
@@ -63,7 +78,7 @@ Static Function Transf_ZFATF018()
     Aadd(_aCab,{"F1_LOJA"    , SA2->A2_LOJA        , NIL })
     Aadd(_aCab,{"F1_ESPECIE" , "NFE"               , NIL })
     Aadd(_aCab,{"F1_MOEDA"   , SF2->F2_MOEDA       , NIL })
-    
+    Aadd(_aCab,{"F1_XINTEG"  , _xInteg             , NIL })    
     //*******************************************************************
     While SD2->(!EOF() ) .and. SF2->(F2_FILIAL + F2_DOC + F2_SERIE + F2_CLIENTE + F2_LOJA) == SD2->(D2_FILIAL + D2_DOC + D2_SERIE + D2_CLIENTE + D2_LOJA)
         
