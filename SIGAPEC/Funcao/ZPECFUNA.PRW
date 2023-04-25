@@ -5048,7 +5048,7 @@ Begin sequence
 			_lRet := .F.
 		EndIf
 		(_cAliasPesq)->(dbSkip())
-		U_ORCCALFIS(_cNumOrc,.F./*atualiza o preço*/)
 	EndDo
+	U_ORCCALFIS(_cNumOrc,.F./*atualiza o preço*/)
 End Sequence
 Return _lRet
