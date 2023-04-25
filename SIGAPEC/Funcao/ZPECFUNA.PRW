@@ -2507,7 +2507,7 @@ Static Function XCALCORCImposto(_nRegVS1, _lAtuaPreco)
 						_nValorUnit := VS3->VS3_VALPEC
 					EndIf
 					//somente atualizar valores caso estejam diferentes
-					If _nValorUnit > 0 .and. _nValorUnit <> VS3->VS3_VALPEC //.and. VS3->(RecLock("VS3",.F.))
+					If (_nValorUnit > 0 .and. _nValorUnit <> VS3->VS3_VALPEC) .or. VS3->VS3_VALTOT <> (VS3->VS3_VALPEC*VS3->VS3_QTDITE) - VS3->VS3_VALDES //.and. VS3->(RecLock("VS3",.F.))
 						VS3->VS3_VALPEC 	:= _nValorUnit //_nPRC_TAB    //Val(_oJson["itens"][_nPos]:GetJsonText("vlPeca"))
 						_nValTotIt			:= VS3->VS3_VALPEC * VS3->VS3_QTDITE  //Round((_nPRC_TAB * VS3->VS3_QTDITE),2)        //Round((VS3->VS3_VALPEC * VS3->VS3_QTDITE),2)
 						If VS3->VS3_PERDES > 0
