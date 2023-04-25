@@ -2861,6 +2861,7 @@ Begin Sequence
 			//tenho que ajustar a quantidade
 			VS3->(RecLock("VS3",.F.))
 			VS3->VS3_QTDITE := _nQtdePrd
+			VS3->VS3_VALTOT := _nQtdePrd * (ROUND(VS3->VS3_VALPEC*(1-(VS3->VS3_PERDES/100)),2))//erro valor total Orc Orig em desmbr por LC
 			VS3->VS3_OBSAGL	:= VS3->VS3_OBSAGL + CRLF  + _aObs[Len(_aObs)]
 			VS3->(MsUnlock())
 		Else
