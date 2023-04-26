@@ -2506,22 +2506,22 @@ Static Function XCALCORCImposto(_nRegVS1, _lAtuaPreco)
 						Aadd(_aMensAglu,"Não encontrado tabela de preço para o item " +VS3->VS3_CODITE+ " para efetuar clonagem do item orçamento, mantido valor original ")
 						_nValorUnit := VS3->VS3_VALPEC
 					EndIf
-					//somente atualizar valores caso estejam diferentes
-					If (_nValorUnit > 0 .and. _nValorUnit <> VS3->VS3_VALPEC) .or. VS3->VS3_VALTOT <> ((VS3->VS3_VALPEC*VS3->VS3_QTDITE) - VS3->VS3_VALDES) //.and. VS3->(RecLock("VS3",.F.))
-						VS3->VS3_VALPEC 	:= _nValorUnit //_nPRC_TAB    //Val(_oJson["itens"][_nPos]:GetJsonText("vlPeca"))
-						_nValTotIt			:= VS3->VS3_VALPEC * VS3->VS3_QTDITE  //Round((_nPRC_TAB * VS3->VS3_QTDITE),2)        //Round((VS3->VS3_VALPEC * VS3->VS3_QTDITE),2)
-						If VS3->VS3_PERDES > 0
-							VS3->VS3_VALDES := _nValTotIt * (VS3->VS3_PERDES/100)  
-							_nvaldes 		:=  _nValTotIt * (VS3->VS3_PERDES/100)
-						Else
-							VS3->VS3_VALDES := 0
-							_nvaldes		:= 0
-						Endif	
-						VS3->VS3_VALTOT := (VS3->VS3_VALPEC*VS3->VS3_QTDITE) - VS3->VS3_VALDES
-						//necessario esta linha devido as casas decimais do valor liquido
-						_nTotLiq 		:= Round(((VS3->VS3_VALPEC*VS3->VS3_QTDITE) - _nvaldes )/VS3->VS3_QTDITE,TamSx3("VS3_VALLIQ")[2])
-						VS3->VS3_VALLIQ := _nTotLiq //VS3->VS3_VALTOT / VS3->VS3_QTDITE
+				Endif
+				//somente atualizar valores caso estejam diferentes // Retirado de lAtuaPreco para corrigir erros no Faturamento no VS3_VALTOT 
+				If (_nValorUnit > 0 .and. _nValorUnit <> VS3->VS3_VALPEC) .or. VS3->VS3_VALTOT <> ((VS3->VS3_VALPEC*VS3->VS3_QTDITE) - VS3->VS3_VALDES) //.and. VS3->(RecLock("VS3",.F.))
+					VS3->VS3_VALPEC 	:= _nValorUnit //_nPRC_TAB    //Val(_oJson["itens"][_nPos]:GetJsonText("vlPeca"))
+					_nValTotIt			:= VS3->VS3_VALPEC * VS3->VS3_QTDITE  //Round((_nPRC_TAB * VS3->VS3_QTDITE),2)        //Round((VS3->VS3_VALPEC * VS3->VS3_QTDITE),2)
+					If VS3->VS3_PERDES > 0
+						VS3->VS3_VALDES := _nValTotIt * (VS3->VS3_PERDES/100)  
+						_nvaldes 		:=  _nValTotIt * (VS3->VS3_PERDES/100)
+					Else
+						VS3->VS3_VALDES := 0
+						_nvaldes		:= 0
 					Endif	
+					VS3->VS3_VALTOT := (VS3->VS3_VALPEC*VS3->VS3_QTDITE) - VS3->VS3_VALDES
+					//necessario esta linha devido as casas decimais do valor liquido
+					_nTotLiq 		:= Round(((VS3->VS3_VALPEC*VS3->VS3_QTDITE) - _nvaldes )/VS3->VS3_QTDITE,TamSx3("VS3_VALLIQ")[2])
+					VS3->VS3_VALLIQ := _nTotLiq //VS3->VS3_VALTOT / VS3->VS3_QTDITE
 				Endif
 				VS3->(MsUnLock())
 				_aIt 	:= {}	
