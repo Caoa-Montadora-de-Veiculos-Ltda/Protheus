@@ -68,9 +68,9 @@ Static Function MenuDef()
     ADD OPTION aRotina Title 'Incluir'              ACTION 'VIEWDEF.ZCFGF003' OPERATION 3 ACCESS 0
     ADD OPTION aRotina Title 'Alterar'              ACTION 'VIEWDEF.ZCFGF003' OPERATION 4 ACCESS 0
     ADD OPTION aRotina Title 'Excluir'              ACTION 'VIEWDEF.ZCFGF003' OPERATION 5 ACCESS 0
-    ADD OPTION aRotina TITLE 'Legenda'    	        ACTION 'zBrwLeg()'        OPERATION 6 ACCESS 0
-    ADD OPTION aRotina TITLE 'Copiar Acessos'       ACTION 'zCopySZX()'       OPERATION 7 ACCESS 0
-    ADD OPTION aRotina TITLE 'Bloqueio de Acessos'  ACTION 'zBlqSZX()'	      OPERATION 8 ACCESS 0
+    ADD OPTION aRotina TITLE 'Legenda'    	        ACTION 'U_zBrwLeg()'      OPERATION 6 ACCESS 0
+    ADD OPTION aRotina TITLE 'Copiar Acessos'       ACTION 'U_zCopySZX()'     OPERATION 7 ACCESS 0
+    ADD OPTION aRotina TITLE 'Bloqueio de Acessos'  ACTION 'U_zBlqSZX()'	  OPERATION 8 ACCESS 0
 
 Return( aRotina )
 
@@ -161,7 +161,7 @@ Obs......:
 =====================================================================================
 */  
 
-Static Function zBrwLeg()
+User Function zBrwLeg()
 
     Local aLegenda := {}
 
@@ -332,7 +332,7 @@ Uso......:              Geral
 Obs......:
 =====================================================================================
 */ 
-Static Function ZCopySZX()
+User Function ZCopySZX()
 
 Local cQryUpd   	:= ""
 // Local cError        := ""
@@ -463,7 +463,7 @@ Uso......:              Geral
 Obs......:
 =====================================================================================
 */ 
-Static Function ZBlqSZX()
+User Function ZBlqSZX()
 
 Local cQryBlq   	:= ""
 Local cAliBlq 		:= GetNextAlias()
