@@ -3664,29 +3664,16 @@ User Function zSaldoWis(_cProduto, _cMarca, _cArmazem)
 	cQryWis += " FROM " + _cConectWis + " ESTWIS "
     cQryWis += " WHERE RTRIM(LTRIM(ESTWIS.CD_PRODUTO)) = '" + AllTrim(_cProduto) + "' "
 
- 	If _cArmazem == "01" //BARUERI
-		
+	If AllTrim(_cMarca) $ "HYU_SBR"
+    	cQryWis += " AND CD_EMPRESA = 1006 " //-- HYU SBR
+	ElseIf AllTrim(_cMarca) $ "CHE"  
+    	cQryWis += " AND CD_EMPRESA = 1002 " //-- CHE
+	EndIf
+ 	
+	If _cArmazem == "01" //BARUERI
 		cQryWis += " AND ARMAZEM = 'BAR' " //-- Armazenagem BARUERI.
-		
-		If AllTrim(_cMarca) $ "HYU_SBR"
-       		cQryWis += " AND CD_EMPRESA = 1006 " //-- HYU SBR
-			//cQryWis += " AND SUBSTR(CD_ENDERECO,1,2) NOT BETWEEN '30' AND '39' " //-- Armazenagem BARUERI.	
-		ElseIf AllTrim(_cMarca) $ "CHE"  
-       		cQryWis += " AND CD_EMPRESA = 1002 " //-- CHE
-			//cQryWis += " AND SUBSTR(CD_ENDERECO,1,3) NOT BETWEEN '030' AND '039' " //-- HYU SBR
-		EndIf
-
 	ElseIf _cArmazem == "11" //FRANCO DA ROCHA
-		
 		cQryWis += " AND ARMAZEM = 'FDR' " //-- Armazenagem FRANCO DA ROCHA
-
-		If AllTrim(_cMarca) $ "HYU_SBR"
-       		cQryWis += " AND CD_EMPRESA = 1006 " //-- HYU SBR
-			//cQryWis += " AND SUBSTR(CD_ENDERECO,1,2) BETWEEN '30' AND '39' " //-- Armazenagem FRANCO DA ROCHA.
-		ElseIf AllTrim(_cMarca) $ "CHE"  
-       		cQryWis += " AND CD_EMPRESA = 1002 " //-- CHE
-			//cQryWis += " AND SUBSTR(CD_ENDERECO,1,3) BETWEEN '030' AND '039' " //-- HYU SBR
-		EndIf
 	EndIf
  
     DbUseArea( .T., "TOPCONN", TcGenQry(,,cQryWis), cAlsWis, .T., .T. )
