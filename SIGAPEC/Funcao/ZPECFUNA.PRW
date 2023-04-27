@@ -3659,64 +3659,36 @@ User Function zSaldoWis(_cProduto, _cMarca, _cArmazem)
     If Select( (cAlsWis) ) > 0
 	    (cAlsWis)->(DbCloseArea())
 	EndIf
-	/* Passado para aleterar conforme instrução Sidnei RG Log DAC - 27/06/2022
-	SELECT NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) AS QTDE_EST 
-	FROM WIS.V_ENDERECO_ESTOQUE@DBLINK_WISPROD ESTWIS
-	WHERE ESTWIS.CD_PRODUTO = 'R-16546AA090'
-	*/
-
-	//SELECT NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) AS QTDE_EST FROM WIS.V_ENDERECO_ESTOQUE@DBLINK_WISPROD ESTWIS
-	//WHERE ESTWIS.CD_PRODUTO = 'R-16546AA090'	
-    //If  "_PRD" $ AllTrim(GetEnvServer())  //"PRODUÇÃO"  //.or. AllTrim(GetEnvServer()) == "PRIME"
 
 	cQryWis := " SELECT NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) AS QTDE_EST "
 	cQryWis += " FROM " + _cConectWis + " ESTWIS "
     cQryWis += " WHERE RTRIM(LTRIM(ESTWIS.CD_PRODUTO)) = '" + AllTrim(_cProduto) + "' "
-	//Conforme solicitação JC em reunião com Sidnei RG colocar validação de empresa relacionada a marca DAC 28/062022
-	/*  Implementado abaixo regras para atuar com FDR DAC 10/02/2023
-	If AllTrim(_cMarca) $ "HYU_SBR"
-       	cQryWis += " AND CD_EMPRESA = 1006 " //-- HYU SBR
-	ElseIf AllTrim(_cMarca) $ "CHE"  //1002 CHE
-       	cQryWis += " AND CD_EMPRESA = 1002 " //-- HYU SBR
-	EndIf
-    */
+
  	If _cArmazem == "01" //BARUERI
+		
+		cQryWis += " AND ARMAZEM = 'BAR' " //-- Armazenagem BARUERI.
+		
 		If AllTrim(_cMarca) $ "HYU_SBR"
        		cQryWis += " AND CD_EMPRESA = 1006 " //-- HYU SBR
-			cQryWis += " AND SUBSTR(CD_ENDERECO,1,2) NOT BETWEEN '30' AND '39' " //-- Armazenagem Franco da Rocha.
+			//cQryWis += " AND SUBSTR(CD_ENDERECO,1,2) NOT BETWEEN '30' AND '39' " //-- Armazenagem BARUERI.	
 		ElseIf AllTrim(_cMarca) $ "CHE"  
        		cQryWis += " AND CD_EMPRESA = 1002 " //-- CHE
-			cQryWis += " AND SUBSTR(CD_ENDERECO,1,3) NOT BETWEEN '030' AND '039' " //-- HYU SBR
+			//cQryWis += " AND SUBSTR(CD_ENDERECO,1,3) NOT BETWEEN '030' AND '039' " //-- HYU SBR
 		EndIf
+
 	ElseIf _cArmazem == "11" //FRANCO DA ROCHA
+		
+		cQryWis += " AND ARMAZEM = 'FDR' " //-- Armazenagem FRANCO DA ROCHA
+
 		If AllTrim(_cMarca) $ "HYU_SBR"
        		cQryWis += " AND CD_EMPRESA = 1006 " //-- HYU SBR
-			cQryWis += " AND SUBSTR(CD_ENDERECO,1,2) BETWEEN '30' AND '39' " //-- Armazenagem Franco da Rocha.
+			//cQryWis += " AND SUBSTR(CD_ENDERECO,1,2) BETWEEN '30' AND '39' " //-- Armazenagem FRANCO DA ROCHA.
 		ElseIf AllTrim(_cMarca) $ "CHE"  
        		cQryWis += " AND CD_EMPRESA = 1002 " //-- CHE
-			cQryWis += " AND SUBSTR(CD_ENDERECO,1,3) BETWEEN '030' AND '039' " //-- HYU SBR
+			//cQryWis += " AND SUBSTR(CD_ENDERECO,1,3) BETWEEN '030' AND '039' " //-- HYU SBR
 		EndIf
 	EndIf
  
-    /*
-	Else
-	// Passado para aleterar conforme instrução Sidnei RG Log DAC - 27/06/2022
-	//SELECT NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) AS QTDE_EST 
-	//FROM WIS.V_ENDERECO_ESTOQUE@DBLINK_WISHML ESTWIS
-	//WHERE ESTWIS.CD_PRODUTO = 'R-16546AA090'
-        cQryWis := " SELECT NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) AS QTDE_EST "
-		//Não esta funcionando HML disponibilizado
-        //cQryWis += " FROM WIS.V_ENDERECO_ESTOQUE@DBLINK_WISHML ESTWIS "
-		cQryWis += " FROM WIS.V_ENDERECO_ESTOQUE@DBLINK_WISPROD ESTWIS "
-        cQryWis += " WHERE RTRIM(LTRIM(ESTWIS.CD_PRODUTO)) = '" + AllTrim(_cProduto) + "' "
-		//Conforme solicitação JC em reunião com Sidnei RG colocar validação de empresa relacionada a marca DAC 28/062022
-		If AllTrim(_cMarca) $ "HYU_SBR"
-        	cQryWis += " AND CD_EMPRESA = 1006 " //-- HYU SBR
-		ElseIf AllTrim(_cMarca) $ "CHE"  //1002 CHE
-        	cQryWis += " AND CD_EMPRESA = 1002 " //-- HYU SBR
-		EndIf
-    EndIf
-	*/
     DbUseArea( .T., "TOPCONN", TcGenQry(,,cQryWis), cAlsWis, .T., .T. )
 
 	DbSelectArea((cAlsWis))
