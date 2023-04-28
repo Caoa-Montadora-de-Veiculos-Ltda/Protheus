@@ -10,6 +10,9 @@ Local cIdPonto   := ""
 Local cIdModel   := "" 
 
 Local cTpVdNaoPe := "" 
+Local _cPgNF     := AllTrim( GetMV('CMV_FAT011') )
+
+Private _cParc   := ""
 
 If aParam <> Nil 
 	oObj      := aParam[1] 
@@ -150,6 +153,18 @@ If aParam <> Nil
 			EndIf 
 		EndIf 
 // --> Incluso  CRISTIANO  14/12/2021   (*FINAL* ) ----------------------- //
+
+    Case cIdPonto == "MODELCOMMITTTS"
+		If VRJ->VRJ_FORPAG $ _cPgNF .AND. VRJ->VRJ_STATUS = 'F' .AND. SE1->E1_PARCELA <> "1" //Forçar a parcela 1 no título p/Atribuição
+		    //SE1->(dbSetOrder(1))
+		    //If SE1->(dbSeek(xFilial("SE1") + '5  ' + cE1NUM  ))
+				IF Empty(SE1->E1_PARCELA) .AND. SE1->(!EOF()) 
+					RecLock("SE1",.F.) 
+						SE1->E1_PARCELA := "1"
+					SE1->(MsUnlock())
+				ENDIF
+			//EndIf
+		EndIf
 
 	EndCase
 
@@ -433,6 +448,8 @@ cE1TIPO    := aParam[ 2, aScan( aParam[2], {|x| x[1] == "E1_TIPO"   }) , 2 ]
 cE1NATUREZ := aParam[ 2, aScan( aParam[2], {|x| x[1] == "E1_NATUREZ"}) , 2 ]
 cE1CLIENTE := aParam[ 2, aScan( aParam[2], {|x| x[1] == "E1_CLIENTE"}) , 2 ]
 cE1LOJA    := aParam[ 2, aScan( aParam[2], {|x| x[1] == "E1_LOJA"   }) , 2 ]
+
+
 
 SE1->(dbSetOrder(2))
 If SE1->(dbSeek(xFilial("SE1") + cE1CLIENTE + cE1LOJA + cE1PREFIXO + cE1NUM + cE1PARCELA + cE1TIPO ))

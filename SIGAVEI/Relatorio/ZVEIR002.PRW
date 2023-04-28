@@ -28,7 +28,7 @@ User Function ZVEIR002()
 	
 	oObjSX1:AddGroup("ZVEIR002")
 	oObjSX1:SearchGroup()
-	lFiltroMarca := (Len(oObjSX1:GetGroup("ZVEIR002")[2]) >= 7)
+	lFiltroMarca := .T.//(Len(oObjSX1:GetGroup("ZVEIR002")[2]) >= 7)
 
 	If ! Pergunte("VEIC063",.t.)
 		Return
@@ -122,9 +122,10 @@ User Function ZVEIR2CB_ConfigBrowse(oDMSBrwStru)
 	oDMSBrwStru:AddField( "D2_PEDIDO"  )
 	oDMSBrwStru:AddField( "VV0_NUMTRA" )
 	oDMSBrwStru:AddField( "VRJ_DATDIG" )
-	oDMSBrwStru:AddField( "VV3_DESCRI" ,"Tipo Venda" )
+	oDMSBrwStru:AddField( "VV3_DESCRI" , "Tipo Venda" )
 	oDMSBrwStru:AddField( "VRK_CHASSI" )
 	oDMSBrwStru:AddField( "VRK_MODVEI" )
+	oDMSBrwStru:AddField( "VRK_CODMAR" , "Marca" )
 	oDMSBrwStru:AddField( "VV2_DESMOD" )
 	oDMSBrwStru:AddField( "VRK_OPCION" )
 	oDMSBrwStru:AddFieldManual( DMS_DataContainer():New({;
@@ -237,9 +238,10 @@ Static Function ZVEIR2QR_Query()
 	"         , SD2.D2_PEDIDO " + CLRF + ;
 	"         , COALESCE(VV0.VV0_NUMTRA,' ') as VV0_NUMTRA" + CLRF + ;
 	"         , SC6.C6_ENTREG " + CLRF + ;
-	"         , COALESCE( VV3_DESCRI , ' ' ) as VV3_DESCRI " + CLRF + ;
+	"         , COALESCE( VV3.VV3_DESCRI , ' ' ) as VV3_DESCRI " + CLRF + ;
 	"         , SD2.D2_NUMSERI " + CLRF + ;
 	"         , VV1.VV1_MODVEI " + CLRF + ;
+	"         , COALESCE( VRK.VRK_CODMAR , ' ' ) as MARCA " + CLRF + ;
 	"         , VV2.VV2_DESMOD " + CLRF + ;
 	"         , VV2.VV2_OPCION " + CLRF + ;
 	"         , COALESCE( RTRIM( VX5OPC.VX5_DESCRI ) , ' ' ) AS DESCOPCION " + CLRF + ;
@@ -254,8 +256,8 @@ Static Function ZVEIR2QR_Query()
 	"         , SF2.F2_CHVNFE " + CLRF + ;
 	"         , COALESCE( VRK.VRK_VALTAB , SC6.C6_XPRCTAB ) AS VRK_VALTAB" + CLRF + ;
 	"         , COALESCE( VRK.VRK_VALVDA , SC6.C6_XVLRVDA ) AS VRK_VALVDA" + CLRF + ;
-	"         , SC5.C5_VEND1 " + CLRF + ;
-	"         , COALESCE( SA3.A3_NOME , ' ' ) AS A3_NOME " + CLRF + ;
+	"         , COALESCE( SA3.A3_COD     , '      '       ) AS C5_VEND1 " + CLRF + ;
+	"         , COALESCE( SA3.A3_NOME    , '            ' ) AS A3_NOME " + CLRF + ;
 	"         , SD2.D2_CLIENTE " + CLRF + ;
 	"         , SD2.D2_LOJA " + CLRF + ;
 	"         , SA1.A1_CGC " + CLRF + ;
@@ -313,14 +315,20 @@ Static Function ZVEIR2QR_Query()
 	"         ON  VRK.VRK_FILIAL  = '" + xFilial("VRK") + "' " + CLRF + ;
 	"         AND VRK.VRK_NUMTRA = VV0.VV0_NUMTRA " + CLRF + ;
 	"         AND VRK.D_E_L_E_T_ = ' ' " + CLRF + ;
-	"     LEFT JOIN " + RetSQLName("VV3") + " VV3    ON    VV3.VV3_FILIAL = '" + xFilial("VV3") + "' AND    VV3.VV3_TIPVEN = SC5.C5_XTIPVEN AND    VV3.D_E_L_E_T_ = ' ' " + CLRF + ;
+	"     LEFT JOIN " + RetSQLName("VRJ") + " VRJ " + CLRF + ;
+	"         ON  VRJ.VRJ_FILIAL = " + xFilial("VRK") + " " + CLRF + ;
+    "	      AND VRJ.VRJ_PEDIDO = VRK.VRK_PEDIDO " + CLRF + ;
+    "	      AND VRJ.D_E_L_E_T_ = ' ' " + CLRF + ;
+	" 	  LEFT JOIN " + RetSQLName("VV3") + " VV3    ON    VV3.VV3_FILIAL = '" + xFilial("VV3") + "' AND   (VV3.VV3_TIPVEN = SC5.C5_XTIPVEN OR VV3.VV3_TIPVEN = VRJ.VRJ_TIPVEN) AND    VV3.D_E_L_E_T_ = ' ' " + CLRF + ;
 	"     LEFT JOIN " + RetSQLName("SE4") + " SE4    ON    SE4.E4_FILIAL  = '" + xFilial("SE4") + "' AND    SE4.E4_CODIGO  = SF2.F2_COND    AND    SE4.D_E_L_E_T_ = ' ' " + CLRF + ;
-	"     LEFT JOIN " + RetSQLName("SA3") + " SA3    ON    SA3.A3_FILIAL  = '" + xFilial("SA3") + "' AND    SA3.A3_COD     = SC5.C5_VEND1   AND    SA3.D_E_L_E_T_ = ' ' " + CLRF + ;
+	"     LEFT JOIN " + RetSQLName("SA3") + " SA3    ON    SA3.A3_FILIAL  = '" + xFilial("SA3") + "' AND    SA3.A3_COD     = VRJ.VRJ_CODVEN AND    SA3.D_E_L_E_T_ = ' ' " + CLRF + ;
 	"     LEFT JOIN " + RetSQLName("VX5") + " VX5INT ON VX5INT.VX5_FILIAL = '" + xFilial("VX5") + "' AND VX5INT.VX5_CODIGO = VV2.VV2_CORINT AND VX5INT.D_E_L_E_T_ = ' ' AND VX5INT.VX5_CHAVE  = '066'  " + CLRF + ;
 	"     LEFT JOIN " + RetSQLName("VX5") + " VX5EXT ON VX5EXT.VX5_FILIAL = '" + xFilial("VX5") + "' AND VX5EXT.VX5_CODIGO = VV2.VV2_COREXT AND VX5EXT.D_E_L_E_T_ = ' ' AND VX5EXT.VX5_CHAVE  = '067'  " + CLRF + ;
 	"     LEFT JOIN " + RetSQLName("VX5") + " VX5OPC ON VX5OPC.VX5_FILIAL = '" + xFilial("VX5") + "' AND VX5OPC.VX5_CODIGO = VV2.VV2_OPCION AND VX5OPC.D_E_L_E_T_ = ' ' AND VX5OPC.VX5_CHAVE  = '068'  " + CLRF + ;
 	"     WHERE   SD2.D2_FILIAL  = '" + xFilial("SD2") + "' " + CLRF + ;
 	"         AND SD2.D_E_L_E_T_ = ' '   " + CLRF + ;
+	"		  AND SF2.F2_COND <> '025' " + CLRF + ;
+	"		  AND SD2.D2_QTDEDEV <> SD2.D2_QUANT " + CLRF + ;
 	"         AND SD2.D2_NUMSERI <> ' ' " + CLRF 
 	
 
@@ -336,15 +344,15 @@ Static Function ZVEIR2QR_Query()
 	EndIf
 
 	If !Empty(_MV_PAR05)
-		cQuery += " AND SC5.C5_VEND1 = '" + _MV_PAR05 + "'"
+		cQuery += " AND ( SC5.C5_VEND1 = '" + _MV_PAR05 + "' OR VRJ.VRJ_CODVEN = '" + _MV_PAR05 + "' )"
 	EndIf
 
 	If !Empty(_MV_PAR06)
-		cQuery += " AND SC5.C5_XTIPVEN = '" + _MV_PAR06 + "'"
+		cQuery += " AND ( VRJ.VRJ_TIPVEN = '" + _MV_PAR06 + "' OR AND SC5.C5_XTIPVEN = '" + _MV_PAR06 + "' ) "
 	EndIf
 
 	If lFiltroMarca .and. !Empty(_MV_PAR07)
-		cQuery += " AND SC6.C6_XCODMAR = '" + _MV_PAR07 + "'"
+		cQuery += " AND ( VRK.VRK_CODMAR = '" + _MV_PAR07 + "' OR SC6.C6_XCODMAR = '" + _MV_PAR07 + "' )"
 	EndIf
 
 	If ( ExistBlock("VC063QRY") )

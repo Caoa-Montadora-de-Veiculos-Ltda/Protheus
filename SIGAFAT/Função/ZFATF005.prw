@@ -15,6 +15,7 @@
 @obs
 @project
 @history carrega dados padrões para o acols do PV
+         Criado pesquisa no campo Tipo de Operação (L. 49) 31/03/23 - A.Carlos
 /*/
 User Function ZFATF005()
 
@@ -42,9 +43,10 @@ Private _nPosOper := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_OPER' })
 Private _nPosTes  := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_TES' })
 Private aRetP     := {}
 
-aadd(aPergs, {1, "TES "            , _cTes   , "@!", '.T.', "SF4", '.T.', 25, .T., , .F.})
+aadd(aPergs, {1, "TES "            , _cTes   , "@!", '.T.', "SF4", '.T.', 25, .F., , .F.})
 aadd(aPergs, {1, "Armazém "        , _cLocal , "@!", '.T.', " "  , '.T.', 25, .T., , .F.})
-aadd(aPergs, {1, "Tipo Operação "  , _cOperac, "@!", '.T.', " "  , '.T.', 25, .T., , .F.})
+//aadd(aPergs, {1, "Tipo Operação "  , _cOperac, "@!", '.T.', " "  , '.T.', 25, .T., , .F.})
+aAdd(aPergs, {1 ,"Tipo Operação "  , Space(5), ""  , ""   , "DJ" ,  ""  , 10, .F.})
 aadd(aPergs, {1, "Centro de Custo ", _cCusto , "@!", '.T.', "CTT", '.T.', 80, .T., , .F.})
 aadd(aPergs, {1, "Endereço "       , _cLocliz, "@!", '.T.', "SBE", '.T.', 50, .T., , .F.})
 

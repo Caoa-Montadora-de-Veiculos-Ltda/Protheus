@@ -108,7 +108,7 @@ Begin Sequence
 			_lRet := .F.
 			Disarmtransaction()
 		EndIf
-	End Transaction	
+	End Transaction
 End Sequence
 //NO CASO DE ERRO E TENHA PROCESSADO ALGUM ORÇAMENTO IRA RETORNAR OS PROBLEMAS ENCONTRADOS
 If !_lRet .and. Len(_aRegVS1) > 0
@@ -138,7 +138,7 @@ If !_lRet .and. Len(_aRegVS1) > 0
 		EndIf
 		VS1->(MsUnLock())
 	Next
-EndIf	
+EndIf
 
 Return _lRet
 
@@ -215,8 +215,17 @@ Begin Sequence
 		If ! _lRet
 			Exit
 		Else
+			//Atualiza TES Inteligente
+			If !(U_ZPECREGFI(_cPedido)) //cZK_XPICKI _cPedido
+				_cObs		:= 	"ERRO NA ATUALIZAÇÃO TES INTELIGENTE NO PICKING "+_cPedido+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+ CRLF
+			EndIf
+		
 			VS1->(RecLock("VS1",.F.))
-			_cObs	:= "RETORNO DE SEPARAÇÃO REALIZADO COM SUCESSO REFERENTE PICKING "+_cPedido+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+ CRLF		
+			If Empty(_cObs)
+				_cObs	:= "RETORNO DE SEPARAÇÃO REALIZADO COM SUCESSO REFERENTE PICKING "+_cPedido+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+ CRLF
+			Else
+				_cObs	+= "RETORNO DE SEPARAÇÃO REALIZADO COM SUCESSO REFERENTE PICKING "+_cPedido+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+ CRLF
+			Endif
 			_cObs 	+= "Gravado a conferência (VM5) para os itens de separação  corretamente no recebimento do REST !"+ CRLF
 			VS1->VS1_STATUS := _cFaseFat
 			VS1->VS1_OBSAGL	:= Upper(_cObs) +CRLF+ VS1->VS1_OBSAGL
@@ -616,6 +625,3 @@ Return {_nMsg,EncodeUtf8(_cMsg)}
 	}]
 }
 */
-
-
-

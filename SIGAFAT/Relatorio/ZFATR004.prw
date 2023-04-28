@@ -22,7 +22,7 @@ User Function ZFATR004() // u_ZFATR004()
 	Local cTitulo	    := "Escolha o caminho para salvar o arquivo!"
 	Local cMainPath     := "\"
 	Local cArquivo	    := ""
-
+	Private cCfop		:= SuperGetMv('CMV_FAT010',.F.,'') //Parametro com as CFOP que serão ignorados pelo relatorio
     Private bVldDt      := {|| lRet := Empty(MV_PAR06) .And. Empty(MV_PAR08),; 
                             IIF( !lRet,; 
                             ( MV_PAR01 :=  CtoD(''),; 
@@ -227,9 +227,9 @@ Static Function fQuery()
 	cQuery += CRLF + "          VV2.VV2_OPCION, "
 	cQuery += CRLF + "          VX5.VX5_DESCRI,  "
 	cQuery += CRLF + "          VX5B.VX5_DESCRI AS COREXT, "
-	cQuery += CRLF + "          COALESCE(VRK.VRK_MODVEI,' ' ) AS VRK_MODVEI,  "
+	cQuery += CRLF + "          COALESCE(VRK.VRK_MODVEI,VV1.VV1_MODVEI ) AS VRK_MODVEI,  "
 	cQuery += CRLF + "          SC6.C6_XMODVEI,  "
-	cQuery += CRLF + "          COALESCE(VRK.VRK_FABMOD, ' ' ) AS VRK_FABMOD,  "
+	cQuery += CRLF + "          COALESCE(VRK.VRK_FABMOD, VV1.VV1_FABMOD) AS VRK_FABMOD,  "
 	cQuery += CRLF + "		    SC6.C6_XFABMOD,  "
 	cQuery += CRLF + "          SF2.F2_DOC     AS VV0_NUMNFI, "
 	cQuery += CRLF + "          SF2.F2_SERIE   AS VV0_SERNFI, "
@@ -252,10 +252,10 @@ Static Function fQuery()
 	cQuery += CRLF + "          COALESCE( SD1.D1_DOC  ,'         ') AS D1_DOC, "
 	cQuery += CRLF + "          COALESCE( SD1.D1_SERIE,'   '      ) AS D1_SERIE, "
 	cQuery += CRLF + "          SF2.F2_EMISSAO, "
-	cQuery += CRLF + "          COALESCE(VV0.VV0_CODMAR, SC6.C6_XCODMAR) AS VV0_CODMAR, "
+	cQuery += CRLF + "          COALESCE(VV1.VV1_CODMAR, SC6.C6_XCODMAR) AS VV0_CODMAR, "
 	cQuery += CRLF + "          SA1.A1_NREDUZ, "
 	cQuery += CRLF + "          COALESCE( SD1.D1_EMISSAO,'      ') AS D1_EMISSAO, "
-	cQuery += CRLF + "          SD2.D2_COD															  "
+	cQuery += CRLF + "          SD2.D2_COD	"
 	cQuery += CRLF + "  FROM " + RetSqlName( "SE1" ) + " SE1  "
 	
 	cQuery += CRLF + "  	JOIN " + RetSqlName( "SF2" ) + " SF2  "
@@ -272,6 +272,8 @@ Static Function fQuery()
 	cQuery += CRLF + "          AND SD2.D2_SERIE   = SF2.F2_SERIE  "
 	cQuery += CRLF + "          AND SD2.D2_CLIENTE = SF2.F2_CLIENTE  "
 	cQuery += CRLF + "          AND SD2.D2_LOJA    = SF2.F2_LOJA "
+	cQuery += CRLF + "          AND SD2.D2_NUMSERI <>  ' ' "
+	cQuery += CRLF + "          AND SD2.D2_CF NOT IN " + FormatIn(cCfop,',')
 	cQuery += CRLF + "          AND SD2.D_E_L_E_T_ = ' ' "
 	
 	cQuery += CRLF + "  	JOIN " + RetSqlName( "SA1" ) + " SA1  "
@@ -292,8 +294,8 @@ Static Function fQuery()
 	cQuery += CRLF + "          AND SC5.D_E_L_E_T_ = ' ' "
 		
 	cQuery += CRLF + "  	JOIN " + RetSqlName( "SE4" ) + " SE4  "
-	cQuery += CRLF + "          ON  E4_FILIAL = '" + xFilial("SE4") + "'  "
-	cQuery += CRLF + "          AND E4_CODIGO = SF2.F2_COND  "
+	cQuery += CRLF + "          ON  SE4.E4_FILIAL = '" + xFilial("SE4") + "'  "
+	cQuery += CRLF + "          AND SE4.E4_CODIGO = SF2.F2_COND  "
 	cQuery += CRLF + "  	    AND SE4.D_E_L_E_T_ = ' '  "
 	
 	cQuery += CRLF + "   	LEFT JOIN " + RetSqlName( "VV0" ) + " VV0  "
@@ -320,9 +322,15 @@ Static Function fQuery()
 	cQuery += CRLF + "          ON  VRK.VRK_FILIAL  = '" + xFilial("VRK") + "'  "
 	cQuery += CRLF + "          AND VRK.VRK_NUMTRA  = VV0.VV0_NUMTRA "
 	cQuery += CRLF + "          AND VRK.D_E_L_E_T_ = ' '  "
+	  
+	cQuery += CRLF + "  	LEFT JOIN  " + RetSqlName( "VRJ" ) + " VRJ "
+    cQuery += CRLF + "    		ON  VRJ.VRJ_FILIAL = VRK.VRK_FILIAL "
+    cQuery += CRLF + "    		AND VRJ.VRJ_PEDIDO = VRK.VRK_PEDIDO "
+    cQuery += CRLF + "    		AND VRJ.D_E_L_E_T_ = ' ' "
+
 	cQuery += CRLF + "  	LEFT JOIN " + RetSqlName( "VV3" ) + " VV3  "
 	cQuery += CRLF + "          ON  VV3.VV3_FILIAL     = '" + xFilial("VV3") + "'  "
-	cQuery += CRLF + "          AND VV3.VV3_TIPVEN     = SC5.C5_XTIPVEN  "
+	cQuery += CRLF + "          AND (VV3.VV3_TIPVEN = SC5.C5_XTIPVEN OR VV3.VV3_TIPVEN = VRJ.VRJ_TIPVEN)  "
 	cQuery += CRLF + "  	    AND VV3.D_E_L_E_T_ = ' '  "
 	
 	cQuery += CRLF + "  	LEFT JOIN " + RetSqlName( "SD1" ) + " SD1  "
@@ -400,7 +408,10 @@ Static Function fQuery()
 	cQuery += CRLF + "		SD1.D1_EMISSAO, "
 	cQuery += CRLF + "		SD2.D2_COD, "
 	cQuery += CRLF + "		SC6.C6_XPRCTAB, "
-	cQuery += CRLF + "		SC6.C6_XCODMAR  "
+	cQuery += CRLF + "		SC6.C6_XCODMAR,  "
+	cQuery += CRLF + "	    VV1.VV1_MODVEI , "
+	cQuery += CRLF + "      VV1.VV1_FABMOD, "
+	cQuery += CRLF + "      VV1.VV1_CODMAR 
 	cQuery += CRLF + " ORDER BY 1, 2, 11, 12 "
 
 Return cQuery

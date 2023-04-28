@@ -2522,22 +2522,22 @@ Static Function XCALCORCImposto(_nRegVS1, _lAtuaPreco)
 						Aadd(_aMensAglu,"Não encontrado tabela de preço para o item " +VS3->VS3_CODITE+ " para efetuar clonagem do item orçamento, mantido valor original ")
 						_nValorUnit := VS3->VS3_VALPEC
 					EndIf
-					//somente atualizar valores caso estejam diferentes
-					If _nValorUnit > 0 .and. _nValorUnit <> VS3->VS3_VALPEC //.and. VS3->(RecLock("VS3",.F.))
-						VS3->VS3_VALPEC 	:= _nValorUnit //_nPRC_TAB    //Val(_oJson["itens"][_nPos]:GetJsonText("vlPeca"))
-						_nValTotIt			:= VS3->VS3_VALPEC * VS3->VS3_QTDITE  //Round((_nPRC_TAB * VS3->VS3_QTDITE),2)        //Round((VS3->VS3_VALPEC * VS3->VS3_QTDITE),2)
-						If VS3->VS3_PERDES > 0
-							VS3->VS3_VALDES := _nValTotIt * (VS3->VS3_PERDES/100)  
-							_nvaldes 		:=  _nValTotIt * (VS3->VS3_PERDES/100)
-						Else
-							VS3->VS3_VALDES := 0
-							_nvaldes		:= 0
-						Endif	
-						VS3->VS3_VALTOT := (VS3->VS3_VALPEC*VS3->VS3_QTDITE) - VS3->VS3_VALDES
-						//necessario esta linha devido as casas decimais do valor liquido
-						_nTotLiq 		:= Round(((VS3->VS3_VALPEC*VS3->VS3_QTDITE) - _nvaldes )/VS3->VS3_QTDITE,TamSx3("VS3_VALLIQ")[2])
-						VS3->VS3_VALLIQ := _nTotLiq //VS3->VS3_VALTOT / VS3->VS3_QTDITE
+				Endif
+				//somente atualizar valores caso estejam diferentes // Retirado de lAtuaPreco para corrigir erros no Faturamento no VS3_VALTOT 
+				If (_nValorUnit > 0 .and. _nValorUnit <> VS3->VS3_VALPEC) .or. VS3->VS3_VALTOT <> ((VS3->VS3_VALPEC*VS3->VS3_QTDITE) - VS3->VS3_VALDES) //.and. VS3->(RecLock("VS3",.F.))
+					VS3->VS3_VALPEC 	:= _nValorUnit //_nPRC_TAB    //Val(_oJson["itens"][_nPos]:GetJsonText("vlPeca"))
+					_nValTotIt			:= VS3->VS3_VALPEC * VS3->VS3_QTDITE  //Round((_nPRC_TAB * VS3->VS3_QTDITE),2)        //Round((VS3->VS3_VALPEC * VS3->VS3_QTDITE),2)
+					If VS3->VS3_PERDES > 0
+						VS3->VS3_VALDES := _nValTotIt * (VS3->VS3_PERDES/100)  
+						_nvaldes 		:=  _nValTotIt * (VS3->VS3_PERDES/100)
+					Else
+						VS3->VS3_VALDES := 0
+						_nvaldes		:= 0
 					Endif	
+					VS3->VS3_VALTOT := (VS3->VS3_VALPEC*VS3->VS3_QTDITE) - VS3->VS3_VALDES
+					//necessario esta linha devido as casas decimais do valor liquido
+					_nTotLiq 		:= Round(((VS3->VS3_VALPEC*VS3->VS3_QTDITE) - _nvaldes )/VS3->VS3_QTDITE,TamSx3("VS3_VALLIQ")[2])
+					VS3->VS3_VALLIQ := _nTotLiq //VS3->VS3_VALTOT / VS3->VS3_QTDITE
 				Endif
 				VS3->(MsUnLock())
 				_aIt 	:= {}	
@@ -3675,64 +3675,23 @@ User Function zSaldoWis(_cProduto, _cMarca, _cArmazem)
     If Select( (cAlsWis) ) > 0
 	    (cAlsWis)->(DbCloseArea())
 	EndIf
-	/* Passado para aleterar conforme instrução Sidnei RG Log DAC - 27/06/2022
-	SELECT NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) AS QTDE_EST 
-	FROM WIS.V_ENDERECO_ESTOQUE@DBLINK_WISPROD ESTWIS
-	WHERE ESTWIS.CD_PRODUTO = 'R-16546AA090'
-	*/
-
-	//SELECT NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) AS QTDE_EST FROM WIS.V_ENDERECO_ESTOQUE@DBLINK_WISPROD ESTWIS
-	//WHERE ESTWIS.CD_PRODUTO = 'R-16546AA090'	
-    //If  "_PRD" $ AllTrim(GetEnvServer())  //"PRODUÇÃO"  //.or. AllTrim(GetEnvServer()) == "PRIME"
 
 	cQryWis := " SELECT NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) AS QTDE_EST "
 	cQryWis += " FROM " + _cConectWis + " ESTWIS "
     cQryWis += " WHERE RTRIM(LTRIM(ESTWIS.CD_PRODUTO)) = '" + AllTrim(_cProduto) + "' "
-	//Conforme solicitação JC em reunião com Sidnei RG colocar validação de empresa relacionada a marca DAC 28/062022
-	/*  Implementado abaixo regras para atuar com FDR DAC 10/02/2023
+
 	If AllTrim(_cMarca) $ "HYU_SBR"
-       	cQryWis += " AND CD_EMPRESA = 1006 " //-- HYU SBR
-	ElseIf AllTrim(_cMarca) $ "CHE"  //1002 CHE
-       	cQryWis += " AND CD_EMPRESA = 1002 " //-- HYU SBR
+    	cQryWis += " AND CD_EMPRESA = 1006 " //-- HYU SBR
+	ElseIf AllTrim(_cMarca) $ "CHE"  
+    	cQryWis += " AND CD_EMPRESA = 1002 " //-- CHE
 	EndIf
-    */
- 	If _cArmazem == "01" //BARUERI
-		If AllTrim(_cMarca) $ "HYU_SBR"
-       		cQryWis += " AND CD_EMPRESA = 1006 " //-- HYU SBR
-			cQryWis += " AND SUBSTR(CD_ENDERECO,1,2) NOT BETWEEN '30' AND '39' " //-- Armazenagem Franco da Rocha.
-		ElseIf AllTrim(_cMarca) $ "CHE"  
-       		cQryWis += " AND CD_EMPRESA = 1002 " //-- CHE
-			cQryWis += " AND SUBSTR(CD_ENDERECO,1,3) NOT BETWEEN '030' AND '039' " //-- HYU SBR
-		EndIf
+ 	
+	If _cArmazem == "01" //BARUERI
+		cQryWis += " AND ARMAZEM = 'BAR' " //-- Armazenagem BARUERI.
 	ElseIf _cArmazem == "11" //FRANCO DA ROCHA
-		If AllTrim(_cMarca) $ "HYU_SBR"
-       		cQryWis += " AND CD_EMPRESA = 1006 " //-- HYU SBR
-			cQryWis += " AND SUBSTR(CD_ENDERECO,1,2) BETWEEN '30' AND '39' " //-- Armazenagem Franco da Rocha.
-		ElseIf AllTrim(_cMarca) $ "CHE"  
-       		cQryWis += " AND CD_EMPRESA = 1002 " //-- CHE
-			cQryWis += " AND SUBSTR(CD_ENDERECO,1,3) BETWEEN '030' AND '039' " //-- HYU SBR
-		EndIf
+		cQryWis += " AND ARMAZEM = 'FDR' " //-- Armazenagem FRANCO DA ROCHA
 	EndIf
  
-    /*
-	Else
-	// Passado para aleterar conforme instrução Sidnei RG Log DAC - 27/06/2022
-	//SELECT NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) AS QTDE_EST 
-	//FROM WIS.V_ENDERECO_ESTOQUE@DBLINK_WISHML ESTWIS
-	//WHERE ESTWIS.CD_PRODUTO = 'R-16546AA090'
-        cQryWis := " SELECT NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) AS QTDE_EST "
-		//Não esta funcionando HML disponibilizado
-        //cQryWis += " FROM WIS.V_ENDERECO_ESTOQUE@DBLINK_WISHML ESTWIS "
-		cQryWis += " FROM WIS.V_ENDERECO_ESTOQUE@DBLINK_WISPROD ESTWIS "
-        cQryWis += " WHERE RTRIM(LTRIM(ESTWIS.CD_PRODUTO)) = '" + AllTrim(_cProduto) + "' "
-		//Conforme solicitação JC em reunião com Sidnei RG colocar validação de empresa relacionada a marca DAC 28/062022
-		If AllTrim(_cMarca) $ "HYU_SBR"
-        	cQryWis += " AND CD_EMPRESA = 1006 " //-- HYU SBR
-		ElseIf AllTrim(_cMarca) $ "CHE"  //1002 CHE
-        	cQryWis += " AND CD_EMPRESA = 1002 " //-- HYU SBR
-		EndIf
-    EndIf
-	*/
     DbUseArea( .T., "TOPCONN", TcGenQry(,,cQryWis), cAlsWis, .T., .T. )
 
 	DbSelectArea((cAlsWis))
@@ -4997,4 +4956,74 @@ Begin Sequence
 		Endif
 	Endif
 End Begin
+Return _lRet
+
+
+//Atualiza TES inteligente e recalcula Picking 29/03/2023
+User Function ZPECREGFI(cZK_XPICKI)
+	Local _lRet			:= .T.
+	Local _cAliasPesq 	:= GetNextAlias()	
+	Local _cMens
+	Local _cTESVS3		:= " "
+	Local _cCodIte		:= " "
+	Local _cNumOrc		:= " "
+	Local _cXREGFI		:= " "
+	Local _cOperVS3		:= " "
+	Local _cStatus		:= "F"
+	
+	BeginSql Alias _cAliasPesq
+		SELECT DISTINCT	VS1_CLIFAT,VS1_LOJA,VS1_NCLIFT,VS1_NUMORC,VS1_TIPORC,VS1_DATORC, VS1_XMARCA
+  		FROM %table:VS1% VS1
+   		WHERE 	VS1.VS1_FILIAL  	= %XFilial:VS1%
+			AND VS1.VS1_XPICKI  	= %Exp:cZK_XPICKI%
+			AND VS1.VS1_TIPORC 		= '1' 
+			AND VS1.VS1_STATUS  	= %Exp:_cStatus%
+			AND VS1.VS1_NUMNFI		= ' '
+		  	AND VS1.%notDel%		  
+	EndSql      
+	If (_cAliasPesq)->(Eof()) 
+		MsgInfo("Não localizado orçamentos com Picking "+cZK_XPICKI+" para recalcular !","Atenção") 
+		Break
+	EndIf	
+Begin sequence
+	While !(_cAliasPesq)->(Eof())
+		_cCliente 	:= (_cAliasPesq)->VS1_CLIFAT
+		_cLoja 		:= (_cAliasPesq)->VS1_LOJA
+		_cNumOrc 	:= (_cAliasPesq)->VS1_NUMORC
+		_cMens 		:= " "
+		VS1->(dbSetOrder(1))
+		VS3->(dbSetOrder(1))
+		If VS3->(dbSeek(xFilial("VS3")+_cNumOrc))
+			VS1->(dbSeek(xFilial("VS1")+_cNumOrc))
+       	 	Do While (VS3->(!EOF()) .AND. VS3->VS3_NUMORC == _cNumOrc)
+				cTES := " "
+				_cOperVS3 := Alltrim(VS3->VS3_OPER)
+				_cTESVS3  := Alltrim(VS3->VS3_CODTES)
+				_cCodIte  := Alltrim(VS3->VS3_CODITE)
+				_cXREGFI  := Alltrim(VS3->VS3_XREGFI)
+				cTES := Alltrim(MaTesInt(2, _cOperVS3, _cCliente, _cLoja,"C", _cCodIte))
+				_cMens := "TES Inteligente: NumOrc: "+_cNumOrc+ "/ Cliente: "+_cCliente+_cLoja+"/ Produto " +_cCodIte+"/ Oper: "+_cOperVS3+"/ Regra: "+_cXREGFI+" / TES_ORC: " +_cTESVS3+ " / Tes Intelig: " +cTES+CRLF
+				If (!(_cXREGFI = "T") .and. !(_cTESVS3 = cTES) .and. !Empty(cTES))
+					VS1->(RecLock("VS1",.F.))
+					VS3->(RecLock("VS3",.F.))
+					_cMens += "O produto " +_cCodIte+ " teve a TES " +_cTESVS3+ " alterada para " +cTES+ " conforme Operação " +_cOperVS3+ " no momento do faturamento em " +DtoC(date()) + " às " + Time() + CRLF
+					VS1->VS1_OBSAGL		:= Upper(_cMens) + CRLF + AllTrim(VS1->VS1_OBSAGL)
+					VS3->VS3_CODTES := cTES
+					VS3->VS3_SITTRI := U_XFUNSITT(cTES, VS3->VS3_CODITE, VS3->VS3_GRUITE)
+					VS3->(MsUnlock())
+				Elseif Empty(cTES)
+					_cMens += "Erro no retorno da TES Inteligente -> Tes: "+cTES+" Oper: " +_cOperVS3+ " Cliente: "+_cCliente+" Loja: "+_cLoja+" Cod: "+_cCodIte+DtoC(date()) + " às " + Time() + CRLF
+					_lRet := .F.
+				EndIf	
+	        	VS3->(dbSkip())
+			EndDo
+			VS1->(MsUnlock())
+		Else
+			_cMens := "Erro na Busca dos itens do ORC: " +(_cAliasPesq)->VS1_NUMORC+ " às " + Time() + CRLF
+			_lRet := .F.
+		EndIf
+		(_cAliasPesq)->(dbSkip())
+	EndDo
+	U_ORCCALFIS(_cNumOrc,.F./*atualiza o preço*/)
+End Sequence
 Return _lRet

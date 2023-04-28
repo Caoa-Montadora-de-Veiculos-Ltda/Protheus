@@ -14,19 +14,50 @@ Obs......:
 */
 User Function MACSOLICMS()
 
-	Local _cEmp  	:= FWCodEmp()
-	Local _aRet 	:= {}
-	
-//ParamIxb[3] //Base de retencao ICMS Solidario
-//ParamIxb[4] //Alíquota Solidário
-//ParamIxb[5]  //Valor do ICMS Solidario
+Local _cEmp  	:= FWCodEmp()
+Local _cFil  	:= FWCodFil()
+Local _aRet 	:= {}
+Local nBaseSol  	:= ParamIxb[3] //Base de retencao ICMS Solidario
+Local nAliqSol  	:= ParamIxb[4] //Alíquota Solidário
+Local nValsol   	:= ParamIxb[5]  //Valor do ICMS Solidario
 
-	If _cEmp == "2010" //Executa o p.e. somente para Anapolis.
-		_aRet := zFMontadora()
-    Else
-        //Retorna os valores padrões quando Barueri
-        _aRet := {ParamIxb[3],ParamIxb[4],ParamIxb[5]}
-    EndIf
+_aRet := {nBaseSol,nAliqSol,nValsol}
+If _cEmp == "2010" //Executa para Anapolis.
+	_aRet := zFMontadora()
+ElseIf _cFil == "2020012001" //Executa para Barueri
+	_aRet := zFBarueri()
+EndIf
+
+Return(_aRet)
+
+/*
+=====================================================================================
+Programa.:              ZExeczFBarueriMont
+Autor....:              TOTVS
+Data.....:              31/03/2023
+Descricao / Objetivo:   Executa o P.E. para filial Barueri
+Doc. Origem:            GAP
+Solicitante:            Cliente
+Uso......:              CAOA Barueri
+Obs......:              
+=====================================================================================
+*/
+***************************
+Static Function zFBarueri()
+***************************
+
+Local cOperacao 	:= ParamIxb[1] //Tipo de operação Entrada ou Saída
+Local nItem     	:= ParamIxb[2] //Item
+Local nBaseSol  	:= ParamIxb[3] //Base de retencao ICMS Solidario
+Local nAliqSol  	:= ParamIxb[4] //Alíquota Solidário
+Local nValsol   	:= ParamIxb[5]  //Valor do ICMS Solidario
+
+If (SC5->C5_TIPO == "I" .And. SC6->C6_XBASST <> 0) .And. cOperacao == 'S' .And. nItem > 0  
+	nValIC   := MaFisRet(nItem,"IT_VALICM" )
+	_F4MKPSOL:= Posicione("SF4",1,xFilial("SF4")+SC6->C6_TES,"F4_MKPSOL")
+	nBaseSol := If(_F4MKPSOL == "1",0,SC6->C6_XBASST)
+Endif
+_aRet := {nBaseSol,nAliqSol,nValsol}
 
 Return(_aRet)
 
@@ -65,7 +96,7 @@ Local _F4MKPSOL		:= ""
 Do Case
 Case FWIsInCallStack("MAPVLNFS") // rotina de documento de saida
 	//Conout(" MACSOLICMS - MAPVLNFS - C6_XBASST - " + SC6->C6_NUM + "-" + SC6->C6_ITEM + "-" + SC6->C6_PRODUTO + " - " +  cValToChar(SC6->C6_VALOR) + "-" + cValToChar(SC6->C6_XBASST))
-	If (isInCallStack("VEIA060") .or. isInCallStack("VEIXX002") .Or. Upper(Alltrim(FunName())) == "ZFATF019") .And. ;
+	If (isInCallStack("VEIA060") .or. isInCallStack("VEIXX002") .Or. Upper(Alltrim(FunName())) == "ZFATF019" .Or. (SC5->C5_TIPO == "I" .And. SC6->C6_XBASST <> 0)) .And. ;
 		cOperacao == 'S' .And.;
 		nItem > 0  
 			nValIC   := MaFisRet(nItem,"IT_VALICM" )

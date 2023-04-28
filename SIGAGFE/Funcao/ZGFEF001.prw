@@ -91,6 +91,8 @@ Data.....:              30/12/2021
 Descricao / Objetivo:   Efetua a gravação dos pesos bruto e cubado na tabela GW8    
 ===========================================================================================
 */
+/** */
+
 User Function zAtuPesGW8( aDadosRat )
     Local aAreaSB1  := SB1->( GetArea() )
     Local aAreaSB5  := SB5->( GetArea() )
@@ -190,7 +192,15 @@ User Function zAtuPesGW8( aDadosRat )
 
             nPesCub     := ( aDadosRat[nY][PESCUB] / nVolumTot ) * nVolumItem
             nPesReal    := ( aDadosRat[nY][PESBRUT] / nPesTotal ) * nPesItem
-
+            
+            if nPesCub <= 0.01
+                nPesCub := 0.01
+            endif
+            
+            if nPesReal <= 0.01
+                nPesReal := 0.01
+            endif
+            
             //--Guarda valor e recno GW8 para calculo de sobra no rateio    
             AaDD( aRatCub, {Round( nPesCub, TamSX3("F2_XPESOC")[2] )    , nRecGW8} )
             AaDD( aRatBru, {Round( nPesReal, TamSX3("F2_PBRUTO")[2] )   , nRecGW8} )
@@ -209,7 +219,15 @@ User Function zAtuPesGW8( aDadosRat )
 
             nPesCub     := ( aDadosRat[nY][PESCUB] / aDadosRat[nY][VALBRUT] ) * aDadosRat[nY][TOTITEM] 
             nPesReal    := ( aDadosRat[nY][PESBRUT] / aDadosRat[nY][VALBRUT] ) * aDadosRat[nY][TOTITEM]
-
+            
+            if nPesCub <= 0.01
+                nPesCub := 0.01
+            endif
+            
+            if nPesReal <= 0.01
+                nPesReal := 0.01
+            endif
+            
             //--Guarda valor e recno GW8 para calculo de sobra no rateio    
             AaDD( aRatCub, {Round( nPesCub, TamSX3("F2_XPESOC")[2] )    , nRecGW8} )
             AaDD( aRatBru, {Round( nPesReal, TamSX3("F2_PBRUTO")[2] )   , nRecGW8} )
@@ -234,7 +252,7 @@ User Function zAtuPesGW8( aDadosRat )
     Next
 
     nSobCub := aDadosRat[1][PESCUB]  - nTotPesCub 
-
+  
     //--Verifica sobra no rateio de Peso Bruto
     For nY := 1 To Len(aRatBru)
         nTotPesBru := nTotPesBru + aRatBru[nY][1]
@@ -253,11 +271,11 @@ User Function zAtuPesGW8( aDadosRat )
             RecLock("GW8", .F.)
             
                 If nSobCub <> 0
-                    GW8->GW8_PESOC := GW8->GW8_PESOC + nSobCub
+                    GW8->GW8_PESOC := iif(( GW8->GW8_PESOC + nSobCub ) >= 0.01 , GW8->GW8_PESOC + nSobCub , 0.01)
                 EndIf
 
                 If nSobBru <> 0
-                    GW8->GW8_PESOR := GW8->GW8_PESOR + nSobBru
+                    GW8->GW8_PESOR := iif(( GW8->GW8_PESOR + nSobBru ) >= 0.01 , GW8->GW8_PESOR + nSobBru , 0.01) 
                 EndIf
 
             GW8->( MsUnLock() )
