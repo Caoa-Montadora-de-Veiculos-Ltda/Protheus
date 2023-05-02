@@ -50,6 +50,8 @@ Public cC7_XOCOM    := Space(10)
 Public cC7_XFORMAI  := ""
 Public cC7_XTPREQ   := space(04)
 Public cC7_XTPRE2   := space(04)
+Public cC7_XFCA     := space(01)
+
 // ** CAOA - COM - VARIAVEIS PARA DADOS COMPLEMENTARES - ROTINA ZCOMF003 - GAP COM007/001
 
 Begin Sequence
@@ -82,6 +84,9 @@ Begin Sequence
 		Endif
 		If SC7->(FieldPos("C7_XTPPED")) > 0
         	   cC7_XTPREQ := SC7->C7_XTPPED          
+		Endif
+        If SC7->(FieldPos("C7_XFCA")) > 0
+        	   cC7_XFCA := SC7->C7_XFCA          
 		Endif
 	Endif
 

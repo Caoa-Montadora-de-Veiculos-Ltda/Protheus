@@ -9,7 +9,7 @@
 @project    CAOA
 @version 	1.0
 @obs        Chamado pelo PE MTA120G2 salvar dados no PC
-@history    
+@history    Gravando dados específicos do PC e vindo do EIC 
 /*/   
 User Function ZCOMF028()
 Local aArea := GetArea()
@@ -28,6 +28,7 @@ Else
    SC7->C7_XOBSFOR := UPPER(cC7_SFOR)
    SC7->C7_XOBSTST := UPPER(cC7_XOCOM)  
    SC7->C7_XTPPED  := UPPER(cC7_XTPREQ) 
+   SC7->C7_XFCA    := UPPER(cC7_XFCA)
 
 EndIf
 

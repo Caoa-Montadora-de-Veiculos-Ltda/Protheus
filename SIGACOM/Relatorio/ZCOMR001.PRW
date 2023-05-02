@@ -371,7 +371,7 @@ STATIC FUNCTION REPORTProc(	oReport	, aElements, lEnd , cNumPc , lIsLoja )
 			C7_APROV, C7_USER, C7_MOEDA, C7_TXMOEDA,
 			C7_LOCAL, C7_COND, C7_CONTRA, C7_CONTREV,
 			C7_ENCER, C7_FILENT, C7_FISCORI,
-			C7_TPFRETE, C7_FRETE, C7_FRETCON,C7_XFORMAI,
+			C7_TPFRETE, C7_FRETE, C7_FRETCON,C7_XFORMAI,C7_XFCA,
 			%Exp:cCampos%
 			SC7.R_E_C_N_O_ AS SC7RECNO
 		FROM %Table:SC7% SC7
@@ -756,6 +756,7 @@ STATIC FUNCTION ReportCab(oReport,aElements,lEnd,nPosV,nFolha,nFolhas,nLine,nBas
 	LOCAL cM4EndEnt
 	LOCAL aCBoxFrete
 	LOCAL nOptFrete
+	LOCAL cXFCA
 	Local nX := 1
 	Local aMAux := {}
 	PRIVATE oColumns   := {}
@@ -1155,16 +1156,24 @@ STATIC FUNCTION ReportCab(oReport,aElements,lEnd,nPosV,nFolha,nFolhas,nLine,nBas
 		{"D", "Por Conta Destinatário"} , ;
 		{"S", "Sem Frete"}                ;
 		}
-	nOptFrete := AScan(aCBoxFrete, {|x| x[1] == (cAliasSC7)->(C7_TPFRETE)})
-	cText    := "Frete:" + Space(1)
-	cText    := cText + IIF(nOptFrete > 0, aCBoxFrete[nOptFrete][02] ,"")
-	nItRef   := AScan(aElements, {|aItem| aItem[ATT_NAME][02] == "DetailCellBillingName"})
-	nRow     := aElements[nItRef][ATT_POSV][02] + aElements[nItRef][ATT_FONT][02]:nHeight + nSpace    // REFERENCE DetailCellBillingName
-	oFont    := aElements[nItRef][ATT_FONT][02]                                                       // REFERENCE DetailCellBillingName
-	nItRef   := AScan(aElements, {|aItem| aItem[ATT_NAME][02] == "DetailCellBillingPaymentTerm"})
-	nCol     := aElements[nItRef][ATT_POSH][02] /* + nMargin */                                       // REFERENCE DetailCellBillingPaymentTerm
-	nWidth   := aElements[nItRef][ATT_TAMH][02]                                                       // REFERENCE DetailCellBillingPaymentTerm
-	aUltComp := AAddComponent(oReport,@aElements,"DetailCellBillingFreightType",TYPE_TXT,cText,nRow,nCol,oFont,nWidth)
+	cXFCA := (cAliasSC7)->C7_XFCA
+    cText := "Frete: " + Space(1)
+	IF cXFCA = 'S'
+		cText += "FCA"
+	ELSE
+		cText += IIF(nOptFrete > 0, aCBoxFrete[nOptFrete][02] ,"")
+	ENDIF
+		nOptFrete := AScan(aCBoxFrete, {|x| x[1] == (cAliasSC7)->(C7_TPFRETE)})
+		//cText    := "Frete:" + Space(1)
+		//cText    := cText + IIF(nOptFrete > 0, aCBoxFrete[nOptFrete][02] ,"")
+		nItRef   := AScan(aElements, {|aItem| aItem[ATT_NAME][02] == "DetailCellBillingName"})
+		nRow     := aElements[nItRef][ATT_POSV][02] + aElements[nItRef][ATT_FONT][02]:nHeight + nSpace    // REFERENCE DetailCellBillingName
+		oFont    := aElements[nItRef][ATT_FONT][02]                                                       // REFERENCE DetailCellBillingName
+		nItRef   := AScan(aElements, {|aItem| aItem[ATT_NAME][02] == "DetailCellBillingPaymentTerm"})
+		nCol     := aElements[nItRef][ATT_POSH][02] /* + nMargin */                                       // REFERENCE DetailCellBillingPaymentTerm
+		nWidth   := aElements[nItRef][ATT_TAMH][02]                                                       // REFERENCE DetailCellBillingPaymentTerm
+		aUltComp := AAddComponent(oReport,@aElements,"DetailCellBillingFreightType",TYPE_TXT,cText,nRow,nCol,oFont,nWidth)
+	
 
 	/** = LINHA 003 ======================================================================================================================= **/
 	/** = BOX - BILLING =================================================================================================================== **/
