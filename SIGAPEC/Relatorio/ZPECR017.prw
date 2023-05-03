@@ -86,12 +86,12 @@ oSection1 := TRSection():New(oReport,cDescricao + " - Barueri",{cAliasQry},/*{Ar
 TRCell():New(oSection1,"FILIAL"   ,"cAliasQry","FILIAL",PesqPict("SB1","B1_FILIAL"),TamSX3("B1_FILIAL")[1],/*lPixel*/,{||cAliasQry->FILIAL})
 TRCell():New(oSection1,"CODIGO"   ,"cAliasQry","CODIGO","@!",18,/*lPixel*/,/*{||cAliasQry->TOTAL_PEDIDO}*/)
 TRCell():New(oSection1,"DESCRICAO","cAliasQry","DESCRICAO","@!",40,/*lPixel*/,/*{||cAliasQry->TOTAL_PEDIDO}*/)
-TRCell():New(oSection1,"ARMAZ"    ,"cAliasQry","ARMAZ","@!",05,/*lPixel*/,/*{||cAliasQry->DATA_Carga}*/)
-TRCell():New(oSection1,"CONTAB"   ,"cAliasQry","CONTAB","@!",15,/*lPixel*/,/*{||cAliasQry->TOTAL_PEDIDO}*/)
+//TRCell():New(oSection1,"ARMAZ"    ,"cAliasQry","ARMAZ","@!",05,/*lPixel*/,/*{||cAliasQry->DATA_Carga}*/)
+TRCell():New(oSection1,"CONTAB"   ,"cAliasQry","CONTAB","@!",15,/*lPixel*/,{||PQry04()})
 TRCell():New(oSection1,"LINHA"    ,"cAliasQry","LINHA","@!",05,/*lPixel*/,/*{||cAliasQry->DATA_Carga}*/)
 TRCell():New(oSection1,"SUBLINHA" ,"cAliasQry","SUBLINHA","@!",05,/*lPixel*/,/*{||cAliasQry->DATA_Carga}*/)
 TRCell():New(oSection1,"MARCA"    ,"cAliasQry","MARCA","@!",05,/*lPixel*/,/*{||cAliasQry->DATA_Carga}*/)
-TRCell():New(oSection1,"CUSTO"    ,"cAliasQry","CUSTO",PesqPict("SB1","B1_PRV1"),TamSX3("B1_PRV1")[1],/*lPixel*/,{||cAliasQry->CUSTO})
+TRCell():New(oSection1,"CUSTO"    ,"cAliasQry","CUSTO",PesqPict("SB1","B1_PRV1"),TamSX3("B1_PRV1")[1],/*lPixel*/,{||PQry05()})
 TRCell():New(oSection1,"EX_NCM"   ,"cAliasQry","EX_NCM","@!",10,/*lPixel*/,/*{||cAliasQry->DATA_Carga}*/)
 TRCell():New(oSection1,"NCM"      ,"cAliasQry","NCM","@!",10,/*lPixel*/,/*{||cAliasQry->DATA_Carga}*/)
 TRCell():New(oSection1,"Aliq_II"  ,"cAliasQry","Aliq_II" ,PesqPict("SB1","B1_IPI"),TamSX3("B1_IPI")[1],/*lPixel*/,{||cAliasQry->PII})
@@ -102,8 +102,8 @@ TRCell():New(oSection1,"DTCAD"    ,"cAliasQry","DTCAD",PesqPict("SB1","B1_DATREF
 TRCell():New(oSection1,"DTCOM"    ,"cAliasQry","DTCOM",PesqPict("SB1","B1_DATREF"),TamSX3("B1_DATREF")[1],/*lPixel*/,{||PQry02()})
 TRCell():New(oSection1,"DTVEN"    ,"cAliasQry","DTVEN",PesqPict("SB1","B1_DATREF"),TamSX3("B1_DATREF")[1],/*lPixel*/,{||PQry03()})
 TRCell():New(oSection1,"ULTCOM"   ,"cAliasQry","ULTCOM",PesqPict("SB1","B1_DATREF"),TamSX3("B1_DATREF")[1],/*lPixel*/,{||cAliasQry->ULTCOM})
-TRCell():New(oSection1,"DTULTS"   ,"cAliasQry","DTULTS",PesqPict("SB1","B1_DATREF"),TamSX3("B1_DATREF")[1],/*lPixel*/,{||cAliasQry->DTULTS})
-TRCell():New(oSection1,"FOBUS"    ,"cAliasQry","FOBUS",PesqPict("SB1","B1_PRV1"),TamSX3("B1_PRV1")[1],/*lPixel*/,{||cAliasQry->CUSTO})
+//TRCell():New(oSection1,"DTULTS"   ,"cAliasQry","DTULTS",PesqPict("SB1","B1_DATREF"),TamSX3("B1_DATREF")[1],/*lPixel*/,{||cAliasQry->DTULTS})
+TRCell():New(oSection1,"FOBUS"    ,"cAliasQry","FOBUS",PesqPict("SB1","B1_PRV1"),TamSX3("B1_PRV1")[1],/*lPixel*/,{||cAliasQry->FOBUS})
 TRCell():New(oSection1,"PESOL"    ,"cAliasQry","PESOL",PesqPict("SB1","B1_PESO"),TamSX3("B1_PESO")[1],/*lPixel*/,{||cAliasQry->PESOL})
 TRCell():New(oSection1,"COMPRI"   ,"cAliasQry","COMPRI",PesqPict("SB1","B1_PESO"),TamSX3("B1_PESO")[1],/*lPixel*/,{||cAliasQry->COMPRI})
 TRCell():New(oSection1,"LARGURA"  ,"cAliasQry","LARGURA",PesqPict("SB1","B1_PESO"),TamSX3("B1_PESO")[1],/*lPixel*/,{||cAliasQry->LARGURA})
@@ -163,9 +163,9 @@ BeginSql Alias cAliasQry //Define o nome do alias temporário
     SELECT SB1.B1_FILIAL  AS FILIAL
         , SB1.B1_COD     AS CODIGO
         , SB1.B1_DESC    AS DESCRICAO
-        , SB2.B2_LOCAL   AS ARMAZ     
-        , SB2.B2_QATU    AS CONTAB
-        , Substr(TO_CHAR(SB2.B2_USAI),7,2)||'/'||Substr(TO_CHAR(SB2.B2_USAI),5,2)||'/'||Substr(TO_CHAR(SB2.B2_USAI),1,4) AS DTULTS      
+        //, SB2.B2_LOCAL   AS ARMAZ     
+        //, SB2.B2_QATU    AS CONTAB
+        //, Substr(TO_CHAR(SB2.B2_USAI),7,2)||'/'||Substr(TO_CHAR(SB2.B2_USAI),5,2)||'/'||Substr(TO_CHAR(SB2.B2_USAI),1,4) AS DTULTS      
         , SB1.B1_TIPO    AS LINHA
         , SB5.B5_CODLIN  AS SUBLINHA
         , SBM.BM_CODMAR  AS MARCA
@@ -178,22 +178,17 @@ BeginSql Alias cAliasQry //Define o nome do alias temporário
         , SB1.B1_ORIGEM  AS ORIG
         , SUBSTR(SX5.X5_DESCRI,1,20) AS DS_ORIG
         , Substr(TO_CHAR(SB1.B1_XDTULT),7,2)||'/'||Substr(TO_CHAR(SB1.B1_XDTULT),5,2)||'/'||Substr(TO_CHAR(SB1.B1_XDTULT),1,4) AS DTCAD      
-        , SB2.B2_CM1     AS CUSTO
+        //, SB2.B2_CM1     AS CUSTO
         , SB1.B1_POSIPI  AS NCM
         , SYD.YD_EX_NCM  AS EX_NCM     
         , SYD.YD_PER_II  AS PII
         , SYD.YD_PER_IPI AS PIPI
-        , SB1.B1_VLREFUS AS FOBUS
+        , SB1.B1_XPRCFOB AS FOBUS
         , Substr(TO_CHAR(SB1.B1_UCOM),7,2)||'/'||Substr(TO_CHAR(SB1.B1_UCOM),5,2)||'/'||Substr(TO_CHAR(SB1.B1_UCOM),1,4) AS ULTCOM      
         , SB1.B1_PESO    AS PESOL 
         , SA2.A2_CGC     AS CNPJ
         , SA2.A2_NREDUZ  AS FORNE 
     FROM  %Table:SB1% SB1
-    LEFT JOIN %Table:SB2% SB2 
-        ON Substr(SB2.B2_FILIAL,1,6) = Substr(%xFilial:SB1%,1,6) 
- 	    AND SB2.B2_COD   = SB1.B1_COD
- 	    AND SB2.B2_LOCAL = '01'    
- 	    AND SB2.%notDel% 
     LEFT JOIN %Table:SB5% SB5  
         ON Substr(SB5.B5_FILIAL,1,6) = Substr(%xFilial:SB1%,1,6)     
         AND SB5.B5_COD = SB1.B1_COD           
@@ -228,15 +223,6 @@ If (cAliasQry)->(Eof())
     Return
 Endif
 
-//        --AND SB1.B1_MSBLQL = '2' 
-//SB1.B1_COD BETWEEN  %Exp:_cCodIni%  AND %Exp:_cCodFim%
-//    LEFT JOIN  %Table:SA5% SA5 
-//        ON Substr(SA5.A5_FILIAL,1,6) = Substr(%xFilial:SB1%,1,6) 
-//        AND SA5.A5_PRODUTO = SB1.B1_COD           
-//        AND SA5.%notDel%  
-//, Substr(TO_CHAR(SA5.A5_DTCOM01),7,2)||'/'||Substr(TO_CHAR(SA5.A5_DTCOM01),5,2)||'/'||Substr(TO_CHAR(SA5.A5_DTCOM01),1,4) AS DTCOM      
-      
-
 
 //oSection1:EndQuery()
 PQuery(cAliasQry,oReport) //Imprime
@@ -267,12 +253,12 @@ Do While !(cAliasQry)->( Eof() )
     oSection1:Cell("FILIAL"):SetValue((cAliasQry)->FILIAL)
     oSection1:Cell("CODIGO"):SetValue((cAliasQry)->CODIGO)
     oSection1:Cell("DESCRICAO"):SetValue((cAliasQry)->DESCRICAO)
-    oSection1:Cell("ARMAZ"):SetValue((cAliasQry)->ARMAZ)
-    oSection1:Cell("CONTAB"):SetValue((cAliasQry)->CONTAB)
+    //oSection1:Cell("ARMAZ"):SetValue((cAliasQry)->ARMAZ)
+    oSection1:Cell("CONTAB"):SetValue(PQry04((cAliasQry)->CODIGO))
     oSection1:Cell("LINHA"):SetValue((cAliasQry)->LINHA)
     oSection1:Cell("SUBLINHA"):SetValue((cAliasQry)->SUBLINHA)
     oSection1:Cell("MARCA"):SetValue((cAliasQry)->MARCA)
-    oSection1:Cell("CUSTO"):SetValue((cAliasQry)->CUSTO)
+    oSection1:Cell("CUSTO"):SetValue(PQry05((cAliasQry)->CODIGO))
     oSection1:Cell("EX_NCM"):SetValue((cAliasQry)->EX_NCM)
     oSection1:Cell("NCM"):SetValue((cAliasQry)->NCM)
     oSection1:Cell("Aliq_II"):SetValue((cAliasQry)->PII)
@@ -283,7 +269,7 @@ Do While !(cAliasQry)->( Eof() )
     oSection1:Cell("DTCOM"):SetValue(PQry02((cAliasQry)->CODIGO))
     oSection1:Cell("DTVEN"):SetValue(PQry03((cAliasQry)->CODIGO))
     oSection1:Cell("ULTCOM"):SetValue((cAliasQry)->ULTCOM)
-    oSection1:Cell("DTULTS"):SetValue((cAliasQry)->DTULTS)
+    //oSection1:Cell("DTULTS"):SetValue((cAliasQry)->DTULTS)
     oSection1:Cell("FOBUS"):SetValue((cAliasQry)->FOBUS)
     oSection1:Cell("PESOL"):SetValue((cAliasQry)->PESOL)
     oSection1:Cell("COMPRI"):SetValue((cAliasQry)->COMPRI)
@@ -322,6 +308,7 @@ If Empty(cProduto)
     Return(_cRet)   
 endif
 
+_cQuery += " SELECT * FROM ( "
 _cQuery += " SELECT "
 _cQuery += " Substr(TO_CHAR(SD1.D1_DTDIGIT),7,2)||'/'||Substr(TO_CHAR(SD1.D1_DTDIGIT),5,2)||'/'||Substr(TO_CHAR(SD1.D1_DTDIGIT),1,4) AS DTCOM "      
 _cQuery += " FROM "+RetSqlName("SD1") + " SD1 "
@@ -332,8 +319,11 @@ _cQuery += "    AND SF4.D_E_L_E_T_ = ' ' "
 _cQuery += " WHERE " 
 _cQuery += " SD1.D1_FILIAL = '" + xFilial("SD1") +"' " 
 _cQuery += " AND SD1.D1_COD = '" + cProduto +"' " 
+_cQuery += " AND SD1.D1_CF IN ('1102','2102','3102') " 
 _cQuery += " AND SD1.D_E_L_E_T_ = ' ' " 
-_cQuery += " AND ROWNUM = 1 "
+_cQuery += " ORDER BY SD1.D1_DTDIGIT DESC "
+_cQuery += " ) SD1SQL "
+_cQuery += " WHERE ROWNUM = 1"
 
 DBUseArea(.T., "TOPCONN", TCGenQry(NIL,NIL,_cQuery), (_cAQry) , .F., .T. )
 
@@ -362,6 +352,7 @@ If Empty(cProduto)
     Return(_cRet)   
 endif
 
+_cQuery += " SELECT * FROM ("
 _cQuery += " SELECT "
 _cQuery += " Substr(TO_CHAR(SD2.D2_EMISSAO),7,2)||'/'||Substr(TO_CHAR(SD2.D2_EMISSAO),5,2)||'/'||Substr(TO_CHAR(SD2.D2_EMISSAO),1,4) AS DTCOM "      
 _cQuery += " FROM "+RetSqlName("SD2") + " SD2 "
@@ -372,8 +363,11 @@ _cQuery += "    AND SF4.D_E_L_E_T_ = ' ' "
 _cQuery += " WHERE " 
 _cQuery += " SD2.D2_FILIAL = '" + xFilial("SD2") +"' " 
 _cQuery += " AND SD2.D2_COD = '" + cProduto +"' " 
+_cQuery += " AND SD2.D2_CF IN ('5102','5152','5403','6102','6110','6403') " 
 _cQuery += " AND SD2.D_E_L_E_T_ = ' ' " 
-_cQuery += " AND ROWNUM = 1 "
+_cQuery += " ORDER BY SD2.D2_EMISSAO DESC "
+_cQuery += " )SD2SQL "
+_cQuery += " WHERE ROWNUM = 1"
 
 DBUseArea(.T., "TOPCONN", TCGenQry(NIL,NIL,_cQuery), (_cAQry) , .F., .T. )
 
@@ -385,4 +379,69 @@ If Select(_cAQry) <> 0
 Endif  
 
 Return _cRet
+
+/*/{Protheus.doc} ZPECR017
+//Rodar query para buscar SALDO CONTABIL
+@author Antonio Oliveira
+@since 05/07/2022
+@version 2.0
+/*/
+Static Function PQry04(cProduto)
+Local _cAQry 	:= GetNextAlias()
+Local _nRet     := ""
+Local _cQuery   := ""
+
+If Empty(cProduto)
+    Return(_nRet)   
+endif
+
+_cQuery := " " 
+_cQuery += " SELECT SUM(B2_QATU) AS QTDE FROM "+RetSqlName("SB2")+" SB2 "
+_cQuery += " WHERE SB2.B2_FILIAL = '" + xFilial("SB2") +"' "
+_cQuery += " AND SB2.B2_COD = '" + cProduto +"' "
+_cQuery += " AND SB2.D_E_L_E_T_ = ' ' "
+
+DBUseArea(.T., "TOPCONN", TCGenQry(NIL,NIL,_cQuery), (_cAQry) , .F., .T. )
+
+_nRet := (_cAQry)->QTDE
+
+If Select(_cAQry) <> 0
+	(_cAQry)->(DbCloseArea())
+	Ferase(_cAQry+GetDBExtension())
+Endif  
+
+Return _nRet
+
+
+/*/{Protheus.doc} ZPECR017
+//Rodar query para buscar SALDO CONTABIL
+@author Antonio Oliveira
+@since 05/07/2022
+@version 2.0
+/*/
+Static Function PQry05(cProduto)
+Local _cAQry 	:= GetNextAlias()
+Local _nRet     := ""
+Local _cQuery   := ""
+
+If Empty(cProduto)
+    Return(_nRet)   
+endif
+
+_cQuery := " " 
+_cQuery += " SELECT SUM(B2_VATU1) / SUM(B2_QATU) CUSTO_MEDIO  FROM "+RetSqlName("SB2")+" SB2 "
+_cQuery += " WHERE SB2.B2_FILIAL = '" + xFilial("SB2") +"' "
+_cQuery += " AND SB2.B2_COD = '" + cProduto +"' "
+_cQuery += " AND SB2.D_E_L_E_T_ = ' ' "
+
+DBUseArea(.T., "TOPCONN", TCGenQry(NIL,NIL,_cQuery), (_cAQry) , .F., .T. )
+
+_nRet := (_cAQry)->CUSTO_MEDIO
+
+If Select(_cAQry) <> 0
+	(_cAQry)->(DbCloseArea())
+	Ferase(_cAQry+GetDBExtension())
+Endif  
+
+Return _nRet
 
