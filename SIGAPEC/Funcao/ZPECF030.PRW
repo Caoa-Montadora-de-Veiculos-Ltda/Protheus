@@ -1,4 +1,4 @@
-#INCLUDE "PROTHEUS.CH"
+#include "PROTHEUS.CH"
 #INCLUDE "TOTVS.CH"
 #INCLUDE "FWMBROWSE.CH"
 #INCLUDE "FWMVCDEF.CH"
@@ -206,7 +206,6 @@ Class FreAcWindow
 	Method DimObj()
 	Method CargaSaldos()	
 	Method PesqSKU()
-	Method ZPECF30K()
 	Method PesqBKP()
 
 EndClass
@@ -406,7 +405,6 @@ Begin Sequence
 
 
 	// Define o Browse Relacionados
-	_aPrdREL	:= {{Space(Len(SB1->B1_FILIAL)),Space(Len(SB1->B1_COD)),Space(Len(SB1->B1_DESC)),Space(Len(SB1->B1_GRUPO))}}
 	U_ZPECF30K()
 	Self:oBrowse := FWBrowse():New(Self:oPanelVis)
 	Self:oBrowse:SetDataArray(.T.)
@@ -416,6 +414,7 @@ Begin Sequence
 	Self:oBrowse:DisableLocate(.T.)
 	Self:oBrowse:DisableFilter(.T.)
     Self:oBrowse:SetOwner(Self:oPanelVis)
+
 	//Self:oBrowse:SetDoubleClick({ || lRet := .T., __cRet := aBrwData[oBrowse:nAt,2], oModal:DeActivate()    })	
 	// Cria uma coluna de status
 	// Adiciona as colunas do Browse
@@ -477,9 +476,6 @@ Begin Sequence
 	_cAlias := "ZD0"
 	Self:oArea:AddWindow(COL_RIGHT, WND_OPERATIONS, "Saldos por Filiais Filiais", 50, .T., .F.)
 	Self:oPanelOp := Self:oArea:GetWinPanel(COL_RIGHT, WND_OPERATIONS)
-	//função responsavel por carregar dados da previsao
-	//CalcPrev(@_aFil,@_nTotPrev)
-	//CalcPrev()
 		
 	// Define o Browse
 	Self:oBrowse := FWBrowse():New(Self:oPanelOp)
@@ -1039,16 +1035,14 @@ Begin Sequence
 
   	//chamar funcao para carregar dados
   	LoadPlan()  //carrega planejamento
-  	//CalcPrev() //Carrega Saldo filiais
   	//Self:CargaSaldos()
   	Self:_OBrPlan:GoTop(.T.)
 	Self:_OBrPlan:Refresh(.T.)
 	Self:oPanelBrowse:Refresh(.T.) 
 	Self:oArea:Refresh(.T.) 
-	Self:oBrowse:Refresh(.T.)
-  	//Self:oBrowse:GoTop(.T.)
-  	//Self:oBrowse:refresh()
-  	//::oPanelBrowse
+  	Self:oBrowse:GoTop(.T.)
+  	Self:oBrowse:refresh()
+  	::oPanelBrowse
   	//::oPanelRep
   	//::oPanelOp
 //1E021111903F1A7
@@ -1355,92 +1349,6 @@ cFilAnt := _cFilBk
 RestArea(_aAreaSM0)
 Return _aRet
 
-
-
-//==========================================================================
-//funcionalidade para retornar as previsões de acordo com o período
-//==========================================================================
-Static Function CalcPrev()
-Local _cAliasPesq 	:= GetNextAlias()
-Local _cFilDe		:= Replicate(" ",TamSx3("ZD0_FILIAL")[1])
-Local _cFilAte		:= Replicate("Z",TamSx3("ZD0_FILIAL")[1])
-Local _cFilBK    := cFilAnt
-Local _cCodBase
-Local _dDataPrev
-Local _cCodProd  
-Local _nSaldoSB2
-Local _cPerg := "ZPECF030"
-
-Begin Sequence
-	Pergunte(_cPerg,.F.)
-	//SB2->(SaldoSB2()) //FUNÇÃO PARA CALCULO EM ESTOQUE 
-	_nTotPrev     	:= 0
-	_aFil			:= {}
-    //pegar a data de acordo com a quantidade de dias  
-	_dDataPrev := dDatabase + MV_PAR02 
-	_cCodBase  := AllTrim(SubsTr(MV_PAR01,1,Len(ZD0->ZD0_CODBAS)))
-	_cCodProd  := AllTrim(MV_PAR01)	
-	_nTotPrev  := 0
-	BeginSql Alias _cAliasPesq
- 		SELECT 	SB2.B2_FILIAL , 
- 			  (	SELECT 	SUM(ZD0.ZD0_QUANT) 
- 				FROM %Table:ZD0% ZD0                        
- 				WHERE 	ZD0.ZD0_FILIAL 	= SB2.B2_FILIAL 	  
- 					AND ZD0.ZD0_DATPRF 	BETWEEN %Exp:dDataBase% AND %Exp:_dDataPrev%    
- 					AND ZD0.ZD0_STATUS 	= '2'    
- 					AND ZD0.ZD0_CODBAS  = %Exp:_cCodBase%
- 					AND ZD0.%notDel%) AS NQTDEZD0,     
- 			  (	SELECT 	SUM(SD2.D2_QUANT) 
- 				FROM %Table:SD2% SD2                        
- 				JOIN %Table:SF4% SF4 ON
- 						SF4.F4_FILIAL 	= SB2.B2_FILIAL
- 					AND SF4.F4_CODIGO 	= SD2.D2_TES
- 					AND SF4.F4_TRANFIL 	= '1'
- 				WHERE 	SD2.D2_FILIAL 	= SB2.B2_FILIAL 	  
- 					AND SD2.D2_COD 		= SB2.B2_COD
- 					AND SD2.D2_EMISSAO 	BETWEEN %Exp:dDataBase% AND %Exp:_dDataPrev%    
- 					AND SD2.%notDel%) AS NQTDESD2     
-    	FROM %Table:SB2% SB2                        
-    	WHERE 	SB2.B2_FILIAL BETWEEN %Exp:_cFilDe% AND %Exp:_cFilAte% 	  
-    		AND SB2.B2_COD    = %Exp:_cCodProd%
-      		AND SB2.%notDel%      
-		ORDER BY SB2.B2_FILIAL
-	EndSql  
-	
-	If	(_cAliasPesq)->(Eof())
-		Aadd(_aFil,{"",;
-					0,;
-					0,;
-					0;
-					})
-		Break
-	Endif
-	//_aFilSaldo 		:= LocFilPlan()
-
-	While (_cAliasPesq)->(!Eof())
-   		cFilAnt := (_cAliasPesq)->B2_FILIAL
-   		SB2->(DbSeek(XFILIAL("SB2")+_cCodProd))
-   		_nSaldoSB2 := SB2->(SaldoSB2()) //FUNÇÃO PARA CALCULO EM ESTOQUE 
-		Aadd(_aFil,{(_cAliasPesq)->B2_FILIAL,;
-					_nSaldoSB2,;
-					(_cAliasPesq)->NQTDEZD0,;
-					(_cAliasPesq)->NQTDESD2;
-					})
-		_nTotPrev += (_cAliasPesq)->NQTDEZD0	
-		(_cAliasPesq)->(DbSkip())
-	EndDo
-
-End Sequence
-//Caso esteja vazio não localizou 
-If Len(_aFil) == 0
-	Aadd(_aFil,{" ",0,0})
-Endif
-If Select((_cAliasPesq)) <> 0
-	(_cAliasPesq)->(DbCloseArea())
-	Ferase(_cAliasPesq+GetDBExtension())
-Endif      
-cFilAnt := _cFilBK
-Return Nil
 
 
 //==========================================================================
@@ -2057,7 +1965,7 @@ Return .T.
 
 
 //Mostrar Kits
-User Function ZPECF30K() 
+User Function ZPECF30K(_lCarrega) 
 Local _cCodItem		:= MV_PAR01
 Local _cCodKit 		:= ""  	//verificar se o codigo do kit será o mesmo código com final KIT - CONFORME ALINHADO COM ZÉ SERA INCLUÍDO NO CADASTRO COM MESMO CÓDIGO DE PRODUTO ACRESCENTANDO NO FINAL KIT
 Local _cGrupoKit	:= ""								//verificar se o grupo do kit sera o mesmo do grupo do produto normal - CONFORME ALINHADO COM ZÉ SIM DEVERÁ SER O MESMO GRUPO DO PRODUTO ORIGINAL	
@@ -2066,7 +1974,13 @@ Local _cWhere		:= ""
 Local _cAliasPesq	:= GetNextAlias()
 Local _lRet 		:= .T.
 
+Default _lCarrega	:= .T.
+
 Begin Sequence
+	If !_lCarrega
+		_lRet := .F.
+		Break
+	Endif
  	If ValType(_cCodItem) <> "C"
 		_lRet := .F.
 		Break
@@ -2123,6 +2037,13 @@ Begin Sequence
 		(_cAliasPesq)->(DbSkip())
 	EndDo
 End Sequence
+If !_lRet .Or. Len(_aPrdREL) == 0
+	_aPrdREL	:= {{	Space(Len(SB1->B1_FILIAL)),;
+						Space(Len(SB1->B1_COD)),;
+						Space(Len(SB1->B1_DESC)),;
+						Space(Len(SB1->B1_GRUPO));
+					}}
+EndIf
 If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
 	Ferase(_cAliasPesq+GetDBExtension())
