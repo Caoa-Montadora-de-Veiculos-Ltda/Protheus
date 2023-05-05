@@ -20,7 +20,7 @@ Historico:
 
 ===============================================================================================
 */
-User Function ZEICF021(cINTCSV,cPoNum)
+User Function ZEICF021(cINTCSV,cPoNum,nLayout)
 
 Local aLinha		:= {}
 Local aItem 		:= {}
@@ -53,8 +53,12 @@ Private nVlrPack	:= 0
 Private nVlrDesc	:= 0
 Private nVlOutD		:= 0
 Private cWKSZM      := 'WKSZM'
+Private nLay		:= 1
 
 Default cPoNum     := ""
+Default nLayOut   := 5
+
+nLay := nLayOut
 
 If Empty(cINTCSV)
 	U_FCMVEIC0101("Caminho do arquivo em Branco!",,,,"R",,,)
@@ -116,7 +120,7 @@ While !FT_FEof()
 
     aLinha := {}
 	cLinhaIT := StrTran(cLinhaIT,';;','; ;')
-    aLinha := StrTokArr(cLinhaIT, ";")
+    aLinha   := StrTokArr(cLinhaIT, ";")
     
 	cInvoice := aLinha[02]
 	
@@ -124,9 +128,9 @@ While !FT_FEof()
 		FT_FSkip()
 		loop
 	Endif
-
-	If Len(aLinha) <> 13
-		U_FCMVEIC0101("Layout da linha inválido!",nLinha,,cFornecedor,cForloj,"R",,,cInvoice)
+	
+	If (Len(aLinha) <> 13 .and. nLay == 5) .or. (Len(aLinha) <> 12 .and. nLay == 1)
+ 		U_FCMVEIC0101("Layout da linha inválido!",nLinha,,cFornecedor,cForloj,"R",,,cInvoice)
 		lRetorno := .F.
 	EndIF
 	
@@ -134,6 +138,11 @@ While !FT_FEof()
 		U_FCMVEIC0101("Código de produto em branco!",nLinha,,cFornecedor,cForloj,"R",AllTrim(cPoNum),,cInvoice)
 		lRetorno := .F.
 	EndIf
+
+	if nLay <> 5
+		aLinha := aClone( fAjuArr(aLinha,nLay) )
+	EndIf
+
 	aLinha[11] := Padr(aLinha[11],TamSx3("W2_PO_NUM")[1], " ")
 	
 	If !SW2->(DbSeek(FwXFilial('SW2') + aLinha[11]))
@@ -175,7 +184,8 @@ While !FT_FEof()
 					 PadR(aLInha[4], TamSx3("W3_EX_NCM" )[1], " "),;		//EX-NCM
 					 PadR(aLInha[5], TamSx3("EW5_COD_I" )[1], " "),;		//Produto
 					 {aItem},;			//Dados da Invoice
-					 VAL(aLInha[6]),0,;
+					 VAL(aLInha[6]),;
+					 0,;
 					 PadR(aLinha[11],TamSx3("EW5_PO_NUM")[1], " ")})	//Total de Itens do Produto na Invoice
 
 	else
@@ -252,12 +262,13 @@ Local cTipo 	:= ""
 
 Local nX 		:= 1
 Local nY 		:= 1
+Local nZ		:= 1
 Local nTotal 	:= 0
 Local nSaldoAnt := 0
 Local nSaldo    := 0
 Local nRec		:= 0
 Local nQuant    := 0
-
+Local nLin      := 0
 For nY := 1 to len(aDados)
 
 	nX        := 1
@@ -266,22 +277,21 @@ For nY := 1 to len(aDados)
 	nSaldoAnt := 0 
 	
 	cProduto := aDados[nY,4]
-	
+	nLin := Len(aDados[nY,5])
 	//if Empty(cPoNum)
 	cPoNum   := aDados[nY,8]
 	//EndIf
 	
 	QrySW3(cAliasW3,cProduto)
 	nLinha := nY
+
 	If (cAliasw3)->(eof())
 		U_FCMVEIC0101("Item " + AllTrim(cProduto) + " não existe no pedido " + AllTrim(cPoNum) ,nLinha,AllTrim(cProduto) ,cFornecedor,cForloj,"R",AllTrim(cPoNum), , cInvoice)
 		lErro := .T.
 	EndIf
 
+	lAux := .T.
 	While !(cAliasw3)->(eof())
-
-		iif (nX > 1, nX--, nX:=1)
-		lAux := .T.
 		
 		cTipo  := (cAliasW3)->W3_FLUXO 
 
@@ -298,9 +308,37 @@ For nY := 1 to len(aDados)
 			cChave := SUBSTR((cAliasW3)->CHVW3,1,80)//1
 			nRec   := (cAliasW3)->SW3REC
 		EndIf						
-		
+				
 		aDados[nY,7] := nTotal
+		IF nLayOut == 1
+			If lAux .and. nSaldoAnt < aDados[nY,6] .and. alltrim((cAliasW3)->W3_COD_I) == alltrim(aDados[nY,4] ) .and. nX > nLin 
+				aItem := {	Space(4),;				//Linha
+							aDados[nY,5,nLin ,02] ,;				//Quantidade
+							aDados[nY,5,nLin ,03] ,;				//Valor
+							aDados[nY,5,nLin ,04] ,;				//Container
+							aDados[nY,5,nLin ,05] ,;				//Caixa
+							aDados[nY,5,nLin ,06] ,;				//Peso Liquido
+							aDados[nY,5,nLin ,07] ,;				//PURCHASE ORDER
+							aDados[nY,5,nLin ,08] ,;				//Conhecimento de Embarque
+							aDados[nY,5,nLin ,09] ,;				//Navio
+							aDados[nY,5,nLin ,10] ,;				//Saldo
+							aDados[nY,5,nLin ,11] ,;				//Preço Unitario
+							0 ,;
+							"",;						//RECSW3
+							0 ,;
+							"",;
+							0 ,; 						//RECSW5
+							0 ; //Rec da Temporaria
+						}
+				aadd(aDados[nY,5],aItem)
+			else
+				nLin := Len(aDados[nY,5])
+			EndIf
+		EndIf
+		iif (nX > 1, nX--, nX:=1)
+		lAux := .T.
 		nSaldoAnt := 0
+
 		While nX <= len(aDados[nY,5]) .and. lAux
 			if aDados[nY,5,nX,10] > 0
 				nSaldo := (aDados[nY,5,nX,10] + nSaldoAnt) - nSaldo
@@ -314,24 +352,33 @@ For nY := 1 to len(aDados)
 					nSaldoAnt := nSaldo
 					nSaldo    := 0
 				Endif
+				
 				if Empty(aDados[nY,5,nX,13]) .or. aDados[nY,5,nX,14] <> nRec
 					aDados[nY,5,nX,13] := cTipo
 					aDados[nY,5,nX,14] := nRec
 					aDados[nY,5,nX,15] := cChave
 				EndIf
+				
 				aDados[nY,5,nX,16] := nQuant
+				
 				if aDados[nY,5,nX,10] <= 0 //.and. aDados[nY,5,nX,12] <= 0
 					lAux := .F.
 				EndIf
 			EndIF
 			nLinha := aDados[nY,5,nX,1]
 			nX ++
-		EndDo				
-				
+		EndDo
+		
+		nSaldoAnt := 0			
+		
+		For nZ := 1 to  len(aDados[nY,5])
+			nSaldoAnt += aDados[nY,5,nZ,16]
+		Next nZ
+		
 		(cAliasw3)->(dbSkip())
 	EndDo
 
-	if aDados[nY,6] >aDados[nY,7] .and. !lErro
+	if aDados[nY,6] > aDados[nY,7] .and. !lErro
 		U_FCMVEIC0101("Não há saldo para o Item " + AllTrim(cProduto) + "  pedido : " + cPoNum ,nLinha,AllTrim(cProduto) ,cFornecedor,cForloj,"R",AllTrim(cPoNum), , cInvoice)
 		lErro := .T.
 	endif
@@ -566,6 +613,10 @@ Local cTexto := ""
 							WKEW5->EW5_XCASE	:=	aDados[nY,5,nX,5]
 							WKEW5->EW5_XCONT	:=	aDados[nY,5,nX,4]
 							WKEW5->EW5_XCHAV2	:=  cChave
+							
+							If nLay == 1
+								WKEW5->EW5_XLOTE	:=	Alltrim( cPO ) + aDados[nY,5,nX,5]
+							EndIf
 							
 							If aDados[nY,5,nX,13] == "1"
 								lAnuente := .T.
@@ -1253,24 +1304,73 @@ Static Function zGrvArq()
 	EndIF
 Return
 
+//----------------------------------------------------------------------------------
 
 
+//----------------------------------------------------------------------------------
 
+Static Function fAjuArr(aLinha,nLayOut)
+Local aAux   := ARRAY(13)
+Local cProd  := " "
+Local cNCM   := " "
+Local cEXNCM := " "
 
+Default nLayOut := 5
 
+if nLayOut == 1
+	cProd  := PadR(StrTran(aLinha[05],'-'),TamSx3("B1_COD"    )[1], " ")
+	cNCM   := Posicione('SB1',1,xFilial('SB1') + cProd, "B1_POSIPI")
+	cEXNCM := Posicione('SB1',1,xFilial('SB1') + cProd, "B1_EX_NCM")
+
+	aAux[01] := aLinha[04] //SEQ
+	aAux[02] := aLinha[02] //INVOICE
+	aAux[03] := cNCM       //NCM 
+	aAux[04] := cEXNCM     //EX
+	aAux[05] := cProd      //CODIGO PRODUTO
+	aAux[06] := aLinha[06] //QUANTIDADE
+	aAux[07] := aLinha[07] //VALOR UNITARIO
+	aAux[08] := aLinha[09] //CONTAINER
+	aAux[09] := aLinha[10] //CAIXAS
+	aAux[10] := "0"        // PESO LIQUIDO
+	aAux[11] := aLinha[11] //NUMERO DA PURCHASE ORDER
+	aAux[12] := aLinha[03] //CONHECIMENTO EMBARQUE SW6
+	aAux[13] := aLinha[08] //NAVIO SW6
+Else
+	aAux := aClone(aLinha)
+endIf
+
+Return aAux
 /*
-Lay-out do arquivo de importação
-[01] SEQUENCIA DO ITEM
-[02] NUMERO DA INVOICE
-[03] NCM
-[04] EX
-[05] CODIGO PRODUTO
-[06] QUANTIDADE
-[07] VALOR UNITÁRIO
-[08] CONTAINER
-[09] CAIXA
-[10] PESO LIQUIDO
-[11] NUMERO DA PURCHASE ORDER
-[12] CONHECIMENTO EMBARQUE
-[13] NAVIO
+Layout => 1
+  CKD
+	LAYOUT 
+	[01] LOTE
+	[02] INVOICE
+	[03] CONHECIMENTO EMBARQUE SW6
+	[04] SEQ
+	[05] CODIGO PRODUTO
+	[06] QUANTIDADE
+	[07] VALOR UNITARIO
+	[08] NAVIO SW6
+	[09] CONTAINER
+	[10] CAIXAS
+	[11] PO
+	[12] unitizador
+
+Layout => 5 e Geral
+
+	Lay-out do arquivo de importação
+	[01] SEQUENCIA DO ITEM
+	[02] NUMERO DA INVOICE
+	[03] NCM
+	[04] EX
+	[05] CODIGO PRODUTO
+	[06] QUANTIDADE
+	[07] VALOR UNITÁRIO
+	[08] CONTAINER
+	[09] CAIXA
+	[10] PESO LIQUIDO
+	[11] NUMERO DA PURCHASE ORDER
+	[12] CONHECIMENTO EMBARQUE
+	[13] NAVIO
 */
