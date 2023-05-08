@@ -128,7 +128,6 @@ Local oModel
 //lVirtual Indica que deverá considerar os campos virtuais no dicionário de dados. Utilizado somente para o tipo 2-Browse.
 //lFilOnView Indica que deverá considerar o campo de filial na view.
 //cProgram Nome do programa executado, quando for para abrir um browse, determina se deveremos considerar os campos localizados.
-
 Local oStr1 := FWFormStruct( 1, 'SZH', /*bAvalCampo*/, /*lViewUsado*/,  /*lVirtual*/ , /*lFilOnView*/,/*cProgram*/) // Construção de uma estrutura de dados
 Begin Sequence	
 	//Cria o objeto do Modelo de Dados

@@ -10,7 +10,9 @@ Descricao / Objetivo:   Realiza a importação da Planilha de Crédito Floor Plan
 Doc. Origem:            
 Solicitante:            
 Uso......:              [Barueri] - Financeiro
-Obs......:
+@project	GRUPO CAOA GAP FIN108 - Revitalização Credito [ Montadora ]
+Obs......: 
+@history 	04/04/2023	, DAC, Revitalização Limite de Crédito, alterado chamada de funcionalidade ZFATF017 para ZFATF014  
 =====================================================================================
 */
 User Function ZFATF012()
@@ -66,7 +68,7 @@ Static Function zProcImp() //u_ZFATF012()
     If !Empty(cFileOpen) .And. File(cFileOpen)
         Processa({|| ( _lRet := zImporta(cFileOpen) ) }, "Importando Crédito Floor Plan...")
         If _lRet
-            FWMsgRun(, {|| u_ZFATF017() },'Atualização Limite de Crédito','Aguarde atualizando Saldos do Limite de Credito dos Clientes')
+            FWMsgRun(, {|| U_ZFATF014() },'Atualização Limite de Crédito','Aguarde atualizando Saldos do Limite de Credito dos Clientes')
         EndIf
     EndIf
     
@@ -280,15 +282,15 @@ Local _cUpdSA1  := " "
 
         _cUpdSA1 := " "
         _cUpdSA1 +=  " UPDATE " + RetSqlName("SA1")                         + CRLF
-        _cUpdSA1 +=  " SET    A1_XLC = 0 "                                  + CRLF
+        _cUpdSA1 +=  " SET    A1_XLC    = 0 "                               + CRLF
         _cUpdSA1 +=  "       ,A1_XVALBO = 0 "                               + CRLF
         _cUpdSA1 +=  "       ,A1_XPEDFP = 0 "                               + CRLF
         _cUpdSA1 +=  "       ,A1_XFPSAL = 0 "                               + CRLF
         _cUpdSA1 +=  "       ,A1_XDTLC  = ' ' "                             + CRLF
-        _cUpdSA1 +=  "       ,A1_XSTAFP  = '5' "                            + CRLF
-        _cUpdSA1 +=  " WHERE A1_FILIAL = '" + FWxFilial("SA1") + "'"        + CRLF    
-        _cUpdSA1 +=  " AND A1_XTPCRED = '1' "                               + CRLF
-        _cUpdSA1 +=  " AND D_E_L_E_T_ = ' ' "                               + CRLF
+        _cUpdSA1 +=  "       ,A1_XSTAFP = '5' "                             + CRLF
+        _cUpdSA1 +=  " WHERE A1_FILIAL  = '" + FWxFilial("SA1") + "'"       + CRLF    
+        _cUpdSA1 +=  " AND A1_XTPCRED   = '1' "                             + CRLF
+        _cUpdSA1 +=  " AND D_E_L_E_T_   = ' ' "                             + CRLF
 
         If TcSqlExec(_cUpdSA1) < 0
             _lRet := .F.
@@ -347,19 +349,14 @@ Local _nReg
 		FROM  %Table:SA1% SA1
 		WHERE SA1.A1_FILIAL 	= %XFilial:SA1%
             AND SUBSTR(SA1.A1_CGC, 1, 8) = %Exp:_cCnpj%
+            AND SA1.A1_XTPCRED  = '1'
 			AND SA1.%notDel%    
-            ORDER BY SA1.A1_XTPCRED
-	EndSQL	
-	If (_cAliasPesq)->(!Eof()) 
-        _nReg   := 0
-        While (_cAliasPesq)->(!Eof())
-            If (_cAliasPesq)->A1_XTPCRED == "1"
-                _nReg   := (_cAliasPesq)->NREGSA1
-                Exit
-            EndIf 
-            (_cAliasPesq)->(DbSkip()) 
-        EndDo    
-	EndIf
+        ORDER BY SA1.A1_XTPCRED
+	EndSQL
+    (_cAliasPesq)->(DbGotop())	
+	If (_cAliasPesq)->(!Eof()) .AND. (_cAliasPesq)->NREGSA1 > 0 
+        _nReg   := (_cAliasPesq)->NREGSA1
+    EndIf 
 
 If Select(_cAliasPesq) <> 0
 	(_cAliasPesq)->(DbCloseArea())

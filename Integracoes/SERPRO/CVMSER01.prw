@@ -179,41 +179,64 @@ User Function CVMSER1P()
 	// Consulta principal
 	cAliasZ4 := GetNextAlias()
 	cSql001 := " "
-	cSql001 += " SELECT " 
-	cSql001 += " D2_DOC, D2_SERIE, VV0_NUMPED,  VV0_MODVEI, VV0_FILIAL, VV0_OPEMOV, " 
-	cSql001 += " VVA_NUMTRA, VVA_CODMAR, VVA_CHASSI, VV1_FABMOD, VV1_FABMOD, VE1_DESMAR, VV2_DESMOD, A1_NOME "
-	cSql001 += " FROM "+ RetSqlName("SD2") +" SD2 JOIN " 
-	cSql001 +=   RetSqlName("VV0") +" VV0 ON D2_FILIAL = VV0_FILIAL AND D2_PEDIDO = VV0_NUMPED AND VV0.D_E_L_E_T_ <> '*' " 
-    cSql001 += " JOIN "+ RetSqlName("VVA") +" VVA ON VVA_FILIAL = VV0_FILIAL AND VVA_NUMTRA = VV0_NUMTRA AND VVA.D_E_L_E_T_ <> '*' "
-    cSql001 += " JOIN "+ RetSqlName("VV1") +" VV1 ON VV1_CHASSI = VVA_CHASSI AND VV1.D_E_L_E_T_ <> '*' "
-    cSql001 += " JOIN "+ RetSqlName("VE1") +" VE1 ON VE1_CODMAR = VV1_CODMAR AND VE1.D_E_L_E_T_ <> '*' "
-    cSql001 += " JOIN "+ RetSqlName("VV2") +" VV2 ON VV2_CODMAR = VV1_CODMAR AND VV2_MODVEI = VV1_MODVEI AND VV2_SEGMOD=VV1_SEGMOD AND VV2.d_e_l_e_t_ <> '*'  "  
-    cSql001 += " JOIN "+ RetSqlName("SA1") +" SA1 ON A1_COD = D2_CLIENTE AND A1_LOJA = D2_LOJA AND SD2.D_E_L_E_T_ <> '*' "
-    cSql001 += " WHERE SD2.D_E_L_E_T_ <> '*' " 
-    cSql001 += " AND D2_GRUPO = 'VEIA' "
-    cSql001 += " AND D2_EMISSAO BETWEEN '"+ DToS(MV_PAR01) +"' AND '"+ DToS(MV_PAR02) +"' "
-	
+		
+	cSql001 += "  SELECT  SD2.D2_DOC, "
+    cSql001 += "      	  SD2.D2_SERIE, "
+    cSql001 += "      	  NVL(VV0.VV0_NUMPED,SD2.D2_PEDIDO) AS VV0_NUMPED, "
+    cSql001 += "      	  VV1.VV1_MODVEI AS VV0_MODVEI, "
+    cSql001 += "      	  VV1.VV1_FILIAL AS VV0_FILIAL, "
+    cSql001 += "      	  NVL(VV0.VV0_OPEMOV,'0')AS VV0_OPEMOV, "
+    cSql001 += "      	  VV1.VV1_NUMTRA AS VVA_NUMTRA, "
+    cSql001 += "      	  VV1.VV1_CODMAR AS VVA_CODMAR, "
+    cSql001 += "      	  NVL(VVA.VVA_CHASSI,SD2.D2_NUMSERI) AS VVA_CHASSI, "
+    cSql001 += "      	  VV1.VV1_FABMOD, "
+    cSql001 += "      	  VV1.VV1_FABMOD, "
+    cSql001 += "      	  VE1.VE1_DESMAR, "
+    cSql001 += "      	  VV2.VV2_DESMOD, "
+    cSql001 += "      	  SA1.A1_NOME "
+    
+	cSql001 += "  FROM " + RetSqlName( "SD2" ) + " SD2  "
+    
+	cSql001 += "  JOIN " + RetSqlName( "VV1" ) + " VV1  "
+    cSql001 += "      ON  VV1.VV1_CHASSI = SD2.D2_NUMSERI "
+    cSql001 += "      AND VV1.D_E_L_E_T_ = ' ' "
+    
+	cSql001 += "  JOIN " + RetSqlName( "VE1" ) + " VE1  "
+    cSql001 += "      ON  VE1.VE1_CODMAR = VV1.VV1_CODMAR  "
+    cSql001 += "      AND VE1.D_E_L_E_T_ = ' ' "
+    
+	cSql001 += "  JOIN " + RetSqlName( "VV2" ) + " VV2  "
+    cSql001 += "      ON  VV2.VV2_CODMAR = VV1.VV1_CODMAR  "
+    cSql001 += "      AND VV2.VV2_MODVEI = VV1.VV1_MODVEI  "
+    cSql001 += "      AND VV2.VV2_SEGMOD = VV1.VV1_SEGMOD  "
+    cSql001 += "      AND VV2.D_E_L_E_T_ = ' ' "
+    
+	cSql001 += "  JOIN " + RetSqlName( "SA1" ) + " SA1  "
+    cSql001 += "      ON  SA1.A1_COD     = SD2.D2_CLIENTE  "
+    cSql001 += "      AND SA1.A1_LOJA    = SD2.D2_LOJA  "
+    cSql001 += "      AND SA1.D_E_L_E_T_ = ' ' "
+    
+	cSql001 += "  LEFT JOIN " + RetSqlName( "VV0" ) + " VV0  "
+    cSql001 += "      ON  VV0.VV0_FILIAL = SD2.D2_FILIAL "
+    cSql001 += "      AND VV0.VV0_NUMPED = SD2.D2_PEDIDO "
+    cSql001 += "      AND VV0.D_E_L_E_T_ = ' ' "
+    
+	cSql001 += "  LEFT JOIN " + RetSqlName( "VVA" ) + " VVA  "
+    cSql001 += "      ON  VVA.VVA_FILIAL  = VV0.VV0_FILIAL  "
+    cSql001 += "      AND VVA.VVA_NUMTRA  = VV0.VV0_NUMTRA  "
+    cSql001 += "      AND VVA.D_E_L_E_T_ = ' ' "
+    
+	cSql001 += "  WHERE SD2.D_E_L_E_T_ <> '*'  "
+    cSql001 += "      AND SD2.D2_GRUPO = 'VEIA'   "
+    cSql001 += "      AND SD2.D2_EMISSAO BETWEEN '" + DToS( MV_PAR01 ) + "' AND '" + DToS( MV_PAR02 ) + "'   "
+    
 	If !Empty(MV_PAR03)     
-       cSql001 += " AND VVA_CODMAR = '"+ AllTrim(MV_PAR03) + "'"
+        cSql001 += "      AND VV1.VV1_CODMAR = '" + AllTrim( MV_PAR03 ) + "' "
 	EndIf
 	
-	/*ELSE
-    	If !Empty(mv_par05) 
-	    	cSql001 += " AND VV0_MODVEI = '"+ AllTrim(mv_par05) +"' "
-	    EndIf
-	EndIf
-	If !Empty(mv_par04) 
-		cSql001 += "   AND VVA_CHASSI = '"+ AllTrim(mv_par04) +"' "
-	EndIf
-	If !Empty(mv_par05) 
-		cSql001 += "   AND VV0_MODVEI = '"+ AllTrim(mv_par05) +"' "
-	EndIf
-	If !Empty(mv_par06) 
-		cSql001 += "   AND VV0_FABMOD = '"+ AllTrim(mv_par06) +"' "
-	EndIf*/
 	memowrite('C:\temp\consulta.sql',cSql001)
 
-    cSql001 := ChangeQuery(cSql001)
+    //cSql001 := ChangeQuery(cSql001)
 	DbUseArea(.T.,"TOPCONN",TCGENQRY(,,cSql001),cAliasZ4,.F.,.T.)
 
 	//FwMsgRun(,{|| DbUseArea( .T., "TOPCONN", TcGenQry(, , cSql001), cAliasZ4, .T., .T.)},,"Executando consulta na base de dados.")
@@ -364,7 +387,8 @@ Static Function fGeraAux( aRegs )
 	Local cQuery 			:=	""
 	Local cTmpAlias			:= GetNextAlias()
 	Local aOriArea			:= {}
-
+	Local lVV0 				:= .T.
+	Local lVVA 				:= .T.
 		// Verifica a Build
 	lBuild := GetBuild( .T. ) >= "7.00.131227A-20141119"
 	
@@ -453,9 +477,26 @@ Static Function fGeraAux( aRegs )
 	
 	// VF1 - DETALHES DO VEÍCULO (PARTE 1)
 	For nXi := 1 To Len(aRegs)
-	
-		If !VVA->( DbSeek( xFilial("VVA") + aRegs[nXi][02] ) )
+		
+		cQuery :=  " SELECT * FROM " + RetSqlName("SD2") 
+        cQuery +=  " WHERE D_E_L_E_T_ = ' '
+        cQuery +=  "   AND D2_NUMSERI = '" + aRegs[nXi][02] + "' "
+        cQuery +=  "   AND D2_FILIAL = '" + xFilial("SD2") + "' "
+		
+				
+		If Select( cTmpAlias ) <> 0 ; ( cTmpAlias )->( DbCloseArea() ) ; EndIf
+		
+		DbUseArea(.T. , "TOPCONN" , TcGenQry( ,,cQuery ) , cTmpAlias , .F. , .T. )
+		
+		If ( cTmpAlias )->(Eof())
 			Loop
+		EndIf
+		
+		If !VVA->( DbSeek( xFilial("VVA") + aRegs[nXi][02] ) )
+			//Loop
+			lVVA := .F.
+		else
+			lVVA := .T.
 		EndIf
 	
 		If !VV1->( DbSeek( xFilial("VV1") + aRegs[nXi][02] ) )
@@ -463,7 +504,10 @@ Static Function fGeraAux( aRegs )
 		EndIf
 
 		If !VV0->( DbSeek( xFilial("VV0") + VV1->VV1_NUMTRA ) )
-			Loop
+			lVV0 := .F.
+			//Loop
+		else
+			lVV0 := .T.
 		EndIf
 
 		If !VV2->( DbSeek( xFilial("VV2") + VV1->( VV1_CODMAR + VV1_MODVEI + VV1_SEGMOD) ) )
@@ -474,15 +518,23 @@ Static Function fGeraAux( aRegs )
 			//cMesFab := SUBSTR(DTOS(VVF->VVF_DATFAB),5,2)
 		   
 		//EndIf                                   
-		                                                                 
+		if lVV0
+			cCliente := VV0->(VV0_CODCLI + VV0_LOJA)
+			cFornece := VV0->(VV0_CODCLI + VV0_LOJA)
+			cNf := VV0->VV0_NUMNFI + VV0->VV0_SERNFI + VV0->VV0_CODCLI + VV0->VV0_LOJA
+		else
+			cCliente := (cTmpAlias )->( D2_CLIENTE + D2_LOJA ) 
+			cFornece := (cTmpAlias )->( D2_CLIENTE + D2_LOJA ) 
+			cNf := (cTmpAlias )->( D2_DOC + D2_SERIE + D2_CLIENTE + D2_LOJA ) 
+		Endif                                                                 
 		
 		SD1->( DbSeek( xFilial("SD1") + VVF->VVF_NUMNFI + VVF->VVF_SERNFI + VVF->VVF_CODFOR + VVF->VVF_LOJA ) ) 
 		
 		SW6->( DbSeek( xFilial("SW6") + SD1->D1_CONHEC ) )   //VVF->(VVF_CODCLI + VV0_LOJA) ) )
 
-		SA1->( DbSeek( xFilial("SA1") + VV0->(VV0_CODCLI + VV0_LOJA) ) )
+		SA1->( DbSeek( xFilial("SA1") + cCliente ) )
 
-		SA2->( DbSeek( xFilial("SA2") + VV0->(VV0_CODCLI + VV0_LOJA) ) )
+		SA2->( DbSeek( xFilial("SA2") + cCliente ) )
 
 		VVC->( DbSeek( xFilial("VVC") + VV1->(VV1_CODMAR + VV1_CORVEI) ) )
 		
@@ -490,7 +542,7 @@ Static Function fGeraAux( aRegs )
 		
 		VE1->( DbSeek( xFilial("VV1") + VV2->VV2_CODMAR ) )
 
-		SF2->(dbSeek(xFilial("SF2")+VV0->VV0_NUMNFI+VV0->VV0_SERNFI+VV0->VV0_CODCLI+VV0->VV0_LOJA))
+		SF2->(dbSeek(xFilial("SF2")+cNF ))
   
 		cRegVF1 := ""
 		cRegVF1 += "VF1" 										// 001 a 003: IDENTIFICAÇÃO DO REGISTRO <VF1>

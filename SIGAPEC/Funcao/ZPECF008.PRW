@@ -61,8 +61,6 @@ User Function ZPECF008()
 	Private _aMensAglu	:= {}
 	
 	Begin Sequence
-		//teste para validar envio
-		//Caso não seja para executar a rotina sair
 		If !_lZPECF008                             
 			Break
 		Endif        

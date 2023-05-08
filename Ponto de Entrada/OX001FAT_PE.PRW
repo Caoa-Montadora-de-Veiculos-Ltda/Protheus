@@ -1,4 +1,4 @@
-/*/{Protheus.doc} XFASLIMCRE
+/*/{Protheus.doc} OX001FAT
 Ponto de entrada antes de iniciar faturamento OX001FAT_PE
 @author 	DAC-Denilso
 @since 		25/03/2022

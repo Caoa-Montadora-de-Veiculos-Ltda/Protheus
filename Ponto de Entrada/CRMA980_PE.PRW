@@ -1,3 +1,6 @@
+#Include "Totvs.CH"
+#include "parmtype.ch"
+
 /*/{Protheus.doc} CRMA980
 Ponto de Entrada para Cadastro de cliente MVC
 @author CAOA
@@ -8,176 +11,121 @@ Ponto de Entrada para Cadastro de cliente MVC
             GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (Revitalização Limite de Crédito)
             Revitalição processo limite de crédito, anteriormente iniciariam o processo com um campo Matriz, após analise
             não passou a utilizar este campo utilizando o campo XTPPED para o processo
+@history    DAC Denilso - 06/04/2023	        
+            GRUPO CAOA GAP FIN108 - Revitalização Credito [ Montadora ]
+            Unificação Peças com Montadora
 @Obs   
+@tdn        https://tdn.totvs.com/pages/releaseview.action?pageId=616215550
 /*/
-
-#include "protheus.ch"
-#include "parmtype.ch"
-
 
 User Function CRMA980()
-   Local _cEmp    := FWCodEmp()
-   Local _lRet	  := .T.
-   Local _aArea	  := GetArea()
-
-   If _cEmp == "2010" //Executa o p.e. Anapolis.
-      _lRet := zMontadora()
-   Else
-      _lRet := zCaoaSp() //Executa o p.e. CaoaSp
-   EndIf
-   RestArea(_aArea)
-Return(_lRet)
-
-/*
-==============================================================================================
-Programa.:              zMontadora
-Autor....:              Evandro Mariano
-Data.....:              08/11/2022
-Descricao / Objetivo:   Executa chamada Montadora
-===============================================================================================
-*/
-Static Function zMontadora()
-    Local aParam    := PARAMIXB
-    Local _lRet     := .T.
-    Local oObj      := ""
-    Local cIdPonto  := ""
-    Local cIdModel  := ""
-    Local _nOpcx
-
-    If aParam == NIL
+Local _aParam   := PARAMIXB
+Local _aArea    := GetArea()
+Local _lRet     := .T.
+Local _oObj     := ""
+Local _cIdPonto := ""
+Local _cIdModel := ""
+Local _nOpcx 
+Begin Sequence    
+    If _aParam == NIL
         Return(_lRet)
     EndIf
+    _oObj           := _aParam[1]
+    _cIdPonto       := _aParam[2]
+    _cIdModel       := _aParam[3]
+    _nOpcx          := _oObj:GetOperation() // PEGA A OPERAÇÃO
 
-    //If (aParam <> NIL)
-    oObj        := aParam[1]
-    cIdPonto    := aParam[2]
-    cIdModel    := aParam[3]
-
-
-    _nOpcx := oObj:GetOperation() // PEGA A OPERAÇÃO
-
-    If (cIdPonto =="MODELCOMMITNTTS")
-        _cCodCli	:= If(Type("M->A1_COD") 	== "C",M->A1_COD	,SA1->A1_COD)
-        _cLoja		:= If(Type("M->A1_LOJA") 	== "C",M->A1_LOJA	,SA1->A1_LOJA)
-
-        If _nOpcx == 3 .or. _nOpcx == 4 //.or. nOpcx == 5   //Inclusão ou Alteração ou Excluir
-           //U_ZF10GENSAP("SA1",SA1->A1_COD+SA1->A1_LOJA,"A1_XCDSAP", _nOpc)
-           U_ZF10GENSAP("SA1", _cCodCli+_cLoja, "A1_XCDSAP", _nOpcx)
-        EndIf
-        //aguardar implementação da montadora
-        //MsgRun("Atualizando Limite de Crédito Caoa","Aguarde...",{|| ZAtLCredito(_cCodCli) })
-    EndIf
-Return(_lRet)
-
-
-/*
-==============================================================================================
-Programa.:              zCaoaSp
-Autor....:              Evandro Mariano
-Data.....:              08/11/2022
-Descricao / Objetivo:   Executa chamada CaoaSp
-===============================================================================================
-*/
-Static Function zCaoaSp()
-
-    Local aParam    := PARAMIXB
-    Local _lRet      := .T.
-    Local oObj      := ""
-    Local cIdPonto  := ""
-    Local cIdModel  := ""
-    Local _nOpcx 
-    
-    //Private nOpcx             //opção da manutenção do cadastro (I,A,E)
-
-    If aParam == NIL
-        Return(_lRet)
-    EndIf
-        
-    oObj           := aParam[1]
-    cIdPonto       := aParam[2]
-    cIdModel       := aParam[3]
-    nOpcx          := oObj:GetOperation() // PEGA A OPERAÇÃO
-
-    /* passou a ser executado no PE CRM980BFIL
-    If (cIDPonto == 'MODELVLDACTIVE')
-        IF FWCodEmp() = '2020' .AND. FWFilial() = '2001'
-           MsgRun("Atualizando Limite de Crédito Caoa","Aguarde...",{|| u_ZFATF017() })
-        EndIf
-    */
-    //ElseIf  cIdPonto == 'MODELPOS'
-    //ElseIf (cIdPonto =="MODELCOMMITNTTS")
-    If (cIdPonto =="MODELCOMMITNTTS")
-        //IF FWCodEmp() = '2020' .AND. FWFilial() = '2001'
+    If (_cIdPonto =="MODELCOMMITNTTS")
         If _nOpcx == 3 .or. _nOpcx == 4 //.or. _nOpcx == 5 //Inclusão ou Alteração ou Excluir
-			U_ZWSR006("C"    ,M->A1_COD  ,M->A1_LOJA )
-            U_ZF10GENSAP("SA1", M->A1_COD+M->A1_LOJA, "A1_XCDSAP", _nOpcx)
+            ZCRMA980LC(_nOpcx)
         EndIf
-        //If FWCodEmp() = '2020' .AND. FWFilial() = '2001' 
-        //If nOpcx == 3 .or. nOpcx == 4
-        MsgRun("Atualizando Limite de Crédito Caoa","Aguarde...",{|| ZAtLCredito(M->A1_COD) })
-        //MsgRun("Atualizando Limite de Crédito Caoa","Aguarde...",{|| u_ZFATF017() })
-        //EndIf
-            //EndIf
-		//EndIf
+        //quando exclusão zero a loja para atualizar todos  DAC 03/04/2023
+        If _nOpcx == 5
+            _cLoja := ""
+        EndIf
+    //Avalia antes de gravar se foi alterado algum campo customizado para gravar tabela de Log SZ2
+    ElseIf _cIdPonto == 'FORMCOMMITTTSPRE'
+        ZCRMA980VA(/*_cUserSol*/, /*_cRotina*/)
+    //ElseIf  _cIdPonto == 'MODELPOS'
     EndIf
+End Sequence
+RestArea(_aArea)
 Return(_lRet)
 
 
-/*/{Protheus.doc} ZAtLCredito
-Função para atualiar os valiores de limite de crédito dos clientes que não utilizam limite
-pesquisando pelo codigo e avaliando as lojas zerara os valores e dadas do limite de crédito
-@author DAC
-@since 27/02/2023
-@version 2.0
-@Obs   
-/*/
-Static Function ZAtLCredito(_cCodCli)
-Local _lRet         := .T.
-Local _lJob			:= IsBlind()
-Local _cQuery       := ""
-Local _nRegSA1      := SA1->(Recno()) //guardo o numero do registro atual para verificar status 
-Local _nStatus
 
-Default _cCodCli    := ""
+Static Function ZCRMA980LC(_nOpcx)
+Local _lRet      := .T.
+Local _cCodCli
+Local _cLoja
+Local _cTpCred
 
-If Empty(_cCodCli)
-    Return _lRet
-Endif
-	//Limpa registro que era Matriz anteriormente diferentes dos registros que  é matriz DAC 24/02/2023
-	_cQuery += "UPDATE " +RetSqlName("SA1")+ " SA1" 						+ CRLF
-	_cQuery += "SET 	SA1.A1_XLC  	= 0 " 								+ CRLF
-	_cQuery += " 	,	SA1.A1_XDTLC 	= '" + Space(08) + "'" 		        + CRLF
-	_cQuery += " 	,	SA1.A1_XTPCRED 	= '0' " 		                    + CRLF
-	_cQuery += " 	,	SA1.A1_XFPSAL 	= 0 " 		                        + CRLF
-	_cQuery += " 	,	SA1.A1_XFPATR 	= 0 " 		                        + CRLF
-	_cQuery += " 	,	SA1.A1_XLMUSA 	= 0 " 		                        + CRLF
-	_cQuery += " 	,	SA1.A1_XSTAFP 	= '" + Space(01) + "'" 		        + CRLF
-	_cQuery += " 	,	SA1.A1_XPEDFP 	= 0 " 		                        + CRLF
-	_cQuery += " 	,	SA1.A1_XVALBO 	= 0 " 		                        + CRLF
-	_cQuery += " 	,	SA1.A1_XBLQLC 	= '0'" 	                	        + CRLF
-	_cQuery += " 	,	SA1.A1_XBLQVEN 	= '" + Space(01) + "'" 		        + CRLF
-	_cQuery += "WHERE SA1.D_E_L_E_T_    = ' '" 								+ CRLF
-	_cQuery += " 	AND SA1.A1_FILIAL   = '"	+ XFilial("SA1") +"'"  		+ CRLF	
-	_cQuery += " 	AND SA1.A1_COD      = '"	+ _cCodCli +"'"  			+ CRLF	
-    //De acordo com levantamento caso troque a loja respeonsavel pelo crédito deverá alterar a loja que estava anteriormente com crédito para não ter mais crédito
-     If M->A1_XTPCRED == "0"
-	    _cQuery += " 	AND SA1.A1_XTPCRED  = '0' "  			            + CRLF
-    Else     	
-  	    _cQuery += " 	AND SA1.R_E_C_N_O_  <> '"+ AllTrim(Str(_nRegSA1)) +"'"  	+ CRLF	
+Private nOpcx   := _nOpcx   //necessário pois a funcionalidade ZWSR005 espera como private  DAC 03/04/2023  
+
+Begin Sequence
+    _cCodCli	    := If(Type("M->A1_COD") 	== "C",M->A1_COD	    ,SA1->A1_COD)
+    _cLoja		    := If(Type("M->A1_LOJA") 	== "C",M->A1_LOJA	    ,SA1->A1_LOJA)
+    _cTpCred        := If(Type("M->A1_XTPCRED")	== "C",M->A1_XTPCRED	,SA1->A1_XTPCRED)
+    If FWCodEmp() = '2020'
+		U_ZWSR006("C", _cCodCli , _cLoja )
+    //ElseIf FWCodEmp() = '2010'
     EndIf
+    U_ZF10GENSAP("SA1", _cCodCli+_cLoja, "A1_XCDSAP", _nOpcx)    //gravar tabela SZ7 para envio SAP
+    MsgRun("Atualizando Limite de Crédito Caoa","Aguarde...",{|| U_ZFATF014(_cCodCli, _cTpCred, _cLoja, .T.) })
+End Sequence
+Return(_lRet)
 
-	Begin Transaction	
-		_nStatus := TcSqlExec(_cQuery)
-		if (_nStatus < 0)
-			If !_lJob 
-				MSGINFO("Erro ao gravar dados do limite de crédito tabela SA1 "+ TCSQLError() , "[CRMA980] - Atenção" )
-			Endif
-			Conout("[CRMA980] PROBLEMAS NO SELECT "+ CRLF + TCSQLError())
-			_lRet := .F.
+
+Static Function ZCRMA980VA(_cUserSol, _cRotina)
+Local _cAliasPesq  	:= GetNextAlias()
+Local _lRet         := .T.
+Local _cCampo	
+Local _cTitulo 
+Local _xValor
+Local _xValorNovo
+
+Default _cUserSol := RetCodUsr()
+Default _cRotina  := "CAD. CLIENTES" 
+
+Begin Sequence
+	BeginSql Alias _cAliasPesq
+		SELECT  SX3.X3_CAMPO  AS CAMPO 
+			   ,SX3.X3_TITULO AS TITULO 
+		FROM %Table:SX3% SX3
+		WHERE SX3.%NotDel%
+			AND SX3.X3_ARQUIVO = 'SA1'
+            AND (SX3.X3_PROPRI IN ('U') OR SUBSTR(SX3.X3_CAMPO,1,4) = 'A1_X')
+	EndSql
+    /*
+			AND SX3.X3_FOLDER = (	SELECT SXA.XA_ORDEM 
+								    FROM SXA010 SXA
+								    WHERE
+										SXA.%NotDel%
+									    AND SXA.XA_ALIAS = %Exp:_cTable%
+									    AND SXA.XA_PROPRI = 'U' 
+                                        AND SXA.XA_DESCRIC LIKE 'Cr%')
+    */
+    If (_cAliasPesq)->(Eof())
+        Break
+    Endif    
+	(_cAliasPesq)->(DbGoTop())
+	While (_cAliasPesq)->(!EOF())
+		_xValor	:= SA1->(FieldGet(FieldPos((_cAliasPesq)->CAMPO)))
+        If _xValor <> Nil			
+    		_cCampo	    := AllTrim( (_cAliasPesq)->CAMPO )
+            _xValorNovo := M->(&_cCampo)
+    		_cTitulo    := Upper(AllTrim( (_cAliasPesq)->TITULO ))
+            If  _xValorNovo <> _xValor
+                U_ZGENLZA2( _xValor, _xValorNovo, _cCampo, _cTitulo, "CAD. CLIENTES",/*_cUserSol*/)  //ZEMLOG.PRW
+            Endif
         EndIf
-	End Transaction
-    If _lRet		  
-        u_ZFATF017(_cCodCli)
-    Endif
+        (_cAliasPesq)->(DbSkip())
+    EndDo
+End Sequence
+If Select((_cAliasPesq)) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif 
 Return _lRet
+
 
