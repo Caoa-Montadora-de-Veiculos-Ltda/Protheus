@@ -1,5 +1,4 @@
 #Include "TOTVS.CH"
-#Include "Protheus.CH"
 
 /*/{Protheus.doc} LOGLIM
 	Apresentar tela com LOG de alteração nos dados de *Limite de Crédito* no cadastro Cliente
@@ -88,12 +87,9 @@ User Function LOGLIM()
 		EndIf
 	Next _nX
 
-	If Select(cAliZA2) > 0
-		(cAliZA2)->(DbCloseArea())
-	EndIf
-	BeginSql Alias cAliZA2
-		Column ZA2_DATA  AS Date
+	//	Column ZA2_DATA  AS Date
 
+	BeginSql Alias cAliZA2
 		SELECT
 			ZA2_DATA,
 			ZA2_HORA,
@@ -101,16 +97,19 @@ User Function LOGLIM()
 			ZA2_SOLICI,
 			ZA2_OBSERV
 		FROM %Table:ZA2% Z
+	EndSql
+	Count To nReg
+
+/*
 		WHERE
 				Z.%NotDel%
 			AND Z.ZA2_FILIAL = %xFilial:ZA2%
 			AND Z.ZA2_CLIENT = %Exp:M->A1_COD%
 			AND Z.ZA2_LOJA = %Exp:M->A1_LOJA%
 		ORDER BY
-			ZA2_DATA, ZA2_HORA
-	EndSql
-	Count To nReg
+		ZA2_DATA, ZA2_HORA
 
+*/
 	If nReg > 0
 		(cAliZA2)->(DbGoTop())
 
