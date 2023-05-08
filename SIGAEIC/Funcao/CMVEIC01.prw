@@ -71,7 +71,7 @@ User Function CMVEI01A()
 	Private nVlOutD		:= 0
 	Private nRecW2		:= 0
 	Private nPesoL		:= 0
-	Private nLayout		:= 0
+	Private nLayout		:= 1
 	Private nTipPreco   := 0
 	Private nTotalFOB 	:= 0
 	Private nRecZZE  	:= 0  	//usada no função CMVEIC0101
@@ -267,8 +267,8 @@ Static Function IntegraInv()
 	cFalta		:= ""
 
 	MontaWork1()
-	if nLayout == 5
-		Processa( {|| lErroGer := !(U_ZEICF021(cINTCSV,cPoNum))}, "Lendo Arquivo de Integração...", OemToAnsi("Lendo dados do arquivo..."),.F.)
+	if nLayout == 5 .or. nLayout == 1
+		Processa( {|| lErroGer := !(U_ZEICF021(cINTCSV,cPoNum,nLayout))}, "Lendo Arquivo de Integração...", OemToAnsi("Lendo dados do arquivo..."),.F.)
 	Else
 		Processa( {|| LerDados(cINTCSV)  }, "Lendo Arquivo de Integração...", OemToAnsi("Lendo dados do arquivo..."),.F.)
 	EndIf
@@ -280,7 +280,7 @@ Static Function IntegraInv()
 
 		MsgStop("Integração não pode ser concluída! Verifique relatório de Erros"+IIF(Empty(cFalta),"",+CRLF+" "+CRLF+"Itens sem pedidos listados em arquivo: "+cArqFalta))
 
-	Elseif nLayout <> 5 
+	Elseif nLayout <> 1 .and. nLayout <> 5 
 
 		CMV01Capa()
 		If lCapaOk
@@ -458,7 +458,7 @@ Static Function LerDados(cINTCSV)
 				Exit
 			Else
 				aCampos[7]:=StrTran(aCampos[7], ",",".")
-
+				
 				if nLayOut == 5
 					aCampos[5] := aCampos[5]
 				Else
@@ -542,6 +542,10 @@ Static Function LerDados(cINTCSV)
 			[12] unitizador		 */
 			aCampos := SEPARA(cLinhaIT,cSeparador)
 			//			IF Len(aCampos) <> 11
+			if alltrim(aCampos[5]) $ '13163101|401001030AA|602002342AA'
+				conout('13163101')
+			endif
+
 			IF Len(aCampos) < 12
 				lErro := .T.
 			Else
