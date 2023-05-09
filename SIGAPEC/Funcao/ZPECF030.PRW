@@ -68,31 +68,22 @@
 #define DATA_PVINCIAL  	3
 #define DATA_FATURADO  	4
 
+Static oZPEC08Peca  := DMS_Peca():New()
+
 //====================================
 
 User Function ZPECF030
 Begin Sequence
-	Private cRotinaExec := "" // Guarda a ultima rotina executada								
 	Private FreWindow := FreAcWindow():New("SB1")	
-	//Private Inclui := .F.
-	//Private Altera := .F.
-	//Private Exclui := .F.
-	//Private LGRADE := .F.
-	
-	//Private lInRefresh	:=	.F.
-	//Private nOpcAuto := 3
-	//Private lAltera := .F.       
-	//Private aRotina := MenuDef()
 	Private _cAliasPlan := ""
 	Private _aFil     	 := {}
-	Private _nTotPrev	 := 0
 	//Private _OBrPlaneja
 	Private oArea    
-	Private oBrowse   
-	Private _OBrRelac
+	Private oPanelVis
+	Private _oBrRelac   
 	Private	_aPrdREL 
 		
-	lPanel := .T.
+	//lPanel := .T.
 	
 	FreWindow:Init()
 	FreWindow:Show()
@@ -129,9 +120,9 @@ Class FreAcWindow
 	// objetos necessários para a interface	
 	Data oGetData As Object
 	Data oPrn As Object
-	Data oBrowse As Object
+	//Data _oBrRelac As Object
 	Data _oBrPlan As Object
-	Data _OBrRelac As Object
+	//Data _OBrRelac As Object
 	Data oTOleContainer As Object
 	Data oOle As Object
 	Data oScroll As Object
@@ -178,7 +169,7 @@ Class FreAcWindow
 	Method CreateLeftColumn()
 	Method CreateRightColumn()
 	Method CreateCenterColumn()
-	Method FilterFile()
+	//Method FilterFile()
 	// atualização
 	Method Refresh()	
 	Method RefreshSearch()
@@ -250,9 +241,9 @@ Begin Sequence
 	// objetos necessários para a interface	
 	Self:oGetData 	:= Nil
 	Self:oPrn 	    := Nil
-	Self:oBrowse 	:= Nil
+	//_oBrRelac 	:= Nil
 	Self:_oBrPlan   := Nil 
-	Self:_oBrRelac  := Nil 
+	//_oBrRelac  := Nil 
 	Self:oBrwse		:= Nil
 	Self:oTOleContainer := Nil
 	Self:oOle		:= Nil	
@@ -314,7 +305,7 @@ Begin Sequence
   	U_FaMyBar(Self:oPanelDados, , , , ;
           {{"" 	, "Orçamento                 ", {||/*Self:PesqBKP(_cPerg)*/}}}, .F., .F.)	 
 	U_FaMyBar(Self:oPanelDados, , , , ;
-          {{"" 	, "Picking                         ", {||MSGINFO( "Em desenvolvimento", "Atenção" )}}}, .F., .F.)	 
+          {{"" 	, "Picking                        ", {||MSGINFO( "Em desenvolvimento", "Atenção" )}}}, .F., .F.)	 
 End Sequence
 Return
 
@@ -336,7 +327,7 @@ Begin Sequence
 	Self:oArea:SetColSplit(COL_CENTER, CONTROL_ALIGN_LEFT)
 
 	// visualização do planejamento
-	Self:oArea:Addwindow(COL_CENTER, WND_VIS, "Consulta de Peças ", 75, .T., .F.) 
+	Self:oArea:Addwindow(COL_CENTER, WND_VIS, "Consulta de Peças ", 70, .T., .F.) 
 	Self:oPanelBrowse := Self:oArea:GetWinPanel(COL_CENTER, WND_VIS)
 
 //	Self:oArea:AddWindow(COL_CENTER, WND_BROWSE, "Relacionamento", 25, .T., .F.)
@@ -345,7 +336,7 @@ Begin Sequence
 	SB1->(DbSetOrder(1))
 	SB1->(DbSeek(XFilial("SB1")+AllTrim(MV_PAR01)))
 	_cDescr := AllTrim(SB1->B1_DESC)
-	Self:oArea:AddWindow(COL_CENTER, WND_BROWSE, "Relacionamento "+_cDescr, 25, .T., .F.)
+	Self:oArea:AddWindow(COL_CENTER, WND_BROWSE, "Relacionamento ", 30, .T., .F.)
 	Self:oPanelVis := Self:oArea:GetWinPanel(COL_CENTER, WND_BROWSE)
 
     //Campos tabela temporaria              
@@ -355,8 +346,8 @@ Begin Sequence
 	 
     //funcionalidade para carga da tabela temporária
 	LoadPlan()
-    //(_cAliasPlan)->(DbGotop()) 
     aRotina := MenuDef2()
+    //(_cAliasPlan)->(DbGotop()) 
     //tabela temporaria
     Self:_OBrPlan:=FWMBrowse():New(Self:oPanelBrowse)
     Self:_OBrPlan:SetTemporary(.T.) //Indica que o Browse utiliza tabela temporária
@@ -373,7 +364,7 @@ Begin Sequence
     Self:_OBrPlan:SetOwner(Self:oPanelBrowse)
 	Self:_OBrPlan:SetPreEditCell({|| DbSelectArea(_cAliasPlan), .T.})
 	//Self:_OBrPlan:SetEditCell(.T.)
-	Self:_OBrPlan:SetEditCell (.T., {|| .T. })
+	//Self:_OBrPlan:SetEditCell (.T., {|| .T. })
     Self:_OBrPlan:SetMenuDef('ZPECF30P') //funcionalidade corrente                        // Nome do fonte onde esta a função MenuDef
 	//Self:_OBrPlan:lMaximized := .T.
 
@@ -403,53 +394,52 @@ Begin Sequence
 	Self:_OBrPlan:GoTop(.T.)
 	Self:_OBrPlan:Refresh(.T.)
 
-
+	U_ZPECF30K(.F.)
 	// Define o Browse Relacionados
-	U_ZPECF30K()
-	Self:oBrowse := FWBrowse():New(Self:oPanelVis)
-	Self:oBrowse:SetDataArray(.T.)
-	Self:oBrowse:SetArray(_aPrdREL)
-	Self:oBrowse:DisableConfig(.T.)
-	Self:oBrowse:DisableReport(.T.)
-	Self:oBrowse:DisableLocate(.T.)
-	Self:oBrowse:DisableFilter(.T.)
-    Self:oBrowse:SetOwner(Self:oPanelVis)
+	_oBrRelac := FWBrowse():New(Self:oPanelVis)
+	_oBrRelac:SetDataArray(.T.)
+	_oBrRelac:SetArray(_aPrdREL)
+	_oBrRelac:DisableConfig(.T.)
+	_oBrRelac:DisableReport(.T.)
+	_oBrRelac:DisableLocate(.T.)
+	_oBrRelac:DisableFilter(.T.)
+    _oBrRelac:SetOwner(Self:oPanelVis)
 
-	//Self:oBrowse:SetDoubleClick({ || lRet := .T., __cRet := aBrwData[oBrowse:nAt,2], oModal:DeActivate()    })	
+	//_oBrRelac:SetDoubleClick({ || lRet := .T., __cRet := aBrwData[_oBrRelac:nAt,2], oModal:DeActivate()    })	
 	// Cria uma coluna de status
 	// Adiciona as colunas do Browse
 	oColumn := FWBrwColumn():New()
-	oColumn:SetData({||_aPrdREL[Self:oBrowse:nAt,DATA_FILIAL]})
+	oColumn:SetData({||_aPrdREL[_oBrRelac:nAt,DATA_FILIAL]})
 	oColumn:SetTitle("Filial" ) 
 	oColumn:SetSize(4)
-	Self:oBrowse:SetColumns({oColumn})
+	_oBrRelac:SetColumns({oColumn})
 	
 	oColumn := FWBrwColumn():New()
-	oColumn:SetData({||_aPrdREL[Self:oBrowse:nAt,DATA_CODPRD]})
+	oColumn:SetData({||_aPrdREL[_oBrRelac:nAt,DATA_CODPRD]})
 	oColumn:SetTitle("Código Produto") 
 	oColumn:SetSize(15)
 	oColumn:SetDecimal(2)
 	//oColumn:SetPicture("@!")
-	Self:oBrowse:SetColumns({oColumn})
+	_oBrRelac:SetColumns({oColumn})
 
 	oColumn := FWBrwColumn():New()
-	oColumn:SetData({||_aPrdREL[Self:oBrowse:nAt,DATA_DESPRD]})
+	oColumn:SetData({||_aPrdREL[_oBrRelac:nAt,DATA_DESPRD]})
 	oColumn:SetTitle("Descrição Produto") 
 	oColumn:SetSize(15)
 	oColumn:SetDecimal(2)
 	//oColumn:SetPicture("@!")
-	Self:oBrowse:SetColumns({oColumn})
+	_oBrRelac:SetColumns({oColumn})
 
 	oColumn := FWBrwColumn():New()
-	oColumn:SetData({||_aPrdREL[Self:oBrowse:nAt,DATA_GRUPO]})
+	oColumn:SetData({||_aPrdREL[_oBrRelac:nAt,DATA_GRUPO]})
 	oColumn:SetTitle("Grupo Produto") 
 	oColumn:SetSize(15)
 	oColumn:SetDecimal(2)
 	//oColumn:SetPicture("@!")
-	Self:oBrowse:SetColumns({oColumn})
+	_oBrRelac:SetColumns({oColumn})
 
-	Self:oBrowse:Activate()
-	Self:oBrowse:Refresh(.T.)
+	_oBrRelac:Activate()
+	_oBrRelac:Refresh(.T.)
 
 
 End Begin
@@ -477,50 +467,6 @@ Begin Sequence
 	Self:oArea:AddWindow(COL_RIGHT, WND_OPERATIONS, "Saldos por Filiais Filiais", 50, .T., .F.)
 	Self:oPanelOp := Self:oArea:GetWinPanel(COL_RIGHT, WND_OPERATIONS)
 		
-	// Define o Browse
-	Self:oBrowse := FWBrowse():New(Self:oPanelOp)
-	Self:oBrowse:SetDataArray(.T.)
-	Self:oBrowse:SetArray(_aFil)
-	Self:oBrowse:DisableConfig(.T.)
-	Self:oBrowse:DisableReport(.T.)
-	Self:oBrowse:DisableLocate(.T.)
-	Self:oBrowse:DisableFilter(.T.)
-	
-
-	// Cria uma coluna de status
-	// Adiciona as colunas do Browse
-	oColumn := FWBrwColumn():New()
-	oColumn:SetData({||_aFil[Self:oBrowse:nAt,DATA_FILIAL]})
-	oColumn:SetTitle("Filial" ) 
-	oColumn:SetSize(4)
-	Self:oBrowse:SetColumns({oColumn})
-	
-	oColumn := FWBrwColumn():New()
-	oColumn:SetData({||_aFil[Self:oBrowse:nAt,DATA_SALDOEST]})
-	oColumn:SetTitle("Saldo Estoque") 
-	oColumn:SetSize(15)
-	oColumn:SetDecimal(2)
-	oColumn:SetPicture("@E 999,999,999.99")
-	Self:oBrowse:SetColumns({oColumn})
-	Self:oBrowse:Activate()
-
-	oColumn := FWBrwColumn():New()
-	oColumn:SetData({||_aFil[Self:oBrowse:nAt,DATA_PREVIS]})
-	oColumn:SetTitle("Previsão") 
-	oColumn:SetSize(15)
-	oColumn:SetDecimal(2)
-	oColumn:SetPicture("@E 999,999,999.99")
-	Self:oBrowse:SetColumns({oColumn})
-	Self:oBrowse:Activate()
-
-	oColumn := FWBrwColumn():New()
-	oColumn:SetData({||_aFil[Self:oBrowse:nAt,DATA_TRANSF]})
-	oColumn:SetTitle("Transferências") 
-	oColumn:SetSize(15)
-	oColumn:SetDecimal(2)
-	oColumn:SetPicture("@E 999,999,999.99")
-	Self:oBrowse:SetColumns({oColumn})
-	Self:oBrowse:Activate()
 
 	//Carregar tela de saldos 
 	SB1->(DbSetOrder(1))
@@ -665,110 +611,6 @@ Return aDim
 
 
 
-/* ----------------------------------------------------------------------------
-FreAcWindow:FilterFile()
-Filtra o arquivo especificado pelo alias cAlias, utilizando as condições de
-filtro especificado pelo grupo de perguntas cPerg.
-Perguntas em branco serão desconsideradas. Caso todas as perguntas estejam em
-branco, a filtragem será desfeita.
-Restrição: o grupo de perguntas será processado para tratamento dos ranges,
-utilizando a função MakeAdvplExpr()
----------------------------------------------------------------------------- */
-Method FilterFile(cAlias, cPerg, lWndRefresh) Class FreAcWindow
-Local aStackParams	:= {}
-Local i 			:= 0
-Local cPergunta 	:= ""
-Local cExp 			:= ""
-Local aBackup 		:= {}
-Local cCampo		:= ""
-Local aFilUser    	:= MatFilCalc(.F.)    
-Local cFilialUser 	:= ""      
-Local nX          	:= 0  
-Local cFilExp     	:= ""
-	
-Default cAlias 		:= Self:cAliasFile                                    	
-Default cPerg 		:= Self:GetPerg(1)
-Default lWndRefresh := .F.
-  
-// faz um backup dos parâmetros
-For i := 1 To 99
-	cPergunta := "mv_par" + StrZero(i, 2)
-	
-	If Type(cPergunta) # "U"
-		Aadd(aBackup, {cPergunta, &(cPergunta)})			
-	EndIf
-Next
-__SaveParam(cPerg, @Self:aPergunte)	
-// reinicializa a pergunta
-ResetMVRange()
-//Busco o numero de perguntas do grupo de perguntas
-nLenPerg := U_FGetLenPgt(cPerg)
-//Montar a clausula de filtro, para substituir o MakAdvplExpr que utilizava algumas funcoes para compor as expressoes que as tornavam muito lentas em grandes bases
-For i := 1 to nLenPerg
-	cPergunta := "mv_par" + StrZero(i,2)
-	If Type(cPergunta) # "U" .AND. !Empty(&(cPergunta))               
-		//Se o campo de pesquisa (X1_CNT01) estiver preenchido, montar a expressao com o campo da tabela
-		cCampo := Posicione("SX1",1,PadR(cPerg,SX1->(dbStruct())[aScan(SX1->(dbStruct()),{|x| x[1] == "X1_GRUPO"})][3]) + StrZero(i,2),"X1_CNT01")
-		If !Empty(cCampo)
-			Do Case
-				Case Self:aPergunte[i][2] == "C"
-					&(cPergunta) := "(" + AllTrim(cCampo)
-					&(cPergunta) += " = '" + RTrim(Substr(aBackup[i][2],1,Self:aPergunte[i][3])) + "')"
-				Case Self:aPergunte[i][2] == "D"        
-					&(cPergunta) := "(DtoS(" + AllTrim(cCampo) + ")"
-					&(cPergunta) += " = '" + DtoS(CtoD(aBackup[i][2])) + "')"
-				Case Self:aPergunte[i][2] == "N"
-					&(cPergunta) := "(" + AllTrim(cCampo)
-					&(cPergunta) += " = " + cValtoChar(aBackup[i][2]) + ")"
-			EndCase
-		Endif
-	Endif
-Next i
-// empilha os parâmetros que existem
-// e não são vazios
-For i := 1 To nLenPerg
-	cPergunta := "mv_par" + StrZero(i, 2)
-	If Type(cPergunta) # "U" .And. !Empty(&(cPergunta))
-		Aadd(aStackParams, &(cPergunta))
-	EndIf
-Next
-cFilExp := "B1_FILIAL"
-cFilialUser := "("
-For nX:= 1 to len(aFilUser)
-	If nx == 1
-		cFilialUser += cFilExp + " = '" + aFilUser[nx][2] + "'"
-	Else
-		cFilialUser += " .Or. " + cFilExp + " = '" + aFilUser[nx][2] + "'"
-	Endif
-Next			 
-cFilialUser += ")"
-If cFilExp $ "B1_FILIAL"
-	aAdd(aStackParams, cFilialUser)
-EndIf	
-// restaura os parâmetros originais
-For i := 1 To Len(aBackup)
-	&(aBackup[i][1]) := aBackup[i][2]
-Next	
-// desempilha os parâmetros e cria
-// a expressão de filtro
-If Len(aStackParams) > 0
-	cExp := aStackParams[1]
-	For i := 2 To Len(aStackParams)
-		cExp += " .And. " + aStackParams[i]    
-	Next
-	// "@" + cSQLExp executa o filtro diretamente na query SQL
-	// não utilizar @, pois é incompatível com AS/400 e também
-	// ocasiona problemas no tcbrowse()	
-	//ConOut(cExp)  
-	(cAlias)->(dbSetFilter({|| &cExp }, cExp))
-	If !lWndRefresh
-		(cAlias)->(dbGoTop())
-	EndIf
-Else
-	(cAlias)->(dbClearFilter())
-EndIf
-dbSelectArea(cAlias)
-Return Nil
 
 /* ----------------------------------------------------------------------------
 FreAcWindow:GetPerg()
@@ -1036,13 +878,15 @@ Begin Sequence
   	//chamar funcao para carregar dados
   	LoadPlan()  //carrega planejamento
   	//Self:CargaSaldos()
+	U_ZPECF30K(.F.)
+	//_oBrRelac:setArray(_aPrdREL)	
+  	//_oBrRelac:refresh()
   	Self:_OBrPlan:GoTop(.T.)
 	Self:_OBrPlan:Refresh(.T.)
+	Self:oPanelVis:Refresh(.T.)
 	Self:oPanelBrowse:Refresh(.T.) 
 	Self:oArea:Refresh(.T.) 
-  	Self:oBrowse:GoTop(.T.)
-  	Self:oBrowse:refresh()
-  	::oPanelBrowse
+  	//::oPanelBrowse
   	//::oPanelRep
   	//::oPanelOp
 //1E021111903F1A7
@@ -1106,12 +950,12 @@ Begin Sequence
  		_cCodProd  := Space(Len(SB1->B1_COD))
  	Endif
 
- 	If Type("MV_PAR02") == "N"
-		If MV_PAR02 == 2 //Todas as Filiais 1=Sim 2=Não
- 			_cFilDe	 := FwXFilial("SB2")
- 			_cFilAte := _cFilDe
-		Endif
- 	Endif
+ 	//If Type("MV_PAR02") == "N"
+	//	If MV_PAR02 == 2 //Todas as Filiais 1=Sim 2=Não
+ 	//		_cFilDe	 := FwXFilial("SB2")
+ 	//		_cFilAte := _cFilDe
+	//	Endif
+ 	//Endif
 
  	SB1->(DbSetOrder(1))
   	If ValType(_aColuna) <> "A" .or. Len(_aColuna) == 0
@@ -1584,18 +1428,16 @@ Begin Sequence
 
   	Aadd(_aHelpPor,{ "Informar código do Produto     ",;
     	             ""})
-  	Aadd(_aHelpPor,{ "Mostrar todas as Filiais       ",;
-    	             "1=Sim 2=Não"})
-  	//Aadd(_aHelpPor,{ "Informe o Período para Planejamento",;
-    //	             ""})
+  	//Aadd(_aHelpPor,{ "Mostrar todas as Filiais       ",;
+    //	             "1=Sim 2=Não"})
   	_aHelpSpa := _aHelpPor
   	_aHelpEng := _aHelpPor
  
 	//      X1_GRUPO         ,X1_ORDEM,X1_PERGUNT                ,X1_PERSPA,X1_PERENG,X1_VARIAVL,X1_TIPO ,X1_TAMANHO                    ,X1_DECIMAL                        ,X1_PRESEL ,X1_GSC,X1_VALID          ,X1_F3     ,X1_GRPSXG,X1_PYME,X1_VAR01   ,X1_DEF01     ,X1_DEFSPA1,X1_DEFENG1  ,X1_CNT01  ,X1_VAR02,X1_DEF02           ,X1_DEFSPA2   ,X1_DEFENG2   ,X1_CNT02 ,X1_VAR03, X1_DEF03         ,X1_DEFSPA3,X1_DEFENG3 ,X1_CNT03 ,X1_VAR04,X1_DEF04       ,X1_DEFSPA4,X1_DEFENG4,X1_CNT04,X1_VAR05 ,X1_DEF05             ,X1_DEFSPA5,X1_DEFENG5,X1_CNT05,HELP PORT     ,HELP SPANH          ,HELP INGLES        
   	Aadd(_aPerg, { _cPerg    ,"01"    ,"Informe o Produto ?"  ,""       ,""       ,"mv_ch1"  ,"C"     ,Round(TamSX3("B1_COD")[1],0)  ,Round(TamSX3("B1_COD")[2],0)      ,0         ,"G"   ,                  ,"SB1"     ,""       ,"S"    ,"mv_par01",""           ,""        ,""          ,""        ,""      ,""                 ,""           ,""           ,""       ,""      ,""                ,""        ,""         ,""       ,""      ,""             ,""        ,""        ,""      ,""       ,""                   ,""        ,""        ,""      ,_aHelpPor[_nPosHelp],_aHelpSpa[_nPosHelp],_aHelpEng[_nPosHelp]})
   	_nPosHelp ++
- 	Aadd(_aPerg, { _cPerg    ,"02"    ,"Todas as  Filiais ?"  ,""       ,""       ,"mv_ch2"  ,"N"     ,1  							,0      							,0         ,"C"   ,                  ,          ,""       ,"S"    ,"mv_par02","1=Sim"      ,""        ,""          ,""        ,""      ,"2=Não"                 ,""           ,""           ,""       ,""      ,""                ,""        ,""         ,""       ,""      ,""             ,""        ,""        ,""      ,""       ,""                   ,""        ,""        ,""      ,_aHelpPor[_nPosHelp],_aHelpSpa[_nPosHelp],_aHelpEng[_nPosHelp]})
-  	_nPosHelp ++
+ //	Aadd(_aPerg, { _cPerg    ,"02"    ,"Todas as  Filiais ?"  ,""       ,""       ,"mv_ch2"  ,"N"     ,1  							,0      							,0         ,"C"   ,                  ,          ,""       ,"S"    ,"mv_par02","1=Sim"      ,""        ,""          ,""        ,""      ,"2=Não"                 ,""           ,""           ,""       ,""      ,""                ,""        ,""         ,""       ,""      ,""             ,""        ,""        ,""      ,""       ,""                   ,""        ,""        ,""      ,_aHelpPor[_nPosHelp],_aHelpSpa[_nPosHelp],_aHelpEng[_nPosHelp]})
+  //	_nPosHelp ++
 
   	//Aadd(_aPerg, { _cPerg    ,"02"    ,"Período Planejamento ?"  ,""       ,""       ,"mv_ch2"  ,"N"     ,06  							,0                                 ,0         ,"G"   ,  				,          ,""       ,"S"    ,"mv_par02",""           ,""        ,""          ,""        ,""      ,""                 ,""           ,""           ,""       ,""      ,""                ,""        ,""         ,""       ,""      ,""             ,""        ,""        ,""      ,""       ,""                   ,""        ,""        ,""      ,_aHelpPor[_nPosHelp],_aHelpSpa[_nPosHelp],_aHelpEng[_nPosHelp]})
     //Verificar se existe grupo de perguntas caso não cadastrar
@@ -1730,7 +1572,6 @@ Local _nLeadTime := 0
 Local _nEstMax   := 0
 Local _nEstMin   := 0
 Local _nPrevFat  := 0
-//Local _nTotPrev	 := 0
 Local _dDataPrev  
 Local _cCodBase  
 Local _nLin1
@@ -2017,7 +1858,7 @@ Begin Sequence
 	EndSql
 	//			AND (VEH.VEH_TIPO	= '1' OR VEH.VEH_TIPO	= '2')
 	If (_cAliasPesq)->(Eof()) .or. (_cAliasPesq)->NREGVE8 == 0
-		MsgInfo("Não existe kit para o produto " +AllTrim(_cCodItem))	
+		//MsgInfo("Não existe kit para o produto " +AllTrim(_cCodItem))	
 		_lRet := .F.
 		Break	
 	EndIf	   
@@ -2044,6 +1885,12 @@ If !_lRet .Or. Len(_aPrdREL) == 0
 						Space(Len(SB1->B1_GRUPO));
 					}}
 EndIf
+If Type("_oBrRelac") == "O"
+	_oBrRelac:setArray(_aPrdREL)	
+	_oBrRelac:GoTop(.T.)
+	_oBrRelac:refresh()
+
+Endif	
 If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
 	Ferase(_cAliasPesq+GetDBExtension())
@@ -2051,5 +1898,62 @@ Endif
 Return _lRet
 
 
+//itens relacionados
+User Function ZPECF30I(_lCarrega)
+Local _lRet			:= .T.
+Local _cCodItem		:= MV_PAR01
+Local _cDescPRd		:= ""
+Local _aItemRelac	
+Local _cCodSubst
+Local _cGrupoSubst 
+Local _nPos
+
+Default _lCarrega	:= .T.
+
+Begin Sequence
+ 	If ValType(_cCodItem) <> "C"
+		_lRet := .F.
+		Break
+	Endif		
+	SB1->(DbSetOrder(1))
+	SB1->(DbSeek(XFilial("SB1")+AllTrim(_cCodItem)))
+	oZPEC08Peca:SetGrupo(SB1->B1_GRUPO)
+	oZPEC08Peca:SetCodigo(_cCodItem)
+	_aItemRelac := oZPEC08Peca:ItensSubstituidos()
+
+	If Len(_aItemRelac) == 0 .or. Empty(AllTrim(_aItemRelac[1,2]))
+		//	"Não existe item Substitutos para o produto " +AllTrim(_cCodItem)
+		_lRet := .F.
+		Break	
+	Endif
+	_aPrdREL 	:= {}
+	_cDescPRd 	:= SB1->B1_DESC
+	For _nPos := 1 To Len(_aItemRelac)
+		_cGrupoSubst	:= _aItemRelac[_nPos,1]
+		_cCodSubst 		:= AllTrim(_aItemRelac[_nPos,2])
+		_nSaldoSB2 		:= _aItemRelac[_nPos,7]
+		Aadd(_aPrdREL,{	;
+						FwXFilial("VE9"),;
+						_cCodSubst,;
+						SB1->B1_DESC,;
+						_cGrupoSubst;
+						})
+	Next
+End Sequence
+If !_lRet .Or. Len(_aPrdREL) == 0
+	_aPrdREL	:= {{	Space(Len(FwXFilial("SB1"))),;
+						Space(Len(SB1->B1_COD)),;
+						Space(Len(SB1->B1_DESC)),;
+						Space(Len(SB1->B1_GRUPO));
+					}}
+EndIf
+If Type("_oBrRelac") == "O"
+	_oBrRelac:SetDescription( "Itens Relacionados Produto "+_cCodItem+" "+_cDescPRd )
+	_oBrRelac:setArray(_aPrdREL)	
+	_oBrRelac:GoTop(.T.)
+	_oBrRelac:refresh()
+Endif	
+
+Return _lRet
 
 
