@@ -343,7 +343,7 @@ static _VLR_UNIT
 			- Correção na Extração da SAFX08  valores de ICMS para pegar da Tabela SFT para pegar o valro correto após manutenção.
 			- Manutenção na Static Function ExecQuery separando a geração de cada arquivo MasterSaf em funções separada.
 */
-User Function CMVMSF06 
+User Function CMVMSF06()
 
 	Local nOpc := 0
 	Local aRet := {}
@@ -4351,13 +4351,25 @@ Descricao / Objetivo:   Ordem de Produção
 
 Static Function fSAFX108()
 	
-	cQ := CRLF + " SELECT SC2.R_E_C_N_O_ SC2_RECNO "
-	cQ += CRLF + "	FROM "+RetSqlName("SC2")+" SC2 "
-	cQ += CRLF + "	WHERE   SC2.D_E_L_E_T_ = ' ' "
-	cQ += CRLF + "		AND SC2.C2_FILIAL BETWEEN '"+cFilDe+"' AND '"+cFilAte+"' "
-	cQ += CRLF + "		AND SC2.C2_DATPRI  >= '" + dTos(dDataIni) + "' 
-	cQ += CRLF + "		AND SC2.C2_DATPRF  <= '" + dTos(dDataFim) + "' "
-	cQ += CRLF + "ORDER BY SC2.C2_FILIAL,(TRIM(SC2.C2_NUM) || TRIM(SC2.C2_ITEM) || TRIM(SC2.C2_SEQUEN)) "
+	cQ := CRLF + "	SELECT  "
+	cQ += CRLF + "		(SELECT nvl(SUM(D3_CUSTO1),0)*100 D3_CUSTO1  "
+	cQ += CRLF + "			FROM  " + RetSqlName( "SD3" ) + " SD3  "
+	cQ += CRLF + "			WHERE SD3.D_E_L_E_T_ = ' '  "
+	cQ += CRLF + "				AND SD3.D3_FILIAL = SC2.C2_FILIAL  "
+	cQ += CRLF + "				AND SD3.D3_OP = SC2.C2_NUM||SC2.C2_ITEM||SC2.C2_SEQUEN "
+	cQ += CRLF + "				AND SD3.D3_OP <> ' ' "
+	cQ += CRLF + "				AND SD3.D3_CF NOT IN  ('PR0','PR1' ) "
+	cQ += CRLF + "				AND SD3.D3_ESTORNO <> 'S' ) as D3_CUSTO1 "
+	cQ += CRLF + "		,SC2.*  "
+	
+	cQ += CRLF + "	FROM " + RetSqlName( "SC2" ) + " SC2
+	cQ += CRLF + "		WHERE   SC2.D_E_L_E_T_ = ' '  "
+	cQ += CRLF + "			AND SC2.C2_FILIAL BETWEEN '" + cFilDe + "' AND '" + cFilAte + "' "
+	cQ += CRLF + "			AND SC2.C2_DATPRI  >= '" + dTos( dDataIni ) + "' "
+	cQ += CRLF + "			AND SC2.C2_DATPRF  <= '" + dTos( dDataFim ) + "' "
+
+	cQ += CRLF + "	ORDER BY SC2.C2_FILIAL,SC2.C2_NUM,SC2.C2_ITEM,SC2.C2_SEQUEN "
+
 
 	If lDebug
 		MemoWrite(cLocDest+cTab+".txt",cQ)
@@ -4370,56 +4382,57 @@ Static Function fSAFX108()
 
 	If !Empty(aCab)
 		While (cAliasTrb)->(!Eof())
-			SC2->(dbGoto((cAliasTrb)->SC2_RECNO))
-			If SC2->(Recno()) == (cAliasTrb)->SC2_RECNO
-				lContinua := .T.
+			
+			lContinua := .T.
 				
-				// posiciona tabelas auxiliares
-				SB1->(dbSetOrder(1))
-				If SB1->(!dbSeek(Padr(Subs(SC2->C2_FILIAL,1,6),TamSX3("B1_FILIAL")[1])+SC2->C2_PRODUTO))
-					lContinua := .F.
-					cErro := cTab+": Não encontrado tabela: SB1, filial/produto: "+Padr(Subs(SC2->C2_FILIAL,1,6),TamSX3("B1_FILIAL")[1])+"/"+SC2->C2_PRODUTO+", OP: "+SC2->C2_NUM+Alltrim(SC2->C2_ITEM)+Alltrim(SC2->C2_SEQUEN)+"."
-					MS06GrvLog(cErro)
-				Endif	
+			// posiciona tabelas auxiliares
+			SB1->(dbSetOrder(1))
+			If SB1->(!dbSeek(Padr(Subs( (cAliasTrb)->C2_FILIAL,1,6),TamSX3("B1_FILIAL")[1]) + (cAliasTrb)->C2_PRODUTO))
+				lContinua := .F.
+				cErro := cTab+": Não encontrado tabela: SB1, filial/produto: " + Padr(Subs( (cAliasTrb)->C2_FILIAL,1,6),TamSX3("B1_FILIAL")[1])+"/" 
+				cErro += (cAliasTrb)->C2_PRODUTO + ", OP: "+ (cAliasTrb)->C2_NUM + Alltrim( (cAliasTrb)->C2_ITEM) + Alltrim( (cAliasTrb)->C2_SEQUEN ) + "."
+				
+				MS06GrvLog(cErro)
+			Endif	
 
-				If lContinua	
-					MontaItens(aCab,@aItens,SC2->C2_FILIAL)
-								
-					// comeca gravar campos do layout
-					nPosCmpCab:=PosCabArray(aItens,"COD_EMPRESA")
-					aItens[Len(aItens)][nPosCmpCab][2] := SZPMSaf("ZP_EMPMS",SC2->C2_FILIAL)
-					nPosCmpCab:=PosCabArray(aItens,"COD_ESTAB")
-					aItens[Len(aItens)][nPosCmpCab][2] := SZPMSaf("ZP_ESTMS",SC2->C2_FILIAL)
-					nPosCmpCab:=PosCabArray(aItens,"PERIODO_REF")
-					aItens[Len(aItens)][nPosCmpCab][2] := Subs(dTos(SC2->C2_EMISSAO),5,2)+Subs(dTos(SC2->C2_EMISSAO),1,4)
-					nPosCmpCab:=PosCabArray(aItens,"COD_OP")
-					aItens[Len(aItens)][nPosCmpCab][2] := Alltrim(SC2->C2_NUM)+Alltrim(SC2->C2_ITEM)+Alltrim(SC2->C2_SEQUEN)
-					nPosCmpCab:=PosCabArray(aItens,"IND_PRODUTO_OP")
-					aItens[Len(aItens)][nPosCmpCab][2] := IND_PRODUTO("SB1")
-					nPosCmpCab:=PosCabArray(aItens,"COD_PRODUTO_OP")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SC2->C2_PRODUTO")
-					nPosCmpCab:=PosCabArray(aItens,"DT_INI_OP")
-					aItens[Len(aItens)][nPosCmpCab][2] := dTos(SC2->C2_DATPRI)
-					nPosCmpCab:=PosCabArray(aItens,"DT_FIM_OP")
-					aItens[Len(aItens)][nPosCmpCab][2] := dTos(SC2->C2_DATPRF)
-					nPosCmpCab:=PosCabArray(aItens,"COD_UND_PADRAO")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_UM")
-					nPosCmpCab:=PosCabArray(aItens,"QTD_PRODUZIDO")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SC2->C2_QUANT")
-					nPosCmpCab:=PosCabArray(aItens,"IND_APUR_CUSTO")
-					aItens[Len(aItens)][nPosCmpCab][2] := "N"
-					nPosCmpCab:=PosCabArray(aItens,"VLR_TOT_CUSTO")
-					aItens[Len(aItens)][nPosCmpCab][2] := VlrSD3(SD3->D3_FILIAL,SD3->D3_COD,SD3->D3_OP,"D3_CUSTO1")
-					nPosCmpCab:=PosCabArray(aItens,"QTD_TRANSF")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SC2->C2_QUJE")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_TRANSF")
-					aItens[Len(aItens)][nPosCmpCab][2] := VlrSD3(SD3->D3_FILIAL,SD3->D3_COD,SD3->D3_OP,"D3_CUSTO1")
-					nPosCmpCab:=PosCabArray(aItens,"IND_TP_ORDEM")
-					aItens[Len(aItens)][nPosCmpCab][2] := "1"
-					nPosCmpCab:=PosCabArray(aItens,"QTD_ORIGEM")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SC2->C2_QUANT")
-				Endif	
-			Endif
+			If lContinua	
+				MontaItens(aCab,@aItens, (cAliasTrb)->C2_FILIAL)
+							
+				// comeca gravar campos do layout
+				nPosCmpCab:=PosCabArray(aItens,"COD_EMPRESA")
+				aItens[Len(aItens)][nPosCmpCab][2] := SZPMSaf("ZP_EMPMS", (cAliasTrb)->C2_FILIAL)
+				nPosCmpCab:=PosCabArray(aItens,"COD_ESTAB")
+				aItens[Len(aItens)][nPosCmpCab][2] := SZPMSaf("ZP_ESTMS", (cAliasTrb)->C2_FILIAL)
+				nPosCmpCab:=PosCabArray(aItens,"PERIODO_REF")
+				aItens[Len(aItens)][nPosCmpCab][2] := Substr( (cAliasTrb)->C2_EMISSAO , 5 , 2 ) + Substr( (cAliasTrb)->C2_EMISSAO , 1 , 4 )
+				nPosCmpCab:=PosCabArray(aItens,"COD_OP")
+				aItens[Len(aItens)][nPosCmpCab][2] := Alltrim( (cAliasTrb)->C2_NUM ) + Alltrim( (cAliasTrb)->C2_ITEM ) + Alltrim( (cAliasTrb)->C2_SEQUEN )
+				nPosCmpCab:=PosCabArray(aItens,"IND_PRODUTO_OP")
+				aItens[Len(aItens)][nPosCmpCab][2] := IND_PRODUTO("SB1")
+				nPosCmpCab:=PosCabArray(aItens,"COD_PRODUTO_OP")
+				aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"(cAliasTrb)->C2_PRODUTO")
+				nPosCmpCab:=PosCabArray(aItens,"DT_INI_OP")
+				aItens[Len(aItens)][nPosCmpCab][2] :=  (cAliasTrb)->C2_DATPRI
+				nPosCmpCab:=PosCabArray(aItens,"DT_FIM_OP")
+				aItens[Len(aItens)][nPosCmpCab][2] :=  (cAliasTrb)->C2_DATPRF
+				nPosCmpCab:=PosCabArray(aItens,"COD_UND_PADRAO")
+				aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_UM")
+				nPosCmpCab:=PosCabArray(aItens,"QTD_PRODUZIDO")
+				aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"(cAliasTrb)->C2_QUANT")
+				nPosCmpCab:=PosCabArray(aItens,"IND_APUR_CUSTO")
+				aItens[Len(aItens)][nPosCmpCab][2] := "N"
+				nPosCmpCab:=PosCabArray(aItens,"VLR_TOT_CUSTO")
+				aItens[Len(aItens)][nPosCmpCab][2] :=  (cAliasTrb)->D3_CUSTO1 //VlrSD3(SD3->D3_FILIAL,SD3->D3_COD,SD3->D3_OP,"D3_CUSTO1")
+				nPosCmpCab:=PosCabArray(aItens,"QTD_TRANSF")
+				aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"(cAliasTrb)->C2_QUJE")
+				nPosCmpCab:=PosCabArray(aItens,"VLR_TRANSF")
+				aItens[Len(aItens)][nPosCmpCab][2] :=  (cAliasTrb)->D3_CUSTO1 //VlrSD3(SD3->D3_FILIAL,SD3->D3_COD,SD3->D3_OP,"D3_CUSTO1")
+				nPosCmpCab:=PosCabArray(aItens,"IND_TP_ORDEM")
+				aItens[Len(aItens)][nPosCmpCab][2] := "1"
+				nPosCmpCab:=PosCabArray(aItens,"QTD_ORIGEM")
+				aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"(cAliasTrb)->C2_QUANT")
+			Endif	
+			
 			(cAliasTrb)->(dbSkip())
 		Enddo
 	Else
@@ -4439,23 +4452,37 @@ Descricao / Objetivo:   Item da Ordem de Produção
 
 Static Function fSAFX109()
 	
-	cQ := CRLF + " SELECT SD3.R_E_C_N_O_ SD3_RECNO, SC2.R_E_C_N_O_ SC2_RECNO "
-	cQ += CRLF + " FROM " + RetSqlName("SD3") + " SD3 "
+	cQ := CRLF + " SELECT SD3.R_E_C_N_O_ SD3_RECNO, SC2.R_E_C_N_O_ SC2_RECNO, "
+	cQ += CRLF + "     	SD3.D3_FILIAL, "
+	cQ += CRLF + "     	SC2.C2_EMISSAO, "
+	cQ += CRLF + "     	SC2.C2_NUM, "
+	cQ += CRLF + "     	SC2.C2_ITEM, "
+	cQ += CRLF + "     	SC2.C2_SEQUEN, "
+	cQ += CRLF + "     	SD3.D3_OP, "
+	cQ += CRLF + "     	SD3.D3_COD, "
+	cQ += CRLF + "     	SD3.D3_EMISSAO, "
+	cQ += CRLF + "     	SD3.D3_QUANT, "
+	cQ += CRLF + "     	SD3.D3_CUSTO1, "
+	cQ += CRLF + "		CAST(SD3.D3_CUSTO1/SD3.D3_QUANT AS DECIMAL( 8,2)) AS CUSTO_UNI,
+	cQ += CRLF + " 		SC2.C2_PRODUTO " 
 	
-	cQ += CRLF + " 	INNER JOIN " + RetSqlName("SC2") + " SC2 "
-	cQ += CRLF + " 		ON  SC2.D_E_L_E_T_ = ' ' "
-	cQ += CRLF + " 		AND SC2.C2_FILIAL  = D3_FILIAL "
-	cQ += CRLF + " 		AND TRIM(SC2.C2_NUM) || TRIM(SC2.C2_ITEM) || TRIM(SC2.C2_SEQUEN) = TRIM(SD3.D3_OP) "
-	
-	cQ += CRLF + " 	WHERE SD3.D_E_L_E_T_ = ' ' "
-	cQ += CRLF + " 		AND SD3.D3_FILIAL  BETWEEN '" + cFilDe         + "' AND '" + cFilAte        + "' "
-	cQ += CRLF + " 		AND SD3.D3_EMISSAO BETWEEN '" + dTos(dDataIni) + "' AND '" + dTos(dDataFim) + "' "
-	cQ += CRLF + " 		AND SD3.D3_OP      <> ' ' "
-	cQ += CRLF + " 		AND SD3.D3_CF      <> 'PR0' "
-	cQ += CRLF + " 		AND SD3.D3_CF      <> 'PR1' "
-	cQ += CRLF + " 		AND SD3.D3_ESTORNO <> 'S' "
-	cQ += CRLF + " ORDER BY D3_FILIAL,D3_EMISSAO,D3_COD "
+	cQ += CRLF + "  FROM " + RetSqlName("SC2") + " SC2  "
 
+	cQ += CRLF + "  	LEFT JOIN " + RetSqlName("SD3") + " SD3  "
+	cQ += CRLF + "  		ON  SD3.D_E_L_E_T_ = ' '  "
+	cQ += CRLF + "  		AND SD3.D3_FILIAL  = SC2.C2_FILIAL  "
+	cQ += CRLF + "  		AND TRIM(SD3.D3_OP) = TRIM(SC2.C2_NUM) || TRIM(SC2.C2_ITEM) || TRIM(SC2.C2_SEQUEN) "
+	cQ += CRLF + "         	AND SD3.D3_ESTORNO <> 'S' "
+	cQ += CRLF + "         	AND SD3.D3_OP      <> ' '  "
+	cQ += CRLF + "  		AND SD3.D3_CF NOT IN  ('PR0','PR1' ) "
+	
+	cQ += CRLF + "  	WHERE SC2.D_E_L_E_T_ = ' '  "
+	cQ += CRLF + "  		AND SC2.C2_FILIAL  BETWEEN '" + cFilDe    + "' AND '" + cFilAte  + "' "
+	cQ += CRLF + "  		AND SC2.C2_DATPRI  >= '" + dTos(dDataIni) + "'   "
+	cQ += CRLF + " 			AND SC2.C2_DATPRF  <= '" + dTos(dDataFim) + "'
+	
+	cQ += CRLF + "  ORDER BY SC2.C2_FILIAL,SC2.C2_EMISSAO,SC2.C2_NUM ,SD3.D3_COD "
+	
 	If lDebug
 		MemoWrite(cLocDest+cTab+".txt",cQ)
 	EndIf
@@ -4467,50 +4494,49 @@ Static Function fSAFX109()
 
 	If !Empty(aCab)
 		While (cAliasTrb)->(!Eof())
-			SD3->(dbGoto((cAliasTrb)->SD3_RECNO))
-			If SD3->(Recno()) == (cAliasTrb)->SD3_RECNO
-				lContinua := .T.
-				
-				// posiciona tabelas auxiliares
-				SC2->(dbGoto((cAliasTrb)->SC2_RECNO))
-				
-				SB1->(dbSetOrder(1))
-				If SB1->(!dbSeek(Padr(Subs(SD3->D3_FILIAL,1,6),TamSX3("B1_FILIAL")[1])+SD3->D3_COD))
-					lContinua := .F.
-					cErro := cTab+": Não encontrado tabela: SB1, filial/produto: "+Padr(Subs(SD3->D3_FILIAL,1,6),TamSX3("B1_FILIAL")[1])+"/"+SD3->D3_COD+", OP: "+SD3->D3_OP+"." 
-					MS06GrvLog(cErro)
-				Endif	
+		
+			lContinua := .T.
+			
+			SB1->(dbSetOrder(1))
+			If SB1->(!dbSeek(Padr(Subs((cAliasTrb)->D3_FILIAL,1,6),TamSX3("B1_FILIAL")[1])+(cAliasTrb)->D3_COD))
+				lContinua := .F.
+				cErro := cTab + ": Não encontrado tabela: SB1, filial/produto: "
+				cErro += Padr( Subs( (cAliasTrb)->D3_FILIAL , 1 , 6 ), TamSX3("B1_FILIAL")[1]) + "/" + (cAliasTrb)->D3_COD+", OP: " + (cAliasTrb)->D3_OP + "." 
+				MS06GrvLog(cErro)
+			Endif	
 
-				If lContinua	
-					MontaItens(aCab,@aItens,SD3->D3_FILIAL)
-								
-					// comeca gravar campos do layout
-					nPosCmpCab:=PosCabArray(aItens,"COD_EMPRESA")
-					aItens[Len(aItens)][nPosCmpCab][2] := SZPMSaf("ZP_EMPMS",SD3->D3_FILIAL)
-					nPosCmpCab:=PosCabArray(aItens,"COD_ESTAB")
-					aItens[Len(aItens)][nPosCmpCab][2] := SZPMSaf("ZP_ESTMS",SD3->D3_FILIAL)
-					nPosCmpCab:=PosCabArray(aItens,"PERIODO_REF")
-					aItens[Len(aItens)][nPosCmpCab][2] := Subs(dTos(SC2->C2_EMISSAO),5,2)+Subs(dTos(SC2->C2_EMISSAO),1,4)
-					nPosCmpCab:=PosCabArray(aItens,"COD_OP")
-					aItens[Len(aItens)][nPosCmpCab][2] := Alltrim(SC2->C2_NUM)+Alltrim(SC2->C2_ITEM)+Alltrim(SC2->C2_SEQUEN)
-					nPosCmpCab:=PosCabArray(aItens,"IND_PRODUTO")
-					aItens[Len(aItens)][nPosCmpCab][2] := IND_PRODUTO("SB1")
-					nPosCmpCab:=PosCabArray(aItens,"COD_PRODUTO")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SD3->D3_COD")
-					nPosCmpCab:=PosCabArray(aItens,"DT_SAIDA")
-					aItens[Len(aItens)][nPosCmpCab][2] := dTos(SD3->D3_EMISSAO)
-					nPosCmpCab:=PosCabArray(aItens,"COD_UND_PADRAO")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_UM")
-					nPosCmpCab:=PosCabArray(aItens,"QTD_PRODUZIDO")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SD3->D3_QUANT")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_UNIT")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCalZerado,IIf(!Empty(SD3->D3_CUSTO1),SD3->D3_CUSTO1/SD3->D3_QUANT,0))
-					nPosCmpCab:=PosCabArray(aItens,"IND_PRODUTO_OP")
-					aItens[Len(aItens)][nPosCmpCab][2] := IND_PRODUTO("SB1")
-					nPosCmpCab:=PosCabArray(aItens,"COD_PRODUTO_OP")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SC2->C2_PRODUTO")
-				Endif	
-			Endif
+			If lContinua	
+				MontaItens(aCab,@aItens,(cAliasTrb)->D3_FILIAL)
+							
+				// comeca gravar campos do layout
+				nPosCmpCab:=PosCabArray(aItens,"COD_EMPRESA")
+				aItens[Len(aItens)][nPosCmpCab][2] := SZPMSaf("ZP_EMPMS",(cAliasTrb)->D3_FILIAL)
+				nPosCmpCab:=PosCabArray(aItens,"COD_ESTAB")
+				aItens[Len(aItens)][nPosCmpCab][2] := SZPMSaf("ZP_ESTMS",(cAliasTrb)->D3_FILIAL)
+				nPosCmpCab:=PosCabArray(aItens,"PERIODO_REF")
+				aItens[Len(aItens)][nPosCmpCab][2] := Subs( (cAliasTrb)->C2_EMISSAO , 5 , 2 ) + Subs( (cAliasTrb)->C2_EMISSAO , 1 , 4 )
+				nPosCmpCab:=PosCabArray(aItens,"COD_OP")
+				aItens[Len(aItens)][nPosCmpCab][2] := Alltrim( (cAliasTrb)->C2_NUM ) + Alltrim((cAliasTrb)->C2_ITEM)+Alltrim((cAliasTrb)->C2_SEQUEN)
+				nPosCmpCab:=PosCabArray(aItens,"IND_PRODUTO")
+				aItens[Len(aItens)][nPosCmpCab][2] := IND_PRODUTO("SB1")
+				nPosCmpCab:=PosCabArray(aItens,"COD_PRODUTO")
+				aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"(cAliasTrb)->D3_COD")
+				nPosCmpCab:=PosCabArray(aItens,"DT_SAIDA")
+				aItens[Len(aItens)][nPosCmpCab][2] := (cAliasTrb)->D3_EMISSAO
+				nPosCmpCab:=PosCabArray(aItens,"COD_UND_PADRAO")
+				aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_UM")
+				nPosCmpCab:=PosCabArray(aItens,"QTD_PRODUZIDO")
+				aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"(cAliasTrb)->D3_QUANT")
+				nPosCmpCab:=PosCabArray(aItens,"VLR_UNIT")
+				aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCalZerado,(cAliasTrb)->CUSTO_UNI )
+				nPosCmpCab:=PosCabArray(aItens,"IND_PRODUTO_OP")
+				aItens[Len(aItens)][nPosCmpCab][2] := IND_PRODUTO("SB1")
+				nPosCmpCab:=PosCabArray(aItens,"COD_PRODUTO_OP")
+				aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"(cAliasTrb)->C2_PRODUTO")
+				nPosCmpCab:=PosCabArray(aItens,"NUM_ITEM")
+				aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"(cAliasTrb)->C2_ITEM")
+			Endif	
+		
 			(cAliasTrb)->(dbSkip())
 		Enddo
 	Else
@@ -4531,10 +4557,10 @@ Descricao / Objetivo:   Observações da Nota Fiscal
 Static Function fSAFX112()
 	
 	cQ := CRLF + " SELECT CDT.R_E_C_N_O_ CDT_RECNO,SFT.R_E_C_N_O_ SFT_RECNO "
-	cQ += CRLF + " 	FROM "+RetSqlName("CDT")+" CDT "
-	cQ += CRLF + " INNER JOIN "+RetSqlName("SFT")+" SFT "
+	cQ += CRLF + " 	FROM " + RetSqlName("CDT") + " CDT "
+	cQ += CRLF + " INNER JOIN " + RetSqlName("SFT") + " SFT "
 	cQ += CRLF + " 		ON  SFT.D_E_L_E_T_ = ' ' "
-	cQ += CRLF + " 		AND SFT.FT_DTCANC = ' ' "
+	cQ += CRLF + " 		AND SFT.FT_DTCANC  = ' ' "
 	cQ += CRLF + " 		AND SFT.FT_FILIAL  = CDT.CDT_FILIAL "
 	cQ += CRLF + " 		AND SFT.FT_NFISCAL = CDT.CDT_DOC "
 	cQ += CRLF + " 		AND SFT.FT_SERIE   = CDT.CDT_SERIE "
@@ -4547,12 +4573,12 @@ Static Function fSAFX112()
 	If Empty( __cSelNfs )
 		cQ += CRLF + " 	AND SFT.FT_NFISCAL BETWEEN '" + cDocFisDe + "' AND '" + cDocFisAte + "' "
 	Else
-		cQ += CRLF + " 	AND SF.FT_NFISCAL IN " + FormatIn(__cSelNfs, ";") 
+		cQ += CRLF + " 	AND SFT.FT_NFISCAL IN " + FormatIn(__cSelNfs, ";") 
 	EndIf
 
 	cQ += CRLF + "	 WHERE  CDT.D_E_L_E_T_ = ' ' "
 	cQ += CRLF + " 		AND CDT.CDT_FILIAL BETWEEN '" + cFilDe + "' AND '" + cFilAte + "' "
-	cQ += CRLF + " ORDER BY FT_FILIAL,FT_ENTRADA,FT_NFISCAL "
+	cQ += CRLF + " ORDER BY SFT.FT_FILIAL,SFT.FT_ENTRADA,SFT.FT_NFISCAL "
 	
 	If lDebug
 		MemoWrite(cLocDest+cTab+".txt",cQ)
