@@ -54,7 +54,12 @@ Static Function zRel0016()
 	Local cTp_Ped       := space(03)
 	Local _aCombo    	:= {"CHE", "HYN", "SUB","   "}
 	Local _aCmboSts  	:= {"NAO", "SIM"}
-	Local _aST_Item   	:= {"EM ANALISE","BLOQUEADO POR CRÉDITO","B.O.","FATURADO","SEPARAÇÃO","CANCELADO","   "}
+	//Local _aST_Item   	:= {"EM ANALISE","BLOQUEADO POR CRÉDITO","B.O.","FATURADO","SEPARAÇÃO","CANCELADO","   "}
+	Local cCNPJ			:= SPACE(14)
+	Local cInQryST 		:= ""
+	Local cInQryXBO 	:= ""
+	Local cNInQryST 	:= ""
+	Local cNInQryXBO 	:= ""
 	
 	Private MV_PAR01    := ""
 	Private dDataI      := Date()
@@ -70,8 +75,16 @@ Static Function zRel0016()
 	aAdd( aPergs ,{2,	"Marca" 				,"Marca" 	,_aCombo 	, 30 		,  "" 	,	.F.		})  //7
 	aAdd( aPergs ,{1,	"Tipo Pedido"  			,cTp_Ped	,"@!", 		, "Z00"  	,'.T.'	,20	,.F.	})  //8
 	aAdd( aPergs ,{1,	"Grupo" 				,cGupo 		,"@!", 		, "SBM"  	,'.T.'	,20	,.F.	})  //9
-	aAdd( aPergs ,{2,	"Status do Item"		,"StatusI"	,_aST_Item	, 100 		, ""	,	.F.		})  //10
+	//aAdd( aPergs ,{2,	"Status do Item"		,"StatusI"	,_aST_Item	, 100 		, ""	,	.F.		})  //10
 	aAdd( aPergs ,{2,	"Impr Status Pedido" 	,"StatusC" 	,_aCmboSts 	, 30 		,  "" 	,	.F.		})  //7
+	aAdd( aPergs ,{1,	"CNPJ Cliente"			,cCNPJ  	,"@!", 		, "CLICGC"	,'.T.'	,90	,.F.	})  //11
+	aAdd( aPergs ,{5,	"EM ANALISE"			,.T.										,90 ,"",.F.	})  //12
+	aAdd( aPergs ,{5,	"BLOQUEADO POR CRÉDITO"	,.T.										,90 ,"",.F.	})  //13
+	aAdd( aPergs ,{5,	"B.O." 					,.T.										,90 ,"",.F.	})  //14
+	aAdd( aPergs ,{5,	"FATURADO" 				,.T.										,90 ,"",.F.	})  //15
+	aAdd( aPergs ,{5,	"SEPARAÇÃO" 			,.T.										,90 ,"",.F.	})	//16
+	aAdd( aPergs ,{5,	"CANCELADO" 			,.T.										,90 ,"",.F.	})	//17
+	aAdd( aPergs ,{5,	"AG REPROCESS" 			,.T.										,90 ,"",.F.	})	//18	
 	
 	If ParamBox(aPergs, "Parâmetros p/ Relatório", aRetP, , , , , , , , ,.T.) 
 
@@ -121,6 +134,77 @@ Static Function zRel0016()
 		If Select( (cAliasQry) ) > 0
 			(cAliasQry)->(DbCloseArea())
 		EndIf
+		
+		If aRetP[12] //EM ANALISE
+    		if !Empty(cInQryST)
+        		cInQryST += ","
+    		EndIf
+			if !Empty(cInQryXBO)
+        		cInQryXBO += ","
+    		EndIf
+    		cInQryST += "'0'"//"'3','4','F','X','C'"//
+			cInQryXBO += "' '" //"'E','I','N','S'"// 
+		EndIf
+		
+		If aRetP[13] //BLOQUEADO POR CRÉDITO
+    		if !Empty(cInQryST)
+        		cInQryST += ","
+    		EndIf
+			if !Empty(cInQryXBO)
+        		cInQryXBO += ","
+    		EndIf
+    		cInQryST += "'3'"//"'0','4','F','X','C'"//
+			cInQryXBO += "'N'" //  
+		EndIf
+		
+		If aRetP[14] //B.O.
+    		if !Empty(cInQryST)
+        		cInQryST += ","
+    		EndIf
+			if !Empty(cInQryXBO)
+        		cInQryXBO += ","
+    		EndIf
+    		cInQryST += "'0'"
+			cInQryXBO += "'S'"// "'E','I','N',' '"//
+		EndIf
+
+		If aRetP[15] //FATURADO
+    		if !Empty(cInQryST)
+        		cInQryST += ","
+    		EndIf
+			if !Empty(cInQryXBO)
+        		cInQryXBO += ","
+    		EndIf
+    		cInQryST += "'X'"//"'0','3','4','F','C'"//
+			cInQryXBO += "'I','E'"//"'S','N',' '"//
+		EndIf
+		
+		If aRetP[16] //SEPARAÇÃO
+    		if !Empty(cInQryST)
+        		cInQryST += ","
+    		EndIf
+			if !Empty(cInQryXBO)
+        		cInQryXBO += ","
+    		EndIf
+     		cInQryST += "'4','F'"//"'0','3','C'"//
+			cInQryXBO += "'I','E'"//"' '"//  
+		EndIf
+
+		If aRetP[17] //CANCELADO
+    		if !Empty(cInQryST)
+        		cInQryST += ","
+    		EndIf
+			if !Empty(cInQryXBO)
+        		cInQryXBO += ","
+    		EndIf
+    		cInQryST += "'C'"//"'0','3','4','F','X'"//
+			cInQryXBO += "' ','E','I','N','S'" 
+		EndIf
+
+		If aRetP[18] //AG.REPROC
+    		cNInQryST += "'0','3','4','F','X','C'"
+			cNInQryXBO += "' ','E','I','N','S'"
+		EndIf						
 
         _cQuery := ""
 		_cQuery += " SELECT SA1.A1_CGC      					AS CNPJ "+ CRLF
@@ -228,21 +312,21 @@ Static Function zRel0016()
 		If !Empty(aRetP[09])
 			_cQuery += " AND SB1.B1_GRUPO = '" + aRetP[09] + "' "             + CRLF
 		EndIf
-		If !Empty(aRetP[10])
-			If AllTrim(aRetP[10]) == "EM ANALISE"
-				_cQuery += " AND VS1LEG.VS1_STATUS = '0' AND VS1LEG.VS1_XBO = ' ' "     + CRLF
-			ElseIf AllTrim(aRetP[10]) == "BLOQUEADO POR CRÉDITO"
-				_cQuery += " AND VS1LEG.VS1_STATUS = '3' "        						+ CRLF
-			ElseIf AllTrim(aRetP[10]) == "B.O."
-				_cQuery += " AND VS1LEG.VS1_STATUS = '0' AND VS1LEG.VS1_XBO = 'S' "     + CRLF
-			ElseIf AllTrim(aRetP[10]) == "CANCELADO"
-				_cQuery += " AND VS1LEG.VS1_STATUS = 'C' "        						+ CRLF
-			ElseIf AllTrim(aRetP[10]) == "SEPARAÇÃO"
-				_cQuery += " AND VS1LEG.VS1_STATUS IN ('4','F') "        				+ CRLF
-			ElseIf AllTrim(aRetP[10]) == "FATURADO"
-				_cQuery += " AND VS1LEG.VS1_STATUS = 'X'  "        						+ CRLF
-			EndIf
+		If !Empty(aRetP[11])
+			_cQuery += " AND SA1.A1_CGC = '" + aRetP[11] + "' "           	  + CRLF
 		EndIf
+		If !Empty(cInQrySt)
+			_cQuery += " AND VS1LEG.VS1_STATUS IN (" + cInQrySt + ")"  	      + CRLF
+		EndIf 
+		If !Empty(cInQryXbo)
+			_cQuery += " AND VS1LEG.VS1_XBO IN (" + cInQryXBO + ")"           + CRLF
+		EndIf
+		If !Empty(cNInQrySt)
+			_cQuery += " OR (VS1LEG.VS1_STATUS NOT IN (" + cNInQrySt + ")"  	      + CRLF
+		EndIf 
+		If !Empty(cNInQryXbo)
+			_cQuery += " AND VS1LEG.VS1_XBO NOT IN (" + cNInQryXBO + "))"          + CRLF
+		EndIf 		 		
 		_cQuery += " ORDER BY VS1LEG.VS1_NUMORC, VS1LEG.VS1_DATORC "+ CRLF
    
 		// Executa a consulta.
@@ -290,7 +374,7 @@ Static Function zRel0016()
 												(cAliasQry)->QTD_RES,;
 												(cAliasQry)->QTD_ATEND,;
 												(cAliasQry)->STATUS_ITEM,;
-												IIF(AllTrim(aRetP[11]) == "SIM" , PQry01((cAliasQry)->DESMEB) ," ")	})
+												IIF(AllTrim(aRetP[10]) == "SIM" , PQry01((cAliasQry)->DESMEB) ," ")	})
 	
 			(cAliasQry)->(DbSkip()) 
 			nCont++
