@@ -26,6 +26,7 @@ Local _oObj     := ""
 Local _cIdPonto := ""
 Local _cIdModel := ""
 Local _nOpcx 
+
 Begin Sequence    
     If _aParam == NIL
         Return(_lRet)
@@ -35,7 +36,14 @@ Begin Sequence
     _cIdModel       := _aParam[3]
     _nOpcx          := _oObj:GetOperation() // PEGA A OPERAÇÃO
 
-    If (_cIdPonto =="MODELCOMMITNTTS")
+    //Na validação total do formulário
+    //If (_cIdPonto =="FORMPOS")
+    //If (_cIdPonto =="MODELPRE")
+        //Na ativação do modelo.
+    If (_cIdPonto =="MODELVLDACTIVE")
+        ZCRMA980LC(_nOpcx, .F.)  //Processo antes de Atualizar
+        //Após a gravação total do modelo e fora da transação.
+    ElseIf (_cIdPonto =="MODELCOMMITNTTS")
         If _nOpcx == 3 .or. _nOpcx == 4 //.or. _nOpcx == 5 //Inclusão ou Alteração ou Excluir
             ZCRMA980LC(_nOpcx)
         EndIf
@@ -43,8 +51,10 @@ Begin Sequence
         If _nOpcx == 5
             _cLoja := ""
         EndIf
-    //Avalia antes de gravar se foi alterado algum campo customizado para gravar tabela de Log SZ2
+        //Antes da gravação da tabela do formulário.
     ElseIf _cIdPonto == 'FORMCOMMITTTSPRE'
+        //Grava log RGLOG
+         //Avalia antes de gravar se foi alterado algum campo customizado para gravar tabela de Log SZ2
         ZCRMA980VA(/*_cUserSol*/, /*_cRotina*/)
     //ElseIf  _cIdPonto == 'MODELPOS'
     EndIf
@@ -53,8 +63,17 @@ RestArea(_aArea)
 Return(_lRet)
 
 
-
-Static Function ZCRMA980LC(_nOpcx)
+/*/{Protheus.doc} ZCRMA980LC
+Processa Limite de Crédito
+@author     CAOA DAC - Denilso
+@since      05/05/2023
+@version    1.0
+@project    FIN108- Revitalização L.C
+@history    
+@Obs   
+@tdn        
+/*/
+Static Function ZCRMA980LC(_nOpcx, _lPrcLog)
 Local _lRet      := .T.
 Local _cCodCli
 Local _cLoja
@@ -62,20 +81,36 @@ Local _cTpCred
 
 Private nOpcx   := _nOpcx   //necessário pois a funcionalidade ZWSR005 espera como private  DAC 03/04/2023  
 
+Default _lPrcLog    := .T.
+
 Begin Sequence
     _cCodCli	    := If(Type("M->A1_COD") 	== "C",M->A1_COD	    ,SA1->A1_COD)
     _cLoja		    := If(Type("M->A1_LOJA") 	== "C",M->A1_LOJA	    ,SA1->A1_LOJA)
     _cTpCred        := If(Type("M->A1_XTPCRED")	== "C",M->A1_XTPCRED	,SA1->A1_XTPCRED)
-    If FWCodEmp() = '2020'
-		U_ZWSR006("C", _cCodCli , _cLoja )
-    //ElseIf FWCodEmp() = '2010'
-    EndIf
-    U_ZF10GENSAP("SA1", _cCodCli+_cLoja, "A1_XCDSAP", _nOpcx)    //gravar tabela SZ7 para envio SAP
-    MsgRun("Atualizando Limite de Crédito Caoa","Aguarde...",{|| U_ZFATF014(_cCodCli, _cTpCred, _cLoja, .T.) })
+    //Indica se processa Log's, caso não somente processar o calculo do L.C. DAC 10/05/2023
+    If _lPrcLog  
+        If FWCodEmp() = '2020'
+         //Serviço de integração  para integração clientes, fornecedores e transportadoras com execauto RGLOG
+    		U_ZWSR006("C", _cCodCli , _cLoja )
+      //ElseIf FWCodEmp() = '2010'
+        EndIf
+        U_ZF10GENSAP("SA1", _cCodCli+_cLoja, "A1_XCDSAP", _nOpcx)    //Lê tabela SZ7 para envio SAP
+    Endif    
+    FwMsgRun(,{ || U_ZFATF014(_cCodCli, _cTpCred, _cLoja, .T.) }, 'Limite Crédito','Atualizando Limite de Crédito Caoa, aguarde...')  
 End Sequence
 Return(_lRet)
 
 
+/*/{Protheus.doc} ZCRMA980LC
+Grava LOG para Limite de Credito ZA2
+@author     CAOA DAC - Denilso
+@since      05/05/2023
+@version    1.0
+@project    FIN108- Revitalização L.C
+@history    
+@Obs   
+@tdn        
+/*/
 Static Function ZCRMA980VA(_cUserSol, _cRotina)
 Local _cAliasPesq  	:= GetNextAlias()
 Local _lRet         := .T.

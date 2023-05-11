@@ -17,7 +17,8 @@ Ponto de Entrada referente a filtro do Browse de Clientes SA1
 
 User Function CRM980BFIL()
 Local _cRet := ""
-FwMsgRun(,{ || U_ZFATF014() }, 'Limite Crédito','Atualizando Limite de Crédito Caoa, aguarde...')  //Separação Orçamentos / Aguarde
+//Não executar executar somente um a um DAC 10/05/2023
+//FwMsgRun(,{ || U_ZFATF014() }, 'Limite Crédito','Atualizando Limite de Crédito Caoa, aguarde...')  //Separação Orçamentos / Aguarde
 Return _cRet
 
 

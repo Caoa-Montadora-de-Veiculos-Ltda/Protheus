@@ -16,17 +16,44 @@ Obs......:
 =====================================================================================
 */
 User Function ZFATF012()
+Local _aArea    := GetArea()
+Local _lJob     := IsBlind()
+//DimensÃµes da janela
+Local _nAltura  := 180
+Local _nLargura := 650
+Local _cChave	:= AllTrim(FWCodEmp())+"ZFATF012"
+//Objetos da tela
+Local _oGrpAco
+Local _oBtnSair
+Local _oBtnImp
+Local _nPos
+Local _lRet
 
-	Local _aArea := GetArea()
-	//DimensÃµes da janela
-	Local _nAltura := 180
-	Local _nLargura := 650
-	//Objetos da tela
-	Local _oGrpAco
-	Local _oBtnSair
-	Local _oBtnImp
-	Private _oDlgImp
-	
+Private _oDlgImp
+
+	//Garantir que o processamento seja unico
+	If !LockByName(_cChave,.T.,.T.)  
+		//tentar locar por 10 segundos caso não consiga não prosseguir
+		_lRet := .F.
+		For _nPos := 1 To 10
+			Sleep( 3000 ) // Para o processamento por 3 segundos
+			If LockByName("ZFATF012",.T.,.T.)
+				_lRet := .T.
+			EndIf
+		Next		
+		If !_lRet
+			If !_lJob
+				MSGINFO("Já existe um processamento em execução rotina ZFATF012, aguarde!", "[ZFATF012] - Atenção" )
+			Else
+				CONOUT("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZFATF012] Já existe um processamento em execução, aguarde!")
+				ConOut("*************************************************************************************************************************"	+ CRLF)
+				ConOut("----------- [ ZFATF012 ] - Já existe um processamento em execução rotina ZFATF012 "														+ CRLF)
+				ConOut("*************************************************************************************************************************"	+ CRLF)
+			EndIf
+			Return Nil
+		EndIf
+	EndIf
+
 	//Criando a janela
 	DEFINE MSDIALOG _oDlgImp TITLE "[ ZFATF012 ] - Importação Crédito Floor Plan" FROM 000, 000  TO _nAltura, _nLargura COLORS 0, 16777215 PIXEL
 				
@@ -41,6 +68,7 @@ User Function ZFATF012()
 	
 	
 	RestArea(_aArea)
+    UnLockByName(_cChave,.T.,.T.)
 Return()
 /*
 =====================================================================================
@@ -60,7 +88,7 @@ Static Function zProcImp() //u_ZFATF012()
     Local cExtens   := "Arquivo CSV | *.CSV"
     Local cMainPath := "C:\"
     Local cFileOpen := ""
-    Local _lRet      := .T.
+    Local _lRet     := .T.
 
     cFileOpen := cGetFile(cExtens,cTitulo,0,cMainPath,.T.,,.F.)
     

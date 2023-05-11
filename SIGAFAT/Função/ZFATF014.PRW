@@ -38,7 +38,7 @@ Begin Sequence
 	//Tem que vir informado o Cliente
 	If Empty(_cCliFat)
 		//quando não informar o cliente faturamento avaliar todos os clientes
-		ZFAT014GER(_cCliFat ,/* _cLoja */)  //quando geral não enviar a loja
+		ZFAT014GER(/*_cCliFat*/ ,/* _cLoja */)  //quando geral não enviar a loja
 		Break
 	Endif
 	//Caso não venha a loja informado localizo a principal que deve ter a referencias do crédito DAC 28/03/2023
@@ -62,7 +62,7 @@ Begin Sequence
 		_nValPed 	:= ZFATF14TPP(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Pedidos Em Reserva/Em Faturamento/Em Separação
 	Endif
 
-	/*
+	/*  Caso incluam credito avaliar se tem NCC para retornar crédito, Financeiro CAOA informou que atualmente não calcula o Crédito para L.C.
 	_nValCred 	:= ZProc040(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA)
 	*/
 	_cRet := ZFATF14SA1(_cCliFat, _cTpCred, _nValAtr, _nValAbe, _nValBo, _nValPed, _nValCred, _cLoja) //Grava os Dados na SA1
@@ -940,7 +940,7 @@ Return _lRet
 
 
 
-/*/{Protheus.doc} ZF014VDUPL
+/*/{Protheus.doc} ZFAT014GER
 Função responsável por verificar se existe outro tipo de credito cadastrado
 caso exista retornará .F. Falso
 @param      _cCliFat 	- Codigo do cliente  
@@ -980,8 +980,7 @@ Begin Sequence
 	EndIf
 	While (_cAliasPesq)->(!Eof()) 
 		SA1->(DbGoto((_cAliasPesq)->NREGSA1))
-		U_ZFATF014(SA1->A1_COD, SA1->A1_XTPCRED, SA1->A1_LOJA)
-		ZF014ZERLC( SA1->A1_COD, If(!Empty(_cLoja),SA1->A1_LOJA,Nil),/*_cTpCred*/)  //atualizar todos neste código
+		U_ZFATF014(SA1->A1_COD, SA1->A1_XTPCRED, SA1->A1_LOJA, .T. )
 		(_cAliasPesq)->(DbSkip())	
 	EndDo
 End Sequence
