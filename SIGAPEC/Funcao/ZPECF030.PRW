@@ -910,7 +910,7 @@ Local _aRotina 	:= {}
 Begin Sequence
 	AADD(_aRotina, {"Itens Relacionados"	, "U_ZPECF30I()"    		, 0, 0, 0, Nil })
 	AADD(_aRotina, {"Kit."		 			, "U_ZPECF30K()"			, 0, 6, 0, Nil })
-	AADD(_aRotina, {"Visualizar Produto"	, "U_ZPECF30P()"	    	, 0, 7, 0, Nil })
+	AADD(_aRotina, {"Visualizar Produto"	, "U_ZPECF30P_MVC()"	   	, 0, 7, 0, Nil })
 	AADD(_aRotina, {'Estatistica de Venda'	, "U_ZPECF30E()"	    	, 0, 8, 0, Nil })
 End Sequence
 RestArea(_aArea)
@@ -1957,3 +1957,38 @@ Endif
 Return _lRet
 
 
+
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} COMP041_MVC
+Exemplo de montagem da modelo e interface para uma tabela em MVC
+Utilizando NEW MODEL e MENUDEF
+
+@author Ernani Forastieri e Rodrigo Antonio Godinho
+@since 05/10/2009
+@version P10
+/*/
+//-------------------------------------------------------------------
+User Function ZPECF30P_MVC()
+Local _cCodItem	:= MV_PAR01
+Local oBrowse
+
+NEW MODEL ;
+TYPE        1    ;
+DESCRIPTION "Produto" ;
+BROWSE      oBrowse         ;
+SOURCE      "ZPECF30P_MVC"   ;
+MENUDEF     "ZPECF30P_MVC"   ;
+MODELID     "ZPECF30P"     ;
+FILTER      "B1_COD=='"+_cCodItem+"'" ;
+MASTER      "SB1"
+
+Return NIL
+
+//-------------------------------------------------------------------
+Static Function MenuDef()
+Private aRotina := {}
+
+ADD OPTION aRotina TITLE 'Visualizar' ACTION 'VIEWDEF.COMP044_MVC' OPERATION 2 ACCESS 0
+
+Return aRotina
