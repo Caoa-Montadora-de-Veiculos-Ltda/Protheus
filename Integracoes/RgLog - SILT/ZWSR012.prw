@@ -31,31 +31,31 @@ END WSRESTFUL
 WSMETHOD PUT;
 WSRECEIVE empresa, filial, usuario, senha, nota_fiscal, serie_nf, cod_fornecedor, cd_produto, qt_conf,debug;
 WSSERVICE ZWSR012
-	Local cJSON 		:= Self:GetContent() // –> Pega a string do JSON
-	Local oParseJSON 	:= Nil
-	Local oJsonRet 		:= JsonObject():New()
-	Local _lTransf		:= .F.
-	Local _cLog			:= ""
-	Local oJsonLog		:= JsonObject():New()
-	Local _cTab			:= "ZD1"
-	Local _cDoc			:= ""
-	Local _dDataIni 	:= Date()
-	Local _cHsIni		:= Time()
-	
-	Private _aItens		:= {}
-	Private _cErro		:= ""
-	Private _cNfFor 	:= ""
-	Private _cSerFor 	:= ""
-	Private _cFornec	:= ""
-	Private _cLoja		:= ""
-	Private _cTpNf		:= ""
-	Private lDebug 		:= .F.
-	Private _aJson		:= {}
-	
-	//-- Cabeçalho a incluir
-	Private aAuto		:= {}
-	Private _aItem		:= {}
-	Private _atotitem	:= {} 
+Local cJSON 		:= Self:GetContent() // –> Pega a string do JSON
+Local oParseJSON 	:= Nil
+Local oJsonRet 		:= JsonObject():New()
+Local _lTransf		:= .F.
+Local _cLog			:= ""
+Local oJsonLog		:= JsonObject():New()
+Local _cTab			:= "ZD1"
+Local _cDoc			:= ""
+Local _dDataIni 	:= Date()
+Local _cHsIni		:= Time()
+
+Private _aItens		:= {}
+Private _cErro		:= ""
+Private _cNfFor 	:= ""
+Private _cSerFor 	:= ""
+Private _cFornec	:= ""
+Private _cLoja		:= ""
+Private _cTpNf		:= ""
+Private lDebug 		:= .F.
+Private _aJson		:= {}
+
+//-- Cabeçalho a incluir
+//Private aAuto		:= {}
+//Private _aItem		:= {}
+//Private _atotitem	:= {} 
 
 	Conout("ZWSR012 - Integracao Confirmacao de mercadorias recebidas RGLOG PUT - Inicio "+DtoC(date())+" "+Time())
 
@@ -332,9 +332,13 @@ Static Function zGeraTransf()
 				
 				If _nSaldoSB2 < _nQtdeConf
 					_cErro := "Qtde conferida maior que Saldo do Totvs." 
-					_lRet := .F.
+					//_lRet := .F.
 					//Break
-					Return .F.
+					//Return .F.
+					//ESPFUN.-.PEC042.-.Controle.de.saldo.e.e-mail.apos.integracao.de.armazenagem
+					//igualar qtde conferida a saldo b2
+					_nQtdeDiverge := _nQtdeConf
+					_nQtdeConf	  := _nSaldoSB2	
 				EndIf
 
 			Else
