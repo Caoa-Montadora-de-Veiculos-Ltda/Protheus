@@ -398,8 +398,7 @@ Begin Sequence
 			ON 	SC5.C5_FILIAL 	= %XFilial:SC5%
 			AND SC5.C5_NUM		= SC6.C6_NUM	
 			AND SC5.C5_NOTA     = ' '
-			AND SC5.C5_LIBEROK NOT IN('E','S') 
-			AND SC5.C5_CONDPAG 	<> ' '
+			AND (SC5.C5_BLQ		<> ' ' OR SC5.C5_CONDPAG 	= ' ')
 			AND SC5.%notDel%
 			%Exp:_cWhereSC5%
 		WHERE SC6.C6_FILIAL 	= %XFilial:SC6%
@@ -407,6 +406,7 @@ Begin Sequence
 			AND SC6.%notDel%
 			%Exp:_cWhereSC6%
 	EndSql
+	//			AND SC5.C5_LIBEROK NOT IN('E','S',' ') 
 	If (_cAliasPesq)->(Eof())  .Or. (_cAliasPesq)->TIT_SC6BO == 0
 		Break
 	EndIf	
@@ -546,7 +546,8 @@ Begin Sequence
 			ON 	SC5.C5_FILIAL 	= %XFilial:SC5%
 			AND SC5.C5_NUM		= SC6.C6_NUM	
 			AND SC5.C5_NOTA     = ' '
-			AND SC5.C5_LIBEROK NOT IN( 'E',' ') 
+			AND SC5.C5_BLQ		= ' '
+			AND SC5.C5_LIBEROK NOT IN( 'E') 
 			AND SC5.C5_CONDPAG 	<> ' '
 			AND SC5.%notDel%
 			%Exp:_cWhereSC5%
@@ -602,7 +603,7 @@ Local _cWhere		:= ""
 Local _nSaldo		:= 0
 Local _cAliasPesq 	:= GetNextAlias()
 Local _aGrvLog		:= {}
-Local _nPos
+//Local _nPos
 
 Begin Sequence
 	//No caso de não estar informada a loja
@@ -655,7 +656,11 @@ Begin Sequence
 			_cRet := "2"
 		
 		Else
-			_nSaldo := ( SA1->A1_XLC - ( _nValAbe + _nValBo + _nValPed ) )
+			If FWCodEmp() == "2010" 
+				_nSaldo := ( SA1->A1_XLC - ( _nValAbe  ) )
+			Else
+				_nSaldo := ( SA1->A1_XLC - ( _nValAbe + _nValBo + _nValPed ) )
+			Endif
 			SA1->A1_XFPATR	:= ZFATF14DIF(SA1->A1_XFPATR, _nValAtr, "A1_XFPATR", @_aGrvLog) //IiF(_nValAtr >= 0, _nValAtr	, 0)
 			SA1->A1_XLMUSA	:= ZFATF14DIF(SA1->A1_XLMUSA, _nValAbe, "A1_XLMUSA", @_aGrvLog) //IiF(_nValAbe >= 0, _nValAbe	, 0)
 			SA1->A1_XVALBO	:= ZFATF14DIF(SA1->A1_XVALBO, _nValBo , "A1_XVALBO", @_aGrvLog) //IiF(_nValBo  >= 0, _nValBo	, 0)
@@ -690,11 +695,12 @@ Begin Sequence
 		EndIf
 		SA1->(MsUnlock())
 		//caso exista log para gravar
-		If Len(_aGrvLog) > 0
-			For _nPos := 1 To Len(_aGrvLog)
-				U_ZGENLZA2(_aGrvLog[_nPos,1], _aGrvLog[_nPos,2], _aGrvLog[_nPos,3], /*_cTitulo*/, "AVALIACAO L.C.",/*_cUserSol*/)
-			Next
-		Endif		
+		//Não gravar alinhado com Evandro e Aline - DAC 17/05/2023
+		//If Len(_aGrvLog) > 0
+		//	For _nPos := 1 To Len(_aGrvLog)
+		//		U_ZGENLZA2(_aGrvLog[_nPos,1], _aGrvLog[_nPos,2], _aGrvLog[_nPos,3], /*_cTitulo*/, "AVALIACAO L.C.",/*_cUserSol*/)
+		//	Next
+		//Endif		
 		(_cAliasPesq)->(DbSkip())
 	EndDo	
 End Sequence
