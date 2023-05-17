@@ -224,7 +224,6 @@ Static Function zGeraTransf(_aDivergencia)
 	Local _aArmDes			:=	{_cArmTec,_cArmDes}
 	Local cTmpAlias			:= GetNextAlias()
 	Local cQuery			:= ""
-	Local aArea				:= {}
 	Local cAliasZD1			:= GetNextAlias()
 	Local cQryZD1			:= ""
 	Local aLog 				:= {}
@@ -377,7 +376,6 @@ Static Function zGeraTransf(_aDivergencia)
 		ZD1->(DbSetOrder(1))
 		If !ZD1->(DbSeek(FWxFilial("ZD1")+ PadR(_cNfFor, TamSx3('ZD1_DOC') [1]) + PadR(_cSerFor, TamSx3('ZD1_SERIE') [1]) + PadR(_cFornec, TamSx3('ZD1_FORNEC') [1]) + PadR(_cLoja, TamSx3('ZD1_LOJA') [1]) + PadR(_cProduto, TamSx3('B2_COD') [1]) ))	
 		*/
-		aArea  := GetArea()
 		cQuery := ""
 		cQuery += " SELECT * 																"+(Chr(13)+Chr(10))
 		cQuery += " FROM "+RetSqlName("ZD1")+" ZD1											"+(Chr(13)+Chr(10))
@@ -413,7 +411,10 @@ Static Function zGeraTransf(_aDivergencia)
 			Endif	
 		EndIf
 		If Select(cTmpAlias) <> 0 ; (cTmpAlias)->(DbCloseArea()) ; EndIf
-		_cDocumen := NextNumero("SD3",2,"D3_DOC",.T.)
+		DbSelectArea("SD3")
+		_cDocumen := SD3->(NextNumero("SD3",2,"D3_DOC",.T.))  //esta dando erro no processamento
+		//_cDocumen := GetSxeNum("SD3","D3_DOC")
+
 		aadd(_aAuto,{_cDocumen , dDataBase})    //Cabecalho
 		SB1->(DbSetOrder(1))
 		If SB1->(DbSeek(FWxFilial("SB1")+PadR(_cProduto , TamSx3('B1_COD') [1])))
@@ -422,6 +423,7 @@ Static Function zGeraTransf(_aDivergencia)
 			ELSE
 				_aSaldoDest := {_nSaldoTec, _nQtdeConf - _nSaldoTec}
 			ENDIF
+
 			For _nX := 1 To Len(_aSaldoDest)
 				_aLinha := {}
 				if _aSaldoDest[_nX] <= 0
@@ -458,67 +460,76 @@ Static Function zGeraTransf(_aDivergencia)
 		EndIf					
 	Next
 
-	If Len(_aTransf) > 0
-		lMsErroAuto 	:= .F.
-		lMsHelpAuto		:= .T.
-		lAutoErrNoFile 	:= .t.
-		MSExecAuto({|x,y| mata261(x,y)}, _aAuto, _nOpcAuto)
-		_aJson := aClone(_aAuto)
-		If lMsErroAuto
-			_cErro := "Problemas no execauto MATA261, Nota Fiscal TOTVS!" 
-			_cMens := _cErro
-			Aadd(_aDivergencia, {	_cProduto,;
-									Alltrim(_cFornec),;
-									Alltrim(_cLoja ),; 
-									Alltrim(_cSerFor),; 
-									Alltrim(_cNfFor),; 
-									_nQtdeDiverge,;
-									_nQtdeConf,;
-									_cMens} )
-			// se estiver em debug, pega o log inteiro do erro para uma analise mais detalhada
-			if lDebug 
-				aLog   := GetAutoGRLog()
-				_cErro += mostraerro(cStartPath+'ZWSR012.log')
-				For _nX := 1 To Len(aLog)
-					If !Empty(_cErro)
-						_cErro += CRLF
-					EndIf
-					_cErro += aLog[_nX]
-				Next _nX
-			Endif		
-		Else
-			For _nPos := 1 To Len(_aTransf)
-				/*
-				ZD1->(DbSetOrder(1))
-				If ZD1->(DbSeek(FWxFilial("ZD1")+ PadR(_cNfFor, TamSx3('ZD1_DOC') [1]) + PadR(_cSerFor, TamSx3('ZD1_SERIE') [1]) + PadR(_cFornec, TamSx3('ZD1_FORNEC') [1]) + PadR(_cLoja, TamSx3('ZD1_LOJA') [1]) + PadR(_aTransf[_nPos][01] , TamSx3('B2_COD') [1]) ))
-				*/
-				aArea  := GetArea()
-				cQuery := ""
-				cQuery += " SELECT * 																"+(Chr(13)+Chr(10))
-				cQuery += " FROM "+RetSqlName("ZD1")+" ZD1											"+(Chr(13)+Chr(10))
-				cQuery += " WHERE	ZD1.ZD1_FILIAL 	= '"	+FWxFilial("ZD1")+"' 					"+(Chr(13)+Chr(10))
-				cQuery += " 	AND ZD1.ZD1_DOC		LIKE '%"+Alltrim(Str(Val(Alltrim(_cNfFor))))+"%'"+(Chr(13)+Chr(10))
-				cQuery += " 	AND ZD1.ZD1_SERIE 	= '"	+Alltrim(_cSerFor 			)		+"' "+(Chr(13)+Chr(10))
-				cQuery += " 	AND ZD1.ZD1_FORNEC	= '"	+Alltrim(_cFornec 			)		+"' "+(Chr(13)+Chr(10))
-				cQuery += " 	AND ZD1.ZD1_LOJA	= '"	+Alltrim(_cLoja   			)		+"' "+(Chr(13)+Chr(10))
-				cQuery += " 	AND ZD1.ZD1_COD		= '"	+Alltrim(_aTransf[_nPos][01])		+"' "+(Chr(13)+Chr(10))
-				cQuery += " 	AND ZD1.D_E_L_E_T_	= ' '			        						"+(Chr(13)+Chr(10))
-				If Select(cTmpAlias) <> 0 ; (cTmpAlias)->(DbCloseArea()) ; EndIf
-				DbUseArea( .T., "TOPCONN", TcGenQry(,, cQuery), cTmpAlias, .F., .T. )
-				(cTmpAlias)->(DbGoTop())
-				If (cTmpAlias)->(!Eof())
-					ZD1->(DbGoTo((cTmpAlias)->R_E_C_N_O_))
-					RecLock("ZD1", .F.)
-					ZD1->ZD1_QTCONF := ZD1->ZD1_QTCONF + _aTransf[_nPos][02]
-					ZD1->ZD1_SLDIT	:= ZD1->ZD1_SLDIT  - _aTransf[_nPos][02]
-					ZD1->( MsUnLock() )
+	If Len(_aTransf) == 0
+		_cErro := "Não foi possivel fazer a movimentação interna, verificar com ADM Sistemas TOTVS ." 
+		//ESPFUN.-.PEC042.-.Controle.de.saldo.e.e-mail.apos.integracao.de.armazenagem
+		//igualar qtde conferida a saldo b2
+		_QtdeDiverge := _nQtdeConf
+		_QtdeConf	  := (cTmpAlias)->ZD1_SLDIT	
+		If _QtdeDiverge > 0					
+			add(_aDivergencia, {_cProduto,;
+								Alltrim(_cFornec),;
+								Alltrim(_cLoja ),; 
+								Alltrim(_cSerFor),; 
+								Alltrim(_cNfFor),; 
+								_nQtdeDiverge,;
+								_nQtdeConf,;
+								_cErro} )
+		Endif	
+		Return .F.
+	Endif
+	lMsErroAuto 	:= .F.
+	lMsHelpAuto		:= .T.
+	lAutoErrNoFile 	:= .t.
+	MSExecAuto({|x,y| mata261(x,y)}, _aAuto, _nOpcAuto)
+	_aJson := aClone(_aAuto)
+	If lMsErroAuto
+		_cErro := "Problemas no execauto MATA261, Nota Fiscal TOTVS!" 
+		Aadd(_aDivergencia, {	_cProduto,;
+								Alltrim(_cFornec),;
+								Alltrim(_cLoja ),; 
+								Alltrim(_cSerFor),; 
+								Alltrim(_cNfFor),; 
+								_nQtdeDiverge,;
+								_nQtdeConf,;
+								_cErro} )
+		// se estiver em debug, pega o log inteiro do erro para uma analise mais detalhada
+		if lDebug 
+			aLog   := GetAutoGRLog()
+			_cErro += mostraerro(cStartPath+'ZWSR012.log')
+			For _nX := 1 To Len(aLog)
+				If !Empty(_cErro)
+					_cErro += CRLF
 				EndIf
-				If Select(cTmpAlias) <> 0 ; (cTmpAlias)->(DbCloseArea()) ; EndIf
-				RestArea(aArea)
-			Next	
+				_cErro += aLog[_nX]
+			Next _nX
+		Endif		
+		Return .F.
+	Endif
+	//Atualizar ZD1
+	For _nPos := 1 To Len(_aTransf)
+		cQuery := ""
+		cQuery += " SELECT * 																"+(Chr(13)+Chr(10))
+		cQuery += " FROM "+RetSqlName("ZD1")+" ZD1											"+(Chr(13)+Chr(10))
+		cQuery += " WHERE	ZD1.ZD1_FILIAL 	= '"	+FWxFilial("ZD1")+"' 					"+(Chr(13)+Chr(10))
+		cQuery += " 	AND ZD1.ZD1_DOC		LIKE '%"+Alltrim(Str(Val(Alltrim(_cNfFor))))+"%'"+(Chr(13)+Chr(10))
+		cQuery += " 	AND ZD1.ZD1_SERIE 	= '"	+Alltrim(_cSerFor 			)		+"' "+(Chr(13)+Chr(10))
+		cQuery += " 	AND ZD1.ZD1_FORNEC	= '"	+Alltrim(_cFornec 			)		+"' "+(Chr(13)+Chr(10))
+		cQuery += " 	AND ZD1.ZD1_LOJA	= '"	+Alltrim(_cLoja   			)		+"' "+(Chr(13)+Chr(10))
+		cQuery += " 	AND ZD1.ZD1_COD		= '"	+Alltrim(_aTransf[_nPos][01])		+"' "+(Chr(13)+Chr(10))
+		cQuery += " 	AND ZD1.D_E_L_E_T_	= ' '			        						"+(Chr(13)+Chr(10))
+		If Select(cTmpAlias) <> 0 ; (cTmpAlias)->(DbCloseArea()) ; EndIf
+		DbUseArea( .T., "TOPCONN", TcGenQry(,, cQuery), cTmpAlias, .F., .T. )
+		(cTmpAlias)->(DbGoTop())
+		If (cTmpAlias)->(!Eof())
+			ZD1->(DbGoTo((cTmpAlias)->R_E_C_N_O_))
+			RecLock("ZD1", .F.)
+			ZD1->ZD1_QTCONF := ZD1->ZD1_QTCONF + _aTransf[_nPos][02]
+			ZD1->ZD1_SLDIT	:= ZD1->ZD1_SLDIT  - _aTransf[_nPos][02]
+			ZD1->( MsUnLock() )
 		EndIf
-	EndIf
-//End Sequence
+		If Select(cTmpAlias) <> 0 ; (cTmpAlias)->(DbCloseArea()) ; EndIf
+	Next	
 Return .T.
 
 /*
@@ -772,6 +783,218 @@ Return Nil
 
 
 
+/*
+=====================================================================================
+Programa.:              NotificaDiv -Função para envio de E-mail 
+@param 					_aDivergencia  	= Matriz com dados dos erros no processo 
+Autor....:              CAOA - DAC Denilso 
+Data		            16/05/2023
+Descricao / Objetivo	Funcionalidade responsável por enviar e-mail aos responsaveis (cadastro SX5 e-mail) referente a problemas com a integração de transferência 
+Doc. Origem            	ESPFUN.-.PEC042.-.Controle.de.saldo.e.e-mail.apos.integracao.de.armazenagem
+Solicitante            	CAOA
+Uso              		ZwSR012
+Obs
+@menu       			Nao Informado
+@return					_lRet 		- Verdadeiro ou falso
+@history 					
+=====================================================================================
+*/
+//******************************************
+//Função para envio de E-mail  
+Static Function NotificaDiv(_aDivergencia)  	// (cMailDestino	,cMailCopia	,cAssunto	,cHtml		,aAttach	,lMsgErro  ,lMsgOK		,Rotina,	Observação	, cReplyTo	)Local aMailDest     := StrTokArr( Alltrim(Getmv("CMV_WMS024")),  ";" )
+//******************************************
+Local _cEmailDest   := ""  
+Local _cMailCopia   := ""
+Local _cAssunto	    := "Falha no envio do arquivo de confirmação Armazenagem WIS sigapec"
+Local _cHtml        := ""
+Local _cAttach      := ""
+Local _lMsgErro     := .F.
+Local _lMsgOK       := .F.
+Local _cObservacao  := ""
+Local _cReplyTo	    := ""
+Local _cRotina      := "ZWSR012"
+Local _cAliasPesq	:= GetNextAlias()
+Local _cCodProd 	:= ""	
+Local _cCodFornec 	:= ""
+Local _cLojaFornec	:= ""
+Local _cSerieNF		:= ""
+Local _cNfFor		:= ""	
+Local _nQtdeDiverge	:= ""
+Local _nQtdeConf	:= ""	
+Local _cNome		:= ""
+Local _cDescrPrd	:= ""
+Local _cMens        := ""
+Local _lRet			:= .T.
+Local _cChaveSX5	:= "1B"
+Local _nPos
+
+Default _aDivergencia	:= {}
+Begin Sequence
+
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT 	SX5.X5_DESCRI 
+		FROM  	%Table:SX5% SX5
+		WHERE 		SX5.X5_FILIAL 	= %xFilial:SX5%
+				AND SX5.X5_TABELA 	= %Exp:_cChaveSX5%
+				AND SX5.%notDel%
+	EndSql
+	If (_cAliasPesq)->(Eof())
+		Conout("ZWSR012 - Não informado e-mail na tabela SX5, referentes a inconsistencias para envio de e-mail ! Verificar com ADM Sistemas")
+		_lRet := .F.
+		Break
+	EndIf
+	(_cAliasPesq)->(DbGotop())
+	_cEmailDest	:= ""
+	While (_cAliasPesq)->(!Eof())
+		If !Empty((_cAliasPesq)->X5_DESCRI)
+			_cEmailDest	+= AllTrim((_cAliasPesq)->X5_DESCRI)+","
+		EndIf	
+		(_cAliasPesq)->(DbSkip())
+	EndDo
+	If Empty(_cEmailDest)
+		Conout("ZWSR012 - Não informado e-mail na tabela SX5, referentes a inconsistencias para envio de e-mail ! Verificar com ADM Sistemas")
+		_lRet := .F.
+		Break
+	EndIf
+	_cEmailDest := SubsTr(_cEmailDest,1,Len(_cEmailDest)-1)  //retirar a virgula do final
+	//Fechar arquivo temporario para novo select
+	(_cAliasPesq)->(DbCloseArea())
+
+	If Len(_aDivergencia) == 0
+		Conout("ZWSR012 - Não foi recebido dados referentes a inconsistencias para envio de e-mail ! Verificar com ADM Sistemas")
+		_lRet := .F.
+		Break
+	EndIf
+	_cCodProd 		:=  AllTrim(_aDivergencia[1,1])
+	_cCodFornec 	:=  AllTrim(_aDivergencia[1,2])
+	_cLojaFornec	:=  AllTrim(_aDivergencia[1,3])
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT 	ISNULL(SA2.R_E_C_N_O_,0) NREGSA2, 
+				ISNULL(SB1.R_E_C_N_O_,0) NREGSB1
+		FROM  	%Table:SA2% SA2
+		LEFT JOIN %Table:SB1% SB1
+				ON 	SB1.B1_FILIAL 	= %xFilial:SB1%
+				AND	SB1.B1_COD		= %Exp:_cCodProd%
+				AND SB1.%notDel%
+		WHERE 		SA2.A2_FILIAL 	= %xFilial:SA2%
+				AND SA2.A2_COD 		= %Exp:_cCodFornec%
+				AND SA2.A2_LOJA		= %Exp:_cLojaFornec%
+				AND SA2.%notDel%
+	EndSql
+	If (_cAliasPesq)->(!Eof())
+		If (_cAliasPesq)->NREGSA2 > 0
+			SA2->(DbGoto((_cAliasPesq)->NREGSA2))
+			_cNome 		:= AllTrim(SA2->A2_NOME)
+		EndIf	
+		If (_cAliasPesq)->NREGSB1 > 0
+			SB1->(DbGoto((_cAliasPesq)->NREGSB1))
+			_cDescrPrd 	:= AllTrim(SB1->B1_DESC)
+		EndIf	
+	EndIf 
+
+	//Aadd(_aDivergencia, {_cProduto,
+	//						Alltrim(_cFornec), 
+	//						Alltrim(_cLoja ), 
+	//						Alltrim(_cSerFor), 
+	//						Alltrim(_cNfFor), 
+	//						_nQtdeDiverge,
+	//						_nQtdeConf,
+	//						_cMens} )
+
+	_cHtml := "<h3>"                                                                       
+    _cHtml +=    "  Ocorreram divergências no recebimento integração WIS em Transferência. 	<br/>" 
+    _cHtml +=    "  As quantidades não estão divergentes com os dados de armazenagem, verificar. <br/>" 
+    _cHtml +=    "  Data do processament: " + dtoc(date())  + " " + time() + "      		<br/><br/" 
+    _cHtml +=    "  Detalhe do erro:                                                   		<br/>" 
+    _cHtml +=    "</h4>"     
+	For _nPos := 1 To Len(_aDivergencia)
+		_cCodProd 		:=  AllTrim(_aDivergencia[_nPos,1])
+		_cCodFornec 	:=  AllTrim(_aDivergencia[_nPos,2])
+		_cLojaFornec	:=  AllTrim(_aDivergencia[_nPos,3])
+		_cSerieNF		:=  AllTrim(_aDivergencia[_nPos,4])
+		_cNfFor			:=  AllTrim(_aDivergencia[_nPos,5])
+		_nQtdeDiverge	:=  AllTrim(Str(_aDivergencia[_nPos,6]))
+		_nQtdeConf		:=  AllTrim(Str(_aDivergencia[_nPos,7]))
+		_cMens			:=  AllTrim(_aDivergencia[_nPos,8])
+
+		_cHtml += "Fornecedor codigo "+ _cCodFornec+"-"+_cLojaFornec+" "+_cNome+"<br/>"
+		_cHtml += "Nota Fiscal 		 "+ _cSerieNF+"-"+_cNfFor+"<br/>"
+		_cHtml += "Cod Produto 		 "+ _cCodProd+" "+_cDescrPrd+"<br/>"
+		_cHtml += "Qtde Enviada 	 "+ _nQtdeConf+"<br/>"
+		_cHtml += "Qtde Utilizada 	 "+ _nQtdeConf+"<br/>"	
+    	_cHtml += "Divergencias 	 "+ _cMens+"<br/"
+    	_cHtml += "<br/"
+	Next	 
+   	_cHtml += "<br/><br/"
+    _cHtml +=    " <h5>Esse email foi gerado pela rotina " + _cRotina + " </h5>"       
+   	_cHtml += "<br/><br/"
+    _lRet := U_ZGENMAIL(_cEmailDest,;
+						_cMailCopia,; 
+						_cAssunto,;
+						_cHtml,;
+						_cAttach,;
+						_lMsgErro,;
+						_lMsgOK,;
+						_cRotina,;	
+						_cObservacao,; 
+						_cReplyTo	)
+
+	If !_lRet
+		Conout("ZWSR012 - Problemas com Envio de Email "+cHtml)
+	Endif
+End Sequence
+If Select((_cAliasPesq)) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif 
+Return _lRet
+
+
+
+
+/*
+entrada
+
+{
+    "empresa" : "02", 
+    "filial" : "2020012001", 
+    "usuario" : "RGLOG.REST", 
+    "senha" : "CaOa!RgLogRest@2021", 
+    "nota_fiscal" : "82400", 
+    "serie_nf" : "1", 
+    "cod_fornecedor" : "3518732002886", 
+    "Itens" : [
+        {
+            "id" : "20220321101544.0025725840.0220327923.0000082400.01.3518732002886.0000000000000R-873712E500", 
+            "cd_produto" : "R-873712E500", 
+            "qt_conf" : 1.0
+        }
+    ]
+}
+
+
+transferencia
+
+{
+	"empresa":"02",
+	"filial":"2020012001",
+	"usuario":"RGLOG.REST",
+	"senha":"CaOa!RgLogRest@2021",
+   	"nota_fiscal":"565384",
+	"serie_nf":"7",
+   	"cod_fornecedor":"900307401",
+	"Itens":[
+    	{
+            "id" : "20230210145035.0025746481.023023297.000565384.07.0000900307401.0000000000R-865172S300",
+			"cd_produto":"R-865172S300",
+			"qt_conf":20
+		}
+	]
+}
+
+*/
+
+
 /*Estrutura da string Json
 
 //recebida em 15/02/2023 
@@ -828,179 +1051,4 @@ Return Nil
         }
     ]
 }
-*/
-
-
-
-//******************************************
-Static Function NotificaDiv(_aDivergencia)  	// (cMailDestino	,cMailCopia	,cAssunto	,cHtml		,aAttach	,lMsgErro  ,lMsgOK		,Rotina,	Observação	, cReplyTo	)Local aMailDest     := StrTokArr( Alltrim(Getmv("CMV_WMS024")),  ";" )
-//******************************************
-Local _cEmailDest   := ""  
-Local _cMailCopia   := ""
-Local _cAssunto	    := "Falha no envio do arquivo de confirmação Armazenagem WIS sigapec"
-Local _cHtml        := ""
-Local _cAttach      := ""
-Local _lMsgErro     := .F.
-Local _lMsgOK       := .F.
-Local _cObservacao  := ""
-Local _cReplyTo	    := ""
-Local _cRotina      := "ZWSR012"
-Local _cAliasPesq	:= GetNextAlias()
-Local _cNome		:= ""
-Local _cDescrPrd	:= ""
-Local _cMens        := ""
-Local _lRet			:= .T.
-Local _cChaveSX5	:= "1B"
-Local _nPos
-
-Begin Sequence
-
-	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
-		SELECT 	SX5.X5_DESCRI 
-		FROM  	%Table:SX5% SX5
-		WHERE 		SX5.X5_FILIAL 	= %xFilial:SX5%
-				AND SX5.X5_TABELA 	= %Exp:_cChaveSX5%
-				AND SX5.%notDel%
-	EndSql
-	If (_cAliasPesq)->(Eof())
-		Conout("ZWSR012 - Não informado e-mail na tabela SX5, referentes a inconsistencias para envio de e-mail ! Verificar com ADM Sistemas")
-		_lRet := .F.
-		Break
-	EndIf
-	(_cAliasPesq)->(DbGotop())
-	_cEmailDest	:= ""
-	While (_cAliasPesq)->(!Eof())
-		If !Empty((_cAliasPesq)->X5_DESCRI)
-			_cEmailDest	+= AllTrim((_cAliasPesq)->X5_DESCRI)+","
-		EndIf	
-		(_cAliasPesq)->(DbSkip())
-	EndDo
-	If Empty(_cEmailDest)
-		Conout("ZWSR012 - Não informado e-mail na tabela SX5, referentes a inconsistencias para envio de e-mail ! Verificar com ADM Sistemas")
-		_lRet := .F.
-		Break
-	EndIf
-	_cEmailDest := SubsTr(_cEmailDest,1,Len(_cEmailDest)-1)  //retirar a virgula do final
-	//Fechar arquivo temporario para novo select
-	(_cAliasPesq)->(DbCloseArea())
-
-
-	If ValType(_aDivergencia) <> "A" .Or. Len(_aDivergencia) == 0
-		Conout("ZWSR012 - Não foi recebido dados referentes a inconsistencias para envio de e-mail ! Verificar com ADM Sistemas")
-		_lRet := .F.
-		Break
-	EndIf
-	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
-		SELECT 	ISNULL(SA2.R_E_C_N_O_,0) NREGSA2, 
-				ISNULL(SB1.R_E_C_N_O_,0) NREGSB1
-		FROM  	%Table:SA2% SA2
-		LEFT JOIN %Table:SB1% SB1
-				ON 	SB1.B1_FILIAL 	= %xFilial:SB1%
-				AND	SB1.B1_COD		= %Exp:_aDivergencia[1,1]
-				AND SB1.%notDel%
-		WHERE 		SA2.A2_FILIAL 	= %xFilial:SA2%
-				AND SA2.A2_COD 		= %Exp:_aDivergencia[1,2]%
-				AND SA2.A2_LOJA		= %Exp:_aDivergencia[1,3]%
-				AND SA2.%notDel%
-	EndSql
-	If (_cAliasPesq)->(!Eof())
-		If (_cAliasPesq)->NREGSA2 > 0
-			SA2->(DbGoto((_cAliasPesq)->NREGSA2))
-			_cNome 		:= AllTrim(SA2->A2_NOME)
-		EndIf	
-		If (_cAliasPesq)->NREGSB1 > 0
-			SB1->(DbGoto((_cAliasPesq)->NREGSB1))
-			_cDescrPrd 	:= AllTrim(SB1->A2_DESC)
-		EndIf	
-	EndIf 
-	
-	_cHtml := "<h3>"                                                                       
-    _cHtml +=    "  Ocorreram divergências no recebimento integração WIS em Transferência. 	<br/>" 
-    _cHtml +=    "  As quantidades não estão divergentes com os dados de armazenagem, verificar. <br/>" 
-    _cHtml +=    "  Data do processament: " + dtoc(date())  + " " + time() + "      		<br/><br/" 
-    _cHtml +=    "  Detalhe do erro:                                                   		<br/>" 
-    _cHtml +=    "</h4>"     
-	For _nPos := 1 To Len(_aDivergencia)
-		//Aadd(_aDivergencia, {_cProduto,
-		//						Alltrim(_cFornec), 
-		//						Alltrim(_cLoja ), 
-		//						Alltrim(_cSerFor), 
-		//						Alltrim(_cNfFor), 
-		//						_nQtdeDiverge,
-		//						_nQtdeConf,
-		//						_cMens} )
-		_cMens += If(Len(_aDivergencia)>7 .And. !Empty(_aDivergencia[_nPos,8]), _aDivergencia[_nPos,8],"") 	
-		_cHtml += "Fornecedor codigo "+ _aDivergencia[_nPos,2]+"-"+_aDivergencia[_nPos,3]+" "+_cNome+"<br/>"
-		_cHtml += "Nota Fiscal 		 "+ _aDivergencia[_nPos,4]+"-"+_aDivergencia[_nPos,5]+"<br/>"
-		_cHtml += "Cod Produto 		 "+ AllTrim(_aDivergencia[_nPos,1])+" "+"<br/>"
-		_cHtml += "Qtde Enviada 	 "+ AllTrim(Str(_aDivergencia[_nPos,6]))+"<br/>"
-		_cHtml += "Qtde Utilizada 	 "+ AllTrim(Str(_aDivergencia[_nPos,7]))+"<br/>"	
-    	_cHtml += "Divergencias 	 "+AllTrim(_cMens)+"<br/"
-    	_cHtml += "<br/"
-	Next	 
-   	_cHtml += "<br/><br/"
-    _cHtml +=    " <h5>Esse email foi gerado pela rotina " + _cRotina + " </h5>"       
-   	_cHtml += "<br/><br/"
-    _lRet := U_ZGENMAIL(_cEmailDest,;
-						_cMailCopia,; 
-						_cAssunto,;
-						_cHtml,;
-						_cAttach,;
-						_lMsgErro,;
-						_lMsgOK,;
-						_cRotina,;	
-						_cObservacao,; 
-						_cReplyTo	)
-
-	If !_lRet
-		Conout("ZWSR012 - Problemas com Envio de Email "+cHtml)
-	Endif
-End Sequence
-If Select((_cAliasPesq)) <> 0
-	(_cAliasPesq)->(DbCloseArea())
-	Ferase(_cAliasPesq+GetDBExtension())
-Endif 
-Return _lRet
-
-
-/*
-entrada
-
-{
-    "empresa" : "02", 
-    "filial" : "2020012001", 
-    "usuario" : "RGLOG.REST", 
-    "senha" : "CaOa!RgLogRest@2021", 
-    "nota_fiscal" : "82400", 
-    "serie_nf" : "1", 
-    "cod_fornecedor" : "3518732002886", 
-    "Itens" : [
-        {
-            "id" : "20220321101544.0025725840.0220327923.0000082400.01.3518732002886.0000000000000R-873712E500", 
-            "cd_produto" : "R-873712E500", 
-            "qt_conf" : 1.0
-        }
-    ]
-}
-
-
-transferencia
-
-{
-	"empresa":"02",
-	"filial":"2020012001",
-	"usuario":"RGLOG.REST",
-	"senha":"CaOa!RgLogRest@2021",
-   	"nota_fiscal":"565384",
-	"serie_nf":"7",
-   	"cod_fornecedor":"900307401",
-	"Itens":[
-    	{
-            "id" : "20230210145035.0025746481.023023297.000565384.07.0000900307401.0000000000R-865172S300",
-			"cd_produto":"R-865172S300",
-			"qt_conf":20
-		}
-	]
-}
-
 */
