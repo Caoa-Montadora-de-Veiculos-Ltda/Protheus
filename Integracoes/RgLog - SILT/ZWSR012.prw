@@ -835,7 +835,7 @@ Return Nil
 //******************************************
 Static Function NotificaDiv(_aDivergencia)  	// (cMailDestino	,cMailCopia	,cAssunto	,cHtml		,aAttach	,lMsgErro  ,lMsgOK		,Rotina,	Observação	, cReplyTo	)Local aMailDest     := StrTokArr( Alltrim(Getmv("CMV_WMS024")),  ";" )
 //******************************************
-Local _cEmailDest   := ""  //StrTokArr( Alltrim(Getmv("CMV_WSR013")),  ";" )
+Local _cEmailDest   := ""  
 Local _cMailCopia   := ""
 Local _cAssunto	    := "Falha no envio do arquivo de confirmação Armazenagem WIS sigapec"
 Local _cHtml        := ""
