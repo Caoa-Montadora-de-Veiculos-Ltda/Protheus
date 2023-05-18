@@ -174,8 +174,14 @@ Private _aJson		:= {}
 		oJsonRet['Message'] 		:= "Confirmacao de mercadorias recebida com sucesso"
 		oJsonRet['nota_fiscal']		:= Val(_cNfFor)
 		oJsonRet['cod_fornecedor']	:= oParseJSON:cod_fornecedor
+		//implementado para gravar o erro que retorna caso tenha
+		If !Empty(_cErro)
+			_cLog := _cErro
+		Else
+			_cLog := "Confirmacao de mercadorias recebida com sucesso"
+		Endif
 		_cErro := "Confirmacao de mercadorias recebida com sucesso"
-		ZWSR012Monitor("1",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 100 /*_nErro*/ )	
+		ZWSR012Monitor("1",_cTab, _cDoc, _cLog, _dDataIni, _cHsIni, cJson, 100 /*_nErro*/ )	
 		::SetResponse( oJsonRet:ToJson() )
 	Else
 		oJsonRet['errorCode'] 		:= 400
@@ -307,7 +313,8 @@ Static Function zGeraTransf(_aDivergencia)
 			Return .F.
 		Endif
 		
-		_nQtdeTec := SB1->B1_XRESTEC
+		_nQtdeTec 	:= SB1->B1_XRESTEC
+		_nSaldoSB2	:= 0
 		SB2->(DbSetOrder(1))
 		If SB2->(DbSeek(FWxFilial("SB2")+PadR(_cProduto, TamSx3('B2_COD') [1])+PadR(_cArmOrig, TamSx3('B2_LOCAL') [1])))
 			_nSaldoSB2 := SB2->(SaldoSb2())
@@ -318,27 +325,32 @@ Static Function zGeraTransf(_aDivergencia)
 										Alltrim(_cFornec),;
 										Alltrim(_cLoja ),; 
 										Alltrim(_cSerFor),; 
-										Alltrim(_cNfFor),; 
-										_nQtdeDiverge,;
-										_nQtdeConf,;
+										Alltrim(_cNfFor),;
+										_cArmOrig,; 
+										,;
+										,;
+										,;
 										_cErro} )
 				Return .F.
 			Endif
 			If _nSaldoSB2 < _nQtdeConf
 				//ESPFUN.-.PEC042. deixo continuar com o Saldo do SB2 conforme alinhado com José 16/05/2023
-				_cMens := "Qtde conferida maior que Saldo do Totvs. Será utilizado saldo Totvs" 
-				//ESPFUN.-.PEC042.-.Controle.de.saldo.e.e-mail.apos.integracao.de.armazenagem
-				//igualar qtde conferida a saldo B2
+				_nQtdeDiverge := _nQtdeConf
 				_nQtdeConf	  := _nSaldoSB2	
+				_cMsg := "Qtde conferida "+AllTrim(Str(_nQtdeDiverge))+" maior que Saldo do Totvs "+AllTrim(Str(_nSaldoSB2))+". Será utilizado Saldo Totvs" 
+				_cErro:= "Recebimento parcial da qtde " +AllTrim(Str(_nQtdeConf))+ " por falta de saldo no armazem "+_cArmOrig+" divergencia do Saldo Estoque, da Serie/NF "+_cSerFor+"/"+_cNfFor
+				//igualar qtde conferida a saldo B2
 				//Devo enviar e-mail mesmo deixando continuar
 				Aadd(_aDivergencia, {	_cProduto,;
 										Alltrim(_cFornec),;
 										Alltrim(_cLoja ),; 
 										Alltrim(_cSerFor),; 
 										Alltrim(_cNfFor),; 
+										_cArmOrig,;
 										_nQtdeDiverge,;
 										_nQtdeConf,;
-										_cMens} )
+										_nSaldoSB2,;
+										_cMsg} )
 			EndIf
 		Else
 			//Se teve que criar SB2 deve retornar Falso pois o saldo ficara zerado
@@ -349,8 +361,10 @@ Static Function zGeraTransf(_aDivergencia)
 									Alltrim(_cLoja ),; 
 									Alltrim(_cSerFor),; 
 									Alltrim(_cNfFor),; 
-									_nQtdeDiverge,;
-									_nQtdeConf,;
+									_cArmOrig,;
+									,;
+									,;
+									,;
 									_cErro} )
 
 			Return .F.
@@ -394,20 +408,23 @@ Static Function zGeraTransf(_aDivergencia)
 			Return .F.
 		Endif	
 		If _nQtdeConf > (cTmpAlias)->ZD1_SLDIT
-			_cMens := "Qtde conferida maior que o saldo a conferir - ZD1, será substituido pelo saldo ZD1 ." 
 			//ESPFUN.-.PEC042.-.Controle.de.saldo.e.e-mail.apos.integracao.de.armazenagem
 			//igualar qtde conferida a saldo b2
 			_nQtdeDiverge := _nQtdeConf
 			_nQtdeConf	  := (cTmpAlias)->ZD1_SLDIT	
+			_cMsg := "Qtde conferida "+AllTrim(Str(_nQtdeDiverge))+" maior que o saldo a conferir - ZD1 "+AllTrim(Str(_nQtdeConf))+", será substituido pelo saldo ZD1 ." 
+			_cErro:= "Recebimento parcial da qtde " +AllTrim(Str(_nQtdeConf))+ " por falta de Saldo a Receber na NF, Armazém "+_cArmOrig+", da Serie/NF "+_cSerFor+"/"+_cNfFor
 			If _nQtdeDiverge > 0					
 				Aadd(_aDivergencia, {	_cProduto,;
 										Alltrim(_cFornec),;
 										Alltrim(_cLoja ),; 
 										Alltrim(_cSerFor),; 
 										Alltrim(_cNfFor),; 
+										_cArmOrig,;
 										_nQtdeDiverge,;
 										_nQtdeConf,;
-										_cMens} )
+										_nSaldoSB2,;
+										_cMsg} )
 			Endif	
 		EndIf
 		If Select(cTmpAlias) <> 0 ; (cTmpAlias)->(DbCloseArea()) ; EndIf
@@ -465,15 +482,17 @@ Static Function zGeraTransf(_aDivergencia)
 		//ESPFUN.-.PEC042.-.Controle.de.saldo.e.e-mail.apos.integracao.de.armazenagem
 		//igualar qtde conferida a saldo b2
 		_QtdeDiverge := _nQtdeConf
-		_QtdeConf	  := (cTmpAlias)->ZD1_SLDIT	
+		_QtdeConf	 := (cTmpAlias)->ZD1_SLDIT	
 		If _QtdeDiverge > 0					
 			add(_aDivergencia, {_cProduto,;
 								Alltrim(_cFornec),;
 								Alltrim(_cLoja ),; 
 								Alltrim(_cSerFor),; 
 								Alltrim(_cNfFor),; 
+								_cArmOrig,;
 								_nQtdeDiverge,;
 								_nQtdeConf,;
+								_nSaldoSB2,;
 								_cErro} )
 		Endif	
 		Return .F.
@@ -489,9 +508,11 @@ Static Function zGeraTransf(_aDivergencia)
 								Alltrim(_cFornec),;
 								Alltrim(_cLoja ),; 
 								Alltrim(_cSerFor),; 
-								Alltrim(_cNfFor),; 
+								Alltrim(_cNfFor),;
+								_cArmOrig,; 
 								_nQtdeDiverge,;
 								_nQtdeConf,;
+								_nSaldoSB2,;
 								_cErro} )
 		// se estiver em debug, pega o log inteiro do erro para uma analise mais detalhada
 		if lDebug 
@@ -819,16 +840,20 @@ Local _cCodFornec 	:= ""
 Local _cLojaFornec	:= ""
 Local _cSerieNF		:= ""
 Local _cNfFor		:= ""	
-Local _nQtdeDiverge	:= ""
-Local _nQtdeConf	:= ""	
+Local _nQtProtheus	:= ""
+Local _nQtRgLog		:= ""	
 Local _cNome		:= ""
 Local _cDescrPrd	:= ""
 Local _cMens        := ""
 Local _lRet			:= .T.
 Local _cChaveSX5	:= "1B"
+Local _nDif
 Local _nPos
+Local _cArmazem
+Local _nSaldoSB2
 
 Default _aDivergencia	:= {}
+
 Begin Sequence
 
 	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
@@ -892,42 +917,57 @@ Begin Sequence
 		EndIf	
 	EndIf 
 
-	//Aadd(_aDivergencia, {_cProduto,
-	//						Alltrim(_cFornec), 
-	//						Alltrim(_cLoja ), 
-	//						Alltrim(_cSerFor), 
-	//						Alltrim(_cNfFor), 
-	//						_nQtdeDiverge,
-	//						_nQtdeConf,
-	//						_cMens} )
-
 	_cHtml := "<h3>"                                                                       
     _cHtml +=    "  Ocorreram divergências no recebimento integração WIS em Transferência. 	<br/>" 
     _cHtml +=    "  As quantidades não estão divergentes com os dados de armazenagem, verificar. <br/>" 
-    _cHtml +=    "  Data do processament: " + dtoc(date())  + " " + time() + "      		<br/><br/" 
+    _cHtml +=    "  Data do processament: " + dtoc(date())  + " " + time() + "      		<br/><br/>" 
     _cHtml +=    "  Detalhe do erro:                                                   		<br/>" 
     _cHtml +=    "</h4>"     
+
+	/*		add(_aDivergencia, {_cProduto,;				//1
+								Alltrim(_cFornec),;		//2
+								Alltrim(_cLoja ),; 		//3
+								Alltrim(_cSerFor),; 	//4
+								Alltrim(_cNfFor),; 		//5
+								_cArmOrig,;				//6
+								_nQtdeDiverge,;			//7
+								_nQtdeConf,;			//8
+								_nSaldoSB2,;			//9
+								_cErro} )				//10
+	*/
 	For _nPos := 1 To Len(_aDivergencia)
 		_cCodProd 		:=  AllTrim(_aDivergencia[_nPos,1])
 		_cCodFornec 	:=  AllTrim(_aDivergencia[_nPos,2])
 		_cLojaFornec	:=  AllTrim(_aDivergencia[_nPos,3])
 		_cSerieNF		:=  AllTrim(_aDivergencia[_nPos,4])
 		_cNfFor			:=  AllTrim(_aDivergencia[_nPos,5])
-		_nQtdeDiverge	:=  AllTrim(Str(_aDivergencia[_nPos,6]))
-		_nQtdeConf		:=  AllTrim(Str(_aDivergencia[_nPos,7]))
-		_cMens			:=  AllTrim(_aDivergencia[_nPos,8])
+		_cArmazem		:=  AllTrim(_aDivergencia[_nPos,6])
+		_nQtRgLog		:=  If(_aDivergencia[_nPos,7]==Nil,"",AllTrim(Str(_aDivergencia[_nPos,7])))
+		_nQtProtheus	:=  If(_aDivergencia[_nPos,8]==Nil,"",AllTrim(Str(_aDivergencia[_nPos,8])))
+		_nSaldoSB2		:=  If(_aDivergencia[_nPos,9]==Nil,"",AllTrim(Str(_aDivergencia[_nPos,9])))
+		_nDif			:=  If(_aDivergencia[_nPos,8]==Nil,"",AllTrim(Str(_aDivergencia[_nPos,7] - _aDivergencia[_nPos,8])))  
+		_cMens			:=  AllTrim(_aDivergencia[_nPos,10])
 
-		_cHtml += "Fornecedor codigo "+ _cCodFornec+"-"+_cLojaFornec+" "+_cNome+"<br/>"
-		_cHtml += "Nota Fiscal 		 "+ _cSerieNF+"-"+_cNfFor+"<br/>"
-		_cHtml += "Cod Produto 		 "+ _cCodProd+" "+_cDescrPrd+"<br/>"
-		_cHtml += "Qtde Enviada 	 "+ _nQtdeConf+"<br/>"
-		_cHtml += "Qtde Utilizada 	 "+ _nQtdeConf+"<br/>"	
-    	_cHtml += "Divergencias 	 "+ _cMens+"<br/"
-    	_cHtml += "<br/"
+		_cHtml += "Fornecedor codigo....: "			+ _cCodFornec+"-"+_cLojaFornec+" "+_cNome+"<br/>"
+		_cHtml += "Nota Fiscal................: "	+ _cSerieNF+"-"+_cNfFor+"<br/>"
+		_cHtml += "Cod Produto..............: "		+ _cCodProd+" "+_cDescrPrd+"<br/>"
+		_cHtml += "Armazem...................: "	+_cArmazem+"<br/>"
+    	_cHtml += "<br/>"
+		If !Empty(_nQtRgLog)
+			_cHtml += "Qtde enviada RgLog......................: "+_nQtRgLog+"<br/>"
+		EndIf
+		If !Empty(_nQtProtheus)
+			_cHtml += "Qtde disponível para recebimento.: "				+_nQtProtheus+"<br/>"
+			_cHtml += "Qtde recebida.................................: "+_nQtProtheus+"<br/>"
+			_cHtml += "Qtde divergente sem recebimento..: "+ _nDif+"<br/>"	
+		Endif
+    	_cHtml += "<br/>"
+    	_cHtml += "Erro....: "+ _cMens+"<br/>"
+    	_cHtml += "<br/>"
 	Next	 
-   	_cHtml += "<br/><br/"
+   	_cHtml += "<br/><br/>"
     _cHtml +=    " <h5>Esse email foi gerado pela rotina " + _cRotina + " </h5>"       
-   	_cHtml += "<br/><br/"
+   	_cHtml += "<br/><br/>"
     _lRet := U_ZGENMAIL(_cEmailDest,;
 						_cMailCopia,; 
 						_cAssunto,;
