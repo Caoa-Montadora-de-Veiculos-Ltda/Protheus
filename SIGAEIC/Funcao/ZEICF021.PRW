@@ -173,10 +173,10 @@ While !FT_FEof()
 				0 ,;
 				"",;
 				0 ,; 						//RECSW5
-				nRec; //Rec da Temporaria
+				nRec,; //Rec da Temporaria
+				"",;
+				.F.;
 			}
-	
-	
 	
 	if nPos == 0
 		Aadd(aDados,{PadR(aLInha[2], TamSx3("EW5_INVOIC")[1], " "),;		//Invoive
@@ -259,6 +259,7 @@ Local cAliasW3 	:= "TBLW3"
 Local cProduto 	:= ""
 Local cChave   	:= ""
 Local cTipo 	:= ""
+Local cPGI_NUM  := ""
 
 Local nX 		:= 1
 Local nY 		:= 1
@@ -269,12 +270,16 @@ Local nSaldo    := 0
 Local nRec		:= 0
 Local nQuant    := 0
 Local nLin      := 0
+Local lCriaLin  := .F.
+Local lOk       := .T.
 For nY := 1 to len(aDados)
 
 	nX        := 1
 	nTotal    := 0
 	nSaldo    := 0
 	nSaldoAnt := 0 
+	
+	aSort( aDados[nY,5] , , , { |x,y| x[2] > y[2] } )
 	
 	cProduto := aDados[nY,4]
 	nLin := Len(aDados[nY,5])
@@ -293,9 +298,15 @@ For nY := 1 to len(aDados)
 	lAux := .T.
 	While !(cAliasw3)->(eof())
 		
-		cTipo  := (cAliasW3)->W3_FLUXO 
+		cTipo    := (cAliasW3)->W3_FLUXO 
+		cPGI_NUM := (cAliasW3)->W5_PGI_NUM
+		
+		IF (cAliasW3)->W5_SALDO_Q == 0 .AND. (cAliasW3)->W3_SALDO_Q == 0
+			(cAliasW3)->(DbSkip())
+			Loop
+		ENDIF
 
-		if cTipo == "7"
+		if cTipo == "7" .or. ( cTipo == "1" .and. !empty( (cAliasW3)->W5_PGI_NUM ) )
 			nTotal += (cAliasW3)->W5_SALDO_Q
 			nQuant := (cAliasW3)->W5_SALDO_Q
 			nSaldo := (cAliasW3)->W5_SALDO_Q + ABS(nSaldo)
@@ -309,73 +320,167 @@ For nY := 1 to len(aDados)
 			nRec   := (cAliasW3)->SW3REC
 		EndIf						
 				
-		aDados[nY,7] := nTotal
-		IF nLayOut == 1
-			If lAux .and. nSaldoAnt < aDados[nY,6] .and. alltrim((cAliasW3)->W3_COD_I) == alltrim(aDados[nY,4] ) .and. nX > nLin 
-				aItem := {	Space(4),;				//Linha
-							aDados[nY,5,nLin ,02] ,;				//Quantidade
-							aDados[nY,5,nLin ,03] ,;				//Valor
-							aDados[nY,5,nLin ,04] ,;				//Container
-							aDados[nY,5,nLin ,05] ,;				//Caixa
-							aDados[nY,5,nLin ,06] ,;				//Peso Liquido
-							aDados[nY,5,nLin ,07] ,;				//PURCHASE ORDER
-							aDados[nY,5,nLin ,08] ,;				//Conhecimento de Embarque
-							aDados[nY,5,nLin ,09] ,;				//Navio
-							aDados[nY,5,nLin ,10] ,;				//Saldo
-							aDados[nY,5,nLin ,11] ,;				//Preço Unitario
-							0 ,;
-							"",;						//RECSW3
-							0 ,;
-							"",;
-							0 ,; 						//RECSW5
-							0 ; //Rec da Temporaria
-						}
-				aadd(aDados[nY,5],aItem)
-			else
-				nLin := Len(aDados[nY,5])
-			EndIf
+		//aDados[nY,7] := nTotal
+		
+		If lCriaLin //lAux .and. nSaldoAnt < aDados[nY,6] .and. alltrim((cAliasW3)->W3_COD_I) == alltrim(aDados[nY,4] ) .and. nX > nLin 
+			aItem := {	Space(4),;				//Linha
+						aDados[nY,5,nLin ,02] ,;				//Quantidade
+						aDados[nY,5,nLin ,03] ,;				//Valor
+						aDados[nY,5,nLin ,04] ,;				//Container
+						aDados[nY,5,nLin ,05] ,;				//Caixa
+						aDados[nY,5,nLin ,06] ,;				//Peso Liquido
+						aDados[nY,5,nLin ,07] ,;				//PURCHASE ORDER
+						aDados[nY,5,nLin ,08] ,;				//Conhecimento de Embarque
+						aDados[nY,5,nLin ,09] ,;				//Navio
+						aDados[nY,5,nLin ,10] ,;				//Saldo
+						aDados[nY,5,nLin ,11] ,;				//Preço Unitario
+						0 ,;
+						"",;						//RECSW3
+						0 ,;
+						"",;
+						0 ,; 						//RECSW5
+						0 ,; 
+						"",;//Rec da Temporaria
+						.F.;
+					}
+			aadd(aDados[nY,5],aItem)
+		else
+			nLin := Len(aDados[nY,5])
 		EndIf
-		iif (nX > 1, nX--, nX:=1)
+				
+		nLin := Len(aDados[nY,5])
+				
+		nX := 1 
 		lAux := .T.
 		nSaldoAnt := 0
+		
+		For nX := 1 to  len(aDados[nY,5]) //.and. lAux
+			
+			if nQuant == 0 
+				Exit
+			endif
+			if  aDados[nY,5,nX,19] //aDados[nY,5,nX,16] < aDados[nY,5,nX,10] .and. aDados[nY,5,nX,16] > 0 .and. aDados[nY,5,nX,12] == 0 
+				Loop
+			endif
+			if nX == 1 .and. aDados[nY,5,nX,10] == aDados[nY,5,nX,2]
+			
+				aDados[nY,5,nX,10] := nQuant //aDados[nY,5,nX,2] - (cAliasW3)->W5_SALDO_Q
+				aDados[nY,5,nX,12] := aDados[nY,5,nX,2] - aDados[nY,5,nX,10]
+				aDados[nY,5,nX,16] := aDados[nY,5,nX,10]
+				nQuant := 0 //aDados[nY,5,nX,12]
+				aDados[nY,5,nX,13] := cTipo
+				aDados[nY,5,nX,14] := nRec
+				aDados[nY,5,nX,15] := cChave
+				aDados[nY,5,nX,18] := cPGI_NUM
 
-		While nX <= len(aDados[nY,5]) .and. lAux
-			if aDados[nY,5,nX,10] > 0
-				nSaldo := (aDados[nY,5,nX,10] + nSaldoAnt) - nSaldo
-				if nSaldo <= 0
-					aDados[nY,5,nX,10] := 0//aDados[nY,5,nX,2] - (cAliasW3)->W5_SALDO_Q
-					aDados[nY,5,nX,12] := nSaldo * (-1)  //(cAliasW3)->W5_SALDO_Q - aDados[nY,5,nX,2] 
-					nSaldoAnt := 0
-				else
-					aDados[nY,5,nX,10] := nSaldo
-					aDados[nY,5,nX,12] := 0
-					nSaldoAnt := nSaldo
-					nSaldo    := 0
-				Endif
+				if aDados[nY,5,nX,12] == 0  //.or. aDados[nY,5,nX,10] >= aDados[nY,5,nX,10]
+					aDados[nY,5,nX,19] := .T.
+					aDados[nY,7] += aDados[nY,5,nX,16]
+					Loop  //lAux := .F.
+				EndIf
+
+				nSaldoAnt := 0
+			
+			elseif nX == 1 .and. aDados[nY,5,nX,10] <> 0
+				aDados[nY,7] += aDados[nY,5,nX,16]
+				aDados[nY,5,nX,19] := .T.
+			
+			else
+				if aDados[nY,5,nX - 1 ,12] <> 0
+					aDados[nY , 5 , nX     , 12 ] += aDados[nY,5,nX - 1 ,12]
+					aDados[nY , 5 , nX - 1 , 12 ] :=  0
+					aDados[nY, 5  , nX - 1 , 19 ] := .T.
+					//aDados[nY , 5 , nX     , 10 ] -= aDados[nY,5,nX   , 12 ]
+				endif
 				
-				if Empty(aDados[nY,5,nX,13]) .or. aDados[nY,5,nX,14] <> nRec
+				//if  aDados[nY,5,nX,10] == nQuant
+				if (cAliasW3)->W5_SALDO_Q == nQuant
+					if nQuant == (aDados[nY,5,nX,2 ] + aDados[nY,5,nX,12 ] )
+						aDados[nY,5,nX,10] := nQuant
+						aDados[nY,5,nX,12] := 0
+						nQuant := 0
+					ElseIf nQuant > (aDados[nY,5,nX,2 ] + aDados[nY,5,nX,12 ] )
+						aDados[nY,5,nX,10] := aDados[nY,5,nX,2]
+						aDados[nY,5,nX,12] := nQuant - (aDados[nY,5,nX,2 ] + aDados[nY,5,nX,12 ] )
+						nQuant := aDados[nY,5,nX,12]
+					elseif Empty(aDados[nY,5,nX,1])
+						if nQuant > aDados[nY,5,nX,12 ]
+							aDados[nY,5,nX,10] := aDados[nY,5,nX,12 ] 
+							aDados[nY,5,nX,12] := 0
+							nQuant := 0
+						else
+							aDados[nY,5,nX,10] := nQuant 
+							aDados[nY,5,nX,12] := 0
+							nQuant := 0
+						EndIf
+					else
+						aDados[nY,5,nX,10] := nQuant + aDados[nY,5,nX,12 ] 
+						aDados[nY,5,nX,12] := aDados[nY,5,nX,2 ] - aDados[nY,5,nX,10 ] 
+						nQuant := aDados[nY,5,nX,12]
+					Endif
+					nQuant := 0
+					//aDados[nY,5,nX,12] := aDados[nY,5,nX,2 ] - aDados[nY,5,nX,10]
+					aDados[nY,5,nX,16] := aDados[nY,5,nX,10] 
+					
 					aDados[nY,5,nX,13] := cTipo
 					aDados[nY,5,nX,14] := nRec
 					aDados[nY,5,nX,15] := cChave
-				EndIf
-				
-				aDados[nY,5,nX,16] := nQuant
-				
-				if aDados[nY,5,nX,10] <= 0 //.and. aDados[nY,5,nX,12] <= 0
-					lAux := .F.
-				EndIf
-			EndIF
+					aDados[nY,5,nX,18] := cPGI_NUM
+					if nQuant <= 0
+						aDados[nY,5,nX,19] := .T.
+						aDados[nY,7] += aDados[nY,5,nX,16]
+					Endif
+					exit
+				else
+					if ( nQuant + aDados[nY,5,nX,12] ) == (aDados[nY,5,nX,2 ] + aDados[nY,5,nX,12 ] )
+						aDados[nY,5,nX,10] := nQuant + aDados[nY,5,nX,12]
+						aDados[nY,5,nX,12] := 0
+						nQuant := 0
+					ElseIf ( nQuant + aDados[nY,5,nX,12] ) > (aDados[nY,5,nX,2 ] + aDados[nY,5,nX,12 ] )
+						aDados[nY,5,nX,10] := aDados[nY,5,nX,2]
+						aDados[nY,5,nX,12] := (nQuant + aDados[nY,5,nX,12]) - (aDados[nY,5,nX,2 ] + aDados[nY,5,nX,12 ] )
+						nQuant := aDados[nY,5,nX,12]
+					else
+						aDados[nY,5,nX,10] := nQuant + aDados[nY,5,nX,12 ] 
+						aDados[nY,5,nX,12] := aDados[nY,5,nX,2 ] + aDados[nY,5,nX,10 ] 
+						nQuant := aDados[nY,5,nX,12]
+					Endif
+					nQuant := 0
+					//aDados[nY,5,nX,10] := nQuant + aDados[nY,5,nX,12]
+					//aDados[nY,5,nX,12] += aDados[nY,5,nX,2] - aDados[nY,5,nX,10]
+					aDados[nY,5,nX,16] := aDados[nY,5,nX,10]
+					aDados[nY,5,nX,13] := cTipo
+					aDados[nY,5,nX,14] := nRec
+					aDados[nY,5,nX,15] := cChave
+					aDados[nY,5,nX,18] := cPGI_NUM
+					//nQuant := aDados[nY,5,nX,2] - aDados[nY,5,nX,10]
+					if aDados[nY,5,nX,12] == 0
+						aDados[nY,7] += aDados[nY,5,nX,16]
+						aDados[nY,5,nX,19] := .T.
+						Loop
+					EndIf
+
+				endif
+			
+			EndIf
+			
 			nLinha := aDados[nY,5,nX,1]
-			nX ++
-		EndDo
+			//nX ++
+		Next nX
 		
 		nSaldoAnt := 0			
-		
+		lOk := .T.
 		For nZ := 1 to  len(aDados[nY,5])
 			nSaldoAnt += aDados[nY,5,nZ,16]
+			if !(aDados[nY,5,nZ,16])
+				lOk	:= aDados[nY,5,nZ,16]
+			endIf
 		Next nZ
 		
 		(cAliasw3)->(dbSkip())
+		if lOk .and. !(cAliasw3)->(EOF())
+			lCriaLin := .T.
+		EndIf
 	EndDo
 
 	if aDados[nY,6] > aDados[nY,7] .and. !lErro
@@ -400,43 +505,42 @@ Return lRet
 Static Function QrySW3(cAliasW3,cProduto)
 Local cQuery := ''
 
-cQuery += " SELECT " + eol
-cQuery += " 	W3_FILIAL,  " + eol
-cQuery += " 	W3_FLUXO, " + eol
-cQuery += " 	W3_PO_NUM, " + eol
-cQuery += " 	W3_COD_I, " + eol
-cQuery += " 	W3_QTDE, " + eol
-cQuery += " 	W5_QTDE, " + eol
-cQuery += " 	W3_SALDO_Q, " + eol
-cQuery += " 	W5_SALDO_Q, " + eol
-cQuery += " 	SW3.R_E_C_N_O_ as SW3REC, " + eol
-cQuery += " 	SW5.R_E_C_N_O_ as SW5REC, " + eol
-cQuery += " 	W3_FILIAL || W3_PO_NUM || W3_CC || W3_SI_NUM || W3_COD_I ||  " + eol
-cQuery += " 	LPAD(TRIM(CAST(W3_REG AS VARCHAR(4))),4,' ') ||  " + eol
-cQuery += " 	LPAD(TRIM(CAST(W3_SEQ AS VARCHAR(2))),2,' ') AS CHVW3, " + eol
-//cQuery += " 	W5_FILIAL || W5_PGI_NUM || W5_CC || W5_SI_NUM || W5_COD_I AS CHVW5 " + eol
-cQuery += "		W5_FILIAL || W5_PO_NUM || W5_COD_I || LPAD(TRIM(CAST(W5_SEQ AS VARCHAR(2))),2,' ') || W5_SI_NUM||LPAD(TRIM(CAST(W5_REG AS VARCHAR(4))),4,' ')|| W5_CC||W5_FABR ||W5_FABLOJ AS CHVW5 " + eol
-cQuery += " FROM " + RetSqlName("SW3") + " SW3 " + eol
+cQuery += eol +  eol + " SELECT " 
+cQuery += eol +  " 	SW3.W3_FILIAL,  " 
+cQuery += eol +  " 	SW3.W3_FLUXO, " 
+cQuery += eol +  " 	SW3.W3_PO_NUM, " 
+cQuery += eol +  " 	SW3.W3_COD_I, " 
+cQuery += eol +  " 	SW3.W3_QTDE, " 
+cQuery += eol +  " 	NVL(SW5.W5_QTDE,SW3.W3_QTDE) AS W5_QTDE,  " 
+cQuery += eol +  " 	SW3.W3_SALDO_Q, " 
+cQuery += eol +  " 	NVL(SW5.W5_SALDO_Q, 0 ) AS W5_SALDO_Q ,"
+cQuery += eol +  "  NVL(SW5.W5_POSICAO,' ') AS W5_POSICAO, 
+cQuery += eol +  " 	NVL(SW5.W5_PGI_NUM,' ') as W5_PGI_NUM , " 
+cQuery += eol +  " 	SW3.R_E_C_N_O_ as SW3REC, " 
+cQuery += eol +  " 	SW5.R_E_C_N_O_ as SW5REC, " 
+cQuery += eol +  " 	W3_FILIAL || W3_PO_NUM || W3_CC || W3_SI_NUM || W3_COD_I || LPAD(TRIM(CAST(W3_REG AS VARCHAR(4))),4,' ') ||  LPAD(TRIM(CAST(W3_SEQ AS VARCHAR(2))),2,' ') AS CHVW3, " 
+cQuery += eol +  "	NVL(W5_FILIAL || W5_PO_NUM || W5_COD_I || LPAD(TRIM(CAST(W5_SEQ AS VARCHAR(2))),2,' ') || W5_SI_NUM||LPAD(TRIM(CAST(W5_REG AS VARCHAR(4))),4,' ')|| W5_CC||W5_FABR ||W5_FABLOJ, ' ') AS CHVW5 " 
+cQuery += eol +  " FROM " + RetSqlName("SW3") + " SW3 " 
 
-cQuery += " 	LEFT OUTER JOIN " + RetSqlName("SW5") + " SW5   " + eol
-cQuery += " 		ON	SW5.W5_FILIAL  = '" + FwXFilial('SW5') + "' " + eol
-cQuery += " 		AND	SW5.W5_PO_NUM  = SW3.W3_PO_NUM " + eol
-cQuery += " 		AND	SW5.W5_SI_NUM  = SW3.W3_SI_NUM " + eol
-cQuery += " 		AND	SW5.W5_FORN	   = SW3.W3_FORN " + eol
-cQuery += " 		AND	SW5.W5_FORLOJ  = SW3.W3_FORLOJ " + eol
-cQuery += " 		AND	SW5.W5_COD_I   = SW3.W3_COD_I " + eol
-cQuery += " 		AND	SW5.W5_POSICAO = SW3.W3_POSICAO " + eol
-cQuery += " 		AND	SW5.D_E_L_E_T_ = ' ' " + eol
+cQuery += eol +  " 	LEFT OUTER JOIN " + RetSqlName("SW5") + " SW5   " 
+cQuery += eol +  " 		ON	SW5.W5_FILIAL  = '" + FwXFilial('SW5') + "' " 
+cQuery += eol +  " 		AND	SW5.W5_PO_NUM  = SW3.W3_PO_NUM " 
+cQuery += eol +  " 		AND	SW5.W5_SI_NUM  = SW3.W3_SI_NUM " 
+cQuery += eol +  " 		AND	SW5.W5_FORN	   = SW3.W3_FORN " 
+cQuery += eol +  " 		AND	SW5.W5_FORLOJ  = SW3.W3_FORLOJ " 
+cQuery += eol +  " 		AND	SW5.W5_COD_I   = SW3.W3_COD_I " 
+cQuery += eol +  " 		AND	SW5.W5_POSICAO = SW3.W3_POSICAO " 
+cQuery += eol +  " 		AND	SW5.D_E_L_E_T_ = ' ' " 
+cQuery += eol +  " 		AND SW5.W5_SALDO_Q > 0 "
 
-cQuery += " WHERE	SW3.W3_FILIAL  = '" + FwXFilial('SW3') + "' " + eol
-cQuery += "     AND SW3.W3_SEQ 	   = 0 " + eol
-cQuery += "  	AND	SW3.W3_FORN	   = '" + cFornecedor + "' " + eol
-cQuery += "  	AND	SW3.W3_FORLOJ  = '" + cForloj     + "' " + eol
-cQuery += "  	AND	SW3.W3_PO_NUM  = '" + cPoNum      + "' " + eol
-cQuery += " 	AND SW3.W3_COD_I   = '" + cProduto    + "' " + eol
-cQuery += " 	AND	SW3.D_E_L_E_T_ = ' ' " + eol
-//cQuery += "  	AND	SW3.W3_SI_NUM = '000558' 			      " + eol
-cQuery += " ORDER BY W3_COD_I " + eol
+cQuery += eol +  " WHERE	SW3.W3_FILIAL  = '" + FwXFilial('SW3') + "' " 
+cQuery += eol +  "     AND SW3.W3_SEQ 	   = 0 " 
+cQuery += eol +  "  	AND	SW3.W3_FORN	   = '" + cFornecedor + "' " 
+cQuery += eol +  "  	AND	SW3.W3_FORLOJ  = '" + cForloj     + "' " 
+cQuery += eol +  "  	AND	SW3.W3_PO_NUM  = '" + cPoNum      + "' " 
+cQuery += eol +  " 	AND SW3.W3_COD_I   = '" + cProduto    + "' " 
+cQuery += eol +  " 	AND	SW3.D_E_L_E_T_ = ' ' " 
+cQuery += eol +  " ORDER BY W3_COD_I , W3_SALDO_Q DESC , SW5.W5_SALDO_Q DESC " 
 
 MemoWrite("C:\TEMP\"+FunName()+".SQL",cQuery)
 //cQuery := ChangeQuery(cQuery)
@@ -503,12 +607,12 @@ Local cTexto := ""
 			Else
 				cAuxChave := aDados[nY,5,nX ,15]
 				cChave    := aDados[nY,5,nX ,15]
-				cTipo     := aDados[nY,5,nX,13]
+				cTipo     := aDados[nY,5,nX ,13]
 			endIf
 
 			nLinha := aDados[nY,5,nX ,1]
 						
-			if  cTipo == "7"
+			if  cTipo == "7" .or. ( cTipo == "1" .and. !empty( aDados[nY,5,nX ,18]) )
 				if SW5->(DbSeek(cChave))
 					cCC  	:= SW5->W5_CC
 					cSI  	:= SW5->W5_SI_NUM
