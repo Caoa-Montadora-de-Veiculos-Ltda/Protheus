@@ -18,11 +18,12 @@ Relatorio Carga
 @since 30/05/2022
 @version 2.0
 /*/
-User Function ZPECR007()
+User Function ZPECR007(_aOndaRel)
 Local aAreaVS3      := VS3->( GetArea() )
 Local nOpca         := 1
 Local aPergs        := {}
 Local cCodigo       := SPACE(08)
+
 Private MV_PAR01    := ""
 Private dDataI      := Date()
 Private dDataF      := Date()
@@ -33,6 +34,17 @@ Private aRetP       := {}
 Private cAliasQry	:= GetNextAlias()
 Private oReport, oSection1          // objeto que contem o relatorio
 
+Default _aOndaRel   := {}
+
+//Chamado por ZPECF008 DAC 19/05/2023
+If Len(_aOndaRel) > 0
+    aRetP := _aOndaRel
+    If nOpca == 1
+        oReport := ReportDef()
+        oReport:PrintDialog()   
+    Endif
+    Return Nil
+Endif
 aAdd( aPergs ,{1,"Onda  .....: "      ,cCodigo ,"@!", , ""   ,'.T.',120,.F.})
 aadd( aPergs, {1,"Data Inicial...: "  ,dDataI  ,"@D", , ""   ,  "" ,120,.F.})
 aadd( aPergs, {1,"Data Final.....: "  ,dDataF  ,"@D", , ""   ,  "" ,120,.T.})
@@ -209,7 +221,9 @@ _cQ += " 	    AND SE4.E4_FILIAL = ' '"
 _cQ += " 	    AND SE4.E4_CODIGO = VS1LEG.VS1_FORPAG "
 _cQ += "WHERE VS1LEG.D_E_L_E_T_ = ' '"
 If aRetP[01] <> Space(08)
-    _cQ += "         AND VS3LEG.VS3_XAGLU = '" + aRetP[01] + "'"
+    //_cQ += "         AND VS3LEG.VS3_XAGLU = '" + aRetP[01] + "'"
+    _cQ += "         AND VS3LEG.VS3_XAGLU IN "+ FormatIn(aRetP[01],";")  
+
 endif
 _cQ += "	AND VS1LEG.VS1_XDTAGL BETWEEN '" + DTOS(aRetP[02]) + "' AND '" + DTOS(aRetP[03]) + "'" 
 _cQ += "	AND (VS1LEG.VS1_XPICKI != ' ' 
