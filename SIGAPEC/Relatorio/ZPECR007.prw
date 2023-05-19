@@ -18,7 +18,7 @@ Relatorio Carga
 @since 30/05/2022
 @version 2.0
 /*/
-User Function ZPECR007()
+User Function ZPECR007() 
 Local aAreaVS3      := VS3->( GetArea() )
 Local nOpca         := 1
 Local aPergs        := {}

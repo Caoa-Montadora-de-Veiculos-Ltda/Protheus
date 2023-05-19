@@ -3573,8 +3573,29 @@ User Function XAPAVM5VM6Carregamento(_cNumOrc, _aMsg)
 Return _lRet
 
 
-//localizar saldo em estoque 
-//DAC 25/05/2022
+/*/{Protheus.doc} XFLPESQVSW
+Responsável por localizar saldo em estoque
+@author 	DAC-Denilso
+@since 		25/05/2022
+@version 	undefined
+@param 		_cProduto	- Produto
+			_cArmazem	- Armazém
+			_cGrupo		- Grupo do Produto
+			_nSaldoSB2	- Saldo Protheus
+			_cMarca		- Marca 
+@type 		user function
+@project    
+@return		_lRet		- Se foi calculado corretamente 
+			_nSaldo		- Saldo entre as empresas 
+			_cMens		- Mensagens do processo 
+			_cCodProdRet- Produto avaliado 
+			_cArmazemRet- Armazem avaliado 
+			_cGrupoRet	- Grupo do produto avaliado
+
+@ Obs		
+@history    
+/*/
+
 User Function XSLDCAOAEstoque(_cCodProd, _cArmazem, _cGrupo, _nSaldoSB2, _cMarca )
 	Local _lRet 		:= .T.
 	Local _nSaldo		:= 0
@@ -3661,13 +3682,29 @@ Return {_lRet, _nSaldo, AllTrim(_cMens), _cCodProdRet, _cArmazemRet, _cGrupoRet}
 
 
 
-//Localizar Saldo WiS conexão Tclink 
-//Evandro 26/05/2022
+/*/{Protheus.doc} XFLPESQVSW
+Responsável por verificar limite de crédito na liberação
+@author 	DAC-Denilso
+@since 		15/02/2022
+@version 	undefined
+@param 		_cProduto	- Produto
+			_cMarca		- Marca 
+			_cArmazem	- Armazém
+@type 		user function
+@project    
+@return		_nSaldoWis - Saldo existente no WIS
+@ Obs		
+@history    Evandro 		26/05/2022	- Localizar Saldo WiS conexão Tclink 
+			DAC Denilso 	19/05/2023 	- PEC060 - Habilitar ou desabilitar local de armazenagem 
+										  Zé ajustou a funcionalidade para localizar resserva de acordo com parâmetro _lResIntegr
+/*/
 User Function zSaldoWis(_cProduto, _cMarca, _cArmazem)
 	Local cQryWis	  	:= ""
 	Local cAlsWis		:= GetNextAlias()
 	Local _nSaldoWis    := 0
-	Local _cConectWis  := AllTrim(SuperGetMV( "CMV_PEC031"  ,,"WIS.V_ENDERECO_ESTOQUE@DBLINK_WISPROD")) 
+	Local _cConectWis   := AllTrim(SuperGetMV( "CMV_PEC031"  ,,"WIS.V_ENDERECO_ESTOQUE@DBLINK_WISPROD"))
+	Local _lResIntegr   := AllTrim(SuperGetMV( "CMV_PEC040"  ,,.T.))
+	Local _lVlLocWis   	:= AllTrim(SuperGetMV( "CMV_PEC041"  ,,.T.))
 
 	Default _cMarca 	:= ""
 	Default _cArmazem	:= ""
@@ -3675,8 +3712,13 @@ User Function zSaldoWis(_cProduto, _cMarca, _cArmazem)
     If Select( (cAlsWis) ) > 0
 	    (cAlsWis)->(DbCloseArea())
 	EndIf
-
-	cQryWis := " SELECT NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) AS QTDE_EST "
+	//implementado por José Totvs 19/05/2023
+	If _lResIntegr
+		cQryWis := " SELECT CASE WHEN NVL((SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA-ESTWIS.QT_TRANSITO_SAIDA)),0) > 0 THEN NVL((SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA-ESTWIS.QT_TRANSITO_SAIDA)),0) ELSE 0 END AS QTDE_EST "
+	Else
+		cQryWis := " SELECT NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) AS QTDE_EST "
+	Endif
+	//cQryWis := " SELECT NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) AS QTDE_EST "
 	cQryWis += " FROM " + _cConectWis + " ESTWIS "
     cQryWis += " WHERE RTRIM(LTRIM(ESTWIS.CD_PRODUTO)) = '" + AllTrim(_cProduto) + "' "
 
@@ -3686,11 +3728,13 @@ User Function zSaldoWis(_cProduto, _cMarca, _cArmazem)
     	cQryWis += " AND CD_EMPRESA = 1002 " //-- CHE
 	EndIf
  	
-	If _cArmazem == "01" //BARUERI
-		cQryWis += " AND ARMAZEM = 'BAR' " //-- Armazenagem BARUERI.
-	ElseIf _cArmazem == "11" //FRANCO DA ROCHA
-		cQryWis += " AND ARMAZEM = 'FDR' " //-- Armazenagem FRANCO DA ROCHA
-	EndIf
+	If _lVlLocWis	
+		If _cArmazem == "01" //BARUERI
+			cQryWis += " AND ARMAZEM = 'BAR' " //-- Armazenagem BARUERI.
+		ElseIf _cArmazem == "11" //FRANCO DA ROCHA
+			cQryWis += " AND ARMAZEM = 'FDR' " //-- Armazenagem FRANCO DA ROCHA
+		EndIf
+	Endif
  
     DbUseArea( .T., "TOPCONN", TcGenQry(,,cQryWis), cAlsWis, .T., .T. )
 
@@ -3705,7 +3749,6 @@ User Function zSaldoWis(_cProduto, _cMarca, _cArmazem)
 		(cAlsWis)->(DbCloseArea())
 		Ferase(cAlsWis+GetDBExtension())
 	Endif 
-
 Return(_nSaldoWis)
 
 
