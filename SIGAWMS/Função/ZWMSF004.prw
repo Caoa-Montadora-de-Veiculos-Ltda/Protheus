@@ -552,6 +552,7 @@ Static Function VldArmazem(cArmazem)
 			lRet := .F.
 		EndIf
 	EndIf
+	(cAliasQry)->(dbCloseArea())
 
 Return lRet
 

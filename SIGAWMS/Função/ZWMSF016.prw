@@ -107,6 +107,7 @@ Static Function TelaInv()
             aAdd(afields    ,{"BL"				,"BL"			,"C"  ,030	,0 ,"@!" })
             aAdd(afields    ,{"Fornecedor"		,"Fornecedor"	,"C"  ,006	,0 ,"@!" })
             aAdd(afields    ,{"Loja"			,"Loja"			,"C"  ,002	,0 ,"@!" })
+            aAdd(afields    ,{"Processo"		,"Processo"		,"C"  ,030	,0 ,"@!" })			
 
             oBrowse:SetFields(afields) 
 
@@ -586,7 +587,8 @@ Static Function VldArmazem(cArmazem)
 			lRet := .F.
 		EndIf
 	EndIf
-
+    //Fechar Alias Tmp
+    (cAliasQry)->(dbCloseArea())
 Return lRet
 
 /*
@@ -1362,27 +1364,49 @@ Static Function zTmpInv(lJob)
 		( cAliasTmp )->( DbCloseArea() )
 	EndIf
 
-	cQuery  :=  "  SELECT ZM_FILIAL, ZM_INVOICE, ZM_BL, ZM_FORNEC, ZM_LOJA, W9_HAWB " + CRLF 
-  	cQuery  +=  "  FROM " + RetSQLName( "SW9" ) + " SW9 " + CRLF
-  	cQuery  +=  "  INNER JOIN " + RetSQLName( "SZM" ) + " SZM " + CRLF
-  	cQuery  +=  "  	ON SZM.ZM_FILIAL = '" + FWxFilial("SZM") + "' " + CRLF
-  	cQuery  +=  "	AND SZM.ZM_INVOICE = SW9.W9_INVOICE " + CRLF
-    cQuery  +=  "  	AND SZM.ZM_FORNEC = SW9.W9_FORN " + CRLF
-    cQuery  +=  "  	AND SZM.ZM_LOJA = SW9.W9_FORLOJ " + CRLF
-  	cQuery  +=  "	AND SZM.D_E_L_E_T_ = ' ' " + CRLF
-  	cQuery  +=  "  INNER JOIN " + RetSQLName( "SB5" ) + " SB5 " + CRLF
-  	cQuery  +=  "  	ON SB5.B5_FILIAL = '" + FWxFilial("SB5") + "' " + CRLF
-  	cQuery  +=  "  	AND SB5.B5_COD = SZM.ZM_PROD " + CRLF
-  	cQuery  +=  "	AND SB5.B5_CTRWMS = '1'  " + CRLF
-  	cQuery  +=  "	AND SB5.D_E_L_E_T_ = ' ' " + CRLF
-  	cQuery  +=  "  WHERE SW9.W9_FILIAL = '" + FWxFilial("SW9") + "' " + CRLF
-	cQuery  +=  " 	AND SW9.W9_HAWB	BETWEEN '" + MV_PAR01 + "' AND '" + MV_PAR02 + "' " + CRLF
-	cQuery  += 	" 	AND SW9.W9_INVOICE BETWEEN '" + MV_PAR03 + "' AND '" + MV_PAR04 + "' " + CRLF
-	cQuery  += 	" 	AND SW9.W9_FORN BETWEEN '" + MV_PAR05 + "' AND '" + MV_PAR06 + "' " + CRLF
-	cQuery  += 	" 	AND SW9.W9_FORLOJ BETWEEN '" + MV_PAR07 + "' AND '" + MV_PAR08 + "' " + CRLF  
-  	cQuery  +=  "  	AND SW9.D_E_L_E_T_ = ' ' " + CRLF
-  	cQuery  +=  "  GROUP BY ZM_FILIAL, ZM_INVOICE, ZM_BL, ZM_FORNEC, ZM_LOJA, W9_HAWB " + CRLF
-  	cQuery  +=  "  ORDER BY ZM_BL, ZM_INVOICE " + CRLF
+	IF Empty(MV_PAR02) .AND. Empty(MV_PAR09) 
+
+		cQuery  :=  "  SELECT ZM_FILIAL, ZM_INVOICE, ZM_BL, ZM_FORNEC, ZM_LOJA, W9_HAWB " + CRLF 
+		cQuery  +=  "  FROM " + RetSQLName( "SW9" ) + " SW9 " + CRLF
+		cQuery  +=  "  INNER JOIN " + RetSQLName( "SZM" ) + " SZM " + CRLF
+		cQuery  +=  "  	ON SZM.ZM_FILIAL = '" + FWxFilial("SZM") + "' " + CRLF
+		cQuery  +=  "	AND SZM.ZM_INVOICE = SW9.W9_INVOICE " + CRLF
+		cQuery  +=  "  	AND SZM.ZM_FORNEC = SW9.W9_FORN " + CRLF
+		cQuery  +=  "  	AND SZM.ZM_LOJA = SW9.W9_FORLOJ " + CRLF
+		cQuery  +=  "	AND SZM.D_E_L_E_T_ = ' ' " + CRLF
+		cQuery  +=  "  INNER JOIN " + RetSQLName( "SB5" ) + " SB5 " + CRLF
+		cQuery  +=  "  	ON SB5.B5_FILIAL = '" + FWxFilial("SB5") + "' " + CRLF
+		cQuery  +=  "  	AND SB5.B5_COD = SZM.ZM_PROD " + CRLF
+		cQuery  +=  "	AND SB5.B5_CTRWMS = '1'  " + CRLF
+		cQuery  +=  "	AND SB5.D_E_L_E_T_ = ' ' " + CRLF
+		cQuery  +=  "  WHERE SW9.W9_FILIAL = '" + FWxFilial("SW9") + "' " + CRLF
+		cQuery  +=  " 	AND SW9.W9_HAWB	BETWEEN '" + MV_PAR01 + "' AND '" + MV_PAR02 + "' " + CRLF
+		cQuery  += 	" 	AND SW9.W9_INVOICE BETWEEN '" + MV_PAR03 + "' AND '" + MV_PAR04 + "' " + CRLF
+		cQuery  += 	" 	AND SW9.W9_FORN BETWEEN '" + MV_PAR05 + "' AND '" + MV_PAR06 + "' " + CRLF
+		cQuery  += 	" 	AND SW9.W9_FORLOJ BETWEEN '" + MV_PAR07 + "' AND '" + MV_PAR08 + "' " + CRLF  
+		cQuery  +=  "  	AND SW9.D_E_L_E_T_ = ' ' " + CRLF
+		cQuery  +=  "  GROUP BY ZM_FILIAL, ZM_INVOICE, ZM_BL, ZM_FORNEC, ZM_LOJA, W9_HAWB " + CRLF
+		cQuery  +=  "  ORDER BY ZM_BL, ZM_INVOICE " + CRLF
+		
+	ELSE
+
+		cQuery  :=  "  SELECT ZM_FILIAL, ZM_INVOICE, ZM_BL, ZM_FORNEC, ZM_LOJA, ZM_XPROC AS W9_HAWB" + CRLF 
+		cQuery  +=  "  FROM " + RetSQLName( "SZM" ) + " SZM " + CRLF
+		cQuery  +=  "  INNER JOIN " + RetSQLName( "SB5" ) + " SB5 " + CRLF
+		cQuery  +=  "  	ON SB5.B5_FILIAL = '" + FWxFilial("SB5") + "' " + CRLF
+		cQuery  +=  "  	AND SB5.B5_COD = SZM.ZM_PROD " + CRLF
+		cQuery  +=  "	AND SB5.B5_CTRWMS = '1'  " + CRLF
+		cQuery  +=  "	AND SB5.D_E_L_E_T_ = ' ' " + CRLF
+		cQuery  +=  "  WHERE SZM.ZM_FILIAL = '" + FWxFilial("SZM") + "' " + CRLF
+		cQuery  +=  "	AND SZM.ZM_XPROC BETWEEN '" + MV_PAR01 + "' AND '" + MV_PAR02 + "' " + CRLF	
+		cQuery  +=  "	AND SZM.ZM_INVOICE BETWEEN '" + MV_PAR03 + "' AND '" + MV_PAR04 + "' " + CRLF
+		cQuery  +=  "  	AND SZM.ZM_FORNEC BETWEEN '" + MV_PAR05 + "' AND '" + MV_PAR06 + "' " + CRLF
+		cQuery  +=  "  	AND SZM.ZM_LOJA BETWEEN '" + MV_PAR07 + "' AND '" + MV_PAR08 + "' " + CRLF
+		cQuery  +=  "  	AND SZM.ZM_SERIE BETWEEN '" + MV_PAR09 + "' AND '" + MV_PAR10 + "' " + CRLF	  
+		cQuery  +=  "	AND SZM.D_E_L_E_T_ = ' ' " + CRLF
+		cQuery  +=  "  GROUP BY ZM_FILIAL, ZM_INVOICE, ZM_BL, ZM_FORNEC, ZM_LOJA, ZM_XPROC " + CRLF
+
+	ENDIF
 
 	cQuery	:= ChangeQuery( cQuery )
 
@@ -1409,6 +1433,7 @@ Static Function zTmpInv(lJob)
 		aAdd(aCampos, {"Loja"       ,"C"    ,002    ,0  })
 		aAdd(aCampos, {"Qtd"    	,"N"    ,010    ,0  }) 
 		aAdd(aCampos, {"QtdUni"    	,"N"    ,010    ,0  })
+		aAdd(aCampos, {"Processo"  	,"C"    ,030    ,0  })		
 		aAdd(aCampos, {"MsgErro"	,"C"    ,240    ,0  })   
 
 		oTempInv:SetFields( aCampos )
@@ -1439,6 +1464,7 @@ Static Function zTmpInv(lJob)
 						(cTmpInv)->Loja			:= AllTrim( (cAliasTmp)->ZM_LOJA )
 						(cTmpInv)->Qtd			:= nQtd
 						(cTmpInv)->QtdUni		:= nQtdUni
+						(cTmpInv)->Processo		:= AllTrim( (cAliasTmp)->W9_HAWB )						
 						(cTmpInv)->MsgErro		:= cMsgErro
 						(cTmpInv)->(MsUnLock())
 					EndIf
@@ -1453,6 +1479,7 @@ Static Function zTmpInv(lJob)
 					(cTmpInv)->Loja			:= AllTrim( (cAliasTmp)->ZM_LOJA )
 					(cTmpInv)->Qtd			:= nQtd
 					(cTmpInv)->QtdUni		:= nQtdUni
+					(cTmpInv)->Processo		:= AllTrim( (cAliasTmp)->W9_HAWB )	
 					(cTmpInv)->MsgErro		:= cMsgErro
 					(cTmpInv)->(MsUnLock())
 				EndIf
@@ -1775,6 +1802,11 @@ Static Function RetD0Q( nQtdUni, nQtdClas )
  	cQry  +=  "		AND D0Q.D_E_L_E_T_ = ' ' " + CRLF
 	cQry  +=  " WHERE SD1.D1_FILIAL = '" + FWxFilial("SD1") + "' " + CRLF 
 	cQry  +=  "		AND SD1.D1_CONHEC = '" + __cProcess + "' " + CRLF 
+
+	If !Empty(MV_PAR09)
+		cQry  +=  "		AND SD1.D1_SERIE = '" + MV_PAR09 + "'" + CRLF   
+	EndIf
+
  	cQry  +=  "		AND SD1.D_E_L_E_T_ = ' ' " + CRLF
 
 	cQry	:= ChangeQuery( cQry )
