@@ -1364,7 +1364,7 @@ Static Function zTmpInv(lJob)
 		( cAliasTmp )->( DbCloseArea() )
 	EndIf
 
-	IF Empty(MV_PAR02) .AND. Empty(MV_PAR09) 
+	IF !Empty(MV_PAR02) .AND. Empty(MV_PAR09) 
 
 		cQuery  :=  "  SELECT ZM_FILIAL, ZM_INVOICE, ZM_BL, ZM_FORNEC, ZM_LOJA, W9_HAWB " + CRLF 
 		cQuery  +=  "  FROM " + RetSQLName( "SW9" ) + " SW9 " + CRLF
