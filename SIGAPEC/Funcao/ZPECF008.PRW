@@ -388,7 +388,6 @@ Begin Sequence
 	//If !_lArmFDR  //caso faça isto dara erro na 10 pois xonda será o mesmo da aglutinação antes de testas FDR
 	_cAglutina := GETSX8NUM("VS1","VS1_XAGLU")
 	VS1->(ConfirmSx8())
-	Aadd(_aOndaRel,_cAglutina)
 	//Endif	
 
 	//Caso o usuário informe a numeração do orçamentono parametor inicial e final não executar como bypass DAC 
@@ -714,6 +713,10 @@ Begin Sequence
 			//Envia o picking pata a RG LOG
 			Else
 				StartJob("U_ZWSR007",GetEnvServer(),.F.,_cAglutina, _cPicking, /*_lDataEnv*/, cEmpAnt, cFilAnt, /*_aMens*/)
+				//Incluir processamento da onda somente quando tiver algum titulo gerado
+				If Ascan(_aOndaRel, _cAglutina) == 0
+					Aadd(_aOndaRel,_cAglutina)
+				EndIf
 			EndIf
 		EndIf
 	EndDo
