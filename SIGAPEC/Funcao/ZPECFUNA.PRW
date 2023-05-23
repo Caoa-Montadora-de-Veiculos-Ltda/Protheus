@@ -3702,8 +3702,8 @@ User Function zSaldoWis(_cProduto, _cMarca, _cArmazem)
 	Local cAlsWis		:= GetNextAlias()
 	Local _nSaldoWis    := 0
 	Local _cConectWis   := AllTrim(SuperGetMV( "CMV_PEC031"  ,,"WIS.V_ENDERECO_ESTOQUE@DBLINK_WISPROD"))
-	Local _lResIntegr   := AllTrim(SuperGetMV( "CMV_PEC040"  ,,.T.))
-	Local _lVlLocWis   	:= AllTrim(SuperGetMV( "CMV_PEC041"  ,,.T.))
+	Local _lResIntegr   := SuperGetMV( "CMV_PEC040"  ,,.T.)
+	Local _lVlLocWis   	:= SuperGetMV( "CMV_PEC041"  ,,.T.)
 
 	Default _cMarca 	:= ""
 	Default _cArmazem	:= ""

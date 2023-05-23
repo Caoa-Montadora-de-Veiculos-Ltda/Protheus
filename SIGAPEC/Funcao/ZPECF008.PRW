@@ -388,6 +388,9 @@ Begin Sequence
 	//If !_lArmFDR  //caso faça isto dara erro na 10 pois xonda será o mesmo da aglutinação antes de testas FDR
 	_cAglutina := GETSX8NUM("VS1","VS1_XAGLU")
 	VS1->(ConfirmSx8())
+
+	//Aadd(_aOndaRel,_cAglutina)
+
 	//Endif	
 
 	//Caso o usuário informe a numeração do orçamentono parametor inicial e final não executar como bypass DAC 
@@ -3248,12 +3251,12 @@ Begin Sequence
 	aAdd( aRetP , _cOndaRel)  	//Onda
 	aadd( aRetP	, Date()) 		//Data Inicial
 	aadd( aRetP	, Date()) 		//Data Final
-	aAdd( aRetP , "")			//Marca
+	aAdd( aRetP , Space(TamSx3("VS1_XMARCA")[1]))			//Marca
 	aAdd( aRetP ,.F.)			//HYU - Hyundai
 	aAdd( aRetP ,.F.)			//CHE - Chery
 	aAdd( aRetP ,.F.)			//SBR - Subaru
-	aAdd( aRetP , "")			//Pick Inicial
-	aAdd( aRetP , "")			//Pick Final
+	aAdd( aRetP , Space(TamSx3("VS1_XPICKI")[1]))			//Pick Inicial
+	aAdd( aRetP , Repl("Z",TamSx3("VS1_XPICKI")[1]))			//Pick Final
 	U_ZPECR007(aRetP)	
 End Sequence
 
