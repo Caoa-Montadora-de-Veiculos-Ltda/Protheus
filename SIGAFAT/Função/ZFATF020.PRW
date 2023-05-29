@@ -659,7 +659,7 @@ oBrowse:SetTemporary() //Indica que o Browse utiliza tabela temporária
 oBrowse:SetColumns(MBColumn(aCols)) //Adiciona uma coluna no Browse em tempo de execução
     
 oBrowse:DisableReport() // Desabilita a impressão das informações disponíveis no Browse
-oBrowse:DisableConfig() // Desabilita a utilização do Browse
+oBrowse:DisableConfig() // Desabilita a utilização do Browse 
 oBrowse:SetIgnoreARotina(.T.) // Indica que a mbrowse, ira ignorar a variavel private aRotina na construção das opções de menu.
 oBrowse:SetMenuDef("") 
 oBrowse:SetWalkThru(.F.) //Habilita a utilização da funcionalidade Walk-Thru no Browse

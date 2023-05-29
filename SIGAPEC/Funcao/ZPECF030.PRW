@@ -1839,77 +1839,9 @@ Return Nil
 
 
 
-//=======
-//Picking
 Static Function ZPECF30PIK()
-Local _cAliasPesq 	:= GetNextAlias()
 Local _cCodProd     := AllTrim(MV_PAR01)
-Local _ObrW
-
-Begin Sequence
-
-	BeginSql Alias _cAliasPesq
-		SELECT  VS3.*,
-				SZK.ZK_STATUS
-		FROM %Table:VS3% VS3
-		JOIN %Table:SZK% SZK
-			ON 	SZK.%notDel%
-			AND SZK.ZK_FILIAL	= %xFilial:SZK%
-			AND SZK.ZK_XPICKI 	= VS3.VS3_XPICKI
-			AND SZK.ZK_STATUS NOT IN ('C','F')
-			AND SZK.ZK_NF 		= ' '
-		WHERE  VS3.%notDel%
-			AND VS3.VS3_FILIAL	= %xFilial:VS3%
-			AND VS3.VS3_CODITE	= %Exp:_cCodProd%
-			AND VS3.VS3_XPICKI 	<> ' '
- 	EndSql
-
-	If (_cAliasPesq)->(Eof())
-		MSGINFO( "Não existe Picking pendente para este item", "Atenção" )
-		Break
-	Endif
-
- 	_ObrW := FWMBrowse():New()
-	_ObrW:SetMenuDef("ZPECF30PIK")
-	_ObrW:SetOnlyFields( {	"VS3_CODITE"	,;//Cód Produto
-							"VS3_QTDEIT"	,;//Descrição Produto
-							"VS3_VALPEC"	;//Embalagem Primária
-							 } )
-    
-	//Definimos o título que será exibido como método SetDescription
-	_ObrW:SetDescription("Cadastro de Integrações")
-    //Definimos a tabela que será exibida na Browse utilizando o método SetAlias
-	_ObrW:SetAlias(_cAliasPesq)
-//	//Legenda da grade, é obrigatório carregar antes de montar as colunas
-	_ObrW:AddLegend("SZ2->Z2_TPINTEG=='1'","BLUE" 	   	,"Envio")
-	_ObrW:AddLegend("SZ2->Z2_TPINTEG<>'1'","GREEN"   	,"Recebimento")
-	//_ObrW:SetSeek(.T.,_aSeek)
-  	_ObrW:SetUseFilter(.T.)
-    //_oBrowse:SetDBFFilter(.T.)
-    //_oBrowse:SetFilterDefault( "" ) //Exemplo de como inserir um filtro padrão >>> "TR_ST == ‘A‘"
-    //_oBrowse:SetFieldFilter(_aFieFilter)
-	_ObrW:SetLocate()
-	_ObrW:DisableDetails()
-	_ObrW:SetAmbiente(.F.)
-	_ObrW:SetWalkThru(.F.)	
-	//Adiciona um filtro ao browse
-//	_oBrowse:SetFilterDefault( "ZDE_DTCOM = '"+Space(8)+"' " ) //Exemplo de como inserir um filtro padrão >>> "TR_ST == 'A'"
-	//Desliga a exibição dos detalhes
-	_ObrW:DisableDetails()
-    //Ativamos a classe
-	_ObrW:Activate()
-
-
-//           		WHEN  ZK.ZK_STATUS = 'A' THEN 'ABERTO' 
-//           		WHEN  ZK.ZK_STATUS = 'B' THEN 'BLOQUEADO' 
-//           		WHEN  ZK.ZK_STATUS = 'C' THEN 'CANCELADO' 
-//           		WHEN  ZK.ZK_STATUS = 'E' THEN 'ENVIADO' 
-//           		WHEN  ZK.ZK_STATUS = 'F' THEN 'FATURADO' 
-		
-
-End Sequence
-If Select((_cAliasPesq)) <> 0
-	(_cAliasPesq)->(DbCloseArea())
-	Ferase(_cAliasPesq+GetDBExtension())
-Endif      
+U_ZPECF031(_cCodProd)
 Return Nil
+
+
