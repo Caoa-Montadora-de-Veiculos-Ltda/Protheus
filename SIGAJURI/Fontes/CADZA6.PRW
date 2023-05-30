@@ -17,7 +17,7 @@ User Function CADZA6()
     Local cFunTOk  := "u_za6val()" //Pode ser colocado como "u_zVldTst()"
  
     //Chamando a tela de cadastros
-    AxCadastro('ZA6', 'Cadastro de Diretorias', cDelOk, cFunTOk)
+    AxCadastro('ZA6', 'Cadastro de Diretores', cDelOk, cFunTOk)
  
     RestArea(aAreaZA6)
     RestArea(aArea)
