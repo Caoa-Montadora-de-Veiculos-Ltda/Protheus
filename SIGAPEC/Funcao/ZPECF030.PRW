@@ -1759,7 +1759,7 @@ User Function ZPECF30P()
 Private cCadastro := "Consulta Produto "+MV_PAR01
 SB1->(dbSetOrder(1))
 SB1->(DbSeek(FwXFilial("SB1")+AllTrim(MV_PAR01)))
-AxVisual("SB1", SB1->(Recno()),2) 
+FWMsgRun(, {|oSay| AxVisual("SB1", SB1->(Recno()),2) }) 
 Return NIL
 
 
@@ -1841,7 +1841,10 @@ Return Nil
 
 Static Function ZPECF30PIK()
 Local _cCodProd     := AllTrim(MV_PAR01)
-U_ZPECF031(_cCodProd)
+Local _lPickAll		:= .F. 		//mostra todos os itens relacionados a este picking, se .F. mostrata somente o código do produto (_cCodProd)
+Local _lMostraCF	:= .F.   	//Mostra itens Faturados e Cancelados
+
+FWMsgRun(, {|oSay| U_ZPECF031(_cCodProd, _lPickAll, _lMostraCF) }) 
 Return Nil
 
 

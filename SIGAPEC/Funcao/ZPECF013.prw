@@ -23,7 +23,10 @@
 @project
 @history    Seleciona Picking para faturamento.   
 /*/
-User Function ZPECF013()
+User Function ZPECF013(_cFilPicking, _cPicking)
+
+Default _cFilPicking := ""
+Default _cPicking	 := ""
 
 	//colocado controle de usuários DAC 23/05/2022
 	_lRet := U_ZGENUSER( RetCodUsr() ,"ZPECF013" ,.T.)	
@@ -38,7 +41,7 @@ User Function ZPECF013()
 	    RETURN Nil
 	ENDIF
 
-	FWMsgRun( ,{|| TelaUnit() } ,"Carregando dados..." ,"Por favor aguarde...")
+	FWMsgRun( ,{|| TelaUnit(_cFilPicking, _cPicking) } ,"Carregando dados..." ,"Por favor aguarde...")
 
 Return
 
@@ -52,7 +55,7 @@ Return
 @project
 @history    Tela de visualização e processamento da montagem de unitizadores    
 /*/
-Static Function TelaUnit()
+Static Function TelaUnit(_cFilPicking, _cPicking)
 	Local aCoors 		:= FWGetDialogSize( oMainWnd )
 	Local oPanelUp, oFWLayer, oPanelLeft, oRelacVS3 //,oPanelRight , oBrowseLeft, oBrowseRight, oRelacZA5
 	//Local _cUsuario		:= AllTrim(SuperGetMV( "CMV_WSR015"  ,,"RG LOG" )) 
@@ -141,6 +144,11 @@ Static Function TelaUnit()
 	    oBrowseUp:AddButton("Desbloquear Picking" , {||ZPECF13J()})
 	ENDIF
 
+	//Caso tenha sido fornecido o numero do picking filtar PEC044 DAC 30/05/2023
+	//Adiciona um filtro ao browse
+	If !Empty(_cPicking)
+		oBrowseUp:SetFilterDefault("@"+ZPECF13FIT(_cFilPicking, _cPicking) ) //Exemplo de como inserir um filtro padrão >>> "TR_ST == 'A'"
+	Endif
 	//oBrowseUp:AddButton("Conferir Orca/tos"   , {||ZPECF13E(SZK->ZK_XPICKI)})  //Divergência
 	
 	oBrowseUp:AddButton("Fechar"			, { || oDlg:End() })
@@ -202,6 +210,22 @@ Static Function TelaUnit()
 	Activate MsDialog oDlg Center
 
 Return
+
+
+/*/{Protheus.doc} ZPECF13FIT
+Retorna Filtro para fwmbrowse
+@author DAC - Denilso 
+@since 30/05/2023
+@version 2.0
+/*/
+
+Static Function ZPECF13FIT(_cFilPicking, _cPicking)
+Local _cFiltro := ""
+	_cFiltro  +=  " ZK_FILIAL = '"+_cFilPicking+"'"			+ CRLF
+	_cFiltro  +=  "	AND ZK_XPICKI = '" + _cPicking + "' " 	+ CRLF 
+ 	_cFiltro  +=  "	AND D_E_L_E_T_ = ' ' " 					+ CRLF
+Return _cFiltro
+
    
 **************************
 Static Function ZPECF13K()
@@ -2181,7 +2205,7 @@ Begin Sequence
 		SELECT 	VS1.R_E_C_N_O_ AS NREGVS1
 		FROM  %Table:VS1% VS1			
 		WHERE 	VS1.VS1_FILIAL  = %xFilial:VS1%
-			AND VS1.VS1_NUMORC	= %Exp:_cPicking% 
+			AND VS1.VS1_XPICKI	= %Exp:_cPicking% 
            	AND VS1.%notDel%
 	EndSQL	
 	If (_cAliasPesq)->(Eof())
