@@ -27,6 +27,7 @@ Local aItem 		:= {}
 
 Local lErro			:= .F.	
 Local lRetorno		:= .T.
+Local lRet 			:= .T.
 
 Local nY 			:= 0
 Local nLinha		:= 0
@@ -221,8 +222,13 @@ If EW4->( dbSeek( xFilial("EW4") + cInvoice ) )
 Endif
 
 If lRetorno
+	if nLay == 1
+		lRet := Val1Dados()
+	else
+		lRet := ValDados()	
+	EndIf
 	
-	if ValDados()	
+	if lRet	
 		SetArea()
 		CMV01Capa()
 		If lCapaOK 
@@ -246,6 +252,7 @@ EndIf
 
 Return(lRetorno)
 
+
 //-------------------------------------------------------------------------------
 
 
@@ -263,15 +270,12 @@ Local cPGI_NUM  := ""
 
 Local nX 		:= 1
 Local nY 		:= 1
-Local nZ		:= 1
 Local nTotal 	:= 0
 Local nSaldoAnt := 0
 Local nSaldo    := 0
 Local nRec		:= 0
 Local nQuant    := 0
-Local nLin      := 0
-Local lCriaLin  := .F.
-Local lOk       := .T.
+
 For nY := 1 to len(aDados)
 
 	nX        := 1
@@ -279,32 +283,26 @@ For nY := 1 to len(aDados)
 	nSaldo    := 0
 	nSaldoAnt := 0 
 	
-	aSort( aDados[nY,5] , , , { |x,y| x[2] > y[2] } )
-	
 	cProduto := aDados[nY,4]
-	nLin := Len(aDados[nY,5])
+	
 	//if Empty(cPoNum)
 	cPoNum   := aDados[nY,8]
 	//EndIf
 	
 	QrySW3(cAliasW3,cProduto)
 	nLinha := nY
-
 	If (cAliasw3)->(eof())
-		U_FCMVEIC0101("Item " + AllTrim(cProduto) + " não existe no pedido " + AllTrim(cPoNum) ,nLinha,AllTrim(cProduto) ,cFornecedor,cForloj,"R",AllTrim(cPoNum), , cInvoice)
+		U_FCMVEIC0101("Item " + AllTrim(cProduto) + " não existe no pedido " + SW2->W2_PO_NUM ,nLinha,AllTrim(cProduto) ,cFornecedor,cForloj,"R",AllTrim(cPoNum), , cInvoice)
 		lErro := .T.
 	EndIf
 
-	lAux := .T.
 	While !(cAliasw3)->(eof())
+
+		iif (nX > 1, nX--, nX:=1)
+		lAux := .T.
 		
-		cTipo    := (cAliasW3)->W3_FLUXO 
-		cPGI_NUM := (cAliasW3)->W5_PGI_NUM
-		
-		IF (cAliasW3)->W5_SALDO_Q == 0 .AND. (cAliasW3)->W3_SALDO_Q == 0
-			(cAliasW3)->(DbSkip())
-			Loop
-		ENDIF
+		cTipo    := (cAliasW3)->W3_FLUXO
+		cPGI_NUM := (cAliasW3)->W5_PGI_NUM 
 
 		if cTipo == "7" .or. ( cTipo == "1" .and. !empty( (cAliasW3)->W5_PGI_NUM ) )
 			nTotal += (cAliasW3)->W5_SALDO_Q
@@ -319,21 +317,222 @@ For nY := 1 to len(aDados)
 			cChave := SUBSTR((cAliasW3)->CHVW3,1,80)//1
 			nRec   := (cAliasW3)->SW3REC
 		EndIf						
-				
-		//aDados[nY,7] := nTotal
 		
-		If lCriaLin //lAux .and. nSaldoAnt < aDados[nY,6] .and. alltrim((cAliasW3)->W3_COD_I) == alltrim(aDados[nY,4] ) .and. nX > nLin 
+		aDados[nY,7] := nTotal
+		nSaldoAnt := 0
+		While nX <= len(aDados[nY,5]) .and. lAux
+			if aDados[nY,5,nX,10] > 0
+				nSaldo := (aDados[nY,5,nX,10] + nSaldoAnt) - nSaldo
+				if nSaldo <= 0
+					aDados[nY,5,nX,10] := 0//aDados[nY,5,nX,2] - (cAliasW3)->W5_SALDO_Q
+					aDados[nY,5,nX,12] := nSaldo * (-1)  //(cAliasW3)->W5_SALDO_Q - aDados[nY,5,nX,2] 
+					nSaldoAnt := 0
+					aDados[nY,5,nX,18] := cPGI_NUM
+				else
+					aDados[nY,5,nX,10] := nSaldo
+					aDados[nY,5,nX,12] := 0
+					nSaldoAnt := nSaldo
+					nSaldo    := 0
+					aDados[nY,5,nX,18] := cPGI_NUM
+				Endif
+				if Empty(aDados[nY,5,nX,13]) .or. aDados[nY,5,nX,14] <> nRec
+					aDados[nY,5,nX,13] := cTipo
+					aDados[nY,5,nX,14] := nRec
+					aDados[nY,5,nX,15] := cChave
+					aDados[nY,5,nX,18] := cPGI_NUM
+				EndIf
+				aDados[nY,5,nX,16] := nQuant
+				
+				if aDados[nY,5,nX,10] <= 0 //.and. aDados[nY,5,nX,12] <= 0
+					lAux := .F.
+				EndIf
+			EndIF
+			nLinha := aDados[nY,5,nX,1]
+			nX ++
+		EndDo				
+				
+		(cAliasw3)->(dbSkip())
+	EndDo
+
+	if aDados[nY,6] >aDados[nY,7]
+		U_FCMVEIC0101("Não há saldo para o Item " + AllTrim(cProduto) + "  pedido : " + cPoNum ,nLinha,AllTrim(cProduto) ,cFornecedor,cForloj,"R",AllTrim(cPoNum), , cInvoice)
+		lErro := .T.
+	endif
+
+	If  Empty(GetAdvFVal("SYD", "YD_TEC", FwXFilial("SYD") + aDados[nY,2] + aDados[nY,3], 1, " ")) == .T.
+		U_FCMVEIC0101("NCM + Ex não cadastrado: " + aDados[nY,2] + aDados[nY,3] + " não encontrado no sistema!", nLinha,AllTrim(cProduto),cFornecedor,cForloj,"R",cPoNum,,cInvoice)
+		lErro := .T.
+	EndIF
+
+Next nY
+
+lRet := !lErro
+
+Return lRet
+
+//-------------------------------------------------------------------------------
+
+
+//-------------------------------------------------------------------------------
+Static Function Val1Dados()
+Local lRet 		:= .T.
+Local lErro 	:= .F.
+Local lAux 		:= .T.
+
+Local cAliasW3 	  := "TBLW3"
+Local cAliasSaldo := "TBWS5"
+Local cProduto 	  := ""
+Local cChave   	  := ""
+Local cTipo 	  := ""
+Local cPGI_NUM    := ""
+
+Local nX 		:= 1
+Local nY 		:= 1
+Local nZ		:= 1
+Local nTotal 	:= 0
+Local nSaldoAnt := 0
+Local nSaldo    := 0
+Local nRec		:= 0
+Local nQuant    := 0
+Local nLin      := 0
+Local aTotal    := {0,0}
+Local lCriaLin  := .F.
+Local lOk       := .T.
+Local aSaldos   := {}
+
+For nY := 1 to len(aDados)
+
+	nX        := 1
+	nTotal    := 0
+	nSaldo    := 0
+	nSaldoAnt := 0 
+	aSaldos   := {}
+
+	aSort( aDados[nY,5] , , , { |x,y| x[2] > y[2] } )
+	
+	cProduto := aDados[ nY , 4 ]
+	cPoNum   := aDados[ nY , 8 ]
+	nLin     := Len( aDados[ nY , 5 ] )
+	aTotal   := QrySaldo( cAliasSaldo , cProduto )
+
+	QrySW3(cAliasW3,cProduto)
+	nLinha := nY
+
+	If (cAliasw3)->(eof())
+		U_FCMVEIC0101("Item " + AllTrim(cProduto) + " não existe no pedido " + AllTrim(cPoNum) ,nLinha,AllTrim(cProduto) ,cFornecedor,cForloj,"R",AllTrim(cPoNum), , cInvoice)
+		lErro := .T.
+	EndIf
+
+	lAux := .T.
+	
+	While !(cAliasw3)->(eof())
+		
+		cTipo    := (cAliasW3)->W3_FLUXO 
+		cPGI_NUM := (cAliasW3)->W5_PGI_NUM
+		
+		IF (cAliasW3)->W5_SALDO_Q <= 0 .AND. (cAliasW3)->W3_SALDO_Q <= 0
+			(cAliasW3)->(DbSkip())
+			Loop
+		ENDIF
+
+		if cTipo == "7" .or. ( cTipo == "1" .and. !empty( (cAliasW3)->W5_PGI_NUM ) )
+			aadd( aSaldos, {cProduto,;
+							aTotal[2],;
+							(cAliasW3)->W5_SALDO_Q,;
+							(cAliasW3)->W5_SALDO_Q ,;
+							SubStr((cAliasW3)->CHVW5,1,88),;
+							(cAliasW3)->SW5REC;
+							})
+		else
+			aadd( aSaldos, {cProduto,;
+							aTotal[1],;
+							(cAliasW3)->W3_SALDO_Q,;
+							(cAliasW3)->W3_SALDO_Q ,;
+							SUBSTR((cAliasW3)->CHVW3,1,80),;
+							(cAliasW3)->SW3REC;
+							})
+			
+		EndIf
+		(cAliasW3)->(DbSkip())
+	ENDDO	
+	nZ := 0
+	 
+	For nX := 1 to  len(aDados[nY,5]) 
+		
+		if aDados[nY,5,nX,19] 
+			LOOP
+		EndIf
+		aSort( aSaldos , , , { |x,y| x[4] > y[4] } )
+
+		nZ := aScan(aSaldos,{|x| x[4] == aDados[nY,5,nX,10] .and. x[4] > 0 })
+		
+		If nZ > 0
+			nSaldo += aSaldos[nZ,4]
+			aDados[nY,5,nX,10] := aSaldos[nZ,4]
+			aDados[nY,5,nX,12] := 0
+			aDados[nY,5,nX,16] := aDados[nY,5,nX,10]
+			aDados[nY,5,nX,13] := cTipo
+			aDados[nY,5,nX,14] := aSaldos[nZ,6] //Rec
+			aDados[nY,5,nX,15] := aSaldos[nZ,5] //Chave
+			aDados[nY,5,nX,18] := cPGI_NUM
+			aDados[nY,5,nX,19] := .T.
+			aSaldos[nZ,4] := 0
+			aDados[nY,7] += aDados[nY,5,nX,16]
+			nQuant := 0
+			Loop
+		EndIf
+
+		nZ := aScan(aSaldos,{|x| x[4] < aDados[nY,5,nX,2] .and. x[4] > 0 })
+		if nZ > 0
+			nQuant := aDados[nY,5,nX,10]
+			nSaldo += aSaldos[nZ,4]
+			aDados[nY,5,nX,10] := aSaldos[nZ,4]
+			aDados[nY,5,nX,12] := nQuant - aSaldos[nZ,4] 
+			aDados[nY,5,nX,16] := aDados[nY,5,nX,10]
+			aDados[nY,5,nX,13] := cTipo
+			aDados[nY,5,nX,14] := aSaldos[nZ,6] //Rec
+			aDados[nY,5,nX,15] := aSaldos[nZ,5] //Chave
+			aDados[nY,5,nX,18] := cPGI_NUM
+			aDados[nY,5,nX,19] := .T.
+			aSaldos[nZ,4] := 0
+			aDados[nY,7] += aDados[nY,5,nX,16]
+			nQuant := 0
+		EndIf
+		
+		nZ := aScan(aSaldos,{|x| x[4] > aDados[nY,5,nX,2] .and. x[4] > 0 })
+		if nZ > 0
+			nQuant := aDados[nY,5,nX,10]
+			nSaldo += aSaldos[nZ,4]
+			aDados[nY,5,nX,10] := aDados[nY,5,nX,10]
+			aDados[nY,5,nX,12] := 0//nQuant - aSaldos[nZ,4] 
+			aDados[nY,5,nX,16] := aDados[nY,5,nX,10]
+			aDados[nY,5,nX,13] := cTipo
+			aDados[nY,5,nX,14] := aSaldos[nZ,6] //Rec
+			aDados[nY,5,nX,15] := aSaldos[nZ,5] //Chave
+			aDados[nY,5,nX,18] := cPGI_NUM
+			aDados[nY,5,nX,19] := .T.
+			aSaldos[nZ,4] := aSaldos[nZ,4] - nQuant
+			aDados[nY,7] += aDados[nY,5,nX,16]
+			nQuant := 0
+		EndIf
+
+	Next nX
+	
+	For nX := 1 to len(aDados[nY,5]) 
+		aSort( aSaldos , , , { |x,y| x[4] > y[4] } )
+		
+		If  aDados[nY,5,nX,12] > 0
 			aItem := {	Space(4),;				//Linha
-						aDados[nY,5,nLin ,02] ,;				//Quantidade
-						aDados[nY,5,nLin ,03] ,;				//Valor
-						aDados[nY,5,nLin ,04] ,;				//Container
-						aDados[nY,5,nLin ,05] ,;				//Caixa
-						aDados[nY,5,nLin ,06] ,;				//Peso Liquido
-						aDados[nY,5,nLin ,07] ,;				//PURCHASE ORDER
-						aDados[nY,5,nLin ,08] ,;				//Conhecimento de Embarque
-						aDados[nY,5,nLin ,09] ,;				//Navio
-						aDados[nY,5,nLin ,10] ,;				//Saldo
-						aDados[nY,5,nLin ,11] ,;				//Preço Unitario
+						aDados[nY,5,nX, 12] ,;				//Quantidade
+						aDados[nY,5,nX ,03] ,;				//Valor
+						aDados[nY,5,nX ,04] ,;				//Container
+						aDados[nY,5,nX ,05] ,;				//Caixa
+						aDados[nY,5,nX ,06] ,;				//Peso Liquido
+						aDados[nY,5,nX ,07] ,;				//PURCHASE ORDER
+						aDados[nY,5,nX ,08] ,;				//Conhecimento de Embarque
+						aDados[nY,5,nX ,09] ,;				//Navio
+						aDados[nY,5,nX ,12] ,;				//Saldo
+						aDados[nY,5,nX ,11] ,;				//Preço Unitario
 						0 ,;
 						"",;						//RECSW3
 						0 ,;
@@ -343,146 +542,62 @@ For nY := 1 to len(aDados)
 						"",;//Rec da Temporaria
 						.F.;
 					}
+			aDados[nY,5,nX ,12] := 0
 			aadd(aDados[nY,5],aItem)
-		else
 			nLin := Len(aDados[nY,5])
-		EndIf
-				
-		nLin := Len(aDados[nY,5])
-				
-		nX := 1 
-		lAux := .T.
-		nSaldoAnt := 0
-		
-		For nX := 1 to  len(aDados[nY,5]) //.and. lAux
+			nZ := aScan(aSaldos,{|x| x[4] == aDados[nY,5,nLin,10] .and. x[4] > 0 })
 			
-			if nQuant == 0 
-				Exit
-			endif
-			if  aDados[nY,5,nX,19] //aDados[nY,5,nX,16] < aDados[nY,5,nX,10] .and. aDados[nY,5,nX,16] > 0 .and. aDados[nY,5,nX,12] == 0 
+			If nZ > 0
+				nSaldo += aSaldos[nZ,4]
+				aDados[nY,5,nLin,10] := aSaldos[nZ,4]
+				aDados[nY,5,nLin,12] := 0
+				aDados[nY,5,nLin,16] := aDados[nY,5,nLin,10]
+				aDados[nY,5,nLin,13] := cTipo
+				aDados[nY,5,nLin,14] := aSaldos[nZ,6] //Rec
+				aDados[nY,5,nLin,15] := aSaldos[nZ,5] //Chave
+				aDados[nY,5,nLin,18] := cPGI_NUM
+				aDados[nY,5,nLin,19] := .T.
+				aSaldos[nZ,4] := 0
+				aDados[nY,7] += aDados[nY,5,nLin,16]
+				nQuant := 0
 				Loop
-			endif
-			if nX == 1 .and. aDados[nY,5,nX,10] == aDados[nY,5,nX,2]
-			
-				aDados[nY,5,nX,10] := nQuant //aDados[nY,5,nX,2] - (cAliasW3)->W5_SALDO_Q
-				aDados[nY,5,nX,12] := aDados[nY,5,nX,2] - aDados[nY,5,nX,10]
-				aDados[nY,5,nX,16] := aDados[nY,5,nX,10]
-				nQuant := 0 //aDados[nY,5,nX,12]
-				aDados[nY,5,nX,13] := cTipo
-				aDados[nY,5,nX,14] := nRec
-				aDados[nY,5,nX,15] := cChave
-				aDados[nY,5,nX,18] := cPGI_NUM
-
-				if aDados[nY,5,nX,12] == 0  //.or. aDados[nY,5,nX,10] >= aDados[nY,5,nX,10]
-					aDados[nY,5,nX,19] := .T.
-					aDados[nY,7] += aDados[nY,5,nX,16]
-					Loop  //lAux := .F.
-				EndIf
-
-				nSaldoAnt := 0
-			
-			elseif nX == 1 .and. aDados[nY,5,nX,10] <> 0
-				aDados[nY,7] += aDados[nY,5,nX,16]
-				aDados[nY,5,nX,19] := .T.
-			
-			else
-				if aDados[nY,5,nX - 1 ,12] <> 0
-					aDados[nY , 5 , nX     , 12 ] += aDados[nY,5,nX - 1 ,12]
-					aDados[nY , 5 , nX - 1 , 12 ] :=  0
-					aDados[nY, 5  , nX - 1 , 19 ] := .T.
-					//aDados[nY , 5 , nX     , 10 ] -= aDados[nY,5,nX   , 12 ]
-				endif
-				
-				//if  aDados[nY,5,nX,10] == nQuant
-				if (cAliasW3)->W5_SALDO_Q == nQuant
-					if nQuant == (aDados[nY,5,nX,2 ] + aDados[nY,5,nX,12 ] )
-						aDados[nY,5,nX,10] := nQuant
-						aDados[nY,5,nX,12] := 0
-						nQuant := 0
-					ElseIf nQuant > (aDados[nY,5,nX,2 ] + aDados[nY,5,nX,12 ] )
-						aDados[nY,5,nX,10] := aDados[nY,5,nX,2]
-						aDados[nY,5,nX,12] := nQuant - (aDados[nY,5,nX,2 ] + aDados[nY,5,nX,12 ] )
-						nQuant := aDados[nY,5,nX,12]
-					elseif Empty(aDados[nY,5,nX,1])
-						if nQuant > aDados[nY,5,nX,12 ]
-							aDados[nY,5,nX,10] := aDados[nY,5,nX,12 ] 
-							aDados[nY,5,nX,12] := 0
-							nQuant := 0
-						else
-							aDados[nY,5,nX,10] := nQuant 
-							aDados[nY,5,nX,12] := 0
-							nQuant := 0
-						EndIf
-					else
-						aDados[nY,5,nX,10] := nQuant + aDados[nY,5,nX,12 ] 
-						aDados[nY,5,nX,12] := aDados[nY,5,nX,2 ] - aDados[nY,5,nX,10 ] 
-						nQuant := aDados[nY,5,nX,12]
-					Endif
-					nQuant := 0
-					//aDados[nY,5,nX,12] := aDados[nY,5,nX,2 ] - aDados[nY,5,nX,10]
-					aDados[nY,5,nX,16] := aDados[nY,5,nX,10] 
-					
-					aDados[nY,5,nX,13] := cTipo
-					aDados[nY,5,nX,14] := nRec
-					aDados[nY,5,nX,15] := cChave
-					aDados[nY,5,nX,18] := cPGI_NUM
-					if nQuant <= 0
-						aDados[nY,5,nX,19] := .T.
-						aDados[nY,7] += aDados[nY,5,nX,16]
-					Endif
-					exit
-				else
-					if ( nQuant + aDados[nY,5,nX,12] ) == (aDados[nY,5,nX,2 ] + aDados[nY,5,nX,12 ] )
-						aDados[nY,5,nX,10] := nQuant + aDados[nY,5,nX,12]
-						aDados[nY,5,nX,12] := 0
-						nQuant := 0
-					ElseIf ( nQuant + aDados[nY,5,nX,12] ) > (aDados[nY,5,nX,2 ] + aDados[nY,5,nX,12 ] )
-						aDados[nY,5,nX,10] := aDados[nY,5,nX,2]
-						aDados[nY,5,nX,12] := (nQuant + aDados[nY,5,nX,12]) - (aDados[nY,5,nX,2 ] + aDados[nY,5,nX,12 ] )
-						nQuant := aDados[nY,5,nX,12]
-					else
-						aDados[nY,5,nX,10] := nQuant + aDados[nY,5,nX,12 ] 
-						aDados[nY,5,nX,12] := aDados[nY,5,nX,2 ] + aDados[nY,5,nX,10 ] 
-						nQuant := aDados[nY,5,nX,12]
-					Endif
-					nQuant := 0
-					//aDados[nY,5,nX,10] := nQuant + aDados[nY,5,nX,12]
-					//aDados[nY,5,nX,12] += aDados[nY,5,nX,2] - aDados[nY,5,nX,10]
-					aDados[nY,5,nX,16] := aDados[nY,5,nX,10]
-					aDados[nY,5,nX,13] := cTipo
-					aDados[nY,5,nX,14] := nRec
-					aDados[nY,5,nX,15] := cChave
-					aDados[nY,5,nX,18] := cPGI_NUM
-					//nQuant := aDados[nY,5,nX,2] - aDados[nY,5,nX,10]
-					if aDados[nY,5,nX,12] == 0
-						aDados[nY,7] += aDados[nY,5,nX,16]
-						aDados[nY,5,nX,19] := .T.
-						Loop
-					EndIf
-
-				endif
-			
 			EndIf
-			
-			nLinha := aDados[nY,5,nX,1]
-			//nX ++
-		Next nX
-		
-		nSaldoAnt := 0			
-		lOk := .T.
-		For nZ := 1 to  len(aDados[nY,5])
-			nSaldoAnt += aDados[nY,5,nZ,16]
-			if !(aDados[nY,5,nZ,16])
-				lOk	:= aDados[nY,5,nZ,16]
-			endIf
-		Next nZ
-		
-		(cAliasw3)->(dbSkip())
-		if lOk .and. !(cAliasw3)->(EOF())
-			lCriaLin := .T.
-		EndIf
-	EndDo
+			nZ := aScan(aSaldos,{|x| x[4] < aDados[nY,5,nLin,2] .and. x[4] > 0 })
+			if nZ > 0
+				nQuant := aDados[nY,5,nX,10]
+				nSaldo += aSaldos[nZ,4]
+				aDados[nY,5,nLin,10] := aSaldos[nZ,4]
+				aDados[nY,5,nLin,12] := nQuant - aSaldos[nZ,4] 
+				aDados[nY,5,nLin,16] := aDados[nY,5,nX,10]
+				aDados[nY,5,nLin,13] := cTipo
+				aDados[nY,5,nLin,14] := aSaldos[nZ,6] //Rec
+				aDados[nY,5,nLin,15] := aSaldos[nZ,5] //Chave
+				aDados[nY,5,nLin,18] := cPGI_NUM
+				aDados[nY,5,nLin,19] := .T.
+				aSaldos[nZ,4] := 0
+				aDados[nY,7] += aDados[nY,5,nLin,16]
+				nQuant := 0
+			EndIf
+			nZ := aScan(aSaldos,{|x| x[4] > aDados[nY,5,nLin,2] .and. x[4] > 0 })
+			if nZ > 0
+				nQuant := aDados[nY,5,nX,10]
+				nSaldo += aSaldos[nZ,4]
+				aDados[nY,5,nLin,10] := nQuant
+				aDados[nY,5,nLin,12] := nQuant - aSaldos[nZ,4] 
+				aDados[nY,5,nLin,16] := aDados[nY,5,nX,10]
+				aDados[nY,5,nLin,13] := cTipo
+				aDados[nY,5,nLin,14] := aSaldos[nZ,6] //Rec
+				aDados[nY,5,nLin,15] := aSaldos[nZ,5] //Chave
+				aDados[nY,5,nLin,18] := cPGI_NUM
+				aDados[nY,5,nLin,19] := .T.
+				aSaldos[nZ,4] := aSaldos[nZ,4] - nQuant
+				aDados[nY,7] += aDados[nY,5,nLin,16]
+				nQuant := 0
+			EndIf
+		endIf 
+	Next nX
 
+	
 	if aDados[nY,6] > aDados[nY,7] .and. !lErro
 		U_FCMVEIC0101("Não há saldo para o Item " + AllTrim(cProduto) + "  pedido : " + cPoNum ,nLinha,AllTrim(cProduto) ,cFornecedor,cForloj,"R",AllTrim(cPoNum), , cInvoice)
 		lErro := .T.
@@ -498,6 +613,66 @@ Next nY
 lRet := !lErro
 
 Return lRet
+
+
+//-------------------------------------------------------------------------------
+
+
+//-------------------------------------------------------------------------------
+Static Function QrySaldo(cAliasSaldo,cProduto)
+Local cQuery := ''
+
+cQuery += eol +  " Select " 
+cQuery += eol +  "		sum(SW3.W3_SALDO_Q) as W3_SALDO_P, "
+cQuery += eol +  "		sum(NVL(SW5.W5_SALDO_Q, 0 ) ) as W5_SALDO_P , "
+cQuery += eol +  "      sum(NVL(EW5.EW5_QTDE  , 0 ) ) as EW5_QTDE, "
+cQuery += eol +  "      sum(SW3.W3_SALDO_Q - NVL(EW5.EW5_QTDE  , 0 ) ) as W3_SALDO,"
+cQuery += eol +  "      sum(NVL(SW5.W5_SALDO_Q, 0 ) - NVL(EW5.EW5_QTDE  , 0 )) as W5_SALDO "
+cQuery += eol +  " FROM " + RetSqlName("SW3") + " SW3 " 
+
+cQuery += eol +  " 	LEFT OUTER JOIN " + RetSqlName("SW5") + " SW5   " 
+cQuery += eol +  " 		ON	SW5.W5_FILIAL  = '" + FwXFilial('SW5') + "' " 
+cQuery += eol +  " 		AND	SW5.W5_PO_NUM  = SW3.W3_PO_NUM " 
+cQuery += eol +  " 		AND	SW5.W5_SI_NUM  = SW3.W3_SI_NUM " 
+cQuery += eol +  " 		AND	SW5.W5_FORN	   = SW3.W3_FORN " 
+cQuery += eol +  " 		AND	SW5.W5_FORLOJ  = SW3.W3_FORLOJ " 
+cQuery += eol +  " 		AND	SW5.W5_COD_I   = SW3.W3_COD_I " 
+cQuery += eol +  " 		AND	SW5.W5_POSICAO = SW3.W3_POSICAO " 
+cQuery += eol +  " 		AND	SW5.D_E_L_E_T_ = ' ' " 
+cQuery += eol +  " 		AND SW5.W5_SALDO_Q > 0 "
+
+cQuery += eol +  "LEFT OUTER JOIN " + RetSqlName("EW5") + " EW5 " 
+cQuery += eol +  "		ON	EW5.EW5_FILIAL  = '" + FwXFilial('EW5') + "' "  
+cQuery += eol +  "		AND	EW5.EW5_PO_NUM  = SW3.W3_PO_NUM "
+cQuery += eol +  "		AND	EW5.EW5_SI_NUM  = SW3.W3_SI_NUM "
+cQuery += eol +  "		AND	EW5.EW5_FORN	= SW3.W3_FORN "
+cQuery += eol +  "		AND	EW5.EW5_FORLOJ  = SW3.W3_FORLOJ "
+cQuery += eol +  "		AND	EW5.EW5_COD_I   = SW3.W3_COD_I "
+cQuery += eol +  "		AND	EW5.EW5_POSICA  = SW3.W3_POSICAO "
+cQuery += eol +  "		AND	EW5.D_E_L_E_T_ = ' '  "
+
+cQuery += eol +  " WHERE	SW3.W3_FILIAL  = '" + FwXFilial('SW3') + "' " 
+cQuery += eol +  "     	AND SW3.W3_SEQ 	   = 0 " 
+cQuery += eol +  "  	AND	SW3.W3_FORN	   = '" + cFornecedor + "' " 
+cQuery += eol +  "  	AND	SW3.W3_FORLOJ  = '" + cForloj     + "' " 
+cQuery += eol +  "  	AND	SW3.W3_PO_NUM  = '" + cPoNum      + "' " 
+cQuery += eol +  " 		AND SW3.W3_COD_I   = '" + cProduto    + "' " 
+cQuery += eol +  " 		AND	SW3.D_E_L_E_T_ = ' ' " 
+cQuery += eol +  " ORDER BY W3_COD_I , W3_SALDO_Q DESC , SW5.W5_SALDO_Q DESC " 
+
+MemoWrite("C:\TEMP\"+FunName()+"1.SQL",cQuery)
+//cQuery := ChangeQuery(cQuery)
+IF Select(cAliasSaldo) > 0
+	(cAliasSaldo)->(DbCloseArea())
+	fErase(cAliasSaldo+GetDbExtension())
+EndIf
+
+dbUseArea(.F.,"TOPCONN",TcGenQry(,,cQuery ),cAliasSaldo,.T.,.T.)
+
+
+Return iif((cAliasSaldo)->(!eof()), {(cAliasSaldo)->W3_SALDO , (cAliasSaldo)->W5_SALDO}, {0,0})
+
+
 //-------------------------------------------------------------------------------
 
 
@@ -505,15 +680,18 @@ Return lRet
 Static Function QrySW3(cAliasW3,cProduto)
 Local cQuery := ''
 
-cQuery += eol +  eol + " SELECT " 
+cQuery += eol +  " SELECT " 
 cQuery += eol +  " 	SW3.W3_FILIAL,  " 
 cQuery += eol +  " 	SW3.W3_FLUXO, " 
 cQuery += eol +  " 	SW3.W3_PO_NUM, " 
 cQuery += eol +  " 	SW3.W3_COD_I, " 
 cQuery += eol +  " 	SW3.W3_QTDE, " 
 cQuery += eol +  " 	NVL(SW5.W5_QTDE,SW3.W3_QTDE) AS W5_QTDE,  " 
-cQuery += eol +  " 	SW3.W3_SALDO_Q, " 
-cQuery += eol +  " 	NVL(SW5.W5_SALDO_Q, 0 ) AS W5_SALDO_Q ,"
+cQuery += eol +  " 	SW3.W3_SALDO_Q as SALDO_W3, " 
+cQuery += eol +  "  NVL(SW5.W5_SALDO_Q, 0 ) AS SALDO_W5 ,"
+cQuery += eol +  "  NVL(EW5.EW5_QTDE  , 0 ) AS EW5_QTDE ,
+cQuery += eol +  "  (SW3.W3_SALDO_Q - NVL(EW5.EW5_QTDE  , 0 )) AS W3_SALDO_Q ,
+cQuery += eol +  "  (NVL(SW5.W5_QTDE  , 0 ) - NVL(EW5.EW5_QTDE  , 0 )) AS W5_SALDO_Q ,
 cQuery += eol +  "  NVL(SW5.W5_POSICAO,' ') AS W5_POSICAO, 
 cQuery += eol +  " 	NVL(SW5.W5_PGI_NUM,' ') as W5_PGI_NUM , " 
 cQuery += eol +  " 	SW3.R_E_C_N_O_ as SW3REC, " 
@@ -533,13 +711,23 @@ cQuery += eol +  " 		AND	SW5.W5_POSICAO = SW3.W3_POSICAO "
 cQuery += eol +  " 		AND	SW5.D_E_L_E_T_ = ' ' " 
 cQuery += eol +  " 		AND SW5.W5_SALDO_Q > 0 "
 
+cQuery += eol +  "LEFT OUTER JOIN " + RetSqlName("EW5") + " EW5 " 
+cQuery += eol +  "		ON	EW5.EW5_FILIAL  = '" + FwXFilial('EW5') + "' "  
+cQuery += eol +  "		AND	EW5.EW5_PO_NUM  = SW3.W3_PO_NUM "
+cQuery += eol +  "		AND	EW5.EW5_SI_NUM  = SW3.W3_SI_NUM "
+cQuery += eol +  "		AND	EW5.EW5_FORN	= SW3.W3_FORN "
+cQuery += eol +  "		AND	EW5.EW5_FORLOJ  = SW3.W3_FORLOJ "
+cQuery += eol +  "		AND	EW5.EW5_COD_I   = SW3.W3_COD_I "
+cQuery += eol +  "		AND	EW5.EW5_POSICA  = SW3.W3_POSICAO "
+cQuery += eol +  "		AND	EW5.D_E_L_E_T_ = ' '  "
+
 cQuery += eol +  " WHERE	SW3.W3_FILIAL  = '" + FwXFilial('SW3') + "' " 
-cQuery += eol +  "     AND SW3.W3_SEQ 	   = 0 " 
+cQuery += eol +  "     	AND SW3.W3_SEQ 	   = 0 " 
 cQuery += eol +  "  	AND	SW3.W3_FORN	   = '" + cFornecedor + "' " 
 cQuery += eol +  "  	AND	SW3.W3_FORLOJ  = '" + cForloj     + "' " 
 cQuery += eol +  "  	AND	SW3.W3_PO_NUM  = '" + cPoNum      + "' " 
-cQuery += eol +  " 	AND SW3.W3_COD_I   = '" + cProduto    + "' " 
-cQuery += eol +  " 	AND	SW3.D_E_L_E_T_ = ' ' " 
+cQuery += eol +  " 		AND SW3.W3_COD_I   = '" + cProduto    + "' " 
+cQuery += eol +  " 		AND	SW3.D_E_L_E_T_ = ' ' " 
 cQuery += eol +  " ORDER BY W3_COD_I , W3_SALDO_Q DESC , SW5.W5_SALDO_Q DESC " 
 
 MemoWrite("C:\TEMP\"+FunName()+".SQL",cQuery)
@@ -779,60 +967,67 @@ Begin Transaction
 		nTotalFOB := 0
 
 		While cInvoice == WKEW5->EW5_INVOIC
-		//if !EW5->(DbSeek(xFilial("EW5")+WKEW5->EW5_PGI_NU+WKEW5->EW5_INVOIC+WKEW5->EW5_FORN+WKEW5->EW5_FORLOJ+WKEW5->EW5_PO_NUM+WKEW5->EW5_POSICA))
-		
-			EW5->(RecLock("EW5",.T.))
-				EW5->EW5_FILIAL	:= xFilial("EW5")
-				EW5->EW5_INVOIC	:= WKEW5->EW5_INVOIC //cInvoice
-				EW5->EW5_FORN	:= WKEW5->EW5_FORN
-				EW5->EW5_FORLOJ	:= WKEW5->EW5_FORLOJ
-				EW5->EW5_CC		:= WKEW5->EW5_CC
-				EW5->EW5_SI_NUM	:= WKEW5->EW5_SI_NUM
-				EW5->EW5_PO_NUM	:= WKEW5->EW5_PO_NUM
-				EW5->EW5_POSICA	:= WKEW5->EW5_POSICA
-				EW5->EW5_PGI_NU	:= WKEW5->EW5_PGI_NU
-				EW5->EW5_COD_I	:= WKEW5->EW5_COD_I
-				EW5->EW5_QTDE 	:= WKEW5->EW5_QTDE
-				EW5->EW5_PRECO	:= WKEW5->EW5_PRECO
-				EW5->EW5_FABLOJ	:= WKEW5->EW5_FABLOJ
-				EW5->EW5_SEQ	:= WKEW5->EW5_SEQ
-				EW5->EW5_REG	:= WKEW5->EW5_REG
-				EW5->EW5_PESOL	:= WKEW5->EW5_PESOL
-				EW5->EW5_PESOB	:= WKEW5->EW5_PESOB
-				EW5->EW5_FABR	:= WKEW5->EW5_FABR
-				EW5->EW5_XLOTE	:= WKEW5->EW5_XLOTE
-				EW5->EW5_XCASE	:= WKEW5->EW5_XCASE
-				EW5->EW5_XCONT	:= WKEW5->EW5_XCONT
-				EW5->EW5_XVIN	:= WKEW5->EW5_XVIN
-				EW5->EW5_XMOTOR	:= WKEW5->EW5_XMOTOR
-				EW5->EW5_XCHAVE	:= WKEW5->EW5_XCHAVE
-				EW5->EW5_XOPC	:= WKEW5->EW5_XOPC
-				EW5->EW5_XANOFB	:= WKEW5->EW5_XANOFB
-				EW5->EW5_XANOMD	:= WKEW5->EW5_XANOMD
-				EW5->EW5_XCORIN	:= WKEW5->EW5_XCORIN
-				EW5->EW5_XCOREX	:= WKEW5->EW5_XCOREX
-				EW5->EW5_XSERMO	:= WKEW5->EW5_XSERMO
+			
+			If EW5->(DbSeek(xFilial("EW5") + WKEW5->(EW5_PGI_NU + EW5_INVOIC + EW5_FORN + EW5_FORLOJ + EW5_PO_NUM + EW5_POSICA) ) )
+				EW5->( RecLock( "EW5" , .F. ) )
+					EW5->EW5_QTDE += WKEW5->EW5_QTDE
+				EW5->(MSUnlock())
+			Else
+				EW5->(RecLock("EW5",.T.))
+					EW5->EW5_FILIAL	:= xFilial("EW5")
+					EW5->EW5_INVOIC	:= WKEW5->EW5_INVOIC //cInvoice
+					EW5->EW5_FORN	:= WKEW5->EW5_FORN
+					EW5->EW5_FORLOJ	:= WKEW5->EW5_FORLOJ
+					EW5->EW5_CC		:= WKEW5->EW5_CC
+					EW5->EW5_SI_NUM	:= WKEW5->EW5_SI_NUM
+					EW5->EW5_PO_NUM	:= WKEW5->EW5_PO_NUM
+					EW5->EW5_POSICA	:= WKEW5->EW5_POSICA
+					EW5->EW5_PGI_NU	:= WKEW5->EW5_PGI_NU
+					EW5->EW5_COD_I	:= WKEW5->EW5_COD_I
+					EW5->EW5_QTDE 	:= WKEW5->EW5_QTDE
+					EW5->EW5_PRECO	:= WKEW5->EW5_PRECO
+					EW5->EW5_FABLOJ	:= WKEW5->EW5_FABLOJ
+					EW5->EW5_SEQ	:= WKEW5->EW5_SEQ
+					EW5->EW5_REG	:= WKEW5->EW5_REG
+					EW5->EW5_PESOL	:= WKEW5->EW5_PESOL
+					EW5->EW5_PESOB	:= WKEW5->EW5_PESOB
+					EW5->EW5_FABR	:= WKEW5->EW5_FABR
+					//EW5->EW5_XLOTE	:= WKEW5->EW5_XLOTE
+					//EW5->EW5_XCASE	:= WKEW5->EW5_XCASE
+					//EW5->EW5_XCONT	:= WKEW5->EW5_XCONT
+					EW5->EW5_XVIN	:= WKEW5->EW5_XVIN
+					EW5->EW5_XMOTOR	:= WKEW5->EW5_XMOTOR
+					EW5->EW5_XCHAVE	:= WKEW5->EW5_XCHAVE
+					EW5->EW5_XOPC	:= WKEW5->EW5_XOPC
+					EW5->EW5_XANOFB	:= WKEW5->EW5_XANOFB
+					EW5->EW5_XANOMD	:= WKEW5->EW5_XANOMD
+					EW5->EW5_XCORIN	:= WKEW5->EW5_XCORIN
+					EW5->EW5_XCOREX	:= WKEW5->EW5_XCOREX
+					EW5->EW5_XSERMO	:= WKEW5->EW5_XSERMO
 
-				If WKEW5->EW5_XFLUXO == "1"
-					EW5->EW5_XFLUXO := "1"
-				Else
-					EW5->EW5_XFLUXO := "2"
-				EndIF
-				EW5->EW5_XITEW5 := cSeqEW5
+					If WKEW5->EW5_XFLUXO == "1"
+						EW5->EW5_XFLUXO := "1"
+					Else
+						EW5->EW5_XFLUXO := "2"
+					EndIF
+					EW5->EW5_XITEW5 := cSeqEW5
 
 				EW5->(MSUnlock())
-				nTotalFOB := nTotalFOB + (WKEW5->EW5_QTDE * WKEW5->EW5_PRECO)
 				cSeqEW5 := Soma1(cSeqEW5)
+			endif
 
-				IF aScan( aInvoice, { |x| x[1] ==  cInvoice } )== 0
-					AAdd(aInvoice, {cInvoice,cHouse,cNavio})
-				EndIF
+			nTotalFOB := nTotalFOB + (WKEW5->EW5_QTDE * WKEW5->EW5_PRECO)
+	
+			IF aScan( aInvoice, { |x| x[1] ==  cInvoice } )== 0
+				AAdd(aInvoice, {cInvoice,cHouse,cNavio})
+			EndIF
 				
-				if zAtuNcmW3() == .T.
-					U_FCMVEIC0101("Atualizado NCM + ExNCM na W3",, WKEW5->EW5_COD_I, WKEW5->EW5_FORN, WKEW5->EW5_FORLOJ, "A", WKEW5->EW5_PO_NUM, WKEW5->EW5_POSICA, cInvoice)
-				EndIF
-				//atualiza a PLI
-				CMV01AtulizaPLI()
+			if zAtuNcmW3() == .T.
+				U_FCMVEIC0101("Atualizado NCM + ExNCM na W3",, WKEW5->EW5_COD_I, WKEW5->EW5_FORN, WKEW5->EW5_FORLOJ, "A", WKEW5->EW5_PO_NUM, WKEW5->EW5_POSICA, cInvoice)
+			EndIF
+	
+			//atualiza a PLI
+			CMV01AtulizaPLI()
 			//EndIf
 			
 			WKEW5->(dbSkip())
@@ -1120,111 +1315,6 @@ Static Function CMV01ValCapa()
 
 Return lRet
 
-
-//----------------------------------------------------------------------------------
-
-
-//----------------------------------------------------------------------------------
-/*
-Static Function zGrvArq()
-	Local lLimpaAnt:= .F.
-	Local cErr	:= ""
-	Local cLin  := ""
-	Local nLn   := 0
-	Local aLn	:= {}
-	Local oArq	:= FWFileReader():New(cDiretorio)
-	Local cZM_BL, cZM_INVOIC, cZM_FORNEC, cZM_LOJA, cZM_ITEM, cZM_NAVIO := ""
-	Local cZM_DESCR, cZM_UNIT, nZM_QTDE, cZM_CASE,cZM_LOTE, cZM_CONT,cZM_PO_NUM   := ""
-
-	if (oArq:Open())
-
-		while (oArq:hasLine())
-			nLn ++
-			cLin := StrTran(oArq:GetLine(),';;','; ;')
-			aLn := Separa(cLin, ";",.T.)
-
-			If Len(aLn) < 12
-				cErr += Char(13) + Char(10) + " Linha " + Str(nLn) + " num de colunas:" + Str(Len(aLn))
-				Loop
-			EndIF
-
-			If nLayOut = 1
-				cZM_BL		:= Padr(aLn[3], TamSx3("ZM_BL")[1], " ")
-				cZM_INVOIC	:= Padr(aLn[2], TamSx3("ZM_INVOICE")[1], " ")
-				cZM_FORNEC	:= EW4->EW4_FORN
-				cZM_LOJA	:= EW4->EW4_FORLOJ
-				cZM_ITEM	:= Alltrim(Padl(aLn[4], TamSx3("ZM_ITEM")[1], "0"))
-				cZM_DOC		:= Padr("", TAMSX3("ZM_DOC")[1], " ")
-				cZM_SERIE	:= Padr("", TAMSX3("ZM_SERIE")[1], " ")
-				cZM_NAVIO	:= Padr(aLn[8], TamSx3("ZM_NAVIO")[1], " ")
-				cZM_CONT	:= Alltrim(aLn[09])
-				cZM_LOTE	:= Alltrim(aLn[1])
-				cZM_CASE	:= Alltrim(aLn[10])
-				cZM_PROD	:= Alltrim(StrTran(AllTrim(aLn[05]), "-", ""))
-				nZM_QTDE	:= Val(aLn[06])
-				cZM_UNIT	:= Alltrim(aLn[12]) + Alltrim(aLn[10]) // alterado para Lote + case
-				cZM_DESCR   := Posicione("SB1", 1, FwxFilial("SB1") + Alltrim(aLn[05]), "B1_DESC")
-				cZM_PO_NUM  := aLn[11]
-			Else
-				cZM_BL		:= Padr(aLn[12], TamSx3("ZM_BL")[1], " ")
-				cZM_INVOIC	:= Padr(aLn[2], TamSx3("ZM_INVOICE")[1], " ")
-				cZM_FORNEC	:= EW4->EW4_FORN
-				cZM_LOJA	:= EW4->EW4_FORLOJ
-				cZM_ITEM	:= Alltrim(Padl(aLn[1], TamSx3("ZM_ITEM")[1], "0"))
-				cZM_DOC		:= Padr("", TAMSX3("ZM_DOC")[1], " ")
-				cZM_SERIE	:= Padr("", TAMSX3("ZM_SERIE")[1], " ")
-				cZM_NAVIO	:= Padr(aLn[13], TamSx3("ZM_NAVIO")[1], " ")
-				cZM_CONT	:= Alltrim(aLn[08])
-				cZM_LOTE	:= ""
-				cZM_CASE	:= Alltrim(aLn[09])
-				cZM_PROD	:= AllTrim(aLn[05])
-				nZM_QTDE	:= Val(aLn[06])
-				cZM_UNIT	:= ""
-				cZM_DESCR   := Posicione("SB1", 1, FwxFilial("SB1") + Alltrim(aLn[05]), "B1_DESC")
-				cZM_PO_NUM  := aLn[11]
-			EndIf
-
-			aLn[06] := StrTran(aLn[6], ".", "" )
-
-			If lLimpaAnt = .F.
-				TcSqlExec("DELETE FROM " + RetSqlName("SZM") + " WHERE D_E_L_E_T_ = '*' AND ZM_INVOICE = '" + cZM_INVOIC + "' "   )
-				TcSqlExec("UPDATE " + RetSqlName("SZM") + " SET D_E_L_E_T_ = '*' WHERE ZM_FILIAL = '" + FwXfilial("SZM") + "' AND ZM_INVOICE = '" + cZM_INVOIC + "' ")
-				lLimpaAnt = .T.
-			EndIF
-
-			RecLock("SZM", .T.)
-				SZM->ZM_FILIAL 	:= FwXfilial("SZM")
-				SZM->ZM_INVOICE	:= Alltrim(cZM_INVOIC)
-				SZM->ZM_NAVIO	:= Alltrim(cZM_NAVIO)
-				SZM->ZM_BL		:= Alltrim(cZM_BL)
-				SZM->ZM_CONT	:= cZM_CONT
-				SZM->ZM_LOTE	:= cZM_LOTE
-				SZM->ZM_CASE	:= cZM_CASE
-				SZM->ZM_PROD	:= cZM_PROD
-				SZM->ZM_QTDE	:= nZM_QTDE
-				SZM->ZM_UNIT	:= cZM_UNIT
-				SZM->ZM_DOC		:= ""
-				SZM->ZM_SERIE	:= ""
-				SZM->ZM_FORNEC	:= EW4->EW4_FORN
-				SZM->ZM_LOJA	:= EW4->EW4_FORLOJ
-				SZM->ZM_ITEM	:= cZM_ITEM
-				SZM->ZM_DESCR   := cZM_DESCR
-				SZM->ZM_PO_NUM  := cZM_PO_NUM
-			SZM->(MsUnlock())
-
-		EndDo
-		oArq:Close()
-	EndIF
-
-	If cErr <> ""
-		ApMsgStop("Erros encontrados: " + cErr, "CMVEIC01")
-	EndIF
-Return
-
-*/
-
-
-
 //----------------------------------------------------------------------------------
 
 
@@ -1267,25 +1357,7 @@ Static Function MontaSZM()
 		fErase(cArqSZM_2+OrdBagExt())
 	EndIF
 	
-	//cArqSZM_1 := CriaTrab(Nil, .F.)
-	//cArqSZM_2 := CriaTrab(Nil, .F.)
-	
 	dbUseArea(.t.,,cArqSZM,cWKSZM,.T.,.F.)
-
-	//IndRegua(cWKEW5,cArqEW5_1+OrdBagExt(),"EW5_INVOIC+EW5_CC+EW5_SI_NUM+EW5_PO_NUM+EW5_POSICA+EW5_COD_I+EW5_XCASE")
-	// ordena WKEW5 igual a tela padrao de invoice antecipada, para poder enumerar os itens corretamente
-	//IndRegua(cWKEW5,cArqEW5_2+OrdBagExt(),"EW5_INVOIC+EW5_PO_NUM+EW5_COD_I+EW5_SI_NUM+EW5_POSICA")
-	//SET INDEX TO (cArqEW5),(cArqEW5_2)
-	
-	//(cWKSZM)->(DBClearIndex() )
-	//DBCreateIndex(cWKSZM+'1', "EW5_INVOIC+EW5_CC+EW5_SI_NUM+EW5_PO_NUM+EW5_POSICA+EW5_COD_I+EW5_XCASE", {|| EW5_INVOIC+EW5_CC+EW5_SI_NUM+EW5_PO_NUM+EW5_POSICA+EW5_COD_I+EW5_XCASE})
-  	//DBCreateIndex(cWKSZM+'2', "EW5_INVOIC+EW5_PO_NUM+EW5_COD_I+EW5_SI_NUM+EW5_POSICA" , {|| EW5_INVOIC+EW5_PO_NUM+EW5_COD_I+EW5_SI_NUM+EW5_POSICA })
-
-	//dbSetIndex(cWKEW5+'1')
-	//dbSetIndex(cWKEW5+'2')
-	
-	
-	//(cWKSZM)->(dbSetOrder(1))
 
 	dbSelectArea(nArea)
 
@@ -1445,7 +1517,7 @@ endIf
 
 Return aAux
 /*
-Layout => 1
+Layout == 1
   CKD
 	LAYOUT 
 	[01] LOTE
@@ -1461,7 +1533,7 @@ Layout => 1
 	[11] PO
 	[12] unitizador
 
-Layout => 5 e Geral
+Layout == 5 e Geral
 
 	Lay-out do arquivo de importação
 	[01] SEQUENCIA DO ITEM
