@@ -48,16 +48,16 @@ Local aArea	      := GetArea()
          LIMPEZA->(dbGoTop())
          IF LIMPEZA->(!EOF())
             While LIMPEZA->(!EOF())
-               If SCR->(dbSeek(xFilial("SCR")+"CP"+LIMPEZA->CR_NUM))
-                  While SCR->(!EOF()) .AND. SCR->CR_FILIAL = LIMPEZA->CR_FILIAL .AND. SCR->CR_NUM = LIMPEZA->CR_NUM
-                     RecLock( ("SCR"), .F. )
+               While SCR->(!EOF()) .AND. SCR->CR_FILIAL = LIMPEZA->CR_FILIAL .AND. SCR->CR_NUM = LIMPEZA->CR_NUM
+                     If SCR->(dbSeek(xFilial("SCR")+"CP"+LIMPEZA->CR_NUM))
+                        RecLock( ("SCR"), .F. )
                         SCR->CR_XVLLIB := 0
                         MsUnlock()
+                     Endif
                      SCR->(dbSkip())
-                  EndDo
-               Endif
+               End
                LIMPEZA->(dbSkip())
-            ENDDO   
+            END   
          ENDIF
          LIMPEZA->(DbCloseArea())
 
@@ -85,18 +85,18 @@ Local aArea	      := GetArea()
                cQry1 := ChangeQuery(cQry1)
                DbUseArea(.T.,"TOPCONN",TCGENQRY(,,cQry1),"cVLIBER",.T.,.T.)
                
-               If SCR->(dbSeek(xFilial("SCR")+"CP"+CONTRATO->C3_NUM))
-                  While SCR->(!EOF()) .AND. SCR->CR_FILIAL = CONTRATO->C3_FILIAL .AND. SCR->CR_NUM = CONTRATO->C3_NUM
+               While SCR->(!EOF()) .AND. SCR->CR_FILIAL = CONTRATO->C3_FILIAL .AND. SCR->CR_NUM = CONTRATO->C3_NUM
+                  If SCR->(dbSeek(xFilial("SCR")+"CP"+CONTRATO->C3_NUM))
                      RecLock( ("SCR"), .F. )
-                        SCR->CR_XVLLIB := cVLIBER->nTOTAL
+                     SCR->CR_XVLLIB := cVLIBER->nTOTAL
                      MsUnlock()
-                     SCR->(dbSkip())
-                  EndDo
-               Endif
+                  Endif
+                  SCR->(dbSkip())
+               End
 
                cVLIBER->(DbCloseArea())
                
-               //Ler o próximo contrato
+               //Ler o prÃ³ximo contrato
                CONTRATO->(dbSkip())
             END   
             SCR->(dbSeek(cChave))
