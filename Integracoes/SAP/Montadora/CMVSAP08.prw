@@ -446,7 +446,7 @@ user function CMVSAP08( aParam )
 		
 					cUsu := Alltrim(Subs((cAliasCT2)->CT2_ORIGEM,9,15)) 
 					nPos := aScan( aSimple, {|aVet| aVet[2] == "textoCabecalhoDocumento" } )
-					xRet := oWsdl:SetValue( aSimple[nPos][1], IIf(!Empty((cAliasCT2)->CT2_XNOME),Alltrim((cAliasCT2)->CT2_XNOME),IIf(!Empty(cUsu),cUsu,Embaralha((cAliasCT2)->CT2_USERGI)))) //textoCabecalhoDocumento - Nome do usuário que efetuou o lançamento
+					xRet := oWsdl:SetValue( aSimple[nPos][1] , Substr( IIf(!Empty((cAliasCT2)->CT2_XNOME),Alltrim((cAliasCT2)->CT2_XNOME),IIf(!Empty(cUsu),cUsu,Embaralha((cAliasCT2)->CT2_USERGI))),1,25))
 					If !xRet
 						U_ZF12GENSAP((cAliasQry)->Z7_FILIAL,(cAliasQry)->Z7_XTABELA,(cAliasQry)->Z7_XCHAVE,(cAliasQry)->Z7_XSEQUEN,"E","textoCabecalhoDocumento Erro: " + oWsdl:cError)
 						(cAliasQry)->(dbSkip())
@@ -481,7 +481,7 @@ user function CMVSAP08( aParam )
 							Exit
 						EndIf
 	
-						nPos := aScan( aSimple, {|aVet| aVet[2] == "divisao" .and. aVet[5] == "ContabilRequest#1.documentos#1.AccountGL#" + Alltrim(Str(nz)) } )// divisao DE X PARA  TOTVS FILIAL X DIVISÃO ????
+						nPos := aScan( aSimple, {|aVet| aVet[2] == "divisao" .and. aVet[5] == "ContabilRequest#1.documentos#1.AccountGL#" + Alltrim(Str(nz)) } )// divisao DE X PARA – TOTVS FILIAL X DIVISÃO ????
 						xRet := oWsdl:SetValue( aSimple[nPos][1], cXDiv   )
 						If !xRet
 							U_ZF12GENSAP((cAliasQry)->Z7_FILIAL,(cAliasQry)->Z7_XTABELA,(cAliasQry)->Z7_XCHAVE,(cAliasQry)->Z7_XSEQUEN,"E","divisao Erro: " + oWsdl:cError)
