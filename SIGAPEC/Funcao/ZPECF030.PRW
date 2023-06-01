@@ -302,7 +302,7 @@ Begin Sequence
 	U_FaMyBar(Self:oPanelDados, , , , ;
           {{"" 	, "Kardex Entrada/Saida", {||/*Self:PesqSKU(_cPerg)*/}}}, .F., .F.)	 
   	U_FaMyBar(Self:oPanelDados, , , , ;
-          {{"" 	, "Orçamento                 ", {||/*Self:PesqBKP(_cPerg)*/}}}, .F., .F.)	 
+          {{"" 	, "Orçamento                 ", {||ZPECF30ORC()}}}, .F., .F.)	 
 	U_FaMyBar(Self:oPanelDados, , , , ;
           {{"" 	, "Picking                        ", {||ZPECF30PIK()}}}, .F., .F.)	 
 End Sequence
@@ -1752,7 +1752,7 @@ Return _lRet
 @author DAC denilso
 @since 12/05/2023
 @version 1.0
-@return _lRet, Logico
+@return Nil
 @type User function
 /*/
 User Function ZPECF30P()
@@ -1768,7 +1768,7 @@ Return NIL
 @author DAC denilso
 @since 24/05/2023
 @version 1.0
-@return _lRet, Logico
+@return Nil
 @type User function
 /*/
 User Function ZPECF30E()
@@ -1838,13 +1838,34 @@ Return Nil
 
 
 
-
+/*/{Protheus.doc} ZPECF30PIK
+//Mostrar Picking de itens
+@author DAC denilso
+@since 26/05/2023
+@version 1.0
+@return Nil
+@type User function
+/*/
 Static Function ZPECF30PIK()
 Local _cCodProd     := AllTrim(MV_PAR01)
 Local _lPickAll		:= .F. 		//mostra todos os itens relacionados a este picking, se .F. mostrata somente o código do produto (_cCodProd)
 Local _lMostraCF	:= .F.   	//Mostra itens Faturados e Cancelados
-
-FWMsgRun(, {|oSay| U_ZPECF031(_cCodProd, _lPickAll, _lMostraCF) }) 
+	FWMsgRun(, {|oSay| U_ZPECF031(_cCodProd, _lPickAll, _lMostraCF) }) 
 Return Nil
 
 
+
+/*/{Protheus.doc} ZPECF30ORC
+//Mostrar Orcamentos de itens
+@author DAC denilso
+@since 01/06/2023
+@version 1.0
+@return Nil
+@type User function
+/*/
+Static Function ZPECF30ORC()
+Local _cCodProd     := AllTrim(MV_PAR01)
+Local _lPickAll		:= .F. 		//mostra todos os itens relacionados a este picking, se .F. mostrata somente o código do produto (_cCodProd)
+Local _lMostraCF	:= .F.   	//Mostra itens Faturados e Cancelados
+	FWMsgRun(, {|oSay| U_ZPECF032(_cCodProd, _lPickAll, _lMostraCF) }) 
+Return Nil

@@ -2077,8 +2077,9 @@ Local _nStatus
 Local _lRet		
 
 Begin Sequence
-	_lRet := !U_ZGENUSER( RetCodUsr() ,"ZPECF13H" ,.T.)
+	_lRet := U_ZGENUSER( RetCodUsr() ,"ZPECF13H" ,.T.)
 	If !_lRet
+		_lRet := .f.
 		Break	
 	EndIf
 
@@ -2144,6 +2145,7 @@ Local _lRet
 Begin Sequence
 	_lRet := U_ZGENUSER( RetCodUsr() ,"ZPECF13H" ,.T.)
 	If !_lRet
+		_lRet := .f.
 		Break	
 	EndIf
 	

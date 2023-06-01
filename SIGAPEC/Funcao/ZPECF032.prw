@@ -7,43 +7,47 @@
 
 #define CRLF chr(13) + chr(10)  
 
-/*/{Protheus.doc} ZPECF031
-Visualizar Picking de itens 
+/*/{Protheus.doc} ZPECF032
+Viualizar Orçamentos de Itens 
 @author     DAC - Denilso 
 @since      26/05/2023
 @version    1.0
 @obs        Tela esta relacionada com a funcionalidade ZPECF030 a mesma poderá ser colocada também no menu com a chamada ZPECF032 caso seja necessário adaptar parametros para a procura  
-
 /*/
 
 
 
-User Function ZPECF031(_cCodProd, _lPickAll, _lMostraCF)
+User Function ZPECF032(_cCodProd, _lPickAll, _lMostraCF)
 Local _aArea := GetArea()
 
 Default _cCodProd   := Space(Len(VS3->VS3_CODITE))
 Default _lPickAll   := .T.
 Default _lMostraCF  := .T.
 
-    ZPECF031PR(_cCodProd, _lPickAll, _lMostraCF)
+    ZPECF032PR(_cCodProd, _lPickAll, _lMostraCF)
 
 RestArea(_aArea)
 Return Nil
 
 
 
-Static Function ZPECF031PR(_cCodProd, _lPickAll, _lMostraCF)
+Static Function ZPECF032PR(_cCodProd, _lPickAll, _lMostraCF)
 Local _aBrwFil		:= {}
 Local _aStru         := {}
 Local _aCampos      := {}
 Local _cWhere       := ""
-Local _cWhereSZK    := ""
+Local _cWherevs1    := ""
 Local _cQuery       := ""
 Local _cTitulo      := ""
+Local _cFaseConf 	:= Alltrim(GetNewPar("MV_MIL0095","4")) // Fase de Conferencia e Separacao
+Local _cFaseOrc 	:= AllTrim(GetNewPar("MV_FASEORC","023R45F"))
+Local _cFase
+Local _cFasePrc
 Local _aTamSx3
 Local _cAliasPesq    //:= GetNextAlias()
 Local _ObrW         
 Local _nPos
+Local _nPosCpo
 Local _lInicio
 
 Default _cCodProd   := Space(Len(VS3->VS3_CODITE))
@@ -51,7 +55,26 @@ Default _lPickAll   := .T.
 Default _lMostraCF  := .T.
     
 Begin Sequence
-    _cTitulo      := "Posição Picking por Produto"
+	//Definir as fases que serão atendidas no processo
+	_nPosCpo := AT(_cFaseConf, _cFaseOrc)
+	If _nPosCpo == 0 
+		MSGINFO( "Não existe fase de orçamento no parâmetro indicativo de Fase", "[ZPECF032PR] - Atenção" )
+		Break
+	Endif
+	//identifico os status do orçamento (fase) para trazer na tela
+	_cFase := SubsTr(_cFaseOrc, 1, _nPosCpo -1)
+	If Empty(_cFase) 
+		MSGINFO( "Não localizado fase de orçamento no parâmetro indicação de Fase", "[ZPECF032PR] - Atenção" )
+		Break
+	Endif
+    _cFasePrc   := ""
+    For _nPos := 1 To LEN( _cFase )
+        _cFasePrc   += SubsTr(_cFase,_nPos,1)+";"
+    Next _nPos
+    //_cFasePrc := SubsTr(_cFasePrc,1, Len(_cFasePrc)-1)
+    _cFasePrc := SubsTr(_cFasePrc,1, Len(_cFasePrc))
+
+    _cTitulo      := "Posição Orçamento por Produto"
     //implemento com o nome e o codigo do produto 
     If !Empty(_cCodProd)
         SB1->(DbSetOrder(1)) 
@@ -65,27 +88,17 @@ Begin Sequence
 
     _aCampos := {}
     Aadd( _aCampos, {"VS3", "VS3_QTDITE" ,.T.})
+    Aadd( _aCampos, {"VS3", "VS3_QTDINI" ,.T.})
+    Aadd( _aCampos, {"VS1", "VS1_STATUS" ,.F.})
     Aadd( _aCampos, {"VS3", "VS3_NUMORC" ,.T.})
     Aadd( _aCampos, {"VS3", "VS3_SEQUEN" ,.T.})
-    Aadd( _aCampos, {"VS3", "VS3_XPICKI" ,.T.})
-    Aadd( _aCampos, {"SZK", "ZK_SEQREG"  ,.T.})
-    If SZK->(FieldPos("ZK_DTGERPI")) > 0
-        Aadd( _aCampos, {"SZK", "ZK_DTGERPI",.T.})
-    EndIf
-    Aadd( _aCampos, {"SZK", "ZK_DTRECPI" ,.T.})
- 	If SZK->(FieldPos("ZK_USGERPI")) > 0
-        Aadd( _aCampos, {"SZK", "ZK_USGERPI",.T.})
-    EndIf
-    Aadd( _aCampos, {"SA1", "A1_COD"     ,.F.})
-    Aadd( _aCampos, {"SA1", "A1_LOJA"    ,.F.})
-    Aadd( _aCampos, {"SA1", "A1_NREDUZ"  ,.T.})
-    Aadd( _aCampos, {"SZK", "ZK_STATUS"  ,.F.})
-    Aadd( _aCampos, {"VS3", "VS3_CODITE" ,If( Empty(_cCodProd),.T.,.F.) })
-    Aadd( _aCampos, {"VS3", "VS3_FILIAL" ,.F.})
-    //Campos não constantes no dicionário
- 	aAdd( _aCampos, {"SZK","PK_STATUS", "C","Status Picking", 10, 0, "@!",.T.})
+    Aadd( _aCampos, {"VS1", "VS1_XTPPED" ,.F.})
+    Aadd( _aCampos, {"VS1", "VS1_DATORC" ,.T.})
+    Aadd( _aCampos, {"VS1", "VS1_XPVAW"  ,.T.})
     //Campos que serao incluídos no browse mas criados na tabela
- 	aAdd( _aCampos, {"VS1","RECNOVS1" , "N","Recno VS1"     , 10, 0, "@!",.F. /*não ncluir no browse*/})
+   	aAdd( _aCampos, {"VS1", "ORC_STATUS" , "C","Status Orc.", 30, 0, "@!",.T.})
+ 	aAdd( _aCampos, {"VS1", "RECNOVS1"   , "N","Recno VS1"  , 10, 0, "@!",.F. /*não ncluir no browse*/})
+   	aAdd( _aCampos, {"VX5", "VX5_DESCRI" , "C","Tipo"       , 30, 0, "@!",.T.})
     
     _aBrwFil    := {}
     _aStru      := {}  //Estrutura do Banco
@@ -118,28 +131,28 @@ Begin Sequence
 
     _oTable := FWTemporaryTable():New()
     _oTable:SetFields(_aStru)
-    _oTable:AddIndex("INDEX1", {"VS3_XPICKI", "VS3_NUMORC", "VS3_SEQUEN"} )
+    _oTable:AddIndex("INDEX1", {"VS3_NUMORC", "VS3_SEQUEN"} )
     _oTable:Create()
     _cAliasPesq := _oTable:GetAlias()
 
     _cTable := _oTable:GetRealName()
 
 	_cWhere     := ""
-    _cWhereSZK  := ""
+    _cWhereVS1  := ""
     //Somente picking deste produto
    
 	If !Empty(_cCodProd) .And. !_lPickAll
 		_cWhere +=   " AND VS3.VS3_CODITE = '"+_cCodProd+"'"+ CRLF
 	//indica se trara todos os demais produtos do Pincking quando estiver indicado produto
     ElseIf !Empty(_cCodProd) .And. _lPickAll
-        _cWhereSZK += "AND  (   SELECT DISTINCT VS3A.VS3_CODITE "+ CRLF
-        _cWhereSZK += "         FROM VS3020 VS3A " + CRLF
-        _cWhereSZK += "         WHERE VS3A.VS3_XPICKI  =  SZK.ZK_XPICKI "+ CRLF
-        _cWhereSZK += "             AND VS3A.VS3_CODITE =  '"+_cCodProd+"') <> ' ' "+ CRLF
+        _cWhereVS1 += "AND  (   SELECT DISTINCT VS3A.VS3_CODITE "+ CRLF
+        _cWhereVS1 += "         FROM VS3020 VS3A " + CRLF
+        _cWhereVS1 += "         WHERE VS3A.VS3_NUMORC  =  VS1.VS1_NUMORC "+ CRLF
+        _cWhereVS1 += "             AND VS3A.VS3_CODITE =  '"+_cCodProd+"') <> ' ' "+ CRLF
 	Endif
     //indica que mostra cancelado e faturado
     If !_lMostraCF
-		_cWhereSZK += "	AND SZK.ZK_STATUS NOT IN ('C','F') "
+        _cFasePrc += "C;F" 
     EndIf
 
     _cQuery := " INSERT INTO "+_cTable+"                                                                                    "+(Chr(13)+Chr(10))
@@ -163,41 +176,50 @@ Begin Sequence
             Endif
         Endif 
     Next _nPos       
+
     //Campos não normatizados pelo dicionário 
     _cQuery += "        , CASE "+ CRLF
-	_cQuery += "             WHEN  SZK.ZK_STATUS = 'A'   THEN 'ABERTO   ' "+ CRLF
-    _cQuery += "             WHEN  SZK.ZK_STATUS = 'B'   THEN 'BLOQUEADO' "+ CRLF
-    _cQuery += "             WHEN  SZK.ZK_STATUS = 'C'   THEN 'CANCELADO' "+ CRLF
-	_cQuery += "             WHEN  SZK.ZK_STATUS = 'E'   THEN 'ENVIADO  ' "+ CRLF
-    _cQuery += "             WHEN  SZK.ZK_STATUS = 'F'   THEN 'FATURADO ' "+ CRLF
+	_cQuery += "             WHEN  VS1.VS1_STATUS = '0'   THEN '"+Upper("Digitado")                 +"' "+ CRLF
+    _cQuery += "             WHEN  VS1.VS1_STATUS = '2'   THEN '"+Upper("Margem Pendente")          +"' "+ CRLF
+    _cQuery += "             WHEN  VS1.VS1_STATUS = '3'   THEN '"+Upper("Avaliacao de Credito")     +"' "+ CRLF
+    _cQuery += "             WHEN  VS1.VS1_STATUS = '4'   THEN '"+Upper("Carregamento")             +"' "+ CRLF
+    _cQuery += "             WHEN  VS1.VS1_STATUS = 'S'   THEN '"+Upper("Aguardando Lib.Diverg.")   +"' "+ CRLF
+	_cQuery += "             WHEN  VS1.VS1_STATUS = 'RT'  THEN '"+Upper("Aguardando Reserva")       +"' "+ CRLF
+    _cQuery += "             WHEN  VS1.VS1_STATUS = 'F'   THEN '"+Upper("liberação p/ faturamento") +"' "+ CRLF
+    _cQuery += "             WHEN  VS1.VS1_STATUS = 'P'   THEN '"+Upper("Pendente para O.S.")       +"' "+ CRLF
+    _cQuery += "             WHEN  VS1.VS1_STATUS = 'L'   THEN '"+Upper("Liberado para O.S.")       +"' "+ CRLF
+    _cQuery += "             WHEN  VS1.VS1_STATUS = 'I'   THEN '"+Upper("Importado para O.S.")      +"' "+ CRLF
+    _cQuery += "             WHEN  VS1.VS1_STATUS = 'C'   THEN '"+Upper("cancelado")                +"' "+ CRLF
+    _cQuery += "             WHEN  VS1.VS1_STATUS = 'X'   THEN '"+Upper("Faturado")                 +"' "+ CRLF
     _cQuery += "         ELSE 'STATUS NÃO INFORMADO' "+ CRLF
-    _cQuery += "         END AS PK_STATUS "+ CRLF
+    _cQuery += "         END AS ORC_STATUS "+ CRLF
+    _cQuery += "        ,SUBSTR(VX5.VX5_DESCRI,1,30)   AS  VX5_DESCRI "  + CRLF
     _cQuery += "        ,VS1.R_E_C_N_O_     AS  RECNOVS1 "  + CRLF
     _cQuery += "        ,' '                AS  D_E_L_E_T_ "+ CRLF
     _cQuery += "        ,ROW_NUMBER() OVER (ORDER BY VS3_XPICKI, VS3_NUMORC, VS3_SEQUEN)     AS  R_E_C_N_O_ "+ CRLF    
-    
 	_cQuery += "FROM "+RetSqlName("VS3")+" VS3 "+ CRLF
 	_cQuery += "JOIN "+RetSqlName("VS1")+" VS1 "+ CRLF
 	_cQuery += "	ON 	VS1.D_E_L_E_T_ = ' ' "+ CRLF
 	_cQuery += "	AND VS1.VS1_FILIAL	= '"+FwXFilial("VS1")+"' " + CRLF
 	_cQuery += "	AND VS1.VS1_NUMORC 	= VS3.VS3_NUMORC "+ CRLF
 	_cQuery += "	AND VS1.VS1_TIPORC 	= '1' "+ CRLF
+	_cQuery += "	AND VS1.VS1_STATUS IN "+ FormatIn(_cFasePrc,";") +" "+ CRLF
+    _cQuery +=      _cWhereVS1
 	_cQuery += "JOIN "+RetSqlName("SA1")+" SA1 "+ CRLF
 	_cQuery += "	ON 	SA1.D_E_L_E_T_ = ' ' "+ CRLF
 	_cQuery += "	AND SA1.A1_FILIAL	= '"+FwXFilial("SA1")+"' "+ CRLF
 	_cQuery += "	AND SA1.A1_COD 	    = VS1.VS1_CLIFAT "+ CRLF
 	_cQuery += "	AND SA1.A1_LOJA 	= VS1.VS1_LOJA "+ CRLF
-	_cQuery += "JOIN "+RetSqlName("SZK")+" SZK "+ CRLF
-	_cQuery += "	ON 	SZK.D_E_L_E_T_ = ' ' " + CRLF
-	_cQuery += "	AND SZK.ZK_FILIAL	= '"+FwXFilial("SZK")+"' "+ CRLF
-	_cQuery += "	AND SZK.ZK_XPICKI 	= VS3.VS3_XPICKI "+ CRLF
-	_cQuery += "	AND SZK.ZK_NF 		= ' ' "+ CRLF
-	_cQuery +=      _cWhereszk 
+    _cQuery += "LEFT JOIN "+RetSqlName("VX5")+" VX5 "+ CRLF
+	_cQuery += "	ON 	VX5.D_E_L_E_T_ = ' ' " + CRLF
+	_cQuery += "	AND VX5.VX5_FILIAL = '"+FwXFilial("SA1")+"' "+ CRLF
+	_cQuery += "	AND VX5.VX5_CHAVE = 'Z03' "+ CRLF
+	_cQuery += "	AND VX5.VX5_CODIGO = VS1.VS1_XTPPED "
 	_cQuery += "WHERE  VS3.D_E_L_E_T_ = ' ' "
 	_cQuery += "	AND VS3.VS3_FILIAL	= '"+FwXFilial("VS3")+"' "+ CRLF
 	_cQuery += "	AND VS3.VS3_XPICKI 	<> ' ' "+ CRLF
     _cQuery +=      _cWhere
-    _cQuery += "ORDER BY VS3.VS3_XPICKI, VS3.VS3_NUMORC, VS3.VS3_SEQUEN"    
+    _cQuery += "ORDER BY VS3.VS3_NUMORC, VS3.VS3_SEQUEN"    
 
 	nStatus := TCSqlExec(_cQuery)
     If (nStatus < 0)
@@ -207,7 +229,7 @@ Begin Sequence
     
     (_cAliasPesq)->(DbGoTop())
 	If (_cAliasPesq)->(Eof())
-		MSGINFO( "Não existe Picking pendente para este item", "Atenção" )
+		MSGINFO( "Não existe Orçamento pendente para este item", "Atenção" )
 		Break
 	Endif
 	DbSelectArea(_cAliasPesq)
@@ -248,15 +270,14 @@ Begin Sequence
 	_ObrW:SetDescription(_cTitulo)
     //Definimos a tabela que será exibida na Browse utilizando o método SetAlias
 //	//Legenda da grade, é obrigatório carregar antes de montar as colunas
-	_ObrW:AddLegend("ZK_STATUS = 'A' "  ,"YELLOW" 	   	,"Aberto")
-	_ObrW:AddLegend("ZK_STATUS = 'B'"   ,"RED"   		,"Boqueado")
-	_ObrW:AddLegend("ZK_STATUS = 'C'"   ,"BLACK"   		,"Cancelado")
-	_ObrW:AddLegend("ZK_STATUS = 'E'"   ,"GREEN"   	    ,"Enviado")
-	_ObrW:AddLegend("ZK_STATUS = 'F' "  ,"BLUE" 	   	,"Faturado")
-	_ObrW:AddLegend("ZK_STATUS = ' ' "  ,"WHITE" 	   	,"Sem Informação")
+	_ObrW:AddLegend("VS1_STATUS = '0' "  ,"YELLOW" 	   	,"Digitado")
+	_ObrW:AddLegend("VS1_STATUS = '2'"   ,"RED"   		,"Margem Pendente")
+	_ObrW:AddLegend("VS1_STATUS = '3'"   ,"BLACK"   	,"Avaliacao de Credito")
+	_ObrW:AddLegend("VS1_STATUS = 'F'"   ,"GREEN"       ,"liberação p/ faturamento")
+	_ObrW:AddLegend("VS1_STATUS = 'C' "  ,"BLUE" 	   	,"cancelado")
+	_ObrW:AddLegend("VS1_STATUS = 'X ' " ,"WHITE" 	   	,"Sem Faturado")
 
-	_ObrW:AddButton("Visualiza Picking"		, { || FWMsgRun(, {|oSay| ZPECF031PK(_cAliasPesq,@_ObrW) }, "Picking"	, "Localizando Picking") },,,, .F., 2 )
-	_ObrW:AddButton("Visualiza Orçamento"  	, { || FWMsgRun(, {|oSay| ZPECF031OP(_cAliasPesq,@_ObrW) }, "Orçamento", "Localizando Orçamento") },,,, .F., 2 )
+	_ObrW:AddButton("Visualiza Orçamento"  	, { || FWMsgRun(, {|oSay| ZPECF032OP(_cAliasPesq,@_ObrW) }, "Orçamento", "Localizando Orçamento") },,,, .F., 2 )
 
    //Ativamos a classe
     _ObrW:Refresh(.T.)
@@ -268,7 +289,6 @@ Begin Sequence
 //           		WHEN  ZK.ZK_STATUS = 'C' THEN 'CANCELADO' 
 //           		WHEN  ZK.ZK_STATUS = 'E' THEN 'ENVIADO' 
 //           		WHEN  ZK.ZK_STATUS = 'F' THEN 'FATURADO' 
-		
 
 End Sequence
 If Select((_cAliasPesq)) <> 0
@@ -278,30 +298,15 @@ If Select((_cAliasPesq)) <> 0
 Endif      
 Return Nil
 
-/*/{Protheus.doc} ZPECF031PK
-Mostrat Picking 
-@author DAC - Denilso 
-@since 26/05/2023
-@version 2.0
-/*/
-Static Function ZPECF031PK(_cAliasPesq,_ObrW)
-Local _lRet     := .T.
-Local _aArea := GetArea()
-//    _nPos := _ObrW:nat 
-    If _lRet 
-        U_ZPECF013(FWxFilial("SZK"),(_cAliasPesq)->VS3_XPICKI)
-    EndIf
-    RestArea(_aArea)
-Return Nil
 
 
-/*/{Protheus.doc} ZPECF031OP
+/*/{Protheus.doc} ZPECF032OP
 Mostrat Orçamento 
 @author DAC - Denilso 
 @since 31/05/2023
-@version 2.0
+@version 1.0
 /*/
-Static Function ZPECF031OP(_cAliasPesq,_ObrW)
+Static Function ZPECF032OP(_cAliasPesq,_ObrW)
 Local _lRet     := .T.
 Local _nOpc     := 2
 Local _aArea := GetArea()
