@@ -64,11 +64,11 @@ user function CMVSAP08( aParam )
 		RpcSetEnv( cEmpJob , cFilJob )
 
 		If !LockByName("CMVSAP08")
-			Alert("JOB j· em ExecuÁ„o : CMVSAP08 " + DTOC(dDATABASE) + " - " + TIME() )
+			Alert("JOB j√° em Execu√ß√£o : CMVSAP08 " + DTOC(dDATABASE) + " - " + TIME() )
 			RpcClearEnv()
 			Return
 		Else
-			Conout("Conex„o realizada com sucesso : CMVSAP08 " + DTOC(dDATABASE) + " - " + TIME() )
+			Conout("Conex√£o realizada com sucesso : CMVSAP08 " + DTOC(dDATABASE) + " - " + TIME() )
 		EndIf
 	EndIF
 	
@@ -79,8 +79,8 @@ user function CMVSAP08( aParam )
 	cUserProxy	:= allTrim( superGetMv( "CAOAPROUSE"	, , "T-RODRIGO.SALOMAO"	) )	// Usuario do Proxy
 	cPassProxy	:= allTrim( superGetMv( "CAOAPROPAS"	, , "caoa2019**"		) )	// Senha do Proxy
 	cUrl		:= allTrim( superGetMv( "CAOASAP08A"	, , "http://10.120.40.141:53400/dir/wsdl?p=ic/7cd73db8a3283b5cbbbf1fe55d2f205c") )
-	nDiasErro	:= superGetMv( "CAOASAP01C"	, , 3 )  // qtde de dias para reprocessar registros com status de erro, apÛs tera que verificar manualnente
-	nDiasProces	:= superGetMv( "CAOASAP01D"	, , 3 )  // qtde de dias para processar registros n„o processados
+	nDiasErro	:= superGetMv( "CAOASAP01C"	, , 3 )  // qtde de dias para reprocessar registros com status de erro, ap√≥s tera que verificar manualnente
+	nDiasProces	:= superGetMv( "CAOASAP01D"	, , 3 )  // qtde de dias para processar registros n√£o processados
 		
 	//Montagem da Query para pegar Itens da Fila
 
@@ -157,7 +157,7 @@ user function CMVSAP08( aParam )
 		cSerie := ""
 		
 		/*
-		//Exclus„o SAP
+		//Exclus√£o SAP
 		If (cAliasQry)->Z7_XOPESAP == 2 // 05/09/19
 			If (cAliasQry)->Z7_XSEQUEN <> '001' .and. !U_ZF13GENSAP((cAliasQry)->Z7_FILIAL,(cAliasQry)->Z7_XTABELA,(cAliasQry)->Z7_XCHAVE,(cAliasQry)->Z7_XSEQUEN)
 				(cAliasQry)->(dbSkip())
@@ -186,7 +186,7 @@ user function CMVSAP08( aParam )
 			Endif	
 		Endif	
 		
-		//Exclus„o SAP
+		//Exclus√£o SAP
 		If (cAliasQry)->Z7_XOPESAP == 2
 			//cMsgSoap := U_ZF14GENSAP((cAliasQry)->Z7_FILIAL,(cAliasQry)->Z7_XTABELA,(cAliasQry)->Z7_XCHAVE,(cAliasQry)->Z7_XSEQUEN,{{"motivoOperacao","2"}})
 			cMsgSoap := U_ZF15GENSAP((cAliasQry)->Z7_FILIAL,(cAliasQry)->Z7_XTABELA,(cAliasQry)->Z7_XCHAVE,(cAliasQry)->Z7_XSEQUEN,{{"motivoOperacao","2"}})
@@ -213,7 +213,7 @@ user function CMVSAP08( aParam )
 							//If SF2->(dbSeek(Subs(CT2->CT2_KEY,1,TamSX3("F2_FILIAL")[1]+TamSX3("F2_DOC")[1]+TamSX3("F2_SERIE")[1]+TamSX3("F2_CLIENTE")[1]+TamSX3("F2_LOJA")[1])))
 							If SF2->(dbSeek(SD2->D2_FILIAL+SD2->D2_DOC+SD2->D2_SERIE+SD2->D2_CLIENTE+SD2->D2_LOJA))
 								If !U_ZF09GENSAP(SF2->F2_ESPECIE,SF2->F2_CHVNFE,SF2->F2_FIMP,SF2->F2_DOC,SF2->F2_SERIE)
-									U_ZF12GENSAP((cAliasQry)->Z7_FILIAL,(cAliasQry)->Z7_XTABELA,(cAliasQry)->Z7_XCHAVE,(cAliasQry)->Z7_XSEQUEN,"E","[CMVSAP08] - Envio movimento SAP, Nota Fiscal n„o autorizada na Sefaz. NF :"+Alltrim(SF2->F2_DOC)+"/"+Alltrim(SF2->F2_SERIE)," ")
+									U_ZF12GENSAP((cAliasQry)->Z7_FILIAL,(cAliasQry)->Z7_XTABELA,(cAliasQry)->Z7_XCHAVE,(cAliasQry)->Z7_XSEQUEN,"E","[CMVSAP08] - Envio movimento SAP, Nota Fiscal n√£o autorizada na Sefaz. NF :"+Alltrim(SF2->F2_DOC)+"/"+Alltrim(SF2->F2_SERIE)," ")
 									(cAliasQry)->(dbSkip())
 									Loop
 								Endif
@@ -231,7 +231,7 @@ user function CMVSAP08( aParam )
 								SF1->(dbSetOrder(1))
 								If SF1->(dbSeek(SD1->D1_FILIAL+SD1->D1_DOC+SD1->D1_SERIE+SD1->D1_FORNECE+SD1->D1_LOJA))
 									If !U_ZF09GENSAP(SF1->F1_ESPECIE,SF1->F1_CHVNFE,SF1->F1_FIMP,SF1->F1_DOC,SF1->F1_SERIE)
-										U_ZF12GENSAP((cAliasQry)->Z7_FILIAL,(cAliasQry)->Z7_XTABELA,(cAliasQry)->Z7_XCHAVE,(cAliasQry)->Z7_XSEQUEN,"E","[CMVSAP08] - Envio movimento SAP, Nota Fiscal n„o autorizada na Sefaz. NF :"+Alltrim(SF1->F1_DOC)+"/"+Alltrim(SF1->F1_SERIE)," ")
+										U_ZF12GENSAP((cAliasQry)->Z7_FILIAL,(cAliasQry)->Z7_XTABELA,(cAliasQry)->Z7_XCHAVE,(cAliasQry)->Z7_XSEQUEN,"E","[CMVSAP08] - Envio movimento SAP, Nota Fiscal n√£o autorizada na Sefaz. NF :"+Alltrim(SF1->F1_DOC)+"/"+Alltrim(SF1->F1_SERIE)," ")
 										(cAliasQry)->(dbSkip())
 										Loop
 									Endif
@@ -270,7 +270,7 @@ user function CMVSAP08( aParam )
 			
 			oWsdl:bNoCheckPeerCert := .T.
 
-			oWsdl:lUseNSPrefix := .T. //Define se vai usar prefixo de namespace antes dos nomes das tags na mensagem SOAP que ser· enviada.
+			oWsdl:lUseNSPrefix := .T. //Define se vai usar prefixo de namespace antes dos nomes das tags na mensagem SOAP que ser√° enviada.
 
 			oWsdl:SetAuthentication( cUser, cPass )
 			lOk := oWsdl:GetAuthentication( cUser, cPass )
@@ -294,7 +294,7 @@ user function CMVSAP08( aParam )
 			EndIf
 			//varinfo( "", aOps )
 
-			// Define a operaÁ„o
+			// Define a opera√ß√£o
 			xRet := oWsdl:SetOperation( aOps[1][1] ) // "Contabil_Out"
 			If !xRet 
 				Conout("SetOperation ERROR: "  + oWsdl:cError)
@@ -334,7 +334,7 @@ user function CMVSAP08( aParam )
 					//--------------------------------------------------------Adicionar campos Nescessarios
 					cXDiv := Right( AllTrim(xEncCGC((cAliasCT2)->CT2_FILIAL)), 4 )
 					
-					// Define o valor de cada par‚meto necess·rio
+					// Define o valor de cada par√¢meto necess√°rio
 					nPos := aScan( aSimple, {|aVet| aVet[2] == "sistema" } )
 					xRet := oWsdl:SetValue( aSimple[nPos][1], "TOTVS" )	//sistema
 					If !xRet
@@ -446,14 +446,14 @@ user function CMVSAP08( aParam )
 		
 					cUsu := Alltrim(Subs((cAliasCT2)->CT2_ORIGEM,9,15)) 
 					nPos := aScan( aSimple, {|aVet| aVet[2] == "textoCabecalhoDocumento" } )
-					xRet := oWsdl:SetValue( aSimple[nPos][1] , Substr( IIf(!Empty((cAliasCT2)->CT2_XNOME),Alltrim((cAliasCT2)->CT2_XNOME),IIf(!Empty(cUsu),cUsu,Embaralha((cAliasCT2)->CT2_USERGI))),1,25))
+					xRet := oWsdl:SetValue( aSimple[nPos][1], IIf(!Empty((cAliasCT2)->CT2_XNOME),Alltrim((cAliasCT2)->CT2_XNOME),IIf(!Empty(cUsu),cUsu,Embaralha((cAliasCT2)->CT2_USERGI)))) //textoCabecalhoDocumento - Nome do usu√°rio que efetuou o lan√ßamento
 					If !xRet
 						U_ZF12GENSAP((cAliasQry)->Z7_FILIAL,(cAliasQry)->Z7_XTABELA,(cAliasQry)->Z7_XCHAVE,(cAliasQry)->Z7_XSEQUEN,"E","textoCabecalhoDocumento Erro: " + oWsdl:cError)
 						(cAliasQry)->(dbSkip())
 						Loop
 					EndIf
 		
-					nPos := aScan( aSimple, {|aVet| aVet[2] == "motivoOperacao" } )//"1" - LanÁamento / "2" Estorno/Cancelamento
+					nPos := aScan( aSimple, {|aVet| aVet[2] == "motivoOperacao" } )//"1" - Lan√ßamento / "2" Estorno/Cancelamento
 					xRet := oWsdl:SetValue( aSimple[nPos][1], "1" )
 					If !xRet
 						U_ZF12GENSAP((cAliasQry)->Z7_FILIAL,(cAliasQry)->Z7_XTABELA,(cAliasQry)->Z7_XCHAVE,(cAliasQry)->Z7_XSEQUEN,"E","motivoOperacao Erro: " + oWsdl:cError)
@@ -481,7 +481,7 @@ user function CMVSAP08( aParam )
 							Exit
 						EndIf
 	
-						nPos := aScan( aSimple, {|aVet| aVet[2] == "divisao" .and. aVet[5] == "ContabilRequest#1.documentos#1.AccountGL#" + Alltrim(Str(nz)) } )// divisao DE X PARA ñ TOTVS FILIAL X DIVIS√O ????
+						nPos := aScan( aSimple, {|aVet| aVet[2] == "divisao" .and. aVet[5] == "ContabilRequest#1.documentos#1.AccountGL#" + Alltrim(Str(nz)) } )// divisao DE X PARA ¬ñ TOTVS FILIAL X DIVIS√ÉO ????
 						xRet := oWsdl:SetValue( aSimple[nPos][1], cXDiv   )
 						If !xRet
 							U_ZF12GENSAP((cAliasQry)->Z7_FILIAL,(cAliasQry)->Z7_XTABELA,(cAliasQry)->Z7_XCHAVE,(cAliasQry)->Z7_XSEQUEN,"E","divisao Erro: " + oWsdl:cError)
@@ -497,7 +497,7 @@ user function CMVSAP08( aParam )
 							Exit
 						EndIf
 	
-						nPos := aScan( aSimple, {|aVet| aVet[2] == "tipoDocumento" .and. aVet[5] == "ContabilRequest#1.documentos#1.AccountGL#" + Alltrim(Str(nz)) } )//tipoDocumento Ser· herdado do cabeÁalho ???
+						nPos := aScan( aSimple, {|aVet| aVet[2] == "tipoDocumento" .and. aVet[5] == "ContabilRequest#1.documentos#1.AccountGL#" + Alltrim(Str(nz)) } )//tipoDocumento Ser√° herdado do cabe√ßalho ???
 						xRet := oWsdl:SetValue( aSimple[nPos][1], cTipoDoc)
 						If !xRet
 							U_ZF12GENSAP((cAliasQry)->Z7_FILIAL,(cAliasQry)->Z7_XTABELA,(cAliasQry)->Z7_XCHAVE,(cAliasQry)->Z7_XSEQUEN,"E","tipoDocumento Erro: " + oWsdl:cError)
@@ -603,8 +603,8 @@ user function CMVSAP08( aParam )
 					EndIf
 					//--------------------------------------------------------Fim Campos
 				Else
-					Help("",1,"Envio movimento SAP",,"Movimento contabilizado com inconsistÍncia.",1,0)	
-					U_ZF12GENSAP((cAliasQry)->Z7_FILIAL,(cAliasQry)->Z7_XTABELA,(cAliasQry)->Z7_XCHAVE,(cAliasQry)->Z7_XSEQUEN,"E","[CMVSAP08] - Envio movimento SAP, Movimento contabilizado com inconsistÍncia."," ")
+					Help("",1,"Envio movimento SAP",,"Movimento contabilizado com inconsist√™ncia.",1,0)	
+					U_ZF12GENSAP((cAliasQry)->Z7_FILIAL,(cAliasQry)->Z7_XTABELA,(cAliasQry)->Z7_XCHAVE,(cAliasQry)->Z7_XSEQUEN,"E","[CMVSAP08] - Envio movimento SAP, Movimento contabilizado com inconsist√™ncia."," ")
 					(cAliasQry)->(dbSkip())
 					Loop
 				EndIf
@@ -624,11 +624,11 @@ user function CMVSAP08( aParam )
 					(cAliasQry)->(dbSkip())
 					Loop
 				Else
-					// Recupera os elementos de retorno, j· parseados
+					// Recupera os elementos de retorno, j√° parseados
 					cResp := oWsdl:GetParsedResponse()				
 					U_ZF12GENSAP((cAliasQry)->Z7_FILIAL,(cAliasQry)->Z7_XTABELA,(cAliasQry)->Z7_XCHAVE,(cAliasQry)->Z7_XSEQUEN,"A",cResp,cMsgSoap)
 					
-					//Exclus„o SAP
+					//Exclus√£o SAP
 					If !(cAliasQry)->Z7_XOPESAP == 2
 						// se envio foi com sucesso, verifica se jah tem registro gerado de cancelamento na sz7, e caso tenha grava o xml para envio
 						U_ZF17GENSAP((cAliasQry)->Z7_FILIAL,(cAliasQry)->Z7_XTABELA,(cAliasQry)->Z7_XCHAVE,(cAliasQry)->Z7_XSEQUEN,cMsgSoap)
@@ -637,9 +637,9 @@ user function CMVSAP08( aParam )
 			EndIf
 		else
 			If lIsBlind
-				Conout("Erro de Conex„o CMVSAP08 Error Http: " + Str(nStatuHttp) )
+				Conout("Erro de Conex√£o CMVSAP08 Error Http: " + Str(nStatuHttp) )
 			else
-				Alert("Erro de Conex„o Error Http: " + Str(nStatuHttp) )
+				Alert("Erro de Conex√£o Error Http: " + Str(nStatuHttp) )
 			endif
 		EndIf
 		(cAliasQry)->(dbSkip())
@@ -647,7 +647,7 @@ user function CMVSAP08( aParam )
 	
 	IF lIsBlind
 		RpcClearEnv()
-		Conout("Conex„o finalizada com sucesso : CMVSAP08 " + DTOC(dDATABASE) + " - " + TIME() )
+		Conout("Conex√£o finalizada com sucesso : CMVSAP08 " + DTOC(dDATABASE) + " - " + TIME() )
 	Endif	
 	
 return
@@ -666,7 +666,7 @@ Static Function xQryCt2(cxFil,cxChav)
 	Local cNextAlias := GetNextAlias()
 	local cQry		 := ""
 	
-	//Montagem da Query para ExtraÁ„o dos dados
+	//Montagem da Query para Extra√ß√£o dos dados
 	cQry := " SELECT " + CRLF
 	cQry += " CT2.CT2_CCC    , " + CRLF
 	cQry += " CT2.CT2_CCD    , " + CRLF
