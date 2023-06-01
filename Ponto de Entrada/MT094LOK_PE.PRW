@@ -38,9 +38,9 @@ Local aArea	      := GetArea()
          //Limpa o campo SCR->CR_XVLLIB para reprocessar os valores dos contratos de parcerias
          cChave := SCR->CR_FILIAL + SCR->CR_TIPO + SCR->CR_NUM
          cQry :=  ""
-         cQry :=  "  SELECT CR_FILIAL, CR_NUM  FROM " +  RetSQLName("SCR")   + " SCR "                        + CRLF
-         cQry +=  "  WHERE  SCR.D_E_L_E_T_  = ' '  AND SCR.CR_NUM =  '"      + cNUM  + "'"                    + CRLF
-         cQry +=  "  ORDER BY CR_FILIAL, CR_NUM             "                                                 + CRLF
+         cQry :=  "  SELECT CR_FILIAL, CR_NUM  FROM " +  RetSQLName("SCR")   + " SCR "               + CRLF
+         cQry +=  "  WHERE  SCR.D_E_L_E_T_  = ' '  AND SCR.CR_NUM =  '"      + cNUM  + "'"           + CRLF
+         cQry +=  "  ORDER BY CR_FILIAL, CR_NUM             "                                        + CRLF
          cQry := ChangeQuery(cQry)
          DbUseArea(.T.,"TOPCONN",TCGENQRY(,,cQry),"LIMPEZA",.T.,.T.)
 
