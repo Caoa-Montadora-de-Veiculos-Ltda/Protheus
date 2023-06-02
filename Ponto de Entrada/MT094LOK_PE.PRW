@@ -96,7 +96,7 @@ Local aArea	      := GetArea()
 
                cVLIBER->(DbCloseArea())
                
-               //Ler o prÃ³ximo contrato
+               //Ler o próximo contrato
                CONTRATO->(dbSkip())
             END   
             SCR->(dbSeek(cChave))
