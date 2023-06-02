@@ -1030,7 +1030,7 @@ Begin Sequence
 	_cQuery += " 	,	SA1.A1_XSTAFP 	= '" + Space(01) + "'" 		        + CRLF
 	_cQuery += " 	,	SA1.A1_XPEDFP 	= 0 " 		                        + CRLF
 	_cQuery += " 	,	SA1.A1_XVALBO 	= 0 " 		                        + CRLF
-	_cQuery += " 	,	SA1.A1_XBLQLC 	= '0'" 	                	        + CRLF
+	//_cQuery += " 	,	SA1.A1_XBLQLC 	= '0'" 	                	        + CRLF
 	_cQuery += " 	,	SA1.A1_XBLQVEN 	= '" + Space(01) + "'" 		        + CRLF
 	_cQuery += "WHERE SA1.D_E_L_E_T_    = ' '" 								+ CRLF
 	_cQuery += " 	AND SA1.A1_FILIAL   = '"	+ XFilial("SA1") +"'"  		+ CRLF	
@@ -1052,5 +1052,3 @@ Begin Sequence
 	End Transaction
 End Sequence
 Return _lRet
-
-
