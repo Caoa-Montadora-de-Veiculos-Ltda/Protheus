@@ -138,7 +138,7 @@ Begin Sequence
         _cWhereSZK += "             AND VS3A.VS3_CODITE =  '"+_cCodProd+"') <> ' ' "+ CRLF
 	Endif
     //indica que mostra cancelado e faturado
-    If !_lMostraCF
+    If _lMostraCF
 		_cWhereSZK += "	AND SZK.ZK_STATUS NOT IN ('C','F') "
     EndIf
 
@@ -256,7 +256,7 @@ Begin Sequence
 	_ObrW:AddLegend("ZK_STATUS = ' ' "  ,"WHITE" 	   	,"Sem Informação")
 
 	_ObrW:AddButton("Visualiza Picking"		, { || FWMsgRun(, {|oSay| ZPECF031PK(_cAliasPesq,@_ObrW) }, "Picking"	, "Localizando Picking") },,,, .F., 2 )
-	_ObrW:AddButton("Visualiza Orçamento"  	, { || FWMsgRun(, {|oSay| ZPECF031OP(_cAliasPesq,@_ObrW) }, "Orçamento", "Localizando Orçamento") },,,, .F., 2 )
+	_ObrW:AddButton("Visualiza Orçamento"  	, { || FWMsgRun(, {|oSay| U_XFVERORC(_cAliasPesq,@_ObrW) }, "Orçamento", "Localizando Orçamento") },,,, .F., 2 )  //função no ZPECFUNA
 
    //Ativamos a classe
     _ObrW:Refresh(.T.)
@@ -295,91 +295,6 @@ Local _aArea := GetArea()
 Return Nil
 
 
-/*/{Protheus.doc} ZPECF031OP
-Mostrat Orçamento 
-@author DAC - Denilso 
-@since 31/05/2023
-@version 2.0
-/*/
-Static Function ZPECF031OP(_cAliasPesq,_ObrW)
-Local _lRet     := .T.
-Local _nOpc     := 2
-Local _aArea := GetArea()
-Local _nReg
-//infelizmente é necessário carregar as variaveis abaixo para que abra a tela de orçamento DAC
-Private cCadastro := "Orçamento"
-Private aItensKit := {}
-Private aPedTransf := {}
-Private cGruFor   := "04" 										// Grupo de Formulas que podem ser utilizadas nos orcamentos
-Private lVAMCid  		:= GetNewPar("MV_CADCVAM","S") == "S" 	// Utiliza VAM (Cidades)?
-Private lRecompra  	:= .F.										// Indica se eh um orcamento para recompra
-Private lPassou := .f.											// Tratamento da mudanca de aba na funcao OX001MUDFOL()
-Private aIteRel := {{"","","",0,0,"","",""}}					// Vetor contendo os itens relacionados da listbox oLItRel
-Private aMemos1   := {{"VS1_OBSMEM","VS1_OBSERV"}}				// Observacao do Orcamento
-Private lAbortPrint	:= .f.										// Variavel de Aborto de Operacao
-Private lOrcJaRes := .f.
-Private dDatOrc := ctod("")
-//
-Private cMV_VERIORC := Alltrim(GetNewPar("MV_VERIORC","1"))
-Private lPediVenda := .f.
-Private lCancParc := .f.
-Private lAltPedVda := .f.
-Private lPVP := .f.
-Private lCancelPVP := .f.
-Private lFaturaPVP := .f.
-Private nUsadoPX01 := 0
-Private oPedido := DMS_Pedido():New()
-Private oSqlHlp := DMS_SqlHelper():New()
-Private oDpm    := DMS_Dpm():New()
-Private aNATrf  := {}
-Private	cVS1Status := VS1->VS1_STATUS
-Private cFaseOrc
-Private lInconveniente := (GetNewPar("MV_INCORC","N") == "S")
-Private lInconvObr     := (GetNewPar("MV_INCOBR","N") == "S")
-Private cIncDefault    := Alltrim(GetNewPar("MV_MIL0094",""))	// SEM INSTALAR
-// Variaveis de integracao
-Private aAutoCab := {} 											// Cabecalho do Orcamento (VS1)
-Private aAutoPecas := {}										// Pecas do Orcamento (VS3)
-Private aAutoServ := {}											// Servicos do Orcamento (VS4)
-Private aAutoInco := {}											// Inconvenientes do Orcamento
-// 'lOX001Auto' indica se todos os vetores de integracao foram preenchidos
-Private lOX001Auto := .f. //( xAutoCab <> NIL  .and. xAutoPecas <> NIL .and. xAutoServ <> NIL )
-// Variaveis de Controle de tela (OBJETOS)
-Private aTitulo := {"STR0136","STR0134","STR0135"}
-Private nFolderI := 1 // Numero da Folder de Inconveniente
-Private nFolderP := 2 // Numero da Folder de Pecas
-Private nFolderS := 3 // Numero da Folder de Servicos
-Private aNewBot := {}
-Private nMaxItNF  := GetMv("MV_NUMITEN")
-Private lAprMsg   := GetNewPar("MV_MIL0151",.T.)
-Private lMsg0268 := .f. // Controle de Msg de Pedido Gravado
-Private cVK_F := {}
-
-Private n														// Controle do Fiscal para linha da aCols
-Private aNumP := {}		  										// Controle do Fiscal para aCols de Pecas
-Private aNumS := {}												// Controle do Fiscal para aCols de Servicos
-Private nTotFis := 0											// Numero total de itens do Fiscal (pecas + servicos)
-Private bRefresh := { || .t. } 									// Variavel necessaria ao MAFISREF
-Private aCodErro := {"",""}										// Variavel de Codigo de Erro na Importacao de OS
-Private aItensNImp := {}										// Variavel de retorno de importacao de pecas p/ O.S.
-Private lJaPerg := .t. 											// Variavel necessaria ao OFIOC040
-
-VISUALIZA := ( _nOpc == 2 )
-INCLUI 	  := ( _nOpc == 3 )
-ALTERA 	  := ( _nOpc == 4 )
-EXCLUI 	  := ( _nOpc == 5 )
-FECHA  	  := ( _nOpc == 6 )
-//    _nPos := _ObrW:nat 
-    _nReg := (_cAliasPesq)->RECNOVS1
-    VS1->(DbGoto(_nReg))
-    cVS1Status := VS1->VS1_STATUS
-    cFaseOrc := OI001GETFASE(VS1->VS1_NUMORC)
-    If _lRet 
-        //OXA012V("VS1",_nReg,2)
-        OX001EXEC("VS1",_nReg,2, /*lLibPV*/)
-    EndIf
-    RestArea(_aArea)
-Return Nil
 
 
 
