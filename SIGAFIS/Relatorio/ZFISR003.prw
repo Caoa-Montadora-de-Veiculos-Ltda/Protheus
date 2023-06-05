@@ -30,8 +30,8 @@ oSection := TRSection():New(oReport    ,"Colunas"    ,{cAliasTMP})
     TRCell():New( oSection  ,"D1_TES"       ,cAliasTMP  ,'Tes'                         )
     TRCell():New( oSection  ,"F4_FINALID"   ,cAliasTMP  ,'Finalidade TES'              )
     TRCell():New( oSection  ,"B1_ORIGEM"    ,cAliasTMP  ,'Origem do Produto'           )
-    TRCell():New( oSection  ,"B1_POSIPI"    ,cAliasTMP  ,'NCM'                         )
-    TRCell():New( oSection  ,"B1_EX_NBM"    ,cAliasTMP  ,'Ex-NBM'                      )
+    TRCell():New( oSection  ,"B1_POSIPI"    ,cAliasTMP  ,'NCM'                      , "@!", TamSX3("B1_POSIPI")[1]                           )
+    TRCell():New( oSection  ,"B1_EX_NCM"    ,cAliasTMP  ,'Ex-NCM'                      )
     TRCell():New( oSection  ,"ModVei"       ,cAliasTMP  ,'Modelo Veículo'              )
     TRCell():New( oSection  ,"VRK_OPCION"   ,cAliasTMP  ,'Opcional'                    )
     TRCell():New( oSection  ,"B1_GRUPO"     ,cAliasTMP  ,'Grupo\Linha'                 )
@@ -401,7 +401,7 @@ Static Function  ReportPrint(oReport)
          oSection:Cell( "F4_FINALID"):SetValue( Alltrim( (cAliasTMP)->F4_FINALID )                                                                          ) //--Finalidade TES
          oSection:Cell( "B1_ORIGEM" ):SetValue( AllTrim( (cAliasTMP)->B1_ORIGEM )                                                                           ) //--Origem do Produto
          oSection:Cell( "B1_POSIPI" ):SetValue( AllTrim( (cAliasTMP)->B1_POSIPI )                                                                           ) //--NCM
-         oSection:Cell( "B1_EX_NBM" ):SetValue( AllTrim( (cAliasTMP)->B1_EX_NBM )                                                                           ) //--Ex-NBM
+         oSection:Cell( "B1_EX_NCM" ):SetValue( AllTrim( (cAliasTMP)->B1_EX_NCM )                                                                           ) //--Ex-NBM
          oSection:Cell( "ModVei"    ):SetValue( AllTrim( cModVei )                                                                                          ) //--Modelo Veículo
          oSection:Cell( "VRK_OPCION"):SetValue( AllTrim( (cAliasTMP)->VRK_OPCION )                                                                          ) //--Opcional
          oSection:Cell( "B1_GRUPO"  ):SetValue( AllTrim( (cAliasTMP)->B1_GRUPO )                                                                            ) //--Grupo\Linha
@@ -552,7 +552,7 @@ Static Function ZTmpRadio1()
 
 	cQuery += " SELECT 	D1_FILIAL, D1_COD, D1_DOC, D1_SERIE, D1_TES, D1_CF, D1_FORNECE, D1_LOJA, D1_EMISSAO, D1_DTDIGIT, " 			+ CRLF
 	cQuery += " D1_ITEM, F4_FINALID, F4_TEXTO, FT_CTIPI, FT_CSTPIS, FT_CSTCOF, F4_ICM, F4_IPI, F4_CREDICM, F4_CREDIPI, F4_DUPLIC, "	+ CRLF
-	cQuery += "	B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NBM, "								  			+ CRLF
+	cQuery += "	B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, "								  			+ CRLF
 	cQuery += "	F1_ESPECIE, F1_CODNFE, F1_MENNOTA, F1_DOC, F1_SERIE, F1_STATUS, F1_TIPO, FT_CHVNFE, "								+ CRLF
 	cQuery += " FT_VALCONT, D1_CONTA, D1_ITEMCTA, D1_NFORI, D1_SERIORI, D1_VUNIT, D1_TOTAL, "										+ CRLF
 	cQuery += " CASE " + CRLF
@@ -689,7 +689,7 @@ Static Function ZTmpRadio1()
     
 	cQuery += " GROUP BY 	D1_FILIAL, D1_COD, D1_DOC, D1_SERIE, D1_TES, D1_CF, D1_FORNECE, D1_LOJA, D1_EMISSAO, D1_DTDIGIT, " 		+ CRLF
 	cQuery += " D1_ITEM, F4_FINALID, F4_TEXTO, FT_CTIPI, FT_CSTPIS, FT_CSTCOF,  F4_ICM, F4_IPI, F4_CREDICM, F4_CREDIPI, F4_DUPLIC, "+ CRLF
-	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NBM, "											+ CRLF
+	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, "											+ CRLF
 	cQuery += "	F1_ESPECIE, F1_CODNFE, F1_MENNOTA, F1_DOC, F1_SERIE, F1_STATUS, F1_TIPO, FT_CHVNFE,"								+ CRLF
 	cQuery += " FT_VALCONT, D1_CONTA, D1_ITEMCTA, D1_NFORI, D1_SERIORI, D1_VUNIT, D1_TOTAL, "										+ CRLF
     cQuery += " CASE "

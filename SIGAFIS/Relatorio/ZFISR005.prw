@@ -33,8 +33,8 @@ User Function ZFISR005()
     TRCell():New( oSection  ,"D2_TES"      ,cAliasTMP  ,"Tes"							)
     TRCell():New( oSection  ,"F4_FINALID"  ,cAliasTMP  ,"Finalidade TES"				)
     TRCell():New( oSection  ,"B1_ORIGEM"   ,cAliasTMP  ,"Origem do Produto"			    )
-    TRCell():New( oSection  ,"B1_POSIPI"   ,cAliasTMP  ,"NCM"							)
-    TRCell():New( oSection  ,"B1_EX_NBM"   ,cAliasTMP  ,"Ex-NBM"						)
+    TRCell():New( oSection  ,"B1_POSIPI"   ,cAliasTMP  ,'NCM'                      , "@!" ,TamSX3("B1_POSIPI")[1]                           )
+    TRCell():New( oSection  ,"B1_EX_NCM"   ,cAliasTMP  ,"Ex-NCM"						)
     TRCell():New( oSection  ,"ModVei"      ,cAliasTMP  ,"Modelo Veículo"				)
     TRCell():New( oSection  ,"VRK_OPCION"  ,cAliasTMP  ,"Opcional"						)
     TRCell():New( oSection  ,"B1_GRUPO"    ,cAliasTMP  ,"Grupo\Linha"					)
@@ -421,7 +421,7 @@ Static Function ReportPrint(oReport)
         oSection:Cell( "F4_FINALID"  ):SetValue( Alltrim( (cAliasTMP)->F4_FINALID ) ) //--Finalidade TES
         oSection:Cell( "B1_ORIGEM"   ):SetValue( AllTrim( (cAliasTMP)->B1_ORIGEM ) ) //--Origem do Produto
         oSection:Cell( "B1_POSIPI"   ):SetValue( AllTrim( (cAliasTMP)->B1_POSIPI ) ) //--NCM
-        oSection:Cell( "B1_EX_NBM"   ):SetValue( AllTrim( (cAliasTMP)->B1_EX_NBM ) ) //--Ex-NBM
+        oSection:Cell( "B1_EX_NCM"   ):SetValue( AllTrim( (cAliasTMP)->B1_EX_NCM ) ) //--Ex-NBM
         oSection:Cell( "ModVei"      ):SetValue( AllTrim( cModVei ) ) //--Modelo Veículo
         oSection:Cell( "VRK_OPCION"  ):SetValue( AllTrim( (cAliasTMP)->VRK_OPCION ) ) //--Opcional
         oSection:Cell( "B1_GRUPO"    ):SetValue( AllTrim( (cAliasTMP)->B1_GRUPO ) ) //--Grupo\Linha
@@ -567,7 +567,7 @@ Static Function zTmpRadio3()
 
     cQuery += " SELECT D2_FILIAL, D2_COD, D2_DOC,D2_SERIE, D2_TES, D2_CF,D2_CLIENTE,D2_LOJA,D2_EMISSAO, D2_ITEMPV, "		+ CRLF
 	cQuery += " F4_FINALID, F4_TEXTO, FT_CTIPI, FT_CSTPIS, FT_CSTCOF, F4_ICM, F4_IPI, F4_CREDICM, F4_CREDIPI, F4_DUPLIC, "	+ CRLF
-	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NBM, D2_ITEM, "							+ CRLF
+	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, D2_ITEM, "							+ CRLF
 	cQuery += " F2_ESPECIE,F2_CODNFE,F2_MENNOTA,F2_USERLGI,F2_USERLGA,F2_TIPO, FT_CHVNFE,F2_DOC, F2_SERIE, F2_FIMP,  " 		+ CRLF
 	cQuery += " FT_VALCONT, F2_FORMUL, D2_CONTA, D2_NFORI, D2_SERIORI, D2_PRUNIT,D2_TOTAL, "								+ CRLF
 	cQuery += " D2_DESC, D2_DESCON, FT_CLASFIS, D2_DESCZFP, D2_DESCZFC, D2_TIPO, "											+ CRLF
@@ -687,7 +687,7 @@ Static Function zTmpRadio3()
 
 	cQuery += " GROUP BY D2_FILIAL, D2_COD, D2_DOC,D2_SERIE, D2_TES, D2_CF,D2_CLIENTE,D2_LOJA,D2_EMISSAO, D2_ITEMPV, "		+ CRLF
 	cQuery += " F4_FINALID, F4_TEXTO, FT_CTIPI, FT_CSTPIS, FT_CSTCOF, F4_ICM, F4_IPI, F4_CREDICM, F4_CREDIPI, F4_DUPLIC, "	+ CRLF
-	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NBM, D2_ITEM, "							+ CRLF
+	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, D2_ITEM, "							+ CRLF
 	cQuery += " F2_ESPECIE,F2_CODNFE,F2_MENNOTA,F2_USERLGI,F2_USERLGA,F2_TIPO, FT_CHVNFE,F2_DOC, F2_SERIE, F2_FIMP,  " 		+ CRLF
 	cQuery += " FT_VALCONT, F2_FORMUL, D2_CONTA, D2_NFORI, D2_SERIORI, D2_PRUNIT,D2_TOTAL, "								+ CRLF
 	cQuery += " D2_DESC, D2_DESCON, FT_CLASFIS, D2_DESCZFP, D2_DESCZFC, D2_TIPO, "											+ CRLF
