@@ -702,15 +702,6 @@ Static Function GerUniAuto()
 		oMntUniItem:SetNumSeq((cTmpUnit)->numseq)
 		If !oMntUniItem:zMntUnit()
 			__cErro := oMntUniItem:GetErro()
-			IF Empty(__cErro)
-				__cErro := "Erro na Montagem do Unitizador"
-				__cErro += 	CRLF + "prdori:"  + (cTmpUnit)->prdori
-				__cErro += 	CRLF + "codpro:"  + (cTmpUnit)->codpro
-				__cErro += 	CRLF + "lotect"   + (cTmpUnit)->lotect
-				__cErro += 	CRLF + "numlot"   + (cTmpUnit)->numlot
-				__cErro += 	CRLF + "qtdunitz" + STR((cTmpUnit)->qtdunitz)
-				__cErro += 	CRLF + "numseq"   + (cTmpUnit)->numseq
-			EndIf
 			lRet := .F.
 			Exit
 		EndIf
@@ -882,9 +873,6 @@ Static Function CargaUnit( cInvoice, cCont, cUnit )
 	Local lAchouD0Q		:= .F.
 	Local cArmOrig		:= ""
 	Local lQtdExata		:= .F.
-	Local nTentativa    := 1
-	Local nX            := 0
-	Local nCount        := 0
 
 	Default cInvoice	:= ""
 	Default cCont		:= ""
@@ -914,142 +902,100 @@ Static Function CargaUnit( cInvoice, cCont, cUnit )
 	If ( cAliasUnit )->( !EOF() )
 
 		While ( cAliasUnit )->( !EOF() )
-			For nTentativa := 1 to 2
-				
-				if Select(cAliasD0Q) > 0
-					DbSelectArea(cAliasD0Q) 
-					( cAliasD0Q )->( dbCloseArea() )
-				EndIf
-								
-				cQry  :=  " SELECT D0Q.D0Q_SERVIC, D0Q.D0Q_LOCAL, D0Q.D0Q_ENDER, D0Q.D0Q_PRDORI, " + CRLF
-				cQry  +=  " D0Q.D0Q_CODPRO, D0Q.D0Q_LOTECT, D0Q.D0Q_NUMLOT, D0Q.D0Q_QUANT, D0Q.D0Q_NUMSEQ, " + CRLF
-				cQry  +=  " D0Q.D0Q_DOCTO, D0Q.D0Q_SERIE, D0Q.D0Q_CLIFOR, D0Q.D0Q_LOJA " + CRLF
-				cQry  +=  " FROM " + RetSQLName( "SD1" ) + " SD1 " + CRLF
-				cQry  +=  " JOIN " + RetSQLName( "D0Q" ) + " D0Q " + CRLF
-				cQry  +=  "		ON D0Q.D0Q_FILIAL = '" + FWxFilial("D0Q") + "' " + CRLF
-				cQry  +=  "		AND D0Q.D0Q_DOCTO = SD1.D1_DOC" + CRLF
-				cQry  +=  "		AND D0Q.D0Q_SERIE = SD1.D1_SERIE" + CRLF
-				cQry  +=  "		AND D0Q.D0Q_CLIFOR = SD1.D1_FORNECE" + CRLF
-				cQry  +=  "		AND D0Q.D0Q_LOJA = SD1.D1_LOJA" + CRLF
-				cQry  +=  "		AND D0Q.D0Q_CODPRO = SD1.D1_COD" + CRLF
-				cQry  +=  "		AND D0Q.D0Q_NUMSEQ = SD1.D1_NUMSEQ" + CRLF
-				cQry  +=  " 	AND D0Q.D0Q_QUANT > D0Q.D0Q_QTDUNI " + CRLF //--Remove itens consumidos por outro unitizador
-				
-				if nTentativa == 1
-					cQry  +=  " 	AND D0Q.D0Q_QUANT >= '" + cValToChar( ( cAliasUnit )->ZM_QTDE ) + "' " + CRLF
-				else
-					cQry  +=  " 	AND D0Q.D0Q_QUANT < '" + cValToChar( ( cAliasUnit )->ZM_QTDE ) + "' " + CRLF
-				endif
-				
-				cQry  +=  "		AND D0Q.D_E_L_E_T_ = ' ' " + CRLF
-				cQry  +=  " WHERE SD1.D1_FILIAL = '" + FWxFilial("SD1") + "' " + CRLF
-				cQry  +=  "		AND SD1.D1_CONHEC = '" + __cProcess + "' " + CRLF
-				cQry  +=  " 	AND SD1.D1_COD = '" + ( cAliasUnit )->ZM_PROD + "' " + CRLF
-				
-				//--Remove demandas consumidas, validação necessaria por conta do cenario de produtos iguais em um mesmo unitizador
-				If !Empty( cNumSeq )
-					cQry  +=  "		AND SD1.D1_NUMSEQ NOT IN " + FormatIn(cNumSeq, ";") + CRLF
-				EndIf
 
-				cQry  +=  "		AND SD1.D_E_L_E_T_ = ' ' " + CRLF
-				cQry  +=  " ORDER BY D0Q.D0Q_QUANT " + CRLF 
+			cQry  :=  " SELECT D0Q.D0Q_SERVIC, D0Q.D0Q_LOCAL, D0Q.D0Q_ENDER, D0Q.D0Q_PRDORI, " + CRLF
+			cQry  +=  " D0Q.D0Q_CODPRO, D0Q.D0Q_LOTECT, D0Q.D0Q_NUMLOT, D0Q.D0Q_QUANT, D0Q.D0Q_NUMSEQ, " + CRLF
+			cQry  +=  " D0Q.D0Q_DOCTO, D0Q.D0Q_SERIE, D0Q.D0Q_CLIFOR, D0Q.D0Q_LOJA " + CRLF
+			cQry  +=  " FROM " + RetSQLName( "SD1" ) + " SD1 " + CRLF
+			cQry  +=  " JOIN " + RetSQLName( "D0Q" ) + " D0Q " + CRLF
+			cQry  +=  "		ON D0Q.D0Q_FILIAL = '" + FWxFilial("D0Q") + "' " + CRLF
+			cQry  +=  "		AND D0Q.D0Q_DOCTO = SD1.D1_DOC" + CRLF
+			cQry  +=  "		AND D0Q.D0Q_SERIE = SD1.D1_SERIE" + CRLF
+			cQry  +=  "		AND D0Q.D0Q_CLIFOR = SD1.D1_FORNECE" + CRLF
+			cQry  +=  "		AND D0Q.D0Q_LOJA = SD1.D1_LOJA" + CRLF
+			cQry  +=  "		AND D0Q.D0Q_CODPRO = SD1.D1_COD" + CRLF
+			cQry  +=  "		AND D0Q.D0Q_NUMSEQ = SD1.D1_NUMSEQ" + CRLF
+			cQry  +=  " 	AND D0Q.D0Q_QUANT > D0Q.D0Q_QTDUNI " + CRLF //--Remove itens consumidos por outro unitizador
+			cQry  +=  " 	AND D0Q.D0Q_QUANT >= '" + cValToChar( ( cAliasUnit )->ZM_QTDE ) + "' " + CRLF
+			cQry  +=  "		AND D0Q.D_E_L_E_T_ = ' ' " + CRLF
+			cQry  +=  " WHERE SD1.D1_FILIAL = '" + FWxFilial("SD1") + "' " + CRLF
+			cQry  +=  "		AND SD1.D1_CONHEC = '" + __cProcess + "' " + CRLF
+			cQry  +=  " 	AND SD1.D1_COD = '" + ( cAliasUnit )->ZM_PROD + "' " + CRLF
 
-				cQry	:= ChangeQuery( cQry )
-
-				DbUseArea( .T., "TOPCONN", TcGenQry(,,cQry), cAliasD0Q, .T., .T. )
-				DbSelectArea( cAliasD0Q )
-				
-				if  ( cAliasD0Q )->(!EOF()) .and. nTentativa == 1
-					
-					Exit
-				EndIf
-			Next nTentativa
-			
-			IF ALLTRIM((( cAliasUnit )->ZM_PROD) )== "J686101110"
-				Conout(( cAliasUnit )->ZM_PROD)
+			//--Remove demandas consumidas, validação necessaria por conta do cenario de produtos iguais em um mesmo unitizador
+			If !Empty( cNumSeq )
+				cQry  +=  "		AND SD1.D1_NUMSEQ NOT IN " + FormatIn(cNumSeq, ";") + CRLF
 			EndIf
+
+			cQry  +=  "		AND SD1.D_E_L_E_T_ = ' ' " + CRLF
+			cQry  +=  " ORDER BY D0Q.D0Q_QUANT " + CRLF 
+
+			cQry	:= ChangeQuery( cQry )
+
+			DbUseArea( .T., "TOPCONN", TcGenQry(,,cQry), cAliasD0Q, .T., .T. )
+
 			If ( cAliasD0Q )->( !EOF() )
 
 				If !lAchouD0Q //--Usado para gravar apenas uma vez o armazem por ser é igual para todos os itens do processo
 					cArmOrig := ( cAliasD0Q )->D0Q_LOCAL //--Usado para avaliação de lock no armazem de origem
 					lAchouD0Q := .T.
 				EndIf
-				nQuant := 0
+
 				lQtdExata := .F.
-				nX := 0
 				While ( cAliasD0Q )->( !EOF() )
-					nX++
-					if nTentativa > 1
-						nQuant += ( cAliasD0Q )->D0Q_QUANT
-					else
-						nQuant := ( cAliasD0Q )->D0Q_QUANT
-					EndIf
-					
 					//--Busca por quantidade exatamente igual ao item para priorizar o consumo total da demanda
-					If ( cAliasUnit )->ZM_QTDE == nQuant
+					If ( cAliasUnit )->ZM_QTDE == ( cAliasD0Q )->D0Q_QUANT
 						lQtdExata := .T.
 						Exit
 					EndIf
 					( cAliasD0Q )->( DbSkip() )
-				
 				EndDo
 
 				//--Se não encontrou qtd exata, volta ponteiro para o inicio do arquivo
-				If !lQtdExata .or.  nTentativa > 1
+				If !lQtdExata
 					( cAliasD0Q )->( DbGoTop() )
 				EndIF
-				
-				nCount := 1
-				
-				While ( cAliasD0Q )->( !EOF() ) .and. nCount <= nX
-					nCount++
-					If RecLock(cTmpUnit,.T.)
-						(cTmpUnit)->unitizador	:= cUnit
-						(cTmpUnit)->armazem		:= ( cAliasD0Q )->D0Q_LOCAL
-						(cTmpUnit)->localiz		:= ( cAliasD0Q )->D0Q_ENDER
-						(cTmpUnit)->prdori		:= ( cAliasD0Q )->D0Q_PRDORI
-						(cTmpUnit)->codpro		:= ( cAliasD0Q )->D0Q_CODPRO
-						(cTmpUnit)->lotect		:= ( cAliasD0Q )->D0Q_LOTECT
-						(cTmpUnit)->numlot		:= ( cAliasD0Q )->D0Q_NUMLOT
-						(cTmpUnit)->qtdunitz	:= ( cAliasD0Q )->D0Q_QUANT //( cAliasUnit)->ZM_QTDE
-						(cTmpUnit)->docto		:= ( cAliasD0Q )->D0Q_DOCTO
-						(cTmpUnit)->serie		:= ( cAliasD0Q )->D0Q_SERIE
-						(cTmpUnit)->clifor		:= ( cAliasD0Q )->D0Q_CLIFOR
-						(cTmpUnit)->loja		:= ( cAliasD0Q )->D0Q_LOJA
-						(cTmpUnit)->servic		:= ( cAliasD0Q )->D0Q_SERVIC
-						(cTmpUnit)->numseq		:= ( cAliasD0Q )->D0Q_NUMSEQ
-						(cTmpUnit)->(MsUnLock())
-					EndIf
-					( cAliasD0Q )->(DbSkip())
-				EndDo
+
+				If RecLock(cTmpUnit,.T.)
+					(cTmpUnit)->unitizador	:= cUnit
+					(cTmpUnit)->armazem		:= ( cAliasD0Q )->D0Q_LOCAL
+					(cTmpUnit)->localiz		:= ( cAliasD0Q )->D0Q_ENDER
+					(cTmpUnit)->prdori		:= ( cAliasD0Q )->D0Q_PRDORI
+					(cTmpUnit)->codpro		:= ( cAliasD0Q )->D0Q_CODPRO
+					(cTmpUnit)->lotect		:= ( cAliasD0Q )->D0Q_LOTECT
+					(cTmpUnit)->numlot		:= ( cAliasD0Q )->D0Q_NUMLOT
+					(cTmpUnit)->qtdunitz	:= ( cAliasUnit )->ZM_QTDE
+					(cTmpUnit)->docto		:= ( cAliasD0Q )->D0Q_DOCTO
+					(cTmpUnit)->serie		:= ( cAliasD0Q )->D0Q_SERIE
+					(cTmpUnit)->clifor		:= ( cAliasD0Q )->D0Q_CLIFOR
+					(cTmpUnit)->loja		:= ( cAliasD0Q )->D0Q_LOJA
+					(cTmpUnit)->servic		:= ( cAliasD0Q )->D0Q_SERVIC
+					(cTmpUnit)->numseq		:= ( cAliasD0Q )->D0Q_NUMSEQ
+					(cTmpUnit)->(MsUnLock())
+				EndIf
+
 				//--Verifica se a demanda de um produto foi totalmente consumida	
-				
-				( cAliasD0Q )->( DbGoTop() )
-				
-				While ( cAliasD0Q )->(!Eof())
-					cAliasQry:= GetNextAlias()
-					
-					BeginSql Alias cAliasQry
-						SELECT qtdunitz as TOTUNIT
-						FROM %Exp:cRealName% TMPUNIT
-						WHERE TMPUNIT.unitizador = %Exp:cUnit%
-						AND TMPUNIT.codpro = %Exp:( cAliasD0Q )->D0Q_CODPRO%
-						AND TMPUNIT.numseq = %Exp:( cAliasD0Q )->D0Q_NUMSEQ%
-					EndSql
-										
-					If (cAliasQry)->TOTUNIT == ( cAliasD0Q )->D0Q_QUANT
-						//--Guarda Numseq para avaliação de demandas ja consumidas
-						If Empty(cNumSeq)
-							cNumSeq := AllTrim( ( cAliasD0Q )->D0Q_NUMSEQ )
-						Else
-							cNumSeq := cNumSeq + ";" + AllTrim( ( cAliasD0Q )->D0Q_NUMSEQ )
-						EndIf
+				cAliasQry:= GetNextAlias()
+				BeginSql Alias cAliasQry
+					SELECT Sum(qtdunitz) as TOTUNIT
+					FROM %Exp:cRealName% TMPUNIT
+					WHERE TMPUNIT.unitizador = %Exp:cUnit%
+					AND TMPUNIT.codpro = %Exp:( cAliasD0Q )->D0Q_CODPRO%
+					AND TMPUNIT.numseq = %Exp:( cAliasD0Q )->D0Q_NUMSEQ%
+				EndSql
 
+				If (cAliasQry)->TOTUNIT == ( cAliasD0Q )->D0Q_QUANT
+
+					//--Guarda Numseq para avaliação de demandas ja consumidas
+					If Empty(cNumSeq)
+						cNumSeq := AllTrim( ( cAliasD0Q )->D0Q_NUMSEQ )
+					Else
+						cNumSeq := cNumSeq + ";" + AllTrim( ( cAliasD0Q )->D0Q_NUMSEQ )
 					EndIf
 
-					(cAliasQry)->( DbCloseArea() )
-					( cAliasD0Q )->(DbSkip())
-				EndDo
+				EndIf
+
+				(cAliasQry)->( DbCloseArea() )
 
 			EndIf
 
@@ -1192,17 +1138,17 @@ Static Function GeraOrdSer(cUnitiz)
 				D0Q.D0Q_NUMLOT
 		FROM       %Table:D0S% D0S
 		INNER JOIN %Table:D0Q% D0Q
-			ON  D0Q.D0Q_FILIAL = %xFilial:D0Q%
-			AND D0Q.D0Q_ID = D0S.D0S_IDD0Q
-			AND D0Q.%NotDel%
+		ON D0Q.D0Q_FILIAL = %xFilial:D0Q%
+		AND D0Q.D0Q_ID = D0S.D0S_IDD0Q
+		AND D0Q.%NotDel%
 		INNER JOIN %Table:D0R% D0R
-			ON  D0R.D0R_FILIAL = %xFilial:D0R%
-			AND D0R.D0R_IDUNIT = D0S.D0S_IDUNIT
-			AND D0R.D0R_STATUS IN ('1','2') // Para garantir que não irá gerar duplicado
-			AND D0R.%NotDel%
+		ON D0R.D0R_FILIAL = %xFilial:D0R%
+		AND D0R.D0R_IDUNIT = D0S.D0S_IDUNIT
+		AND D0R.D0R_STATUS IN ('1','2') // Para garantir que não irá gerar duplicado
+		AND D0R.%NotDel%
 		WHERE D0S.D0S_FILIAL = %xFilial:D0S%
-			AND D0S.D0S_IDUNIT = %Exp:cUnitiz%
-			AND D0S.%NotDel%
+		AND D0S.D0S_IDUNIT = %Exp:cUnitiz%
+		AND D0S.%NotDel%
 	EndSql
 
 	If (cAliasQry)->(!Eof())
@@ -1703,12 +1649,12 @@ Static Function ReportDef()
                             "ZWMSF004",;
                             {|oReport|  ReportPrint(oReport)},;
                             "Relatorio para conferencia do enderaçamento dos unitizadores.")
-	oReport:HideParamPage()                // Desabilita a impressao da pagina de parametros.
-    oReport:HideHeader()                   //--Define que não será impresso o cabeçalho padrão da página
-    oReport:HideFooter()                   //--Define que não será impresso o rodapé padrão da página
-    oReport:SetDevice(4)                   //--Define o tipo de impressão selecionado. Opções: 1-Arquivo,2-Impressora,3-Email,4-Planilha, 5-Html e 6-PDF
-    oReport:SetPreview(.T.)                //--Define se será apresentada a visualização do relatório antes da impressão física
-    oReport:SetEnvironment(2)              //--Define o ambiente para impressão 	Ambiente: 1-Server e 2-Client
+	oReport:HideParamPage()   // Desabilita a impressao da pagina de parametros.
+    oReport:HideHeader() //--Define que não será impresso o cabeçalho padrão da página
+    oReport:HideFooter() //--Define que não será impresso o rodapé padrão da página
+    oReport:SetDevice(4) //--Define o tipo de impressão selecionado. Opções: 1-Arquivo,2-Impressora,3-Email,4-Planilha, 5-Html e 6-PDF
+    oReport:SetPreview(.T.) //--Define se será apresentada a visualização do relatório antes da impressão física
+    oReport:SetEnvironment(2) //--Define o ambiente para impressão 	Ambiente: 1-Server e 2-Client
     //oReport:SetEdit(.T.) 
 	
 	//Verifica os parâmetros selecionados via Pergunte
@@ -2012,7 +1958,6 @@ Static Function zVldMont(cIdUnit)
 	Local nQtdD14 := 0
 	Local nQtdSZM := 0
 	Local cAliasQry := Nil
-	Local eol       := CHR(13)+Chr(10)  //Por Algum Motivo o CRLF encontrasse nulo neste trecho
 
     cAliasQry := GetNextAlias()
     BeginSql Alias cAliasQry
@@ -2043,65 +1988,5 @@ Static Function zVldMont(cIdUnit)
     EndIf
 
     (cAliasQry)->( DbCloseArea() )
-	
-	if nQtdD14 <> nQtdSZM
-		cErro := "Erro de Transferencia do Unitizador " + cIdUnit + " "	
-		cErro += eol + "Quantidade SZM.......:" + Transform(nQtdSZM , "@E 999,999.999")
-		cErro += eol + "Quantidade D14 ......:" + Transform(nQtdD14 , "@E 999,999.999")
-		cErro += eol + "Diferenca SZM - D14..:" + Transform(nQtdSZM - nQtdD14 , "@E 999,999.999")
-		cErro += eol + "Transferencia do Unitizador sera cancelada
-		MsgAlert(cErro) 
-		zPegMont(cIdUnit)
-	EndIf
 
 Return nQtdD14 == nQtdSZM
-
-/*
-=========================================================================================
-Programa.:              zVldMont
-Autor....:              CAOA - Fagner Ferraz Barreto
-Data.....:              14/01/2022
-Descricao / Objetivo:   Confirma se todos os itens foram incluidos no unitizador
-=========================================================================================
-*/
-Static Function zPegMont(cIdUnit)
-	//Local nQtdD14  := 0
-	//Local nQtdSZM  := 0
-	Local cAliasQry := Nil
-	Local cMemo     := ""
-	Local eol       := CHR(13)+Chr(10)  //Por Algum Motivo o CRLF encontrasse nulo neste trecho
-
-    cAliasQry := GetNextAlias()
-    BeginSql Alias cAliasQry
-        SELECT d14.D14_PRODUT,D14.D14_QTDEST QTDD14
-        FROM %Table:D14% D14
-        WHERE D14.D14_FILIAL = %xFilial:D14%
-        AND D14.D14_IDUNIT = %Exp:cIdUnit%
-        AND D14.%NotDel%
-    EndSql
-
-    While (cAliasQry)->( !Eof() )
-        cMemo += Alltrim((cAliasQry)->D14_PRODUT) + ";" + alltrim( Transform((cAliasQry)->QTDD14 , "@E 999,999.99") ) + eol
-		(cAliasQry)->(DbSkip())
-    EndDo
-	MemoWrite("C:\Temp\D14_" + alltrim(cIdUnit) + ".csv",cMemo)
-    (cAliasQry)->( DbCloseArea() )
-
-	cAliasQry := GetNextAlias()
-    BeginSql Alias cAliasQry
-        SELECT SZM.ZM_PROD ,SZM.ZM_QTDE QTDSZM
-        FROM %Table:SZM% SZM
-        WHERE SZM.ZM_FILIAL = %xFilial:SZM%
-        AND SZM.ZM_UNIT = %Exp:cIdUnit%
-        AND SZM.%NotDel%
-    EndSql
-
-   	cMemo := ""
-    While (cAliasQry)->( !Eof() )
-        cMemo += Alltrim((cAliasQry)->ZM_PROD) + ";" + alltrim( Transform((cAliasQry)->QTDSZM , "@E 999,999.99") )+eol
-		(cAliasQry)->(DbSkip())
-    EndDo
-    MemoWrite("C:\Temp\SZM_" + alltrim(cIdUnit) + ".csv",cMemo)
-	(cAliasQry)->( DbCloseArea() )
-
-Return 
