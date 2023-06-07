@@ -211,7 +211,7 @@ Historico: 				DAC -Denilso 16/05/2023
 ============================================================================================
 */
 Static Function zGeraTransf(_aDivergencia)
-	Local _cDocumen     	:= ""
+	Local _cDocumento     	:= ""
 	Local _cProduto			:= ""
 	Local _cIdJson			:= ""
 	Local _aAuto  			:= {}
@@ -429,10 +429,34 @@ Static Function zGeraTransf(_aDivergencia)
 		EndIf
 		If Select(cTmpAlias) <> 0 ; (cTmpAlias)->(DbCloseArea()) ; EndIf
 		DbSelectArea("SD3")
-		_cDocumen := SD3->(NextNumero("SD3",2,"D3_DOC",.T.))  //esta dando erro no processamento
-		//_cDocumen := GetSxeNum("SD3","D3_DOC")
 
-		aadd(_aAuto,{_cDocumen , dDataBase})    //Cabecalho
+		//_cDocumento := SD3->(NextNumero("SD3",2,"D3_DOC",.T.))  //esta dando erro no processamento
+		//Implementado pois em alguns casos não esta conseguindo localizar numeração DAC 07/06/2023 PEC042
+		_cDocumento := ""
+		For _nPos := 1 To 10
+			_cDocumento  := Criavar("D3_DOC")
+			_cDocumento	:= IIf(Empty(_cDocumento),NextNumero("SD3",2,"D3_DOC",.T.),_cDocumento)
+			If !Empty(_cDocumento)
+				Exit
+			Endif 
+		Next 	
+		If Empty(_cDocumento)
+			_cErro := "Não foi possivel montar numeração SD3, para gerar movimentação." 
+			Aadd(_aDivergencia, {	_cProduto,;
+									Alltrim(_cFornec),;
+									Alltrim(_cLoja ),; 
+									Alltrim(_cSerFor),; 
+									Alltrim(_cNfFor),;
+									_cArmOrig,; 
+									_nQtdeDiverge,;
+									_nQtdeConf,;
+									_nSaldoSB2,;
+									_cErro} )
+			Return .F.
+		Endif
+		_cDocumento	:= A261RetINV(_cDocumento)
+		aadd(_aAuto,{_cDocumento , dDataBase})    //Cabecalho
+
 		SB1->(DbSetOrder(1))
 		If SB1->(DbSeek(FWxFilial("SB1")+PadR(_cProduto , TamSx3('B1_COD') [1])))
 			IF _nQtdeConf <= _nSaldoTec
@@ -565,7 +589,7 @@ Static function zGeraEntrada()
 Local _lRet 			:= .T.
 Local _aCabec  			:= {}
 Local _aItem			:= {}
-//Local _cDocumen     	:= ""
+//Local _cDocumento     	:= ""
 Local _nPos				:= 0
 Local _cIdJson			:= ""
 Local _cProduto			:= ""
@@ -628,7 +652,7 @@ Private lAutoErrNoFile 	:= .T.
 		SB1->(DbSetOrder(1))
 		If SB1->(DbSeek(FWxFilial("SB1")+PadR(_cProduto , TamSx3('B1_COD') [1])))
 			
-			//_cDocumen := NextNumero("SD3",2,"D3_DOC",.T.)
+			//_cDocumento := NextNumero("SD3",2,"D3_DOC",.T.)
 		
 		    _aCabec	:= {}
 			_aItem	:= {}
