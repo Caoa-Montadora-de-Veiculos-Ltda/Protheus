@@ -12,6 +12,7 @@ Consulta de Faturamento por Tipo
 @since 05/12/2022
 @version 1.0
 @type function
+
 /*/
 
 User Function ZVEIR002()
