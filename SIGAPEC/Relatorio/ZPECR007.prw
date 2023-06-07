@@ -40,7 +40,9 @@ Default _aOndaRel   := {}
 If Len(_aOndaRel) > 0
     aRetP := _aOndaRel
     If nOpca == 1
-        oReport := ReportDef()
+ 	    //If FindFunction("TRepInUse") .And. TRepInUse() // teste padrão 
+   
+        oReport := ReportDef(.T.)
         oReport:PrintDialog()   
     Endif
     Return Nil
@@ -84,16 +86,27 @@ Definição do Relatorio Carga
 @since 30/05/2022
 @version 2.0
 /*/
-Static Function ReportDef()
+Static Function ReportDef(_lPlanilha)
+
+Default _lPlanilha  := .F.
 
 MV_PAR01 := aRetP[01]
 
 oReport:= TReport():New("ZPECR007",' Relação Carga  ',"BARUERI", {|oReport| ReportPrint(oReport)},' Carga  ') 
 oReport:HideParamPage()   // Desabilita a impressao da pagina de parametros.
+//Impressão em planilha
+If _lPlanilha
 
-//Verifica os parâmetros selecionados via Pergunte
-Pergunte(oReport:GetParam(),.F.)
-
+	oReport:NDEVICE         := 4  //PLANILHA
+	oReport:NEXCELPRINTTYPE := 3 	
+	oReport:lPrtParamPage  := .f.      
+	oReport:ParamReadOnly(.T.) //Define se o usuário terá acesso aos parâmetros do relatório. ParamReadOnly .T. – Não permite acesso aos parâmetros.F. – Permite acesso aos parâmetros	
+	oReport:HideParamPage()   // Desabilita a impressao da pagina de parametros.
+  	//Pergunte(oReport:uParam,.F.)          
+Else
+    //Verifica os parâmetros selecionados via Pergunte
+    //Pergunte(oReport:GetParam(),.F.)
+Endif
 oSection1 := TRSection():New(oReport,"Carga  - Barueri",{cAliasQry},/*{Array com as ordens do relatório}*/,/*Campos do SX3*/,/*Campos do SIX*/)
 
 TRCell():New(oSection1,"MARCA"                ,"cAliasQry","MARCA"          ,"@!",03,/*lPixel*/,/*{|| code-block de impressao }*/)
@@ -261,11 +274,6 @@ oReport:SetMeter((cAliasQry)->(LastRec()))
 oSection1:Init()
 
 Do While !(cAliasQry)->( Eof() )
-
-    /*IF (cAliasQry)->CODIGO_CLIENTE <> aRetP[01] 
-        (cAliasQry)->( DbSkip() )
-        LOOP
-    ENDIF*/
 
     oReport:IncMeter()
 
