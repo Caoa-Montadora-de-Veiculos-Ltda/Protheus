@@ -10,7 +10,7 @@ Descricao / Objetivo:   Rotina responsavel por receber a confirmação da conferen
 						realizada pela RGLOG e transferir os itens conferidos entre armazens
 						- Revitalização feita em 29/06/2022.
 Historico: 				DAC -Denilso 16/05/2023
-						//ESPFUN.-.PEC042.-.Controle.de.saldo.e.e-mail.apos.integracao.de.armazenagem
+						PEC042.-.Controle.de.saldo.e.e-mail.apos.integracao.de.armazenagem, implementado LOCALIZAÇÃO D3 POR NextNumero, envio de e-nail com divergência, e tratamento parcial quando Qde Conf maior que saldo
 ====================================================================================================
 */
 WSRESTFUL ZWSR012 DESCRIPTION "Integração RGLOG Confirmacao de mercadorias recebidas" FORMAT APPLICATION_JSON 
@@ -207,7 +207,7 @@ Autor....:              CAOA - Evandro Ap. Mariano dos Santos
 Data.....:              29/06/2022
 Descricao / Objetivo:   Realiza a conferencia e faz a transferencia do 80 para 01
 Historico: 				DAC -Denilso 16/05/2023
-						//ESPFUN.-.PEC042.-.Controle.de.saldo.e.e-mail.apos.integracao.de.armazenagem
+						PEC042.-.Controle.de.saldo.e.e-mail.apos.integracao.de.armazenagem
 ============================================================================================
 */
 Static Function zGeraTransf(_aDivergencia)

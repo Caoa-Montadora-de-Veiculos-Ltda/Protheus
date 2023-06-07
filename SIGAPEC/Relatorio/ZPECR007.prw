@@ -17,6 +17,9 @@ Relatorio Carga
 @author Antonio Oliveira
 @since 30/05/2022
 @version 2.0
+@history    DAC -19/05/2023
+            PEC042 - Controle de saldo e e-mail apos integracao de armazenagem - Imprimir sem passar pelo parâmetro chamada ZPECF008
+
 /*/
 User Function ZPECR007(_aOndaRel)
 Local aAreaVS3      := VS3->( GetArea() )
@@ -36,7 +39,7 @@ Private oReport, oSection1          // objeto que contem o relatorio
 
 Default _aOndaRel   := {}
 
-//Chamado por ZPECF008 DAC 19/05/2023
+//Chamado por ZPECF008 DAC 19/05/2023 PEC042 
 If Len(_aOndaRel) > 0
     aRetP := _aOndaRel
     If nOpca == 1

@@ -20,7 +20,9 @@ Responsável por Aglutinar e Separação do orçamento passando pelas fases automati
 @obs 
 @menu       Nao Informado
 @return		Nulo
-@history    16/12/2022 PEC031 - Limite de Credito - Revitalização DAC
+@history    DAC - 16/12/2022 PEC031 - Limite de Credito - Revitalização DAC
+@    		DAC -19/05/2023
+            PEC042 - Controle de saldo e e-mail apos integracao de armazenagem - Imprimir sem passar pelo parâmetro chamada ZPECR007
 /*/
 User Function ZPECF008()
 	Local _aSays	    := {}
@@ -155,7 +157,7 @@ User Function ZPECF008()
 			ZPECF08R07(_aOndaRel)
 		Endif
 
-	End Sequence
+	End Sequence 
 	If Select(_cAliasPesq) <> 0
 		(_cAliasPesq)->(DbCloseArea())
 		Ferase(_cAliasPesq+GetDBExtension())
@@ -3227,7 +3229,7 @@ Responsável por Gerar relatório Relação Carga  - Barueri
 @since 		19/05/2023
 @version 	undefined
 @param 		_aOndaRel	- Ondas geradas no processo  
-@project    PEC060 - Habilitar ou desabilitar local de armazenagem - Geração do relatório ZPECR007 no final de qualquer onda 
+@project    PEC042 - Controle de saldo e e-mail apos integracao de armazenagem - Geração do relatório ZPECR007 no final de qualquer onda 
 @type 		user function
 @obs 
 @menu       Nao Informado

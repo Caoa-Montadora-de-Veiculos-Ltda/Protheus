@@ -3229,6 +3229,7 @@ Return Nil
 @return  	NIL
 @project
 @history    Tranferência Interna Mútipla (Divergência)   
+			PEC042 - Controle de saldo e e-mail apos integracao de armazenagem - Ajuste para localizar dcto D3 NextNumero
 @obs         
   	VM5.VM5_CODIGO , (cAlVM5)->VM6_QTORIG - (cAlVM5)->VM6_QTCONF , cArmorig, cArmdes
     	     01                         02    -    Qtde                   03        04
@@ -3711,7 +3712,7 @@ Responsável por verificar limite de crédito na liberação
 @return		_nSaldoWis - Saldo existente no WIS
 @ Obs		
 @history    Evandro 		26/05/2022	- Localizar Saldo WiS conexão Tclink 
-			DAC Denilso 	19/05/2023 	- PEC060 - Habilitar ou desabilitar local de armazenagem 
+			DAC Denilso 	19/05/2023 	- PEC042 - Controle de saldo e e-mail apos integracao de armazenagem 
 										  Zé ajustou a funcionalidade para localizar resserva de acordo com parâmetro _lResIntegr
 /*/
 User Function zSaldoWis(_cProduto, _cMarca, _cArmazem)
@@ -4083,6 +4084,7 @@ Return(_cRet)
 @return  	NIL
 @project
 @history    Tranferência Interna Mútipla (Divergência)   
+			PEC042 - Controle de saldo e e-mail apos integracao de armazenagem - Ajuste para localizar dcto D3 NextNumero
 @obs         
   	VM5.VM5_CODIGO , (cAlVM5)->VM6_QTORIG - (cAlVM5)->VM6_QTCONF , cArmorig, cArmdes
     	     01                         02    -    Qtde                   03        04
@@ -4144,13 +4146,32 @@ User Function XRESCAOAPEC(_cNumOrc, _lReserva, _aRegVS3, _cArmOrig, _cArmDes, _l
 		Begin Transaction
 			//incluir itens VS3
 			//montar por numero de registro	
-			_cDocumento := GetSxeNum("SD3","D3_DOC")
-			_aItens 	:= XRESCAOATR(_cNumOrc, _lReserva, @_aRegVS3, _cArmorig, _cArmdes, _cDocumento, @_aMsg)
-			If Len(_aItens) == 0
-				AAdd(_aMsg,"Não foi possivel fazer transferências ref  orçamento " +_cNumOrc+ ", não será realizada a Reserva comunicar ADM Sistemas!!! ")
+			//_cDocumento := GetSxeNum("SD3","D3_DOC")  //não pode ser pelo SX
+			//Implementado pois em alguns casos não esta conseguindo localizar numeraçãp
+			_cDocumento := ""
+			For _nPos := 1 To 10
+				_cDocumento  := Criavar("D3_DOC")
+				_cDocumento	:= IIf(Empty(_cDocumento),NextNumero("SD3",2,"D3_DOC",.T.),_cDocumento)
+				If !Empty(_cDocumento)
+					Exit
+				Endif 
+			Next 	
+			If Empty(_cDocumento)
+				_cMens := "Não foi possivel montar numeração SD3, para gerar movimentação." 
+				Aadd(_aMsg,_cErro)
 				_lRet := .F.
 				Disarmtransaction()
-			EndIf
+			Else
+				_cDocumento	:= A261RetINV(_cDocumento)
+			Endif 
+			If _lRet 		
+				_aItens 	:= XRESCAOATR(_cNumOrc, _lReserva, @_aRegVS3, _cArmorig, _cArmdes, _cDocumento, @_aMsg)
+				If Len(_aItens) == 0
+					AAdd(_aMsg,"Não foi possivel fazer transferências ref  orçamento " +_cNumOrc+ ", não será realizada a Reserva comunicar ADM Sistemas!!! ")
+					_lRet := .F.
+					Disarmtransaction()
+				EndIf
+			Endif	
 			If _lRet 		
 				_aAuto := Aclone({})
 				Aadd(_aAuto,{_cDocumento , dDataBase})    //Cabecalho
@@ -5093,6 +5114,7 @@ Mostrat Orçamento
 @author DAC - Denilso 
 @since 31/05/2023
 @version 2.0
+@project	PEC044 - Revitalização Consulta Peças - Abri consulta orçamento
 /*/
 User Function XFVERORC(_cAliasPesq,_ObrW)
 Local _lRet     := .T.
