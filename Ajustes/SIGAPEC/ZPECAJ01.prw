@@ -525,7 +525,23 @@ Begin SEQUENCE
  	//criavar('D3_DOC')  
 	
     _aAuto      := {}
-	_cDocumento := NextNumero("SD3",2,"D3_DOC",.T.)
+
+	//Implementado pois em alguns casos não esta conseguindo localizar numera~]ap
+	_cDocumento := ""
+	For _nPos := 1 To 10
+		_cDocumento  := Criavar("D3_DOC")
+		_cDocumento	:= IIf(Empty(_cDocumento),NextNumero("SD3",2,"D3_DOC",.T.),_cDocumento)
+		If !Empty(_cDocumento)
+			Exit
+		Endif 
+	Next 	
+	If Empty(_cDocumento)
+		_cErro := "Não foi possivel montar numeração SD3, para gerar movimentação." 
+		Aadd(_aMsgErro,_cErro)
+		_lRet := .F.
+		Break
+	Endif
+	_cDocumento	:= A261RetINV(_cDocumento)
 	aAdd(_aAuto,{_cDocumento , dDataBase})    //Cabecalho
 	SB1->(DbSetOrder(1))
 	If !SB1->(DbSeek(FWxFilial("SB1")+PadR(_cProduto , TamSx3('B1_COD') [1])))
