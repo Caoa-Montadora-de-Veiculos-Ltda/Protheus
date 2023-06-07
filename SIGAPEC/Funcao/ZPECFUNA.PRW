@@ -3299,8 +3299,8 @@ User Function XMOVA261(_cNumOrc, _cCodProd, _cArmorig, _cArmdes, _nQtde, _nRegvs
 			Break
 		Endif	
 
-		//_cDocumento := GetSxeNum("SD3","D3_DOC")
-		//Implementado pois em alguns casos não esta conseguindo localizar numera~]ap
+		//_cDocumento := GetSxeNum("SD3","D3_DOC") //não pode ser do SX
+		//Implementado pois em alguns casos não esta conseguindo localizar numeração subindo com PEC042 DAC-07/06/2023
 		_cDocumento := ""
 		For _nPos := 1 To 10
 			_cDocumento := Criavar("D3_DOC")
