@@ -44,6 +44,7 @@ Local _cDoc			:= ""
 Local _dDataIni 	:= Date()
 Local _cHsIni		:= Time()
 Local _aDivergencia	:= {}
+Local _nRetJson		:= 0
 
 Private _aItens		:= {}
 Private _cErro		:= ""
@@ -162,42 +163,43 @@ Private _aJson		:= {}
 	Endif
 	//Para Transferência
 	_cErro	 := ""
+	_nRetJson:= 0
 	If _cTpNf == "T"
-		_lTransf := zGeraTransf(@_aDivergencia)
-		//Enviar Email de divergencias ESPFUN.-.PEC042.
-		If Len(_aDivergencia) > 0					
-			NotificaDiv(_aDivergencia)
-		Endif	
+		_lTransf := zGeraTransf(@_aDivergencia, @_nRetJson)
 	ElseIf _cTpNf == "S"
 		_lTransf := zGeraEntrada()
  	EndIf
-	If _lTransf
-		If Empty(_cErro)
-			_cErro := "Confirmacao de mercadorias recebida com sucesso"
-		Endif
-		//Gravar log SZ1
-		ZWSR012Monitor("1",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, If(_lTransf,100,400) /*_nErro*/ )	
-		//Retorno Json
-		oJsonRet['Message'] 		:= "Confirmacao de mercadorias recebida com sucesso"
-		oJsonRet['nota_fiscal']		:= Val(_cNfFor)
-		oJsonRet['cod_fornecedor']	:= oParseJSON:cod_fornecedor
-		oJsonRet['errorCode']		:= 100
-		oJsonRet['errorMessage']	:= AllTrim(_cErro)
-		::SetResponse( oJsonRet:ToJson() )
-	Else 
-		//Gravar log SZ1
-		ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )
-		//Retorno Json
-		oJsonRet['errorCode'] 		:= 400
-		oJsonRet['errorMessage']	:= AllTrim(_cErro)
-	Endif
 	_cLog += "Message....: " + _cErro
-	if ValType(_aJson) == "A" .and. Len(_aJson) > 0
+	if Len(_aJson) > 0
 		ojsonLog:set(_aJson)
 		_cLog += chr(10) + "Array Auto.: " + ojsonLog:toJSON()
 	endif
+	If _lTransf
+		If !Empty(_cErro)  //pode vir preenchida nos casos de parciais por exemplo
+			_cLog := _cErro
+		Else
+			_cLog := "Confirmacao de mercadorias recebida com sucesso"
+		Endif
+		oJsonRet['errorCode']		:= If(_nRetJson == 0, 100, _nRetJson)  //necessário pois parcial tem que voltar para 400
+		oJsonRet['Message'] 		:= _cLog	//"Confirmacao de mercadorias recebida com sucesso"
+		oJsonRet['nota_fiscal']		:= Val(_cNfFor)
+		oJsonRet['cod_fornecedor']	:= oParseJSON:cod_fornecedor
+		::SetResponse( oJsonRet:ToJson() )
+		//implementado para gravar o erro que retorna caso tenha
+		ZWSR012Monitor("1",_cTab, _cDoc, _cLog, _dDataIni, _cHsIni, cJson, 100 /*_nErro*/ )	
+	Else
+		oJsonRet['errorCode'] 		:= 400
+		oJsonRet['errorMessage']	:= AllTrim(_cErro)
+		//_cErro ja foi informado em caso de problemas
+		::SetResponse( oJsonRet:ToJson() )
+		ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )	
+	EndIf
 	Conout(_cLog)//Logs de Monitoramento
 	Conout("ZWSR012 - Integracao Confirmacao de mercadorias recebidas RGLOG PUT - Final "+DtoC(date())+" "+Time())
+	//Caso tenha divergencia ESPFUN.-.PEC042.
+	If Len(_aDivergencia) > 0					
+		NotificaDiv(_aDivergencia)
+	Endif	
 Return .T.
 
 /*
@@ -210,7 +212,7 @@ Historico: 				DAC -Denilso 16/05/2023
 						PEC042.-.Controle.de.saldo.e.e-mail.apos.integracao.de.armazenagem
 ============================================================================================
 */
-Static Function zGeraTransf(_aDivergencia)
+Static Function zGeraTransf(_aDivergencia, _nRetJson)
 Local _cDocumento     	:= ""
 Local _cProduto			:= ""
 Local _cIdJson			:= ""
@@ -237,6 +239,8 @@ Local _lRet 			:= .T.
 Local _nRegZD1
 Local _cMsg
 Local _nCount
+
+Default _nRetJson		:= 0
 
 Private lMsErroAuto 	:= .F.
 Private lMsHelpAuto		:= .T.    
@@ -410,6 +414,7 @@ Private lAutoErrNoFile 	:= .T.
 									_nQtdeConf,;
 									_nSaldoSB2,;
 									_cMsg} )
+			_nRetJson := 400						
 		EndIf
 		// Valida se o Produto tem Quantidade minima para saldo no armazem tecnico	
 		//Caso não tenha o armazém técino continuo 
@@ -469,6 +474,7 @@ Private lAutoErrNoFile 	:= .T.
 										_nQtdeConf,;
 										_nSaldoSB2,;
 										_cMsg} )
+				_nRetJson := 400									
 			Endif	
 		EndIf
 		If _lRet
@@ -483,12 +489,12 @@ Private lAutoErrNoFile 	:= .T.
 	_cErro := ""
 	If Len(_aErro) > 0
 		For _nPos := 1 To Len(_aErro)
-			_cErro += AllTrim(_aErro[_nPos])+ CRLF
+			_cErro += AllTrim(_aErro[_nPos])+ "  "
 		Next
 	Endif 	
 	//Retornando falso ja aborto a processo
 	If ! _lRet
-		_cErro := "Problemas na importação:"+ CRLF + _cErro
+		_cErro := "Problemas na importação:"+' - ' + _cErro
 		Return .F.
 	Endif	
 
