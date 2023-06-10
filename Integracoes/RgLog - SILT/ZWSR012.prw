@@ -153,51 +153,51 @@ Private _aJson		:= {}
 
 	//-- Array de itens dentro de uma propriedade
 	_aItens := oParseJSON:Itens
-	_lTransf := .F.
+	//Alterado forma de chamada das funções DAC 09/06/2023
+	If _aItens == Nil  .Or. Len(_aItens) == 0
+ 		_cErro := "Não informado itens"
+		ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )	
+		SetRestFault(400, _cErro)
+		Return(.T.)
+	Endif
+	//Para Transferência
+	_cErro	 := ""
 	If _cTpNf == "T"
-		If Len(_aItens) > 0
-			_lTransf := zGeraTransf(@_aDivergencia)
-		EndIf
-	Else
-		If Len(_aItens) > 0
-			_lTransf := zGeraEntrada()
-		EndIf		
-	EndIf
-	_cLog += "Message....: " + _cErro
-	if Len(_aJson) > 0
-		ojsonLog:set(_aJson)
-		_cLog += chr(10) + "Array Auto.: " + ojsonLog:toJSON()
-	endif
-
+		_lTransf := zGeraTransf(@_aDivergencia)
+		//Enviar Email de divergencias ESPFUN.-.PEC042.
+		If Len(_aDivergencia) > 0					
+			NotificaDiv(_aDivergencia)
+		Endif	
+	ElseIf _cTpNf == "S"
+		_lTransf := zGeraEntrada()
+ 	EndIf
 	If _lTransf
-		oJsonRet['errorCode']		:= 100
+		If Empty(_cErro)
+			_cErro := "Confirmacao de mercadorias recebida com sucesso"
+		Endif
+		//Gravar log SZ1
+		ZWSR012Monitor("1",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, If(_lTransf,100,400) /*_nErro*/ )	
+		//Retorno Json
 		oJsonRet['Message'] 		:= "Confirmacao de mercadorias recebida com sucesso"
 		oJsonRet['nota_fiscal']		:= Val(_cNfFor)
 		oJsonRet['cod_fornecedor']	:= oParseJSON:cod_fornecedor
-		//implementado para gravar o erro que retorna caso tenha
-		If !Empty(_cErro)
-			_cLog := _cErro
-		Else
-			_cLog := "Confirmacao de mercadorias recebida com sucesso"
-		Endif
-		_cErro := "Confirmacao de mercadorias recebida com sucesso"
-		ZWSR012Monitor("1",_cTab, _cDoc, _cLog, _dDataIni, _cHsIni, cJson, 100 /*_nErro*/ )	
+		oJsonRet['errorCode']		:= 100
+		oJsonRet['errorMessage']	:= AllTrim(_cErro)
 		::SetResponse( oJsonRet:ToJson() )
-	Else
+	Else 
+		//Gravar log SZ1
+		ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )
+		//Retorno Json
 		oJsonRet['errorCode'] 		:= 400
 		oJsonRet['errorMessage']	:= AllTrim(_cErro)
-		//_cErro ja foi informado em caso de problemas
-		ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )	
-		::SetResponse( oJsonRet:ToJson() )
-
-	EndIf
+	Endif
+	_cLog += "Message....: " + _cErro
+	if ValType(_aJson) == "A" .and. Len(_aJson) > 0
+		ojsonLog:set(_aJson)
+		_cLog += chr(10) + "Array Auto.: " + ojsonLog:toJSON()
+	endif
 	Conout(_cLog)//Logs de Monitoramento
 	Conout("ZWSR012 - Integracao Confirmacao de mercadorias recebidas RGLOG PUT - Final "+DtoC(date())+" "+Time())
-	//Caso tenha divergencia ESPFUN.-.PEC042.
-	If Len(_aDivergencia) > 0					
-		NotificaDiv(_aDivergencia)
-	Endif	
-
 Return .T.
 
 /*
@@ -211,53 +211,88 @@ Historico: 				DAC -Denilso 16/05/2023
 ============================================================================================
 */
 Static Function zGeraTransf(_aDivergencia)
-	Local _cDocumento     	:= ""
-	Local _cProduto			:= ""
-	Local _cIdJson			:= ""
-	Local _aAuto  			:= {}
-	Local _aLinha 			:= {}
-	Local _aTransf			:= {}
-	Local _nOpcAuto     	:= 3
-	Local _nPos				:= 0
-	Local _nX				:= 1
-	Local _nQtdeConf		:= 0
-	Local _nSaldoSB2		:= 0
-	Local _nSaldoTec		:= 0
-	Local _nQtdeTec			:= 0
-	Local _cArmOrig			:= AllTrim( GetNewPar( "CMV_PEC019", "80" ) )
-	Local _cArmDes			:= AllTrim( GetNewPar( "CMV_PEC020", "01" ) )
-	Local _cArmTec			:= AllTrim( GetNewPar( "CMV_PEC028", "02" ) )
-	Local _aArmDes			:=	{_cArmTec,_cArmDes}
-	Local cTmpAlias			:= GetNextAlias()
-	Local cQuery			:= ""
-	Local cAliasZD1			:= GetNextAlias()
-	Local cQryZD1			:= ""
-	Local aLog 				:= {}
-	Local cStartPath 		:= GetSrvProfString("Startpath","")
-	Local _cMens
+Local _cDocumento     	:= ""
+Local _cProduto			:= ""
+Local _cIdJson			:= ""
+Local _aAuto  			:= {}
+Local _aLinha 			:= {}
+Local _aSaldoDest		:= {}
+Local _aError			:= {}
+Local _nOpcAuto     	:= 3
+Local _nPos				:= 0
+Local _nQtdeConf		:= 0
+Local _nSaldoSB2		:= 0
+Local _nSaldoTec		:= 0
+Local _nQtdeTec			:= 0
+Local _cArmOrig			:= AllTrim( GetNewPar( "CMV_PEC019", "80" ) )
+Local _cArmDes			:= AllTrim( GetNewPar( "CMV_PEC020", "01" ) )
+Local _cArmTec			:= AllTrim( GetNewPar( "CMV_PEC028", "02" ) )
+Local _aArmDes			:=	{_cArmTec,_cArmDes}
+//Local cTmpAlias			:= GetNextAlias()
+Local cAliasZD1			:= GetNextAlias()
+Local cQryZD1			:= ""
+//Local aLog 				:= {}
+//Local cStartPath 		:= GetSrvProfString("Startpath","")
+Local _lRet 			:= .T.
+Local _nRegZD1
+Local _cMsg
+Local _nCount
 
-	Private lMsErroAuto 	:= .F.
-	Private lMsHelpAuto		:= .T.    
-	Private lAutoErrNoFile 	:= .T. 
+Private lMsErroAuto 	:= .F.
+Private lMsHelpAuto		:= .T.    
+Private lAutoErrNoFile 	:= .T. 
 	
-	//Begin Sequence
-	_aDivergencia := {}
+	_aDivergencia 	:= {}
+	_aErro			:= {}
+	_aSaldoDest		:= {}
+	_cErro			:= ""
+	_lRet := .T.
+
 	For _nPos := 1 To Len(_aItens)
 		_cIdJson		:= AllTrim(_aItens[_nPos]["id"])
 		_cProduto		:= AllTrim(_aItens[_nPos]["cd_produto"])
 		_nQtdeConf		:= _aItens[_nPos]["qt_conf"]
 		_nQtdeDiverge	:= 0
-		If Select(cTmpAlias) <> 0
-			(cTmpAlias)->(DbCloseArea())
-		EndIf
 		
 		if fSZ1Val( _cIdJson )
-			_cErro := "ID " + _cIdJson + " conferencia recebida anteriormente" 
-			Return .F.
+			_cErro := "ID " + _cIdJson + " conferencia recebida anteriormente, referente ao produto "+AllTrim(_cProduto) 
+			Aadd(_aErro, _cErro)
+			_lRet := .F.
+			Loop
 		Endif
-		
+
+		//Verifica a quantidade enviada
+		If _nQtdeConf == 0
+			_cErro := "Qtde conferida nao informada para o produto "+AllTrim(_cProduto) 
+			_lRet := .F.
+			Aadd(_aErro, _cErro)
+			Loop
+		Endif
+		//Produto
+		If Empty(_cProduto)
+			_cErro := "Codigo do produto "+AllTrim(_cProduto)+" esta em branco." 
+			Aadd(_aErro, _cErro)
+			_lRet := .F.
+			Loop
+		Endif	
+		SB1->(DbSetOrder(1))
+		If !SB1->(DbSeek(FWxFilial("SB1")+PadR(_cProduto, TamSx3('B1_COD') [1])))
+			_cErro := "Produto "+AllTrim(_cProduto)+"  nao cadastrado no Totvs." 
+			_lRet := .F.
+			Aadd(_aErro, _cErro)
+			Loop
+		Endif
+		If SB1->B1_MSBLQL == "1"
+			_cErro := "Produto "+AllTrim(_cProduto)+"  bloqueado no cadastrado Totvs." 
+			Aadd(_aErro, _cErro)
+			_lRet := .F.
+			Loop
+		EndIf
+
+		//arquivo recebimento
+		If Select(cAliasZD1) <> 0 ; (cAliasZD1)->(DbCloseArea()) ; EndIf
 		cQryZD1:= ""
-		cQryZD1 += " SELECT ZD1.ZD1_LOCAL													"+(Chr(13)+Chr(10))
+		cQryZD1 += " SELECT ZD1.R_E_C_N_O_ AS NREGZD1													"+(Chr(13)+Chr(10))
 		cQryZD1 += " FROM "+RetSqlName("ZD1")+" ZD1											"+(Chr(13)+Chr(10))
 		cQryZD1 += " WHERE	ZD1.ZD1_FILIAL 	= '"	+FWxFilial("ZD1")+"' 					"+(Chr(13)+Chr(10))
 		cQryZD1 += " 	AND ZD1.ZD1_DOC		LIKE '%"+Alltrim(Str(Val(Alltrim(_cNfFor))))+"%'"+(Chr(13)+Chr(10))
@@ -266,13 +301,35 @@ Static Function zGeraTransf(_aDivergencia)
 		cQryZD1 += " 	AND ZD1.ZD1_LOJA	= '"	+Alltrim(_cLoja   )					+"' "+(Chr(13)+Chr(10))
 		cQryZD1 += " 	AND ZD1.ZD1_COD		= '"	+Alltrim(_cProduto)					+"' "+(Chr(13)+Chr(10))
 		cQryZD1 += " 	AND ZD1.D_E_L_E_T_	= ' '			        						"+(Chr(13)+Chr(10))
+
 		DbUseArea( .T., "TOPCONN", TcGenQry(,, cQryZD1), cAliasZD1, .F., .T. )
 		(cAliasZD1)->(DbGoTop())
-		If (cAliasZD1)->(Eof())
-			_cErro := "Nota Fiscal nao encontrada para conferencia." 
-			Return .F.
+		If (cAliasZD1)->(Eof()) .Or. (cAliasZD1)->NREGZD1 == 0 
+			_cErro := "Nota Fiscal nao encontrada para conferencia. referente ao produto "+AllTrim(_cProduto) 
+			Aadd(_aErro, _cErro)
+			_lRet := .F.
+			Loop
 		Endif
-		If AllTrim((cAliasZD1)->ZD1_LOCAL) == "90"
+		//Não vou fazer o while pois conforme alinhamento é somente um registro para a chave DAC 09/06/2023
+		ZD1->(DbGoto((cAliasZD1)->NREGZD1))
+		//Se não tiver saldo no titulo não passar DAC 10/06/2023
+		If	ZD1->ZD1_SLDIT <= 0
+		    _cErro := "Produto "+AllTrim(_cProduto)+"  nao possui Saldo para movimentação na tabela de Conferencia de Recebimento no Totvs." 
+			Aadd(_aErro, _cErro)
+			Aadd(_aDivergencia, {	_cProduto,;
+									Alltrim(_cFornec),;
+									Alltrim(_cLoja ),; 
+									Alltrim(_cSerFor),; 
+									Alltrim(_cNfFor),; 
+									_cArmOrig,;
+									,;
+									,;
+									,;
+									_cErro} )
+			_lRet := .F.
+			Loop
+		Endif 
+		If AllTrim(ZD1->ZD1_LOCAL) == "90"
 			_cArmOrig	:= "90"
 			_cArmDes	:= "11"
 			_cArmTec	:= AllTrim( GetNewPar( "CMV_PEC028", "02" ) )
@@ -283,20 +340,8 @@ Static Function zGeraTransf(_aDivergencia)
 			_cArmTec	:= AllTrim( GetNewPar( "CMV_PEC028", "02" ) )
 			_aArmDes	:=	{_cArmTec,_cArmDes}
 		EndIf
-		(cAliasZD1)->(DbCloseArea())
-		If Empty(_cProduto)
-			_cErro := "Codigo do produto esta em branco." 
-			Return .F.
-		Endif	
-		SB1->(DbSetOrder(1))
-		If !SB1->(DbSeek(FWxFilial("SB1")+PadR(_cProduto, TamSx3('B1_COD') [1])))
-			_cMens := "Produto "+AllTrim(_cProduto)+"  nao cadastrado no Totvs." 
-			Return .F.
-		Endif
-		If SB1->B1_MSBLQL == "1"
-			_cErro := "Produto "+AllTrim(_cProduto)+"  bloqueado no cadastrado Totvs." 
-			Return .F.
-		EndIf
+
+
 		//Criação dos armazens
 		NNR->(DbSetOrder(1))
 		NNR->(DbSeek(FWxFilial("SB2")))
@@ -307,52 +352,11 @@ Static Function zGeraTransf(_aDivergencia)
 			EndIf
 			NNR->(DbSkip())
 		EndDo
-		//Verifica a quantidade enviada
-		If _nQtdeConf == 0
-			_cErro := "Qtde conferida nao informada." 
-			Return .F.
-		Endif
 		
 		_nQtdeTec 	:= SB1->B1_XRESTEC
 		_nSaldoSB2	:= 0
 		SB2->(DbSetOrder(1))
-		If SB2->(DbSeek(FWxFilial("SB2")+PadR(_cProduto, TamSx3('B2_COD') [1])+PadR(_cArmOrig, TamSx3('B2_LOCAL') [1])))
-			_nSaldoSB2 := SB2->(SaldoSb2())
-			//Não permitir saldo zerado DAC 16/05/2023
-			If _nSaldoSB2 == 0
-				_cErro := "Armazém "+_cArmOrig+" de Recebimento sem Saldo no Totvs. " 
-				Aadd(_aDivergencia, {	_cProduto,;
-										Alltrim(_cFornec),;
-										Alltrim(_cLoja ),; 
-										Alltrim(_cSerFor),; 
-										Alltrim(_cNfFor),;
-										_cArmOrig,; 
-										,;
-										,;
-										,;
-										_cErro} )
-				Return .F.
-			Endif
-			If _nSaldoSB2 < _nQtdeConf
-				//ESPFUN.-.PEC042. deixo continuar com o Saldo do SB2 conforme alinhado com José 16/05/2023
-				_nQtdeDiverge := _nQtdeConf
-				_nQtdeConf	  := _nSaldoSB2	
-				_cMsg := "Qtde conferida "+AllTrim(Str(_nQtdeDiverge))+" maior que Saldo do Totvs "+AllTrim(Str(_nSaldoSB2))+". Será utilizado Saldo Totvs" 
-				_cErro:= "Recebimento parcial da qtde " +AllTrim(Str(_nQtdeConf))+ " por falta de saldo no armazem "+_cArmOrig+" divergencia do Saldo Estoque, da Serie/NF "+_cSerFor+"/"+_cNfFor
-				//igualar qtde conferida a saldo B2
-				//Devo enviar e-mail mesmo deixando continuar
-				Aadd(_aDivergencia, {	_cProduto,;
-										Alltrim(_cFornec),;
-										Alltrim(_cLoja ),; 
-										Alltrim(_cSerFor),; 
-										Alltrim(_cNfFor),; 
-										_cArmOrig,;
-										_nQtdeDiverge,;
-										_nQtdeConf,;
-										_nSaldoSB2,;
-										_cMsg} )
-			EndIf
-		Else
+		If !SB2->(DbSeek(FWxFilial("SB2")+PadR(_cProduto, TamSx3('B2_COD') [1])+PadR(_cArmOrig, TamSx3('B2_LOCAL') [1])))
 			//Se teve que criar SB2 deve retornar Falso pois o saldo ficara zerado
 			CriaSB2(AllTrim(_cProduto),AllTrim(_cArmOrig))
 		    _cErro := "Produto "+AllTrim(_cProduto)+"  nao cadastrado no Estoque "+AllTrim(_cArmOrig)+" do Totvs." 
@@ -366,54 +370,94 @@ Static Function zGeraTransf(_aDivergencia)
 									,;
 									,;
 									_cErro} )
+		Endif	
 
-			Return .F.
+		_nSaldoSB2 := SB2->(SaldoSb2())
+		//Não permitir saldo zerado DAC 16/05/2023
+		If _nSaldoSB2 == 0
+			_cErro := "Produto "+AllTrim(_cProduto)+" com Armazém "+_cArmOrig+" de Recebimento sem Saldo no Totvs. " 
+			Aadd(_aErro, _cErro)
+			Aadd(_aDivergencia, {	_cProduto,;
+									Alltrim(_cFornec),;
+									Alltrim(_cLoja ),; 
+									Alltrim(_cSerFor),; 
+									Alltrim(_cNfFor),;
+									_cArmOrig,; 
+									,;
+									,;
+									,;
+									_cErro} )
+			_lRet := .F.
+			Loop
+		Endif
+		//neste caso não é erro receberá parcial quando saldo do armazém esta menor que a quantidade enviada			
+		If _nSaldoSB2 < _nQtdeConf
+			//ESPFUN.-.PEC042. deixo continuar com o Saldo do SB2 conforme alinhado com José 16/05/2023
+			_nQtdeDiverge := _nQtdeConf
+			_nQtdeConf	  := _nSaldoSB2	
+			_cMsg := "Qtde conferida "+AllTrim(Str(_nQtdeDiverge))+" maior que Saldo do Totvs "+AllTrim(Str(_nSaldoSB2))+". Será utilizado Saldo Totvs" 
+			_cErro:= "Recebimento parcial do produto "+_cProduto+" na qtde " +AllTrim(Str(_nQtdeConf))+ " por falta de saldo no armazem "+_cArmOrig+" divergencia do Saldo Estoque, da Serie/NF "+_cSerFor+"/"+_cNfFor
+			//igualar qtde conferida a saldo B2
+			//Devo enviar e-mail mesmo deixando continuar
+			Aadd(_aErro, _cErro)
+			Aadd(_aDivergencia, {	_cProduto,;
+									Alltrim(_cFornec),;
+									Alltrim(_cLoja ),; 
+									Alltrim(_cSerFor),; 
+									Alltrim(_cNfFor),; 
+									_cArmOrig,;
+									_nQtdeDiverge,;
+									_nQtdeConf,;
+									_nSaldoSB2,;
+									_cMsg} )
 		EndIf
 		// Valida se o Produto tem Quantidade minima para saldo no armazem tecnico	
+		//Caso não tenha o armazém técino continuo 
 		if _nQtdeTec > 0
 			SB2->(DbSetOrder(1))
 			If SB2->(DbSeek(FWxFilial("SB2")+PadR(_cProduto, TamSx3('B2_COD') [1])+PadR(_cArmTec, TamSx3('B2_LOCAL') [1])))				
 				_nSaldoTec := SB2->(SaldoSb2())
 				_nSaldoTec := _nQtdeTec - _nSaldoTec
-			else
+			Else
 				CriaSB2(AllTrim(_cProduto),AllTrim(_cArmTec))
-				//_cErro := "Produto "+AllTrim(_cProduto)+" nao cadastrado no Estoque "+AllTrim(_cArmTec)+" do Totvs." 
+				_cErro := "Produto "+AllTrim(_cProduto)+" nao cadastrado no Estoque "+AllTrim(_cArmTec)+" do Totvs, referente Qtde Técnico "+AllTrim(Str(_nQtdeTec)) 
+				Aadd(_aDivergencia, {	_cProduto,;
+										Alltrim(_cFornec),;
+										Alltrim(_cLoja ),; 
+										Alltrim(_cSerFor),; 
+										Alltrim(_cNfFor),;
+										_cArmOrig,; 
+										,;
+										,;
+										,;
+										_cErro} )
 			EndIf
 		Endif	
 		
+		//Pode criar	
 		If !SB2->(DbSeek(FWxFilial("SB2")+PadR(_cProduto, TamSx3('B2_COD') [1])+PadR(_cArmDes, TamSx3('B2_LOCAL') [1])))
 			CriaSB2(AllTrim(_cProduto),AllTrim(_cArmDes))
-			//_cErro := "Produto "+AllTrim(_cProduto)+" nao cadastrado no Estoque "+AllTrim(_cArmDes)+" do Totvs." 
+			_cErro := "Produto "+AllTrim(_cProduto)+" nao cadastrado no Estoque "+AllTrim(_cArmDes)+" do Totvs." 
+			Aadd(_aDivergencia, {	_cProduto,;
+									Alltrim(_cFornec),;
+									Alltrim(_cLoja ),; 
+									Alltrim(_cSerFor),; 
+									Alltrim(_cNfFor),;
+									_cArmOrig,; 
+									,;
+									,;
+									,;
+									_cErro} )
 		EndIf
-					
-		/*
-		ZD1->(DbSetOrder(1))
-		If !ZD1->(DbSeek(FWxFilial("ZD1")+ PadR(_cNfFor, TamSx3('ZD1_DOC') [1]) + PadR(_cSerFor, TamSx3('ZD1_SERIE') [1]) + PadR(_cFornec, TamSx3('ZD1_FORNEC') [1]) + PadR(_cLoja, TamSx3('ZD1_LOJA') [1]) + PadR(_cProduto, TamSx3('B2_COD') [1]) ))	
-		*/
-		cQuery := ""
-		cQuery += " SELECT * 																"+(Chr(13)+Chr(10))
-		cQuery += " FROM "+RetSqlName("ZD1")+" ZD1											"+(Chr(13)+Chr(10))
-		cQuery += " WHERE	ZD1.ZD1_FILIAL 	= '"	+FWxFilial("ZD1")+"' 					"+(Chr(13)+Chr(10))
-		cQuery += " 	AND ZD1.ZD1_DOC		LIKE '%"+Alltrim(Str(Val(Alltrim(_cNfFor))))+"%'"+(Chr(13)+Chr(10))
-		cQuery += " 	AND ZD1.ZD1_SERIE 	= '"	+Alltrim(_cSerFor )					+"' "+(Chr(13)+Chr(10))
-		cQuery += " 	AND ZD1.ZD1_FORNEC	= '"	+Alltrim(_cFornec )					+"' "+(Chr(13)+Chr(10))
-		cQuery += " 	AND ZD1.ZD1_LOJA	= '"	+Alltrim(_cLoja   )					+"' "+(Chr(13)+Chr(10))
-		cQuery += " 	AND ZD1.ZD1_COD		= '"	+Alltrim(_cProduto)					+"' "+(Chr(13)+Chr(10))
-		cQuery += " 	AND ZD1.D_E_L_E_T_	= ' '			        						"+(Chr(13)+Chr(10))
-		If Select(cTmpAlias) <> 0 ; (cTmpAlias)->(DbCloseArea()) ; EndIf
-		DbUseArea( .T., "TOPCONN", TcGenQry(,, cQuery), cTmpAlias, .F., .T. )
-		(cTmpAlias)->(DbGoTop())
-		If (cTmpAlias)->(Eof())
-			_cErro := "Nao existe controle de conferencia para esse item - ZD1." 
-			Return .F.
-		Endif	
-		If _nQtdeConf > (cTmpAlias)->ZD1_SLDIT
+				
+		If _nQtdeConf > ZD1->ZD1_SLDIT
 			//ESPFUN.-.PEC042.-.Controle.de.saldo.e.e-mail.apos.integracao.de.armazenagem
 			//igualar qtde conferida a saldo b2
 			_nQtdeDiverge := _nQtdeConf
-			_nQtdeConf	  := (cTmpAlias)->ZD1_SLDIT	
+			_nQtdeConf	  := ZD1->ZD1_SLDIT	
 			_cMsg := "Qtde conferida "+AllTrim(Str(_nQtdeDiverge))+" maior que o saldo a conferir - ZD1 "+AllTrim(Str(_nQtdeConf))+", será substituido pelo saldo ZD1 ." 
 			_cErro:= "Recebimento parcial da qtde " +AllTrim(Str(_nQtdeConf))+ " por falta de Saldo a Receber na NF, Armazém "+_cArmOrig+", da Serie/NF "+_cSerFor+"/"+_cNfFor
+			Aadd(_aErro, _cErro)
 			If _nQtdeDiverge > 0					
 				Aadd(_aDivergencia, {	_cProduto,;
 										Alltrim(_cFornec),;
@@ -427,49 +471,87 @@ Static Function zGeraTransf(_aDivergencia)
 										_cMsg} )
 			Endif	
 		EndIf
-		If Select(cTmpAlias) <> 0 ; (cTmpAlias)->(DbCloseArea()) ; EndIf
-		DbSelectArea("SD3")
-
-		//_cDocumento := SD3->(NextNumero("SD3",2,"D3_DOC",.T.))  //esta dando erro no processamento
-		//Implementado pois em alguns casos não esta conseguindo localizar numeração DAC 07/06/2023 PEC042
-		_cDocumento := ""
-		For _nPos := 1 To 10
-			_cDocumento  := Criavar("D3_DOC")
-			_cDocumento	:= IIf(Empty(_cDocumento),NextNumero("SD3",2,"D3_DOC",.T.),_cDocumento)
-			If !Empty(_cDocumento)
-				Exit
+		If _lRet
+			If _nQtdeConf <= _nSaldoTec
+				 Aadd(_aSaldoDest,{(cAliasZD1)->NREGZD1, _cProduto, _cArmOrig, _aArmDes, _nQtdeDiverge, _nSaldoSB2, _nQtdeConf, {_nQtdeConf} })
+			Else
+				 Aadd(_aSaldoDest,{(cAliasZD1)->NREGZD1, _cProduto, _cArmOrig, _aArmDes, _nQtdeDiverge, _nSaldoSB2, _nQtdeConf, {_nSaldoTec, _nQtdeConf - _nSaldoTec}})
 			Endif 
-		Next 	
-		If Empty(_cDocumento)
-			_cErro := "Não foi possivel montar numeração SD3, para gerar movimentação." 
-			Aadd(_aDivergencia, {	_cProduto,;
-									Alltrim(_cFornec),;
-									Alltrim(_cLoja ),; 
-									Alltrim(_cSerFor),; 
-									Alltrim(_cNfFor),;
-									_cArmOrig,; 
-									_nQtdeDiverge,;
-									_nQtdeConf,;
-									_nSaldoSB2,;
-									_cErro} )
-			Return .F.
 		Endif
-		_cDocumento	:= A261RetINV(_cDocumento)
-		aadd(_aAuto,{_cDocumento , dDataBase})    //Cabecalho
+	Next
+	//significa que pelo menos u registro ocorreu erro, preencher _cErro para retorno
+	_cErro := ""
+	If Len(_aErro) > 0
+		For _nPos := 1 To Len(_aErro)
+			_cErro += AllTrim(_aErro[_nPos])+ CRLF
+		Next
+	Endif 	
+	//Retornando falso ja aborto a processo
+	If ! _lRet
+		_cErro := "Problemas na importação:"+ CRLF + _cErro
+		Return .F.
+	Endif	
 
-		SB1->(DbSetOrder(1))
-		If SB1->(DbSeek(FWxFilial("SB1")+PadR(_cProduto , TamSx3('B1_COD') [1])))
-			IF _nQtdeConf <= _nSaldoTec
-				_aSaldoDest := {_nQtdeConf}
-			ELSE
-				_aSaldoDest := {_nSaldoTec, _nQtdeConf - _nSaldoTec}
-			ENDIF
-
-			For _nX := 1 To Len(_aSaldoDest)
+	//Caso ocorra erro na gravação não efetuar retornar erro total
+	Begin Transaction
+		For _nPos := 1 To Len(_aSaldoDest)
+			_nRegZD1 		:= _aSaldoDest[_nPos,1]
+			_cProduto		:= _aSaldoDest[_nPos,2]	 
+			_cArmOrig		:= _aSaldoDest[_nPos,3]	 
+			_aArmDes		:= _aSaldoDest[_nPos,4]	 
+			_nQtdeDiverge	:= _aSaldoDest[_nPos,5]
+			_nSaldoSB2		:= _aSaldoDest[_nPos,6]
+			_nSaldoSB2		:= _aSaldoDest[_nPos,6]
+			_nQtdeConf		:= _aSaldoDest[_nPos,7]
+			_aSaldoMov		:= _aSaldoDest[_nPos,8]
+			_aAuto			:= {}
+			_lRet 			:= .F.
+			//_cDocumento := SD3->(NextNumero("SD3",2,"D3_DOC",.T.))  //esta dando erro no processamento
+			//Implementado pois em alguns casos não esta conseguindo localizar numeração DAC 07/06/2023 PEC042
+			_cDocumento := ""
+			For _nCount := 1 To 10
+				_cDocumento  := Criavar("D3_DOC")
+				_cDocumento	:= IIf(Empty(_cDocumento),NextNumero("SD3",2,"D3_DOC",.T.),_cDocumento)
+				If !Empty(_cDocumento)
+					Exit
+				Endif 
+			Next 	
+			If Empty(_cDocumento)
+				_cErro := "Não foi possivel criar numeração TOTVS, não foi gravada a movimentação"
+				Aadd(_aDivergencia, {	_cProduto,;
+										Alltrim(_cFornec),;
+										Alltrim(_cLoja ),; 
+										Alltrim(_cSerFor),; 
+										Alltrim(_cNfFor),;
+										_cArmOrig,; 
+										_nQtdeDiverge,;
+										_nQtdeConf,;
+										_nSaldoSB2,;
+										_cErro} )
+				Exit
+			Endif
+			_cDocumento	:= A261RetINV(_cDocumento)
+			aadd(_aAuto,{_cDocumento , dDataBase})    //Cabecalho
+			//ZD1->(DbGoto(_nRegZD1))  //posiciono ZD1
+			SB1->(DbSetOrder(1))
+			If !SB1->(DbSeek(FWxFilial("SB1")+PadR(_cProduto, TamSx3('B1_COD') [1])))
+				_cErro := "Não localizado Produto "+_cProduto+" para execução gravação movimentação por ExecAuto"
+				Aadd(_aDivergencia, {	_cProduto,;
+										Alltrim(_cFornec),;
+										Alltrim(_cLoja ),; 
+										Alltrim(_cSerFor),; 
+										Alltrim(_cNfFor),;
+										_cArmOrig,; 
+										_nQtdeDiverge,;
+										_nQtdeConf,;
+										_nSaldoSB2,;
+										_cErro} )
+				Exit
+			Endif	
+			For _nCount := 1 To Len(_aSaldoMov)
 				_aLinha := {}
-				if _aSaldoDest[_nX] <= 0
-					//_nX++
-					loop
+				If _aSaldoMov[_nCount] <= 0
+					Loop
 				Endif 
 				//Origem
 				aadd(_aLinha,{"D3_COD"    	, SB1->B1_COD 																						, Nil} ) //Cod Produto origem
@@ -481,14 +563,14 @@ Static Function zGeraTransf(_aDivergencia)
 				aadd(_aLinha,{"D3_COD"		, SB1->B1_COD																						, Nil}) //cod produto destino
 				aadd(_aLinha,{"D3_DESCRI"	, SB1->B1_DESC																						, Nil}) //descr produto destino
 				aadd(_aLinha,{"D3_UM"		, SB1->B1_UM																						, Nil}) //unidade medida destino					
-				aadd(_aLinha,{"D3_LOCAL"	, AllTrim( _aArmDes[_nX] )																			, Nil}) //armazem destino  era  SB1->B1_LOCPAD
+				aadd(_aLinha,{"D3_LOCAL"	, AllTrim( _aArmDes[_nCount] )																			, Nil}) //armazem destino  era  SB1->B1_LOCPAD
 				aadd(_aLinha,{"D3_LOCALIZ"	, IIf(Localiza(SB1->B1_COD),FM_PRODSBZ(SB1->B1_COD,"SB5->B5_LOCALIZ"),Space(15))					, Nil}) //Informar endereço destino
 				aadd(_aLinha,{"D3_NUMSERI"	, CriaVar('D3_NUMSERI')																				, Nil}) //Numero serie
 				aadd(_aLinha,{"D3_LOTECTL"	, CriaVar('D3_LOTECTL')																				, Nil}) //Lote Origem
 				aadd(_aLinha,{"D3_NUMLOTE"	, CriaVar("D3_NUMLOTE")																				, Nil}) //sublote Origem
 				aadd(_aLinha,{"D3_DTVALID"	, CriaVar("D3_DTVALID")																				, Nil}) //data validade
 				aadd(_aLinha,{"D3_POTENCI"	, CriaVar('D3_POTENCI')																				, Nil}) // Potencia
-				aadd(_aLinha,{"D3_QUANT"	, _aSaldoDest[_nX]																						, Nil}) //Quantidade
+				aadd(_aLinha,{"D3_QUANT"	, _aSaldoMov[_nCount]																						, Nil}) //Quantidade
 				aadd(_aLinha,{"D3_QTSEGUM"	, CriaVar("D3_QTSEGUM") 																			, Nil}) //Seg unidade medida
 				aadd(_aLinha,{"D3_ESTORNO"	, CriaVar("D3_ESTORNO")																				, Nil}) //Estorno
 				aadd(_aLinha,{"D3_LOTECTL"	, CriaVar('D3_LOTECTL')	 																			, Nil}) //Lote destino
@@ -496,86 +578,78 @@ Static Function zGeraTransf(_aDivergencia)
 				aadd(_aLinha,{"D3_ITEMGRD"	, CriaVar("D3_ITEMGRD")																				, Nil})	//Item Grade 
 				aadd(_aLinha,{"D3_OBSERVA"	, "NF.TOTVS:"+AllTrim(_cNfFor)+"|"+AllTrim(_cSerFor)+"|"+AllTrim(_cFornec)+"|"+AllTrim(_cLoja) 		, Nil})	//Observacao
 				aAdd(_aAuto, _aLinha)
-				aAdd(_aTransf,{_cProduto,_aSaldoDest[_nX]})
-			Next _nX
-		EndIf					
-	Next
+			Next _nCount
 
-	If Len(_aTransf) == 0
-		_cErro := "Não foi possivel fazer a movimentação interna, verificar com ADM Sistemas TOTVS ." 
-		//ESPFUN.-.PEC042.-.Controle.de.saldo.e.e-mail.apos.integracao.de.armazenagem
-		//igualar qtde conferida a saldo b2
-		_QtdeDiverge := _nQtdeConf
-		_QtdeConf	 := (cTmpAlias)->ZD1_SLDIT	
-		If _QtdeDiverge > 0					
-			add(_aDivergencia, {_cProduto,;
-								Alltrim(_cFornec),;
-								Alltrim(_cLoja ),; 
-								Alltrim(_cSerFor),; 
-								Alltrim(_cNfFor),; 
-								_cArmOrig,;
-								_nQtdeDiverge,;
-								_nQtdeConf,;
-								_nSaldoSB2,;
-								_cErro} )
-		Endif	
-		Return .F.
-	Endif
-	lMsErroAuto 	:= .F.
-	lMsHelpAuto		:= .T.
-	lAutoErrNoFile 	:= .t.
-	MSExecAuto({|x,y| mata261(x,y)}, _aAuto, _nOpcAuto)
-	_aJson := aClone(_aAuto)
-	If lMsErroAuto
-		_cErro := "Problemas no execauto MATA261, Nota Fiscal TOTVS!" 
-		Aadd(_aDivergencia, {	_cProduto,;
-								Alltrim(_cFornec),;
-								Alltrim(_cLoja ),; 
-								Alltrim(_cSerFor),; 
-								Alltrim(_cNfFor),;
-								_cArmOrig,; 
-								_nQtdeDiverge,;
-								_nQtdeConf,;
-								_nSaldoSB2,;
-								_cErro} )
-		// se estiver em debug, pega o log inteiro do erro para uma analise mais detalhada
-		if lDebug 
-			aLog   := GetAutoGRLog()
-			_cErro += mostraerro(cStartPath+'ZWSR012.log')
-			For _nX := 1 To Len(aLog)
-				If !Empty(_cErro)
-					_cErro += CRLF
-				EndIf
-				_cErro += aLog[_nX]
-			Next _nX
-		Endif		
-		Return .F.
-	Endif
-	//Atualizar ZD1
-	For _nPos := 1 To Len(_aTransf)
-		cQuery := ""
-		cQuery += " SELECT * 																"+(Chr(13)+Chr(10))
-		cQuery += " FROM "+RetSqlName("ZD1")+" ZD1											"+(Chr(13)+Chr(10))
-		cQuery += " WHERE	ZD1.ZD1_FILIAL 	= '"	+FWxFilial("ZD1")+"' 					"+(Chr(13)+Chr(10))
-		cQuery += " 	AND ZD1.ZD1_DOC		LIKE '%"+Alltrim(Str(Val(Alltrim(_cNfFor))))+"%'"+(Chr(13)+Chr(10))
-		cQuery += " 	AND ZD1.ZD1_SERIE 	= '"	+Alltrim(_cSerFor 			)		+"' "+(Chr(13)+Chr(10))
-		cQuery += " 	AND ZD1.ZD1_FORNEC	= '"	+Alltrim(_cFornec 			)		+"' "+(Chr(13)+Chr(10))
-		cQuery += " 	AND ZD1.ZD1_LOJA	= '"	+Alltrim(_cLoja   			)		+"' "+(Chr(13)+Chr(10))
-		cQuery += " 	AND ZD1.ZD1_COD		= '"	+Alltrim(_aTransf[_nPos][01])		+"' "+(Chr(13)+Chr(10))
-		cQuery += " 	AND ZD1.D_E_L_E_T_	= ' '			        						"+(Chr(13)+Chr(10))
-		If Select(cTmpAlias) <> 0 ; (cTmpAlias)->(DbCloseArea()) ; EndIf
-		DbUseArea( .T., "TOPCONN", TcGenQry(,, cQuery), cTmpAlias, .F., .T. )
-		(cTmpAlias)->(DbGoTop())
-		If (cTmpAlias)->(!Eof())
-			ZD1->(DbGoTo((cTmpAlias)->R_E_C_N_O_))
-			RecLock("ZD1", .F.)
-			ZD1->ZD1_QTCONF := ZD1->ZD1_QTCONF + _aTransf[_nPos][02]
-			ZD1->ZD1_SLDIT	:= ZD1->ZD1_SLDIT  - _aTransf[_nPos][02]
-			ZD1->( MsUnLock() )
-		EndIf
-		If Select(cTmpAlias) <> 0 ; (cTmpAlias)->(DbCloseArea()) ; EndIf
-	Next	
-Return .T.
+			If Len(_aAuto) == 0 .Or. Len(_aLinha) == 0
+				_cErro := "Não foi possivel fazer a movimentação interna não carregou dados da movimentação, verificar com ADM Sistemas TOTVS ." 
+				//ESPFUN.-.PEC042.-.Controle.de.saldo.e.e-mail.apos.integracao.de.armazenagem
+				//igualar qtde conferida a saldo b2
+				add(_aDivergencia, {_cProduto,;
+									Alltrim(_cFornec),;
+									Alltrim(_cLoja ),; 
+									Alltrim(_cSerFor),; 
+									Alltrim(_cNfFor),; 
+									_cArmOrig,;
+									_nQtdeDiverge,;
+									_nQtdeConf,;
+									_nSaldoSB2,;
+									_cErro} )
+				Exit
+			Endif	
+			lMsErroAuto 	:= .F.
+			lMsHelpAuto		:= .T.
+			lAutoErrNoFile 	:= .t.
+			MSExecAuto({|x,y| mata261(x,y)}, _aAuto, _nOpcAuto)
+			_aJson := aClone(_aAuto)
+			If lMsErroAuto
+				_cErro := "Problemas no execauto MATA261, Nota Fiscal TOTVS!" 
+				_aError := GetAutoGRLog()
+				_cMsg 	:= "Problemas no execauto MATA261, Nota Fiscal TOTVS!" +CRLF
+				For _nCount := 1 To Len(_aError)
+					If !Empty((AllTrim(_aError[_nCount])))  	
+						_cMsg	+= 	AllTrim(_aError[_nCount]) + CRLF
+					EndIf		
+				Next _nCount			
+				Aadd(_aDivergencia, {	_cProduto,;
+										Alltrim(_cFornec),;
+										Alltrim(_cLoja ),; 
+										Alltrim(_cSerFor),; 
+										Alltrim(_cNfFor),;
+										_cArmOrig,; 
+										_nQtdeDiverge,;
+										_nQtdeConf,;
+										_nSaldoSB2,;
+										_cMsg} )
+				Exit
+			Endif 
+		    // se estiver em debug, pega o log inteiro do erro para uma analise mais detalhada
+			/*
+		    if lDebug 
+				aLog   := GetAutoGRLog()
+				_cErro += mostraerro(cStartPath+'ZWSR012.log')
+				For _nX := 1 To Len(aLog)
+					If !Empty(_cErro)
+						_cErro += CRLF
+					EndIf
+					_cErro += aLog[_nX]
+				Next _nX
+			Endif		
+			*/
+			ZD1->(DbGoto(_nRegZD1))  //posiciono ZD1
+			For _nCount := 1 To Len(_aSaldoMov)
+				RecLock("ZD1", .F.)
+				ZD1->ZD1_QTCONF += _aSaldoMov[_nCount]
+				ZD1->ZD1_SLDIT	-= _aSaldoMov[_nCount]
+				ZD1->( MsUnLock() )
+			Next _nCount
+			_lRet := .T.
+		Next _nPos
+		If !_lRet
+			Disarmtransaction()
+		Endif			
+
+	End Transaction		
+Return _lRet
 
 /*
 =====================================================================================
