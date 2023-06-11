@@ -168,7 +168,7 @@ While !FT_FEof()
 				aLinha[12],;										//Conhecimento de Embarque
 				aLinha[13],;										//Navio
 				VAL(aLinha[06]),;									//Saldo
-				VAL(StrTran(aLinha[07], ",", "."))/VAL(aLinha[06]),;//Preço Unitario
+				Round(VAL( alltrim(StrTran(aLinha[07], ",", ".")) )/VAL( Alltrim( aLinha[06] ) ), 5 ),;//Preço Unitario
 				0 ,;
 				"",;						//RECSW3
 				0 ,;
@@ -992,9 +992,9 @@ Begin Transaction
 					EW5->EW5_PESOL	:= WKEW5->EW5_PESOL
 					EW5->EW5_PESOB	:= WKEW5->EW5_PESOB
 					EW5->EW5_FABR	:= WKEW5->EW5_FABR
-					//EW5->EW5_XLOTE	:= WKEW5->EW5_XLOTE
-					//EW5->EW5_XCASE	:= WKEW5->EW5_XCASE
-					//EW5->EW5_XCONT	:= WKEW5->EW5_XCONT
+					EW5->EW5_XLOTE	:= WKEW5->EW5_XLOTE
+					EW5->EW5_XCASE	:= WKEW5->EW5_XCASE
+					EW5->EW5_XCONT	:= WKEW5->EW5_XCONT
 					EW5->EW5_XVIN	:= WKEW5->EW5_XVIN
 					EW5->EW5_XMOTOR	:= WKEW5->EW5_XMOTOR
 					EW5->EW5_XCHAVE	:= WKEW5->EW5_XCHAVE
@@ -1016,7 +1016,7 @@ Begin Transaction
 				cSeqEW5 := Soma1(cSeqEW5)
 			endif
 
-			nTotalFOB := nTotalFOB + (WKEW5->EW5_QTDE * WKEW5->EW5_PRECO)
+			nTotalFOB := nTotalFOB + NoRound( WKEW5->EW5_QTDE * WKEW5->EW5_PRECO , 2 )
 	
 			IF aScan( aInvoice, { |x| x[1] ==  cInvoice } )== 0
 				AAdd(aInvoice, {cInvoice,cHouse,cNavio})
@@ -1381,12 +1381,12 @@ Default cPedido := ""
 		WKSZM->ZM_NAVIO  := aLinha[13]
 		WKSZM->ZM_BL     := aLinha[12]
 		WKSZM->ZM_CONT   := aLinha[08]
-		WKSZM->ZM_LOTE   := ""
+		WKSZM->ZM_LOTE   := iif(nLay == 1,Alltrim( aLinha[11]) ,' ' )
 		WKSZM->ZM_CASE   := aLinha[09]
 		WKSZM->ZM_PROD   := aLinha[05]
 		WKSZM->ZM_DESCR  := Posicione("SB1", 1, FwxFilial("SB1") + Alltrim(aLinha[05]), "B1_DESC")
 		WKSZM->ZM_QTDE   := val(aLinha[06])
-		WKSZM->ZM_UNIT   := ""
+		WKSZM->ZM_UNIT   := iif(nLay == 1 , Alltrim( aLinha[11] )+Alltrim(aLinha[09]),' ' )
 		WKSZM->ZM_DOC    := ""
 		WKSZM->ZM_SERIE  := ""
 		WKSZM->ZM_FORNEC := cFornecedor
