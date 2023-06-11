@@ -12,6 +12,7 @@ Consulta de Faturamento por Tipo
 @since 05/12/2022
 @version 1.0
 @type function
+
 /*/
 
 User Function ZVEIR002()
@@ -233,8 +234,8 @@ Static Function ZVEIR2QR_Query()
 
 	cQuery +=  CLRF + ;
 	"     SELECT  " + CLRF + ;
-	"          COALESCE( VRK.VRK_PEDIDO , ' ' ) AS VRJ_PEDIDO " + CLRF + ;
-	"         , SC6.C6_PEDCLI AS VRJ_PEDCOM " + CLRF + ;
+	"           COALESCE( VRK.VRK_PEDIDO , ' ' ) AS VRJ_PEDIDO " + CLRF + ;
+	"         , COALESCE( VRJ.VRJ_PEDCOM ,SC6.C6_PEDCLI ) AS VRJ_PEDCOM " + CLRF + ;
 	"         , SD2.D2_PEDIDO " + CLRF + ;
 	"         , COALESCE(VV0.VV0_NUMTRA,' ') as VV0_NUMTRA" + CLRF + ;
 	"         , SC6.C6_ENTREG " + CLRF + ;
