@@ -222,11 +222,11 @@ If EW4->( dbSeek( xFilial("EW4") + cInvoice ) )
 Endif
 
 If lRetorno
-	if nLay == 1
-		lRet := Val1Dados()
-	else
-		lRet := ValDados()	
-	EndIf
+	//if nLay == 1
+		lRet := Val1Dados() // Unificando os Layout da Montadora com Barueri
+	//else
+	//	lRet := ValDados()	
+	//EndIf
 	
 	if lRet	
 		SetArea()
