@@ -92,7 +92,8 @@ User Function ZFISR005()
     TRCell():New( oSection  ,"D2_QUANT"    ,cAliasTMP  ,"Quant."						)
     TRCell():New( oSection  ,"D2_PRUNIT"   ,cAliasTMP  ,"Valor Unit. Item"				)
   //TRCell():New( oSection  ,"D2_DESC"     ,cAliasTMP  ,"Desconto Item"				    )
-    TRCell():New( oSection  ,"D2_DESCON"   ,cAliasTMP  ,"Desconto Item"				    )
+    //TRCell():New( oSection  ,"D2_DESCON"   ,cAliasTMP  ,"Desconto Item"				    )
+    TRCell():New( oSection  ,"FT_DESCONT"   ,cAliasTMP  ,"Desconto Item"				    )
     TRCell():New( oSection  ,"VlrFrete"    ,cAliasTMP  ,"Frete"						    )
     TRCell():New( oSection  ,"VlrSeguro"   ,cAliasTMP  ,"Seguro"						)
     TRCell():New( oSection  ,"VlrDesp"     ,cAliasTMP  ,"Despesas"						)
@@ -480,7 +481,8 @@ Static Function ReportPrint(oReport)
         oSection:Cell( "D2_QUANT"    ):SetValue( (cAliasTMP)->D2_QUANT ) //--Quant
         oSection:Cell( "D2_PRUNIT"   ):SetValue( (cAliasTMP)->D2_PRUNIT ) //--Valor Unit. Item
       //oSection:Cell( "D2_DESC"     ):SetValue( (cAliasTMP)->D2_DESC ) //--Desconto Item
-        oSection:Cell( "D2_DESCON"   ):SetValue( (cAliasTMP)->D2_DESCON ) //--Desconto Item
+        //oSection:Cell( "D2_DESCON"   ):SetValue( (cAliasTMP)->D2_DESCON ) //--Desconto Item
+        oSection:Cell( "FT_DESCONT"   ):SetValue( (cAliasTMP)->FT_DESCONT ) //--Desconto Item
         oSection:Cell( "VlrFrete"    ):SetValue( nVlrFrete ) //--Frete
         oSection:Cell( "VlrSeguro"   ):SetValue( nVlrSeguro ) //--Seguro
         oSection:Cell( "VlrDesp"     ):SetValue( nVlrDesp ) //--Despesas

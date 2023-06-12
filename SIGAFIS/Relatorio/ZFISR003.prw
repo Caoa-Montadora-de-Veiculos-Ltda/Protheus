@@ -89,7 +89,8 @@ oSection := TRSection():New(oReport    ,"Colunas"    ,{cAliasTMP})
     TRCell():New( oSection  ,"D1_UM"        ,cAliasTMP  ,'Un Medida'                   )
     TRCell():New( oSection  ,"D1_QUANT"     ,cAliasTMP  ,'Quant.'                      )
     TRCell():New( oSection  ,"D1_VUNIT"     ,cAliasTMP  ,'Valor Unit. Item'            )
-    TRCell():New( oSection  ,"F1_DESCONT"   ,cAliasTMP  ,'Desconto Item'               )
+    //TRCell():New( oSection  ,"F1_DESCONT"   ,cAliasTMP  ,'Desconto Item'               )
+    TRCell():New( oSection  ,"FT_DESCONT"   ,cAliasTMP  ,'Desconto Item'               ) 
     TRCell():New( oSection  ,"D1_VALFRE"    ,cAliasTMP  ,'Frete'                       )
     TRCell():New( oSection  ,"D1_DESPESA"   ,cAliasTMP  ,'Despesas Acessorias'         )
     TRCell():New( oSection  ,"D1_SEGURO"    ,cAliasTMP  ,'Seguro'                      )
@@ -459,7 +460,8 @@ Static Function  ReportPrint(oReport)
          oSection:Cell( "D1_UM"     ):SetValue( AllTrim( (cAliasTMP)->D1_UM )                                                                               ) //--Un Medida
          oSection:Cell( "D1_QUANT"  ):SetValue( (cAliasTMP)->D1_QUANT                                                                                       ) //--Quant.
          oSection:Cell( "D1_VUNIT"  ):SetValue( (cAliasTMP)->D1_VUNIT                                                                                       ) //--Valor Unit. Item
-         oSection:Cell( "F1_DESCONT"):SetValue( (cAliasTMP)->F1_DESCONT                                                                                     ) //--Desconto Item
+         //oSection:Cell( "F1_DESCONT"):SetValue( (cAliasTMP)->F1_DESCONT                                                                                     ) //--Desconto Item
+         oSection:Cell( "FT_DESCONT"):SetValue( (cAliasTMP)->FT_DESCONT                                                                                     ) //--Desconto Item
          oSection:Cell( "D1_VALFRE" ):SetValue( (cAliasTMP)->D1_VALFRE                                                                                      ) //--Frete
          oSection:Cell( "D1_DESPESA"):SetValue( (cAliasTMP)->D1_DESPESA                                                                                     ) //--Despesas Acessorias
          oSection:Cell( "D1_SEGURO" ):SetValue( (cAliasTMP)->D1_SEGURO                                                                                      ) //--Seguro

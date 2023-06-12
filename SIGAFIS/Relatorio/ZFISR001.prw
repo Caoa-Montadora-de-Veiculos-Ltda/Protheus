@@ -722,7 +722,7 @@ Static Function zRel0001(cArquivo)
 														AllTrim( (cAliasTRB)->D1_UM ),;    //--Un Medida
 														(cAliasTRB)->D1_QUANT,;    //--Quant.
 														(cAliasTRB)->D1_VUNIT,;    //--Valor Unit. Item
-														(cAliasTRB)->D1_DESC,;    //--Desconto Item
+														(cAliasTRB)->FT_DESCONT,;    //--Desconto Item 
 														(cAliasTRB)->D1_VALFRE,;    //--Frete
 														(cAliasTRB)->D1_DESPESA,;    //--Despesas Acessorias
 														(cAliasTRB)->D1_SEGURO,;    //--Seguro
@@ -1586,7 +1586,7 @@ Static Function zRel0002(cArquivo)
 														(cAliasTRB)->D2_UM,;    //--Un Medida
 														(cAliasTRB)->D2_QUANT,;    //--Quant
 														(cAliasTRB)->D2_PRUNIT,;    //--Valor Unit. Item
-														(cAliasTRB)->D2_DESC,;    //--Desconto Item
+														(cAliasTRB)->FT_DESCONT,;    //--Desconto Item
 														nVlrFrete,;    //--Frete
 														nVlrSeguro,;    //--Seguro
 														nVlrDesp,;    //--Despesas
