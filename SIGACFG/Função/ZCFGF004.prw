@@ -191,10 +191,11 @@ aAdd(aSX6, { "CAOA_WS004"     , "C"   ,  .T.    , "http://10.120.41.106/Servicos
 //PARAMETROS FLUIG
         // Paramentros        , TIPO  , Alt HML , Conteudo HML                  , Alt TST   , Conteudo TST                          , Alt DES  , Conteudo DES
 aAdd(aSX6, { "ES_XFLUIG1"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "admin"            } )
-aAdd(aSX6, { "ES_XFLUIG2"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "Caoat3ch"         } )
+aAdd(aSX6, { "ES_XFLUIG2"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "Caoat99#ch"       } )
 aAdd(aSX6, { "ES_XFLUIG3"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "admin"            } )
 aAdd(aSX6, { "ES_XFLUIG4"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "1"                } )
-aAdd(aSX6, { "ES_XFLUIG5"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "https://caoatst-fluig.totvscloud.com.br:8143/webdesk/ECMWorkflowEngineService?wsdl"                } )
+aAdd(aSX6, { "ES_XFLUIG5"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "https://caoatst.fluig.cloudtotvs.com.br/webdesk/ECMWorkflowEngineService?wsdl"                } )
+aAdd(aSX6, { "MV_ECMURL"      , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "https://caoatst.fluig.cloudtotvs.com.br/webdesk"                                              } ) //parametro integ. juridico com Fluig
 
 
 //PARAMETROS BARUERI
@@ -216,23 +217,6 @@ aAdd(aSX6, { "CMV_WSR016"     , "C"   ,  .T.    , " "                           
 aAdd(aSX6, { "CMV_WSR017"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "CAgka2694X*"            } )
 aAdd(aSX6, { "CMV_WSR018"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "interfacewis/entrada/recebimento"            } )
 
-/*
-aAdd(aSX6, { "CMV_PEC015"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "http://www.rgtracking.com.br"            } )
-aAdd(aSX6, { "CMV_PEC016"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "/rglog/edi/MinhasColetasJson.php?formato=json&op=3736&filtro=coleta&dataI=02/10/2014&dataF=02/17/2014&aut=N&st=FIXO"            } )
-aAdd(aSX6, { "CMV_PEC021"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "/rglog/edi/MinhasColetasJson.php?formato=json&op=3736&filtro=chave&valor=35220510213051001399570010005184801005184809"            } )
-aAdd(aSX6, { "CMV_WSR001"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "wmsapi.rgtracking.com.br:8080/interfacewis/entrada/pedido/"            } )
-aAdd(aSX6, { "CMV_WSR002"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "interfacewis/entrada/pedido"            } )
-aAdd(aSX6, { "CMV_WSR007"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "wmsapi.rgtracking.com.br:8080/interfacewis/entrada/produto/"            } )
-aAdd(aSX6, { "CMV_WSR008"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "interfacewis/entrada/fornecedor"            } )
-aAdd(aSX6, { "CMV_WSR009"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "caoa.totvs"            } )
-aAdd(aSX6, { "CMV_WSR010"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "CAgka2694X*"            } )
-aAdd(aSX6, { "CMV_WSR011"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "wmsapi.rgtracking.com.br:8080/"            } )
-aAdd(aSX6, { "CMV_WSR012"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "interfacewis/entrada/cliente"            } )
-aAdd(aSX6, { "CMV_WSR013"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "evandro.mariano@caoa.com.br"            } )
-aAdd(aSX6, { "CMV_WSR016"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "caoa.totvs"            } )
-aAdd(aSX6, { "CMV_WSR017"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "CAgka2694X*"            } )
-aAdd(aSX6, { "CMV_WSR018"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , "interfacewis/entrada/recebimento"            } )
-*/
 aAdd(aSX6, { "MV_INTGFE"      , "L"   ,  .T.    , ".F."                         ,  .T.      , ".F."                                ,  .T.      , ".T."            } )
 
 ProcRegua(Len(aSX6))
