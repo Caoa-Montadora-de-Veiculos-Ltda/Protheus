@@ -85,6 +85,7 @@ Static Function zProcRel(_aRetParam)
     oFWMsExcel:AddColumn("Relatorio","Planilha01","Aliq. PIS"                	,1  ,2  )
     oFWMsExcel:AddColumn("Relatorio","Planilha01","Aliq. COFINS"               	,1  ,2  )
     oFWMsExcel:AddColumn("Relatorio","Planilha01","Dt. Cadastro"                ,2  ,4  )
+    oFWMsExcel:AddColumn("Relatorio","Planilha01","Dt. Ult. Alteração"          ,2  ,4  )
     oFWMsExcel:AddColumn("Relatorio","Planilha01","1a. Compra"                  ,2  ,4  )
     oFWMsExcel:AddColumn("Relatorio","Planilha01","1a. Venda"                   ,2  ,4  )
     oFWMsExcel:AddColumn("Relatorio","Planilha01","Ult. Compra"                 ,2  ,4  )
@@ -122,6 +123,7 @@ Static Function zProcRel(_aRetParam)
     cQuery += "         , SB1.B1_LOTVEN " + CRLF
     cQuery += "         , SB1.B1_ORIGEM " + CRLF
     cQuery += "         , SX5.X5_DESCRI " + CRLF
+    cQuery += "         , SB1.B1_XDTINC " + CRLF
     cQuery += "         , SB1.B1_XDTULT " + CRLF
     cQuery += "         , SB1.B1_X1CLEG " + CRLF
     cQuery += "         , SB1.B1_XUCLEG " + CRLF
@@ -270,6 +272,7 @@ Static Function zProcRel(_aRetParam)
                                                         (cAliasTRB)->YD_PER_IPI,;
                                                         cTxPis,;
                                                         cTxCofins,;
+                                                        STod((cAliasTRB)->B1_XDTINC),;
                                                         STod((cAliasTRB)->B1_XDTULT),;
                                                         IIf( Empty((cAliasTRB)->DT_PRI_COMPRA)  ,(cAliasTRB)->B1_X1CLEG ,(cAliasTRB)->DT_PRI_COMPRA ),;
                                                         IIf( Empty((cAliasTRB)->DT_PRI_VENDA)   ,(cAliasTRB)->B1_X1VLEG ,(cAliasTRB)->DT_PRI_VENDA  ),;
