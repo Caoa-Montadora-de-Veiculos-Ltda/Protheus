@@ -84,11 +84,11 @@ Static Function zProcRel(_aRetParam)
     oFWMsExcel:AddColumn("Relatorio","Planilha01","Aliq. IPI"                	,1  ,2  )
     oFWMsExcel:AddColumn("Relatorio","Planilha01","Aliq. PIS"                	,1  ,2  )
     oFWMsExcel:AddColumn("Relatorio","Planilha01","Aliq. COFINS"               	,1  ,2  )
-    oFWMsExcel:AddColumn("Relatorio","Planilha01","Dt. Cadastro"                ,2  ,4  )
+    oFWMsExcel:AddColumn("Relatorio","Planilha01","Dt. Inclusão"                ,2  ,4  )
     oFWMsExcel:AddColumn("Relatorio","Planilha01","Dt. Ult. Alteração"          ,2  ,4  )
     oFWMsExcel:AddColumn("Relatorio","Planilha01","1a. Compra"                  ,2  ,4  )
-    oFWMsExcel:AddColumn("Relatorio","Planilha01","1a. Venda"                   ,2  ,4  )
     oFWMsExcel:AddColumn("Relatorio","Planilha01","Ult. Compra"                 ,2  ,4  )
+    oFWMsExcel:AddColumn("Relatorio","Planilha01","1a. Venda"                   ,2  ,4  )
     oFWMsExcel:AddColumn("Relatorio","Planilha01","Ult. Venda"                  ,2  ,4  )
     oFWMsExcel:AddColumn("Relatorio","Planilha01","Prc FOB"                		,3  ,3  )
     oFWMsExcel:AddColumn("Relatorio","Planilha01","Peso"                       	,1  ,2  )
@@ -274,10 +274,10 @@ Static Function zProcRel(_aRetParam)
                                                         cTxCofins,;
                                                         STod((cAliasTRB)->B1_XDTINC),;
                                                         STod((cAliasTRB)->B1_XDTULT),;
-                                                        IIf( Empty((cAliasTRB)->DT_PRI_COMPRA)  ,(cAliasTRB)->B1_X1CLEG ,(cAliasTRB)->DT_PRI_COMPRA ),;
-                                                        IIf( Empty((cAliasTRB)->DT_PRI_VENDA)   ,(cAliasTRB)->B1_X1VLEG ,(cAliasTRB)->DT_PRI_VENDA  ),;
-                                                        IIf( Empty((cAliasTRB)->DT_ULT_COMPRA)  ,(cAliasTRB)->B1_XUCLEG ,(cAliasTRB)->DT_ULT_COMPRA ),;
-                                                        IIf( Empty((cAliasTRB)->DT_ULT_VENDA)   ,(cAliasTRB)->B1_XUVLEG ,(cAliasTRB)->DT_ULT_VENDA  ),;
+                                                        IIf( Empty((cAliasTRB)->DT_PRI_COMPRA)  ,STod((cAliasTRB)->B1_X1CLEG) ,STod((cAliasTRB)->DT_PRI_COMPRA) ),;
+                                                        IIf( Empty((cAliasTRB)->DT_ULT_COMPRA)  ,STod((cAliasTRB)->B1_XUCLEG) ,STod((cAliasTRB)->DT_ULT_COMPRA) ),;
+                                                        IIf( Empty((cAliasTRB)->DT_PRI_VENDA)   ,STod((cAliasTRB)->B1_X1VLEG) ,STod((cAliasTRB)->DT_PRI_VENDA)  ),;
+                                                        IIf( Empty((cAliasTRB)->DT_ULT_VENDA)   ,STod((cAliasTRB)->B1_XUVLEG) ,STod((cAliasTRB)->DT_ULT_VENDA)  ),;
                                                         (cAliasTRB)->B1_XPRCFOB,;
                                                         (cAliasTRB)->B1_PESO,;
                                                         (cAliasTRB)->B5_COMPR,;
