@@ -85,6 +85,8 @@ Static Function zProcRel(_aRetParam)
     oFWMsExcel:AddColumn("Relatorio","Planilha01","Aliq. PIS"                	,1  ,2  )
     oFWMsExcel:AddColumn("Relatorio","Planilha01","Aliq. COFINS"               	,1  ,2  )
     oFWMsExcel:AddColumn("Relatorio","Planilha01","Dt. Cadastro"                ,2  ,4  )
+    oFWMsExcel:AddColumn("Relatorio","Planilha01","1a. Compra"                  ,2  ,4  )
+    oFWMsExcel:AddColumn("Relatorio","Planilha01","1a. Venda"                   ,2  ,4  )
     oFWMsExcel:AddColumn("Relatorio","Planilha01","Ult. Compra"                 ,2  ,4  )
     oFWMsExcel:AddColumn("Relatorio","Planilha01","Ult. Venda"                  ,2  ,4  )
     oFWMsExcel:AddColumn("Relatorio","Planilha01","Prc FOB"                		,3  ,3  )
@@ -121,6 +123,10 @@ Static Function zProcRel(_aRetParam)
     cQuery += "         , SB1.B1_ORIGEM " + CRLF
     cQuery += "         , SX5.X5_DESCRI " + CRLF
     cQuery += "         , SB1.B1_XDTULT " + CRLF
+    cQuery += "         , SB1.B1_X1CLEG " + CRLF
+    cQuery += "         , SB1.B1_XUCLEG " + CRLF
+    cQuery += "         , SB1.B1_X1VLEG " + CRLF
+    cQuery += "         , SB1.B1_XUVLEG " + CRLF
     cQuery += "         , SB1.B1_POSIPI " + CRLF
     cQuery += "         , SYD.YD_EX_NCM " + CRLF
     cQuery += "         , SYD.YD_PER_II " + CRLF
@@ -134,22 +140,46 @@ Static Function zProcRel(_aRetParam)
     cQuery += " 			FROM " +  RetSQLName("SD1") +" SD1 " + CRLF
     cQuery += " 				LEFT JOIN " +  RetSQLName("SF4") +" SF4  " + CRLF
     cQuery += " 				ON SF4.F4_FILIAL = '" + FWxFilial('SF4') + "' " + CRLF
+    cQuery += " 				AND SF4.F4_CODIGO = SD1.D1_TES " + CRLF
     cQuery += " 				AND SF4.F4_ESTOQUE = 'S' " + CRLF
     cQuery += " 				AND SF4.D_E_L_E_T_ = ' '  " + CRLF
     cQuery += " 			WHERE SD1.D1_FILIAL = '" + FWxFilial('SD1') + "' " + CRLF
     cQuery += " 			AND SD1.D1_CF IN ('1102','2102','3102') " + CRLF
     cQuery += " 			AND SD1.D1_COD = SB1.B1_COD " + CRLF
-    cQuery += " 			AND SD1.D_E_L_E_T_ = ' ' ) 		AS DT_NF_ENTRADA " + CRLF
+    cQuery += " 			AND SD1.D_E_L_E_T_ = ' ' ) 		AS DT_ULT_COMPRA " + CRLF
+    cQuery += "         ,(	SELECT MIN(SD1.D1_DTDIGIT)       " + CRLF
+    cQuery += " 			FROM " +  RetSQLName("SD1") +" SD1 " + CRLF
+    cQuery += " 				LEFT JOIN " +  RetSQLName("SF4") +" SF4  " + CRLF
+    cQuery += " 				ON SF4.F4_FILIAL = '" + FWxFilial('SF4') + "' " + CRLF
+    cQuery += " 				AND SF4.F4_CODIGO = SD1.D1_TES " + CRLF
+    cQuery += " 				AND SF4.F4_ESTOQUE = 'S' " + CRLF
+    cQuery += " 				AND SF4.D_E_L_E_T_ = ' '  " + CRLF
+    cQuery += " 			WHERE SD1.D1_FILIAL = '" + FWxFilial('SD1') + "' " + CRLF
+    cQuery += " 			AND SD1.D1_CF IN ('1102','2102','3102') " + CRLF
+    cQuery += " 			AND SD1.D1_COD = SB1.B1_COD " + CRLF
+    cQuery += " 			AND SD1.D_E_L_E_T_ = ' ' ) 		AS DT_PRI_COMPRA " + CRLF
     cQuery += "         , (	SELECT MAX(SD2.D2_EMISSAO)       " + CRLF
     cQuery += " 			FROM " +  RetSQLName("SD2") +" SD2 " + CRLF
     cQuery += " 				LEFT JOIN " +  RetSQLName("SF4") +" SF4  " + CRLF
     cQuery += " 				ON SF4.F4_FILIAL = '" + FWxFilial('SF4') + "' " + CRLF
+    cQuery += " 				AND SF4.F4_CODIGO = SD2.D2_TES " + CRLF
     cQuery += " 				AND SF4.F4_ESTOQUE = 'S' " + CRLF
     cQuery += " 				AND SF4.D_E_L_E_T_ = ' '  " + CRLF
     cQuery += " 			WHERE SD2.D2_FILIAL = '" + FWxFilial('SD2') + "' " + CRLF
     cQuery += " 			AND SD2.D2_CF IN ('5102','5152','5403','6102','6110','6403') " + CRLF
     cQuery += " 			AND SD2.D2_COD = SB1.B1_COD " + CRLF
-    cQuery += " 			AND SD2.D_E_L_E_T_ = ' ' ) 		AS DT_NF_SAIDA " + CRLF
+    cQuery += " 			AND SD2.D_E_L_E_T_ = ' ' ) 		AS DT_ULT_VENDA " + CRLF
+    cQuery += "         , (	SELECT MIN(SD2.D2_EMISSAO)       " + CRLF
+    cQuery += " 			FROM " +  RetSQLName("SD2") +" SD2 " + CRLF
+    cQuery += " 				LEFT JOIN " +  RetSQLName("SF4") +" SF4  " + CRLF
+    cQuery += " 				ON SF4.F4_FILIAL = '" + FWxFilial('SF4') + "' " + CRLF
+    cQuery += " 				AND SF4.F4_CODIGO = SD2.D2_TES " + CRLF
+    cQuery += " 				AND SF4.F4_ESTOQUE = 'S' " + CRLF
+    cQuery += " 				AND SF4.D_E_L_E_T_ = ' '  " + CRLF
+    cQuery += " 			WHERE SD2.D2_FILIAL = '" + FWxFilial('SD2') + "' " + CRLF
+    cQuery += " 			AND SD2.D2_CF IN ('5102','5152','5403','6102','6110','6403') " + CRLF
+    cQuery += " 			AND SD2.D2_COD = SB1.B1_COD " + CRLF
+    cQuery += " 			AND SD2.D_E_L_E_T_ = ' ' ) 		AS DT_PRI_VENDA " + CRLF
     cQuery += " FROM " +  RetSQLName("SB1") +" SB1 " + CRLF
     cQuery += "     LEFT JOIN " +  RetSQLName("SB5") +" SB5 " + CRLF
     cQuery += "         ON SB5.B5_FILIAL = '" + FWxFilial('SB5') + "' " + CRLF
@@ -241,8 +271,10 @@ Static Function zProcRel(_aRetParam)
                                                         cTxPis,;
                                                         cTxCofins,;
                                                         STod((cAliasTRB)->B1_XDTULT),;
-                                                        STod((cAliasTRB)->DT_NF_ENTRADA),;
-                                                        STod((cAliasTRB)->DT_NF_SAIDA),;
+                                                        IIf( Empty((cAliasTRB)->DT_PRI_COMPRA)  ,(cAliasTRB)->B1_X1CLEG ,(cAliasTRB)->DT_PRI_COMPRA ),;
+                                                        IIf( Empty((cAliasTRB)->DT_PRI_VENDA)   ,(cAliasTRB)->B1_X1VLEG ,(cAliasTRB)->DT_PRI_VENDA  ),;
+                                                        IIf( Empty((cAliasTRB)->DT_ULT_COMPRA)  ,(cAliasTRB)->B1_XUCLEG ,(cAliasTRB)->DT_ULT_COMPRA ),;
+                                                        IIf( Empty((cAliasTRB)->DT_ULT_VENDA)   ,(cAliasTRB)->B1_XUVLEG ,(cAliasTRB)->DT_ULT_VENDA  ),;
                                                         (cAliasTRB)->B1_XPRCFOB,;
                                                         (cAliasTRB)->B1_PESO,;
                                                         (cAliasTRB)->B5_COMPR,;
