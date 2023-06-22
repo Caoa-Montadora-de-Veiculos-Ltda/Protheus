@@ -19,7 +19,10 @@
 		},
 		{
 			"label": "sigacfg"
+		},
+		{
+			"label": "SIGAMDI"
 		}
 	],
-	"lastProgramExecuted": "sigacfg"
+	"lastProgramExecuted": "SIGAMDI"
 }

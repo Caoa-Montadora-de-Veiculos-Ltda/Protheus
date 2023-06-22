@@ -100,7 +100,8 @@ Static Function ReportDef()
     TRCell():New(oSection1,"ESTSOL65"      ,"cAliasTRB"	,'Estoque Solic. 65'          ,PesqPict("SB2","B2_QATU"   ) ,TamSx3("B2_QATU"   )[1] ,/*lPixel*/,/* {|| }*/)
     TRCell():New(oSection1,"ESTSOL80"      ,"cAliasTRB"	,'Estoque Solic. 80'          ,PesqPict("SB2","B2_QATU"   ) ,TamSx3("B2_QATU"   )[1] ,/*lPixel*/,/* {|| }*/)
     TRCell():New(oSection1,"ESTSOL90"      ,"cAliasTRB"	,'Estoque Solic. 90'          ,PesqPict("SB2","B2_QATU"   ) ,TamSx3("B2_QATU"   )[1] ,/*lPixel*/,/* {|| }*/)
-    TRCell():New(oSection1,"ESTSOLWIS"     ,"cAliasTRB"	,'Estoque Solic. Wis'         ,PesqPict("SB2","B2_QATU"   ) ,TamSx3("B2_QATU"   )[1] ,/*lPixel*/,/* {|| }*/)
+    TRCell():New(oSection1,"ESTSOLOU"      ,"cAliasTRB"	,'Estoque Solic. Outros'      ,PesqPict("SB2","B2_QATU"   ) ,TamSx3("B2_QATU"   )[1] ,/*lPixel*/,/* {|| }*/) 
+    TRCell():New(oSection1,"ESTSOLWIS"     ,"cAliasTRB"	,'Estoque Solic. Wis'         ,PesqPict("SB2","B2_COD"   ) ,TamSx3("B2_COD"   )[1] ,/*lPixel*/,/* {|| }*/)
     TRCell():New(oSection1,"PROD_ATEND"    ,"cAliasTRB"	,'Produto Atendido'           ,PesqPict("VS3","VS3_CODITE") ,TamSx3("VS3_CODITE")[1] ,/*lPixel*/,/* {|| }*/)
     TRCell():New(oSection1,"DESC_ATEND"    ,"cAliasTRB"	,'Descr. Prod. Atendido'      ,PesqPict("SB1","B1_DESC"   ) ,TamSx3("B1_DESC"   )[1] ,/*lPixel*/,/* {|| }*/)
     TRCell():New(oSection1,"ESTATE01"      ,"cAliasTRB"	,'Estoque Atendido 01'        ,PesqPict("SB2","B2_QATU"   ) ,TamSx3("B2_QATU"   )[1] ,/*lPixel*/,/* {|| }*/)
@@ -109,7 +110,8 @@ Static Function ReportDef()
     TRCell():New(oSection1,"ESTATE65"      ,"cAliasTRB"	,'Estoque Atendido 65'        ,PesqPict("SB2","B2_QATU"   ) ,TamSx3("B2_QATU"   )[1] ,/*lPixel*/,/* {|| }*/)
     TRCell():New(oSection1,"ESTATE80"      ,"cAliasTRB"	,'Estoque Atendido 80'        ,PesqPict("SB2","B2_QATU"   ) ,TamSx3("B2_QATU"   )[1] ,/*lPixel*/,/* {|| }*/)
     TRCell():New(oSection1,"ESTATE90"      ,"cAliasTRB"	,'Estoque Atendido 90'        ,PesqPict("SB2","B2_QATU"   ) ,TamSx3("B2_QATU"   )[1] ,/*lPixel*/,/* {|| }*/)    
-    TRCell():New(oSection1,"ESTATEWIS"     ,"cAliasTRB"	,'Estoque Atendido Wis'       ,PesqPict("SB2","B2_QATU"   ) ,TamSx3("B2_QATU"   )[1] ,/*lPixel*/,/* {|| }*/)    
+    TRCell():New(oSection1,"ESTATEOU"      ,"cAliasTRB"	,'Estoque Atendido Outros'    ,PesqPict("SB2","B2_QATU"   ) ,TamSx3("B2_QATU"   )[1] ,/*lPixel*/,/* {|| }*/)    
+    TRCell():New(oSection1,"ESTATEWIS"     ,"cAliasTRB"	,'Estoque Atendido Wis'       ,PesqPict("SB2","B2_COD"   ) ,TamSx3("B2_COD"   )[1] ,/*lPixel*/,/* {|| }*/)    
     TRCell():New(oSection1,"QTDE_SOLICITADA"      ,"cAliasTRB"	,'Qtde Solicitada Pedido'     ,PesqPict("VS3","VS3_QTDINI") ,TamSx3("VS3_QTDINI")[1] ,/*lPixel*/,/* {|| }*/)
     TRCell():New(oSection1,"QTDE_ATENDIDA"        ,"cAliasTRB"	,'Qtde Atendida'              ,PesqPict("VS3","VS3_QTDITE") ,TamSx3("VS3_QTDITE")[1] ,/*lPixel*/,/* {|| }*/)
     TRCell():New(oSection1,"QTDE_PEDIDO_SOLIC"    ,"cAliasTRB"	,'Qtde Ped.Compras'           ,PesqPict("SC7","C7_QUANT"  ) ,TamSx3("C7_QUANT"  )[1] ,/*lPixel*/,/* {|| }*/)
@@ -170,7 +172,8 @@ Static Function ReportPrint(oReport)
     cQuery += CRLF + "		NVL(SB2SOL02.B2_QATU,0)			AS	ESTSOL02, "
     cQuery += CRLF + "		NVL(SB2SOL65.B2_QATU,0)			AS	ESTSOL65, "
     cQuery += CRLF + "		NVL(SB2SOL80.B2_QATU,0)			AS	ESTSOL80, "
-    cQuery += CRLF + "		NVL(SB2SOL90.B2_QATU,0)			AS	ESTSOL90, "    
+    cQuery += CRLF + "		NVL(SB2SOL90.B2_QATU,0)			AS	ESTSOL90, "
+    cQuery += CRLF + "		NVL(TMPSB2SOLOU.TOT,0)			AS  ESTSOLOU, "    
     cQuery += CRLF + "		NVL(TMPWISSOL.QTDEWIS,0)||' '||TMPWISSOL.ARMAZEM		AS	ESTSOLWIS, "
     cQuery += CRLF + "		VS3.VS3_CODITE					AS	PROD_ATEND, "
     cQuery += CRLF + "		SB1ATEN.B1_DESC					AS	DESC_ATEND, "
@@ -179,7 +182,8 @@ Static Function ReportPrint(oReport)
     cQuery += CRLF + "		NVL(SB2ATEN02.B2_QATU,0)		AS	ESTATE02, "
     cQuery += CRLF + "		NVL(SB2ATEN65.B2_QATU,0)		AS	ESTATE65, "
     cQuery += CRLF + "		NVL(SB2ATEN80.B2_QATU,0)		AS	ESTATE80, "
-    cQuery += CRLF + "		NVL(SB2ATEN90.B2_QATU,0)		AS	ESTATE90, "   
+    cQuery += CRLF + "		NVL(SB2ATEN90.B2_QATU,0)		AS	ESTATE90, "
+    cQuery += CRLF + "		NVL(TMPSB2ATEOU.TOT,0)			AS  ESTATEOU, "     
     cQuery += CRLF + "		NVL(TMPWISATEN.QTDEWIS,0)||' '||TMPWISATEN.ARMAZEM		AS	ESTATEWIS, "
     cQuery += CRLF + "		VS3.VS3_QTDINI					AS	QTDE_SOLICITADA, "
     cQuery += CRLF + "		NVL(TMPATE.VS3_QTDITE,0) 		AS 	QTDE_ATENDIDA, "
@@ -261,6 +265,15 @@ Static Function ReportPrint(oReport)
     cQuery += CRLF + "			AND SB2SOL90.B2_COD = VS3.VS3_XITSUB "
     cQuery += CRLF + "			AND SB2SOL90.B2_LOCAL = '90' "
     cQuery += CRLF + "			AND SB2SOL90.D_E_L_E_T_ = ' ' "
+    cQuery += CRLF + "		LEFT JOIN ( "
+    cQuery += CRLF + "			SELECT SB2OU.B2_FILIAL FIL, SB2OU.B2_COD COD, SUM(SB2OU.B2_QATU) TOT " 
+    cQuery += CRLF + "			FROM " + RetSQLName( 'SB2' ) + " SB2OU "                                                             
+ 	cQuery += CRLF + "			WHERE SB2OU.D_E_L_E_T_ = ' ' "
+ 	cQuery += CRLF + "			AND SB2OU.B2_LOCAL NOT IN ('01','11','02','61','65','80','90') "
+ 	cQuery += CRLF + "			GROUP BY B2_FILIAL, B2_COD "
+    cQuery += CRLF + "			      ) TMPSB2SOLOU "
+ 	cQuery += CRLF + "			ON TMPSB2SOLOU.FIL = VS3.VS3_FILIAL "
+ 	cQuery += CRLF + "			AND TMPSB2SOLOU.COD = VS3.VS3_XITSUB "   
     cQuery += CRLF + "		LEFT JOIN " + RetSQLName( 'SB2' ) + " SB2ATEN01 "
     cQuery += CRLF + "			ON SB2ATEN01.B2_FILIAL = VS3.VS3_FILIAL "
     cQuery += CRLF + "			AND SB2ATEN01.B2_COD = VS3.VS3_CODITE "
@@ -291,6 +304,15 @@ Static Function ReportPrint(oReport)
     cQuery += CRLF + "			AND SB2ATEN90.B2_COD = VS3.VS3_CODITE "
     cQuery += CRLF + "			AND SB2ATEN90.B2_LOCAL = '90' "
     cQuery += CRLF + "			AND SB2ATEN90.D_E_L_E_T_ = ' ' "
+    cQuery += CRLF + "		LEFT JOIN ( "
+    cQuery += CRLF + "			SELECT SB2OU.B2_FILIAL FIL, SB2OU.B2_COD COD, SUM(SB2OU.B2_QATU) TOT " 
+    cQuery += CRLF + "			FROM " + RetSQLName( 'SB2' ) + " SB2OU "                                                             
+ 	cQuery += CRLF + "			WHERE SB2OU.D_E_L_E_T_ = ' ' "
+ 	cQuery += CRLF + "			AND SB2OU.B2_LOCAL NOT IN ('01','11','02','61','65','80','90') "
+ 	cQuery += CRLF + "			GROUP BY B2_FILIAL, B2_COD "
+    cQuery += CRLF + "			      ) TMPSB2ATEOU "
+ 	cQuery += CRLF + "			ON TMPSB2ATEOU.FIL = VS3.VS3_FILIAL "
+ 	cQuery += CRLF + "			AND TMPSB2ATEOU.COD = VS3.VS3_CODITE "       
     cQuery += CRLF + "		LEFT JOIN " + RetSQLName( 'VX5' ) + " VX5 "
     cQuery += CRLF + "			ON VX5.VX5_FILIAL = '" + FWxFilial('VX5') + "' "
     cQuery += CRLF + "			AND VX5.VX5_CHAVE = 'Z00' "
@@ -331,16 +353,18 @@ Static Function ReportPrint(oReport)
     cQuery += CRLF + "			ON TMPPED.C7_PRODUTO = VS3.VS3_XITSUB "
     cQuery += CRLF + "		LEFT JOIN 	( "
     cQuery += CRLF + "					SELECT 	RTRIM(LTRIM(ESTWIS.CD_PRODUTO)) 							AS PROD, "
-    cQuery += CRLF + "							NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) 	AS QTDEWIS "
+    cQuery += CRLF + "							NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA - ESTWIS.QT_TRANSITO_SAIDA), 0) 	AS QTDEWIS, "
+    cQuery += CRLF + "	                ESTWIS.ARMAZEM "
     cQuery += CRLF + "					FROM " + _cConectWis + " ESTWIS "
-    cQuery += CRLF + "					GROUP BY RTRIM(LTRIM(ESTWIS.CD_PRODUTO)) "
+    cQuery += CRLF + "					GROUP BY RTRIM(LTRIM(ESTWIS.CD_PRODUTO)), ESTWIS.ARMAZEM "
     cQuery += CRLF + "					) TMPWISSOL "
     cQuery += CRLF + "				ON LTRIM(RTRIM(TMPWISSOL.PROD)) = LTRIM(RTRIM(VS3.VS3_XITSUB)) "
     cQuery += CRLF + "		LEFT JOIN 	( "
     cQuery += CRLF + "					SELECT 	RTRIM(LTRIM(ESTWIS.CD_PRODUTO)) 							AS PROD, "
-    cQuery += CRLF + "					NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) 	AS QTDEWIS "
+    cQuery += CRLF + "					NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA - ESTWIS.QT_TRANSITO_SAIDA), 0) 	AS QTDEWIS, "
+    cQuery += CRLF + "	                ESTWIS.ARMAZEM "
     cQuery += CRLF + "					FROM " + _cConectWis + " ESTWIS "
-    cQuery += CRLF + "					GROUP BY RTRIM(LTRIM(ESTWIS.CD_PRODUTO)) "
+    cQuery += CRLF + "					GROUP BY RTRIM(LTRIM(ESTWIS.CD_PRODUTO)), ESTWIS.ARMAZEM "
     cQuery += CRLF + "					) TMPWISATEN "
     cQuery += CRLF + "				ON LTRIM(RTRIM(TMPWISATEN.PROD)) = LTRIM(RTRIM(VS3.VS3_CODITE)) "
     cQuery += CRLF + "		LEFT JOIN ( "
@@ -514,7 +538,8 @@ Static Function PQuery(cAliasTRB,oReport)
         oSection1:Cell("ESTSOL02"             ):SetValue((cAliasTRB)->ESTSOL02)
         oSection1:Cell("ESTSOL65"             ):SetValue((cAliasTRB)->ESTSOL65)
         oSection1:Cell("ESTSOL80"             ):SetValue((cAliasTRB)->ESTSOL80)
-        oSection1:Cell("ESTSOL90"             ):SetValue((cAliasTRB)->ESTSOL90)        
+        oSection1:Cell("ESTSOL90"             ):SetValue((cAliasTRB)->ESTSOL90)
+        oSection1:Cell("ESTSOLOU"             ):SetValue((cAliasTRB)->ESTSOLOU)                
         oSection1:Cell("PROD_ATEND"           ):SetValue((cAliasTRB)->PROD_ATEND)
         oSection1:Cell("DESC_ATEND"           ):SetValue((cAliasTRB)->DESC_ATEND)
         oSection1:Cell("ESTATE01"             ):SetValue((cAliasTRB)->ESTATE01)
@@ -522,7 +547,8 @@ Static Function PQuery(cAliasTRB,oReport)
         oSection1:Cell("ESTATE02"             ):SetValue((cAliasTRB)->ESTATE02)
         oSection1:Cell("ESTATE65"             ):SetValue((cAliasTRB)->ESTATE65)
         oSection1:Cell("ESTATE80"             ):SetValue((cAliasTRB)->ESTATE80)
-        oSection1:Cell("ESTATE90"             ):SetValue((cAliasTRB)->ESTATE90)        
+        oSection1:Cell("ESTATE90"             ):SetValue((cAliasTRB)->ESTATE90)
+        oSection1:Cell("ESTATEOU"             ):SetValue((cAliasTRB)->ESTATEOU)                 
         oSection1:Cell("ESTATEWIS"            ):SetValue((cAliasTRB)->ESTATEWIS)
         oSection1:Cell("QTDE_SOLICITADA"      ):SetValue((cAliasTRB)->QTDE_SOLICITADA)
         oSection1:Cell("QTDE_ATENDIDA"        ):SetValue((cAliasTRB)->QTDE_ATENDIDA)
