@@ -29,6 +29,8 @@ user function EICDI154
 	Local cErr     := ""
 	Local cChave	:= ""
 	Local _cEmp		:= FwCodEmp()
+	Local nTamLote  := TAMSX3('W8_XLOTE')[1] +1
+	Local nTamCase  := TAMSX3('W8_XCASE')[1]
 
 	static lQuebra:=.f.
 	Static aContainers
@@ -96,6 +98,7 @@ user function EICDI154
 						SD1->D1_ANOFAB	:= RIGHT(SWN->WN_ANOFAB,2)
 						SD1->D1_XANOFAB	:= SWN->WN_ANOFAB
 						SD1->D1_ANOMOD	:= SWN->WN_ANOMOD
+						SD1->D1_XCASE   := SUBSTR(SWN->WN_XLOTE,nTamLote,nTamCase)
 					MSUNLOCK()
 				Else
 					RECLOCK("SD1",.F.)
