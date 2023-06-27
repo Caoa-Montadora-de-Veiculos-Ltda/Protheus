@@ -274,10 +274,10 @@ Static Function zProcRel(_aRetParam)
                                                         cTxCofins,;
                                                         STod((cAliasTRB)->B1_XDTINC),;
                                                         STod((cAliasTRB)->B1_XDTULT),;
-                                                        IIf( Empty((cAliasTRB)->DT_PRI_COMPRA)  ,STod((cAliasTRB)->B1_X1CLEG) ,STod((cAliasTRB)->DT_PRI_COMPRA) ),;
-                                                        IIf( Empty((cAliasTRB)->DT_ULT_COMPRA)  ,STod((cAliasTRB)->B1_XUCLEG) ,STod((cAliasTRB)->DT_ULT_COMPRA) ),;
-                                                        IIf( Empty((cAliasTRB)->DT_PRI_VENDA)   ,STod((cAliasTRB)->B1_X1VLEG) ,STod((cAliasTRB)->DT_PRI_VENDA)  ),;
-                                                        IIf( Empty((cAliasTRB)->DT_ULT_VENDA)   ,STod((cAliasTRB)->B1_XUVLEG) ,STod((cAliasTRB)->DT_ULT_VENDA)  ),;
+                                                        IIF(Empty((cAliasTRB)->DT_PRI_COMPRA) , STod((cAliasTRB)->B1_X1CLEG) , IIF( Empty((cAliasTRB)->B1_X1CLEG) , SToD((cAliasTRB)->DT_PRI_COMPRA) , MIN( STod((cAliasTRB)->B1_X1CLEG), SToD((cAliasTRB)->DT_PRI_COMPRA)))),;
+                                                        IIF(Empty((cAliasTRB)->DT_ULT_COMPRA) , STod((cAliasTRB)->B1_XUCLEG) , IIF( Empty((cAliasTRB)->B1_XUCLEG) , SToD((cAliasTRB)->DT_ULT_COMPRA) , MAX( STod((cAliasTRB)->B1_XUCLEG), SToD((cAliasTRB)->DT_ULT_COMPRA)))),;
+                                                        IIF(Empty((cAliasTRB)->DT_PRI_VENDA)  , STod((cAliasTRB)->B1_X1VLEG) , IIF( Empty((cAliasTRB)->B1_X1VLEG) , SToD((cAliasTRB)->DT_PRI_VENDA)  , MIN( STod((cAliasTRB)->B1_X1VLEG), SToD((cAliasTRB)->DT_PRI_VENDA )))),;
+                                                        IIF(Empty((cAliasTRB)->DT_ULT_VENDA)  , STod((cAliasTRB)->B1_XUVLEG) , IIF( Empty((cAliasTRB)->B1_XUVLEG) , SToD((cAliasTRB)->DT_ULT_VENDA)  , MAX( STod((cAliasTRB)->B1_XUVLEG), SToD((cAliasTRB)->DT_ULT_VENDA )))),;
                                                         (cAliasTRB)->B1_XPRCFOB,;
                                                         (cAliasTRB)->B1_PESO,;
                                                         (cAliasTRB)->B5_COMPR,;
