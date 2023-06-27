@@ -193,7 +193,7 @@ Static Function FImpExcel()
     AADD(_aCelulas,{'CONV'      ,"L",02,'N',05,2})  //11
     AADD(_aCelulas,{'TIPCONV'   ,"M",02,'C',01,0})  //12
     AADD(_aCelulas,{'RASTRO'    ,"N",02,'C',01,0})  //13
-    //AADD(_aCelulas,{'LOCREC'    ,"O",02,'C',03,0})  //14
+    AADD(_aCelulas,{'LOCREC'    ,"O",02,'C',03,0})  //14
     AADD(_aCelulas,{'POSIPI'    ,"P",02,'C',10,0})  //15
     AADD(_aCelulas,{'GARANT'    ,"R",02,'C',01,0})  //16
     AADD(_aCelulas,{'ORIGEM'    ,"S",02,'C',01,0})  //17
