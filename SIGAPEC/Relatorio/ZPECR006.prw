@@ -114,6 +114,7 @@ Static Function ReportDef()
     TRCell():New(oSection1,"ESTATEWIS"     ,"cAliasTRB"	,'Estoque Atendido Wis'       ,PesqPict("SB2","B2_COD"   ) ,TamSx3("B2_COD"   )[1] ,/*lPixel*/,/* {|| }*/)    
     TRCell():New(oSection1,"QTDE_SOLICITADA"      ,"cAliasTRB"	,'Qtde Solicitada Pedido'     ,PesqPict("VS3","VS3_QTDINI") ,TamSx3("VS3_QTDINI")[1] ,/*lPixel*/,/* {|| }*/)
     TRCell():New(oSection1,"QTDE_ATENDIDA"        ,"cAliasTRB"	,'Qtde Atendida'              ,PesqPict("VS3","VS3_QTDITE") ,TamSx3("VS3_QTDITE")[1] ,/*lPixel*/,/* {|| }*/)
+    TRCell():New(oSection1,"QTDE_ATENDER"         ,"cAliasTRB"	,'Qtde Atender'               ,PesqPict("VS3","VS3_QTDITE") ,TamSx3("VS3_QTDITE")[1] ,/*lPixel*/,/* {|| }*/)
     TRCell():New(oSection1,"QTDE_PEDIDO_SOLIC"    ,"cAliasTRB"	,'Qtde Ped.Compras'           ,PesqPict("SC7","C7_QUANT"  ) ,TamSx3("C7_QUANT"  )[1] ,/*lPixel*/,/* {|| }*/)
     TRCell():New(oSection1,"BO_GERAL"             ,"cAliasTRB"	,'BO Geral'                   ,PesqPict("SB2","B2_QATU"   ) ,TamSx3("B2_QATU"   )[1] ,/*lPixel*/,/* {|| }*/)
     TRCell():New(oSection1,"CHASSIS"              ,"cAliasTRB"	,'Chassis'                    ,PesqPict("VS1","VS1_XCHASS") ,TamSx3("VS1_XCHASS")[1] ,/*lPixel*/,/* {|| }*/)
@@ -187,6 +188,7 @@ Static Function ReportPrint(oReport)
     cQuery += CRLF + "		NVL(TMPWISATEN.QTDEWIS,0)||' '||TMPWISATEN.ARMAZEM		AS	ESTATEWIS, "
     cQuery += CRLF + "		VS3.VS3_QTDINI					AS	QTDE_SOLICITADA, "
     cQuery += CRLF + "		NVL(TMPATE.VS3_QTDITE,0) 		AS 	QTDE_ATENDIDA, "
+    cQuery += CRLF + "		NVL(VS3.VS3_QTDINI-NVL(TMPATE.VS3_QTDITE,0),0) AS QTDE_ATENDER, "
     cQuery += CRLF + "		NVL(TMPPED.SALDO,0)				AS	QTDE_PEDIDO_SOLIC, "
     cQuery += CRLF + "		NVL(TMPXBO.TOT_BO,0)			AS  BO_GERAL, "
     cQuery += CRLF + "		VS1.VS1_XCHASS 					AS  CHASSIS, "
@@ -552,6 +554,7 @@ Static Function PQuery(cAliasTRB,oReport)
         oSection1:Cell("ESTATEWIS"            ):SetValue((cAliasTRB)->ESTATEWIS)
         oSection1:Cell("QTDE_SOLICITADA"      ):SetValue((cAliasTRB)->QTDE_SOLICITADA)
         oSection1:Cell("QTDE_ATENDIDA"        ):SetValue((cAliasTRB)->QTDE_ATENDIDA)
+        oSection1:Cell("QTDE_ATENDER"        ):SetValue((cAliasTRB)->QTDE_ATENDER)        
         oSection1:Cell("QTDE_PEDIDO_SOLIC"    ):SetValue((cAliasTRB)->QTDE_PEDIDO_SOLIC)
         oSection1:Cell("ESTSOLWIS"            ):SetValue((cAliasTRB)->ESTSOLWIS)
         oSection1:Cell("BO_GERAL"             ):SetValue((cAliasTRB)->BO_GERAL)
