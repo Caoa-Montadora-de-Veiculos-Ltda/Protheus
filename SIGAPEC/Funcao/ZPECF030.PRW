@@ -270,7 +270,7 @@ Begin Sequence
 	// cria o panel da pesquisa
 	Self:oPanelSearch := Self:oArea:GetWinPanel(COL_LEFT, WND_SEARCH)
 	Pergunte(Self:GetPerg(1), .T., , , Self:oPanelSearch, , @Self:aPergunte, .T., .F.)	
-	U_FaMyBar(Self:oPanelSearch, , , , ;
+	FaMyBar(Self:oPanelSearch, , , , ;
           {{"Pesquisar", "Pesquisar", {||Self:PesqSKU(_cPerg)}}}, .F., .F.)	 //"Pesquisar"###"Pesquisar"
 	//localiza faturamento, compras e produto
 	LocFCP()
@@ -294,15 +294,15 @@ Begin Sequence
 	// Outras Ações
 	Self:oArea:AddWindow(COL_LEFT, wnd_resumo, "Ferramentas", 50, .T., .T.) 
 	Self:oPanelDados := Self:oArea:GetWinPanel(COL_LEFT, wnd_resumo)
-	U_FaMyBar(Self:oPanelDados, , , , ;
+	FaMyBar(Self:oPanelDados, , , , ;
           {{"" 	, "Invoice                       "	, {||ZPECF30INV()}}}, .F., .F.)	 				  
-	U_FaMyBar(Self:oPanelDados, , , , ;
+	FaMyBar(Self:oPanelDados, , , , ;
           {{""	, "Pedido de Compras    "			, {|| ZPECF30CMP(/*Self:oPanelVis*/) }}}, .F., .F.)	 
-	U_FaMyBar(Self:oPanelDados, , , , ;
+	FaMyBar(Self:oPanelDados, , , , ;
           {{"" 	, "Kardex Entrada/Saida"			, {|| ZPECF30KAR(/*Self:oPanelVis*/)}}}, .F., .F.)	 
-  	U_FaMyBar(Self:oPanelDados, , , , ;
+  	FaMyBar(Self:oPanelDados, , , , ;
           {{"" 	, "Orçamento                 "		, {||ZPECF30ORC()}}}, .F., .F.)	 
-	U_FaMyBar(Self:oPanelDados, , , , ;
+	FaMyBar(Self:oPanelDados, , , , ;
           {{"" 	, "Picking                        ", {||ZPECF30PIK()}}}, .F., .F.)	 
 End Sequence
 Return
@@ -345,7 +345,7 @@ Begin Sequence
 	 
     //funcionalidade para carga da tabela temporária
 	LoadPlan()
-    aRotina := MenuDef2()
+    //aRotina := MenuDef2()
     //(_cAliasPlan)->(DbGotop()) 
     //tabela temporaria
     Self:_OBrPlan:=FWMBrowse():New(Self:oPanelBrowse)
@@ -366,7 +366,9 @@ Begin Sequence
 	//Self:_OBrPlan:SetEditCell (.T., {|| .T. })
     Self:_OBrPlan:SetMenuDef('ZPECF30P') //funcionalidade corrente                        // Nome do fonte onde esta a função MenuDef
 	//Self:_OBrPlan:lMaximized := .T.
-
+	Self:_OBrPlan:AddButton("Itens Relacionados"  	, { || FWMsgRun(, {|| ZPECF30ITR() }, "Itens Relacionados"	, "Localizando") },,,, .F., 2 )  
+	Self:_OBrPlan:AddButton("KIT"  					, { || FWMsgRun(, {|| ZPECF30KIT() }, "KIT"					, "Localizando") },,,, .F., 2 )  
+	Self:_OBrPlan:AddButton("Visualizar Produto" 	, { || FWMsgRun(, {|| ZPECF30PRD() }, "Visualizar Produto"	, "Localizando") },,,, .F., 2 )  
     //Cria as colunas com base no array aCampos
 
     For _nPos := 1 To Len(_aColuna)
@@ -393,7 +395,7 @@ Begin Sequence
 	Self:_OBrPlan:GoTop(.T.)
 	Self:_OBrPlan:Refresh(.T.)
 
-	U_ZPECF30K(.F.)
+	ZPECF30KIT(.F.)
 	// Define o Browse Relacionados
 	_oBrRelac := FWBrowse():New(Self:oPanelVis)
 	_oBrRelac:SetDataArray(.T.)
@@ -472,7 +474,7 @@ Begin Sequence
 	oArea := Self:oArea
 
 	// Define o Browse Estatistica de Venda
-	U_ZPECF30E()
+	ZPECF30EVM()
 	_oBrEstVenda := FWBrowse():New(Self:oPanelEVenda)
 	_oBrEstVenda:SetDataArray(.T.)
 	_oBrEstVenda:SetArray(_aPrdEstVenda)
@@ -538,12 +540,12 @@ Funções auxiliares
 
 
 /* ----------------------------------------------------------------------------
-U_DlgInPanel()
+DlgInPanel()
 Encaixa Dialog no Panel.
 ---------------------------------------------------------------------------- */
-User Function DlgInPanel(oParent)
-	Local aDim := {}
-	Local nTop := 0
+Static Function DlgInPanel(oParent)
+	Local aDim 	:= {}
+	Local nTop 	:= 0
 	Local nLeft := 0
 	oParent:ReadClientCoors( ,.T.)
 	_GetXCoors(oParent, @nTop)
@@ -552,16 +554,15 @@ User Function DlgInPanel(oParent)
 				nLeft + oParent:oWnd:nLeft, ;
 				oParent:nBottom + oParent:oWnd:nTop + nTop -40 , ;
 				oParent:nRight + nLeft -11 }
-
 Return aDim
 
 
 /* ----------------------------------------------------------------------------
-U_DlgWidthPanelPanel()
+DlgWidthPanelPanel()
 Devolve a largura do painel oParent, utilizando o método ReadClientCorrs() para
 ler as dimensões reais do painel.
 ---------------------------------------------------------------------------- */
-User Function DlgWidthPanel(oParent)
+Static Function DlgWidthPanel(oParent)
 	Local nLargura := 0	
 	oParent:ReadClientCoors()	
 	nLargura := oParent:nWidth
@@ -570,12 +571,12 @@ Return nLargura
 
 /* ----------------------------------------------------------------------------
 
-U_FaMyBar()
+FaMyBar()
 
 Barra de botões padrão
 
 ---------------------------------------------------------------------------- */
-User Function FaMyBar(oDlg , bOk, bCancel, aButtons, aButText, lIsEnchoice, lSplitBar,lLegenda)
+Static Function FaMyBar(oDlg , bOk, bCancel, aButtons, aButText, lIsEnchoice, lSplitBar,lLegenda)
 Local nX 			:= 0
 
 DEFAULT aButtons	:= {}
@@ -632,7 +633,7 @@ Method DimObj(cPanel) Class FreAcWindow
 	Local oParent := NIL
 	Self:oArea:GetWinPanel(COL_CENTER, WND_VIS)
 	oParent:FreeChildren()
-	aDim := U_DLGinPANEL(oParent)
+	aDim := DLGinPANEL(oParent)
 Return aDim
 
 
@@ -668,7 +669,7 @@ Begin Sequence
 		If !Empty(Self:GetPerg())				
 			Pergunte(Self:GetPerg(), .T., , , Self:oPanelSearch, , ;
 			         @Self:aPergunte, .T., .F.)
-			U_FaMyBar(Self:oPanelSearch, , , , ;
+			FaMyBar(Self:oPanelSearch, , , , ;
 			        {{"Pesquisar", "Pesquisar", {|| Self:PesqSKU(_cPerg)}}}, .F.,.F.)	 
 		EndIf
 	Endif
@@ -859,8 +860,8 @@ Begin Sequence
 
   	//chamar funcao para carregar dados
   	LoadPlan()  //carrega planejamento
-  	U_ZPECF30K(.F.)
-	U_ZPECF30E()
+  	ZPECF30KIT(.F.)
+	ZPECF30EVM()
 	LocFCP()  //carregar ultimo faturamento e compras, descrição produto
 	
 	//_oBrRelac:setArray(_aPrdREL)	
@@ -880,26 +881,6 @@ End Sequence
 Return _lRet
 
 
-
-/*/{Protheus.doc} MenuDef2
-//Menu do planejamento.
-@author DAC- denilso.almeida
-@since 15/10/2019
-@version 1.0
-@return ${return}, ${return_description}
-
-@type function
-/*/
-Static Function MenuDef2()
-Local _aArea	:= GetArea()
-Local _aRotina 	:= {}
-Begin Sequence
-	AADD(_aRotina, {"Itens Relacionados"	, "U_ZPECF30I()"    		, 0, 0, 0, Nil })
-	AADD(_aRotina, {"Kit."		 			, "U_ZPECF30K()"			, 0, 6, 0, Nil })
-	AADD(_aRotina, {"Visualizar Produto"	, "U_ZPECF30P()"	   	, 0, 7, 0, Nil })
-End Sequence
-RestArea(_aArea)
-Return( _aRotina )
 
 
 
@@ -1144,6 +1125,7 @@ Begin Sequence
             AND SF4.F4_FILIAL = %xFilial:SF4%
      		AND SF4.F4_CODIGO = SD2.D2_TES 
      		AND SF4.F4_ESTOQUE = 'S'
+			AND SF4.F4_DUPLIC 	= 'S'
     	WHERE 	SD2.%notDel%
 			AND	SD2.D2_FILIAL 	BETWEEN %Exp:_cFilDe% AND %Exp:_cFilAte% 	  
     		AND SD2.D2_COD  	= %Exp:_cCodProd%
@@ -1262,22 +1244,6 @@ Endif
 
 Return _nTotEmp
 
-
-//----------------------------------------------
-//Imprimir relatório Consulta Estoque
-//----------------------------------------------
-User Function QCOMP5RE()
-Local _aArea 		:= GetArea()
-Local _cFunNameBkp 	:= SetFunName()
-Begin Sequence
-	pergunte( "MTC030", .F. )
-	//Help( ,,"Atenção", , "Relatório em desenvolvimento !",1,0)
-	MATC030()
-End Sequence
-SetFunName(_cFunNameBkp)
-//oFather:FilterFile(,,.T.)            
-RestArea(_aArea)
-Return Nil
 
 
 /*/{Protheus.doc} ValidCampo
@@ -1501,16 +1467,16 @@ Return Nil
 
 
 
-/*/{Protheus.doc} ZPECF30K
+/*/{Protheus.doc} ZPECF30KIT
 //Mostrar Kits
 @author DAC denilso
 @since 05/05/2023
 @version 1.0
 @parametro 				_lCarrega - indica se esta realizando o carregamento de variaveis neste momento não mostra kits utilizado para fazer atualização no browse
 @return _lRet, Logico
-@type User function
+@type Static function
 /*/
-User Function ZPECF30K(_lCarrega)
+Static Function ZPECF30KIT(_lCarrega)
 Local _cCodItem		:= MV_PAR01
 Local _cCodKit 		:= ""  	//verificar se o codigo do kit será o mesmo código com final KIT - CONFORME ALINHADO COM ZÉ SERA INCLUÍDO NO CADASTRO COM MESMO CÓDIGO DE PRODUTO ACRESCENTANDO NO FINAL KIT
 Local _cGrupoKit	:= ""	//verificar se o grupo do kit sera o mesmo do grupo do produto normal - CONFORME ALINHADO COM ZÉ SIM DEVERÁ SER O MESMO GRUPO DO PRODUTO ORIGINAL	
@@ -1602,16 +1568,16 @@ Return _lRet
 
 
 
-/*/{Protheus.doc} ZPECF30I
+/*/{Protheus.doc} ZPECF30ITR
 //itens relacionados
 @author DAC denilso
 @since 05/05/2023
 @version 1.0
 @parametro 				_lCarrega - indica se esta realizando o carregamento de variaveis neste momento não mostra kits utilizado para fazer atualização no browse
 @return _lRet, Logico
-@type User function
+@type Static function
 /*/
-User Function ZPECF30I(_lCarrega)
+Static Function ZPECF30ITR(_lCarrega)
 Local _lRet			:= .T.
 Local _cCodItem		:= MV_PAR01
 Local _cDescPRd		:= ""
@@ -1671,15 +1637,15 @@ Return _lRet
 
 
 
-/*/{Protheus.doc} ZPECF30P
+/*/{Protheus.doc} ZPECF30PRD
 //Mostrar Produto
 @author DAC denilso
 @since 12/05/2023
 @version 1.0
 @return Nil
-@type User function
+@type Static function
 /*/
-User Function ZPECF30P()
+Static Function ZPECF30PRD()
 Private cCadastro := "Consulta Produto "+MV_PAR01
 SB1->(dbSetOrder(1))
 SB1->(DbSeek(FwXFilial("SB1")+AllTrim(MV_PAR01)))
@@ -1688,14 +1654,14 @@ Return NIL
 
 
 /*/{Protheus.doc} ZPECF30E
-//Mostrar Produto
+//Mostrar Estatisticas de vendas
 @author DAC denilso
 @since 24/05/2023
 @version 1.0
 @return Nil
-@type User function
+@type Static function
 /*/
-User Function ZPECF30E()
+Static Function ZPECF30EVM()
 Local _cAliasPesq 	:= GetNextAlias()
 Local _cCodProd     := AllTrim(MV_PAR01)
 Local _dDataIni		:= dDatabase
@@ -1726,7 +1692,7 @@ Begin Sequence
 			AND SD2.D2_EMISSAO  BETWEEN %Exp:_dDataIni% AND %Exp:_dDataFim%
       		AND SD2.%notDel%      
 		GROUP BY SUBSTR(D2_EMISSAO,1,6)
-		ORDER BY SUBSTR(D2_EMISSAO,1,6)
+		ORDER BY SUBSTR(D2_EMISSAO,1,6) DESC
 	EndSql
 
 	If	(_cAliasPesq)->(Eof())
@@ -1768,7 +1734,7 @@ Return Nil
 @since 26/05/2023
 @version 1.0
 @return Nil
-@type User function
+@type Static function
 /*/
 Static Function ZPECF30PIK()
 Local _cCodProd     := AllTrim(MV_PAR01)
@@ -1785,7 +1751,7 @@ Return Nil
 @since 01/06/2023
 @version 1.0
 @return Nil
-@type User function
+@type Static function
 /*/
 Static Function ZPECF30ORC()
 Local _cCodProd     := MV_PAR01
@@ -1804,7 +1770,7 @@ Return Nil
 @since 01/06/2023
 @version 1.0
 @return Nil
-@type User function
+@type Static function
 /*/
 Static Function ZPECF30INV()
 Local _cCodProd     := MV_PAR01
@@ -1820,7 +1786,7 @@ Return Nil
 @since 01/06/2023
 @version 1.0
 @return Nil
-@type User function
+@type Static function
 /*/
 Static Function ZPECF30KAR()
 Local _cCodProd     := MV_PAR01
@@ -1835,7 +1801,7 @@ Return Nil
 @since 01/06/2023
 @version 1.0
 @return Nil
-@type User function
+@type Static function
 /*/
 Static Function ZPECF30CMP()
 Local _cCodProd     := MV_PAR01

@@ -212,10 +212,9 @@ Begin Sequence
 	_cQuery += "	ON 	VX5.D_E_L_E_T_ = ' ' " + CRLF
 	_cQuery += "	AND VX5.VX5_FILIAL = '"+FwXFilial("SA1")+"' "+ CRLF
 	_cQuery += "	AND VX5.VX5_CHAVE = 'Z00' "+ CRLF
-	_cQuery += "	AND VX5.VX5_CODIGO = VS1.VS1_XTPPED "
-	_cQuery += "WHERE  VS3.D_E_L_E_T_ = ' ' "
+	_cQuery += "	AND VX5.VX5_CODIGO = VS1.VS1_XTPPED "+ CRLF
+	_cQuery += "WHERE  VS3.D_E_L_E_T_ = ' ' "+ CRLF
 	_cQuery += "	AND VS3.VS3_FILIAL	= '"+FwXFilial("VS3")+"' "+ CRLF
-	_cQuery += "	AND VS3.VS3_XPICKI 	<> ' ' "+ CRLF
     _cQuery +=      _cWhere
     _cQuery += "ORDER BY VS3.VS3_NUMORC, VS3.VS3_SEQUEN"    
 

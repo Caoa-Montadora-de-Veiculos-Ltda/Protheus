@@ -10,7 +10,7 @@
 /*/{Protheus.doc} ZPECF034
 Pedido de Compras Pendentes
 @author     DAC - Denilso 
-@since      24/06/2023
+@since      26/06/2023
 @version    1.0
 @obs        Tela esta relacionada com a funcionalidade ZPECF030 a mesma poderá ser colocada também no menu com a chamada ZPECF032 caso seja necessário adaptar parametros para a procura  
 /*/

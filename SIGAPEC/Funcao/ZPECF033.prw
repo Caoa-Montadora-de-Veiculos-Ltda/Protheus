@@ -361,7 +361,7 @@ Begin Sequence
 	
     _ObrW:AddLegend("AllTrim(TIPO) = 'ENTRADA'  "  ,"BLUE" 	   	,"N.F. Entrada")
 	_ObrW:AddLegend("AllTrim(TIPO) = 'SAIDA'    "  ,"GREEN"     ,"N.F. Saida")
-	_ObrW:AddLegend("AllTrim(TIPO) = ''         "  ,"YELLOW"    ,"Saldo Inicial")
+	//_ObrW:AddLegend("AllTrim(TIPO) = ''         "  ,"YELLOW"    ,"Saldo Inicial")
 	_ObrW:AddButton("Notas Entrada/Saida"  	, { || FWMsgRun(, {|| ZPEC33NF(_cAliasPesq) }, "Nota Fiscal", "Localizando Nota Fiscal") },,,, .F., 2 )  //função no ZPECFUNA
   
    //Ativamos a classe
