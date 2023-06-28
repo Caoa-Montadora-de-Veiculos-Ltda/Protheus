@@ -138,7 +138,7 @@ Begin Sequence
         _cWhereSZK += "             AND VS3A.VS3_CODITE =  '"+_cCodProd+"') <> ' ' "+ CRLF
 	Endif
     //indica que mostra cancelado e faturado
-    If _lMostraCF
+    If !_lMostraCF
 		_cWhereSZK += "	AND SZK.ZK_STATUS NOT IN ('C','F') "
     EndIf
 
@@ -224,6 +224,8 @@ Begin Sequence
     _ObrW:SetAmbiente(.F.) //Habilita a utilização da funcionalidade Ambiente no Browse
     _ObrW:SetFixedBrowse(.T.)
 	_ObrW:DisableDetails()
+    _ObrW:ForceQuitButton()     
+
     //_ObrW:DisableReport() // Desabilita a impressão das informações disponíveis no Browse
 
 	//_ObrW:SetSeek(.T.,_aSeek)

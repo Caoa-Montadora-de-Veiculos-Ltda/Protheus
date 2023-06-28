@@ -13,7 +13,9 @@ Exemplo de Modelo 1 com tabela temporária
     @return Nil, Função não tem retorno
     @example
 /*/
- 
+
+Static _lZPECF030
+
 User Function ZPECF027(_cProduto)
     Local aArea        := GetArea()
     Local oBrowse
@@ -40,6 +42,8 @@ User Function ZPECF027(_cProduto)
 	IF FWFilial() <> '2001' //Verificar Filial Barueri
 	    RETURN Nil
 	ENDIF
+
+   _lZPECF030 := FWIsInCallStack("U_ZPECF030")   //PEC044 
 
     IF Empty(_cProduto)    
         aAdd( aPergs ,{1,"Informe o Produto ",cProd     ,"@!" , ""  , "SB1","", 100,.F. })
@@ -109,7 +113,8 @@ User Function ZPECF027(_cProduto)
         oBrowse:AddLegend( "STATUS=='03'", "BR_AMARELO"          , "Embarcado"                   ) 
         oBrowse:AddLegend( "STATUS=='04'", "BR_AZUL"             , "Aguardando pres. Carga"      )
         oBrowse:AddLegend( "STATUS=='05'", "BR_PINK"             , "Porto Ag. Parametrizacao"    )
-        oBrowse:AddLegend( "STATUS=='06'", "BR_BR_VERMELHO_CLARO", "Registro Ag. Parametrizacao" )   
+        //oBrowse:AddLegend( "STATUS=='06'", "BR_BR_VERMELHO_CLARO", "Registro Ag. Parametrizacao" )   
+        oBrowse:AddLegend( "STATUS=='06'", "BR_LILAS"           , "Registro Ag. Parametrizacao" )   
         oBrowse:AddLegend( "STATUS=='07'", "BR_VERMELHO"         , "Canal Vermelho"              )   
         oBrowse:AddLegend( "STATUS=='08'", "BR_VERDE"            , "Canal Verde"                 ) 
         oBrowse:AddLegend( "STATUS=='09'", "BR_LARANJA"          , "Nacionalizada"               )
@@ -117,19 +122,48 @@ User Function ZPECF027(_cProduto)
         oBrowse:AddLegend( "STATUS=='11'", "BR_CINZA"            , "Entregue"                    )
         //oBrowse:AddLegend( "STATUS=='X'" , "BR_VERDE_ESCURO" , "X" )        
 
-        oBrowse:DisableReport()
+        //oBrowse:DisableReport()
         oBrowse:DisableDetails()
+        If ! _lZPECF030  //se foi ou não chamado pelo Consultas ZPECF30 PEC044
+            aAdd(afields, {"Status"      ,"Status","C"    ,002 ,0 ,"@!" })
+            aAdd(afields, {"Filial"      ,"Filial","C"    ,010 ,0 ,"@!" })
+            aAdd(afields, {"Invoice"   	 ,"Invoice","C"   ,030 ,0 ,"@!" })
+            aAdd(afields, {"Item"        ,"Item","C"      ,023 ,0 ,"@!" })
+            aAdd(afields, {"Descricao"   ,"Descricao","C" ,060 ,0 ,"@!" })
+            aAdd(afields, {"Pedido" 	 ,"Pedido","C"    ,030 ,0 ,"@!" })
+            aAdd(afields, {"Processo"    ,"Processo","C"  ,030 ,0 ,"@!" })
+            aAdd(afields, {"Caixa"	     ,"Caixa","C"     ,010 ,0 ,"@!" })
+            aAdd(afields, {"Data_Inv"    ,"Data_Inv","D"  ,008 ,0 ,"@D" })
+            aAdd(afields, {"Prev_Cheg"	 ,"Prev_Cheg","D" ,008 ,0 ,"@D" })
+        Else
+            //aAdd(afields, {"Filial"         ,"Filial"       ,"C" ,010 ,0 ,"@!" })
+            aAdd(afields, {"Invoice"   	    ,"Invoice"      ,"C" ,030 ,0 ,"@!" })
+            aAdd(afields, {"Data_Inv"       ,"Data_Inv"     ,"D" ,008 ,0 ,"@D" })
+            aAdd(afields, {"Pedido Compras" ,"PedCMP"       ,"C" ,030 ,0 ,"@!" })
+            aAdd(afields, {"Item"           ,"Item"         ,"C" ,023 ,0 ,"@!" })
+            aAdd(afields, {"Descricao"      ,"Descricao"    ,"C" ,060 ,0 ,"@!" })
+            aAdd(afields, {"Qtd"            ,"Qtd"          ,"N" ,010 ,2 ,"@E 9,999,999.99" }) 
+            aAdd(afields, {"Vl_Unit"        ,"Vl_Unit"      ,"N" ,014 ,2 ,"@E 99,999,999,999.99" })
+            aAdd(afields, {"Vl_Total"       ,"Vl_Total"     ,"N" ,014 ,2 ,"@E 99,999,999,999.99" })
+            aAdd(afields, {"Status"         ,"Status"       ,"C" ,002 ,0 ,"@!" })
+            aAdd(afields, {"Nota"	        ,"Nota"         ,"C" ,009 ,0 ,"@!" })
+            aAdd(afields, {"Serie"          ,"Serie"        ,"C" ,003 ,0 ,"@!" })
+            aAdd(afields, {"Navio"	        ,"Navio"        ,"C" ,040 ,0 ,"@!" })
+            aAdd(afields, {"Container"      ,"Container"    ,"C" ,020 ,0 ,"@!" })
+            aAdd(afields, {"Caixa"	        ,"Caixa"        ,"C" ,010 ,0 ,"@!" })
+            aAdd(afields, {"P.O." 	        ,"Pedido"       ,"C" ,030 ,0 ,"@!" })
+            aAdd(afields, {"B_L"	        ,"B_L"          ,"C" ,020 ,0 ,"@!" })
+            aAdd(afields, {"Prev. Chegada"	,"Prev_Cheg"    ,"D" ,008 ,0 ,"@D" })
+            aAdd(afields, {"Dt Recebto"     ,"Data_Rec"     ,"D" ,008 ,0 ,"@D" })
+            aAdd(afields, {"Processo"       ,"Processo"     ,"C" ,030 ,0 ,"@!" })
 
-        aAdd(afields, {"Status"      ,"Status","C"    ,002 ,0 ,"@!" })
-        aAdd(afields, {"Filial"      ,"Filial","C"    ,010 ,0 ,"@!" })
-        aAdd(afields, {"Invoice"   	 ,"Invoice","C"   ,030 ,0 ,"@!" })
-        aAdd(afields, {"Item"        ,"Item","C"      ,023 ,0 ,"@!" })
-        aAdd(afields, {"Descricao"   ,"Descricao","C" ,060 ,0 ,"@!" })
-        aAdd(afields, {"Pedido" 	 ,"Pedido","C"    ,030 ,0 ,"@!" })
-        aAdd(afields, {"Processo"    ,"Processo","C"  ,030 ,0 ,"@!" })
-        aAdd(afields, {"Caixa"	     ,"Caixa","C"     ,010 ,0 ,"@!" })
-        aAdd(afields, {"Data_Inv"    ,"Data_Inv","D"  ,008 ,0 ,"@D" })
-        aAdd(afields, {"Prev_Cheg"	 ,"Prev_Cheg","D" ,008 ,0 ,"@D" })
+            oBrowse:AddButton("Visualiza P.O."		, { || FWMsgRun(, {|oSay| ZPCF027LPO(_cProduto) }, "Visualizar P.O."	, "Visualizar P.O.") },,,, .F., 2 )
+            SB1->(DbSetOrder(1))
+            SB1->(DbSeek(FwXFilial("SB1")+_cProduto))
+            cTitulo := "Invoice - Produto "+AllTrim(_cProduto)+AllTrim(SB1->B1_DESC)
+            oBrowse:SetDescription(cTitulo)
+
+        Endif                
         //aAdd(afields, {"Descricao"  ,"Descricao","C" ,060 ,0 ,"@!" })
         //aAdd(afields, {"Qtd"    	  ,"Qtd","N"       ,010 ,2 ,"@E 9999999,99" }) 
         //aAdd(afields, {"Vl_Unit"    ,"Vl_Unit" ,"N"  ,014 ,2 ,"@E 99999999999,99" })
@@ -145,7 +179,9 @@ User Function ZPECF027(_cProduto)
         //aAdd(afields, {"RECORD"	  ,"RECORD","C"    ,010 ,0 ,"@E 9999999999" })
         //aAdd(afields, {"MsgErro"	  ,"MsgErro","C"   ,240 ,0 ,"@!" })   
 
+        //DAC PEC044 22/06/2023
         oBrowse:SetFields(afields) 
+
 
         oBrowse:Activate()
 
@@ -181,7 +217,9 @@ Static Function zTmpInv(lJob)
     Local _cAliasInv    := GetNextAlias()
     Local _cAliasNF     := GetNextAlias()
     Local _cAliasMA     := GetNextAlias()
-	Default lJob		:= .F.	
+    
+    Default lJob		:= .F.	
+
 
     If Select( _cAliasInv ) > 0
 		( _cAliasInv )->( DbCloseArea() )
@@ -336,13 +374,19 @@ Static Function zTmpInv(lJob)
         aAdd(aCampos, {"Proforma"   ,"C"    ,030    ,0  })
         aAdd(aCampos, {"B_L"	    ,"C"    ,020    ,0  })
         aAdd(aCampos, {"Prev_Cheg"	,"D"    ,008    ,0  })
-        aAdd(aCampos, {"Rec_Cont"   ,"D"    ,008    ,0  })
+        aAdd(aCampos, {"Data_Rec"	,"D"    ,008    ,0  })
         aAdd(aCampos, {"Tp_Pedido"  ,"C"    ,030    ,0  })        
        // aAdd(aCampos, {"RECORD"	    ,"C"    ,010    ,0  })
 	    aAdd(aCampos, {"MsgErro"	,"C"    ,240    ,0  })  
         aAdd(aCampos, {"Notas_F"	,"C"    ,240    ,0  })
         aAdd(aCampos, {"Serie_F"    ,"C"    ,003    ,0  })
         aAdd(aCampos, {"Qtd_F"    	,"N"    ,010    ,2  }) 
+
+        aAdd(aCampos, {"PedCMP"     ,"C"    ,030    ,0  })
+        aAdd(aCampos, {"Rec_Cont"   ,"D"    ,008    ,0  })
+
+        
+
 
 		oTempInv:SetFields( aCampos )
 		oTempInv:AddIndex( "01", { "Item"    } )
@@ -354,7 +398,7 @@ Static Function zTmpInv(lJob)
         _cQueNF := " "
 	    _cQueNF := " Select "
         _cQueNF += " SD1.D1_DOC FILHAS,SD1.D1_SERIE SERIE_F,SD1.D1_XCONHEC CONHEC,SD1.D1_QUANT QTDE_F,SD1.D1_XCASE XCASE, " 
-        _cQueNF += " SW8.W8_HAWB AS PROCESSO, SW8.W8_PO_NUM AS PEDIDO, SW8.W8_INVOICE AS INVOICE,SW8.W8_COD_I AS ITEM "
+        _cQueNF += " SW8.W8_HAWB AS PROCESSO, SW8.W8_PO_NUM AS PEDIDO, SW8.W8_INVOICE AS INVOICE,SW8.W8_COD_I AS ITEM ,SD1.D1_EMISSAO NF_EMISSAO"
         _cQueNF += " FROM " + RetSqlName("SW8") + " SW8 "
         _cQueNF += " LEFT JOIN " + RetSqlName("SD1") + " SD1 "
         _cQueNF += " ON SD1.D1_FILIAL     = SW8.W8_FILIAL    " 
@@ -415,7 +459,6 @@ Static Function zTmpInv(lJob)
             cSerFilha  := " "
             nQtdFilha  := 0
             (_cAliasNF)->(DbGoTop())
-
             WHILE (_cAliasNF)->(!EOF())
                 
                 If Alltrim((_cAliasNF)->XCASE) == Alltrim((_cAliasInv)->Caixa)
@@ -430,9 +473,7 @@ Static Function zTmpInv(lJob)
                     ENDIF
 
                 EndIf
-
                 (_cAliasNF)->(DbSkip())
-
             End
 
             _xDescTp := POSICIONE("ZZ8",1, FWXFILIAL("ZZ8") + (_cAliasInv)->TpPedido, "ZZ8_DESC")
@@ -489,9 +530,14 @@ Static Function zTmpInv(lJob)
                 (cAliasTmp)->Rec_Cont    := Stod((_cAliasInv)->Rec_Cont)
                 (cAliasTmp)->Notas_F     := cNFFilha
                 (cAliasTmp)->Serie_F     := cSerFilha
-                (cAliasTmp)->Qtd_F       :=nQtdFilha               
+                (cAliasTmp)->Qtd_F       := nQtdFilha               
                 //(cAliasTmp)->RECORD    := Str((_cAliasInv)->RECORD)
-                (cAliasTmp)->MsgErro   := cMsgErro
+                (cAliasTmp)->MsgErro     := cMsgErro
+                (cAliasTmp)->PedCMP      := AllTrim((_cAliasInv)->Invoice)
+                If (_cAliasInv)->STATUS = '11'
+                    (cAliasTmp)->Data_Rec    :=  StoD((_cAliasNF)->NF_EMISSAO)
+
+                Endif     
 				(cAliasTmp)->(MsUnLock())
 			EndIf
 
@@ -691,4 +737,108 @@ Static Function ViewDef()
 Return oView
 
 
+//mostrar P.O.
+//DAC - Denilso 22/06/2023
+Static Function ZPCF027LPO(_cProduto)
+/* mesmo declarando não funciona da ero na montagem 
+Local _cAliasPesq 	:= GetNextAlias()
+Local _cPO          := (cAliasTmp)->PEDIDO
+Local _cAlias       := "SW2"
+Local _nOpc         := 2 
+Local _nReg         := 0
 
+//AOM - 14/04/2011 - Flag para verificar se Operação Especial está habilitada
+Private cSim            := "N"
+Private lForeCast := (AllTrim(EasyGParam("MV_FORECAS"))$cSim)
+Private lOperacaoEsp    := AvFlags("OPERACAO_ESPECIAL") .And. !lPOAuto
+Private lRegTriPO       := SW3->(FieldPos("W3_GRUPORT")) # 0 .AND. SIX->(dbSeek("EIJ2"))
+PRIVATE cProg           := "PO" 
+Private cDESC_PO:= EasyGParam("MV_DESC_PO",,"I") // JVR - 05/01/10 - Inserido seleção da descrição por parametro."I/P/GI"
+PRIVATE nLenFabr:=AVSX3("A2_COD",3) //SO.:0026 OS.: 0243/02 FCD
+PRIVATE nLenForn:=AVSX3("A2_COD",3) //SO.:0026 OS.: 0243/02 FCD
+PRIVATE nLenCli :=AVSX3("A1_COD",3) //SO.:0026 OS.: 0243/02 FCD
+PRIVATE nLenCC  :=AVSX3("W0__CC",3) //SO.:0026 OS.: 0243/02 FCD
+PRIVATE nLenSi  :=AVSX3("W0__NUM",3)//SO.:0026 OS.: 0243/02 FCD
+PRIVATE nLenOK  :=AVSX3("W2_OK",3)  //SO.:0026 OS.: 0243/02 FCD
+PRIVATE cArqRdmake:= "EICPONEC"
+PRIVATE cArqNestle:= "PONESTLE"
+PRIVATE lSeal  := EasyEntryPoint("IC193PO1"), cSay1, cSay2
+PRIVATE lHunter:= EasyEntryPoint("IC010PO1")//AWR 09/11/1999
+PRIVATE lNec   := EasyEntryPoint(cArqRdmake)
+PRIVATE lNestle:= EasyEntryPoint(cArqNestle)
+PRIVATE lNobel := EasyEntryPoint("IC163PO1")
+PRIVATE lRdMake:= EasyEntryPoint("EICPPO02")
+PRIVATE cPrice := 0, aGetsNaciona
+PRIVATE lLibQt := GETNEWPAR("MV_LIBQTEM", .F.) //PARA ACEITAR SALDO DE QTDE. NEGATIVO (THISSEN)
+Private lSolic:=.T., aFornSW1 := {}  // EOS - OS 486/02 Inclusao de SI de referencia
+Private _PictPrUn := ALLTRIM(X3Picture("W3_PRECO")), _PictPO := ALLTRIM(X3Picture("W2_PO_NUM"))
+Private _PictQtde := ALLTRIM(X3Picture("W3_QTDE")), _PictPrTot := ALLTRIM(X3Picture("W2_FOB_TOT"))
+//lFilDa:=EasyGParam("MV_FIL_DA")
+SX3->(DBSETORDER(2))
+PRIVATE lCancelaSaldo    :=EasyGParam("MV_CANSALD") $ cSim
+PRIVATE lExiste_Midia    :=EasyGParam("MV_SOFTWAR") $ cSim
+SX3->(DBSETORDER(1))
+If(!(cDesc_PO $ "I/P/GI"), cDESC_PO := "I",)
+
+Private lCpoCtCust := (EasyGParam("MV_EASY")$cSim) .And. SW3->(FIELDPOS("W3_CTCUSTO")) > 0 // NCF - 22/06/2010 - Flag do campo de Centro de Custo
+
+Private lPesoBruto := SW3->(FieldPos("W3_PESO_BR")) > 0 .And. SW5->(FieldPos("W5_PESO_BR")) > 0 .And. SW7->(FieldPos("W7_PESO_BR")) > 0 .And.;
+                      SW8->(FieldPos("W8_PESO_BR")) > 0 .And. EasyGParam("MV_EIC0014",,.F.) //FSM - 02/09/2011 - Campo de peso bruto unitario
+
+Private aCorrespWork := {} //AOM - 07/04/2011 - Array para manipular as work no objeto de Operações Especiais
+
+
+Private lPedNac := cProg == "PN" // GFP - 26/03/2014
+
+Private oUpdAtu //BAK - 22/08/11
+Private oBufferUM:= tHashMap():New() //bufferização da busca pela unidade de medida
+Private cCadastro := "P.O. "+_cPO
+INCLUI := .F.
+EXCLUI := .F.
+ALTERA := .F.
+//U_ZPECF029(_cProduto)
+//return nil
+
+Begin Sequence
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT ISNULL(SW2.R_E_C_N_O_,0) NREGSW2
+		FROM  %Table:SW2% SW2
+		WHERE   SW2.W2_FILIAL 	= %XFilial:SW2%
+			AND SW2.W2_PO_NUM  	= %Exp:_cPO%
+			AND SW2.%notDel%
+	EndSQL
+    //AND SW3.W3_COD_I    = %Exp:_cProduto%
+//            AND SW3.W3_SEQ      = '1'                                                                  "+LBreak
+	(_cAliasPesq)->(DbGotop())	
+	If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGSW2 == 0
+        MSGINFO( "P.O. Não encontrada !", "Atenção" )
+		Break
+	EndIf
+    _nReg := (_cAliasPesq)->NREGSW2
+	SW2->(DbGoto((_cAliasPesq)->NREGSW2))
+    //Dados para chamar tela PO
+    
+    PO400Visua(_cAlias,_nReg,_nOpc)
+End Sequence
+If Select(_cAliasPesq) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif  
+ */   
+    //PEC044 - necessário implementar PEs EICPPO01_PE e IPO400MNU_PE
+    EICPO400(,,,2)
+
+Return Nil
+
+
+
+/*
+User Function EICPO400()
+Local cFiltro
+Local cParam	:= If(Type("ParamIxb") = "A",ParamIxb[1],If(Type("ParamIxb") = "C",ParamIxb,""))
+ 	If cParam == "FILTRA_SI" .AND. FunName() = "EICEI100"
+        cFiltro := "W2_FILIAL='"+xFilial("SW2")+"' .And.  AllTrim(SW2.W2_PO_NUM) = '"+AllTrim((cAliasTmp)->PEDIDO)+"'"
+        SET FILTER TO &cFiltro        
+     EndIf
+Return Nil 
+*/

@@ -68,6 +68,9 @@
 #define DATA_FATURADO  	2
 
 Static oZPEC08Peca  := DMS_Peca():New()
+Static cSayDescPrd 	:= ""
+Static cSayUltCMP	:= ""
+Static cSayUltVND   := ""
 
 //====================================
 
@@ -134,30 +137,13 @@ Class FreAcWindow
 	Data oDlg As Object
 	Data oTreeAccounts As Object
 
-	Data oSayBalAcc As Object
-	Data cSayBalAcc As String
-	Data oSayLead 	As Object
-	Data oSayDAtu   As Object
+	Data oSayDescPrd 	As Object
+	Data oSayUltCMP 	As Object
+	Data oSayUltVND 	As Object
 
-	Data oSayPrev 	As Object
-	Data oSayFat 	As Object
-	Data oSayEmpen 	As Object
-	Data oSaySVen 	As Object
-	Data oSaySaFat  As Object
-	Data oSayEstMax	As Object
-	Data oSayEstMin	As Object
-	Data oSayPrevFat As Object
-
-	Data cSayLead 	As String
-	Data cSayDAtu 	As String
-	Data cSayPrev 	As String
-	Data cSayFat 	As String
-	Data cSayEmpen 	As String
-	Data cSaySVen 	As String
-	Data cSaySaFat  As String
-	Data cSayEstMax As String
-	Data cSayEstMin As String
-	Data cSayPrevFat As String
+	Data cSayDescPrd 	As String
+	Data cSayUltCMP		As String
+	Data cSayUltVND 	As String
 
 	Data oComboBal As Object
 	Data aComboBal As Array
@@ -235,7 +221,7 @@ Begin Sequence
 
 	// painéis direitos	
 	Self:oPanelOp 		:= Nil
-	Self:oPanelEVenda 		:= Nil
+	Self:oPanelEVenda 	:= Nil
 
 	// objetos necessários para a interface	
 	Self:oGetData 	:= Nil
@@ -251,15 +237,10 @@ Begin Sequence
 	Self:aPergunte 	:= Nil
 	Self:oChart 	:= Nil
 
-	Self:oSayLead 	:= Nil
-	Self:oSayDAtu 	:= Nil
-	Self:oSayPrev 	:= Nil
-	Self:oSayFat 	:= Nil
-	Self:oSayEmpen 	:= Nil
-	Self:oSaySVen 	:= Nil
-	Self:oSaySaFat  := Nil
-	Self:oSayEstMax	:= Nil
-	Self:oSayEstMin	:= Nil
+	Self:oSayDescPrd 	:= Nil
+	Self:oSayUltCMP 	:= Nil
+	Self:oSayUltVND 	:= Nil
+
 
 End Begin
 Return Self
@@ -291,18 +272,36 @@ Begin Sequence
 	Pergunte(Self:GetPerg(1), .T., , , Self:oPanelSearch, , @Self:aPergunte, .T., .F.)	
 	U_FaMyBar(Self:oPanelSearch, , , , ;
           {{"Pesquisar", "Pesquisar", {||Self:PesqSKU(_cPerg)}}}, .F., .F.)	 //"Pesquisar"###"Pesquisar"
+	//localiza faturamento, compras e produto
+	LocFCP()
+	Self:cSayDescPrd := cSayDescPrd
+	Self:cSayUltCMP	 := cSayUltCMP
+	Self:cSayUltVND  := cSayUltVND
+
+	_nLin1 := 30
+	_nCol1 := 07
+	_nCol2 := 65
+
+	@ _nLin1, _nCol1 Say Self:oSayDescPrd Var Self:cSayDescPrd Size 200, 012 PIXEL OF Self:oPanelSearch
+	_nLin1 += 20
+
+	@ _nLin1, _nCol1 Say "Ultima Compra" Size 71, 10 PIXEL OF Self:oPanelSearch 
+	@ _nLin1, _nCol2 Say Self:oSayUltCMP Var Self:cSayUltCMP Size 200, 012 PIXEL OF Self:oPanelSearch
+	_nLin1 += 10
+	@ _nLin1, _nCol1 Say "Ultima Venda" Size 71, 10 PIXEL OF Self:oPanelSearch 
+	@ _nLin1, _nCol2 Say Self:oSayUltVND Var Self:cSayUltVND Size 200, 012 PIXEL OF Self:oPanelSearch
 
 	// Outras Ações
 	Self:oArea:AddWindow(COL_LEFT, wnd_resumo, "Ferramentas", 50, .T., .T.) 
 	Self:oPanelDados := Self:oArea:GetWinPanel(COL_LEFT, wnd_resumo)
 	U_FaMyBar(Self:oPanelDados, , , , ;
-          {{"" 	, "Invoice                       ", {||MSGINFO( "Em desenvolvimento", "Atenção" )}}}, .F., .F.)	 				  
+          {{"" 	, "Invoice                       "	, {||ZPECF30INV()}}}, .F., .F.)	 				  
 	U_FaMyBar(Self:oPanelDados, , , , ;
-          {{""	, "Pedido de Compras    ", {|| /*PesqAXLS(Self:oPanelVis)*/}}}, .F., .F.)	 
+          {{""	, "Pedido de Compras    "			, {|| ZPECF30CMP(/*Self:oPanelVis*/) }}}, .F., .F.)	 
 	U_FaMyBar(Self:oPanelDados, , , , ;
-          {{"" 	, "Kardex Entrada/Saida", {||/*Self:PesqSKU(_cPerg)*/}}}, .F., .F.)	 
+          {{"" 	, "Kardex Entrada/Saida"			, {|| ZPECF30KAR(/*Self:oPanelVis*/)}}}, .F., .F.)	 
   	U_FaMyBar(Self:oPanelDados, , , , ;
-          {{"" 	, "Orçamento                 ", {||ZPECF30ORC()}}}, .F., .F.)	 
+          {{"" 	, "Orçamento                 "		, {||ZPECF30ORC()}}}, .F., .F.)	 
 	U_FaMyBar(Self:oPanelDados, , , , ;
           {{"" 	, "Picking                        ", {||ZPECF30PIK()}}}, .F., .F.)	 
 End Sequence
@@ -315,6 +314,7 @@ Cria os painéis centrais, de acordo com o gestor utilizado: Contas a Receber,
 Contas a Pagar ou Tesouraria:
 ---------------------------------------------------------------------------- */
 Method CreateCenterColumn() Class FreAcWindow
+Local _cPerg := "ZPECF030"
 Local oColumn 	:= Nil
 Local _aEdit	:= {}
 Local _nPos
@@ -359,7 +359,7 @@ Begin Sequence
     Self:_OBrPlan:DisableDetails()
     Self:_OBrPlan:lHeaderClick:=.T.
     //Self:_OBrPlan:SetFields(_aColuna)
-    Self:_OBrPlan:DisableReport()
+    //Self:_OBrPlan:DisableReport()
     Self:_OBrPlan:SetOwner(Self:oPanelBrowse)
 	Self:_OBrPlan:SetPreEditCell({|| DbSelectArea(_cAliasPlan), .T.})
 	//Self:_OBrPlan:SetEditCell(.T.)
@@ -404,7 +404,7 @@ Begin Sequence
 	_oBrRelac:DisableFilter(.T.)
     _oBrRelac:SetOwner(Self:oPanelVis)
 
-	//_oBrRelac:SetDoubleClick({ || lRet := .T., __cRet := aBrwData[_oBrRelac:nAt,2], oModal:DeActivate()    })	
+	_oBrRelac:SetDoubleClick({ || ZPECF30RE(_oBrRelac,_oBrRelac:nAt) , Self:PesqSKU(_cPerg), _oBrRelac:Refresh()    })	
 	// Cria uma coluna de status
 	// Adiciona as colunas do Browse
 	oColumn := FWBrwColumn():New()
@@ -463,7 +463,7 @@ Begin Sequence
 	//Self:oPanelOp := Self:oArea:GetWinPanel(COL_RIGHT, WND_OPERATIONS)
 		
 
-	//Carregar tela de saldos 
+	//Carregar tela Estatistica 
 	//SB1->(DbSetOrder(1))
 	//SB1->(DbSeek(XFilial("SB1")+AllTrim(MV_PAR01)))
 	//_cDescr := AllTrim(SB1->B1_DESC)
@@ -799,17 +799,13 @@ FreAcWindow:RefreshPrd()
 Atualiza o painel de saldos. Não efetua nenhum recálculo de valores.
 ---------------------------------------------------------------------------- */
 Method RefreshPrd() Class FreAcWindow
-Begin Sequence	
-	Self:oSayDAtu:Refresh()
-	Self:oSayLead:Refresh()
-	Self:oSayPrev:Refresh()
-	Self:oSayFat:Refresh()
-	Self:oSayEmpen:Refresh()
-	Self:oSaySVen:Refresh()
-	Self:oSaySaFat:Refresh()
-	Self:oSayEstMaxv:= Nil
-	Self:oSayEstMin:Refresh()
-End Sequence	
+	Self:cSayDescPrd := cSayDescPrd
+	Self:cSayUltCMP	 := cSayUltCMP
+	Self:cSayUltVND  := cSayUltVND
+
+	Self:oSayDescPrd:Refresh()
+	Self:oSayUltCMP:Refresh()
+	Self:oSayUltVND:Refresh()
 Return Nil
 
 
@@ -827,46 +823,6 @@ Begin Sequence
 	EndIf
 End Sequence	
 Return Nil
-
-/* ----------------------------------------------------------------------------
-U_EExecQuery()
----------------------------------------------------------------------------- */
-User Function EExecQuery(cQueryAlias, cQuery)
-Local lReturn := .F.
-Begin  Sequence
-  	cQuery := ChangeQuery(cQuery)
-  	//ConOut(cQuery)
-  	dbUseArea(.T., "TOPCONN", TCGenQry(, , cQuery), cQueryAlias, .F., .T.)
-	If Select(cQueryAlias) > 0
-		lReturn := .T.
-		(cQueryAlias)->(dbGotop())	
-	EndIf
-End Sequence	
-Return lReturn
-
-
-
-/* ----------------------------------------------------------------------------
-FGetLenPgt
-Retorna o numero de perguntas do grupo de perguntas em uso
----------------------------------------------------------------------------- */
-User Function FGetLenPgt(cPerg)
-Local nLenPerg := 0
-Local aArea		:= GetArea()
-Local aAreaSX1	:= SX1->(GetArea())
-Begin Sequence	
-	If SX1->(MsSeek(cPerg))
-		//dbSelectArea("SX1")
-		While !SX1->(Eof()) .and. Alltrim(cPerg) == Alltrim(SX1->X1_GRUPO)
-			nLenPerg++
-			SX1->(dbSkip())
-			Enddo
-		Endif
-End Sequence
-RestArea(aAreaSX1)
-RestArea(aArea)
-Return(nLenPerg)		 
-
 
 
 /*/{Protheus.doc} PesqSKU
@@ -905,6 +861,8 @@ Begin Sequence
   	LoadPlan()  //carrega planejamento
   	U_ZPECF30K(.F.)
 	U_ZPECF30E()
+	LocFCP()  //carregar ultimo faturamento e compras, descrição produto
+	
 	//_oBrRelac:setArray(_aPrdREL)	
   	//_oBrRelac:refresh()
   	Self:_OBrPlan:GoTop(.T.)
@@ -913,6 +871,7 @@ Begin Sequence
 	Self:oPanelBrowse:Refresh(.T.) 
 	Self:oPanelEVenda:Refresh(.T.)
 	Self:oArea:Refresh(.T.) 
+	Self:RefreshPrd()
   	//::oPanelBrowse
   	//::oPanelEVenda
   	//::oPanelOp
@@ -1100,7 +1059,6 @@ Begin Sequence
 		Break
 	Endif
 	//Carregar as filiais 
-	//_aFil 		:= LocFilPlan()
 	(_cAliasTRB)->(DbGotop())
 	_lArmazemPad := .F. 
     While (_cAliasTRB)->(!Eof())
@@ -1159,109 +1117,75 @@ cFilAnt := _cFilBK
 Return _lRet  
 
 
-//localizar filiais para trazer saldo do produto para a filial
-Static Function LocFilPlan(_lTodas)
-Local _aAreaSM0 := SM0->(GetArea())
-Local _cFilBk  	:= cFilAnt
-Local _cEmpBk  	:= cEmpAnt
-Local _aRet		:= {}
-Local _aUnitNeg	
-Local _aEmpAux 	
-Local _nPosUni  
-Local _nPosEmp
-Local _nPosFil
-Local _cUnidNeg
-Local _aFilAux   
-
-Default _lTodas := .F.
-
-Begin Sequence
-	_aUnitNeg	:= Iif(_lTodas, FWAllGrpCompany(), {SM0->M0_CODIGO})
-	_aEmpAux 	:= Iif(_lTodas, FWAllCompany(), {cEmpAnt})
-	//Percorrendo os grupos de empresa
-	For _nPosUni := 1 To Len(_aUnitNeg)
-		_cUnidNeg := _aUnitNeg[_nPosUni]
-		//Percorrendo as empresas
-		For _nPosEmp 	:= 1 To Len(_aEmpAux)
-			cEmpAnt 	:= _aEmpAux[_nPosEmp]
-			_aFilAux 	:= FWAllFilial(cEmpAnt,,,.t.)
-			//Percorrendo as filiais listadas
-			If Len(_aFilAux) == 0  //Não tem unidade de Negocio
-				SM0->(DbGoTop())
-				While SM0->(!Eof())
-					cFilAnt :=	SM0->M0_CODFIL
-					Aadd(_aRet,cFilAnt)	
-					SM0->(DbSkip())
-				EnDDo	
-				Break
-			Endif	
-			For _nPosFil := 1 To Len(_aFilAux)
-				//Se o tamanho da filial for maior, atualiza
-				If Len(cFilAnt) > Len(_aFilAux[_nPosFil])
-					cFilAnt := cEmpAnt + _aFilAux[_nPosFil]
-				Else
-					cFilAnt := _aFilAux[_nPosFil]
-				EndIf 
-				//Posiciono na empresa (para poder pegar o ident)
-				SM0->(DbGoTop())
-				SM0->(DbSeek(_cUnidNeg+cFilAnt)) //é utilizado o 01, por grupo de empresas, caso necessário rotina pode ser adaptada
-				//......................
-				//Fazer tratamentos necessários neste ponto, se for consultas SQL lembrar de utilizar RetSQLName e FWxFilial
-				//......................
-				Aadd(_aRet,cFilAnt)	
-			Next
-		Next
-	Next
-End Sequence
-//Voltando backups
-cEmpAnt := _cEmpBk
-cFilAnt := _cFilBk
-RestArea(_aAreaSM0)
-Return _aRet
-
 
 
 //==========================================================================
-//funcionalidade para retornar as Faturamento de acordo com o período
+//funcionalidade para retornar data da ultima Fatura
 //==========================================================================
-Static Function CalcFat()
+Static Function LocFCP()
 Local _cAliasPesq 	:= GetNextAlias()
-Local _cFilDe		:= Replicate(" ",TamSx3("ZD0_FILIAL")[1])
-Local _cFilAte		:= Replicate("Z",TamSx3("ZD0_FILIAL")[1])
-Local _nTotFat  	:= 0
-Local _cParTipo     := AllTrim(SuperGetMV('QA_PLANNFS', .F., "N"))
-Local _cCodProd     := AllTrim(MV_PAR01)
-Local _dDataFat
-Local _cVarTipo
+Local _cFilDe		:= Replicate(" ",TamSx3("D2_FILIAL")[1])
+Local _cFilAte		:= Replicate("Z",TamSx3("D2_FILIAL")[1])
+Local _dDataFAT  	:= CtoD(Space(08))
+Local _dDataCMP  	:= CtoD(Space(08))
+Local _cDescri      := Space(30)
+Local _cCodProd     := MV_PAR01
 //Local _cVar
 //Local _nPos
 Begin Sequence
     //pegar a data de acordo com a quantidade de dias  
-	_dDataFat 	:= dDatabase //+ MV_PAR02 
-	_cCodBase  	:= SubsTr(MV_PAR01,1,Len(ZD0->ZD0_CODBAS))
-	_nTotFat   	:= 0
-	//Montar o tipo de taturamento
-	_cVarTipo 	:= _cParTipo
 	BeginSql Alias _cAliasPesq
- 		SELECT  SUM(SD2.D2_TOTAL) NTOTFAT
-    	FROM %Table:SD2% SD2                        
-    	WHERE 	SD2.D2_FILIAL 	BETWEEN %Exp:_cFilDe% AND %Exp:_cFilAte% 	  
-    		AND SD2.D2_EMISSAO 	<= %Exp:_dDataFat%    
+ 
+ 
+ 		SELECT  MAX(SD2.D2_EMISSAO)  DATA_FAT 
+    	FROM %Table:SD2% SD2  
+     	INNER JOIN %Table:SF4% SF4 
+            ON  SF4.%notDel%
+            AND SF4.F4_FILIAL = %xFilial:SF4%
+     		AND SF4.F4_CODIGO = SD2.D2_TES 
+     		AND SF4.F4_ESTOQUE = 'S'
+    	WHERE 	SD2.%notDel%
+			AND	SD2.D2_FILIAL 	BETWEEN %Exp:_cFilDe% AND %Exp:_cFilAte% 	  
     		AND SD2.D2_COD  	= %Exp:_cCodProd%
-    		AND SD2.D2_TIPO		IN (%Exp:_cVarTipo%)
-      		AND SD2.%notDel%      
+     		AND SD2.D2_QUANT    <> 0 
 	EndSql  
-	
-	If	(_cAliasPesq)->(Eof())
-		Break
+	If	(_cAliasPesq)->(!Eof())
+		_dDataFAT := StoD((_cAliasPesq)->DATA_FAT)
 	Endif		
-	_nTotFat += (_cAliasPesq)->NTOTFAT	
+	//procurar compras
+	(_cAliasPesq)->(DbCloseArea())
+	BeginSql Alias _cAliasPesq
+ 		SELECT MAX(SD1.D1_EMISSAO)  DATA_CMP 
+    	FROM %Table:SD1% SD1  
+     	INNER JOIN %Table:SF4% SF4  
+            ON  SF4.%notDel%
+            AND SF4.F4_FILIAL = %xFilial:SF4%
+     		AND SF4.F4_CODIGO = SD1.D1_TES 
+     		AND SF4.F4_ESTOQUE= 'S' 
+     	WHERE SF4.%notDel% 
+            AND SD1.D1_FILIAL   BETWEEN %Exp:_cFilDe% AND %Exp:_cFilAte%
+     		AND SD1.D1_COD      = %Exp:_cCodProd%
+     		AND SD1.D1_QUANT    <> '0' 
+	EndSql  
+
+	If	(_cAliasPesq)->(!Eof())
+		_dDataCMP := StoD((_cAliasPesq)->DATA_CMP)
+	Endif		
+	//procurar produto
+    SB1->(DbSetOrder(1)) 
+    SB1->(DbSeek(FwXFilial("SB1")+_cCodProd))
+	_cDescri := SB1->B1_DESC
+
+	cSayDescPrd := _cDescri
+	cSayUltCMP	 := DtoC(_dDataCMP)
+	cSayUltVND  := DtoC(_dDataFAT)
+
 End Sequence
 If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif      
-Return _nTotFat
+Return Nil
 
 
 
@@ -1864,8 +1788,66 @@ Return Nil
 @type User function
 /*/
 Static Function ZPECF30ORC()
-Local _cCodProd     := AllTrim(MV_PAR01)
+Local _cCodProd     := MV_PAR01
 Local _lPickAll		:= .F. 		//mostra todos os itens relacionados a este picking, se .F. mostrata somente o código do produto (_cCodProd)
 Local _lMostraCF	:= .F.   	//Mostra itens Faturados e Cancelados
 	FWMsgRun(, {|oSay| U_ZPECF032(_cCodProd, _lPickAll, _lMostraCF) }) 
+	MV_PAR01 		:= _cCodProd
+
 Return Nil
+
+
+
+/*/{Protheus.doc} ZPECF30INV
+//Mostrar Invoices
+@author DAC denilso
+@since 01/06/2023
+@version 1.0
+@return Nil
+@type User function
+/*/
+Static Function ZPECF30INV()
+Local _cCodProd     := MV_PAR01
+	FWMsgRun(, {|| U_ZPECF027(_cCodProd) }) 
+	MV_PAR01 		:= _cCodProd
+
+Return Nil
+
+
+/*/{Protheus.doc} ZPECF30KAR
+//Kardex Entrada e Saida
+@author DAC denilso
+@since 01/06/2023
+@version 1.0
+@return Nil
+@type User function
+/*/
+Static Function ZPECF30KAR()
+Local _cCodProd     := MV_PAR01
+	U_ZPECF033(_cCodProd) 
+	MV_PAR01 		:= _cCodProd
+Return Nil
+
+
+/*/{Protheus.doc} ZPECF30CMP
+//Mostrar pendencias PC e ou PO
+@author DAC denilso
+@since 01/06/2023
+@version 1.0
+@return Nil
+@type User function
+/*/
+Static Function ZPECF30CMP()
+Local _cCodProd     := MV_PAR01
+	FWMsgRun(, {|| U_ZPECF034(_cCodProd) }) 
+	MV_PAR01 		:= _cCodProd
+Return Nil
+
+
+
+Static Function ZPECF30RE(_oBrRelac,_nPos)
+Local _cCodProd := ""
+
+_cCodProd 	:= _aPrdREL[_nPos,2]
+MV_PAR01 	:= _cCodProd
+Return .T.

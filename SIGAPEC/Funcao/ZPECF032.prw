@@ -31,7 +31,7 @@ Return Nil
 
 Static Function ZPECF032PR(_cCodProd, _lPickAll, _lMostraCF)
 Local _aBrwFil		:= {}
-Local _aStru         := {}
+Local _aStru        := {}
 Local _aCampos      := {}
 Local _cWhere       := ""
 Local _cWherevs1    := ""
@@ -244,6 +244,8 @@ Begin Sequence
     _ObrW:SetAmbiente(.F.) //Habilita a utilização da funcionalidade Ambiente no Browse
     _ObrW:SetFixedBrowse(.T.)
 	_ObrW:DisableDetails()
+    _ObrW:ForceQuitButton()     
+
 	//Definimos o título que será exibido como método SetDescription
 	_ObrW:SetDescription(_cTitulo)
     //Definimos a tabela que será exibida na Browse utilizando o método SetAlias
