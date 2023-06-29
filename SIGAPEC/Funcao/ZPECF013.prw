@@ -182,7 +182,10 @@ Static Function TelaUnit(_cFilPicking, _cPicking, _lConsultaExt)
 	oBrowseLeft:SetOwner( oPanelLeft )
 	oBrowseLeft:SetDescription("Itens")
 	oBrowseLeft:SetMenuDef( '' )
-	oBrowseLeft:DisableReport()
+	If !_lConsultaExt
+		oBrowseLeft:DisableReport()
+	Endif	
+    oBrowseLeft:ForceQuitButton()     
 	oBrowseLeft:DisableDetails()
 	oBrowseLeft:SetAlias('VS3')       
 	oBrowseLeft:SetProfileID( '2' )

@@ -17,8 +17,8 @@ KARDEX ENTRADA E SAIDA
 
 User Function ZPECF033(_cCodProd)
 Local _aArea        := GetArea()
-Local _cCodProdDe   := Space(Len(SB1->B1_COD))
-Local _cCodProdAte  := Space(Len(SB1->B1_COD))
+Local _cCodProdDe   := Space(Len(SB1->B1_COD))  
+Local _cCodProdAte  := Space(Len(SB1->B1_COD)) 
 Local _dDataDe      := CtoD(Space(08))
 Local _dDataAte     := Date()
 Local _cCadastro    := OemToAnsi("Kardex Entrada e Saida")   
@@ -27,61 +27,74 @@ Local _aSays	    := {}
 Local _aButtons	    := {}
 Local _aPar    	    := {}
 Local _aRet    	    := {}
+Local _aPerg        := {}
 Local _nRet			:= 0
+Local _oSay
+
 Default _cCodProd   := Space(Len(SB1->B1_COD))
 
 Begin Sequence 
     //quando não informado cod produto solicitar de / ate
-    If Empty(_cCodProd)
-    	aAdd(_aPar,{1,OemToAnsi("Produto de     : ") ,_cCodProdDe			,"@!"		,".T."	,"SB1" 	,".T."	,100,.F.}) 
-    	aAdd(_aPar,{1,OemToAnsi("Produto ate    : ") ,_cCodProdAte		    ,"@!"		,".T."	,"SB1"	,".T."	,100,.T.}) 
-   /*
-    Else 
-        _cCodProd := AllTrim(_cCodProd)
-        _cCodProd += Space(Len(SB1->B1_COD) - Len(_cCodProd) )
+   	If !Empty(_cCodProd)
+   	    aAdd(_aPar,{1,OemToAnsi("Data Inicial   : ") ,_dDataDe		    ,"@D"		,".T."	,	    ,".T."	,100,.F.}) 
+   	    aAdd(_aPar,{1,OemToAnsi("Data Final     : ") ,_dDataAte		    ,"@D"		,".T."	,	    ,".T."	,100,.T.}) 
+    Else
+     	aAdd(_aPar,{1,OemToAnsi("Produto de     : ") ,_cCodProdDe		,"@!"		,".T."	,"SB1" 	,".T."	,100,.F.}) 
+    	aAdd(_aPar,{1,OemToAnsi("Produto ate    : ") ,_cCodProdAte		,"@!"		,".T."	,"SB1"	,".T."	,100,.T.}) 
+    	aAdd(_aPar,{1,OemToAnsi("Data Inicial   : ") ,_dDataDe		    ,"@D"		,".T."	,	    ,".T."	,100,.F.}) 
+    	aAdd(_aPar,{1,OemToAnsi("Data Final     : ") ,_dDataAte		    ,"@D"		,".T."	,	    ,".T."	,100,.T.}) 
+        aAdd(_aPar,{3,OemToAnsi("Saldo Inicial") ,2 ,{"1=Sim","2=Não"}	,80,"",.T.})  //Saldo Inicial / 1=Sim 2=Não
+    Endif
+   	// Monta Tela principal
+   	aAdd(_aSays,OemToAnsi("Este Programa tem  como objetivo mostrar o Kardex Entrada e Saida.")) 
+   	//aAdd(_aSays,OemToAnsi("Caso seja escolhido o parametro Saldo Inicial igual a [Sim], desperezara.")) 
+   	//aAdd(_aSays,OemToAnsi("a data inicial e final trazendo todas as datas de entradas e saidas.")) 
 
-        _cCodProdDe  := _cCodProd
-        _cCodProdAte := _cCodProd
-     	aAdd(_aPar,{1,OemToAnsi("Produto de     : ") ,_cCodProdDe			,"@!"		,".T."	,"SB1" 	,".T."	,100,.T.}) 
-    	aAdd(_aPar,{1,OemToAnsi("Produto ate    : ") ,_cCodProdAte		    ,"@!"		,".T."	,"SB1"	,".T."	,100,.T.}) 
-    */
-    Endif 
-	aAdd(_aPar,{1,OemToAnsi("Data Inicial   : ") ,_dDataDe		    ,"@D"		,".T."	,	    ,".T."	,100,.F.}) 
-	aAdd(_aPar,{1,OemToAnsi("Data Final     : ") ,_dDataAte		    ,"@D"		,".T."	,	    ,".T."	,100,.T.}) 
-//	aAdd(_aPar,{3,OemToAnsi("Saldo Inicial") ,2 ,{"1=Sim","2=Não"}	,80,"",.T.})  //Saldo Inicial / 1=Sim 2=Não
+   	aAdd(_aButtons, { 1,.T.,{|o| FechaBatch(),_nRet:=1											}})
+   	aAdd(_aButtons, { 2,.T.,{|o| FechaBatch()													}})
+   	aAdd(_aButtons, { 5,.T.,{|o| ParamBox(_aPar,_cTitle,@_aRet,,,.T.,,,,"ZPECF033",.T.,.T.) 	}})
 
-	// Monta Tela principal
-	aAdd(_aSays,OemToAnsi("Este Programa tem  como objetivo mostrar o Kardex Entrada e Saida.")) 
-	//aAdd(_aSays,OemToAnsi("Caso seja escolhido o parametro Saldo Inicial igual a [Sim], desperezara.")) 
-	//aAdd(_aSays,OemToAnsi("a data inicial e final trazendo todas as datas de entradas e saidas.")) 
-
-	aAdd(_aButtons, { 1,.T.,{|o| FechaBatch(),_nRet:=1											}})
-	aAdd(_aButtons, { 2,.T.,{|o| FechaBatch()													}})
-	aAdd(_aButtons, { 5,.T.,{|o| ParamBox(_aPar,_cTitle,@_aRet,,,.T.,,,,"ZPECF033",.T.,.T.) 	}})
-
-	FormBatch( _cCadastro, _aSays, _aButtons )
-	If _nRet <> 1
-		Break
-	Endif
-	If Len(_aRet) == 0
-		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Necessário informar os parâmetros"),4,1)   
-		Break 
-	Endif
-	FwMsgRun(,{ || ZPECF033PR(_aRet, _cCodProd ) }, "Selecionando dados para a Montagem Kardex Entrada e Saida", "Aguarde...")  
+   	FormBatch( _cCadastro, _aSays, _aButtons )
+   	If _nRet <> 1
+   		Break
+   	Endif
+   	If Len(_aRet) == 0
+   		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Necessário informar os parâmetros"),4,1)   
+   		Break 
+    Endif
+    //Feito aujuste pois quando vier o código somente pedir a data
+    _aPerg := {}
+    If !Empty(_cCodProd)
+		Aadd(_aPerg, _cCodProd )  //De		
+		Aadd(_aPerg, _cCodProd )  //Ate	
+		Aadd(_aPerg, _aRet[1] )	  //Data inicial	
+		Aadd(_aPerg, _aRet[2] )	  //Data final	
+    	Aadd(_aPerg, 2 )	      //Imprime cancelado e faturado	
+    Else
+        _aPerg := Aclone(_aRet)            
+    Endif
+	FwMsgRun(,{ |_oSay| ZPECF033PR(_aPerg, _cCodProd, _oSay ) }, "Selecionando dados para a Montagem Kardex Entrada e Saida", "Aguarde...")  
     RestArea(_aArea)
 End Sequence
 Return Nil
 
 
+/*/{Protheus.doc} ZPECF033PR
+Processar KARDEX ENTRADA E SAIDA 
+@author     DAC - Denilso 
+@since      24/06/2023
+@version    1.0
+@obs        
+/*/
 
-Static Function ZPECF033PR(_aRet, _cCodProd )
-Local _cCodProdDe   := If(Empty(_cCodProd), _aRet[1], _cCodProd)
-Local _cCodProdAte  := If(Empty(_cCodProd), _aRet[2], _cCodProd)
-Local _dDataDe      := If(Empty(_cCodProd), _aRet[3], _aRet[1])
-Local _dDataAte     := If(Empty(_cCodProd), _aRet[4], _aRet[2])
-Local _lSaldoIni    := .F. //_aRet[5] == 1
-Local _cAliasPesq   //:= GetNextAlias()
+Static Function ZPECF033PR(_aRet, _cCodProd, _oSay )
+Local _cCodProdDe   := _aRet[1]
+Local _cCodProdAte  := _aRet[2]
+Local _dDataDe      := _aRet[3]
+Local _dDataAte     := _aRet[4]
+Local _lSaldoIni    := _aRet[5] == 1
 Local _cWhere       := ""
+Local _cAliasPesq   
 Local _nPos
 Local _aBrwCab
 Local _aStru
@@ -97,26 +110,27 @@ Begin Sequence
         _dDataAte := Date()
     Endif
     _aCpoCab := {}
-    Aadd( _aCpoCab, {"SB1", "CODPROD"  , "C","Produto"         , Len(SB1->B1_COD)   , 0, "@!",.F.})
-    Aadd( _aCpoCab, {"SB1", "DESCRIC"  , "C","Descrição"       , Len(SB1->B1_DESC)  , 0, "@!",.F.})
-   	aAdd( _aCpoCab, {"SD2", "EMISSAO"  , "D","Emissão"         , 08, 0, "@D",.T.})
-   	aAdd( _aCpoCab, {"SB1", "LOCAL"    , "C","Armazém"         , Len(SB1->B1_LOCPAD)   , 0, "@!",.T.})
-   	aAdd( _aCpoCab, {"SD2", "DOC"      , "C","Nota Fiscal"     , Len(SD2->D2_DOC)      , 0, "@!",.T.})
-   	aAdd( _aCpoCab, {"SD2", "SERIE"    , "C","Serie"           , Len(SD2->D2_SERIE)    , 0, "@!",.T.})
-   	aAdd( _aCpoCab, {"SD2", "TIPO"     , "C","Entrada/Saida"   , 007                   , 0, "@!",.T.})
-   	aAdd( _aCpoCab, {"SD2", "TES"      , "C","TES"             , Len(SD2->D2_TES)      , 0, "@!",.T.})
-   	aAdd( _aCpoCab, {"SD2", "CFOP"     , "C","CFOP"            , Len(SD2->D2_CF)      , 0, "@!",.T.})
+    Aadd( _aCpoCab, {"SB1", "CODPROD"   , "C","Produto"         , Len(SB1->B1_COD)   , 0, "@!",.F.})
+    Aadd( _aCpoCab, {"SB1", "DESCRIC"   , "C","Descrição"       , Len(SB1->B1_DESC)  , 0, "@!",.F.})
+   	aAdd( _aCpoCab, {"SD2", "EMISSAO"   , "D","Emissão"         , 08, 0, "@D",.T.})
+   	aAdd( _aCpoCab, {"SB1", "LOCAL"     , "C","Armazém"         , Len(SB1->B1_LOCPAD)   , 0, "@!",.T.})
+   	aAdd( _aCpoCab, {"NNR", "DESC_LOC"  , "C","Nome Armazém"    , Len(NNR->NNR_DESCRI)  , 0, "@!",.T.})
+   	aAdd( _aCpoCab, {"SD2", "DOC"       , "C","Nota Fiscal"     , Len(SD2->D2_DOC)      , 0, "@!",.T.})
+   	aAdd( _aCpoCab, {"SD2", "SERIE"     , "C","Serie"           , Len(SD2->D2_SERIE)    , 0, "@!",.T.})
+   	aAdd( _aCpoCab, {"SD2", "TIPO"      , "C","Entrada/Saida"   , 007                   , 0, "@!",.T.})
+   	aAdd( _aCpoCab, {"SD2", "TES"       , "C","TES"             , Len(SD2->D2_TES)      , 0, "@!",.T.})
+   	aAdd( _aCpoCab, {"SD2", "CFOP"      , "C","CFOP"            , Len(SD2->D2_CF)      , 0, "@!",.T.})
     _aTamSx3 := TamSX3("D2_QUANT")
-   	aAdd( _aCpoCab, {"SD2", "QTDE_MOV" , _aTamSx3[03],"Qtde Movimentada"   , _aTamSx3[01]   , _aTamSx3[02], PesqPict("SD2","D2_QUANT"),.T.})
+   	aAdd( _aCpoCab, {"SD2", "QTDE_MOV"  , _aTamSx3[03],"Qtde Movimentada"   , _aTamSx3[01]   , _aTamSx3[02], PesqPict("SD2","D2_QUANT"),.T.})
     _aTamSx3 := TamSX3("D2_TOTAL")
-   	aAdd( _aCpoCab, {"SD2", "CUSTO_TOT", _aTamSx3[03],"Custo Total"  , _aTamSx3[01]   , _aTamSx3[02], PesqPict("SD2","D2_TOTAL"),.T.})
-   	aAdd( _aCpoCab, {"SD2", "PENTREGA" , "D","Previsão Entrega" , 008                  , 0, "@D",.T.})
-   	aAdd( _aCpoCab, {"SA1", "COD_CF"   , "C","Cod. Fornec./Cliente" , Len(SA1->A1_COD) , 0, "@!",.F.})
-   	aAdd( _aCpoCab, {"SA1", "LOJA_CF"  , "C","Cod. Fornec./Cliente" , Len(SA1->A1_LOJA) , 0, "@!",.F.})
+   	aAdd( _aCpoCab, {"SD2", "CUSTO_TOT" , _aTamSx3[03],"Custo Total"  , _aTamSx3[01]   , _aTamSx3[02], PesqPict("SD2","D2_TOTAL"),.T.})
+   	aAdd( _aCpoCab, {"SD2", "PENTREGA"  , "D","Previsão Entrega" , 008                  , 0, "@D",.T.})
+   	aAdd( _aCpoCab, {"SA1", "COD_CF"    , "C","Cod. Fornec./Cliente" , Len(SA1->A1_COD) , 0, "@!",.F.})
+   	aAdd( _aCpoCab, {"SA1", "LOJA_CF"   , "C","Cod. Fornec./Cliente" , Len(SA1->A1_LOJA) , 0, "@!",.F.})
    	aAdd( _aCpoCab, {"SA1", "NOME_CF"   , "C","Fornecedor/Cliente"   , Len(SA1->A1_NOME)  , 0, "@!",.T.})
    	aAdd( _aCpoCab, {"SF4", "DESC_CFOP" , "C","Descrição CFOP"       , Len(SF4->F4_TEXTO) , 0, "@!",.T.})
- 	aAdd( _aCpoCab, {"SD2","NRECNO"     , "N","Recno NF"            , 10, 0, "@!",.F. /*não ncluir no browse*/})
-   	aAdd( _aCpoCab, {"SD2", "SALDO", _aTamSx3[03],"Saldo"  , _aTamSx3[01]   , _aTamSx3[02], PesqPict("SD2","D2_TOTAL"),.F.})
+ 	aAdd( _aCpoCab, {"SD2", "NRECNO"    , "N","Recno NF"            , 10, 0, "@!",.F. /*não ncluir no browse*/})
+   	aAdd( _aCpoCab, {"SD2", "SALDO"     , _aTamSx3[03],"Saldo"  , _aTamSx3[01]   , _aTamSx3[02], PesqPict("SD2","D2_TOTAL"),.F.})
 
     _aBrwCab    := {}
     _aStru      := {}  //Estrutura do Banco
@@ -162,6 +176,7 @@ Begin Sequence
     _cQuery += "            , SB1.B1_DESC DESCRI "+ CRLF                      
     _cQuery += "            , SD1.D1_EMISSAO  EMISSAO "+ CRLF                
     _cQuery += "     		, SD1.D1_LOCAL LOCAL "+ CRLF                     
+    _cQuery += "     		, NNR.NNR_DESCRI DESC_LOCAL "+ CRLF                     
     _cQuery += "     		, SD1.D1_DOC DOC "+ CRLF                         
     _cQuery += "     		, SD1.D1_SERIE SERIE "+ CRLF                      
     _cQuery += "     		, 'ENTRADA' TIPO "+ CRLF
@@ -174,37 +189,40 @@ Begin Sequence
     _cQuery += "     		, SD1.D1_LOJA LOJA "+ CRLF                       
     _cQuery += "     		, SA2.A2_NOME NOME_CF "+ CRLF                    
     _cQuery += "     		, SF4D1.F4_TEXTO DESC_CFOP "+ CRLF                                   
-    _cQuery += "             , SF1.R_E_C_N_O_     AS  NRECNO "+ CRLF           
-    _cQuery += "             ,' '                 AS  D_E_L_E_T_ "+ CRLF       
-    _cQuery += "             , SD1.R_E_C_N_O_     AS  R_E_C_N_O_ "+ CRLF        
-    _cQuery += "      	FROM ABDHDU_PROT.SD1020 SD1 "+ CRLF                  
-    _cQuery += "     	INNER JOIN ABDHDU_PROT.SF1020 SF1 "+ CRLF           
-    _cQuery += "             ON SF1.F1_FILIAL   = '"+FwXFilial("SF1")+"' " + CRLF              
-    _cQuery += "             AND SF1.F1_DOC     = SD1.D1_DOC "+ CRLF               
-    _cQuery += "             AND SF1.F1_SERIE   = SD1.D1_SERIE "+ CRLF  
-    _cQuery += "             AND SF1.F1_FORNECE = SD1.D1_FORNECE "+ CRLF  
-    _cQuery += "             AND SF1.F1_LOJA    = SD1.D1_FORNECE "+ CRLF  
-
-    _cQuery += "     	INNER JOIN ABDHDU_PROT.SF4020 SF4D1 "+ CRLF           
-    _cQuery += "             ON SF4D1.D_E_L_E_T_ = '  ' "+ CRLF                   
-    _cQuery += "             AND SF4D1.F4_FILIAL = '"+FwXFilial("SF4")+"' " + CRLF               
-    _cQuery += "     		AND SF4D1.F4_CODIGO = SD1.D1_TES "+ CRLF           
-    _cQuery += "     		AND SF4D1.F4_ESTOQUE= 'S' "+ CRLF                 
-    _cQuery += "        LEFT JOIN ABDHDU_PROT.SB1020 SB1 "+ CRLF               
-    _cQuery += "             ON  SB1.D_E_L_E_T_ = '  '  "+ CRLF                   
-    _cQuery += "             AND SB1.B1_FILIAL  = '"+FwXFilial("SB1")+"' " + CRLF              
-    _cQuery += "             AND SB1.B1_COD     = SD1.D1_COD "+ CRLF               
-    _cQuery += "        LEFT JOIN ABDHDU_PROT.SC7020 SC7 "+ CRLF               
-    _cQuery += "             ON  SC7.D_E_L_E_T_ = '  '  "+ CRLF                   
-    _cQuery += "             AND SC7.C7_FILIAL  = '"+FwXFilial("SC7")+"' " + CRLF              
-    _cQuery += "             AND SC7.C7_NUM     = SD1.D1_PEDIDO "+ CRLF               
-    _cQuery += "        LEFT JOIN ABDHDU_PROT.SA2020 SA2 "+ CRLF              
-    _cQuery += "             ON SA2.D_E_L_E_T_ = '  '  "+ CRLF                  
-    _cQuery += "             AND SA2.A2_FILIAL   = '"+FwXFilial("SA2")+"' " + CRLF               
-    _cQuery += "             AND SA2.A2_COD      = SD1.D1_FORNECE "+ CRLF            
-    _cQuery += "             AND SA2.A2_LOJA     = SD1.D1_LOJA "+ CRLF             
+    _cQuery += "            , SF1.R_E_C_N_O_     AS  NRECNO "+ CRLF           
+    _cQuery += "            ,' '                 AS  D_E_L_E_T_ "+ CRLF       
+    _cQuery += "            , SD1.R_E_C_N_O_     AS  R_E_C_N_O_ "+ CRLF        
+    _cQuery += "      	FROM "+RetSqlName("SD1")+" SD1 "+ CRLF                    
+    _cQuery += "     	INNER JOIN "+RetSqlName("SF1")+" SF1 "+ CRLF           
+    _cQuery += "             ON SF1.F1_FILIAL       = '"+FwXFilial("SF1")+"' " + CRLF              
+    _cQuery += "             AND SF1.F1_DOC         = SD1.D1_DOC "+ CRLF               
+    _cQuery += "             AND SF1.F1_SERIE       = SD1.D1_SERIE "+ CRLF  
+    _cQuery += "             AND SF1.F1_FORNECE     = SD1.D1_FORNECE "+ CRLF  
+    _cQuery += "             AND SF1.F1_LOJA        = SD1.D1_LOJA "+ CRLF  
+    _cQuery += "     	INNER JOIN "+RetSqlName("SF4")+" SF4D1 "+ CRLF             
+    _cQuery += "            ON SF4D1.D_E_L_E_T_     = '  ' "+ CRLF                   
+    _cQuery += "            AND SF4D1.F4_FILIAL     = '"+FwXFilial("SF4")+"' " + CRLF               
+    _cQuery += "     		AND SF4D1.F4_CODIGO     = SD1.D1_TES "+ CRLF           
+    _cQuery += "     		AND SF4D1.F4_ESTOQUE    = 'S' "+ CRLF                 
+    _cQuery += "        LEFT JOIN "+RetSqlName("SB1")+" SB1 "               
+    _cQuery += "             ON  SB1.D_E_L_E_T_     = '  '  "+ CRLF                   
+    _cQuery += "             AND SB1.B1_FILIAL      = '"+FwXFilial("SB1")+"' " + CRLF              
+    _cQuery += "             AND SB1.B1_COD         = SD1.D1_COD "+ CRLF               
+    _cQuery += "        LEFT JOIN "+RetSqlName("SC7")+" SC7 "+ CRLF                 
+    _cQuery += "             ON  SC7.D_E_L_E_T_     = '  '  "+ CRLF                   
+    _cQuery += "             AND SC7.C7_FILIAL      = '"+FwXFilial("SC7")+"' " + CRLF              
+    _cQuery += "             AND SC7.C7_NUM         = SD1.D1_PEDIDO "+ CRLF               
+    _cQuery += "        LEFT JOIN "+RetSqlName("SA2")+" SA2 "+ CRLF                
+    _cQuery += "             ON  SA2.D_E_L_E_T_      = '  '  "+ CRLF                  
+    _cQuery += "             AND SA2.A2_FILIAL      = '"+FwXFilial("SA2")+"' " + CRLF               
+    _cQuery += "             AND SA2.A2_COD         = SD1.D1_FORNECE "+ CRLF            
+    _cQuery += "             AND SA2.A2_LOJA        = SD1.D1_LOJA "+ CRLF             
+    _cQuery += "        LEFT JOIN "+RetSqlName("NNR")+" NNR "+ CRLF                 
+    _cQuery += "             ON  NNR.D_E_L_E_T_     = '  ' "+ CRLF                   
+    _cQuery += "             AND NNR.NNR_FILIAL     = '"+FwXFilial("NNR")+"' " + CRLF              
+    _cQuery += "             AND NNR.NNR_CODIGO         = SD1.D1_LOCAL "+ CRLF               
     _cQuery += "     	WHERE SD1.D_E_L_E_T_ = '  ' "+ CRLF                   
-    _cQuery += "             AND SD1.D1_FILIAL   = '"+FwXFilial("SD1")+"' " + CRLF             
+    _cQuery += "            AND SD1.D1_FILIAL   = '"+FwXFilial("SD1")+"' " + CRLF             
     _cQuery += "     		AND SD1.D1_COD      BETWEEN '"+_cCodProdDe+"'  AND '"+_cCodProdAte+"' "+ CRLF        
     _cQuery += "     		AND SD1.D1_QUANT    <> '0' "+ CRLF                   
     _cQuery += "     		AND SD1.D1_EMISSAO  BETWEEN '"+DtOs(_dDataDe) +"' AND '"+DtOs(_dDataAte) + "' "+ CRLF 
@@ -213,6 +231,7 @@ Begin Sequence
     _cQuery += "            , SB1.B1_DESC DESCRI "+ CRLF                      
     _cQuery += "     		, SD2.D2_EMISSAO  EMISSAO "+ CRLF                
     _cQuery += "     		, SD2.D2_LOCAL LOCAL "+ CRLF                     
+    _cQuery += "     		, NNR.NNR_DESCRI DESC_LOCAL "+ CRLF                     
     _cQuery += "      		, SD2.D2_DOC DOC "+ CRLF
     _cQuery += "     		, SD2.D2_SERIE SERIE "+ CRLF
     _cQuery += "     		, 'SAIDA' TIPO "+ CRLF
@@ -228,23 +247,27 @@ Begin Sequence
     _cQuery += "            , SD2.R_E_C_N_O_     AS  NRECNO "+ CRLF           
     _cQuery += "            ,' '                 AS  D_E_L_E_T_  "+ CRLF      
     _cQuery += "            , SD2.R_E_C_N_O_     AS  R_E_C_N_O_  "+ CRLF        
-    _cQuery += "      	FROM ABDHDU_PROT.SD2020 SD2 "+ CRLF                  
-    _cQuery += "     	INNER JOIN ABDHDU_PROT.SF4020 SF4D2 "+ CRLF           
-    _cQuery += "             ON SF4D2.D_E_L_E_T_ = '  ' "+ CRLF                   
-    _cQuery += "             AND SF4D2.F4_FILIAL = '"+FwXFilial("SF4")+"' " + CRLF              
-    _cQuery += "     		AND SF4D2.F4_CODIGO = SD2.D2_TES "+ CRLF          
-    _cQuery += "     		AND SF4D2.F4_ESTOQUE= 'S' "+ CRLF                
-    _cQuery += "        LEFT JOIN ABDHDU_PROT.SB1020 SB1 "+ CRLF              
-    _cQuery += "             ON  SB1.D_E_L_E_T_ = '  ' "+ CRLF                   
-    _cQuery += "             AND SB1.B1_FILIAL   = '"+FwXFilial("SB1")+"' " + CRLF              
-    _cQuery += "             AND SB1.B1_COD      = SD2.D2_COD "+ CRLF               
-    _cQuery += "        LEFT JOIN ABDHDU_PROT.SA1020 SA1 "+ CRLF              
-    _cQuery += "             ON  SA1.D_E_L_E_T_ = '  ' "+ CRLF                   
-    _cQuery += "             AND SA1.A1_FILIAL   = '"+FwXFilial("SA1")+"' " + CRLF              
-    _cQuery += "             AND SA1.A1_COD      = SD2.D2_CLIENTE "+ CRLF           
-    _cQuery += "             AND SA1.A1_LOJA     = SD2.D2_LOJA "+ CRLF             
+    _cQuery += "      	FROM "+RetSqlName("SD2")+" SD2 "+ CRLF                    
+    _cQuery += "     	INNER JOIN "+RetSqlName("SF4")+" SF4D2 "+ CRLF             
+    _cQuery += "            ON  SF4D2.D_E_L_E_T_    = '  ' "+ CRLF                   
+    _cQuery += "            AND SF4D2.F4_FILIAL     = '"+FwXFilial("SF4")+"' " + CRLF              
+    _cQuery += "     		AND SF4D2.F4_CODIGO     = SD2.D2_TES "+ CRLF          
+    _cQuery += "     		AND SF4D2.F4_ESTOQUE    = 'S' "+ CRLF                
+    _cQuery += "        LEFT JOIN "+RetSqlName("SB1")+" SB1 "+ CRLF                 
+    _cQuery += "             ON  SB1.D_E_L_E_T_     = '  ' "+ CRLF                   
+    _cQuery += "             AND SB1.B1_FILIAL      = '"+FwXFilial("SB1")+"' " + CRLF              
+    _cQuery += "             AND SB1.B1_COD         = SD2.D2_COD "+ CRLF               
+    _cQuery += "        LEFT JOIN "+RetSqlName("SA1")+" SA1 "+ CRLF                
+    _cQuery += "             ON  SA1.D_E_L_E_T_     = '  ' "+ CRLF                   
+    _cQuery += "             AND SA1.A1_FILIAL      = '"+FwXFilial("SA1")+"' " + CRLF              
+    _cQuery += "             AND SA1.A1_COD         = SD2.D2_CLIENTE "+ CRLF           
+    _cQuery += "             AND SA1.A1_LOJA        = SD2.D2_LOJA "+ CRLF             
+    _cQuery += "        LEFT JOIN "+RetSqlName("NNR")+" NNR "+ CRLF                 
+    _cQuery += "             ON  NNR.D_E_L_E_T_     = '  ' "+ CRLF                   
+    _cQuery += "             AND NNR.NNR_FILIAL     = '"+FwXFilial("NNR")+"' " + CRLF              
+    _cQuery += "             AND NNR.NNR_CODIGO         = SD2.D2_LOCAL "+ CRLF               
     _cQuery += "     	WHERE SD2.D_E_L_E_T_ = '  ' "+ CRLF    
-    _cQuery += "             AND SD2.D2_FILIAL   = '"+FwXFilial("SD2")+"' " + CRLF             
+    _cQuery += "            AND SD2.D2_FILIAL   = '"+FwXFilial("SD2")+"' " + CRLF             
     _cQuery += "     	    AND SD2.D2_COD      BETWEEN '"+_cCodProdDe+"'  AND '"+_cCodProdAte+"' "+ CRLF       
     _cQuery += "     		AND SD2.D2_QUANT    <> 0 "+ CRLF                    
     _cQuery += "     		AND SD2.D2_EMISSAO  BETWEEN '"+DtOs(_dDataDe) +"' AND '"+DtOs(_dDataAte) + "' "+ CRLF
@@ -255,6 +278,7 @@ Begin Sequence
         _cQuery += "            , SB1.B1_DESC DESCRI "+ CRLF                      
         _cQuery += "     		, SB9.B9_DATA EMISSAO "+ CRLF                
         _cQuery += "     		, 'ND' LOCAL "+ CRLF                     
+        _cQuery += "     		, 'ND' DESC_LOCAL "+ CRLF                     
         _cQuery += "      		, 'ND' DOC "+ CRLF
         _cQuery += "     		, 'ND' SERIE "+ CRLF
         _cQuery += "     		, ' ' TIPO "+ CRLF
@@ -270,15 +294,15 @@ Begin Sequence
         _cQuery += "            , MAX(SB9.R_E_C_N_O_)     AS  NRECNO "+ CRLF           
         _cQuery += "            ,' '                 AS  D_E_L_E_T_  "+ CRLF      
         _cQuery += "            , MAX(SB9.R_E_C_N_O_)     AS  R_E_C_N_O_  "+ CRLF        
-        _cQuery += "      	FROM ABDHDU_PROT.SB9020 SB9 "+ CRLF                  
-        _cQuery += "        LEFT JOIN ABDHDU_PROT.SB1020 SB1 "+ CRLF              
-        _cQuery += "             ON  SB1.D_E_L_E_T_ = '  ' "+ CRLF                   
-        _cQuery += "             AND SB1.B1_FILIAL   = '"+FwXFilial("SB1")+"' " + CRLF              
-        _cQuery += "             AND SB1.B1_COD      = SB9.B9_COD "+ CRLF               
-        _cQuery += "        WHERE SB9.D_E_L_E_T_ = ' ' "+ CRLF
+        _cQuery += "      	FROM "+RetSqlName("SB9")+" SB9 "+ CRLF                   
+        _cQuery += "        LEFT JOIN "+RetSqlName("SB1")+" SB1 "+ CRLF               
+        _cQuery += "             ON  SB1.D_E_L_E_T_     = '  ' "+ CRLF                   
+        _cQuery += "             AND SB1.B1_FILIAL      = '"+FwXFilial("SB1")+"' " + CRLF              
+        _cQuery += "             AND SB1.B1_COD         = SB9.B9_COD "+ CRLF               
+        _cQuery += "        WHERE SB9.D_E_L_E_T_        = ' ' "+ CRLF
          _cQuery += "        	AND SB9.B9_COD BETWEEN '"+_cCodProdDe+"'  AND '"+_cCodProdAte+"' "+ CRLF
     	_cQuery += "        	AND ROWNUM = 1 "+ CRLF
-         _cQuery += "        GROUP BY SB9.B9_COD, SB1.B1_DESC, SB9.B9_DATA, SB9.B9_QINI " + CRLF
+        _cQuery += "        GROUP BY SB9.B9_COD, SB1.B1_DESC, SB9.B9_DATA, SB9.B9_QINI " + CRLF
  	Endif
 
     _cQuery += "     ) TMPKRD "+ CRLF
@@ -308,22 +332,18 @@ Return Nil
 
 
 
+/*/{Protheus.doc} ZPECF033PR
+Visualizar KARDEX ENTRADA E SAIDA 
+@author     DAC - Denilso 
+@since      24/06/2023
+@version    1.0
+@obs        
+/*/
 
 //gerar browse com informações Kardex
 Static Function ZPECF033BW(_cCodProd,  _dDataDe, _dDataAte, _cAliasPesq, _aBrwCab)
-//Local _aCpoInf      := {} 
-/*
-Local _aSizeAut     := MsAdvSize(.f.)
-Local _oKardex      := MSDIALOG() :New(_aSizeAut[7],0,_aSizeAut[6],_aSizeAut[5],"Kardex Entrada e Saida",,,,128,,,,,.T.)
-Local _oTPanel01    := TPanel():New(0,0,"",_oKardex,NIL,.T.,.F.,NIL,NIL,100,(_oKardex:nClientHeight/6)-10,.F.,.F.)
-Local _oTPanel01:Align :=  CONTROL_ALIGN_TOP
-Local _oTPanel02    := TPanel():New(0,0,"Informações",_oKardex,NIL,.T.,.F.,NIL,NIL,100,(_oKardex:nClientHeight/4)-10,.F.,.F.)
-Local _oTPanel02:Align := CONTROL_ALIGN_BOTTOM
-*/
 Local _cTitulo      := "Kardex Entrada e Saida de "+DtoC(_dDataDe)+" a "+DtoC(_dDataAte)
 Local _oBrw
-//Local _oBrwInf
-//Local _nPos
 
 Begin Sequence
 
@@ -367,49 +387,6 @@ Begin Sequence
    //Ativamos a classe
     _ObrW:Refresh(.T.)
 	_ObrW:Activate()
-/*
-    //preparo Informações gerais
-    _aBrwInf := {}
-    _aCpoInf := {}
-   	aAdd( _aCpoInf, {"SA1", "NOME_CF"   , "C","Fornecedor/Cliente"   , Len(SA1->A1_NOME)  , 0, "@!",.T.})
-   	aAdd( _aCpoInf, {"SF4", "DESC_CFOP" , "C","Descrição CFOP"       , Len(SF4->F4_TEXTO) , 0, "@!",.T.})
-    For _nPos := 1 To Len(_aCpoInf)
-        Aadd(_aBrwInf,{ RetTitle(_aCpoInf[_nPos,4]),;    //titulo
-                        _aCpoInf[_nPos,02],;             //campo
-                        _aCpoInf[_nPos,03],;                  //tipo
-                        _aCpoInf[_nPos,05],;                  //tamanho
-                        _aCpoInf[_nPos,06],;                  //decimal
-                        _aCpoInf[_nPos,07];  //pict
-                          })
-    Next                      
-
-    _oBrwInf := FWMBrowse():New()
-    _oBrwInf:SetAlias(_cAliasPesq)
-    _oBrwInf:SetOwner(_oTPanel02)
-    _oBrwInf:SetDescription("Cliente/Fornecedor - Descrição CFOP")
-    _oBrwInf:SetMenuDef('')
-    _oBrwInf:SetTemporary(.T.)
-    _oBrwInf:SetUseFilter(.F.)
-    _oBrwInf:OptionReport(.F.)
-	_oBrwInf:SetFields(_aBrwInf)
-
-    _oBrwInf:DisableDetails()
-    _oBrwInf:DisableReport()
-    _oBrwInf:Activate()
-    _ObrW:Refresh()
-    _oBrwInf:oBrowse:Align := CONTROL_ALIGN_ALLCLIENT
-
-    _oKardex:Activate()
- */
-    /*
-    //oRelac:= FWBrwRelation():New()
-    //oRelac:AddRelation( oBrwCab , oBrwIte , {{"D1_FILIAL" , "F1_FILIAL" } ,; 
-                                             {"D1_DOC"    , "F1_DOC"    } ,;
-                                             {"D1_SERIE"  , "F1_SERIE"  } ,;
-                                             {"D1_FORNECE", "F1_FORNECE"} ,;
-                                             {"D1_LOJA"   , "F1_LOJA"   }})
-
-    */
 End Sequence 
 Return Nil
 

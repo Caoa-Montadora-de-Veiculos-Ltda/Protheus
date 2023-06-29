@@ -18,25 +18,71 @@ Visualizar Picking de itens
 
 
 
-User Function ZPECF031(_cCodProd, _lPickAll, _lMostraCF)
+User Function ZPECF031(_cCodProd )
 Local _aArea := GetArea()
+Local _cCodProdDe   := Space(Len(SB1->B1_COD))
+Local _cCodProdAte  := Space(Len(SB1->B1_COD))
+Local _cCadastro    := OemToAnsi("Pedido de Compras")   
+Local _cTitle  	    := OemToAnsi("Pedido de Compras Pendentes")   
+Local _aSays	    := {}
+Local _aButtons	    := {}
+Local _aPar    	    := {}
+Local _aRet    	    := {}
+Local _nRet			:= 0
 
-Default _cCodProd   := Space(Len(VS3->VS3_CODITE))
-Default _lPickAll   := .T.
-Default _lMostraCF  := .T.
+Default _cCodProd   := Space(Len(SB1->B1_COD))
 
-    ZPECF031PR(_cCodProd, _lPickAll, _lMostraCF)
+Begin Sequence 
+    //quando não informado cod produto solicitar de / ate
+    If Empty(_cCodProd)
+    	aAdd(_aPar,{1,OemToAnsi("Produto de     : ") ,_cCodProdDe			,"@!"		,".T."	,"SB1" 	,".T."	,100,.F.}) 
+    	aAdd(_aPar,{1,OemToAnsi("Produto ate    : ") ,_cCodProdAte		    ,"@!"		,".T."	,"SB1"	,".T."	,100,.T.}) 
+	    aAdd(_aPar,{3,OemToAnsi("Mostra Canc/Fatur") ,2 ,{"1=Sim","2=Não"}	,80,"",.T.})  //Mostra Canc/Fatur / 1=Sim 2=Não
 
-RestArea(_aArea)
+	    // Monta Tela principal
+	    aAdd(_aSays,OemToAnsi("Este Programa tem  como objetivo visualizar os Itens ")) 
+	    aAdd(_aSays,OemToAnsi("relativos ao Picking. ")) 
+
+	    aAdd(_aButtons, { 1,.T.,{|o| FechaBatch(),_nRet:=1											}})
+	    aAdd(_aButtons, { 2,.T.,{|o| FechaBatch()													}})
+	    aAdd(_aButtons, { 5,.T.,{|o| ParamBox(_aPar,_cTitle,@_aRet,,,.T.,,,,"ZPECF031",.T.,.T.) 	}})
+
+	    FormBatch( _cCadastro, _aSays, _aButtons )
+	    If _nRet <> 1
+		    Break
+	    Endif
+	    If Len(_aRet) == 0
+    		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Necessário informar os parâmetros"),4,1)   
+    		Break 
+    	Endif
+	Else
+		Aadd(_aRet, _cCodProd )  //De		
+		Aadd(_aRet, _cCodProd )  //Ate	
+		Aadd(_aRet, 2 )	         //Imprime cancelado e faturado	
+    Endif
+	FwMsgRun(,{ |_oSay| ZPECF031PR(_aRet, _cCodProd, @_oSay ) }, "Selecionando dados para a Montagem Picking", "Aguarde...")  
+
+    RestArea(_aArea)
+End Sequence
 Return Nil
 
 
 
-Static Function ZPECF031PR(_cCodProd, _lPickAll, _lMostraCF)
+/*/{Protheus.doc} ZPECF031
+Processar picking 
+@author     DAC - Denilso 
+@since      26/05/2023
+@version    1.0
+@obs        
+/*/
+
+Static Function ZPECF031PR(_aRet, _cCodProd, _oSay)
+Local _cCodProdDe   := _aRet[1]
+Local _cCodProdAte  := _aRet[2]
+Local _lMostraCF    := _aRet[3] == 1
 Local _aBrwFil		:= {}
-Local _aStru         := {}
+Local _aStru        := {}
 Local _aCampos      := {}
-Local _cWhere       := ""
 Local _cWhereSZK    := ""
 Local _cQuery       := ""
 Local _cTitulo      := ""
@@ -46,10 +92,6 @@ Local _ObrW
 Local _nPos
 Local _lInicio
 
-Default _cCodProd   := Space(Len(VS3->VS3_CODITE))
-Default _lPickAll   := .T.
-Default _lMostraCF  := .T.
-    
 Begin Sequence
     _cTitulo      := "Posição Picking por Produto"
     //implemento com o nome e o codigo do produto 
@@ -124,20 +166,8 @@ Begin Sequence
 
     _cTable := _oTable:GetRealName()
 
-	_cWhere     := ""
-    _cWhereSZK  := ""
-    //Somente picking deste produto
-   
-	If !Empty(_cCodProd) .And. !_lPickAll
-		_cWhere +=   " AND VS3.VS3_CODITE = '"+_cCodProd+"'"+ CRLF
-	//indica se trara todos os demais produtos do Pincking quando estiver indicado produto
-    ElseIf !Empty(_cCodProd) .And. _lPickAll
-        _cWhereSZK += "AND  (   SELECT DISTINCT VS3A.VS3_CODITE "+ CRLF
-        _cWhereSZK += "         FROM VS3020 VS3A " + CRLF
-        _cWhereSZK += "         WHERE VS3A.VS3_XPICKI  =  SZK.ZK_XPICKI "+ CRLF
-        _cWhereSZK += "             AND VS3A.VS3_CODITE =  '"+_cCodProd+"') <> ' ' "+ CRLF
-	Endif
     //indica que mostra cancelado e faturado
+    _cWhereSZK := ""
     If !_lMostraCF
 		_cWhereSZK += "	AND SZK.ZK_STATUS NOT IN ('C','F') "
     EndIf
@@ -178,26 +208,26 @@ Begin Sequence
     
 	_cQuery += "FROM "+RetSqlName("VS3")+" VS3 "+ CRLF
 	_cQuery += "JOIN "+RetSqlName("VS1")+" VS1 "+ CRLF
-	_cQuery += "	ON 	VS1.D_E_L_E_T_ = ' ' "+ CRLF
+	_cQuery += "	ON 	VS1.D_E_L_E_T_  = ' ' "+ CRLF
 	_cQuery += "	AND VS1.VS1_FILIAL	= '"+FwXFilial("VS1")+"' " + CRLF
 	_cQuery += "	AND VS1.VS1_NUMORC 	= VS3.VS3_NUMORC "+ CRLF
 	_cQuery += "	AND VS1.VS1_TIPORC 	= '1' "+ CRLF
 	_cQuery += "JOIN "+RetSqlName("SA1")+" SA1 "+ CRLF
-	_cQuery += "	ON 	SA1.D_E_L_E_T_ = ' ' "+ CRLF
+	_cQuery += "	ON 	SA1.D_E_L_E_T_  = ' ' "+ CRLF
 	_cQuery += "	AND SA1.A1_FILIAL	= '"+FwXFilial("SA1")+"' "+ CRLF
 	_cQuery += "	AND SA1.A1_COD 	    = VS1.VS1_CLIFAT "+ CRLF
 	_cQuery += "	AND SA1.A1_LOJA 	= VS1.VS1_LOJA "+ CRLF
 	_cQuery += "JOIN "+RetSqlName("SZK")+" SZK "+ CRLF
-	_cQuery += "	ON 	SZK.D_E_L_E_T_ = ' ' " + CRLF
+	_cQuery += "	ON 	SZK.D_E_L_E_T_  = ' ' " + CRLF
 	_cQuery += "	AND SZK.ZK_FILIAL	= '"+FwXFilial("SZK")+"' "+ CRLF
 	_cQuery += "	AND SZK.ZK_XPICKI 	= VS3.VS3_XPICKI "+ CRLF
 	_cQuery += "	AND SZK.ZK_NF 		= ' ' "+ CRLF
 	_cQuery +=      _cWhereszk 
-	_cQuery += "WHERE  VS3.D_E_L_E_T_ = ' ' "
+	_cQuery += "WHERE  VS3.D_E_L_E_T_   = ' ' "
 	_cQuery += "	AND VS3.VS3_FILIAL	= '"+FwXFilial("VS3")+"' "+ CRLF
 	_cQuery += "	AND VS3.VS3_XPICKI 	<> ' ' "+ CRLF
-    _cQuery +=      _cWhere
-    _cQuery += "ORDER BY VS3.VS3_XPICKI, VS3.VS3_NUMORC, VS3.VS3_SEQUEN"    
+    _cQuery += "    AND VS3.VS3_CODITE  BETWEEN '"+_cCodProdDe+"'  AND '"+_cCodProdAte+"' "+ CRLF    
+    _cQuery += "ORDER BY VS3.VS3_XPICKI, VS3.VS3_NUMORC, VS3.VS3_SEQUEN "+ CRLF    
 
 	nStatus := TCSqlExec(_cQuery)
     If (nStatus < 0)
@@ -226,30 +256,9 @@ Begin Sequence
 	_ObrW:DisableDetails()
     _ObrW:ForceQuitButton()     
 
-    //_ObrW:DisableReport() // Desabilita a impressão das informações disponíveis no Browse
-
-	//_ObrW:SetSeek(.T.,_aSeek)
-   	//_ObrW:SetUseFilter(.T.)  //Habilita a utilização do filtro no Browse
-     //_ObrW:SetDBFFilter(.T.)
-    //_ObrW:SetFilterDefault( "" ) //Indica o filtro padrão do Browse //Exemplo de como inserir um filtro padrão >>> "TR_ST == ‘A‘"
-    //_ObrW:SetFieldFilter(_aFieFilter)
-	//_ObrW:SetLocate()
-	//_ObrW:SetAmbiente(.F.)
-	//_ObrW:SetWalkThru(.F.)
-	//Adiciona um filtro ao browse
-    //	_ObrW:SetFilterDefault( "A1_COD = '"+Space(8)+"' " ) //Exemplo de como inserir um filtro padrão >>> "TR_ST == 'A'"
-	//Desliga a exibição dos detalhes
-	/*
-    //_ObrW:SetColumns(MBColumn(_aCols)) //Adiciona uma coluna no Browse em tempo de execução    
-	_ObrW:SetOnlyFields( {	"VS3_CODITE"	,;//Cód Produto
-							"VS3_QTDEIT"	,;//Descrição Produto
-							"VS3_VALPEC"	;//Embalagem Primária
-							 } )
-    */
 	//Definimos o título que será exibido como método SetDescription
 	_ObrW:SetDescription(_cTitulo)
-    //Definimos a tabela que será exibida na Browse utilizando o método SetAlias
-//	//Legenda da grade, é obrigatório carregar antes de montar as colunas
+    //Legenda da grade, é obrigatório carregar antes de montar as colunas
 	_ObrW:AddLegend("ZK_STATUS = 'A' "  ,"YELLOW" 	   	,"Aberto")
 	_ObrW:AddLegend("ZK_STATUS = 'B'"   ,"RED"   		,"Boqueado")
 	_ObrW:AddLegend("ZK_STATUS = 'C'"   ,"BLACK"   		,"Cancelado")
@@ -259,18 +268,9 @@ Begin Sequence
 
 	_ObrW:AddButton("Visualiza Picking"		, { || FWMsgRun(, {|oSay| ZPECF031PK(_cAliasPesq,@_ObrW) }, "Picking"	, "Localizando Picking") },,,, .F., 2 )
 	_ObrW:AddButton("Visualiza Orçamento"  	, { || FWMsgRun(, {|oSay| U_XFVERORC(_cAliasPesq,@_ObrW) }, "Orçamento", "Localizando Orçamento") },,,, .F., 2 )  //função no ZPECFUNA
-
    //Ativamos a classe
     _ObrW:Refresh(.T.)
 	_ObrW:Activate()
-
-
-//           		WHEN  ZK.ZK_STATUS = 'A' THEN 'ABERTO' 
-//           		WHEN  ZK.ZK_STATUS = 'B' THEN 'BLOQUEADO' 
-//           		WHEN  ZK.ZK_STATUS = 'C' THEN 'CANCELADO' 
-//           		WHEN  ZK.ZK_STATUS = 'E' THEN 'ENVIADO' 
-//           		WHEN  ZK.ZK_STATUS = 'F' THEN 'FATURADO' 
-		
 
 End Sequence
 If Select((_cAliasPesq)) <> 0

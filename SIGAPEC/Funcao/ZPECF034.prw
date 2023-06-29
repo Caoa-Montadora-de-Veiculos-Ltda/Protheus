@@ -65,6 +65,13 @@ Begin Sequence
 End Sequence
 Return Nil
 
+/*/{Protheus.doc} ZPECF034PR
+Processar Pedido de Compras Pendentes
+@author     DAC - Denilso 
+@since      26/06/2023
+@version    1.0
+@obs        
+/*/
 
 Static Function ZPECF034PR(_aRet, _cCodProd, _oSay)
 Local _cCodProdDe   := _aRet[1]
@@ -156,19 +163,19 @@ Begin Sequence
     _cQuery += "        , SC7.R_E_C_N_O_   AS  NRECNO "						+ CRLF           
     _cQuery += "        ,' '                 AS  D_E_L_E_T_ "				+ CRLF       
     _cQuery += "        , SC7.R_E_C_N_O_     AS  R_E_C_N_O_ "				+ CRLF        
-    _cQuery += " FROM ABDHDU_PROT.SC7020 SC7 "						+ CRLF                  
-    _cQuery += " LEFT JOIN ABDHDU_PROT.SA2020 SA2 "					+ CRLF              
-    _cQuery += "   	ON SA2.D_E_L_E_T_ = '  '  "						+ CRLF                  
-    _cQuery += "    AND SA2.A2_FILIAL   = '"+FwXFilial("SA2")+"' " 	+ CRLF               
-    _cQuery += "    AND SA2.A2_COD      = SC7.C7_FORNECE "			+ CRLF            
-    _cQuery += "    AND SA2.A2_LOJA     = SC7.C7_LOJA "				+ CRLF             
-    _cQuery += " WHERE SC7.D_E_L_E_T_ = '  ' "						+ CRLF                   
-    _cQuery += "    AND SC7.C7_FILIAL  = '"+FwXFilial("SC7")+"' " 	+ CRLF              
+    _cQuery += " FROM "+RetSqlName("SC7")+" SC7 "                           + CRLF                    
+    _cQuery += " LEFT JOIN "+RetSqlName("SA2")+" SA2 "                      + CRLF 
+    _cQuery += "   	ON  SA2.D_E_L_E_T_ = '  '  "					        + CRLF                  
+    _cQuery += "    AND SA2.A2_FILIAL   = '"+FwXFilial("SA2")+"' " 	        + CRLF               
+    _cQuery += "    AND SA2.A2_COD      = SC7.C7_FORNECE "			        + CRLF            
+    _cQuery += "    AND SA2.A2_LOJA     = SC7.C7_LOJA "				        + CRLF             
+    _cQuery += " WHERE SC7.D_E_L_E_T_ = '  ' "						        + CRLF                   
+    _cQuery += "    AND SC7.C7_FILIAL  = '"+FwXFilial("SC7")+"' " 	        + CRLF              
     _cQuery += "    AND SC7.C7_PRODUTO   BETWEEN '"+_cCodProdDe+"'  AND '"+_cCodProdAte+"' "+ CRLF        
-    _cQuery += "    AND SC7.C7_QUANT    <> '0' "					+ CRLF                   
-    _cQuery += "    AND SC7.C7_QUANT    >  SC7.C7_QUJE "			+ CRLF                   
-    _cQuery += "    AND SC7.C7_RESIDUO = ' ' "						+ CRLF  
-    _cQuery += " ORDER BY DATPRF, CODPROD "+ CRLF
+    _cQuery += "    AND SC7.C7_QUANT    <> '0' "					        + CRLF                   
+    _cQuery += "    AND SC7.C7_QUANT    >  SC7.C7_QUJE "			        + CRLF                   
+    _cQuery += "    AND SC7.C7_RESIDUO = ' ' "						        + CRLF  
+    _cQuery += " ORDER BY DATPRF, CODPROD "                                 + CRLF
 
 	nStatus := TCSqlExec(_cQuery)
     If (nStatus < 0)
@@ -193,7 +200,13 @@ Endif
 Return Nil
 
 
-//gerar browse com informações Kardex
+/*/{Protheus.doc} ZPECF034BW
+Visualizar Pedidos de Compras Pendentes
+@author     DAC - Denilso 
+@since      26/06/2023
+@version    1.0
+@obs        
+/*/
 Static Function ZPECF034BW(_cCodProd,  _cAliasPesq, _aBrwCab)
 Local _cTitulo      := "Pedidos de Compra "
 Local _oBrw
@@ -255,7 +268,6 @@ Return Nil
 @return Nil
 @type User function
 /*/
-
 Static Function ZPEC34PC(_cAliasPesq)
 Local _nTipo := 1
 Local _nOpc  := 2

@@ -65,7 +65,9 @@
 #define DATA_GRUPO  	4
 
 #define DATA_MESREF  	1
-#define DATA_FATURADO  	2
+#define DATA_QUANT  	2
+#define DATA_FATURADO  	3
+
 
 Static oZPEC08Peca  := DMS_Peca():New()
 Static cSayDescPrd 	:= ""
@@ -493,15 +495,22 @@ Begin Sequence
 	oColumn:SetTitle("Ano/Mes" ) 
 	oColumn:SetSize(6)
 	oColumn:SetPicture("@R 9999/99")
-
 	_oBrEstVenda:SetColumns({oColumn})
 	
 	oColumn := FWBrwColumn():New()
+	oColumn:SetData({||_aPrdEstVenda[_oBrEstVenda:nAt,DATA_QUANT]})
+	oColumn:SetTitle("Quantidade") 
+	oColumn:SetSize(TamSx3("D2_QUANT")[1])
+	oColumn:SetDecimal(TamSx3("D2_QUANT")[2])
+	oColumn:SetPicture(PesqPict("SD2","D2_QUANT"))
+	_oBrEstVenda:SetColumns({oColumn})
+
+	oColumn := FWBrwColumn():New()
 	oColumn:SetData({||_aPrdEstVenda[_oBrEstVenda:nAt,DATA_FATURADO]})
 	oColumn:SetTitle("Faturamento") 
-	oColumn:SetSize(14)
-	oColumn:SetDecimal(2)
-	oColumn:SetPicture("@E 999,999,999.99")
+	oColumn:SetSize(TamSx3("D2_TOTAL")[1])
+	oColumn:SetDecimal(TamSx3("D2_TOTAL")[1])
+	oColumn:SetPicture(PesqPict("SD2","D2_TOTAL"))
 	_oBrEstVenda:SetColumns({oColumn})
 
 	_oBrEstVenda:Activate()
@@ -928,6 +937,7 @@ Begin Sequence
   		_aColuna := {}
   		Aadd(_aColuna, {"Filial"		,"TRB_FILIAL"	,"C",Len(SB1->B1_FILIAL)	,00	,"@!" })
   		Aadd(_aColuna, {"Armazém"		,"TRB_LOCAL"	,"C",Len(SB1->B1_LOCPAD)	,00	,"@!" })
+  		Aadd(_aColuna, {"Nome Armazém"	,"TRB_NOMELO"	,"C",Len(NNR->NNR_DESCRI)	,00	,"@!" })
   		Aadd(_aColuna, {"Qtde"			,"TRB_QTDE" 	,"N",TamSx3("B2_QATU")[1]	,02	,"@E 9999,999,999.99" })
   		Aadd(_aColuna, {"Orçamento"		,"TRB_ORC" 		,"N",TamSx3("B2_QATU")[1]	,02	,"@E 9999,999,999.99" })
   		Aadd(_aColuna, {"Picking"		,"TRB_PICKIN" 	,"N",TamSx3("B2_QATU")[1]	,02	,"@E 9999,999,999.99" })
@@ -991,8 +1001,9 @@ Begin Sequence
 	_cWhereVS1 := "%"+_cWhereVS1+"%"
 
 	BeginSql Alias _cAliasTRB //Define o nome do alias temporário 
-		SELECT 	ISNULL(SB1.R_E_C_N_O_,0) NREGSB1
-				,ISNULL(SB2.R_E_C_N_O_,0) NREGSB2
+		SELECT 	  ISNULL(SB1.R_E_C_N_O_,0) NREGSB1
+				, ISNULL(SB2.R_E_C_N_O_,0) NREGSB2
+				, NNR.NNR_DESCRI DESCRI_LOCAL
 				, (	SELECT SUM(VS3.VS3_QTDITE)
 					FROM %Table:VS1% VS1 
 					JOIN  %Table:VS3% VS3
@@ -1030,6 +1041,10 @@ Begin Sequence
 			AND SB2.%notDel% 
 			AND ( ( NVL( SB2.B2_QATU -  SB2.B2_RESERVA - SB2.B2_QACLASS  , 0) > 0 AND SB2.B2_LOCAL <> %Exp:_cArmazemPad%) OR 
 					SB2.B2_LOCAL = %Exp:_cArmazemPad% )
+		LEFT JOIN  %Table:NNR% NNR
+			ON  NNR.%notDel%
+			AND NNR.NNR_FILIAL 	= %xFilial:NNR%
+			AND NNR.NNR_CODIGO 	= SB2.B2_LOCAL
     	WHERE 	SB1.B1_FILIAL 	= %Exp:FwXFilial("SB1")% 	  
     		AND SB1.B1_COD  	= %Exp:_cCodProd%
 			AND SB1.%notDel% 
@@ -1051,6 +1066,7 @@ Begin Sequence
    			_nSaldo := ( _nSaldoSB2 - ((_cAliasTRB)->ITENSORC ) )
 			(_cAliasPlan)->TRB_FILIAL 	:= SB2->B2_FILIAL
    	   		(_cAliasPlan)->TRB_LOCAL 	:= SB2->B2_LOCAL
+  	   		(_cAliasPlan)->TRB_NOMELO 	:= (_cAliasTRB)->DESCRI_LOCAL
    	   		(_cAliasPlan)->TRB_QTDE  	:= _nSaldoSB2
    	   		(_cAliasPlan)->TRB_ORC  	:= If(AllTrim(SB2->B2_LOCAL) == _cArmazemPad,(_cAliasTRB)->ITENSORC,0)
    	   		(_cAliasPlan)->TRB_PICKIN	:= If(AllTrim(SB2->B2_LOCAL) == _cArmazemPad,(_cAliasTRB)->ITENSPIC,0)
@@ -1668,7 +1684,7 @@ Local _dDataIni		:= dDatabase
 Local _dDataFim		:= dDatabase
 Local _cFilDe		:= Replicate(" ",TamSx3("D2_FILIAL")[1])
 Local _cFilAte		:= Replicate("Z",TamSx3("D2_FILIAL")[1])
-Local _nPeriodo		:= 365
+Local _nPeriodo     := SuperGetMV('CMV_PEC042', .F., 365)
 Local _lRet 		:= .T.
 
 Begin Sequence
@@ -1679,7 +1695,7 @@ Begin Sequence
     //pegar a data de acordo com a quantidade de dias  
 	//Montar o tipo de taturamento
 	BeginSql Alias _cAliasPesq
- 		SELECT  SUBSTR(D2_EMISSAO,1,6) D2_EMISSAO, SUM(SD2.D2_TOTAL) NTOTMESFAT
+ 		SELECT  SUBSTR(D2_EMISSAO,1,6) D2_EMISSAO, SUM(SD2.D2_QUANT) QUANT, SUM(SD2.D2_TOTAL) NTOTMESFAT
     	FROM %Table:SD2% SD2        
 		JOIN  %Table:SF4% SF4  
 			ON	SF4.F4_FILIAL  	= %xFilial:SF4%
@@ -1702,6 +1718,7 @@ Begin Sequence
 
 	While (_cAliasPesq)->(!Eof())
 		Aadd(_aPrdEstVenda,{	(_cAliasPesq)->D2_EMISSAO,;
+								(_cAliasPesq)->QUANT,;	
 								(_cAliasPesq)->NTOTMESFAT;
 						})
 
@@ -1711,6 +1728,7 @@ End Sequence
 
 If !_lRet 
 	Aadd(_aPrdEstVenda,{	Space(TamSx3("D2_EMISSAO")[1]) ,;
+							0,;
 							0;
 						})
 Endif						
@@ -1738,9 +1756,8 @@ Return Nil
 /*/
 Static Function ZPECF30PIK()
 Local _cCodProd     := AllTrim(MV_PAR01)
-Local _lPickAll		:= .F. 		//mostra todos os itens relacionados a este picking, se .F. mostrata somente o código do produto (_cCodProd)
-Local _lMostraCF	:= .F.   	//Mostra itens Faturados e Cancelados
-	FWMsgRun(, {|oSay| U_ZPECF031(_cCodProd, _lPickAll, _lMostraCF) }) 
+	FWMsgRun(, {|oSay| U_ZPECF031(_cCodProd) }) 
+	MV_PAR01 		:= _cCodProd
 Return Nil
 
 
@@ -1755,9 +1772,7 @@ Return Nil
 /*/
 Static Function ZPECF30ORC()
 Local _cCodProd     := MV_PAR01
-Local _lPickAll		:= .F. 		//mostra todos os itens relacionados a este picking, se .F. mostrata somente o código do produto (_cCodProd)
-Local _lMostraCF	:= .F.   	//Mostra itens Faturados e Cancelados
-	FWMsgRun(, {|oSay| U_ZPECF032(_cCodProd, _lPickAll, _lMostraCF) }) 
+	FWMsgRun(, {|oSay| U_ZPECF032(_cCodProd) }) 
 	MV_PAR01 		:= _cCodProd
 
 Return Nil
@@ -1810,10 +1825,16 @@ Local _cCodProd     := MV_PAR01
 Return Nil
 
 
-
+/*/{Protheus.doc} ZPECF30RE
+//Modificar código de pesquisa com duplo click
+@author DAC denilso
+@since 01/06/2023
+@version 1.0
+@return Nil
+@type Static function
+/*/
 Static Function ZPECF30RE(_oBrRelac,_nPos)
 Local _cCodProd := ""
-
 _cCodProd 	:= _aPrdREL[_nPos,2]
 MV_PAR01 	:= _cCodProd
 Return .T.

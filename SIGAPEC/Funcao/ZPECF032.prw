@@ -14,33 +14,76 @@ Viualizar Orçamentos de Itens
 @version    1.0
 @obs        Tela esta relacionada com a funcionalidade ZPECF030 a mesma poderá ser colocada também no menu com a chamada ZPECF032 caso seja necessário adaptar parametros para a procura  
 /*/
-
-User Function ZPECF032(_cCodProd, _lPickAll, _lMostraCF)
+User Function ZPECF032(_cCodProd)
 Local _aArea := GetArea()
+Local _cCodProdDe   := Space(Len(SB1->B1_COD))
+Local _cCodProdAte  := Space(Len(SB1->B1_COD))
+Local _cCadastro    := OemToAnsi("Pedido de Compras")   
+Local _cTitle  	    := OemToAnsi("Pedido de Compras Pendentes")   
+Local _aSays	    := {}
+Local _aButtons	    := {}
+Local _aPar    	    := {}
+Local _aRet    	    := {}
+Local _nRet			:= 0
 
-Default _cCodProd   := Space(Len(VS3->VS3_CODITE))
-Default _lPickAll   := .T.
-Default _lMostraCF  := .T.
+Default _cCodProd   := Space(Len(SB1->B1_COD))
 
-    ZPECF032PR(_cCodProd, _lPickAll, _lMostraCF)
+Begin Sequence 
+    //quando não informado cod produto solicitar de / ate
+    If Empty(_cCodProd)
+    	aAdd(_aPar,{1,OemToAnsi("Produto de     : ") ,_cCodProdDe			,"@!"		,".T."	,"SB1" 	,".T."	,100,.F.}) 
+    	aAdd(_aPar,{1,OemToAnsi("Produto ate    : ") ,_cCodProdAte		    ,"@!"		,".T."	,"SB1"	,".T."	,100,.T.}) 
+	    aAdd(_aPar,{3,OemToAnsi("Mostra Canc/Fatur") ,2 ,{"1=Sim","2=Não"}	,80,"",.T.})  //Mostra Canc/Fatur / 1=Sim 2=Não
 
-RestArea(_aArea)
+	    // Monta Tela principal
+	    aAdd(_aSays,OemToAnsi("Este Programa tem  como objetivo mostrar os Orçamentos.")) 
+	    aAdd(_aSays,OemToAnsi("aos quais estão pendentes, sendo que os mesmos estão na")) 
+	    aAdd(_aSays,OemToAnsi("fase antes do carregamento")) 
+
+	    aAdd(_aButtons, { 1,.T.,{|o| FechaBatch(),_nRet:=1											}})
+	    aAdd(_aButtons, { 2,.T.,{|o| FechaBatch()													}})
+	    aAdd(_aButtons, { 5,.T.,{|o| ParamBox(_aPar,_cTitle,@_aRet,,,.T.,,,,"ZPECF032",.T.,.T.) 	}})
+
+	    FormBatch( _cCadastro, _aSays, _aButtons )
+	    If _nRet <> 1
+		    Break
+	    Endif
+	    If Len(_aRet) == 0
+    		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Necessário informar os parâmetros"),4,1)   
+    		Break 
+    	Endif
+	Else
+		Aadd(_aRet, _cCodProd )  //De		
+		Aadd(_aRet, _cCodProd )  //Ate	
+		Aadd(_aRet, 2 )	         //Imprime cancelado e faturado	
+    Endif
+	FwMsgRun(,{ |_oSay| ZPECF032PR(_aRet, _cCodProd, @_oSay ) }, "Selecionando dados Referente Orçamento", "Aguarde...")  
+
+    RestArea(_aArea)
+End Sequence
 Return Nil
 
 
-
-Static Function ZPECF032PR(_cCodProd, _lPickAll, _lMostraCF)
+/*/{Protheus.doc} ZPECF032PR
+Processa visualização Orçamentos de Itens 
+@author     DAC - Denilso 
+@since      26/05/2023
+@version    1.0
+/*/
+Static Function ZPECF032PR(_aRet, _cCodProd, _oSay)
+Local _cCodProdDe   := _aRet[1]
+Local _cCodProdAte  := _aRet[2]
+Local _lMostraCF    := _aRet[3] == 1
 Local _aBrwFil		:= {}
 Local _aStru        := {}
 Local _aCampos      := {}
-Local _cWhere       := ""
-Local _cWherevs1    := ""
 Local _cQuery       := ""
 Local _cTitulo      := ""
 Local _cFaseConf 	:= Alltrim(GetNewPar("MV_MIL0095","4")) // Fase de Conferencia e Separacao
 Local _cFaseOrc 	:= AllTrim(GetNewPar("MV_FASEORC","023R45F"))
 Local _cFase
 Local _cFasePrc
+Local _cWhereVS1
 Local _aTamSx3
 Local _cAliasPesq    //:= GetNextAlias()
 Local _ObrW         
@@ -49,8 +92,6 @@ Local _nPosCpo
 Local _lInicio
 
 Default _cCodProd   := Space(Len(VS3->VS3_CODITE))
-Default _lPickAll   := .T.
-Default _lMostraCF  := .T.
     
 Begin Sequence
 	//Definir as fases que serão atendidas no processo
@@ -135,23 +176,11 @@ Begin Sequence
 
     _cTable := _oTable:GetRealName()
 
-	_cWhere     := ""
-    _cWhereVS1  := ""
-    //Somente picking deste produto
-   
-	If !Empty(_cCodProd) .And. !_lPickAll
-		_cWhere +=   " AND VS3.VS3_CODITE = '"+_cCodProd+"'"+ CRLF
-	//indica se trara todos os demais produtos do Pincking quando estiver indicado produto
-    ElseIf !Empty(_cCodProd) .And. _lPickAll
-        _cWhereVS1 += "AND  (   SELECT DISTINCT VS3A.VS3_CODITE "+ CRLF
-        _cWhereVS1 += "         FROM VS3020 VS3A " + CRLF
-        _cWhereVS1 += "         WHERE VS3A.VS3_NUMORC  =  VS1.VS1_NUMORC "+ CRLF
-        _cWhereVS1 += "             AND VS3A.VS3_CODITE =  '"+_cCodProd+"') <> ' ' "+ CRLF
-	Endif
     //indica que mostra cancelado e faturado
-    If _lMostraCF
-        _cFasePrc += "C;F" 
-    EndIf
+    _cWhereVS1 := ""
+    If !_lMostraCF
+     	_cWhereVS1 += "	AND VS1.VS1_STATUS IN "+ FormatIn(_cFasePrc,";") +" "+ CRLF
+     EndIf
 
     _cQuery := " INSERT INTO "+_cTable+"                                                                                    "+(Chr(13)+Chr(10))
     _cQuery += " ("
@@ -197,26 +226,26 @@ Begin Sequence
     _cQuery += "        ,ROW_NUMBER() OVER (ORDER BY VS3_XPICKI, VS3_NUMORC, VS3_SEQUEN)     AS  R_E_C_N_O_ "+ CRLF    
 	_cQuery += "FROM "+RetSqlName("VS3")+" VS3 "+ CRLF
 	_cQuery += "JOIN "+RetSqlName("VS1")+" VS1 "+ CRLF
-	_cQuery += "	ON 	VS1.D_E_L_E_T_ = ' ' "+ CRLF
+	_cQuery += "	ON 	VS1.D_E_L_E_T_  = ' ' "+ CRLF
 	_cQuery += "	AND VS1.VS1_FILIAL	= '"+FwXFilial("VS1")+"' " + CRLF
 	_cQuery += "	AND VS1.VS1_NUMORC 	= VS3.VS3_NUMORC "+ CRLF
 	_cQuery += "	AND VS1.VS1_TIPORC 	= '1' "+ CRLF
-	_cQuery += "	AND VS1.VS1_STATUS IN "+ FormatIn(_cFasePrc,";") +" "+ CRLF
-    _cQuery +=      _cWhereVS1
+	//_cQuery += "	AND VS1.VS1_STATUS IN "+ FormatIn(_cFasePrc,";") +" "+ CRLF
+	_cQuery +=      _cWhereVS1 
 	_cQuery += "JOIN "+RetSqlName("SA1")+" SA1 "+ CRLF
-	_cQuery += "	ON 	SA1.D_E_L_E_T_ = ' ' "+ CRLF
+	_cQuery += "	ON 	SA1.D_E_L_E_T_  = ' ' "+ CRLF
 	_cQuery += "	AND SA1.A1_FILIAL	= '"+FwXFilial("SA1")+"' "+ CRLF
 	_cQuery += "	AND SA1.A1_COD 	    = VS1.VS1_CLIFAT "+ CRLF
 	_cQuery += "	AND SA1.A1_LOJA 	= VS1.VS1_LOJA "+ CRLF
     _cQuery += "LEFT JOIN "+RetSqlName("VX5")+" VX5 "+ CRLF
-	_cQuery += "	ON 	VX5.D_E_L_E_T_ = ' ' " + CRLF
-	_cQuery += "	AND VX5.VX5_FILIAL = '"+FwXFilial("SA1")+"' "+ CRLF
-	_cQuery += "	AND VX5.VX5_CHAVE = 'Z00' "+ CRLF
-	_cQuery += "	AND VX5.VX5_CODIGO = VS1.VS1_XTPPED "+ CRLF
-	_cQuery += "WHERE  VS3.D_E_L_E_T_ = ' ' "+ CRLF
+	_cQuery += "	ON 	VX5.D_E_L_E_T_  = ' ' " + CRLF
+	_cQuery += "	AND VX5.VX5_FILIAL  = '"+FwXFilial("VX5")+"' "+ CRLF
+	_cQuery += "	AND VX5.VX5_CHAVE   = 'Z00' "+ CRLF
+	_cQuery += "	AND VX5.VX5_CODIGO  = VS1.VS1_XTPPED "+ CRLF
+	_cQuery += "WHERE  VS3.D_E_L_E_T_   = ' ' "+ CRLF
 	_cQuery += "	AND VS3.VS3_FILIAL	= '"+FwXFilial("VS3")+"' "+ CRLF
-    _cQuery +=      _cWhere
-    _cQuery += "ORDER BY VS3.VS3_NUMORC, VS3.VS3_SEQUEN"    
+    _cQuery += "    AND VS3.VS3_CODITE  BETWEEN '"+_cCodProdDe+"'  AND '"+_cCodProdAte+"' "+ CRLF    
+    _cQuery += "ORDER BY VS3.VS3_NUMORC, VS3.VS3_SEQUEN "+ CRLF    
 
 	nStatus := TCSqlExec(_cQuery)
     If (nStatus < 0)
@@ -247,7 +276,6 @@ Begin Sequence
 
 	//Definimos o título que será exibido como método SetDescription
 	_ObrW:SetDescription(_cTitulo)
-    //Definimos a tabela que será exibida na Browse utilizando o método SetAlias
 //	//Legenda da grade, é obrigatório carregar antes de montar as colunas
 	_ObrW:AddLegend("VS1_STATUS = '0' "  ,"YELLOW" 	   	,"Digitado")
 	_ObrW:AddLegend("VS1_STATUS = '2'"   ,"RED"   		,"Margem Pendente")
