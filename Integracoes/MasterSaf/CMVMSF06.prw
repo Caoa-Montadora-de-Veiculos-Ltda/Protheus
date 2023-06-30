@@ -6133,7 +6133,7 @@ Descricao / Objetivo:   Tabela de Produtos
 
 Static Function fSAFX2013()
 	
-	cQ := CRLF + " SELECT SB1.R_E_C_N_O_ SB1_RECNO, NVL(SB5.R_E_C_N_O_,0) SB5_RECNO "
+	cQ := CRLF + " SELECT SB1.R_E_C_N_O_ SB1_RECNO, NVL(SB5.R_E_C_N_O_,0) SB5_RECNO,nvl(SB5.B5_CEME, '@') as B5_CEME, SB1.* "
 	cQ += CRLF + " FROM " + RetSqlName("SB1") + " SB1 "
 
 	cQ += CRLF + " 	LEFT JOIN " + RetSqlName("SB5") + " SB5 "
@@ -6160,75 +6160,74 @@ Static Function fSAFX2013()
 
 	If !Empty(aCab)
 		While (cAliasTrb)->(!Eof())
-			SB1->(dbGoto((cAliasTrb)->SB1_RECNO))
-			If SB1->(Recno()) == (cAliasTrb)->SB1_RECNO
-				lContinua := .T.
-				lSB5 := .F.
-				
-				// posiciona tabelas auxiliares
-				If (cAliasTrb)->SB5_RECNO > 0
-					SB5->(dbGoto((cAliasTrb)->SB5_RECNO))
-					lSB5 := .T.
-				Endif
-				If lContinua	
-					MontaItens(aCab,@aItens,SB1->B1_FILIAL)
+			
+			MontaItens(aCab,@aItens,(cAliasTrb)->B1_FILIAL)
 								
-					// comeca gravar campos do layout
-					nPosCmpCab:=PosCabArray(aItens,"IND_PRODUTO")
-					aItens[Len(aItens)][nPosCmpCab][2] := IND_PRODUTO("SB1")
-					nPosCmpCab:=PosCabArray(aItens,"COD_PRODUTO")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_COD")
-					nPosCmpCab:=PosCabArray(aItens,"DATA_PRODUTO")
-					aItens[Len(aItens)][nPosCmpCab][2] := "19000101"
-					nPosCmpCab:=PosCabArray(aItens,"DESCRICAO")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_DESC")
-					nPosCmpCab:=PosCabArray(aItens,"COD_NBM")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_POSIPI")
-					nPosCmpCab:=PosCabArray(aItens,"COD_NCM")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_POSIPI")
-					nPosCmpCab:=PosCabArray(aItens,"COD_NALADI")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_NALSH")
-					nPosCmpCab:=PosCabArray(aItens,"IND_REGIDO_SUBST")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SB1->B1_PICMRET),"S","@")
-					nPosCmpCab:=PosCabArray(aItens,"IND_CONTROLE_SELO")
-					aItens[Len(aItens)][nPosCmpCab][2] := "N"
-					nPosCmpCab:=PosCabArray(aItens,"COD_MEDIDA")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_UM")
-					//nPosCmpCab:=PosCabArray(aItens,"COD_GRUPO_PROD")
-					//aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_GRUPO")
-					nPosCmpCab:=PosCabArray(aItens,"IND_INCID_ICMS_SER")
-					aItens[Len(aItens)][nPosCmpCab][2] := "1"
-					nPosCmpCab:=PosCabArray(aItens,"COD_UND_PADRAO")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_UM")
-					nPosCmpCab:=PosCabArray(aItens,"DESCR_DETALHADA")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf(lSB5,Eval(bCmpZerado,"SB5->B5_CEME"),"@")
-					nPosCmpCab:=PosCabArray(aItens,"IND_FABRIC_ESTAB")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf((SB1->B1_TIPO == "PA" .and. SB1->B1_ORIGEM $ "0/3/4/5/8"),"S","N")
-					nPosCmpCab:=PosCabArray(aItens,"IND_CLASSIF_ICMSS")
-					aItens[Len(aItens)][nPosCmpCab][2] := "1"
-					nPosCmpCab:=PosCabArray(aItens,"ORIGEM")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf(SB1->B1_ORIGEM $ "0/3/4/5/8","1","2")
-					nPosCmpCab:=PosCabArray(aItens,"IND_INCID_PIS")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SB1->B1_PPIS),"S","N")
-					nPosCmpCab:=PosCabArray(aItens,"ALIQ_PIS")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SB1->B1_PPIS),Eval(bCmpZerado,"SB1->B1_PPIS"),"@")
-					nPosCmpCab:=PosCabArray(aItens,"IND_INCID_COFINS")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SB1->B1_PCOFINS),"S","N")
-					nPosCmpCab:=PosCabArray(aItens,"ALIQ_COFINS")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SB1->B1_PCOFINS),Eval(bCmpZerado,"SB1->B1_PCOFINS"),"@")
-					nPosCmpCab:=PosCabArray(aItens,"IND_FUNRURAL")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf(SB1->B1_CONTSOC=="S","S","N")
-					nPosCmpCab:=PosCabArray(aItens,"IND_PETR_ENERG")
-					aItens[Len(aItens)][nPosCmpCab][2] := "N" 
-					nPosCmpCab:=PosCabArray(aItens,"IND_PRD_INCENTIV")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SB1->B1_CRDEST),"S","N")
-					nPosCmpCab:=PosCabArray(aItens,"CLAS_ITEM")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf((nPos:=aScan(aTipo,{|x| Alltrim(x[1])==Alltrim(SB1->B1_TIPO)}))>0,aTipo[nPos][2],"00") 
-					nPosCmpCab:=PosCabArray(aItens,"COD_BARRAS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_CODBAR")
-				Endif	
-			Endif
+			// comeca gravar campos do layout
+			nPosCmpCab:=PosCabArray(aItens,"IND_PRODUTO")
+			aItens[Len(aItens)][nPosCmpCab][2] := IND_PRODUTO("SB1")
+			nPosCmpCab:=PosCabArray(aItens,"COD_PRODUTO")
+			aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado, cAliasTrb + "->B1_COD")
+			nPosCmpCab:=PosCabArray(aItens,"DATA_PRODUTO")
+			aItens[Len(aItens)][nPosCmpCab][2] := "19000101"
+			nPosCmpCab:=PosCabArray(aItens,"DESCRICAO")
+			aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado, cAliasTrb + "->B1_DESC")
+			nPosCmpCab:=PosCabArray(aItens,"COD_NBM")
+			aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,cAliasTrb + "->B1_POSIPI")
+			nPosCmpCab:=PosCabArray(aItens,"COD_NCM")
+			aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,cAliasTrb + "->B1_POSIPI")
+			nPosCmpCab:=PosCabArray(aItens,"COD_NALADI")
+			aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,cAliasTrb + "->B1_NALSH")
+			nPosCmpCab:=PosCabArray(aItens,"IND_REGIDO_SUBST")
+			aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty((cAliasTrb  )->B1_PICMRET),"S","@")
+			nPosCmpCab:=PosCabArray(aItens,"IND_CONTROLE_SELO")
+			aItens[Len(aItens)][nPosCmpCab][2] := "N"
+			nPosCmpCab:=PosCabArray(aItens,"COD_MEDIDA")
+			aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado, cAliasTrb + "->B1_UM")
+			//nPosCmpCab:=PosCabArray(aItens,"COD_GRUPO_PROD")
+			//aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_GRUPO")
+			nPosCmpCab:=PosCabArray(aItens,"IND_INCID_ICMS_SER")
+			aItens[Len(aItens)][nPosCmpCab][2] := "1"
+			nPosCmpCab:=PosCabArray(aItens,"COD_UND_PADRAO")
+			aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado, cAliasTrb + "->B1_UM")
+			nPosCmpCab:=PosCabArray(aItens,"DESCR_DETALHADA")
+			aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,cAliasTrb + "->B5_CEME")
+			nPosCmpCab:=PosCabArray(aItens,"IND_FABRIC_ESTAB")
+			aItens[Len(aItens)][nPosCmpCab][2] := IIf(((cAliasTrb)->B1_TIPO == "PA" .and. (cAliasTrb)->B1_ORIGEM $ "0/3/4/5/8"),"S","N")
+			nPosCmpCab:=PosCabArray(aItens,"IND_CLASSIF_ICMSS")
+			aItens[Len(aItens)][nPosCmpCab][2] := "1"
+			nPosCmpCab:=PosCabArray(aItens,"ORIGEM")
+			aItens[Len(aItens)][nPosCmpCab][2] := IIf((cAliasTrb)->B1_ORIGEM $ "0/3/4/5/8","1","2")
+			nPosCmpCab:=PosCabArray(aItens,"IND_INCID_PIS")
+			aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty((cAliasTrb)->B1_PPIS),"S","N")
+			nPosCmpCab:=PosCabArray(aItens,"ALIQ_PIS")
+			aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty( (cAliasTrb)->B1_PPIS),Eval(bCmpZerado, cAliasTrb + "->B1_PPIS"),"@")
+			nPosCmpCab:=PosCabArray(aItens,"IND_INCID_COFINS")
+			aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty( (cAliasTrb)->B1_PCOFINS),"S","N")
+			nPosCmpCab:=PosCabArray(aItens,"ALIQ_COFINS")
+			aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty((cAliasTrb)->B1_PCOFINS),Eval(bCmpZerado, cAliasTrb + "->B1_PCOFINS"),"@")
+			nPosCmpCab:=PosCabArray(aItens,"IND_FUNRURAL")
+			aItens[Len(aItens)][nPosCmpCab][2] := IIf( (cAliasTrb)->B1_CONTSOC=="S","S","N")
+			nPosCmpCab:=PosCabArray(aItens,"IND_PETR_ENERG")
+			aItens[Len(aItens)][nPosCmpCab][2] := "N" 
+			nPosCmpCab:=PosCabArray(aItens,"IND_PRD_INCENTIV")
+			aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty( (cAliasTrb)->B1_CRDEST),"S","N")
+			nPosCmpCab:=PosCabArray(aItens,"CLAS_ITEM")
+			aItens[Len(aItens)][nPosCmpCab][2] := IIf((nPos:=aScan(aTipo,{|x| Alltrim(x[1])==Alltrim(SB1->B1_TIPO)}))>0,aTipo[nPos][2],"00") 
+			nPosCmpCab:=PosCabArray(aItens,"COD_BARRAS")
+			aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado, cAliasTrb + "->B1_CODBAR")
+			
+			if len(aItens) >= _nLimite  //a cada 1000 linhas é gravado no arquivo para liberar a memória
+				SalvaTXT(aCab,aItens)
+				aItens := {}
+				IF LDebug
+					(cAliasTrb)->(dbCloseArea())
+					RETURN
+				ENDIF
+			ENDIF
+			
 			(cAliasTrb)->(dbSkip())
+			
 		Enddo
 	Else
 		APMsgAlert(cTab+": Estrutura não cadastrada na tabela 'SZR - CAMPOS TABELA MASTERSAF'.Verifique.")
