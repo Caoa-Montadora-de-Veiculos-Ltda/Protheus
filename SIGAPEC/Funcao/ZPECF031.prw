@@ -195,12 +195,13 @@ Begin Sequence
     Next _nPos       
     //Campos não normatizados pelo dicionário 
     _cQuery += "        , CASE "+ CRLF
-	_cQuery += "             WHEN  SZK.ZK_STATUS = 'A'   THEN 'ABERTO   ' "+ CRLF
-    _cQuery += "             WHEN  SZK.ZK_STATUS = 'B'   THEN 'BLOQUEADO' "+ CRLF
-    _cQuery += "             WHEN  SZK.ZK_STATUS = 'C'   THEN 'CANCELADO' "+ CRLF
-	_cQuery += "             WHEN  SZK.ZK_STATUS = 'E'   THEN 'ENVIADO  ' "+ CRLF
-    _cQuery += "             WHEN  SZK.ZK_STATUS = 'F'   THEN 'FATURADO ' "+ CRLF
-    _cQuery += "         ELSE 'STATUS NÃO INFORMADO' "+ CRLF
+	_cQuery += "             WHEN  SZK.ZK_STATUS = 'A'   THEN 'ABERTO    ' "+ CRLF
+    _cQuery += "             WHEN  SZK.ZK_STATUS = 'B'   THEN 'BLOQUEADO ' "+ CRLF
+    _cQuery += "             WHEN  SZK.ZK_STATUS = 'C'   THEN 'CANCELADO ' "+ CRLF
+	_cQuery += "             WHEN  SZK.ZK_STATUS = 'E'   THEN 'ENVIADO   ' "+ CRLF
+    _cQuery += "             WHEN  SZK.ZK_STATUS = 'F'   THEN 'FATURADO  ' "+ CRLF
+    _cQuery += "             WHEN  SZK.ZK_STATUS = 'R'   THEN 'REPROCESSA' "+ CRLF
+    _cQuery += "         ELSE 'ST NÃO INF' "+ CRLF
     _cQuery += "         END AS PK_STATUS "+ CRLF
     _cQuery += "        ,VS1.R_E_C_N_O_     AS  RECNOVS1 "  + CRLF
     _cQuery += "        ,' '                AS  D_E_L_E_T_ "+ CRLF
@@ -264,8 +265,8 @@ Begin Sequence
 	_ObrW:AddLegend("ZK_STATUS = 'C'"   ,"BLACK"   		,"Cancelado")
 	_ObrW:AddLegend("ZK_STATUS = 'E'"   ,"GREEN"   	    ,"Enviado")
 	_ObrW:AddLegend("ZK_STATUS = 'F' "  ,"BLUE" 	   	,"Faturado")
+	_ObrW:AddLegend("ZK_STATUS = 'R' "  ,"ORANGE" 	   	,"Reprocessado")
 	_ObrW:AddLegend("ZK_STATUS = ' ' "  ,"WHITE" 	   	,"Sem Informação")
-
 	_ObrW:AddButton("Visualiza Picking"		, { || FWMsgRun(, {|oSay| ZPECF031PK(_cAliasPesq,@_ObrW) }, "Picking"	, "Localizando Picking") },,,, .F., 2 )
 	_ObrW:AddButton("Visualiza Orçamento"  	, { || FWMsgRun(, {|oSay| U_XFVERORC(_cAliasPesq,@_ObrW) }, "Orçamento", "Localizando Orçamento") },,,, .F., 2 )  //função no ZPECFUNA
    //Ativamos a classe

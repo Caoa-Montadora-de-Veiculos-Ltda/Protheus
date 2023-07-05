@@ -8,7 +8,7 @@
 #define CRLF chr(13) + chr(10)  
 
 /*/{Protheus.doc} ZPECF033
-KARDEX ENTRADA E SAIDA 
+Listagem ENTRADA E SAIDA 
 @author     DAC - Denilso 
 @since      24/06/2023
 @version    1.0
@@ -21,8 +21,8 @@ Local _cCodProdDe   := Space(Len(SB1->B1_COD))
 Local _cCodProdAte  := Space(Len(SB1->B1_COD)) 
 Local _dDataDe      := CtoD(Space(08))
 Local _dDataAte     := Date()
-Local _cCadastro    := OemToAnsi("Kardex Entrada e Saida")   
-Local _cTitle  	    := OemToAnsi("Kardex Entrada e Saida")   
+Local _cCadastro    := OemToAnsi("Listagem Entrada e Saida")   
+Local _cTitle  	    := OemToAnsi("Listagem Entrada e Saida")   
 Local _aSays	    := {}
 Local _aButtons	    := {}
 Local _aPar    	    := {}
@@ -46,7 +46,7 @@ Begin Sequence
         aAdd(_aPar,{3,OemToAnsi("Saldo Inicial") ,2 ,{"1=Sim","2=Não"}	,80,"",.T.})  //Saldo Inicial / 1=Sim 2=Não
     Endif
    	// Monta Tela principal
-   	aAdd(_aSays,OemToAnsi("Este Programa tem  como objetivo mostrar o Kardex Entrada e Saida.")) 
+   	aAdd(_aSays,OemToAnsi("Este Programa tem  como objetivo mostrar o Listagem Entrada e Saida.")) 
    	//aAdd(_aSays,OemToAnsi("Caso seja escolhido o parametro Saldo Inicial igual a [Sim], desperezara.")) 
    	//aAdd(_aSays,OemToAnsi("a data inicial e final trazendo todas as datas de entradas e saidas.")) 
 
@@ -73,14 +73,14 @@ Begin Sequence
     Else
         _aPerg := Aclone(_aRet)            
     Endif
-	FwMsgRun(,{ |_oSay| ZPECF033PR(_aPerg, _cCodProd, _oSay ) }, "Selecionando dados para a Montagem Kardex Entrada e Saida", "Aguarde...")  
+	FwMsgRun(,{ |_oSay| ZPECF033PR(_aPerg, _cCodProd, _oSay ) }, "Selecionando dados para a Montagem Listagem Entrada e Saida", "Aguarde...")  
     RestArea(_aArea)
 End Sequence
 Return Nil
 
 
 /*/{Protheus.doc} ZPECF033PR
-Processar KARDEX ENTRADA E SAIDA 
+Processar Listagem ENTRADA E SAIDA 
 @author     DAC - Denilso 
 @since      24/06/2023
 @version    1.0
@@ -121,10 +121,11 @@ Begin Sequence
    	aAdd( _aCpoCab, {"SD2", "TES"       , "C","TES"             , Len(SD2->D2_TES)      , 0, "@!",.T.})
    	aAdd( _aCpoCab, {"SD2", "CFOP"      , "C","CFOP"            , Len(SD2->D2_CF)      , 0, "@!",.T.})
     _aTamSx3 := TamSX3("D2_QUANT")
-   	aAdd( _aCpoCab, {"SD2", "QTDE_MOV"  , _aTamSx3[03],"Qtde Movimentada"   , _aTamSx3[01]   , _aTamSx3[02], PesqPict("SD2","D2_QUANT"),.T.})
+   	aAdd( _aCpoCab, {"SD2", "QTDE_MOV"  , _aTamSx3[03],"Qtde N.Fiscal"   , _aTamSx3[01]   , _aTamSx3[02], PesqPict("SD2","D2_QUANT"),.T.})
     _aTamSx3 := TamSX3("D2_TOTAL")
+   	aAdd( _aCpoCab, {"SD2", "CUSTO_UNI" , _aTamSx3[03],"Custo Unitário" , _aTamSx3[01]         , _aTamSx3[02], PesqPict("SD2","D2_TOTAL"),.T.})
    	aAdd( _aCpoCab, {"SD2", "CUSTO_TOT" , _aTamSx3[03],"Custo Total" , _aTamSx3[01]         , _aTamSx3[02], PesqPict("SD2","D2_TOTAL"),.T.})
-   	aAdd( _aCpoCab, {"SD2", "PENTREGA"  , "D","Previsão Entrega"     , 008                  , 0, "@D",.T.})
+   	//aAdd( _aCpoCab, {"SD2", "PENTREGA"  , "D","Previsão Entrega"     , 008                  , 0, "@D",.T.})
    	aAdd( _aCpoCab, {"SA1", "COD_CF"    , "C","Cod. Fornec./Cliente" , Len(SA1->A1_COD)     , 0, "@!",.F.})
    	aAdd( _aCpoCab, {"SA1", "LOJA_CF"   , "C","Cod. Fornec./Cliente" , Len(SA1->A1_LOJA)    , 0, "@!",.F.})
    	aAdd( _aCpoCab, {"SA1", "NFANT_CF"  , "C","Nome Fant For/Cli"    , Len(SA1->A1_NREDUZ)  , 0, "@!",.T.})
@@ -184,8 +185,9 @@ Begin Sequence
     _cQuery += "     		, SD1.D1_TES TES "+ CRLF                          
     _cQuery += "     		, SD1.D1_CF CFOP "+ CRLF                        
     _cQuery += "     		, SD1.D1_QUANT QTDE_MOV "+ CRLF                   
+    _cQuery += "     		, SD1.D1_TOTAL / SD1.D1_QUANT CUSTO_UNI "+ CRLF                  
     _cQuery += "     		, SD1.D1_TOTAL CUSTO_TOT "+ CRLF                  
-    _cQuery += "     		, SC7.C7_DATPRF PENTREGA "+ CRLF                          
+   // _cQuery += "     		, SC7.C7_DATPRF PENTREGA "+ CRLF                          
     _cQuery += "     		, SD1.D1_FORNECE CLIFOR "+ CRLF                  
     _cQuery += "     		, SD1.D1_LOJA LOJA "+ CRLF                       
     _cQuery += "     		, SA2.A2_NREDUZ NFANT_CF "+ CRLF                    
@@ -210,10 +212,10 @@ Begin Sequence
     _cQuery += "             ON  SB1.D_E_L_E_T_     = '  '  "+ CRLF                   
     _cQuery += "             AND SB1.B1_FILIAL      = '"+FwXFilial("SB1")+"' " + CRLF              
     _cQuery += "             AND SB1.B1_COD         = SD1.D1_COD "+ CRLF               
-    _cQuery += "        LEFT JOIN "+RetSqlName("SC7")+" SC7 "+ CRLF                 
-    _cQuery += "             ON  SC7.D_E_L_E_T_     = '  '  "+ CRLF                   
-    _cQuery += "             AND SC7.C7_FILIAL      = '"+FwXFilial("SC7")+"' " + CRLF              
-    _cQuery += "             AND SC7.C7_NUM         = SD1.D1_PEDIDO "+ CRLF               
+    //_cQuery += "        LEFT JOIN "+RetSqlName("SC7")+" SC7 "+ CRLF                 
+    //_cQuery += "             ON  SC7.D_E_L_E_T_     = '  '  "+ CRLF                   
+    //_cQuery += "             AND SC7.C7_FILIAL      = '"+FwXFilial("SC7")+"' " + CRLF              
+    //_cQuery += "             AND SC7.C7_NUM         = SD1.D1_PEDIDO "+ CRLF               
     _cQuery += "        LEFT JOIN "+RetSqlName("SA2")+" SA2 "+ CRLF                
     _cQuery += "             ON  SA2.D_E_L_E_T_      = '  '  "+ CRLF                  
     _cQuery += "             AND SA2.A2_FILIAL      = '"+FwXFilial("SA2")+"' " + CRLF               
@@ -240,8 +242,9 @@ Begin Sequence
     _cQuery += "     		, SD2.D2_TES TES "+ CRLF                         
     _cQuery += "     		, SD2.D2_CF CFOP  "+ CRLF                      
     _cQuery += "     		, (SD2.D2_QUANT*-1) QTDE_MOV "+ CRLF              
+    _cQuery += "     		, SD2.D2_TOTAL/SD2.D2_QUANT CUSTO_UNI "+ CRLF                 
     _cQuery += "     		, SD2.D2_TOTAL CUSTO_TOT "+ CRLF                 
-    _cQuery += "     		, '  ' PENTREGA "+ CRLF                          
+   // _cQuery += "     		, '  ' PENTREGA "+ CRLF                          
     _cQuery += "     		, SD2.D2_CLIENTE CLIFOR "+ CRLF                  
     _cQuery += "     		, SD2.D2_LOJA LOJA  "+ CRLF                      
     _cQuery += "     		, SA1.A1_NREDUZ NFANT_CF "+ CRLF                    
@@ -288,8 +291,9 @@ Begin Sequence
         _cQuery += "     		, 'ND' TES "+ CRLF                         
         _cQuery += "     		, 'ND' CFOP  "+ CRLF                      
         _cQuery += "     		, SB9.B9_QINI  QTDE_MOV "+ CRLF              
+        _cQuery += "     		, 0 CUSTO_UNI "+ CRLF                 
         _cQuery += "     		, 0 CUSTO_TOT "+ CRLF                 
-        _cQuery += "     		, 'ND' PENTREGA "+ CRLF                          
+       // _cQuery += "     		, 'ND' PENTREGA "+ CRLF                          
         _cQuery += "     		, 'ND' CLIFOR "+ CRLF                  
         _cQuery += "     		, 'ND' LOJA  "+ CRLF                      
         _cQuery += "     		, 'ND' NFANT_CF "+ CRLF                    
@@ -320,7 +324,7 @@ Begin Sequence
 
     (_cAliasPesq)->(DbGoTop())
 	If (_cAliasPesq)->(Eof())
-		MSGINFO( "Não existem dados para montar o Kardex", "Atenção" )
+		MSGINFO( "Não existem dados para montar o Listagem", "Atenção" )
 		Break
 	Endif
 
@@ -337,16 +341,16 @@ Return Nil
 
 
 /*/{Protheus.doc} ZPECF033PR
-Visualizar KARDEX ENTRADA E SAIDA 
+Visualizar Listagem ENTRADA E SAIDA 
 @author     DAC - Denilso 
 @since      24/06/2023
 @version    1.0
 @obs        
 /*/
 
-//gerar browse com informações Kardex
+//gerar browse com informações Listagem
 Static Function ZPECF033BW(_cCodProd,  _dDataDe, _dDataAte, _cAliasPesq, _aBrwCab)
-Local _cTitulo      := "Kardex Entrada e Saida de "+DtoC(_dDataDe)+" a "+DtoC(_dDataAte)
+Local _cTitulo      := "Listagem Entrada e Saida de "+DtoC(_dDataDe)+" a "+DtoC(_dDataAte)
 Local _oBrw
 
 Begin Sequence

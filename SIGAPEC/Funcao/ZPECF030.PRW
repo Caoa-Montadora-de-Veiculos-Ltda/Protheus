@@ -291,10 +291,12 @@ Begin Sequence
 	Self:oArea:AddWindow(COL_LEFT, WND_TOOLS, "Ferramentas", 50, .T., .T.) 
 	Self:oPanelDados := Self:oArea:GetWinPanel(COL_LEFT, WND_TOOLS)
 	FaMyBar(Self:oPanelDados, , , {{1, "Pedido de Compras"		, {||ZPECF30CMP()},"PEDIDO"}}	, 	, .F., .F.)	 
-	FaMyBar(Self:oPanelDados, , , {{2, "Kardex Entrada/Saida"	, {||ZPECF30KAR()},"FATIMG32"}}	, 	, .F., .F.)	 
+	FaMyBar(Self:oPanelDados, , , {{2, "Listagem Entrada/Saida"	, {||ZPECF30KAR()},"FATIMG32"}}	, 	, .F., .F.)	 
 	FaMyBar(Self:oPanelDados, , , {{3, "Invoice"				, {||ZPECF30INV()},"AVIAO"}}	,  	, .F., .F.)	 				  
-  	FaMyBar(Self:oPanelDados, , , {{4, "Orçamento"				, {||ZPECF30ORC()},"PRECO"}} 	,  	, .F., .F.)	 
-	FaMyBar(Self:oPanelDados, , , {{5, "Picking"				, {||ZPECF30PIK()},"TMSIMG32"}}	,   , .F., .F.)	 
+  	FaMyBar(Self:oPanelDados, , , {{4, "Orçamento"				, {||ZPECF30ORC()},"PRECO"}} ,  	, .F., .F.)	 
+	FaMyBar(Self:oPanelDados, , , {{5, "Picking"				, {||ZPECF30PIK()},"CONTAINR"}}	,   , .F., .F.)	 
+  	FaMyBar(Self:oPanelDados, , , {{6, "Saldo WIS"				, {||ZPECF30WIS()},"TMSIMG32"}} ,  	, .F., .F.)	 
+
 End Sequence
 Return
 
@@ -431,6 +433,7 @@ Begin Sequence
 	_oBrRelac:SetColumns({oColumn})
 
 	_oBrRelac:Activate()
+	_oBrRelac:GoTop(.T.)
 	_oBrRelac:Refresh(.T.)
 
 End Begin
@@ -499,6 +502,7 @@ Begin Sequence
 	_oBrEstVenda:SetColumns({oColumn})
 
 	_oBrEstVenda:Activate()
+	_oBrEstVenda:GoTop(.T.)
 	_oBrEstVenda:Refresh(.T.)
 
 	//Detalhes
@@ -527,15 +531,25 @@ Begin Sequence
 	_oBrDetalhe:SetColumns({oColumn})
 
 	_oBrDetalhe:Activate()
+	_oBrDetalhe:GoTop(.T.)
 	_oBrDetalhe:Refresh(.T.)
 
 
 End Sequence
 Return Nil
 
+/*/{Protheus.doc} ZPEC30MCOR
+//Mudar a cor do registro de totalização na Estatistica de Vendas
+@author DAC denilso
+@since 04/07/2023
+@version 1.0
+@return Nil
+@type Static function
+/*/
 Static Function ZPEC30MCOR(_nLinha)
 Local _lRet := .F. 
-If _aPrdEstVenda[_nLinha,2] > 0 .and. _aPrdEstVenda[_nLinha,4] == 0
+//Tratar para ler como ultimo registro e registro onde esta a totalização
+If Len(_aPrdEstVenda) > 0 .and. Len(_aPrdEstVenda) <= _nLinha .And. _aPrdEstVenda[_nLinha,2] > 0 .and. _aPrdEstVenda[_nLinha,4] == 0
 	_lRet := .T.
 Endif
 Return _lRet
@@ -721,7 +735,7 @@ Begin Sequence
 			Pergunte(Self:GetPerg(), .T., , , Self:oPanelSearch, , ;
 			         @Self:aPergunte, .T., .F.)
 			FaMyBar(Self:oPanelSearch, , , , ;
-			        {{"Pesquisar", "Pesquisar", {|| Self:PesqSKU(_cPerg)}}}, .F.,.F.)	 
+			        {{"Pesquisar", "Pesquisar", {|| FwMsgRun(,{ || Self:PesqSKU(_cPerg)}, "Selecionando dados Referente Produto", "Aguarde...") }}}, .F.,.F.)	
 		EndIf
 	Endif
 End Sequence	
@@ -1544,7 +1558,7 @@ EndIf
 If Type("_oBrRelac") == "O"
 	_oBrRelac:setArray(_aPrdREL)	
 	_oBrRelac:GoTop(.T.)
-	_oBrRelac:refresh()
+	_oBrRelac:refresh(.T.)
 Endif	
 If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
@@ -1724,7 +1738,7 @@ Endif
 If Type("_oBrEstVenda") == "O"
 	_oBrEstVenda:setArray(_aPrdEstVenda)	
 	_oBrEstVenda:GoTop(.T.)
-	_oBrEstVenda:refresh()
+	_oBrEstVenda:refresh(.T.)
 EndIf
 If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
@@ -1758,8 +1772,10 @@ Local _lProcUF 		:= .T.  ////indica que deve procurar a UF para verificação valo
 Local _cAtivo		:= "1"
 Local _cCurvaABC	:= ""
 Local _aArmazen		:= {"01","11"}
-Local _nSaldoWis	:= 0
+Local _nSaldoWis01	:= 0
+Local _nSaldoWis11 	:= 0
 Local _nCustoMedio	:= 0
+Local _cMarca		:= ""
 Local _nRegSD2
 Local _cCampo
 Local _lRetUsu
@@ -1828,13 +1844,18 @@ Begin Sequence
 	(_cAliasPesq)->(DbCloseArea())
 	//Localizar a curva ABC
 	BeginSql Alias _cAliasPesq
- 		SELECT  SZO.R_E_C_N_O_ AS NREGSZO
+ 		SELECT  NVL(SZO.R_E_C_N_O_,0) AS NREGSZO
 				,NVL(SB2SQL.CUSTO,0)   AS CUSTO_MEDIO 
+				,COALESCE(SBM.BM_CODMAR,' ') AS MARCA
     	FROM %Table:SB1% SB1
 		LEFT JOIN %Table:SZO% SZO
 			ON  SZO.%notDel%   
 			AND SZO.ZO_FILIAL   BETWEEN %Exp:_cFilDe% AND %Exp:_cFilAte%
 			AND SZO.ZO_COD      = SB1.B1_COD
+    	LEFT JOIN %Table:SBM% SBM	
+    		ON  SBM.%notDel%
+			AND SBM.BM_FILIAL 	= %xFilial:SBM%
+    		AND SBM.BM_GRUPO 	= SB1.B1_GRUPO 
 		LEFT JOIN ( 
     				SELECT B2_COD
 						,  CAST(SUM(NVL(B2_QATU,0)) AS NUMBER (8, 2)) AS SALDO
@@ -1853,34 +1874,45 @@ Begin Sequence
 	If (_cAliasPesq)->(!Eof())  
 		If (_cAliasPesq)->NREGSZO > 0
 			SZO->(DbGoto((_cAliasPesq)->NREGSZO))
-			_cCurvaABC := SZO->ZO_CURVQTD
+			_cCurvaABC 	:= AllTrim(SZO->ZO_CURVQTD) + AllTrim(SZO->ZO_CURVCUS)
+			_cMarca   	:= SZO->ZO_MARCA 
 		Endif 
 		If (_cAliasPesq)->CUSTO_MEDIO > 0
 			_nCustoMedio := (_cAliasPesq)->CUSTO_MEDIO
 		Endif	
 	EndIf
-	_nSaldoWis := 0
+	//prioridade marca encontrada no select SBM
+	If !Empty((_cAliasPesq)->MARCA)
+		_cMarca := (_cAliasPesq)->MARCA
+	Endif 
+	_nSaldoWis01 := 0
+	_nSaldoWis11 := 0
+
 	For _nPos := 1 To Len(_aArmazen)
-		_nSaldoWis += U_zSaldoWis(_cCodProd, SZO->ZO_MARCA, _aArmazen[_nPos])
+		If _aArmazen[_nPos] == "01"
+			_nSaldoWis01 += U_zSaldoWis(_cCodProd, _cMarca, _aArmazen[_nPos])
+		Else	
+			_nSaldoWis11 += U_zSaldoWis(_cCodProd, _cMarca, _aArmazen[_nPos])
+		Endif
 	Next
 
 	_aDetalhe 	:= {}
 	Aadd(_aDetalhe,{"Cod.  Produto"		, _cCodProd})
 	Aadd(_aDetalhe,{"Desc. Produto"		, SB1->B1_DESC})
 	Aadd(_aDetalhe,{"Data Inclusão"		, DtoC(SB1->B1_XDTINC)})
+	Aadd(_aDetalhe,{"Ultima Compra"		, DtoC(_dDataCMP) })
+	Aadd(_aDetalhe,{"Ultima Venda"		, DtoC(_dDataFAT) })
+	Aadd(_aDetalhe,{"Dias sem movto"	, Transform(_nDiasFat		, "@E 999,999,999,999" )})
+	Aadd(_aDetalhe,{"Curva ABC"			, _cCurvaABC})
+	Aadd(_aDetalhe,{"Minimo Venda"		, Transform(SB1->B1_LOTVEN	,PesqPict("SB1","B1_LOTVEN") )})
+	Aadd(_aDetalhe,{"Saldo Wis BAR"		, Transform(_nSaldoWis01	,PesqPict("SB2","B2_QATU") )})
+	Aadd(_aDetalhe,{"Saldo Wis FDR"		, Transform(_nSaldoWis11	,PesqPict("SB2","B2_QATU") )})
+	Aadd(_aDetalhe,{"Preço de Venda"	, Transform(_nValTab		, "@E 999,999,999.99")})
 	_lRetUsu :=  U_ZGENUSER( RetCodUsr() ,"ZPECF30DET" ,.F.)
 	//somente se possuir alteração
 	If _lRetUsu
 		Aadd(_aDetalhe,{"Custo Médio"	, Transform(_nCustoMedio				, "@E 9999,999,999.99")})
 	EndIf
-	Aadd(_aDetalhe,{"Curva ABC"			, _cCurvaABC})
-	Aadd(_aDetalhe,{"Minimo Venda"		, Transform(SB1->B1_LOTVEN	,PesqPict("SB1","B1_LOTVEN") )})
-	Aadd(_aDetalhe,{"Qtde Disp Wis"		, Transform(_nSaldoWis		,PesqPict("SB2","B2_QATU") )})
-
-	Aadd(_aDetalhe,{"Ultima Compra"		, DtoC(_dDataCMP) })
-	Aadd(_aDetalhe,{"Ultima Venda"		, DtoC(_dDataFAT) })
-	Aadd(_aDetalhe,{"Dias sem movto"	, Transform(_nDiasFat		, "@E 999,999,999,999" )})
-	Aadd(_aDetalhe,{"Preço de Venda"	, Transform(_nValTab		, "@E 999,999,999.99")})
 
 End Sequence
 
@@ -1890,7 +1922,7 @@ Endif
 If Type("_oBrDetalhe") == "O"
 	_oBrDetalhe:setArray(_aDetalhe)	
 	_oBrDetalhe:GoTop(.T.)
-	_oBrDetalhe:refresh()
+	_oBrDetalhe:refresh(.T.)
 EndIf
 If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
@@ -1949,7 +1981,7 @@ Return Nil
 
 
 /*/{Protheus.doc} ZPECF30KAR
-//Kardex Entrada e Saida
+//Listagem Entrada e Saida
 @author DAC denilso
 @since 01/06/2023
 @version 1.0
@@ -2018,4 +2050,19 @@ If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif      
+Return Nil
+
+
+/*/{Protheus.doc} ZPECF30WIS
+//Mostrar Saldos Wis
+@author DAC denilso
+@since 05/06/2023
+@version 1.0
+@return Nil
+@type Static function
+/*/
+Static Function ZPECF30WIS
+Local _cCodProd     := MV_PAR01
+	FWMsgRun(, {|| U_ZPECF035(_cCodProd) }) 
+	MV_PAR01 		:= _cCodProd
 Return Nil
