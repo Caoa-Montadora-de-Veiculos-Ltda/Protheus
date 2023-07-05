@@ -123,13 +123,14 @@ Begin Sequence
     _aTamSx3 := TamSX3("D2_QUANT")
    	aAdd( _aCpoCab, {"SD2", "QTDE_MOV"  , _aTamSx3[03],"Qtde Movimentada"   , _aTamSx3[01]   , _aTamSx3[02], PesqPict("SD2","D2_QUANT"),.T.})
     _aTamSx3 := TamSX3("D2_TOTAL")
-   	aAdd( _aCpoCab, {"SD2", "CUSTO_TOT" , _aTamSx3[03],"Custo Total"  , _aTamSx3[01]   , _aTamSx3[02], PesqPict("SD2","D2_TOTAL"),.T.})
-   	aAdd( _aCpoCab, {"SD2", "PENTREGA"  , "D","Previsão Entrega" , 008                  , 0, "@D",.T.})
-   	aAdd( _aCpoCab, {"SA1", "COD_CF"    , "C","Cod. Fornec./Cliente" , Len(SA1->A1_COD) , 0, "@!",.F.})
-   	aAdd( _aCpoCab, {"SA1", "LOJA_CF"   , "C","Cod. Fornec./Cliente" , Len(SA1->A1_LOJA) , 0, "@!",.F.})
-   	aAdd( _aCpoCab, {"SA1", "NOME_CF"   , "C","Fornecedor/Cliente"   , Len(SA1->A1_NOME)  , 0, "@!",.T.})
-   	aAdd( _aCpoCab, {"SF4", "DESC_CFOP" , "C","Descrição CFOP"       , Len(SF4->F4_TEXTO) , 0, "@!",.T.})
- 	aAdd( _aCpoCab, {"SD2", "NRECNO"    , "N","Recno NF"            , 10, 0, "@!",.F. /*não ncluir no browse*/})
+   	aAdd( _aCpoCab, {"SD2", "CUSTO_TOT" , _aTamSx3[03],"Custo Total" , _aTamSx3[01]         , _aTamSx3[02], PesqPict("SD2","D2_TOTAL"),.T.})
+   	aAdd( _aCpoCab, {"SD2", "PENTREGA"  , "D","Previsão Entrega"     , 008                  , 0, "@D",.T.})
+   	aAdd( _aCpoCab, {"SA1", "COD_CF"    , "C","Cod. Fornec./Cliente" , Len(SA1->A1_COD)     , 0, "@!",.F.})
+   	aAdd( _aCpoCab, {"SA1", "LOJA_CF"   , "C","Cod. Fornec./Cliente" , Len(SA1->A1_LOJA)    , 0, "@!",.F.})
+   	aAdd( _aCpoCab, {"SA1", "NFANT_CF"  , "C","Nome Fant For/Cli"    , Len(SA1->A1_NREDUZ)  , 0, "@!",.T.})
+   	aAdd( _aCpoCab, {"SF4", "DESC_CFOP" , "C","Descrição CFOP"       , Len(SF4->F4_TEXTO)   , 0, "@!",.T.})
+   	aAdd( _aCpoCab, {"SA1", "NOME_CF"   , "C","Fornecedor/Cliente"   , Len(SA1->A1_NOME)    , 0, "@!",.T.})
+ 	aAdd( _aCpoCab, {"SD2", "NRECNO"    , "N","Recno NF"             , 10, 0, "@!",.F. /*não ncluir no browse*/})
    	aAdd( _aCpoCab, {"SD2", "SALDO"     , _aTamSx3[03],"Saldo"  , _aTamSx3[01]   , _aTamSx3[02], PesqPict("SD2","D2_TOTAL"),.F.})
 
     _aBrwCab    := {}
@@ -187,8 +188,9 @@ Begin Sequence
     _cQuery += "     		, SC7.C7_DATPRF PENTREGA "+ CRLF                          
     _cQuery += "     		, SD1.D1_FORNECE CLIFOR "+ CRLF                  
     _cQuery += "     		, SD1.D1_LOJA LOJA "+ CRLF                       
-    _cQuery += "     		, SA2.A2_NOME NOME_CF "+ CRLF                    
+    _cQuery += "     		, SA2.A2_NREDUZ NFANT_CF "+ CRLF                    
     _cQuery += "     		, SF4D1.F4_TEXTO DESC_CFOP "+ CRLF                                   
+    _cQuery += "     		, SA2.A2_NOME NOME_CF "+ CRLF                    
     _cQuery += "            , SF1.R_E_C_N_O_     AS  NRECNO "+ CRLF           
     _cQuery += "            ,' '                 AS  D_E_L_E_T_ "+ CRLF       
     _cQuery += "            , SD1.R_E_C_N_O_     AS  R_E_C_N_O_ "+ CRLF        
@@ -242,8 +244,9 @@ Begin Sequence
     _cQuery += "     		, '  ' PENTREGA "+ CRLF                          
     _cQuery += "     		, SD2.D2_CLIENTE CLIFOR "+ CRLF                  
     _cQuery += "     		, SD2.D2_LOJA LOJA  "+ CRLF                      
-    _cQuery += "     		, SA1.A1_NOME NOME_CF  "+ CRLF                   
+    _cQuery += "     		, SA1.A1_NREDUZ NFANT_CF "+ CRLF                    
     _cQuery += "     		, SF4D2.F4_TEXTO DESC_CFOP "+ CRLF                                    
+    _cQuery += "     		, SA1.A1_NOME NOME_CF  "+ CRLF                   
     _cQuery += "            , SD2.R_E_C_N_O_     AS  NRECNO "+ CRLF           
     _cQuery += "            ,' '                 AS  D_E_L_E_T_  "+ CRLF      
     _cQuery += "            , SD2.R_E_C_N_O_     AS  R_E_C_N_O_  "+ CRLF        
@@ -289,8 +292,9 @@ Begin Sequence
         _cQuery += "     		, 'ND' PENTREGA "+ CRLF                          
         _cQuery += "     		, 'ND' CLIFOR "+ CRLF                  
         _cQuery += "     		, 'ND' LOJA  "+ CRLF                      
-        _cQuery += "     		, 'ND' NOME_CF  "+ CRLF                   
+        _cQuery += "     		, 'ND' NFANT_CF "+ CRLF                    
         _cQuery += "     		, 'ND' DESC_CFOP "+ CRLF                                    
+        _cQuery += "     		, 'ND' NOME_CF  "+ CRLF                   
         _cQuery += "            , MAX(SB9.R_E_C_N_O_)     AS  NRECNO "+ CRLF           
         _cQuery += "            ,' '                 AS  D_E_L_E_T_  "+ CRLF      
         _cQuery += "            , MAX(SB9.R_E_C_N_O_)     AS  R_E_C_N_O_  "+ CRLF        
