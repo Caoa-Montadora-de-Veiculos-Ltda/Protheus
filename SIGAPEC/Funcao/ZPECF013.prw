@@ -25,6 +25,7 @@
 /*/
 User Function ZPECF013(_cFilPicking, _cPicking)
 Local _lConsultaExt := FWIsInCallStack("U_ZPECF030")  //PEC044
+
 Default _cFilPicking := ""
 Default _cPicking	 := ""
 
@@ -43,7 +44,6 @@ Default _cPicking	 := ""
 		ENDIF
 	Endif
 	FWMsgRun( ,{|| TelaUnit(_cFilPicking, _cPicking, _lConsultaExt) } ,"Carregando dados..." ,"Por favor aguarde...")
-
 Return
 
 /*/{Protheus.doc} ZPECF013 - TelaUnit
@@ -146,11 +146,13 @@ Static Function TelaUnit(_cFilPicking, _cPicking, _lConsultaExt)
 	    	oBrowseUp:AddButton("Desbloquear Picking" , {||ZPECF13J()})
 		Endif
 	Endif
+
 	//Caso tenha sido fornecido o numero do picking filtar PEC044 DAC 30/05/2023
 	//Adiciona um filtro ao browse
 	If _lConsultaExt .and. !Empty(_cPicking)
 		oBrowseUp:SetFilterDefault("@"+ZPECF13FIT(_cFilPicking, _cPicking) ) //Exemplo de como inserir um filtro padrão >>> "TR_ST == 'A'"
 	Endif
+
 	//oBrowseUp:AddButton("Conferir Orca/tos"   , {||ZPECF13E(SZK->ZK_XPICKI)})  //Divergência
 	
 	oBrowseUp:AddButton("Fechar"			, { || oDlg:End() })
@@ -182,10 +184,9 @@ Static Function TelaUnit(_cFilPicking, _cPicking, _lConsultaExt)
 	oBrowseLeft:SetOwner( oPanelLeft )
 	oBrowseLeft:SetDescription("Itens")
 	oBrowseLeft:SetMenuDef( '' )
-	If !_lConsultaExt
+	If !_lConsultaExt //pec044
 		oBrowseLeft:DisableReport()
 	Endif	
-    oBrowseLeft:ForceQuitButton()     
 	oBrowseLeft:DisableDetails()
 	oBrowseLeft:SetAlias('VS3')       
 	oBrowseLeft:SetProfileID( '2' )
@@ -213,17 +214,14 @@ Static Function TelaUnit(_cFilPicking, _cPicking, _lConsultaExt)
 //oTimer := TTimer():New(8000, {|| aPedidos := MontaQ(2) }, oDlgPeds )
 //oTimer:Activate()
 	Activate MsDialog oDlg Center
-
 Return
 
-
 /*/{Protheus.doc} ZPECF13FIT
-Retorna Filtro para fwmbrowse
+Retorna Filtro para fwmbrowse  PEC044
 @author DAC - Denilso 
-@since 30/05/2023
+@since 30/05/2023 
 @version 2.0
 /*/
-
 Static Function ZPECF13FIT(_cFilPicking, _cPicking)
 Local _cFiltro := ""
 	_cFiltro  +=  " ZK_FILIAL = '"+_cFilPicking+"'"			+ CRLF
@@ -231,7 +229,7 @@ Local _cFiltro := ""
  	_cFiltro  +=  "	AND D_E_L_E_T_ = ' ' " 					+ CRLF
 Return _cFiltro
 
-   
+
 **************************
 Static Function ZPECF13K()
 **************************
@@ -2082,9 +2080,8 @@ Local _nStatus
 Local _lRet		
 
 Begin Sequence
-	_lRet := U_ZGENUSER( RetCodUsr() ,"ZPECF13H" ,.T.)
+	_lRet := !U_ZGENUSER( RetCodUsr() ,"ZPECF13H" ,.T.)
 	If !_lRet
-		_lRet := .f.
 		Break	
 	EndIf
 
@@ -2150,7 +2147,6 @@ Local _lRet
 Begin Sequence
 	_lRet := U_ZGENUSER( RetCodUsr() ,"ZPECF13H" ,.T.)
 	If !_lRet
-		_lRet := .f.
 		Break	
 	EndIf
 	
@@ -2286,3 +2282,5 @@ User Function zCmbDesc(cChave, cCampo, cConteudo)
      
     RestArea(aArea)
 Return cDescri
+
+
