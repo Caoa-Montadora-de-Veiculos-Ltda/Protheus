@@ -294,8 +294,8 @@ Begin Sequence
 	FaMyBar(Self:oPanelDados, , , {{2, "Listagem Entrada/Saida"	, {||ZPECF30KAR()},"FATIMG32"}}	, 	, .F., .F.)	 
 	FaMyBar(Self:oPanelDados, , , {{3, "Invoice"				, {||ZPECF30INV()},"AVIAO"}}	,  	, .F., .F.)	 				  
   	FaMyBar(Self:oPanelDados, , , {{4, "Orçamento"				, {||ZPECF30ORC()},"PRECO"}} ,  	, .F., .F.)	 
-	FaMyBar(Self:oPanelDados, , , {{5, "Picking"				, {||ZPECF30PIK()},"CONTAINR"}}	,   , .F., .F.)	 
-  	FaMyBar(Self:oPanelDados, , , {{6, "Saldo WIS"				, {||ZPECF30WIS()},"TMSIMG32"}} ,  	, .F., .F.)	 
+	FaMyBar(Self:oPanelDados, , , {{5, "Picking"				, {||ZPECF30PIK()},"TMSIMG32"}}	,   , .F., .F.)	 
+  	FaMyBar(Self:oPanelDados, , , {{6, "Saldo WIS"				, {||ZPECF30WIS()},"CONTAINR"}} ,  	, .F., .F.)	 
 
 End Sequence
 Return
@@ -490,7 +490,7 @@ Begin Sequence
 	oColumn:SetTitle("Quantidade") 
 	oColumn:SetSize(TamSx3("D2_QUANT")[1])
 	oColumn:SetDecimal(TamSx3("D2_QUANT")[2])
-	oColumn:SetPicture(PesqPict("SD2","D2_QUANT"))
+	oColumn:SetPicture("@E 99,999,999,999")  //PesqPict("SD2","D2_QUANT") conforme solicitação Vandre 07/07/2023
 	_oBrEstVenda:SetColumns({oColumn})
 
 	oColumn := FWBrwColumn():New()
@@ -1722,8 +1722,8 @@ Begin Sequence
 		(_cAliasPesq)->(DbSkip())
 	EndDo	
 	Aadd(_aPrdEstVenda,{	StrZero(_nRegistros,6),;
-							_nTotQuant/_nRegistros,;	
-							_nTotFat/_nRegistros,;
+							Round(_nTotQuant/_nRegistros,3),;	
+							Round(_nTotFat/_nRegistros,2),;
 							0 ;
 						})
 
