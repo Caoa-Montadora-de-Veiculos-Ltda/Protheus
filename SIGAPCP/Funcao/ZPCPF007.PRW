@@ -235,7 +235,7 @@ Local _aSM0			:= {}
 Local _aError		:= {}
 Local _lRet 		:= .F. 
 Local _cChassi		:= ""
-Local _cChaInt 		:= ""
+Local _cChaInt 		:= "000001"
 Local _cTexto		:= ""
 Local _nRegVV1		:= 0
 Local _cPropAtu		:= SuperGetMV( "CMV_VEI011"  ,,"000373")  //000373 Proprietario Atual  NAO CADASTRADO 
@@ -263,7 +263,14 @@ _cChassi	:= Upper(SD3->D3_XCHASSI)
 Private M->VV1_CHASSI :=  _cChassi  //Upper(SH6->H6_XCHASSI) //Necessario fazer isto pois existe validação no TO do Padrão e o mesmo não tem as variaveis de memoria carregadas causando errolog DAC-09/07/2020
 
 _aSM0 		:= FWArrFilAtu(cEmpAnt,cFilAnt)
+
 _cChaInt 	:= GETSXENUM("VV1","VV1_CHAINT")
+WHILE ExistCpo("VV1", _cChaInt , 1)           //Valido se a numeração já existe para evitar erro de Chave duplicada
+	ConfirmSX8()
+	_cChaInt 	:= GETSXENUM("VV1","VV1_CHAINT")
+ENDDO
+ConfirmSX8() // Confirmo o uso da Nuemração para evitar erro na geração de novo numero
+
 //Caso ja esteja cadastrado o Veiculo
 VV1->(DbSetOrder(2))	//VV1_FILIAL+VV1_CHASSI
 If VV1->(DbSeek(xFilial('VV1')+_cChassi))
