@@ -30,8 +30,8 @@ oSection := TRSection():New(oReport    ,"Colunas"    ,{cAliasTMP})
     TRCell():New( oSection  ,"D1_TES"       ,cAliasTMP  ,'Tes'                         )
     TRCell():New( oSection  ,"F4_FINALID"   ,cAliasTMP  ,'Finalidade TES'              )
     TRCell():New( oSection  ,"B1_ORIGEM"    ,cAliasTMP  ,'Origem do Produto'           )
-    TRCell():New( oSection  ,"B1_POSIPI"    ,cAliasTMP  ,'NCM'                         )
-    TRCell():New( oSection  ,"B1_EX_NBM"    ,cAliasTMP  ,'Ex-NBM'                      )
+    TRCell():New( oSection  ,"B1_POSIPI"    ,cAliasTMP  ,'NCM'                      , "@!", TamSX3("B1_POSIPI")[1]                           )
+    TRCell():New( oSection  ,"B1_EX_NCM"    ,cAliasTMP  ,'Ex-NCM'                      )
     TRCell():New( oSection  ,"ModVei"       ,cAliasTMP  ,'Modelo Veículo'              )
     TRCell():New( oSection  ,"VRK_OPCION"   ,cAliasTMP  ,'Opcional'                    )
     TRCell():New( oSection  ,"B1_GRUPO"     ,cAliasTMP  ,'Grupo\Linha'                 )
@@ -89,7 +89,8 @@ oSection := TRSection():New(oReport    ,"Colunas"    ,{cAliasTMP})
     TRCell():New( oSection  ,"D1_UM"        ,cAliasTMP  ,'Un Medida'                   )
     TRCell():New( oSection  ,"D1_QUANT"     ,cAliasTMP  ,'Quant.'                      )
     TRCell():New( oSection  ,"D1_VUNIT"     ,cAliasTMP  ,'Valor Unit. Item'            )
-    TRCell():New( oSection  ,"F1_DESCONT"   ,cAliasTMP  ,'Desconto Item'               )
+    //TRCell():New( oSection  ,"F1_DESCONT"   ,cAliasTMP  ,'Desconto Item'               )
+    TRCell():New( oSection  ,"FT_DESCONT"   ,cAliasTMP  ,'Desconto Item'               ) 
     TRCell():New( oSection  ,"D1_VALFRE"    ,cAliasTMP  ,'Frete'                       )
     TRCell():New( oSection  ,"D1_DESPESA"   ,cAliasTMP  ,'Despesas Acessorias'         )
     TRCell():New( oSection  ,"D1_SEGURO"    ,cAliasTMP  ,'Seguro'                      )
@@ -401,7 +402,7 @@ Static Function  ReportPrint(oReport)
          oSection:Cell( "F4_FINALID"):SetValue( Alltrim( (cAliasTMP)->F4_FINALID )                                                                          ) //--Finalidade TES
          oSection:Cell( "B1_ORIGEM" ):SetValue( AllTrim( (cAliasTMP)->B1_ORIGEM )                                                                           ) //--Origem do Produto
          oSection:Cell( "B1_POSIPI" ):SetValue( AllTrim( (cAliasTMP)->B1_POSIPI )                                                                           ) //--NCM
-         oSection:Cell( "B1_EX_NBM" ):SetValue( AllTrim( (cAliasTMP)->B1_EX_NBM )                                                                           ) //--Ex-NBM
+         oSection:Cell( "B1_EX_NCM" ):SetValue( AllTrim( (cAliasTMP)->B1_EX_NCM )                                                                           ) //--Ex-NBM
          oSection:Cell( "ModVei"    ):SetValue( AllTrim( cModVei )                                                                                          ) //--Modelo Veículo
          oSection:Cell( "VRK_OPCION"):SetValue( AllTrim( (cAliasTMP)->VRK_OPCION )                                                                          ) //--Opcional
          oSection:Cell( "B1_GRUPO"  ):SetValue( AllTrim( (cAliasTMP)->B1_GRUPO )                                                                            ) //--Grupo\Linha
@@ -459,7 +460,8 @@ Static Function  ReportPrint(oReport)
          oSection:Cell( "D1_UM"     ):SetValue( AllTrim( (cAliasTMP)->D1_UM )                                                                               ) //--Un Medida
          oSection:Cell( "D1_QUANT"  ):SetValue( (cAliasTMP)->D1_QUANT                                                                                       ) //--Quant.
          oSection:Cell( "D1_VUNIT"  ):SetValue( (cAliasTMP)->D1_VUNIT                                                                                       ) //--Valor Unit. Item
-         oSection:Cell( "F1_DESCONT"):SetValue( (cAliasTMP)->F1_DESCONT                                                                                     ) //--Desconto Item
+         //oSection:Cell( "F1_DESCONT"):SetValue( (cAliasTMP)->F1_DESCONT                                                                                     ) //--Desconto Item
+         oSection:Cell( "FT_DESCONT"):SetValue( (cAliasTMP)->FT_DESCONT                                                                                     ) //--Desconto Item
          oSection:Cell( "D1_VALFRE" ):SetValue( (cAliasTMP)->D1_VALFRE                                                                                      ) //--Frete
          oSection:Cell( "D1_DESPESA"):SetValue( (cAliasTMP)->D1_DESPESA                                                                                     ) //--Despesas Acessorias
          oSection:Cell( "D1_SEGURO" ):SetValue( (cAliasTMP)->D1_SEGURO                                                                                      ) //--Seguro
@@ -552,9 +554,9 @@ Static Function ZTmpRadio1()
 
 	cQuery += " SELECT 	D1_FILIAL, D1_COD, D1_DOC, D1_SERIE, D1_TES, D1_CF, D1_FORNECE, D1_LOJA, D1_EMISSAO, D1_DTDIGIT, " 			+ CRLF
 	cQuery += " D1_ITEM, F4_FINALID, F4_TEXTO, FT_CTIPI, FT_CSTPIS, FT_CSTCOF, F4_ICM, F4_IPI, F4_CREDICM, F4_CREDIPI, F4_DUPLIC, "	+ CRLF
-	cQuery += "	B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NBM, "								  			+ CRLF
+	cQuery += "	B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, "								  			+ CRLF
 	cQuery += "	F1_ESPECIE, F1_CODNFE, F1_MENNOTA, F1_DOC, F1_SERIE, F1_STATUS, F1_TIPO, FT_CHVNFE, "								+ CRLF
-	cQuery += " FT_VALCONT, D1_CONTA, D1_ITEMCTA, D1_NFORI, D1_SERIORI, D1_VUNIT, D1_TOTAL, "										+ CRLF
+	cQuery += " FT_VALCONT, FT_DESCONT, D1_CONTA, D1_ITEMCTA, D1_NFORI, D1_SERIORI, D1_VUNIT, D1_TOTAL, "							+ CRLF
 	cQuery += " CASE " + CRLF
     cQuery += "     WHEN F1_DESCONT > 0 THEN " + CRLF
     cQuery += "         ROUND(((D1_TOTAL / F1_DESCONT) * F1_DESCONT),2)" + CRLF
@@ -689,9 +691,9 @@ Static Function ZTmpRadio1()
     
 	cQuery += " GROUP BY 	D1_FILIAL, D1_COD, D1_DOC, D1_SERIE, D1_TES, D1_CF, D1_FORNECE, D1_LOJA, D1_EMISSAO, D1_DTDIGIT, " 		+ CRLF
 	cQuery += " D1_ITEM, F4_FINALID, F4_TEXTO, FT_CTIPI, FT_CSTPIS, FT_CSTCOF,  F4_ICM, F4_IPI, F4_CREDICM, F4_CREDIPI, F4_DUPLIC, "+ CRLF
-	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NBM, "											+ CRLF
+	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, "											+ CRLF
 	cQuery += "	F1_ESPECIE, F1_CODNFE, F1_MENNOTA, F1_DOC, F1_SERIE, F1_STATUS, F1_TIPO, FT_CHVNFE,"								+ CRLF
-	cQuery += " FT_VALCONT, D1_CONTA, D1_ITEMCTA, D1_NFORI, D1_SERIORI, D1_VUNIT, D1_TOTAL, "										+ CRLF
+	cQuery += " FT_VALCONT, FT_DESCONT, D1_CONTA, D1_ITEMCTA, D1_NFORI, D1_SERIORI, D1_VUNIT, D1_TOTAL, "							+ CRLF
     cQuery += " CASE "
     cQuery += "     WHEN F1_DESCONT > 0 THEN "
     cQuery += "         ROUND(((D1_TOTAL / F1_DESCONT) * F1_DESCONT),2)"

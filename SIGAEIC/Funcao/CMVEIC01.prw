@@ -113,7 +113,7 @@ User Function CMVEI01A()
 		cDirInicial := Subs(cDirInicial,1,nPos)
 	EndIf
 
-	bGetDir := {|| cDiretorio := cGetFile ( , "Selecione o arquivo:", 1,cDirInicial, .F., GETF_LOCALHARD + GETF_MULTISELECT ),.F.}
+	bGetDir := {|| cDiretorio := cGetFile ( '*.CSV|*.CSV|*.TXT|*.TXT|*.*|*.*' , "Selecione o arquivo:", 1,cDirInicial, .F., GETF_LOCALHARD + GETF_MULTISELECT ),.F.}
 
 	//Não permite entrar na rotina caso a filial não esteja habilitada.
 	if !cFilAnt $ cFilInv
@@ -286,7 +286,7 @@ Static Function IntegraInv()
 		If lCapaOk
 			Processa( {|| CMV01GravaInv()},"Gravando Dados da Invoice...", OemToAnsi("Gravando dados..."),.F.)
 
-			If nLayout = 1 .OR. nLayout = 5  // gravar na szm se é layout ckd
+			If nLayout == 1 .OR. nLayout == 5  // gravar na szm se é layout ckd
 				FWMsgRun(, {|| zGrvArq() }, "", "Gravando SZM...")
 			EndIf
 
@@ -349,10 +349,12 @@ Static Function MontaWork1()
 	
 		cArqEW5_2 := CriaTrab(Nil, .F.)
 		dbUseArea(.t.,,cArqEW5,cWKEW5,.f.,.f.)
-		IndRegua(cWKEW5,cArqEW5+OrdBagExt(),"EW5_INVOIC+EW5_CC+EW5_SI_NUM+EW5_PO_NUM+EW5_POSICA+EW5_COD_I+EW5_XCASE")
+		IndRegua(cWKEW5,cArqEW5+OrdBagExt(),"EW5_INVOIC+EW5_PO_NUM+EW5_COD_I+EW5_SI_NUM+EW5_POSICA")
+		IndRegua(cWKEW5,cArqEW5_2+OrdBagExt(),"EW5_INVOIC+EW5_CC+EW5_SI_NUM+EW5_PO_NUM+EW5_POSICA+EW5_COD_I+EW5_XCASE")
 	// ordena WKEW5 igual a tela padrao de invoice antecipada, para poder enumerar os itens corretamente
-		IndRegua(cWKEW5,cArqEW5_2+OrdBagExt(),"EW5_INVOIC+EW5_PO_NUM+EW5_COD_I+EW5_SI_NUM+EW5_POSICA")
-		SET INDEX TO (cArqEW5),(cArqEW5_2)
+		
+		SET INDEX TO (cArqEW5)
+		SET INDEX TO (cArqEW5_2) ADDITIVE
 	else
 		If File(cArqEW5_1+OrdBagExt())
 			fErase(cArqEW5_1+OrdBagExt())
@@ -366,8 +368,8 @@ Static Function MontaWork1()
 		dbUseArea(.t.,,cArqEW5,cWKEW5,.T.,.F.)
 
 		(cWKEW5)->(DBClearIndex() )
-		DBCreateIndex(cWKEW5+'1', "EW5_INVOIC+EW5_CC+EW5_SI_NUM+EW5_PO_NUM+EW5_POSICA+EW5_COD_I+EW5_XCASE", {|| EW5_INVOIC+EW5_CC+EW5_SI_NUM+EW5_PO_NUM+EW5_POSICA+EW5_COD_I+EW5_XCASE})
-  		DBCreateIndex(cWKEW5+'2', "EW5_INVOIC+EW5_PO_NUM+EW5_COD_I+EW5_SI_NUM+EW5_POSICA" , {|| EW5_INVOIC+EW5_PO_NUM+EW5_COD_I+EW5_SI_NUM+EW5_POSICA })
+  		DBCreateIndex(cWKEW5+'1', "EW5_INVOIC+EW5_PO_NUM+EW5_COD_I+EW5_SI_NUM+EW5_POSICA" , {|| EW5_INVOIC+EW5_PO_NUM+EW5_COD_I+EW5_SI_NUM+EW5_POSICA })
+		DBCreateIndex(cWKEW5+'2', "EW5_INVOIC+EW5_CC+EW5_SI_NUM+EW5_PO_NUM+EW5_POSICA+EW5_COD_I+EW5_XCASE", {|| EW5_INVOIC+EW5_CC+EW5_SI_NUM+EW5_PO_NUM+EW5_POSICA+EW5_COD_I+EW5_XCASE})
 	EndIf
 
 
@@ -2669,7 +2671,7 @@ Return
 //----------------------------------------------------------------------------------
 
 Static Function getDir(oField)
-	Local cDir := cGetFile( '*' , 'Diretorio Destino', 1, 'C:\', .T.,nOR( GETF_LOCALHARD, GETF_LOCALFLOPPY, GETF_RETDIRECTORY ) ,.T., .T. )
+	Local cDir := cGetFile( '*.CSV|*.CSV|*.TXT|*.TXT|*.*|*.*' , 'Diretorio Destino', 1, 'C:\', .T.,nOR( GETF_LOCALHARD, GETF_LOCALFLOPPY, GETF_RETDIRECTORY ) ,.T., .T. )
 
 	If !Empty(cDir)
 		oField:SetValue("DEST",cDir)

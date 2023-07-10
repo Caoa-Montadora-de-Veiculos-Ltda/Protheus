@@ -2667,8 +2667,10 @@ If cTipo == "1"
 						//Caso haja a amarraca, o codigo e descricao do produto, assumem o conteudo da SA7 ou SA5
 		
 						cCodProd  := (cAliasSD2)->D2_COD	            
-						cDescProd := IIF(Empty(SC6->C6_DESCRI),SB1->B1_DESC,SC6->C6_DESCRI) 
-						 
+    //*******************************************************************
+						//cDescProd := IIF(Empty(SC6->C6_DESCRI),SB1->B1_DESC,SC6->C6_DESCRI)
+						cDescProd := SB1->B1_DESC
+	//******************************************************************
 						If !Empty((cAliasSD2)->D2_IDENTB6) .And. lNFPTER  
 				         	If SC5->C5_TIPO == "N" 
 						         //--A7_FILIAL + A7_CLIENTE + A7_LOJA + A7_PRODUTO

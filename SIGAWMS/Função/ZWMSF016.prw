@@ -107,6 +107,7 @@ Static Function TelaInv()
             aAdd(afields    ,{"BL"				,"BL"			,"C"  ,030	,0 ,"@!" })
             aAdd(afields    ,{"Fornecedor"		,"Fornecedor"	,"C"  ,006	,0 ,"@!" })
             aAdd(afields    ,{"Loja"			,"Loja"			,"C"  ,002	,0 ,"@!" })
+            aAdd(afields    ,{"Processo"		,"Processo"		,"C"  ,030	,0 ,"@!" })			
 
             oBrowse:SetFields(afields) 
 
@@ -308,8 +309,12 @@ Static Function ProcUnit(lJob)
 	Private __aRecSB2	:= {}
 
 	Default lJob	:= .F.
-
-    aAdd(aPergs, {1 ,"Armazem Destino"  ,"907"								,""	  ,"" ,"" ,"" ,0  ,.T. })
+	
+	if Select('TMP') > 0
+		__cProcess := TMP->PROCESSO
+	EndIf
+    
+	aAdd(aPergs, {1 ,"Armazem Destino"  ,"907"								,""	  ,"" ,"" ,"" ,0  ,.T. })
     aAdd(aPergs, {1 ,"Endereço Destino" ,Space( TamSX3('BE_LOCALIZ')[1] )	,"@!" ,"" ,"" ,"" ,60 ,.T. })
 
 	//-- Salva estado dos parâmetros porque o parambox ira sobrescrever e isso afeta o browse da rotina
@@ -586,7 +591,8 @@ Static Function VldArmazem(cArmazem)
 			lRet := .F.
 		EndIf
 	EndIf
-
+    //Fechar Alias Tmp
+    (cAliasQry)->(dbCloseArea())
 Return lRet
 
 /*
@@ -700,6 +706,15 @@ Static Function GerUniAuto()
 		oMntUniItem:SetNumSeq((cTmpUnit)->numseq)
 		If !oMntUniItem:zMntUnit()
 			__cErro := oMntUniItem:GetErro()
+			IF Empty(__cErro)
+				__cErro := "Erro na Montagem do Unitizador"
+				__cErro += 	CRLF + "prdori:"  + (cTmpUnit)->prdori
+				__cErro += 	CRLF + "codpro:"  + (cTmpUnit)->codpro
+				__cErro += 	CRLF + "lotect"   + (cTmpUnit)->lotect
+				__cErro += 	CRLF + "numlot"   + (cTmpUnit)->numlot
+				__cErro += 	CRLF + "qtdunitz" + STR((cTmpUnit)->qtdunitz)
+				__cErro += 	CRLF + "numseq"   + (cTmpUnit)->numseq
+			EndIf
 			lRet := .F.
 			Exit
 		EndIf
@@ -871,6 +886,9 @@ Static Function CargaUnit( cInvoice, cCont, cUnit )
 	Local lAchouD0Q		:= .F.
 	Local cArmOrig		:= ""
 	Local lQtdExata		:= .F.
+	Local nTentativa    := 1
+	Local nX            := 0
+	Local nCount        := 0
 
 	Default cInvoice	:= ""
 	Default cCont		:= ""
@@ -884,7 +902,7 @@ Static Function CargaUnit( cInvoice, cCont, cUnit )
 		( cAliasUnit )->( DbCloseArea() )
 	EndIf
 
-	cQry  :=  " SELECT SZM.ZM_PROD, SZM.ZM_QTDE " + CRLF
+	cQry  :=  " SELECT SZM.ZM_PROD, SZM.ZM_QTDE,SZM.ZM_CASE " + CRLF
 	cQry  +=  " FROM " + RetSQLName( "SZM" ) + " SZM " + CRLF 
 	cQry  +=  " WHERE SZM.ZM_FILIAL = '" + FWxFilial("SZM") + "' " + CRLF
 	cQry  +=  "		AND SZM.ZM_INVOICE = '" + cInvoice + "' " + CRLF 
@@ -900,100 +918,149 @@ Static Function CargaUnit( cInvoice, cCont, cUnit )
 	If ( cAliasUnit )->( !EOF() )
 
 		While ( cAliasUnit )->( !EOF() )
+			For nTentativa := 1 to 2
+				
+				if Select(cAliasD0Q) > 0
+					DbSelectArea(cAliasD0Q) 
+					( cAliasD0Q )->( dbCloseArea() )
+				EndIf
+								
+				cQry := CRLF + " SELECT D0Q.D0Q_SERVIC, D0Q.D0Q_LOCAL, D0Q.D0Q_ENDER, D0Q.D0Q_PRDORI, "
+				cQry += CRLF + " D0Q.D0Q_CODPRO, D0Q.D0Q_LOTECT, D0Q.D0Q_NUMLOT, D0Q.D0Q_QUANT, D0Q.D0Q_NUMSEQ, "
+				cQry += CRLF + " D0Q.D0Q_DOCTO, D0Q.D0Q_SERIE, D0Q.D0Q_CLIFOR, D0Q.D0Q_LOJA "
+				cQry += CRLF + " FROM " + RetSQLName( "SD1" ) + " SD1 "
+				
+				cQry += CRLF + " JOIN " + RetSQLName( "D0Q" ) + " D0Q "
+				cQry += CRLF + "		ON  D0Q.D0Q_FILIAL = '" + FWxFilial("D0Q") + "' "
+				cQry += CRLF + "		AND D0Q.D0Q_DOCTO  = SD1.D1_DOC "
+				cQry += CRLF + "		AND D0Q.D0Q_SERIE  = SD1.D1_SERIE "
+				cQry += CRLF + "		AND D0Q.D0Q_CLIFOR = SD1.D1_FORNECE "
+				cQry += CRLF + "		AND D0Q.D0Q_LOJA   = SD1.D1_LOJA "
+				cQry += CRLF + "		AND D0Q.D0Q_CODPRO = SD1.D1_COD "
+				cQry += CRLF + "		AND D0Q.D0Q_NUMSEQ = SD1.D1_NUMSEQ "
+				cQry += CRLF + "		AND D0Q.D0Q_QUANT  > D0Q.D0Q_QTDUNI " //--Remove itens consumidos por outro unitizador
+				cQry += CRLF + "		AND D0Q.D_E_L_E_T_ = ' ' "
+				
+				if nTentativa == 1
+					cQry += CRLF + " 	AND D0Q.D0Q_QUANT >= '" + cValToChar( ( cAliasUnit )->ZM_QTDE ) + "' "
+				else
+					cQry += CRLF + " 	AND D0Q.D0Q_QUANT < '" + cValToChar( ( cAliasUnit )->ZM_QTDE ) + "' "
+				endif
+				
+				cQry += CRLF + " WHERE    SD1.D1_FILIAL = '" + FWxFilial("SD1") + "' "
+				cQry += CRLF + "		AND SD1.D1_CONHEC = '" + __cProcess + "' "
+				cQry += CRLF + "	 	AND SD1.D1_COD    = '" + ( cAliasUnit )->ZM_PROD + "' " 
+				cQry += CRLF + " 		AND SD1.D1_XCASE  = '" + ( cAliasUnit )->ZM_CASE + "' " 
+				//--Remove demandas consumidas, validação necessaria por conta do cenario de produtos iguais em um mesmo unitizador
+				If !Empty( cNumSeq )
+					cQry += CRLF + "		AND SD1.D1_NUMSEQ NOT IN " + FormatIn(cNumSeq, ";") 
+				EndIf
 
-			cQry  :=  " SELECT D0Q.D0Q_SERVIC, D0Q.D0Q_LOCAL, D0Q.D0Q_ENDER, D0Q.D0Q_PRDORI, " + CRLF
-			cQry  +=  " D0Q.D0Q_CODPRO, D0Q.D0Q_LOTECT, D0Q.D0Q_NUMLOT, D0Q.D0Q_QUANT, D0Q.D0Q_NUMSEQ, " + CRLF
-			cQry  +=  " D0Q.D0Q_DOCTO, D0Q.D0Q_SERIE, D0Q.D0Q_CLIFOR, D0Q.D0Q_LOJA " + CRLF
-			cQry  +=  " FROM " + RetSQLName( "SD1" ) + " SD1 " + CRLF
-			cQry  +=  " JOIN " + RetSQLName( "D0Q" ) + " D0Q " + CRLF
-			cQry  +=  "		ON D0Q.D0Q_FILIAL = '" + FWxFilial("D0Q") + "' " + CRLF
-			cQry  +=  "		AND D0Q.D0Q_DOCTO = SD1.D1_DOC" + CRLF
-			cQry  +=  "		AND D0Q.D0Q_SERIE = SD1.D1_SERIE" + CRLF
-			cQry  +=  "		AND D0Q.D0Q_CLIFOR = SD1.D1_FORNECE" + CRLF
-			cQry  +=  "		AND D0Q.D0Q_LOJA = SD1.D1_LOJA" + CRLF
-			cQry  +=  "		AND D0Q.D0Q_CODPRO = SD1.D1_COD" + CRLF
-			cQry  +=  "		AND D0Q.D0Q_NUMSEQ = SD1.D1_NUMSEQ" + CRLF
-			cQry  +=  " 	AND D0Q.D0Q_QUANT > D0Q.D0Q_QTDUNI " + CRLF //--Remove itens consumidos por outro unitizador
-			cQry  +=  " 	AND D0Q.D0Q_QUANT >= '" + cValToChar( ( cAliasUnit )->ZM_QTDE ) + "' " + CRLF
-			cQry  +=  "		AND D0Q.D_E_L_E_T_ = ' ' " + CRLF
-			cQry  +=  " WHERE SD1.D1_FILIAL = '" + FWxFilial("SD1") + "' " + CRLF
-			cQry  +=  "		AND SD1.D1_CONHEC = '" + __cProcess + "' " + CRLF
-			cQry  +=  " 	AND SD1.D1_COD = '" + ( cAliasUnit )->ZM_PROD + "' " + CRLF
+				cQry += CRLF + "		AND SD1.D_E_L_E_T_ = ' ' "
+				cQry += CRLF + " ORDER BY D0Q.D0Q_QUANT " 
 
-			//--Remove demandas consumidas, validação necessaria por conta do cenario de produtos iguais em um mesmo unitizador
-			If !Empty( cNumSeq )
-				cQry  +=  "		AND SD1.D1_NUMSEQ NOT IN " + FormatIn(cNumSeq, ";") + CRLF
-			EndIf
+				cQry	:= ChangeQuery( cQry )
 
-			cQry  +=  "		AND SD1.D_E_L_E_T_ = ' ' " + CRLF
-			cQry  +=  " ORDER BY D0Q.D0Q_QUANT " + CRLF 
-
-			cQry	:= ChangeQuery( cQry )
-
-			DbUseArea( .T., "TOPCONN", TcGenQry(,,cQry), cAliasD0Q, .T., .T. )
-
+				DbUseArea( .T., "TOPCONN", TcGenQry(,,cQry), cAliasD0Q, .T., .T. )
+				DbSelectArea( cAliasD0Q )
+				
+				if  ( cAliasD0Q )->(!EOF()) .and. nTentativa == 1
+					
+					Exit
+				EndIf
+			Next nTentativa
+			
 			If ( cAliasD0Q )->( !EOF() )
 
 				If !lAchouD0Q //--Usado para gravar apenas uma vez o armazem por ser é igual para todos os itens do processo
 					cArmOrig := ( cAliasD0Q )->D0Q_LOCAL //--Usado para avaliação de lock no armazem de origem
 					lAchouD0Q := .T.
 				EndIf
-
+				
+				nX        := 0
+				nQuant    := 0
 				lQtdExata := .F.
+
 				While ( cAliasD0Q )->( !EOF() )
+					nX++
+					
+					if nTentativa > 1
+						nQuant += ( cAliasD0Q )->D0Q_QUANT
+					else
+						nQuant := ( cAliasD0Q )->D0Q_QUANT
+					EndIf
+					
 					//--Busca por quantidade exatamente igual ao item para priorizar o consumo total da demanda
-					If ( cAliasUnit )->ZM_QTDE == ( cAliasD0Q )->D0Q_QUANT
+					If ( cAliasUnit )->ZM_QTDE == nQuant
 						lQtdExata := .T.
 						Exit
 					EndIf
+					
 					( cAliasD0Q )->( DbSkip() )
+				
 				EndDo
 
 				//--Se não encontrou qtd exata, volta ponteiro para o inicio do arquivo
-				If !lQtdExata
+				If !lQtdExata .or.  nTentativa > 1
 					( cAliasD0Q )->( DbGoTop() )
 				EndIF
-
-				If RecLock(cTmpUnit,.T.)
-					(cTmpUnit)->unitizador	:= cUnit
-					(cTmpUnit)->armazem		:= ( cAliasD0Q )->D0Q_LOCAL
-					(cTmpUnit)->localiz		:= ( cAliasD0Q )->D0Q_ENDER
-					(cTmpUnit)->prdori		:= ( cAliasD0Q )->D0Q_PRDORI
-					(cTmpUnit)->codpro		:= ( cAliasD0Q )->D0Q_CODPRO
-					(cTmpUnit)->lotect		:= ( cAliasD0Q )->D0Q_LOTECT
-					(cTmpUnit)->numlot		:= ( cAliasD0Q )->D0Q_NUMLOT
-					(cTmpUnit)->qtdunitz	:= ( cAliasUnit )->ZM_QTDE
-					(cTmpUnit)->docto		:= ( cAliasD0Q )->D0Q_DOCTO
-					(cTmpUnit)->serie		:= ( cAliasD0Q )->D0Q_SERIE
-					(cTmpUnit)->clifor		:= ( cAliasD0Q )->D0Q_CLIFOR
-					(cTmpUnit)->loja		:= ( cAliasD0Q )->D0Q_LOJA
-					(cTmpUnit)->servic		:= ( cAliasD0Q )->D0Q_SERVIC
-					(cTmpUnit)->numseq		:= ( cAliasD0Q )->D0Q_NUMSEQ
-					(cTmpUnit)->(MsUnLock())
-				EndIf
-
+				
+				nCount := 1
+				
+				While ( cAliasD0Q )->( !EOF() ) .and. nCount <= nX
+					
+					nCount++
+					
+					If RecLock(cTmpUnit,.T.)
+						(cTmpUnit)->unitizador	:= cUnit
+						(cTmpUnit)->armazem		:= ( cAliasD0Q )->D0Q_LOCAL
+						(cTmpUnit)->localiz		:= ( cAliasD0Q )->D0Q_ENDER
+						(cTmpUnit)->prdori		:= ( cAliasD0Q )->D0Q_PRDORI
+						(cTmpUnit)->codpro		:= ( cAliasD0Q )->D0Q_CODPRO
+						(cTmpUnit)->lotect		:= ( cAliasD0Q )->D0Q_LOTECT
+						(cTmpUnit)->numlot		:= ( cAliasD0Q )->D0Q_NUMLOT
+						(cTmpUnit)->qtdunitz	:= ( cAliasD0Q )->D0Q_QUANT //( cAliasUnit)->ZM_QTDE
+						(cTmpUnit)->docto		:= ( cAliasD0Q )->D0Q_DOCTO
+						(cTmpUnit)->serie		:= ( cAliasD0Q )->D0Q_SERIE
+						(cTmpUnit)->clifor		:= ( cAliasD0Q )->D0Q_CLIFOR
+						(cTmpUnit)->loja		:= ( cAliasD0Q )->D0Q_LOJA
+						(cTmpUnit)->servic		:= ( cAliasD0Q )->D0Q_SERVIC
+						(cTmpUnit)->numseq		:= ( cAliasD0Q )->D0Q_NUMSEQ
+						(cTmpUnit)->(MsUnLock())
+					EndIf
+					
+					( cAliasD0Q )->(DbSkip())
+				
+				EndDo
 				//--Verifica se a demanda de um produto foi totalmente consumida	
-				cAliasQry:= GetNextAlias()
-				BeginSql Alias cAliasQry
-					SELECT Sum(qtdunitz) as TOTUNIT
-					FROM %Exp:cRealName% TMPUNIT
-					WHERE TMPUNIT.unitizador = %Exp:cUnit%
-					AND TMPUNIT.codpro = %Exp:( cAliasD0Q )->D0Q_CODPRO%
-					AND TMPUNIT.numseq = %Exp:( cAliasD0Q )->D0Q_NUMSEQ%
-				EndSql
+				
+				( cAliasD0Q )->( DbGoTop() )
+				
+				While ( cAliasD0Q )->(!Eof())
+				
+					cAliasQry:= GetNextAlias()
+					
+					BeginSql Alias cAliasQry
+						SELECT qtdunitz as TOTUNIT
+						FROM %Exp:cRealName% TMPUNIT
+						WHERE TMPUNIT.unitizador = %Exp:cUnit%
+						AND TMPUNIT.codpro = %Exp:( cAliasD0Q )->D0Q_CODPRO%
+						AND TMPUNIT.numseq = %Exp:( cAliasD0Q )->D0Q_NUMSEQ%
+					EndSql
+										
+					If (cAliasQry)->TOTUNIT == ( cAliasD0Q )->D0Q_QUANT
+						//--Guarda Numseq para avaliação de demandas ja consumidas
+						If Empty(cNumSeq)
+							cNumSeq := AllTrim( ( cAliasD0Q )->D0Q_NUMSEQ )
+						Else
+							cNumSeq := cNumSeq + ";" + AllTrim( ( cAliasD0Q )->D0Q_NUMSEQ )
+						EndIf
 
-				If (cAliasQry)->TOTUNIT == ( cAliasD0Q )->D0Q_QUANT
-
-					//--Guarda Numseq para avaliação de demandas ja consumidas
-					If Empty(cNumSeq)
-						cNumSeq := AllTrim( ( cAliasD0Q )->D0Q_NUMSEQ )
-					Else
-						cNumSeq := cNumSeq + ";" + AllTrim( ( cAliasD0Q )->D0Q_NUMSEQ )
 					EndIf
 
-				EndIf
-
-				(cAliasQry)->( DbCloseArea() )
+					(cAliasQry)->( DbCloseArea() )
+					( cAliasD0Q )->(DbSkip())
+				EndDo
 
 			EndIf
 
@@ -1010,19 +1077,19 @@ Static Function CargaUnit( cInvoice, cCont, cUnit )
 		
 		//--Retorna recnos da SB2 para avaliação de lock
 		cAliasQry := GetNextAlias()
-		cQry  :=  " SELECT SB2.R_E_C_N_O_ AS RECSB2" + CRLF
-		cQry  +=  " FROM " + RetSQLName( "SZM" ) + " SZM " + CRLF
-		cQry  +=  " JOIN " + RetSQLName( "SB2" ) + " SB2 " + CRLF
-		cQry  +=  "		ON SB2.B2_FILIAL = '" + FWxFilial("SB2") + "' " + CRLF
-		cQry  +=  "		AND SB2.B2_COD = SZM.ZM_PROD " + CRLF 
-		cQry  +=  "		AND ( SB2.B2_LOCAL = '" + cArmDes + "' OR SB2.B2_LOCAL = '" + cArmOrig + "' ) " + CRLF 
-		cQry  +=  "		AND SB2.D_E_L_E_T_ = ' ' " + CRLF
-		cQry  +=  " WHERE SZM.ZM_FILIAL = '" + FWxFilial("SZM") + "' " + CRLF
-		cQry  +=  "		AND SZM.ZM_INVOICE = '" + cInvoice + "' " + CRLF 
-		//cQry  +=  "		AND SZM.ZM_CONT = '" + cCont + "' " + CRLF 
-		cQry  +=  "		AND SZM.ZM_UNIT = '" + cUnit + "' " + CRLF 
- 		cQry  +=  "		AND SZM.D_E_L_E_T_ = ' ' " + CRLF
-		cQry  +=  "	GROUP BY SB2.R_E_C_N_O_ " + CRLF
+		cQry  :=  CRLF + " SELECT SB2.R_E_C_N_O_ AS RECSB2"
+		cQry  +=  CRLF + " 	FROM " + RetSQLName( "SZM" ) + " SZM "
+		cQry  +=  CRLF + " 	JOIN " + RetSQLName( "SB2" ) + " SB2 "
+		cQry  +=  CRLF + "		ON  SB2.B2_FILIAL  = '" + FWxFilial("SB2") + "' "
+		cQry  +=  CRLF + "		AND SB2.B2_COD     = SZM.ZM_PROD " 
+		cQry  +=  CRLF + "		AND SB2.D_E_L_E_T_ = ' ' "
+		cQry  +=  CRLF + "		AND ( SB2.B2_LOCAL = '" + cArmDes + "' OR SB2.B2_LOCAL = '" + cArmOrig + "' ) " 
+		cQry  +=  CRLF + " WHERE SZM.ZM_FILIAL = '" + FWxFilial("SZM") + "' "
+		cQry  +=  CRLF + "		AND SZM.ZM_INVOICE = '" + cInvoice + "' " 
+		//cQry  +=  "		AND SZM.ZM_CONT = '" + cCont + "' " 
+		cQry  +=  CRLF + "		AND SZM.ZM_UNIT    = '" + cUnit + "' " 
+ 		cQry  +=  CRLF + "		AND SZM.D_E_L_E_T_ = ' ' "
+		cQry  +=  CRLF + "	GROUP BY SB2.R_E_C_N_O_ "
 
 		cQry	:= ChangeQuery( cQry )
 
@@ -1136,17 +1203,17 @@ Static Function GeraOrdSer(cUnitiz)
 				D0Q.D0Q_NUMLOT
 		FROM       %Table:D0S% D0S
 		INNER JOIN %Table:D0Q% D0Q
-		ON D0Q.D0Q_FILIAL = %xFilial:D0Q%
-		AND D0Q.D0Q_ID = D0S.D0S_IDD0Q
-		AND D0Q.%NotDel%
+			ON  D0Q.D0Q_FILIAL = %xFilial:D0Q%
+			AND D0Q.D0Q_ID = D0S.D0S_IDD0Q
+			AND D0Q.%NotDel%
 		INNER JOIN %Table:D0R% D0R
-		ON D0R.D0R_FILIAL = %xFilial:D0R%
-		AND D0R.D0R_IDUNIT = D0S.D0S_IDUNIT
-		AND D0R.D0R_STATUS IN ('1','2') // Para garantir que não irá gerar duplicado
-		AND D0R.%NotDel%
+			ON  D0R.D0R_FILIAL = %xFilial:D0R%
+			AND D0R.D0R_IDUNIT = D0S.D0S_IDUNIT
+			AND D0R.D0R_STATUS IN ('1','2') // Para garantir que não irá gerar duplicado
+			AND D0R.%NotDel%
 		WHERE D0S.D0S_FILIAL = %xFilial:D0S%
-		AND D0S.D0S_IDUNIT = %Exp:cUnitiz%
-		AND D0S.%NotDel%
+			AND D0S.D0S_IDUNIT = %Exp:cUnitiz%
+			AND D0S.%NotDel%
 	EndSql
 
 	If (cAliasQry)->(!Eof())
@@ -1362,27 +1429,49 @@ Static Function zTmpInv(lJob)
 		( cAliasTmp )->( DbCloseArea() )
 	EndIf
 
-	cQuery  :=  "  SELECT ZM_FILIAL, ZM_INVOICE, ZM_BL, ZM_FORNEC, ZM_LOJA, W9_HAWB " + CRLF 
-  	cQuery  +=  "  FROM " + RetSQLName( "SW9" ) + " SW9 " + CRLF
-  	cQuery  +=  "  INNER JOIN " + RetSQLName( "SZM" ) + " SZM " + CRLF
-  	cQuery  +=  "  	ON SZM.ZM_FILIAL = '" + FWxFilial("SZM") + "' " + CRLF
-  	cQuery  +=  "	AND SZM.ZM_INVOICE = SW9.W9_INVOICE " + CRLF
-    cQuery  +=  "  	AND SZM.ZM_FORNEC = SW9.W9_FORN " + CRLF
-    cQuery  +=  "  	AND SZM.ZM_LOJA = SW9.W9_FORLOJ " + CRLF
-  	cQuery  +=  "	AND SZM.D_E_L_E_T_ = ' ' " + CRLF
-  	cQuery  +=  "  INNER JOIN " + RetSQLName( "SB5" ) + " SB5 " + CRLF
-  	cQuery  +=  "  	ON SB5.B5_FILIAL = '" + FWxFilial("SB5") + "' " + CRLF
-  	cQuery  +=  "  	AND SB5.B5_COD = SZM.ZM_PROD " + CRLF
-  	cQuery  +=  "	AND SB5.B5_CTRWMS = '1'  " + CRLF
-  	cQuery  +=  "	AND SB5.D_E_L_E_T_ = ' ' " + CRLF
-  	cQuery  +=  "  WHERE SW9.W9_FILIAL = '" + FWxFilial("SW9") + "' " + CRLF
-	cQuery  +=  " 	AND SW9.W9_HAWB	BETWEEN '" + MV_PAR01 + "' AND '" + MV_PAR02 + "' " + CRLF
-	cQuery  += 	" 	AND SW9.W9_INVOICE BETWEEN '" + MV_PAR03 + "' AND '" + MV_PAR04 + "' " + CRLF
-	cQuery  += 	" 	AND SW9.W9_FORN BETWEEN '" + MV_PAR05 + "' AND '" + MV_PAR06 + "' " + CRLF
-	cQuery  += 	" 	AND SW9.W9_FORLOJ BETWEEN '" + MV_PAR07 + "' AND '" + MV_PAR08 + "' " + CRLF  
-  	cQuery  +=  "  	AND SW9.D_E_L_E_T_ = ' ' " + CRLF
-  	cQuery  +=  "  GROUP BY ZM_FILIAL, ZM_INVOICE, ZM_BL, ZM_FORNEC, ZM_LOJA, W9_HAWB " + CRLF
-  	cQuery  +=  "  ORDER BY ZM_BL, ZM_INVOICE " + CRLF
+	IF !Empty(MV_PAR02) .AND. Empty(MV_PAR09) 
+
+		cQuery  :=  "  SELECT ZM_FILIAL, ZM_INVOICE, ZM_BL, ZM_FORNEC, ZM_LOJA, W9_HAWB " + CRLF 
+		cQuery  +=  "  FROM " + RetSQLName( "SW9" ) + " SW9 " + CRLF
+		cQuery  +=  "  INNER JOIN " + RetSQLName( "SZM" ) + " SZM " + CRLF
+		cQuery  +=  "  	ON SZM.ZM_FILIAL = '" + FWxFilial("SZM") + "' " + CRLF
+		cQuery  +=  "	AND SZM.ZM_INVOICE = SW9.W9_INVOICE " + CRLF
+		cQuery  +=  "  	AND SZM.ZM_FORNEC = SW9.W9_FORN " + CRLF
+		cQuery  +=  "  	AND SZM.ZM_LOJA = SW9.W9_FORLOJ " + CRLF
+		cQuery  +=  "	AND SZM.D_E_L_E_T_ = ' ' " + CRLF
+		cQuery  +=  "  INNER JOIN " + RetSQLName( "SB5" ) + " SB5 " + CRLF
+		cQuery  +=  "  	ON SB5.B5_FILIAL = '" + FWxFilial("SB5") + "' " + CRLF
+		cQuery  +=  "  	AND SB5.B5_COD = SZM.ZM_PROD " + CRLF
+		cQuery  +=  "	AND SB5.B5_CTRWMS = '1'  " + CRLF
+		cQuery  +=  "	AND SB5.D_E_L_E_T_ = ' ' " + CRLF
+		cQuery  +=  "  WHERE SW9.W9_FILIAL = '" + FWxFilial("SW9") + "' " + CRLF
+		cQuery  +=  " 	AND SW9.W9_HAWB	BETWEEN '" + MV_PAR01 + "' AND '" + MV_PAR02 + "' " + CRLF
+		cQuery  += 	" 	AND SW9.W9_INVOICE BETWEEN '" + MV_PAR03 + "' AND '" + MV_PAR04 + "' " + CRLF
+		cQuery  += 	" 	AND SW9.W9_FORN BETWEEN '" + MV_PAR05 + "' AND '" + MV_PAR06 + "' " + CRLF
+		cQuery  += 	" 	AND SW9.W9_FORLOJ BETWEEN '" + MV_PAR07 + "' AND '" + MV_PAR08 + "' " + CRLF  
+		cQuery  +=  "  	AND SW9.D_E_L_E_T_ = ' ' " + CRLF
+		cQuery  +=  "  GROUP BY ZM_FILIAL, ZM_INVOICE, ZM_BL, ZM_FORNEC, ZM_LOJA, W9_HAWB " + CRLF
+		cQuery  +=  "  ORDER BY ZM_BL, ZM_INVOICE " + CRLF
+		
+	ELSE
+
+		cQuery  :=  "  SELECT ZM_FILIAL, ZM_INVOICE, ZM_BL, ZM_FORNEC, ZM_LOJA, ZM_XPROC AS W9_HAWB" + CRLF 
+		cQuery  +=  "  FROM " + RetSQLName( "SZM" ) + " SZM " + CRLF
+		cQuery  +=  "  INNER JOIN " + RetSQLName( "SB5" ) + " SB5 " + CRLF
+		cQuery  +=  "  	ON SB5.B5_FILIAL = '" + FWxFilial("SB5") + "' " + CRLF
+		cQuery  +=  "  	AND SB5.B5_COD = SZM.ZM_PROD " + CRLF
+		cQuery  +=  "	AND SB5.B5_CTRWMS = '1'  " + CRLF
+		cQuery  +=  "	AND SB5.D_E_L_E_T_ = ' ' " + CRLF
+		cQuery  +=  "  WHERE SZM.ZM_FILIAL = '" + FWxFilial("SZM") + "' " + CRLF
+		cQuery  +=  "	AND SZM.ZM_XPROC BETWEEN '" + MV_PAR01 + "' AND '" + MV_PAR02 + "' " + CRLF	
+		cQuery  +=  "	AND SZM.ZM_INVOICE BETWEEN '" + MV_PAR03 + "' AND '" + MV_PAR04 + "' " + CRLF
+		cQuery  +=  "  	AND SZM.ZM_FORNEC BETWEEN '" + MV_PAR05 + "' AND '" + MV_PAR06 + "' " + CRLF
+		cQuery  +=  "  	AND SZM.ZM_LOJA BETWEEN '" + MV_PAR07 + "' AND '" + MV_PAR08 + "' " + CRLF
+		cQuery  +=  "  	AND SZM.ZM_SERIE BETWEEN '" + MV_PAR09 + "' AND '" + MV_PAR10 + "' " + CRLF	  
+		cQuery  +=  "	AND SZM.D_E_L_E_T_ = ' ' " + CRLF
+		cQuery  +=  "  GROUP BY ZM_FILIAL, ZM_INVOICE, ZM_BL, ZM_FORNEC, ZM_LOJA, ZM_XPROC " + CRLF
+
+	ENDIF
 
 	cQuery	:= ChangeQuery( cQuery )
 
@@ -1409,6 +1498,7 @@ Static Function zTmpInv(lJob)
 		aAdd(aCampos, {"Loja"       ,"C"    ,002    ,0  })
 		aAdd(aCampos, {"Qtd"    	,"N"    ,010    ,0  }) 
 		aAdd(aCampos, {"QtdUni"    	,"N"    ,010    ,0  })
+		aAdd(aCampos, {"Processo"  	,"C"    ,030    ,0  })		
 		aAdd(aCampos, {"MsgErro"	,"C"    ,240    ,0  })   
 
 		oTempInv:SetFields( aCampos )
@@ -1439,6 +1529,7 @@ Static Function zTmpInv(lJob)
 						(cTmpInv)->Loja			:= AllTrim( (cAliasTmp)->ZM_LOJA )
 						(cTmpInv)->Qtd			:= nQtd
 						(cTmpInv)->QtdUni		:= nQtdUni
+						(cTmpInv)->Processo		:= AllTrim( (cAliasTmp)->W9_HAWB )						
 						(cTmpInv)->MsgErro		:= cMsgErro
 						(cTmpInv)->(MsUnLock())
 					EndIf
@@ -1453,6 +1544,7 @@ Static Function zTmpInv(lJob)
 					(cTmpInv)->Loja			:= AllTrim( (cAliasTmp)->ZM_LOJA )
 					(cTmpInv)->Qtd			:= nQtd
 					(cTmpInv)->QtdUni		:= nQtdUni
+					(cTmpInv)->Processo		:= AllTrim( (cAliasTmp)->W9_HAWB )	
 					(cTmpInv)->MsgErro		:= cMsgErro
 					(cTmpInv)->(MsUnLock())
 				EndIf
@@ -1622,12 +1714,12 @@ Static Function ReportDef()
                             "ZWMSF004",;
                             {|oReport|  ReportPrint(oReport)},;
                             "Relatorio para conferencia do enderaçamento dos unitizadores.")
-	oReport:HideParamPage()   // Desabilita a impressao da pagina de parametros.
-    oReport:HideHeader() //--Define que não será impresso o cabeçalho padrão da página
-    oReport:HideFooter() //--Define que não será impresso o rodapé padrão da página
-    oReport:SetDevice(4) //--Define o tipo de impressão selecionado. Opções: 1-Arquivo,2-Impressora,3-Email,4-Planilha, 5-Html e 6-PDF
-    oReport:SetPreview(.T.) //--Define se será apresentada a visualização do relatório antes da impressão física
-    oReport:SetEnvironment(2) //--Define o ambiente para impressão 	Ambiente: 1-Server e 2-Client
+	oReport:HideParamPage()                // Desabilita a impressao da pagina de parametros.
+    oReport:HideHeader()                   //--Define que não será impresso o cabeçalho padrão da página
+    oReport:HideFooter()                   //--Define que não será impresso o rodapé padrão da página
+    oReport:SetDevice(4)                   //--Define o tipo de impressão selecionado. Opções: 1-Arquivo,2-Impressora,3-Email,4-Planilha, 5-Html e 6-PDF
+    oReport:SetPreview(.T.)                //--Define se será apresentada a visualização do relatório antes da impressão física
+    oReport:SetEnvironment(2)              //--Define o ambiente para impressão 	Ambiente: 1-Server e 2-Client
     //oReport:SetEdit(.T.) 
 	
 	//Verifica os parâmetros selecionados via Pergunte
@@ -1763,18 +1855,25 @@ Static Function RetD0Q( nQtdUni, nQtdClas )
 	EndIf
 
 	cQry  :=  " SELECT SUM(D0Q_QUANT) AS QTDCLAS, SUM(D0Q_QTDUNI) AS QTDUNIT  " + CRLF
-	cQry  +=  " FROM " + RetSQLName( "SD1" ) + " SD1 " + CRLF
+	cQry  +=  " 	FROM " + RetSQLName( "SD1" ) + " SD1 " + CRLF
+	
 	cQry  +=  " LEFT JOIN " + RetSQLName( "D0Q" ) + " D0Q " + CRLF
-	cQry  +=  "		ON D0Q.D0Q_FILIAL = '" + FWxFilial("D0Q") + "' " + CRLF
-	cQry  +=  "		AND D0Q.D0Q_DOCTO = SD1.D1_DOC" + CRLF
- 	cQry  +=  "		AND D0Q.D0Q_SERIE = SD1.D1_SERIE" + CRLF
+	cQry  +=  "		ON  D0Q.D0Q_FILIAL = '" + FWxFilial("D0Q") + "' " + CRLF
+	cQry  +=  "		AND D0Q.D0Q_DOCTO  = SD1.D1_DOC" + CRLF
+ 	cQry  +=  "		AND D0Q.D0Q_SERIE  = SD1.D1_SERIE" + CRLF
  	cQry  +=  "		AND D0Q.D0Q_CLIFOR = SD1.D1_FORNECE" + CRLF
- 	cQry  +=  "		AND D0Q.D0Q_LOJA = SD1.D1_LOJA" + CRLF
+ 	cQry  +=  "		AND D0Q.D0Q_LOJA   = SD1.D1_LOJA" + CRLF
 	cQry  +=  "		AND D0Q.D0Q_CODPRO = SD1.D1_COD" + CRLF
     cQry  +=  "		AND D0Q.D0Q_NUMSEQ = SD1.D1_NUMSEQ" + CRLF
  	cQry  +=  "		AND D0Q.D_E_L_E_T_ = ' ' " + CRLF
-	cQry  +=  " WHERE SD1.D1_FILIAL = '" + FWxFilial("SD1") + "' " + CRLF 
-	cQry  +=  "		AND SD1.D1_CONHEC = '" + __cProcess + "' " + CRLF 
+	
+	cQry  +=  " WHERE  SD1.D1_FILIAL = '" + FWxFilial("SD1") + "' " + CRLF 
+	cQry  +=  "	   AND SD1.D1_CONHEC = '" + __cProcess + "' " + CRLF 
+
+	If !Empty(MV_PAR09)
+		cQry  +=  "		AND SD1.D1_SERIE = '" + MV_PAR09 + "'" + CRLF   
+	EndIf
+
  	cQry  +=  "		AND SD1.D_E_L_E_T_ = ' ' " + CRLF
 
 	cQry	:= ChangeQuery( cQry )
@@ -1926,6 +2025,7 @@ Static Function zVldMont(cIdUnit)
 	Local nQtdD14 := 0
 	Local nQtdSZM := 0
 	Local cAliasQry := Nil
+	Local eol       := CHR(13)+Chr(10)  //Por Algum Motivo o CRLF encontrasse nulo neste trecho
 
     cAliasQry := GetNextAlias()
     BeginSql Alias cAliasQry
@@ -1956,5 +2056,68 @@ Static Function zVldMont(cIdUnit)
     EndIf
 
     (cAliasQry)->( DbCloseArea() )
+	
+	if nQtdD14 <> nQtdSZM
+		cErro := "Erro de Transferencia do Unitizador " + cIdUnit + " "	
+		cErro += eol + "Quantidade SZM.......:" + Transform(nQtdSZM , "@E 999,999.999")
+		cErro += eol + "Quantidade D14 ......:" + Transform(nQtdD14 , "@E 999,999.999")
+		cErro += eol + "Diferenca SZM - D14..:" + Transform(nQtdSZM - nQtdD14 , "@E 999,999.999")
+		cErro += eol + "Transferencia do Unitizador sera cancelada
+		Conout(cErro)
+		MsgAlert("Divergencia de Saldo do do Unitizador " + cIdUnit + " ") 
+		zPegMont(cIdUnit)
+	EndIf
 
 Return nQtdD14 == nQtdSZM
+
+/*
+=========================================================================================
+Programa.:              zVldMont
+Autor....:              CAOA - Fagner Ferraz Barreto
+Data.....:              14/01/2022
+Descricao / Objetivo:   Confirma se todos os itens foram incluidos no unitizador
+=========================================================================================
+*/
+Static Function zPegMont(cIdUnit)
+	//Local nQtdD14  := 0
+	//Local nQtdSZM  := 0
+	Local cAliasQry := Nil
+	Local cMemo     := ""
+	Local eol       := CHR(13)+Chr(10)  //Por Algum Motivo o CRLF encontrasse nulo neste trecho
+
+    cAliasQry := GetNextAlias()
+    BeginSql Alias cAliasQry
+        SELECT d14.D14_PRODUT,D14.D14_QTDEST QTDD14
+        FROM %Table:D14% D14
+        WHERE D14.D14_FILIAL = %xFilial:D14%
+        AND D14.D14_IDUNIT = %Exp:cIdUnit%
+        AND D14.%NotDel%
+    EndSql
+
+    While (cAliasQry)->( !Eof() )
+        cMemo += Alltrim((cAliasQry)->D14_PRODUT) + ";" + alltrim( Transform((cAliasQry)->QTDD14 , "@E 999,999.99") ) + eol
+		(cAliasQry)->(DbSkip())
+    EndDo
+	MemoWrite("C:\Temp\D14_" + alltrim(cIdUnit) + ".csv",cMemo)
+    (cAliasQry)->( DbCloseArea() )
+
+	cAliasQry := GetNextAlias()
+    BeginSql Alias cAliasQry
+        SELECT SZM.ZM_PROD ,SZM.ZM_QTDE QTDSZM
+        FROM %Table:SZM% SZM
+        WHERE SZM.ZM_FILIAL = %xFilial:SZM%
+        AND SZM.ZM_UNIT = %Exp:cIdUnit%
+        AND SZM.%NotDel%
+    EndSql
+
+   	cMemo := ""
+    
+	While (cAliasQry)->( !Eof() )
+        cMemo += Alltrim((cAliasQry)->ZM_PROD) + ";" + alltrim( Transform((cAliasQry)->QTDSZM , "@E 999,999.99") )+eol
+		(cAliasQry)->(DbSkip())
+    EndDo
+    
+	MemoWrite("\Data\SZM_" + alltrim(cIdUnit) + ".csv",cMemo)
+	(cAliasQry)->( DbCloseArea() )
+
+Return 

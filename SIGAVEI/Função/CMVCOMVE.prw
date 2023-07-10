@@ -31,6 +31,9 @@ user function CMVCOMVE(cxFil,cDoc,cSerie,cFornec,cLoja)
 	Local cNextAlias  := xQryDVeNF(cxFil,cDoc,cSerie,cFornec,cLoja)
 	local cNatNf	  := AllTrim( superGetMv( "CMV_VE1NAT"	, , "2104" ) )	// Natureza para Nota fiscal SIGAVEI
 	
+	Local cDI         := ""
+	Local dDtDI       := CtoD('  /  /  ')
+	
 	Private lMsHelpAuto := .t.
 	Private lMsErroAuto := .f.
 	
@@ -46,12 +49,16 @@ user function CMVCOMVE(cxFil,cDoc,cSerie,cFornec,cLoja)
 
 			dbSelectArea("VV1")
 			VV1->(dbSetOrder(2))//VV1_FILIAL+VV1_CHASSI
-
+			
 			//Inclusão dos Veiculos
 			While (cNextAlias)->(!Eof())
 
 				If !(VV1->(dbSeek(xFilial("VV1",(cNextAlias)->D1_FILIAL) + ALLTRIM((cNextAlias)->D1_CHASSI) )))
-
+					
+					cDi   := Posicione("SW6", 1, (cNextAlias)->D1_FILIAL + (cNextAlias)->F1_HAWB, "W6_DI_NUM" )
+					dDtDI := Posicione("SW6", 1, (cNextAlias)->D1_FILIAL + (cNextAlias)->F1_HAWB, "W6_DTREG_D")
+					
+					cDi := PadR( Alltrim(cDi) ,  TamSX3("VV1_DI")[1] )
 					zIncVCM(cNextAlias)	// valter 20/02/2021
 
 					aDados := {}
@@ -119,6 +126,9 @@ user function CMVCOMVE(cxFil,cDoc,cSerie,cFornec,cLoja)
 					Aadd(aDados,{"VV1_POTMOT",	(cNextAlias)->VV2_POTMOT	})
 					Aadd(aDados,{"VV1_DISEIX",	(cNextAlias)->VV2_DISEIX	})
 					Aadd(aDados,{"VV1_PORTAS",	(cNextAlias)->VV2_PORTAS	})
+					
+					Aadd(aDados,{"VV1_DI"	 , cDi   } )
+					Aadd(aDados,{"VV1_DTDI"  , dDtDi } )
 
 					lCont := ImptVeic(aDados)
 
@@ -281,6 +291,7 @@ Static Function xQryDVeNF(cxFil,cDoc,cSerie,cFornec,cLoja)
 			SF1.F1_VALMERC,
 			SF1.F1_CHVNFE ,
 			SF1.F1_TIPO   ,
+			SF1.F1_HAWB   ,
 			SF1.R_E_C_N_O_ RECSF1,
 			SWN.WN_ANOFAB ,
 			SWN.WN_ANOMOD ,

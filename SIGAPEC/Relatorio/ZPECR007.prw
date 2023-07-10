@@ -17,12 +17,16 @@ Relatorio Carga
 @author Antonio Oliveira
 @since 30/05/2022
 @version 2.0
+@history    DAC -19/05/2023
+            PEC042 - Controle de saldo e e-mail apos integracao de armazenagem - Imprimir sem passar pelo parâmetro chamada ZPECF008
+
 /*/
-User Function ZPECR007()
+User Function ZPECR007(_aOndaRel)
 Local aAreaVS3      := VS3->( GetArea() )
 Local nOpca         := 1
 Local aPergs        := {}
 Local cCodigo       := SPACE(08)
+
 Private MV_PAR01    := ""
 Private dDataI      := Date()
 Private dDataF      := Date()
@@ -33,6 +37,19 @@ Private aRetP       := {}
 Private cAliasQry	:= GetNextAlias()
 Private oReport, oSection1          // objeto que contem o relatorio
 
+Default _aOndaRel   := {}
+
+//Chamado por ZPECF008 DAC 19/05/2023 PEC042 
+If Len(_aOndaRel) > 0
+    aRetP := _aOndaRel
+    If nOpca == 1
+ 	    //If FindFunction("TRepInUse") .And. TRepInUse() // teste padrão 
+   
+        oReport := ReportDef(.T.)
+        oReport:PrintDialog()   
+    Endif
+    Return Nil
+Endif
 aAdd( aPergs ,{1,"Onda  .....: "      ,cCodigo ,"@!", , ""   ,'.T.',120,.F.})
 aadd( aPergs, {1,"Data Inicial...: "  ,dDataI  ,"@D", , ""   ,  "" ,120,.F.})
 aadd( aPergs, {1,"Data Final.....: "  ,dDataF  ,"@D", , ""   ,  "" ,120,.T.})
@@ -72,16 +89,27 @@ Definição do Relatorio Carga
 @since 30/05/2022
 @version 2.0
 /*/
-Static Function ReportDef()
+Static Function ReportDef(_lPlanilha)
+
+Default _lPlanilha  := .F.
 
 MV_PAR01 := aRetP[01]
 
 oReport:= TReport():New("ZPECR007",' Relação Carga  ',"BARUERI", {|oReport| ReportPrint(oReport)},' Carga  ') 
 oReport:HideParamPage()   // Desabilita a impressao da pagina de parametros.
+//Impressão em planilha
+If _lPlanilha
 
-//Verifica os parâmetros selecionados via Pergunte
-Pergunte(oReport:GetParam(),.F.)
-
+	oReport:NDEVICE         := 4  //PLANILHA
+	oReport:NEXCELPRINTTYPE := 3 	
+	oReport:lPrtParamPage  := .f.      
+	oReport:ParamReadOnly(.T.) //Define se o usuário terá acesso aos parâmetros do relatório. ParamReadOnly .T. – Não permite acesso aos parâmetros.F. – Permite acesso aos parâmetros	
+	oReport:HideParamPage()   // Desabilita a impressao da pagina de parametros.
+  	//Pergunte(oReport:uParam,.F.)          
+Else
+    //Verifica os parâmetros selecionados via Pergunte
+    //Pergunte(oReport:GetParam(),.F.)
+Endif
 oSection1 := TRSection():New(oReport,"Carga  - Barueri",{cAliasQry},/*{Array com as ordens do relatório}*/,/*Campos do SX3*/,/*Campos do SIX*/)
 
 TRCell():New(oSection1,"MARCA"                ,"cAliasQry","MARCA"          ,"@!",03,/*lPixel*/,/*{|| code-block de impressao }*/)
@@ -209,7 +237,9 @@ _cQ += " 	    AND SE4.E4_FILIAL = ' '"
 _cQ += " 	    AND SE4.E4_CODIGO = VS1LEG.VS1_FORPAG "
 _cQ += "WHERE VS1LEG.D_E_L_E_T_ = ' '"
 If aRetP[01] <> Space(08)
-    _cQ += "         AND VS3LEG.VS3_XAGLU = '" + aRetP[01] + "'"
+    //_cQ += "         AND VS3LEG.VS3_XAGLU = '" + aRetP[01] + "'"
+    _cQ += "         AND VS3LEG.VS3_XAGLU IN "+ FormatIn(aRetP[01],";")  
+
 endif
 _cQ += "	AND VS1LEG.VS1_XDTAGL BETWEEN '" + DTOS(aRetP[02]) + "' AND '" + DTOS(aRetP[03]) + "'" 
 _cQ += "	AND (VS1LEG.VS1_XPICKI != ' ' 
@@ -247,11 +277,6 @@ oReport:SetMeter((cAliasQry)->(LastRec()))
 oSection1:Init()
 
 Do While !(cAliasQry)->( Eof() )
-
-    /*IF (cAliasQry)->CODIGO_CLIENTE <> aRetP[01] 
-        (cAliasQry)->( DbSkip() )
-        LOOP
-    ENDIF*/
 
     oReport:IncMeter()
 

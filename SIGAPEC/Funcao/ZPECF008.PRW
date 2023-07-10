@@ -20,7 +20,9 @@ Responsável por Aglutinar e Separação do orçamento passando pelas fases automati
 @obs 
 @menu       Nao Informado
 @return		Nulo
-@history    16/12/2022 PEC031 - Limite de Credito - Revitalização DAC
+@history    DAC - 16/12/2022 PEC031 - Limite de Credito - Revitalização DAC
+@    		DAC -19/05/2023
+            PEC042 - Controle de saldo e e-mail apos integracao de armazenagem - Imprimir sem passar pelo parâmetro chamada ZPECR007
 /*/
 User Function ZPECF008()
 	Local _aSays	    := {}
@@ -55,6 +57,7 @@ User Function ZPECF008()
 	Local _oSay			:= Nil
 	Local _cLocal		:= "01"  //iniciar com armazem 01
 	Local _cObsPrc		:= ""
+	Local _aOndaRel 	:= {}
 	Local _nPos
 
 	Private _cAglutina 	:= ""
@@ -145,15 +148,16 @@ User Function ZPECF008()
 			Endif
 			Conout("[ZPECF008]"+CRLF+_cObsPrc)
 		Else
-			FwMsgRun(,{ |_oSay| ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _cLocal ,/*indica FDR*/, @_cObsPrc , @_oSay ) }, "Separação Orçamentos armazém PADRÃO", "Aguarde...")  //Separação Orçamentos / Aguarde
+			FwMsgRun(,{ |_oSay| ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _cLocal ,/*indica FDR*/, @_cObsPrc , @_aOndaRel, @_oSay ) }, "Separação Orçamentos armazém PADRÃO", "Aguarde...")  //Separação Orçamentos / Aguarde
 			//validar armazem Franco da Rocha caso existam saldos manutenção temporária devido mudança,  DAC 02/02/2023
 			If !Empty(_cArmazemFDR) 
-				FwMsgRun(,{ |_oSay| ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _cArmazemFDR , .T., @_cObsPrc, @_oSay ) }, "Separação Orçamentos armazém "+_cArmazemFDR, "Aguarde...")  //Separação Orçamentos / Aguarde
+				FwMsgRun(,{ |_oSay| ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _cArmazemFDR , .T., @_cObsPrc,  @_aOndaRel, @_oSay ) }, "Separação Orçamentos armazém "+_cArmazemFDR, "Aguarde...")  //Separação Orçamentos / Aguarde
 			Endif
 			MSGINFO( _cObsPrc , "[ZPECF008] - Atenção" )
+			ZPECF08R07(_aOndaRel)
 		Endif
 
-	End Sequence
+	End Sequence 
 	If Select(_cAliasPesq) <> 0
 		(_cAliasPesq)->(DbCloseArea())
 		Ferase(_cAliasPesq+GetDBExtension())
@@ -174,7 +178,7 @@ Responsável pelo processamento Aglutinando e Separando do orçamento passando pel
 @return		Nulo
 @history    06/07/2022 DAC - Alterado select para onda incluído para não trazer com picking preenchido ZK_XPICKI
 /*/
-Static Function ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave , _cLocal, _lArmFDR, _cObsPrc, _oSay )
+Static Function ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave , _cLocal, _lArmFDR, _cObsPrc, _aOndaRel, _oSay )
 Local _cAliasTRB    	:= GetNextAlias()      
 Local _cCliFatDe 		:= _aRet[01]
 Local _cLojaCFDe		:= _aRet[02]
@@ -386,6 +390,9 @@ Begin Sequence
 	//If !_lArmFDR  //caso faça isto dara erro na 10 pois xonda será o mesmo da aglutinação antes de testas FDR
 	_cAglutina := GETSX8NUM("VS1","VS1_XAGLU")
 	VS1->(ConfirmSx8())
+
+	//Aadd(_aOndaRel,_cAglutina)
+
 	//Endif	
 
 	//Caso o usuário informe a numeração do orçamentono parametor inicial e final não executar como bypass DAC 
@@ -711,6 +718,10 @@ Begin Sequence
 			//Envia o picking pata a RG LOG
 			Else
 				StartJob("U_ZWSR007",GetEnvServer(),.F.,_cAglutina, _cPicking, /*_lDataEnv*/, cEmpAnt, cFilAnt, /*_aMens*/)
+				//Incluir processamento da onda somente quando tiver algum titulo gerado
+				If Ascan(_aOndaRel, _cAglutina) == 0
+					Aadd(_aOndaRel,_cAglutina)
+				EndIf
 			EndIf
 		EndIf
 	EndDo
@@ -3209,3 +3220,46 @@ If Select((_cAliasPesq)) <> 0
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif 
 Return _lSepara
+
+
+//DAC Denilso 	19/05/2023 	-  
+/*/{Protheus.doc} ZPECF08R07
+Responsável por Gerar relatório Relação Carga  - Barueri
+@author 	DAC-Denilso
+@since 		19/05/2023
+@version 	undefined
+@param 		_aOndaRel	- Ondas geradas no processo  
+@project    PEC042 - Controle de saldo e e-mail apos integracao de armazenagem - Geração do relatório ZPECR007 no final de qualquer onda 
+@type 		user function
+@obs 
+@menu       Nao Informado
+@return		Nil  
+@history    /*/
+
+Static Function	ZPECF08R07(_aOndaRel)
+Local aRetP 	:= {}
+Local _cOndaRel	:= ""
+Local _nPos
+
+Begin Sequence
+	If Len(_aOndaRel) == 0
+		Break
+	Endif
+	For _nPos := 1 To Len(_aOndaRel)
+		_cOndaRel += (_aOndaRel[_nPos]+";")
+    Next
+	_cOndaRel := SubsTr(_cOndaRel,1,Len(_cOndaRel)-1)
+	//passar parametros para a 
+	aAdd( aRetP , _cOndaRel)  	//Onda
+	aadd( aRetP	, Date()) 		//Data Inicial
+	aadd( aRetP	, Date()) 		//Data Final
+	aAdd( aRetP , Space(TamSx3("VS1_XMARCA")[1]))			//Marca
+	aAdd( aRetP ,.F.)			//HYU - Hyundai
+	aAdd( aRetP ,.F.)			//CHE - Chery
+	aAdd( aRetP ,.F.)			//SBR - Subaru
+	aAdd( aRetP , Space(TamSx3("VS1_XPICKI")[1]))			//Pick Inicial
+	aAdd( aRetP , Repl("Z",TamSx3("VS1_XPICKI")[1]))			//Pick Final
+	U_ZPECR007(aRetP)	
+End Sequence
+
+Return Nil

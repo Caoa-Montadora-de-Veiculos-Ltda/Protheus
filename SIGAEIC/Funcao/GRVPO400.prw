@@ -203,8 +203,8 @@ User Function xGRVP400()
 		_cQrySW3 += "							AND ?				 = SW5.D_E_L_E_T_			"
 		_cQrySW3 += " WHERE	SW3.W3_FILIAL		= ?												"
 		_cQrySW3 += " 	AND	SW3.W3_PO_NUM		= ?												"
-		_cQrySW3 += " 	AND	SW3.W3_FLUXO 		= ?												"
-		_cQrySW3 += " 	AND SW3.W3_SEQ	 		= ?												"
+		//_cQrySW3 += " 	AND	SW3.W3_FLUXO 		= ?												"
+		//_cQrySW3 += " 	AND SW3.W3_SEQ	 		= ?												"
 		_cQrySW3 += "	AND SW3.D_E_L_E_T_		= ?												"
 	EndIf
 
@@ -217,8 +217,8 @@ User Function xGRVP400()
 	Aadd(aBind,Space(01)		)
 	Aadd(aBind,xFilial("SW3")	)
 	Aadd(aBind,SW2->W2_PO_NUM	)
-	Aadd(aBind,'7'				)
-	Aadd(aBind,'1'				)
+	//Aadd(aBind,'7'				)
+	//Aadd(aBind,'1'				)
 	Aadd(aBind,Space(01)		)
 
 	DbUseArea(.T., "TOPCONN", TCGenQry2(,, _cQrySW3, aBind), 'QSW3', .F., .T.)

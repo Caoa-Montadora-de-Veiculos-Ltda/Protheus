@@ -492,7 +492,7 @@ Begin Sequence
 		VS1->VS1_TIPVEN := _cTipoVenda	
 		VS1->VS1_NATURE	:= _cNatureza
 		VS1->VS1_OBSCON := Upper(AllTrim(_oJson:GetJsonText("comentario")))
-		If VS1->VS1_XTPPED == AllTrim(SuperGetMV( "CMV_WSR047"  ,,"016"))	//Msg para NF Mudança FDR
+		If VS1->VS1_XTPPED $ AllTrim(SuperGetMV( "CMV_WSR050"  ,,"016;007"))	//Tipos de Pedidos com Msg para NF
 			VS1->VS1_MENNOT := Upper(AllTrim(_oJson:GetJsonText("comentario")))
 		Endif
 		//(De/Para Autoware) cdMarca Marca

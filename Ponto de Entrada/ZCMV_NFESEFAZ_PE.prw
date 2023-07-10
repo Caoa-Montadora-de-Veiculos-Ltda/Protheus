@@ -661,36 +661,50 @@ User Function ZCMV_NFESEFAZ()
 				ConOut("SF1 - Notas de Importação "  + SF1->F1_DOC + " SERIE: " + SF1->F1_SERIE + " OBTER DADOS DA TAG INFADICIONAL VEICULO" )
 
 				cCmd :=        " SELECT "
-				cCmd += CRLF + "   VE1_DESMAR,"
-				cCmd += CRLF + "   VVB_DESCRI,"
-				cCmd += CRLF + "   VVB_DESCRI,"
-				cCmd += CRLF + "   VV2_QTDPAS,"
-				cCmd += CRLF + "   VVC_DESCRI,"
-				cCmd += CRLF + "   CD9_TPCOMB,"
-				cCmd += CRLF + "   CD9_CHASSI,"
-				cCmd += CRLF + "   WN_ANOFAB ,"
-				cCmd += CRLF + "   WN_ANOMOD ,"
-				cCmd += CRLF + "   CD9_SERIAL,"
-				cCmd += CRLF + "   W9_DT_EMIS,"
-				cCmd += CRLF + "   WN_INVOICE "
-				cCmd += CRLF + "  FROM " + RetSQLName("SD1")
-				cCmd += CRLF + "  INNER JOIN " + RetSQLName("CD9") + "  ON CD9010.D_E_L_E_T_ = ' ' AND CD9_FILIAL = D1_FILIAL AND CD9_DOC = D1_DOC"
-				cCmd += CRLF + "            AND CD9_SERIE = D1_SERIE AND CD9_CLIFOR = D1_FORNECE AND CD9_LOJA = D1_LOJA"
-				cCmd += CRLF + "  LEFT JOIN " + RetSQLName("VV2") + "  ON VV2010.D_E_L_E_T_ = ' ' AND VV2_PRODUT = D1_COD"
-				cCmd += CRLF + "  LEFT JOIN " + RetSQLName("VE1") + "  ON VE1010.D_E_L_E_T_ = ' ' AND VE1_CODMAR = VV2_CODMAR"
-				cCmd += CRLF + "  LEFT JOIN " + RetSQLName("VVB") + "  ON VVB010.D_E_L_E_T_ = ' ' AND VVB_CATVEI = VV2_CATVEI"
-				cCmd += CRLF + "  LEFT JOIN " + RetSQLName("VVC") + "  ON VVC010.D_E_L_E_T_ = ' ' AND VV2_CODMAR = VVC_CODMAR AND VVC_CORVEI = VV2_COREXT"
-				cCmd += CRLF + "  LEFT JOIN " + RetSQLName("SWN") + "  ON SWN010.D_E_L_E_T_ = ' ' AND WN_FILIAL  = D1_FILIAL  AND WN_DOC = D1_DOC AND WN_SERIE = D1_SERIE"
-				cCmd += CRLF + " 	    AND WN_FORNECE = D1_FORNECE AND WN_LOJA = D1_LOJA AND WN_XVIN = D1_CHASSI "
-				cCmd += CRLF + "  LEFT  JOIN " + RetSQLName("SW9") + "  ON SW9010.D_E_L_E_T_ = ' ' AND W9_FILIAL = WN_FILIAL AND W9_INVOICE = WN_INVOICE"
+				cCmd += CRLF + "   VE1.VE1_DESMAR,"
+				cCmd += CRLF + "   VVB.VVB_DESCRI,"
+				cCmd += CRLF + "   VVB.VVB_DESCRI,"
+				cCmd += CRLF + "   VV2.VV2_QTDPAS,"
+				cCmd += CRLF + "   VVC.VVC_DESCRI,"
+				cCmd += CRLF + "   CD9.CD9_TPCOMB,"
+				cCmd += CRLF + "   CD9.CD9_CHASSI,"
+				cCmd += CRLF + "   SWN.WN_ANOFAB ,"
+				cCmd += CRLF + "   SWN.WN_ANOMOD ,"
+				cCmd += CRLF + "   CD9.CD9_SERIAL,"
+				cCmd += CRLF + "   SW9.W9_DT_EMIS,"
+				cCmd += CRLF + "   SWN.WN_INVOICE,"
+				cCmd += CRLF + "   SW6.W6_DI_NUM, "
+				cCmd += CRLF + "   SW6.W6_DTREG_D "
+				cCmd += CRLF + "  FROM " + RetSQLName("SD1") + " SD1 "
+				cCmd += CRLF + "  INNER JOIN " + RetSQLName("CD9") + " CD9 "
+				cCmd += CRLF + "  		ON  CD9.D_E_L_E_T_ = ' ' "
+				cCmd += CRLF + "  		AND CD9.CD9_FILIAL = SD1.D1_FILIAL "
+				cCmd += CRLF + "  		AND CD9.CD9_DOC    = SD1.D1_DOC"
+				cCmd += CRLF + "        AND CD9.CD9_SERIE  = SD1.D1_SERIE "
+				cCmd += CRLF + "  		AND CD9.CD9_CLIFOR = SD1.D1_FORNECE "
+				cCmd += CRLF + "  		AND CD9.CD9_LOJA   = SD1.D1_LOJA"
+				cCmd += CRLF + "  LEFT JOIN " + RetSQLName("SWN") + " SWN "
+				cCmd += CRLF + " 	    ON  SWN.D_E_L_E_T_ = ' ' 
+				cCmd += CRLF + " 	    AND SWN.WN_FILIAL  = SD1.D1_FILIAL  
+				cCmd += CRLF + " 	    AND SWN.WN_DOC     = SD1.D1_DOC 
+				cCmd += CRLF + " 	    AND SWN.WN_SERIE   = SD1.D1_SERIE"
+				cCmd += CRLF + " 	    AND SWN.WN_FORNECE = SD1.D1_FORNECE 
+				cCmd += CRLF + " 	    AND SWN.WN_LOJA    = SD1.D1_LOJA 
+				cCmd += CRLF + " 	    AND SWN.WN_XVIN    = SD1.D1_CHASSI "
+				cCmd += CRLF + "  LEFT JOIN " + RetSQLName("SW9") + " SW9 ON SW9.D_E_L_E_T_ = ' ' AND SW9.W9_FILIAL  = SWN.WN_FILIAL AND SW9.W9_INVOICE = SWN.WN_INVOICE"
+				cCmd += CRLF + "  LEFT JOIN " + RetSQLName("VV2") + " VV2 ON VV2.D_E_L_E_T_ = ' ' AND VV2.VV2_PRODUT = SD1.D1_COD"
+				cCmd += CRLF + "  LEFT JOIN " + RetSQLName("VE1") + " VE1 ON VE1.D_E_L_E_T_ = ' ' AND VE1.VE1_CODMAR = VV2.VV2_CODMAR"
+				cCmd += CRLF + "  LEFT JOIN " + RetSQLName("VVB") + " VVB ON VVB.D_E_L_E_T_ = ' ' AND VVB.VVB_CATVEI = VV2.VV2_CATVEI"
+				cCmd += CRLF + "  LEFT JOIN " + RetSQLName("VVC") + " VVC ON VVC.D_E_L_E_T_ = ' ' AND VVC.VVC_CODMAR = VV2.VV2_CODMAR AND VVC.VVC_CORVEI = VV2.VV2_COREXT"
+				cCmd += CRLF + "  LEFT JOIN " + RetSQLName("SW6") + " SW6 ON SW6.D_E_L_E_T_ = ' ' AND SW6.W6_HAWB    = SWN.WN_HAWB "
 				cCmd += CRLF + "  WHERE "
-				cCmd += CRLF + "       SD1010.D_E_L_E_T_ = ' ' "
-				cCmd += CRLF + "  AND D1_FILIAL = '" + SF1->F1_FILIAL  + "' "
-				cCmd += CRLF + "  AND D1_DOC    = '" + SF1->F1_DOC     + "' "
-				cCmd += CRLF + "  AND D1_SERIE  = '" + SF1->F1_SERIE   + "' "
-				cCmd += CRLF + "  AND D1_FORNECE= '" + SF1->F1_FORNECE + "' "
-				cCmd += CRLF + "  AND D1_LOJA   = '" + SF1->F1_LOJA    + "' "
-				cCmd += CRLF + "  AND ROWNUM <= 1 "
+				cCmd += CRLF + "           SD1.D_E_L_E_T_ = ' ' "
+				cCmd += CRLF + "       AND SD1.D1_FILIAL = '" + SF1->F1_FILIAL  + "' "
+				cCmd += CRLF + "       AND SD1.D1_DOC    = '" + SF1->F1_DOC     + "' "
+				cCmd += CRLF + "       AND SD1.D1_SERIE  = '" + SF1->F1_SERIE   + "' "
+				cCmd += CRLF + "       AND SD1.D1_FORNECE= '" + SF1->F1_FORNECE + "' "
+				cCmd += CRLF + "       AND SD1.D1_LOJA   = '" + SF1->F1_LOJA    + "' "
+				cCmd += CRLF + "       AND ROWNUM <= 1 "
 				cCmd += CRLF + "  ORDER BY D1_ITEM "
 
 				I := 1
@@ -700,18 +714,18 @@ User Function ZCMV_NFESEFAZ()
 					ConOut("SF1 - Notas de Importação "  + SF1->F1_DOC + " SERIE: " + SF1->F1_SERIE + " MONTAGEM DA TAG INFADICIONAL VEICULO" )
 
 					aProd[I, 25] := " Renavan: 0000000000"
-					aProd[I, 25] += " Marca:" + Alltrim((cQry)->VE1_DESMAR)
-					aProd[I, 25] += " Tipo:"  + Alltrim((cQry)->VVB_DESCRI)
-					aProd[I, 25] += " Motor:" + Alltrim((cQry)->CD9_SERIAL)
-					aProd[I, 25] += " Pass:"  + CvalTochar((cQry)->VV2_QTDPAS)
-					aProd[I, 25] += " Combu:" + Alltrim(aComb[aScan(aComb,{|x| x[1] == (cQry)->CD9_TPCOMB})][02])
-					aProd[I, 25] += " Cor:"   + Alltrim((cQry)->VVC_DESCRI)
-					aProd[I, 25] += " Chassi:"+ Alltrim((cQry)->CD9_CHASSI)
-					aProd[I, 25] += " Fab:"   + Substr((cQry)->WN_ANOFAB, 1, 4)
-					aProd[I, 25] += " Mod:"   + Substr((cQry)->WN_ANOMOD, 1, 4)
-					aProd[I, 25] += " Serie:" + Right(Alltrim((cQry)->CD9_CHASSI), 8)
-					aProd[I, 25] += " Di:"    + Alltrim((cQry)->WN_INVOICE)
-					aProd[I, 25] += " DtDi:"  + Dtoc(sTod((cQry)->W9_DT_EMIS))
+					aProd[I, 25] += " Marca:" + Alltrim( (cQry)->VE1_DESMAR )
+					aProd[I, 25] += " Tipo:"  + Alltrim( (cQry)->VVB_DESCRI )
+					aProd[I, 25] += " Motor:" + Alltrim( (cQry)->CD9_SERIAL )
+					aProd[I, 25] += " Pass:"  + CvalTochar( (cQry)->VV2_QTDPAS )
+					aProd[I, 25] += " Combu:" + Alltrim( aComb[ aScan (aComb,{ |x| x[1] == (cQry)->CD9_TPCOMB} ) ] [ 02 ] )
+					aProd[I, 25] += " Cor:"   + Alltrim( (cQry)->VVC_DESCRI )
+					aProd[I, 25] += " Chassi:"+ Alltrim( (cQry)->CD9_CHASSI )
+					aProd[I, 25] += " Fab:"   + Substr( (cQry)->WN_ANOFAB, 1, 4 )
+					aProd[I, 25] += " Mod:"   + Substr( (cQry)->WN_ANOMOD, 1, 4 )
+					aProd[I, 25] += " Serie:" + Right( Alltrim( (cQry)->CD9_CHASSI ), 8)
+					aProd[I, 25] += " Di:"    + Alltrim( (cQry)->W6_DI_NUM )
+					aProd[I, 25] += " DtDi:"  + Dtoc( sTod( (cQry)->W6_DTREG_D ) )
 
 					I++
 					(cQry)->(DbSkip())

@@ -405,7 +405,7 @@ Begin Sequence
 	SZ1->Z1_DTRET    := _dData
 	SZ1->Z1_HSRET  	 := Time()
 	SZ1->Z1_DOCORI   := Alltrim(_cDoc)
-	If SZK->(FieldPos("Z1_SERORI")) > 0
+	If SZ1->(FieldPos("Z1_SERORI")) > 0
 		SZ1->Z1_SERORI   := Alltrim(_cSerie)
 	EndIf	
 	SZ1->Z1_TMPPRO   := _cTempo

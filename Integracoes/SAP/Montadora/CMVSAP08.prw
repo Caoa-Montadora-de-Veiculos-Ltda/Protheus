@@ -117,6 +117,7 @@ user function CMVSAP08( aParam )
 	cQry += " 							AND SZ7B.Z7_SERORI  = SZ7.Z7_SERORI  " + CRLF
 	cQry += " 							AND SZ7B.Z7_CLIFOR  = SZ7.Z7_CLIFOR   " + CRLF
 	cQry += " 							AND SZ7B.Z7_LOJA    = SZ7.Z7_LOJA " + CRLF
+	cQry += "							AND SZ7B.Z7_XCHAVE  = SZ7.Z7_XCHAVE " + CRLF
 	cQry += " 							AND SZ7B.D_E_L_E_T_ = ' ' " + CRLF
 	cQry += " 							AND SZ7B.Z7_XSTATUS = 'E' " + CRLF
 	cQry += " 							AND ROWNUM = 1 ) " + CRLF
@@ -445,7 +446,7 @@ user function CMVSAP08( aParam )
 		
 					cUsu := Alltrim(Subs((cAliasCT2)->CT2_ORIGEM,9,15)) 
 					nPos := aScan( aSimple, {|aVet| aVet[2] == "textoCabecalhoDocumento" } )
-					xRet := oWsdl:SetValue( aSimple[nPos][1], IIf(!Empty((cAliasCT2)->CT2_XNOME),Alltrim((cAliasCT2)->CT2_XNOME),IIf(!Empty(cUsu),cUsu,Embaralha((cAliasCT2)->CT2_USERGI)))) 	//textoCabecalhoDocumento - Nome do usuário que efetuou o lançamento
+					xRet := oWsdl:SetValue( aSimple[nPos][1] , Substr( IIf(!Empty((cAliasCT2)->CT2_XNOME),Alltrim((cAliasCT2)->CT2_XNOME),IIf(!Empty(cUsu),cUsu,Embaralha((cAliasCT2)->CT2_USERGI))),1,25))
 					If !xRet
 						U_ZF12GENSAP((cAliasQry)->Z7_FILIAL,(cAliasQry)->Z7_XTABELA,(cAliasQry)->Z7_XCHAVE,(cAliasQry)->Z7_XSEQUEN,"E","textoCabecalhoDocumento Erro: " + oWsdl:cError)
 						(cAliasQry)->(dbSkip())
@@ -634,7 +635,12 @@ user function CMVSAP08( aParam )
 					Endif	
 				EndIf
 			EndIf
-
+		else
+			If lIsBlind
+				Conout("Erro de Conexão CMVSAP08 Error Http: " + Str(nStatuHttp) )
+			else
+				Alert("Erro de Conexão Error Http: " + Str(nStatuHttp) )
+			endif
 		EndIf
 		(cAliasQry)->(dbSkip())
 	EndDo

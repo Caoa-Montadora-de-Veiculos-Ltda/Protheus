@@ -52,14 +52,14 @@ Static Function zSelect(nRadio)
 
 	If nRadio == 1
 		If Pergunte( cPergR1	,.T.	)
-			cArquivo := cGetFile(cExtens,cTitulo,,cMainPath,.F.)
+			cArquivo := cGetFile(cExtens,cTitulo,,cMainPath,.F.,)
 			If !Empty(cArquivo)
 				Processa({|| zRel0001(cArquivo)}	,"Gerando Relatório de Notas Fiscais de Entrada..."	)
 			EndIf
 		EndIf
 	Else
 		If Pergunte( cPergR2	,.T.	)
-			cArquivo := cGetFile(cExtens,cTitulo,,cMainPath,.F.)
+			cArquivo := cGetFile(cExtens,cTitulo,,cMainPath,.F.,)
 			If !Empty(cArquivo)
 				Processa({|| zRel0002(cArquivo)}	,"Gerando Relatório de Notas Fiscais de Saída..."	)
 			EndIf
@@ -128,7 +128,7 @@ Static Function zRel0001(cArquivo)
 
 	cQuery += " SELECT 	D1_FILIAL, D1_COD, D1_DOC, D1_SERIE, D1_TES, D1_CF, D1_FORNECE, D1_LOJA, D1_EMISSAO, D1_DTDIGIT, " 			+ CRLF
 	cQuery += " D1_ITEM, F4_FINALID, F4_TEXTO, FT_CTIPI, FT_CSTPIS, FT_CSTCOF, F4_ICM, F4_IPI, F4_CREDICM, F4_CREDIPI, F4_DUPLIC, "	+ CRLF
-	cQuery += "	B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NBM, "								  			+ CRLF
+	cQuery += "	B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, "								  			+ CRLF
 	cQuery += "	F1_ESPECIE, F1_CODNFE, F1_MENNOTA, F1_DOC, F1_SERIE, F1_STATUS, F1_TIPO, FT_CHVNFE, "								+ CRLF
 	cQuery += " FT_VALCONT, D1_CONTA, D1_ITEMCTA, D1_NFORI, D1_SERIORI, D1_VUNIT, D1_TOTAL, "										+ CRLF
 	cQuery += " D1_DESC, FT_CLASFIS, FT_BASERET, FT_ICMSRET, D1_DESCZFP, D1_DESCZFC,  "												+ CRLF
@@ -260,7 +260,7 @@ Static Function zRel0001(cArquivo)
 
 	cQuery += " GROUP BY 	D1_FILIAL, D1_COD, D1_DOC, D1_SERIE, D1_TES, D1_CF, D1_FORNECE, D1_LOJA, D1_EMISSAO, D1_DTDIGIT, " 		+ CRLF
 	cQuery += " D1_ITEM, F4_FINALID, F4_TEXTO, FT_CTIPI, FT_CSTPIS, FT_CSTCOF,  F4_ICM, F4_IPI, F4_CREDICM, F4_CREDIPI, F4_DUPLIC, "+ CRLF
-	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NBM, "											+ CRLF
+	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, "											+ CRLF
 	cQuery += "	F1_ESPECIE, F1_CODNFE, F1_MENNOTA, F1_DOC, F1_SERIE, F1_STATUS, F1_TIPO, FT_CHVNFE,"								+ CRLF
 	cQuery += " FT_VALCONT, D1_CONTA, D1_ITEMCTA, D1_NFORI, D1_SERIORI, D1_VUNIT, D1_TOTAL, "										+ CRLF
 	cQuery += " D1_DESC, FT_CLASFIS, FT_BASERET, FT_ICMSRET, D1_DESCZFP, D1_DESCZFC,  "												+ CRLF
@@ -664,7 +664,7 @@ Static Function zRel0001(cArquivo)
 														Alltrim( (cAliasTRB)->F4_FINALID ),;    //--Finalidade TES
 														AllTrim( (cAliasTRB)->B1_ORIGEM ),;    //--Origem do Produto
 														AllTrim( (cAliasTRB)->B1_POSIPI ),;    //--NCM
-														AllTrim( (cAliasTRB)->B1_EX_NBM ),;    //--Ex-NBM
+														AllTrim( (cAliasTRB)->B1_EX_NCM ),;    //--Ex-NBM
 														AllTrim( cModVei ),;    //--Modelo Veículo
 														AllTrim( (cAliasTRB)->VRK_OPCION ),;    //--Opcional
 														AllTrim( (cAliasTRB)->B1_GRUPO ),;    //--Grupo\Linha
@@ -1005,7 +1005,7 @@ Static Function zRel0002(cArquivo)
 
 	cQuery += " SELECT D2_FILIAL, D2_COD, D2_DOC,D2_SERIE, D2_TES, D2_CF,D2_CLIENTE,D2_LOJA,D2_EMISSAO, D2_ITEMPV, "		+ CRLF
 	cQuery += " F4_FINALID, F4_TEXTO, FT_CTIPI, FT_CSTPIS, FT_CSTCOF, F4_ICM, F4_IPI, F4_CREDICM, F4_CREDIPI, F4_DUPLIC, "	+ CRLF
-	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NBM, D2_ITEM, "							+ CRLF
+	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, D2_ITEM, "							+ CRLF
 	cQuery += " F2_ESPECIE,F2_CODNFE,F2_MENNOTA,F2_USERLGI,F2_USERLGA,F2_TIPO, FT_CHVNFE,F2_DOC, F2_SERIE, F2_FIMP,  " 		+ CRLF
 	cQuery += " FT_VALCONT, F2_FORMUL, D2_CONTA, D2_NFORI, D2_SERIORI, D2_PRUNIT,D2_TOTAL, "								+ CRLF
 	cQuery += " D2_DESC, FT_CLASFIS, D2_DESCZFP, D2_DESCZFC, D2_TIPO, "														+ CRLF
@@ -1125,7 +1125,7 @@ Static Function zRel0002(cArquivo)
 
 	cQuery += " GROUP BY D2_FILIAL, D2_COD, D2_DOC,D2_SERIE, D2_TES, D2_CF,D2_CLIENTE,D2_LOJA,D2_EMISSAO, D2_ITEMPV, "		+ CRLF
 	cQuery += " F4_FINALID, F4_TEXTO, FT_CTIPI, FT_CSTPIS, FT_CSTCOF, F4_ICM, F4_IPI, F4_CREDICM, F4_CREDIPI, F4_DUPLIC, "	+ CRLF
-	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NBM, D2_ITEM, "							+ CRLF
+	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, D2_ITEM, "							+ CRLF
 	cQuery += " F2_ESPECIE,F2_CODNFE,F2_MENNOTA,F2_USERLGI,F2_USERLGA,F2_TIPO, FT_CHVNFE,F2_DOC, F2_SERIE, F2_FIMP,  " 		+ CRLF
 	cQuery += " FT_VALCONT, F2_FORMUL, D2_CONTA, D2_NFORI, D2_SERIORI, D2_PRUNIT,D2_TOTAL, "								+ CRLF
 	cQuery += " D2_DESC, FT_CLASFIS, D2_DESCZFP, D2_DESCZFC, D2_TIPO, "														+ CRLF
@@ -1529,7 +1529,7 @@ Static Function zRel0002(cArquivo)
 														Alltrim( (cAliasTRB)->F4_FINALID ),;    //--Finalidade TES
 														AllTrim( (cAliasTRB)->B1_ORIGEM ),;    //--Origem do Produto
 														AllTrim( (cAliasTRB)->B1_POSIPI ),;    //--NCM
-														AllTrim( (cAliasTRB)->B1_EX_NBM ),;    //--Ex-NBM
+														AllTrim( (cAliasTRB)->B1_EX_NCM ),;    //--Ex-NBM
 														AllTrim( cModVei ),;    //--Modelo Veículo
 														AllTrim( (cAliasTRB)->VRK_OPCION ),;    //--Opcional
 														AllTrim( (cAliasTRB)->B1_GRUPO ),;    //--Grupo\Linha
