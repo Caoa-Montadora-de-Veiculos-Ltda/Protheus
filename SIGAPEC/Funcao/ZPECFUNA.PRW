@@ -3229,6 +3229,7 @@ Return Nil
 @return  	NIL
 @project
 @history    Tranferência Interna Mútipla (Divergência)   
+			PEC042 - Controle de saldo e e-mail apos integracao de armazenagem - Ajuste para localizar dcto D3 NextNumero
 @obs         
   	VM5.VM5_CODIGO , (cAlVM5)->VM6_QTORIG - (cAlVM5)->VM6_QTCONF , cArmorig, cArmdes
     	     01                         02    -    Qtde                   03        04
@@ -3243,7 +3244,7 @@ User Function XMOVA261(_cNumOrc, _cCodProd, _cArmorig, _cArmdes, _nQtde, _nRegvs
 	Local _aAuto  		:= {}
 	Local _aLinha 		:= {}
 	Local _nOpcAuto     := 0
-	Local _cDocumen     := ""
+	Local _cDocumento   := ""
 	Local _lRet 		:= .T.
 	Local _aMsgErro		:= {}
 	Local _cErro
@@ -3299,8 +3300,25 @@ User Function XMOVA261(_cNumOrc, _cCodProd, _cArmorig, _cArmdes, _nQtde, _nRegvs
 			Break
 		Endif	
 
-		_cDocumen := GetSxeNum("SD3","D3_DOC")
-		aadd(_aAuto,{_cDocumen , dDataBase})    //Cabecalho
+		//_cDocumento := GetSxeNum("SD3","D3_DOC") //não pode ser do SX
+		//Implementado pois em alguns casos não esta conseguindo localizar numeração subindo com PEC042 DAC-07/06/2023
+		_cDocumento := ""
+		For _nPos := 1 To 10
+			_cDocumento := Criavar("D3_DOC")
+			_cDocumento	:= IIf(Empty(_cDocumento),NextNumero("SD3",2,"D3_DOC",.T.),_cDocumento)
+			If !Empty(_cDocumento)
+				Exit
+			Endif 
+		Next 	
+		If Empty(_cDocumento)
+			_cErro := "Não foi possivel montar numeração SD3, para gerar movimentação." 
+			AAdd(_aMsgErro, _cErro)
+			MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
+			_lRet := .F.
+			Break
+		Endif
+		_cDocumento	:= A261RetINV(_cDocumento)
+		aadd(_aAuto,{_cDocumento , dDataBase})    //Cabecalho
 
 		//Itens a Incluir
 		SB1->(DbSetOrder(1))
@@ -3406,7 +3424,7 @@ User Function XMOVA261(_cNumOrc, _cCodProd, _cArmorig, _cArmdes, _nQtde, _nRegvs
 		Next _nPos
 	ElseIf Len(_aMsgErro) == 0 .and. _lRet
 		_cObs += "Gravado movimentação do produto "+AllTrim(_cCodProd)+" qtde "+AllTrim(Str(_nQtde))+" do armazem "+_cArmorig+" para o armazem "+_cArmdes + CRLF
-		_cObs += "Dcto movimentação "+_cDocumen	+ CRLF
+		_cObs += "Dcto movimentação "+_cDocumento	+ CRLF
 	Else
 		_cObs += "Ocorreram erros na mivimentação de armazem  do produto "+_cCodProd + CRLF
 	Endif
@@ -3573,8 +3591,28 @@ User Function XAPAVM5VM6Carregamento(_cNumOrc, _aMsg)
 Return _lRet
 
 
-//localizar saldo em estoque 
-//DAC 25/05/2022
+/*/{Protheus.doc} XSLDCAOAEstoque
+Responsável por localizar saldo em estoque
+@author 	DAC-Denilso
+@since 		25/05/2022
+@version 	undefined
+@param 		_cProduto	- Produto
+			_cArmazem	- Armazém
+			_cGrupo		- Grupo do Produto
+			_nSaldoSB2	- Saldo Protheus
+			_cMarca		- Marca 
+@type 		user function
+@project    
+@return		_lRet		- Se foi calculado corretamente 
+			_nSaldo		- Saldo entre as empresas 
+			_cMens		- Mensagens do processo 
+			_cCodProdRet- Produto avaliado 
+			_cArmazemRet- Armazem avaliado 
+			_cGrupoRet	- Grupo do produto avaliado
+
+@ Obs		
+@history    
+/*/
 User Function XSLDCAOAEstoque(_cCodProd, _cArmazem, _cGrupo, _nSaldoSB2, _cMarca )
 	Local _lRet 		:= .T.
 	Local _nSaldo		:= 0
@@ -3661,13 +3699,29 @@ Return {_lRet, _nSaldo, AllTrim(_cMens), _cCodProdRet, _cArmazemRet, _cGrupoRet}
 
 
 
-//Localizar Saldo WiS conexão Tclink 
-//Evandro 26/05/2022
+/*/{Protheus.doc} zSaldoWis
+Responsável por verificar limite de crédito na liberação
+@author 	DAC-Denilso
+@since 		15/02/2022
+@version 	undefined
+@param 		_cProduto	- Produto
+			_cMarca		- Marca 
+			_cArmazem	- Armazém
+@type 		user function
+@project    
+@return		_nSaldoWis - Saldo existente no WIS
+@ Obs		
+@history    Evandro 		26/05/2022	- Localizar Saldo WiS conexão Tclink 
+			DAC Denilso 	19/05/2023 	- PEC042 - Controle de saldo e e-mail apos integracao de armazenagem 
+										  Zé ajustou a funcionalidade para localizar resserva de acordo com parâmetro _lResIntegr
+/*/
 User Function zSaldoWis(_cProduto, _cMarca, _cArmazem)
 	Local cQryWis	  	:= ""
 	Local cAlsWis		:= GetNextAlias()
 	Local _nSaldoWis    := 0
-	Local _cConectWis  := AllTrim(SuperGetMV( "CMV_PEC031"  ,,"WIS.V_ENDERECO_ESTOQUE@DBLINK_WISPROD")) 
+	Local _cConectWis   := AllTrim(SuperGetMV( "CMV_PEC031"  ,,"WIS.V_ENDERECO_ESTOQUE@DBLINK_WISPROD"))
+	Local _lResIntegr   := SuperGetMV( "CMV_PEC040"  ,,.T.)
+	Local _lVlLocWis   	:= SuperGetMV( "CMV_PEC041"  ,,.T.)
 
 	Default _cMarca 	:= ""
 	Default _cArmazem	:= ""
@@ -3675,8 +3729,13 @@ User Function zSaldoWis(_cProduto, _cMarca, _cArmazem)
     If Select( (cAlsWis) ) > 0
 	    (cAlsWis)->(DbCloseArea())
 	EndIf
-
-	cQryWis := " SELECT NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) AS QTDE_EST "
+	//implementado por José Totvs 19/05/2023
+	If _lResIntegr
+		cQryWis := " SELECT CASE WHEN NVL((SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA-ESTWIS.QT_TRANSITO_SAIDA)),0) > 0 THEN NVL((SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA-ESTWIS.QT_TRANSITO_SAIDA)),0) ELSE 0 END AS QTDE_EST "
+	Else
+		cQryWis := " SELECT NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) AS QTDE_EST "
+	Endif
+	//cQryWis := " SELECT NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) AS QTDE_EST "
 	cQryWis += " FROM " + _cConectWis + " ESTWIS "
     cQryWis += " WHERE RTRIM(LTRIM(ESTWIS.CD_PRODUTO)) = '" + AllTrim(_cProduto) + "' "
 
@@ -3686,11 +3745,13 @@ User Function zSaldoWis(_cProduto, _cMarca, _cArmazem)
     	cQryWis += " AND CD_EMPRESA = 1002 " //-- CHE
 	EndIf
  	
-	If _cArmazem == "01" //BARUERI
-		cQryWis += " AND ARMAZEM = 'BAR' " //-- Armazenagem BARUERI.
-	ElseIf _cArmazem == "11" //FRANCO DA ROCHA
-		cQryWis += " AND ARMAZEM = 'FDR' " //-- Armazenagem FRANCO DA ROCHA
-	EndIf
+	If _lVlLocWis	
+		If _cArmazem == "01" //BARUERI
+			cQryWis += " AND ARMAZEM = 'BAR' " //-- Armazenagem BARUERI.
+		ElseIf _cArmazem == "11" //FRANCO DA ROCHA
+			cQryWis += " AND ARMAZEM = 'FDR' " //-- Armazenagem FRANCO DA ROCHA
+		EndIf
+	Endif
  
     DbUseArea( .T., "TOPCONN", TcGenQry(,,cQryWis), cAlsWis, .T., .T. )
 
@@ -3705,7 +3766,6 @@ User Function zSaldoWis(_cProduto, _cMarca, _cArmazem)
 		(cAlsWis)->(DbCloseArea())
 		Ferase(cAlsWis+GetDBExtension())
 	Endif 
-
 Return(_nSaldoWis)
 
 
@@ -4024,6 +4084,7 @@ Return(_cRet)
 @return  	NIL
 @project
 @history    Tranferência Interna Mútipla (Divergência)   
+			PEC042 - Controle de saldo e e-mail apos integracao de armazenagem - Ajuste para localizar dcto D3 NextNumero
 @obs         
   	VM5.VM5_CODIGO , (cAlVM5)->VM6_QTORIG - (cAlVM5)->VM6_QTCONF , cArmorig, cArmdes
     	     01                         02    -    Qtde                   03        04
@@ -4085,13 +4146,32 @@ User Function XRESCAOAPEC(_cNumOrc, _lReserva, _aRegVS3, _cArmOrig, _cArmDes, _l
 		Begin Transaction
 			//incluir itens VS3
 			//montar por numero de registro	
-			_cDocumento := GetSxeNum("SD3","D3_DOC")
-			_aItens 	:= XRESCAOATR(_cNumOrc, _lReserva, @_aRegVS3, _cArmorig, _cArmdes, _cDocumento, @_aMsg)
-			If Len(_aItens) == 0
-				AAdd(_aMsg,"Não foi possivel fazer transferências ref  orçamento " +_cNumOrc+ ", não será realizada a Reserva comunicar ADM Sistemas!!! ")
+			//_cDocumento := GetSxeNum("SD3","D3_DOC")  //não pode ser pelo SX
+			//Implementado pois em alguns casos não esta conseguindo localizar numeraçãp
+			_cDocumento := ""
+			For _nPos := 1 To 10
+				_cDocumento  := Criavar("D3_DOC")
+				_cDocumento	:= IIf(Empty(_cDocumento),NextNumero("SD3",2,"D3_DOC",.T.),_cDocumento)
+				If !Empty(_cDocumento)
+					Exit
+				Endif 
+			Next 	
+			If Empty(_cDocumento)
+				_cMens := "Não foi possivel montar numeração SD3, para gerar movimentação." 
+				Aadd(_aMsg,_cErro)
 				_lRet := .F.
 				Disarmtransaction()
-			EndIf
+			Else
+				_cDocumento	:= A261RetINV(_cDocumento)
+			Endif 
+			If _lRet 		
+				_aItens 	:= XRESCAOATR(_cNumOrc, _lReserva, @_aRegVS3, _cArmorig, _cArmdes, _cDocumento, @_aMsg)
+				If Len(_aItens) == 0
+					AAdd(_aMsg,"Não foi possivel fazer transferências ref  orçamento " +_cNumOrc+ ", não será realizada a Reserva comunicar ADM Sistemas!!! ")
+					_lRet := .F.
+					Disarmtransaction()
+				EndIf
+			Endif	
 			If _lRet 		
 				_aAuto := Aclone({})
 				Aadd(_aAuto,{_cDocumento , dDataBase})    //Cabecalho
@@ -5034,6 +5114,7 @@ Mostrat Orçamento
 @author DAC - Denilso 
 @since 31/05/2023
 @version 2.0
+@project	PEC044 - Revitalização Consulta Peças - Abri consulta orçamento
 /*/
 User Function XFVERORC(_cAliasPesq,_ObrW)
 Local _lRet     := .T.
