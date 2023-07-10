@@ -5117,58 +5117,58 @@ Mostrat Orçamento
 @project	PEC044 - Revitalização Consulta Peças - Abri consulta orçamento
 /*/
 User Function XFVERORC(_cAliasPesq,_ObrW)
-Local _lRet     := .T.
-Local _nOpc     := 2
-Local _aArea := GetArea()
+Local _lRet     	:= .T.
+Local _nOpc     	:= 2
+Local _aArea 		:= GetArea()
 Local _nReg
 //infelizmente é necessário carregar as variaveis abaixo para que abra a tela de orçamento DAC
-Private cCadastro := "Orçamento"
-Private aItensKit := {}
-Private aPedTransf := {}
-Private cGruFor   := "04" 										// Grupo de Formulas que podem ser utilizadas nos orcamentos
-Private lVAMCid  		:= GetNewPar("MV_CADCVAM","S") == "S" 	// Utiliza VAM (Cidades)?
+Private cCadastro 	:= "Orçamento"
+Private aItensKit 	:= {}
+Private aPedTransf 	:= {}
+Private cGruFor   	:= "04" 										// Grupo de Formulas que podem ser utilizadas nos orcamentos
+Private lVAMCid  	:= GetNewPar("MV_CADCVAM","S") == "S" 	// Utiliza VAM (Cidades)?
 Private lRecompra  	:= .F.										// Indica se eh um orcamento para recompra
-Private lPassou := .f.											// Tratamento da mudanca de aba na funcao OX001MUDFOL()
-Private aIteRel := {{"","","",0,0,"","",""}}					// Vetor contendo os itens relacionados da listbox oLItRel
-Private aMemos1   := {{"VS1_OBSMEM","VS1_OBSERV"}}				// Observacao do Orcamento
+Private lPassou 	:= .f.											// Tratamento da mudanca de aba na funcao OX001MUDFOL()
+Private aIteRel 	:= {{"","","",0,0,"","",""}}					// Vetor contendo os itens relacionados da listbox oLItRel
+Private aMemos1   	:= {{"VS1_OBSMEM","VS1_OBSERV"}}				// Observacao do Orcamento
 Private lAbortPrint	:= .f.										// Variavel de Aborto de Operacao
-Private lOrcJaRes := .f.
-Private dDatOrc := ctod("")
+Private lOrcJaRes 	:= .f.
+Private dDatOrc 	:= ctod("")
 //
 Private cMV_VERIORC := Alltrim(GetNewPar("MV_VERIORC","1"))
-Private lPediVenda := .f.
-Private lCancParc := .f.
-Private lAltPedVda := .f.
-Private lPVP := .f.
-Private lCancelPVP := .f.
-Private lFaturaPVP := .f.
-Private nUsadoPX01 := 0
-Private oPedido := DMS_Pedido():New()
-Private oSqlHlp := DMS_SqlHelper():New()
-Private oDpm    := DMS_Dpm():New()
-Private aNATrf  := {}
-Private	cVS1Status := VS1->VS1_STATUS
+Private lPediVenda 	:= .f.
+Private lCancParc 	:= .f.
+Private lAltPedVda 	:= .f.
+Private lPVP 		:= .f.
+Private lCancelPVP 	:= .f.
+Private lFaturaPVP 	:= .f.
+Private nUsadoPX01 	:= 0
+Private oPedido 	:= DMS_Pedido():New()
+Private oSqlHlp 	:= DMS_SqlHelper():New()
+Private oDpm    	:= DMS_Dpm():New()
+Private aNATrf  	:= {}
+Private	cVS1Status 	:= VS1->VS1_STATUS
 Private cFaseOrc
 Private lInconveniente := (GetNewPar("MV_INCORC","N") == "S")
 Private lInconvObr     := (GetNewPar("MV_INCOBR","N") == "S")
 Private cIncDefault    := Alltrim(GetNewPar("MV_MIL0094",""))	// SEM INSTALAR
 // Variaveis de integracao
-Private aAutoCab := {} 											// Cabecalho do Orcamento (VS1)
-Private aAutoPecas := {}										// Pecas do Orcamento (VS3)
-Private aAutoServ := {}											// Servicos do Orcamento (VS4)
-Private aAutoInco := {}											// Inconvenientes do Orcamento
+Private aAutoCab 	:= {} 											// Cabecalho do Orcamento (VS1)
+Private aAutoPecas 	:= {}										// Pecas do Orcamento (VS3)
+Private aAutoServ 	:= {}											// Servicos do Orcamento (VS4)
+Private aAutoInco 	:= {}											// Inconvenientes do Orcamento
 // 'lOX001Auto' indica se todos os vetores de integracao foram preenchidos
-Private lOX001Auto := .f. //( xAutoCab <> NIL  .and. xAutoPecas <> NIL .and. xAutoServ <> NIL )
+Private lOX001Auto 	:= .f. //( xAutoCab <> NIL  .and. xAutoPecas <> NIL .and. xAutoServ <> NIL )
 // Variaveis de Controle de tela (OBJETOS)
-Private aTitulo := {"STR0136","STR0134","STR0135"}
-Private nFolderI := 1 // Numero da Folder de Inconveniente
-Private nFolderP := 2 // Numero da Folder de Pecas
-Private nFolderS := 3 // Numero da Folder de Servicos
-Private aNewBot := {}
-Private nMaxItNF  := GetMv("MV_NUMITEN")
-Private lAprMsg   := GetNewPar("MV_MIL0151",.T.)
-Private lMsg0268 := .f. // Controle de Msg de Pedido Gravado
-Private cVK_F := {}
+Private aTitulo 	:= {"STR0136","STR0134","STR0135"}
+Private nFolderI 	:= 1 // Numero da Folder de Inconveniente
+Private nFolderP 	:= 2 // Numero da Folder de Pecas
+Private nFolderS 	:= 3 // Numero da Folder de Servicos
+Private aNewBot 	:= {}
+Private nMaxItNF  	:= GetMv("MV_NUMITEN")
+Private lAprMsg   	:= GetNewPar("MV_MIL0151",.T.)
+Private lMsg0268 	:= .f. // Controle de Msg de Pedido Gravado
+Private cVK_F 		:= {}
 
 Private n														// Controle do Fiscal para linha da aCols
 Private aNumP := {}		  										// Controle do Fiscal para aCols de Pecas
