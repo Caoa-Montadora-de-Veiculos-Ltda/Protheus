@@ -23,23 +23,27 @@
 @project
 @history    Seleciona Picking para faturamento.   
 /*/
-User Function ZPECF013()
+User Function ZPECF013(_cFilPicking, _cPicking)
+Local _lConsultaExt := FWIsInCallStack("U_ZPECF030")  //PEC044
 
-	//colocado controle de usuários DAC 23/05/2022
-	_lRet := U_ZGENUSER( RetCodUsr() ,"ZPECF013" ,.T.)	
-	If !_lRet
-		Return Nil
-	EndIf
-	IF FWCodEmp() <> '2020' //Verificar Empresa Barueri
-	    RETURN Nil
-	ENDIF
+Default _cFilPicking := ""
+Default _cPicking	 := ""
 
-	IF FWFilial() <> '2001' //Verificar Filial Barueri
-	    RETURN Nil
-	ENDIF
+    If !_lConsultaExt  //PEC044 DAC 28/06/2023 somnte para consulta
+		//colocado controle de usuários DAC 23/05/2022
+		_lRet := U_ZGENUSER( RetCodUsr() ,"ZPECF013" ,.T.)	
+		If !_lRet
+			Return Nil
+		EndIf
+		IF FWCodEmp() <> '2020' //Verificar Empresa Barueri
+		    RETURN Nil
+		ENDIF
 
-	FWMsgRun( ,{|| TelaUnit() } ,"Carregando dados..." ,"Por favor aguarde...")
-
+		IF FWFilial() <> '2001' //Verificar Filial Barueri
+	   	 	RETURN Nil
+		ENDIF
+	Endif
+	FWMsgRun( ,{|| TelaUnit(_cFilPicking, _cPicking, _lConsultaExt) } ,"Carregando dados..." ,"Por favor aguarde...")
 Return
 
 /*/{Protheus.doc} ZPECF013 - TelaUnit
@@ -52,7 +56,7 @@ Return
 @project
 @history    Tela de visualização e processamento da montagem de unitizadores    
 /*/
-Static Function TelaUnit()
+Static Function TelaUnit(_cFilPicking, _cPicking, _lConsultaExt)
 	Local aCoors 		:= FWGetDialogSize( oMainWnd )
 	Local oPanelUp, oFWLayer, oPanelLeft, oRelacVS3 //,oPanelRight , oBrowseLeft, oBrowseRight, oRelacZA5
 	//Local _cUsuario		:= AllTrim(SuperGetMV( "CMV_WSR015"  ,,"RG LOG" )) 
@@ -127,19 +131,27 @@ Static Function TelaUnit()
 	//oBrowseUp:AddLegend("SZK->ZK_OBSCON = 'PEDIDO SEPARADO' .AND. Empty(SZK->ZK_NF) ","YELLOW" ,"A Faturar") 	
 	//DAC USUARIO DO RECEBIMENTO RG LOG
 	//oBrowseUp:AddLegend("Empty(SZK->ZK_NF) .AND. ALLTRIM(SZK->ZK_USURECP) = '"+_cUsuario+"' ","YELLOW" ,"A Faturar") 	
-	
-	oBrowseUp:AddButton("Faturar"		      , {||EmitDoc(SZK->ZK_XPICKI)})
-	//oBrowseUp:AddButton("Pergunte"	          , {||Pergunte(cPerg,.T.)    })
-	//oBrowseUp:AddButton("Cancelar"	          , {||Pergunte(cPerg,.T.)    })
 
-	IF !(cUserMov $ nIDBlq)
-	    oBrowseUp:AddButton("Danfe"               , {||ZPECF13K()})
-		oBrowseUp:AddButton("Manut.Cabecalho"     , {||ZPECF13A(SZK->ZK_XPICKI)})
-	    oBrowseUp:AddButton("Manut. Itens"        , {||ZPECF13C(SZK->ZK_XPICKI)})
-	    oBrowseUp:AddButton("Cancelar Picking"    , {||ZPECF13H()})
-	    oBrowseUp:AddButton("Bloquear Picking" 	  , {||ZPECF13I()})
-	    oBrowseUp:AddButton("Desbloquear Picking" , {||ZPECF13J()})
-	ENDIF
+    If !_lConsultaExt  //PEC044 DAC 28/06/2023 somnte para consulta
+		oBrowseUp:AddButton("Faturar"		      , {||EmitDoc(SZK->ZK_XPICKI)})
+		//oBrowseUp:AddButton("Pergunte"	          , {||Pergunte(cPerg,.T.)    })
+		//oBrowseUp:AddButton("Cancelar"	          , {||Pergunte(cPerg,.T.)    })
+
+		IF !(cUserMov $ nIDBlq)
+	   	 	oBrowseUp:AddButton("Danfe"               , {||ZPECF13K()})
+			oBrowseUp:AddButton("Manut.Cabecalho"     , {||ZPECF13A(SZK->ZK_XPICKI)})
+	    	oBrowseUp:AddButton("Manut. Itens"        , {||ZPECF13C(SZK->ZK_XPICKI)})
+	    	oBrowseUp:AddButton("Cancelar Picking"    , {||ZPECF13H()})
+	    	oBrowseUp:AddButton("Bloquear Picking" 	  , {||ZPECF13I()})
+	    	oBrowseUp:AddButton("Desbloquear Picking" , {||ZPECF13J()})
+		Endif
+	Endif
+
+	//Caso tenha sido fornecido o numero do picking filtar PEC044 DAC 30/05/2023
+	//Adiciona um filtro ao browse
+	If _lConsultaExt .and. !Empty(_cPicking)
+		oBrowseUp:SetFilterDefault("@"+ZPECF13FIT(_cFilPicking, _cPicking) ) //Exemplo de como inserir um filtro padrão >>> "TR_ST == 'A'"
+	Endif
 
 	//oBrowseUp:AddButton("Conferir Orca/tos"   , {||ZPECF13E(SZK->ZK_XPICKI)})  //Divergência
 	
@@ -172,7 +184,9 @@ Static Function TelaUnit()
 	oBrowseLeft:SetOwner( oPanelLeft )
 	oBrowseLeft:SetDescription("Itens")
 	oBrowseLeft:SetMenuDef( '' )
-	oBrowseLeft:DisableReport()
+	If !_lConsultaExt //pec044
+		oBrowseLeft:DisableReport()
+	Endif	
 	oBrowseLeft:DisableDetails()
 	oBrowseLeft:SetAlias('VS3')       
 	oBrowseLeft:SetProfileID( '2' )
@@ -200,9 +214,22 @@ Static Function TelaUnit()
 //oTimer := TTimer():New(8000, {|| aPedidos := MontaQ(2) }, oDlgPeds )
 //oTimer:Activate()
 	Activate MsDialog oDlg Center
-
 Return
-   
+
+/*/{Protheus.doc} ZPECF13FIT
+Retorna Filtro para fwmbrowse  PEC044
+@author DAC - Denilso 
+@since 30/05/2023 
+@version 2.0
+/*/
+Static Function ZPECF13FIT(_cFilPicking, _cPicking)
+Local _cFiltro := ""
+	_cFiltro  +=  " ZK_FILIAL = '"+_cFilPicking+"'"			+ CRLF
+	_cFiltro  +=  "	AND ZK_XPICKI = '" + _cPicking + "' " 	+ CRLF 
+ 	_cFiltro  +=  "	AND D_E_L_E_T_ = ' ' " 					+ CRLF
+Return _cFiltro
+
+
 **************************
 Static Function ZPECF13K()
 **************************
@@ -2181,7 +2208,7 @@ Begin Sequence
 		SELECT 	VS1.R_E_C_N_O_ AS NREGVS1
 		FROM  %Table:VS1% VS1			
 		WHERE 	VS1.VS1_FILIAL  = %xFilial:VS1%
-			AND VS1.VS1_NUMORC	= %Exp:_cPicking% 
+			AND VS1.VS1_XPICKI	= %Exp:_cPicking% 
            	AND VS1.%notDel%
 	EndSQL	
 	If (_cAliasPesq)->(Eof())
@@ -2255,3 +2282,5 @@ User Function zCmbDesc(cChave, cCampo, cConteudo)
      
     RestArea(aArea)
 Return cDescri
+
+
