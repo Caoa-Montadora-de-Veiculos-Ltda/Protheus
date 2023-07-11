@@ -67,22 +67,26 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 		Return
 	EndIf
 
-	cQry := " SELECT"													+ CRLF
-	cQry += " 	D1_DOC      					,"						+ CRLF
-	cQry += " 	D1_SERIE      					,"						+ CRLF
-	cQry += " 	D1_COD      					,"						+ CRLF
-	cQry += " 	D1_CONHEC						,"						+ CRLF
-	cQry += " 	D1_XCASE						,"						+ CRLF
-	cQry += " 	F1_FORNECE						,"						+ CRLF
-	cQry += " 	F1_LOJA							,"						+ CRLF
-	cQry += " 	F1_EMISSAO  					,"						+ CRLF
-	cQry += " 	SUBSTR(F1_HORA,1,4)||'0:00' F1_HORA	,"					+ CRLF
-	cQry += " 	F1_TIPO     					,"						+ CRLF
-	cQry += " 	F1_EST      					,"						+ CRLF
-	cQry += " 	F1.R_E_C_N_O_   NREGSF1		,"						+ CRLF  //PEC025
-	cQry += " 	D1_LOCAL   						," 						+ CRLF
-	cQry += " 	BM_CODMAR						," 						+ CRLF  //PEC069
-	cQry += " 	SUM(D1_QUANT)     	AS D1_QUANT "						+ CRLF
+	cQry := " SELECT"									+ CRLF
+	cQry += " 	 D1_DOC		"							+ CRLF
+	cQry += " 	,D1_SERIE 	"							+ CRLF
+	cQry += " 	,D1_COD   	"							+ CRLF
+	cQry += " 	,D1_CONHEC 	"							+ CRLF
+	cQry += " 	,D1_XCASE	"							+ CRLF
+	cQry += " 	,F1_FORNECE	"							+ CRLF
+	cQry += " 	,F1_LOJA	"							+ CRLF
+	cQry += " 	,F1_EMISSAO "							+ CRLF
+	cQry += " 	,SUBSTR(F1_HORA,1,4)||'0:00' F1_HORA "	+ CRLF
+	cQry += " 	,F1_TIPO "								+ CRLF
+	cQry += " 	,F1_EST  "								+ CRLF
+	cQry += " 	,F1.R_E_C_N_O_   NREGSF1 "				+ CRLF  //PEC025
+	cQry += " 	,D1_LOCAL " 							+ CRLF
+	cQry += " 	,CASE "									+ CRLF	
+	cQry += " 		WHEN TRIM(SBM.BM_CODMAR) = 'CHE' "	+ CRLF	
+	cQry += " 		THEN 'PREP' "						+ CRLF
+	cQry += " 		ELSE 'RGLOG' "						+ CRLF
+	cQry += " 	END	 AS DEPOSITO " 					 	+ CRLF  //PEC069
+	cQry += " 	,SUM(D1_QUANT)     	AS D1_QUANT "		+ CRLF
 	cQry += " FROM "       + retSQLName("SF1") + " F1"					+ CRLF
     cQry += " 	INNER JOIN " + RetSqlName("SD1") + " SD1 "              + CRLF
 	cQry += "		ON SD1.D1_FILIAL = '" + FWxFilial("SD1") + "' " 	+ CRLF
@@ -116,7 +120,7 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 	cQry += " AND F1.F1_ESPECIE NOT IN('CTE','NFST') "					+ CRLF
     cQry += " AND F1.D_E_L_E_T_ =	' '"                                + CRLF
 	cQry += " GROUP BY D1_DOC, D1_SERIE, D1_COD, D1_CONHEC, D1_XCASE, F1_FORNECE, F1_LOJA, F1_EMISSAO, SUBSTR(F1_HORA,1,4), F1_TIPO,F1_EST, D1_LOCAL, BM_CODMAR, F1.R_E_C_N_O_ "+ CRLF //, D1_PEDIDO"		+ CRLF
-	cQry += " ORDER BY BM_CODMAR,D1_DOC, D1_SERIE, D1_COD "+ CRLF 
+	cQry += " ORDER BY DEPOSITO, D1_DOC, D1_SERIE, D1_COD "+ CRLF 
     If Select(_cAlias) > 0
 		(_cAlias)->(dbCloseArea())
 	EndIf
@@ -163,7 +167,7 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 				SF1->(DbGoto((_cAlias)->NREGSF1))  //PEC023
 				_nRegSF1 := (_cAlias)->NREGSF1
 				_cDocOri := cNota+";"+cSerie
-				_cMarca  := (_cAlias)->BM_CODMAR
+				_cDeposito  := (_cAlias)->DEPOSITO
 
 				FreeObj(oJsEnt)                     
 				oJsEnt := JsonObject():new()
@@ -194,7 +198,7 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 				oJsEnt['recebimento']['cd_registro'] 	  	  := ""
 				oJsEnt['recebimento']['qt_itens']   	  	  := "" //--Fixo Cirilo
 				//oJsEnt['recebimento']['cd_deposito'] 	  	  := //zBuscaCd( (_cAlias)->D1_COD )  
-				oJsEnt['recebimento']['cd_deposito'] 	  	  := If( (_cAlias)->BM_CODMAR == "CHE","PREP","RGLOG")  //PEC069
+				oJsEnt['recebimento']['cd_deposito'] 	  	  := (_cAlias)->DEPOSITO   //PEC069
 				oJsEnt['recebimento']['cd_motorista'] 	  	  := ""
 				oJsEnt['recebimento']['dt_agenda'] 	          := ""
 				oJsEnt['recebimento']['ds_transportadora']    := ""       //Fixo pelo exemplo RgLog
@@ -202,7 +206,7 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 				oJsEnt['recebimento']['id_leva_devolucao']    := ""
 				oJsEnt['recebimento']['nu_invoice']    	      := IiF( (_cAlias)->F1_TIPO == 'N' , zBuscaInv( (_cAlias)->D1_CONHEC, cForn, cLoja, Alltrim((_cAlias)->D1_DOC) ), Alltrim((_cAlias)->D1_DOC) )
 				//oJsEnt['recebimento']['detalhe']              := ZWSR007ITE(oJsEnt, Alltrim((_cAlias)->D1_DOC), Alltrim((_cAlias)->D1_SERIE), cForn , cLoja ,_cAlias)
-				oJsEnt['recebimento']['detalhe']              := ZWSR007ITE(oJsEnt, Alltrim((_cAlias)->D1_DOC), Alltrim((_cAlias)->D1_SERIE), cForn , cLoja , _cMarca, @_nItem, _cAlias)  //PEC069
+				oJsEnt['recebimento']['detalhe']              := ZWSR007ITE(oJsEnt, Alltrim((_cAlias)->D1_DOC), Alltrim((_cAlias)->D1_SERIE), cForn , cLoja , _cDeposito, @_nItem, _cAlias)  //PEC069
 		
 				FWMsgRun(, {|| aResRg := zPostRg(oJsEnt) }, "Envio de Receb. Nf de Entrada", "Por favor aguarde...")
 
@@ -239,7 +243,7 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 				If lBotao
 					Help( ,, "[ ZWSR010 ]" ,,_cErro ,1 ,0)
 				Endif	
-				ZWSR010Monitor(_cStatus,"SF1", _cDocOri, "[ ZWSR010 ]"+_cErro, _dDataIni, _cHsIni, oJsEnt, _nError /*_nErro*/ , _cMarca, _nRegSF1)	//PEC025
+				ZWSR010Monitor(_cStatus,"SF1", _cDocOri, "[ ZWSR010 ]"+_cErro, _dDataIni, _cHsIni, oJsEnt, _nError /*_nErro*/ , _cDeposito, _nRegSF1)	//PEC025
 			ENDDO
 			/*
 			If lBotao
@@ -255,7 +259,7 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 			If lBotao
 				MsgInfo(_cErro,"[ ZWSR010 ]")
 			EndIf
-			ZWSR010Monitor("2","SF1", _cDocOri, "[ ZWSR010 ]"+_cErro, _dDataIni, _cHsIni, /*_xJson*/, 400 /*_nErro*/, _cMarca, _nRegSF1 )	//PEC025
+			ZWSR010Monitor("2","SF1", _cDocOri, "[ ZWSR010 ]"+_cErro, _dDataIni, _cHsIni, /*_xJson*/, 400 /*_nErro*/, _cDeposito, _nRegSF1 )	//PEC025
 		EndIf
 	Else
 		If lBotao
@@ -266,7 +270,7 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 																				"** TES utilizada na classificação deve estar marcada para atualizar estoque."})
 		EndIf
 		_cErro	:= "[ ZWSR010 ] Não foi possivel integrar a Nota Fiscal de Entrada com a RGLog verificar dados integração, classificação, TES"  //PEC025
-		ZWSR010Monitor("2","SF1", _cDocOri, _cErro, _dDataIni, _cHsIni, /*_xJson*/, 400 /*_nErro*/, _cMarca, _nRegSF1 )	//PEC025
+		ZWSR010Monitor("2","SF1", _cDocOri, _cErro, _dDataIni, _cHsIni, /*_xJson*/, 400 /*_nErro*/, _cDeposito, _nRegSF1 )	//PEC025
     ENDIF
 
 	If Select(_cAlias) <> 0
@@ -278,7 +282,7 @@ RETURN()
 /*
 Alteração PEC069 incluido Marca
 */
-Static Function ZWSR007ITE( _oJsEnt, cNota, cSerie, cForn, cLoja , _cMarca, _nItem, _cAlias )
+Static Function ZWSR007ITE( _oJsEnt, cNota, cSerie, cForn, cLoja , _cDeposito, _nItem, _cAlias )
 	Local _nPos   	:= 0
 	Local cCodFor	:= ""
 	Local cLojaFor	:= ""
@@ -297,7 +301,7 @@ Static Function ZWSR007ITE( _oJsEnt, cNota, cSerie, cForn, cLoja , _cMarca, _nIt
 
 		ZD1->( DbSetOrder(1) )
 		//no caso de exitir mais de uma marca devrá processar marca separada PEC069 DAC 10/07/2023
-		While (_cAlias)->(!Eof()) .And.  _cMarca ==  (_cAlias)->BM_CODMAR
+		While (_cAlias)->(!Eof()) .And.  _cDeposito ==  (_cAlias)->DEPOSITO
 			cNota    := PadR( Alltrim((_cAlias)->D1_DOC), TamSX3("ZD1_DOC")[1] )
 			cSerie 	 := PadR( Alltrim((_cAlias)->D1_SERIE), TamSX3("ZD1_SERIE")[1] )
 			cCodFor  := PadR( cForn, TamSX3("ZD1_FORNEC")[1] )
@@ -339,7 +343,7 @@ Static Function ZWSR007ITE( _oJsEnt, cNota, cSerie, cForn, cLoja , _cMarca, _nIt
 			_aItens[_nPos]['ds_loja']    	    := ""
 			_aItens[_nPos]['nu_pedido']    	    := ""
 			//_aItens[_nPos]['cd_deposito']    	:= zBuscaCd( Alltrim((_cAlias)->D1_COD) )
-			_aItens[_nPos]['cd_deposito'] 		:= If( (_cAlias)->BM_CODMAR == "CHE","PREP","RGLOG")  //PEC069
+			_aItens[_nPos]['cd_deposito'] 		:= (_cAlias)->DEPOSITO   //PEC069
 			_aItens[_nPos]['qt_transferencia']  := ""
 			_aItens[_nPos]['loja']    	        := ""
 			_aItens[_nPos]['qt_cross_docking']  := ""
@@ -555,7 +559,7 @@ Obs
 @history 				
 =====================================================================================
 */
-Static Function	ZWSR010Monitor(_cStatus, _cTab, _cDoc, _cErro, _dDataIni, _cHsIni, _xJson, _nErro, _cMarca, _nRecno )	
+Static Function	ZWSR010Monitor(_cStatus, _cTab, _cDoc, _cErro, _dDataIni, _cHsIni, _xJson, _nErro, _cDeposito, _nRecno )	
 Local _lJob      	:= IsBlind()
 Local _cUserName 	:= If( _lJob,"NFENTRADA.RGLOG", Nil)   
 Local _aCampos	 	:= {}  //Adicionar campos a serem gravador na tabela DAC  15/02/2023 
@@ -567,7 +571,7 @@ Local _cIdJson	 	:= ""
 Local _cRegSF1
 
 Default _xJson 		:= ""
-Default _cMarca     := ""
+Default _cDeposito     := ""
 Default _nRecno		:= 0
 
 
@@ -584,7 +588,7 @@ If Len(_aItens) > 0
 	For _nPos := 1 To Len(_aItens)
 		_aCampos    := {}
 		//Criada chave para pesquisa
-		_cIdJson	:= "SF1 "+_cDoc + " "+_cStatus+" "+_cMarca+" "+ _cRegSF1+ " "+ DtoS(Date())+SubsTr(Time(),1,2)+SubsTr(Time(),4,2) 
+		_cIdJson	:= "SF1 "+_cDoc + " "+_cStatus+" "+_cDeposito+" "+ _cRegSF1+ " "+ DtoS(Date())+SubsTr(Time(),1,2)+SubsTr(Time(),4,2) 
 		_cProduto	:= _aItens[_nPos]["cd_produto"]     //AllTrim(_aItens[_nPos]["cd_produto"])
 		_nQtdeConf	:= Val( _aItens[_nPos]["qt_produto"] ) //_aItens[_nPos]["qt_conf"]
 		AAdd(_aCampos,{"Z1_IDJSON"	, _cIdJson 	, "id"   		})
@@ -607,7 +611,7 @@ If Len(_aItens) > 0
 Else
 */
 	_cRegSF1 := StrZero(_nRecno,12)
-	_cIdJson	:= "SF1 "+_cDoc + " "+_cStatus+" "+_cMarca+" "+ _cRegSF1+ " "+ DtoS(Date())+SubsTr(Time(),1,2)+SubsTr(Time(),4,2) 
+	_cIdJson	:= "SF1 "+_cDoc + " "+_cStatus+" "+_cDeposito+" "+ _cRegSF1+ " "+ DtoS(Date())+SubsTr(Time(),1,2)+SubsTr(Time(),4,2) 
 	AAdd(_aCampos,{"Z1_IDJSON"	, _cIdJson 	, "id"   		})
 
 	U_CAOA_GRVMONITOR(XFilial(_cTab),;		//Filail
