@@ -605,9 +605,9 @@ Local _nItem     := 0
             IF Empty(aDados[34])        
                 aDados[34] := (_cQAlias)->B1_RASTRO
             ENDIF
-            IF Empty(aDados[29])        
+            /*IF Empty(aDados[29])        
                 aDados[29] := (_cQAlias)->B1_LOCREC
-            ENDIF
+            ENDIF*/
             IF Empty(aDados[23])        
                 aDados[23] := (_cQAlias)->B1_POSIPI
             ENDIF
@@ -771,7 +771,7 @@ Local _nItem     := 0
                 aAdd(aCab,{"B1_CONV"	,aDados[31]     ,NIL})
                 aAdd(aCab,{"B1_TIPCONV"	,aDados[32]     ,Nil})
                 aAdd(aCab,{"B1_RASTRO"  ,aDados[34]     ,NIL})
-                aAdd(aCab,{"B1_LOCREC"	,aDados[29]     ,NIL})
+                //aAdd(aCab,{"B1_LOCREC"	,aDados[29]     ,NIL})
                 aAdd(aCab,{"B1_POSIPI"  ,aDados[23]     ,NIL})
                 aAdd(aCab,{"B1_GARANT"  ,aDados[33]     ,NIL})    
                 aAdd(aCab,{"B1_ORIGEM"  ,aDados[12]     ,NIL}) 
@@ -867,7 +867,7 @@ Local _nItem     := 0
             oModel:SetValue("SB1MASTER","B1_GRTRIB"     ,AllTrim( aDados[26] ) )
             oModel:SetValue("SB1MASTER","B1_IMPZFRC"    ,AllTrim( aDados[27] ))
             oModel:SetValue("SB1MASTER","B1_CEST"       ,StrTran((AllTrim( aDados[28] ) ), '.'))
-            oModel:SetValue("SB1MASTER","B1_LOCREC"     ,AllTrim( aDados[29] ))
+            //oModel:SetValue("SB1MASTER","B1_LOCREC"     ,AllTrim( aDados[29] ))
             oModel:SetValue("SB1MASTER","B1_SEGUM"      ,AllTrim( aDados[30] ))
             oModel:SetValue("SB1MASTER","B1_GARANT"     ,AllTrim( aDados[33] ) )
             oModel:SetValue("SB1MASTER","B1_RASTRO"     ,AllTrim( aDados[34] ))
@@ -1297,7 +1297,7 @@ oModel:SetValue("SB1MASTER","B1_IMPORT"     ,AllTrim( aDados[25] ) )
 oModel:SetValue("SB1MASTER","B1_GRTRIB"     ,AllTrim( aDados[26] ) )
 oModel:SetValue("SB1MASTER","B1_IMPZFRC"    ,AllTrim( aDados[27] ))
 oModel:SetValue("SB1MASTER","B1_CEST"       ,StrTran((AllTrim( aDados[28] ) ), '.'))
-oModel:SetValue("SB1MASTER","B1_LOCREC"     ,AllTrim( aDados[29] ))
+//oModel:SetValue("SB1MASTER","B1_LOCREC"     ,AllTrim( aDados[29] ))
 oModel:SetValue("SB1MASTER","B1_SEGUM"      ,AllTrim( aDados[30] ))
 oModel:SetValue("SB1MASTER","B1_GARANT"     ,AllTrim( aDados[33] ) )
 oModel:SetValue("SB1MASTER","B1_RASTRO"     ,AllTrim( aDados[34] ))
