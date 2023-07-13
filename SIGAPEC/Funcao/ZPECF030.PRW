@@ -1053,6 +1053,7 @@ Begin Sequence
 	EndIf
 	_cWhereVS1 += 	" AND VS1.VS1_STATUS IN  (" +_cStatus+ ") " 
 	_cWhereVS1 := "%"+_cWhereVS1+"%"
+	//GAP005 CORREÇÃO ERRO NO CALCULO SALDO AJUSTADO SELECT DE SUBQUERY PARA VERIFICAR B2_LOCAL
 
 	BeginSql Alias _cAliasTRB //Define o nome do alias temporário 
 		SELECT 	  NVL(SB1.R_E_C_N_O_,0) NREGSB1
@@ -1122,6 +1123,7 @@ Begin Sequence
 		SB2->(DbGoto((_cAliasTRB)->NREGSB2))
 		cFilAnt 	:= SB2->B2_FILIAL
 		_nSaldoSB2 	:= SB2->(SaldoSB2()) //FUNÇÃO PARA CALCULO EM ESTOQUE
+		//GAP005 CORREÇÃO ERRO NO CALCULO SALDO
 
 		If SB2->B2_LOCAL <> _cArmazemPad  .And. _nSaldoSB2 == 0 .And. (_cAliasTRB)->ITENSORC == 0 .And. (_cAliasTRB)->ITENSPIC == 0
     		(_cAliasTRB)->(DbSkip())
