@@ -52,7 +52,7 @@ Private _cNfFor 	:= ""
 Private _cSerFor 	:= ""
 Private _cFornec	:= ""
 Private _cLoja		:= ""
-Private _cTpNf		:= ""
+//Private _cTpNf		:= ""
 Private lDebug 		:= .F.
 Private _aJson		:= {}
 
@@ -113,8 +113,13 @@ Private _aJson		:= {}
 		SetRestFault(400, _cErro)
 		Return(.T.)
  	EndIf
-	
-	If Len(AllTrim(oParseJSON:cod_fornecedor)) == 9  .And. Substr(AllTrim(oParseJSON:cod_fornecedor),1,1) == "9"
+
+	_cNfFor 	:= AllTrim(StrZero(Val(oParseJSON:nota_fiscal),9))
+	_cSerFor 	:= AllTrim(oParseJSON:serie_nf)
+	_cFornec	:= SubStr(AllTrim(oParseJSON:cod_fornecedor), 2, 6)
+	_cLoja		:= SubStr(AllTrim(oParseJSON:cod_fornecedor), 8, 2)
+		
+	/*If Len(AllTrim(oParseJSON:cod_fornecedor)) == 9  .And. Substr(AllTrim(oParseJSON:cod_fornecedor),1,1) == "9"
 		_cNfFor 	:= AllTrim(StrZero(Val(oParseJSON:nota_fiscal),9))
 		//_cNfFor 	:= AllTrim(oParseJSON:nota_fiscal)
 		_cSerFor 	:= AllTrim(oParseJSON:serie_nf)
@@ -127,13 +132,14 @@ Private _aJson		:= {}
 		_cFornec	:= AllTrim(oParseJSON:cod_fornecedor) 
 		_cLoja		:= ""
 		_cTpNf 		:= "S"		
-	EndIf
+	EndIf*/
+
 	_cLog := chr(10)
 	_cLog += "Nf ........: " + _cNfFor      + chr(10)
 	_cLog += "Serie......: " + _cSerFor     + chr(10)
 	_cLog += "Fornecedor.: " + _cFornec     + chr(10)
 	_cLog += "Loja.......: " + _cLoja       + chr(10)
-	_cLog += "Tipo.......: " + _cTpNf       + chr(10)
+	//_cLog += "Tipo.......: " + _cTpNf       + chr(10)
 	_cLog += "Data.......: " + DtoC(Date()) + chr(10)
 	_cLog += "Time.......: " + Time()       + chr(10)
 	_cLog += "JSON.......: " + cJson	    + chr(10)
@@ -164,11 +170,14 @@ Private _aJson		:= {}
 	//Para Transferência
 	_cErro	 := ""
 	_nRetJson:= 0
-	If _cTpNf == "T"
+	_lTransf := zGeraTransf(@_aDivergencia, @_nRetJson)
+	
+	/*If _cTpNf == "T"
 		_lTransf := zGeraTransf(@_aDivergencia, @_nRetJson)
 	ElseIf _cTpNf == "S"
 		_lTransf := zGeraEntrada()
- 	EndIf
+ 	EndIf*/
+	
 	_cLog += "Message....: " + _cErro
 	if Len(_aJson) > 0
 		ojsonLog:set(_aJson)
@@ -294,7 +303,10 @@ Private lAutoErrNoFile 	:= .T.
 		EndIf
 
 		//arquivo recebimento
-		If Select(cAliasZD1) <> 0 ; (cAliasZD1)->(DbCloseArea()) ; EndIf
+		If Select(cAliasZD1) <> 0
+			(cAliasZD1)->(DbCloseArea())
+		EndIf
+		
 		cQryZD1:= ""
 		cQryZD1 += " SELECT ZD1.R_E_C_N_O_ AS NREGZD1													"+(Chr(13)+Chr(10))
 		cQryZD1 += " FROM "+RetSqlName("ZD1")+" ZD1											"+(Chr(13)+Chr(10))
