@@ -900,14 +900,14 @@ Local cTexto := ""
 							WKEW5->EW5_NCM		:=  aDados[nY,2]//cNcm
 							WKEW5->EW5_EXNCM    :=  aDados[nY,3]//cExNcm
 							WKEW5->EW5_XSERMO   :=  cSerMo
-							WKEW5->EW5_XHOUSE	:=	aDados[nY,5,nX,8]
-							WKEW5->EW5_XNAVIO	:=	aDados[nY,5,nX,9]
-							WKEW5->EW5_XCASE	:=	aDados[nY,5,nX,5]
-							WKEW5->EW5_XCONT	:=	aDados[nY,5,nX,4]
+							WKEW5->EW5_XHOUSE	:=	zRetCarUni(aDados[nY,5,nX,8])
+							WKEW5->EW5_XNAVIO	:=	zRetCarUni(aDados[nY,5,nX,9])
+							WKEW5->EW5_XCASE	:=	zRetCarUni(aDados[nY,5,nX,5])
+							WKEW5->EW5_XCONT	:=	zRetCarUni(aDados[nY,5,nX,4])
 							WKEW5->EW5_XCHAV2	:=  cChave
 							
 							If nLay == 1
-								WKEW5->EW5_XLOTE	:=	Alltrim( cPO ) + aDados[nY,5,nX,5]
+								WKEW5->EW5_XLOTE	:=	Alltrim( cPO ) + zRetCarUni(aDados[nY,5,nX,5])
 							EndIf
 							
 							If aDados[nY,5,nX,13] == "1"
@@ -1378,15 +1378,15 @@ Default cPedido := ""
 	RecLock('WKSZM',.T.)
 		WKSZM->ZM_FILIAL := FwXFilial('SZM')
 		WKSZM->ZM_INVOICE:= aLinha[02]
-		WKSZM->ZM_NAVIO  := aLinha[13]
-		WKSZM->ZM_BL     := aLinha[12]
-		WKSZM->ZM_CONT   := aLinha[08]
-		WKSZM->ZM_LOTE   := iif(nLay == 1,Alltrim( aLinha[11]) ,' ' )
-		WKSZM->ZM_CASE   := aLinha[09]
+		WKSZM->ZM_NAVIO  :=zRetCarUni(aLinha[13])
+		WKSZM->ZM_BL     :=aLinha[12]
+		WKSZM->ZM_CONT   :=zRetCarUni(aLinha[08])
+		WKSZM->ZM_LOTE   := iif(nLay == 1,zRetCarUni(Alltrim(aLinha[11])) ,' ' )
+		WKSZM->ZM_CASE   :=zRetCarUni(aLinha[09])
 		WKSZM->ZM_PROD   := aLinha[05]
 		WKSZM->ZM_DESCR  := Posicione("SB1", 1, FwxFilial("SB1") + Alltrim(aLinha[05]), "B1_DESC")
 		WKSZM->ZM_QTDE   := val(aLinha[06])
-		WKSZM->ZM_UNIT   := iif(nLay == 1 , Alltrim( aLinha[11] )+Alltrim(aLinha[09]),' ' )
+		WKSZM->ZM_UNIT   := iif(nLay == 1 , zRetCarUni(Alltrim(aLinha[11])) + zRetCarUni(Alltrim(aLinha[09])),' ' )
 		WKSZM->ZM_DOC    := ""
 		WKSZM->ZM_SERIE  := ""
 		WKSZM->ZM_FORNEC := cFornecedor
@@ -1516,6 +1516,21 @@ Else
 endIf
 
 Return aAux
+
+
+Static Function zRetCarUni(cConteudo)
+	Local cCarEsp		:= "!@#$%¨&()+{}^~´`][;.>,<=/¢¬§ªº'?|"+'"'
+	Local nI			:= 0
+
+	//Retirando caracteres
+	For nI := 1 To Len(cCarEsp)
+		cConteudo := StrTran(cConteudo, SubStr(cCarEsp, nI, 1), "")
+	Next nI
+
+Return cConteudo
+
+
+
 /*
 Layout == 1
   CKD
