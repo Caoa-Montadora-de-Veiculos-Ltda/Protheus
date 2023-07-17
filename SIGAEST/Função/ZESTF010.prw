@@ -5,7 +5,7 @@
 @version  	P12.1.23
 @since  	14/07/2023
 @return  	NIL
-@obs        Ponto de entrada do MATA241
+@obs        Ponto de entrada do MATA261
 @project
 @history    Função chamada no P.E MT241TOK_PE
 */ 

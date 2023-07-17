@@ -19,7 +19,11 @@ User Function A261TOK()
     If _cEmp == "2010" //Executa o p.e. Anapolis.
         _lRet := .T.
     Else
-   		_lRet := U_ZESTF010()
+         If lAutoma261 == .F. //executa somente quando não é execauto.
+   		    _lRet := U_ZESTF010()
+        Else
+            _lRet     := .T.
+        EndIf
    EndIf
      	
     RestArea(_aArea)
