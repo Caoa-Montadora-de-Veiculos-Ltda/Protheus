@@ -14,6 +14,7 @@ User Function A261TOK()
 
     Local _lRet     := .F.
     Local _aArea    := GetArea()
+    Local _cEmp     := FWCodEmp()
      
     If _cEmp == "2010" //Executa o p.e. Anapolis.
         _lRet := .T.
