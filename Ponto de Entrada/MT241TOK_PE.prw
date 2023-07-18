@@ -20,7 +20,7 @@ User Function MT241TOK()
     If _cEmp == "2010" //Executa o p.e. Anapolis.
         _lRet := .T.
     Else
-        lUserAut := U_ZGENUSER( RetCodUsr() ,"MT241TOK_PE",.F.)
+        lUserAut := U_ZGENUSER( RetCodUsr() ,"MT241TOK",.F.)
         If lUserAut 
     		_lRet := .T.
         else

@@ -20,7 +20,7 @@ User Function MA261EST()
     If _cEmp == "2010" //Executa o p.e. Anapolis.
         _lRet := .T.
     Else
-        lUserAut := U_ZGENUSER( RetCodUsr() ,"MA261EST_PE",.F.)
+        lUserAut := U_ZGENUSER( RetCodUsr() ,"MA261EST",.F.)
         If lUserAut 
     		_lRet := .T.
         Else

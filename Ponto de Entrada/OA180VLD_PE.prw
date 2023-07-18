@@ -20,7 +20,7 @@ User Function OA180VLD()
     If _cEmp == "2010" //Executa o p.e. Anapolis.
         _lRet := .T.
     Else
-        lUserAut := U_ZGENUSER( RetCodUsr() ,"OA180VLD_PE",.F.)
+        lUserAut := U_ZGENUSER( RetCodUsr() ,"OA180VLD",.F.)
         If lUserAut 
     		_lRet := .T.
         else

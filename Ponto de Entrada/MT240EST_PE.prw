@@ -20,7 +20,7 @@ User Function MT240EST()
     If _cEmp == "2010" //Executa o p.e. Anapolis.
         _lRet := .T.
     Else
-        lUserAut := U_ZGENUSER( RetCodUsr() ,"MT240EST_PE",.F.)
+        lUserAut := U_ZGENUSER( RetCodUsr() ,"MT240EST",.F.)
         If lUserAut 
     		_lRet := .T.
         else
