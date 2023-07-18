@@ -93,7 +93,6 @@ Local _nPosPU       := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_PRCVEN' })
 Local _nPosCONTA    := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_CONTA' })
 Local _nPosIT       := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_ITEMCTA' })
 Local _cAliasQry    := GetNextAlias()
-Local _lQtdQbr		:= .F.
 Local aItens        := {}
 Local _cEmp 		:= FWCodEmp()
 Private aArea       := GetArea()
