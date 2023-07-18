@@ -44,7 +44,7 @@ User Function ZFAT002A()
 			RETURN Nil
 		ENDIF
 		
-	cFileOpen	:= cGetFile(cExtens,cTitulo1,,cMainPath,.T.)
+	cFileOpen	:= cGetFile(cExtens,cTitulo1,,cMainPath,.T.,)
 
 	If !File(cFileOpen)
 	MsgAlert("Arquivo CSV: " + cFileOpen + " não localizado","[ZFATF002] - Atenção")
@@ -67,39 +67,37 @@ Alterações.....:
 */
 Static Function ZFAT002B(cFileOpen,cArqLog)
 	
-	Local cSeparador     := ";" // Separador do arquivo 	
-	Local aDados         := {} // Array dos dados da linha do laco
-	Local aDadosLi       := {}
-	Local cItem          := ""
-	Local cProduto       := ""
-	Local nQtdven        := 0
-	Local _nPunit        := 0
-	Local n              := 0
-	Local cDescri        := ""
-	Local cUm            := ""
-	Local cConta         := ""
-	Local cCLVL          := ""
-	Local cItemcta       := ""
-	//Local cLocliz		 := ""
-	Local _cQry          := ""
-	Local _cPC           := Space(6)
-	Local _cTipo         := Space(2)
-	Local _cGrupo        := Space(4)
-	Local _nPosItem      := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_ITEM' })
-	Local _nPosPro       := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_PRODUTO' })
-	Local _nPosDes       := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_DESCRI' })
-	Local _nPosUm        := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_UM' })
-	Local _nPosQtd       := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_QTDVEN' })
-	Local _nPosPU        := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_PRCVEN' })
-	Local _nPosCONTA     := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_CONTA' })
-	Local _nPosIT        := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_ITEMCTA' })
-	//Local _nPosTes       := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_TES' })
-	//Local _nPosLiz   	 := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_LOCALIZ' })
-
-	Local _cAliasQry     := GetNextAlias()
-	Local aItens         := {}
-	Private aArea        := GetArea()
-	Public _nLinAc       := 0
+Local cSeparador    := ";" // Separador do arquivo 	
+Local aDados        := {} // Array dos dados da linha do laco
+Local aDadosLi      := {}
+Local cItem         := ""
+Local cProduto      := ""
+Local nQtdven       := 0
+Local _nPunit       := 0
+Local n             := 0
+Local cDescri       := ""
+Local cUm           := ""
+Local cConta        := ""
+Local cCLVL         := ""
+Local cItemcta      := ""
+Local _cQry         := ""
+Local _cPC          := Space(6)
+Local _cTipo        := Space(2)
+Local _cGrupo       := Space(4)
+Local _nPosItem     := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_ITEM' })
+Local _nPosPro      := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_PRODUTO' })
+Local _nPosDes      := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_DESCRI' })
+Local _nPosUm       := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_UM' })
+Local _nPosQtd      := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_QTDVEN' })
+Local _nPosPU       := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_PRCVEN' })
+Local _nPosCONTA    := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_CONTA' })
+Local _nPosIT       := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_ITEMCTA' })
+Local _cAliasQry    := GetNextAlias()
+Local _lQtdQbr		:= .F.
+Local aItens        := {}
+Local _cEmp 		:= FWCodEmp()
+Private aArea       := GetArea()
+Public _nLinAc      := 0
 
 	ProcRegua(311)
 	IncProc()
@@ -122,36 +120,30 @@ Static Function ZFAT002B(cFileOpen,cArqLog)
 	FT_FUSE()
 
 	For n	:= 1 to Len(aDadosLi)
-		//IF n = Len(aDadosLi)
-		//	Exit
-		//EndIF
+	
 		_nLinAc		:= n
 		cProduto	:= PadR( AllTrim( aDadosLi[n][01] ) , TamSX3( "C6_PRODUTO" )[1]," ") //Posição 01 do lay-out
-		//cLocliz		:= PadR( AllTrim( aDadosLi[n][03] ) , TamSX3( "C6_LOCALIZ" )[1]," ") //Posição 01 do lay-out
-
+	
 		SB1->( DbSetOrder( 1 ) )
 		If !SB1->( DbSeek( xFilial( "SB1" ) + cProduto ) )
 			MsgInfo("Produto não cadastrado :" + cProduto , " [ZFATF002]")
 			Loop
 		EndIf
 
-		/*IF n = 1 //incluído conf solicitação do A.Marcio p/copiar os dados da primeira linha p/as demais
-		cTes                 := PadL( AllTrim( aDadosLi[n][03] ) , TamSX3( "C6_TES" )[1]," ")
-		cOper                := PadL( AllTrim( aDadosLi[n][04] ) , TamSX3( "C6_OPER" )[1]," ")
-		cLocal               := PadL( AllTrim( aDadosLi[n][05] ) , TamSX3( "C6_LOCAL" )[1]," ")
-		ENDIF*/
-		//cCC     := PadR( AllTrim( aDadosLi[n][06] ) , TamSX3( "C6_CC"  )[1]," ")  //Bloq por conta gatilho
-		//cCLVL   := AllTrim( aDadosLi[n][03] )                                     //Posição 03 do lay-out
-
 		cItem                := PadL( AllTrim( STR(n) ) , TamSX3( "C6_ITEM" )[1],"0")
 		cDescri              := POSICIONE("SB1",1,XFILIAL("SB1")+cProduto,"SB1->B1_DESC")
-		//cLocal  := POSICIONE("SB1",1,XFILIAL("SB1")+cProduto,"SB1->B1_LOCPAD")
 		cUm                  := POSICIONE("SB1",1,XFILIAL("SB1")+cProduto,"SB1->B1_UM")
 		cConta               := POSICIONE("SB1",1,XFILIAL("SB1")+cProduto,"SB1->B1_CONTA")
 		cCLVL                := POSICIONE("SB1",1,XFILIAL("SB1")+cProduto,"SB1->B1_CLVL")
 		cItemcta             := POSICIONE("SB1",1,XFILIAL("SB1")+cProduto,"SB1->B1_ITEMCC")
-		//cLocaliz:= POSICIONE("SBE",10,XFILIAL("SBE")+cProduto+cLocal,"SBE->BE_LOCALIZ")
-		nQtdven              := VAL(aDadosLi[n][02]) //Posição 02 do lay-out
+		nQtdven              := NoRound(Val(aDadosLi[n][02]), TamSx3("C6_QTDVEN")[02]) //VAL(aDadosLi[n][02]) //Posição 02 do lay-out
+		
+		If _cEmp == '2020' 
+			If nQtdven <> NoRound(VAL(aDadosLi[n][02]), 0)
+				MsgInfo("Arquivo com quantidade quebrada, processo será abortado, verifique o arquivo. Produto:" + cProduto , " [ZFATF002]")
+				EXIT
+			EndIf
+		EndIf
 		
 		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 		//³ Verifica se existe  Pedido de Vendas ³
@@ -163,9 +155,6 @@ Static Function ZFAT002B(cFileOpen,cArqLog)
 		IF _cTipo <> 'SV' .AND. _cGrupo <> 'VEIA'
 
 			If !Empty( _cPC ) //Se não encontrar CM1 fica zero
-				//_cQry  += "CASE when SUM(SB2.B2_VATU1)/SUM(SB2.B2_QATU) <= 0 then 0 "
-				//_cQry  += " ELSE SUM(SB2.B2_VATU1)/SUM(SB2.B2_QATU)"
-				//_cQry  += " END as nPun "
 
 				If Select( (_cAliasQry) ) > 0
 		    		(_cAliasQry)->(DbCloseArea())
