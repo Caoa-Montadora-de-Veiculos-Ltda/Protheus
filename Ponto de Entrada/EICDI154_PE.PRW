@@ -31,6 +31,7 @@ user function EICDI154
 	Local _cEmp		:= FwCodEmp()
 	Local nTamLote  := TAMSX3('W8_XLOTE')[1] +1
 	Local nTamCase  := TAMSX3('W8_XCASE')[1]
+	Local cCase     := Space(10)
 
 	static lQuebra:=.f.
 	Static aContainers
@@ -90,15 +91,15 @@ user function EICDI154
 				nTotal  := noround(SD1->D1_QUANT * nValUni,2)
 				If _cEmp == "2010" //Executa Anapolis.
 					RECLOCK("SD1",.F.)
-						SD1->D1_XCONT 	:= WORK1->WN_XCONT	
-						SD1->D1_CHASSI	:= WORK1->WN_XVIN
-						SD1->D1_CORINT	:= SWN->WN_CORINT
-						SD1->D1_COREXT	:= SWN->WN_COREXT
-						SD1->D1_OPCION	:= SWN->WN_OPCION
-						SD1->D1_ANOFAB	:= RIGHT(SWN->WN_ANOFAB,2)
-						SD1->D1_XANOFAB	:= SWN->WN_ANOFAB
-						SD1->D1_ANOMOD	:= SWN->WN_ANOMOD
-						SD1->D1_XCASE   := SUBSTR(SWN->WN_XLOTE,nTamLote,nTamCase)
+						SD1->D1_XCONT 	:= IIF( !EMPTY( SD1->D1_XCONT  ),SD1->D1_XCONT  , WORK1->WN_XCONT )	
+						SD1->D1_CHASSI	:= IIF( !EMPTY( SD1->D1_CHASSI ),SD1->D1_CHASSI	, WORK1->WN_XVIN  )
+						SD1->D1_CORINT	:= IIF( !EMPTY( SD1->D1_CORINT ),SD1->D1_CORINT	, SWN->WN_CORINT  )
+						SD1->D1_COREXT	:= IIF( !EMPTY( SD1->D1_COREXT ),SD1->D1_COREXT	, SWN->WN_COREXT  )
+						SD1->D1_OPCION	:= IIF( !EMPTY( SD1->D1_OPCION ),SD1->D1_OPCION	, SWN->WN_OPCION  )
+						SD1->D1_ANOFAB	:= IIF( !EMPTY( SD1->D1_ANOFAB ),SD1->D1_ANOFAB	, RIGHT(SWN->WN_ANOFAB,2))
+						SD1->D1_XANOFAB	:= IIF( !EMPTY( SD1->D1_XANOFAB),SD1->D1_XANOFAB, SWN->WN_ANOFAB )
+						SD1->D1_ANOMOD	:= IIF( !EMPTY( SD1->D1_ANOMOD ),SD1->D1_ANOMOD	, SWN->WN_ANOMOD )
+						SD1->D1_XCASE   := IIF( !EMPTY( SD1->D1_XCASE  ),SD1->D1_XCASE  , SUBSTR(SWN->WN_XLOTE,nTamLote,nTamCase) )
 					MSUNLOCK()
 				Else
 					RECLOCK("SD1",.F.)
@@ -248,7 +249,22 @@ user function EICDI154
 				SD1->(dbGoTo(nRecSD1))
 				RestOrd(aOrd)
 			Endif
+		Case cParam == "GRAVACAO_SD1" //Ponto de Entrada para preencher a Array que ira gerar os itens do Documento de entrada
+			//Array aItem vem do fonte padrão cuidado ao manipular a variavel			
+			cCase := SUBSTR(WORK1->WN_XLOTE,nTamLote,nTamCase)
+			
+			Aadd( aItem, { "D1_XCONT"	, WORK1->WN_XCONT , ".T." })
+			Aadd( aItem, { "D1_CHASSI"	, WORK1->WN_XVIN  , ".T." })
+			Aadd( aItem, { "D1_XCASE"	, cCase           , ".T." })
 
+			If _cEmp == "2010" //Executa Anapolis.
+				Aadd( aItem, { "D1_CORINT"	, WORK1->WN_CORINT         , ".T." })
+				Aadd( aItem, { "D1_COREXT"	, WORK1->WN_COREXT         , ".T." })
+				Aadd( aItem, { "D1_OPCION"	, WORK1->WN_OPCION         , ".T." })
+				Aadd( aItem, { "D1_ANOFAB"	, RIGHT(WORK1->WN_ANOFAB,2), ".T." })
+				Aadd( aItem, { "D1_XANOFAB"	, WORK1->WN_ANOFAB         , ".T." })
+				Aadd( aItem, { "D1_ANOMOD"	, WORK1->WN_ANOMOD         , ".T." })
+			EndIf
 		Otherwise
 
 	End Case
