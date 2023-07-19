@@ -360,8 +360,10 @@ Begin Sequence
     Self:_OBrPlan:SetMenuDef('ZPECF30P') //funcionalidade corrente                        // Nome do fonte onde esta a função MenuDef
 	//Self:_OBrPlan:lMaximized := .T.
 	Self:_OBrPlan:AddButton("Itens Relacionados"  	, { || FWMsgRun(, {|| ZPECF30ITR() }, "Itens Relacionados"	, "Localizando") },,,, .F., 2 )  
+	Self:_OBrPlan:AddButton("Itens Similar"  		, { || FWMsgRun(, {|| ZPECF30ITS() }, "Itens Similar"		, "Localizando") },,,, .F., 2 )  
 	Self:_OBrPlan:AddButton("KIT"  					, { || FWMsgRun(, {|| ZPECF30KIT() }, "KIT"					, "Localizando") },,,, .F., 2 )  
 	Self:_OBrPlan:AddButton("Visualizar Produto" 	, { || FWMsgRun(, {|| ZPECF30PRD() }, "Visualizar Produto"	, "Localizando") },,,, .F., 2 )  
+ 
     //Cria as colunas com base no array aCampos
 
     For _nPos := 1 To Len(_aColuna)
@@ -924,11 +926,11 @@ Begin Sequence
 	Self:SetDadosTitle('Consulta Produto '+If(Type("MV_PAR01") == "C" .And. !Empty(MV_PAR01),Alltrim(SB1->B1_DESC),""))
 
   	//chamar funcao para carregar dados
-  	LoadPlan()  //carrega planejamento
-  	ZPECF30KIT(.F.)
-	ZPECF30EVM()  //CARREGA ESTATISTICA DE VENDAS
-	ZPECF30DET()  //CARREGA DETALHES
-	LocFCP()  //carregar ultimo faturamento e compras, descrição produto
+  	LoadPlan()  	//carrega planejamento
+  	ZPECF30ITR(.F.) //carrega browse de itens telacionados 
+	ZPECF30EVM()  	//CARREGA ESTATISTICA DE VENDAS
+	ZPECF30DET()  	//CARREGA DETALHES
+	LocFCP()  		//carregar ultimo faturamento e compras, descrição produto
 	
 	//_oBrRelac:setArray(_aPrdREL)	
   	//_oBrRelac:refresh()
@@ -942,8 +944,6 @@ Begin Sequence
 	Self:RefreshPrd()
 End Sequence
 Return _lRet
-
-
 
 
 
@@ -1053,11 +1053,13 @@ Begin Sequence
 	EndIf
 	_cWhereVS1 += 	" AND VS1.VS1_STATUS IN  (" +_cStatus+ ") " 
 	_cWhereVS1 := "%"+_cWhereVS1+"%"
+	//GAP005 CORREÇÃO ERRO NO CALCULO SALDO AJUSTADO SELECT DE SUBQUERY PARA VERIFICAR B2_LOCAL
 
 	BeginSql Alias _cAliasTRB //Define o nome do alias temporário 
-		SELECT 	  ISNULL(SB1.R_E_C_N_O_,0) NREGSB1
-				, ISNULL(SB2.R_E_C_N_O_,0) NREGSB2
+		SELECT 	  NVL(SB1.R_E_C_N_O_,0) NREGSB1
+				, NVL(SB2.R_E_C_N_O_,0) NREGSB2
 				, NNR.NNR_DESCRI DESCRI_LOCAL
+			 	, SB2.B2_LOCAL 
 				, (	SELECT SUM(VS3.VS3_QTDITE)
 					FROM %Table:VS1% VS1 
 					JOIN  %Table:VS3% VS3
@@ -1065,8 +1067,10 @@ Begin Sequence
 						AND VS3.VS3_FILIAL 	= %xFilial:VS3%
 						AND VS3.VS3_NUMORC 	= VS1.VS1_NUMORC
 						AND VS3.VS3_CODITE  = SB1.B1_COD
+						AND VS3.VS3_LOCAL  	= SB2.B2_LOCAL
 					WHERE  VS1.%notDel%
 						AND VS1.VS1_FILIAL = %xFilial:VS1%
+						AND VS1.VS1_NUMORC = VS3.VS3_NUMORC
 						AND VS1.VS1_TIPORC 	= '1' 
 						%Exp:_cWhereVS1%
 				  ) AS ITENSORC	
@@ -1083,6 +1087,7 @@ Begin Sequence
 						AND VS3.VS3_FILIAL 	= %xFilial:VS3%
 						AND VS3.VS3_NUMORC 	= VS1.VS1_NUMORC
 						AND VS3.VS3_CODITE  = SB1.B1_COD
+						AND VS3.VS3_LOCAL  	= SB2.B2_LOCAL 
 					WHERE  SZK.%notDel%
 						AND	SZK.ZK_NF		= ' '
 						AND SZK.ZK_STATUS   NOT IN ('B','C','F')
@@ -1093,8 +1098,6 @@ Begin Sequence
 			ON  SB2.B2_FILIAL 	BETWEEN %Exp:_cFilDe% AND %Exp:_cFilAte%
 			AND SB2.B2_COD		= SB1.B1_COD  
 			AND SB2.%notDel% 
-			AND ( ( NVL( SB2.B2_QATU -  SB2.B2_RESERVA - SB2.B2_QACLASS  , 0) > 0 AND SB2.B2_LOCAL <> %Exp:_cArmazemPad%) OR 
-					SB2.B2_LOCAL = %Exp:_cArmazemPad% )
 		LEFT JOIN  %Table:NNR% NNR
 			ON  NNR.%notDel%
 			AND NNR.NNR_FILIAL 	= %xFilial:NNR%
@@ -1102,7 +1105,10 @@ Begin Sequence
     	WHERE 	SB1.B1_FILIAL 	= %Exp:FwXFilial("SB1")% 	  
     		AND SB1.B1_COD  	= %Exp:_cCodProd%
 			AND SB1.%notDel% 
+		ORDER BY SB2.B2_LOCAL	
   	EndSql //Gera a consulta no alias informado anteriormente 
+			//AND ( ( NVL( SB2.B2_QATU -  SB2.B2_RESERVA - SB2.B2_QACLASS  , 0) > 0 AND SB2.B2_LOCAL <> %Exp:_cArmazemPad%) OR 
+			//		SB2.B2_LOCAL = %Exp:_cArmazemPad% )
 	//TCSetField(_cAliasTRB,'DATA','D',8,0)
 	If (_cAliasTRB)->(Eof())  .Or. Empty(_cCodProd)
 		_lRet := .F.
@@ -1111,26 +1117,34 @@ Begin Sequence
 	//Carregar as filiais 
 	(_cAliasTRB)->(DbGotop())
 	_lArmazemPad := .F. 
+	_lRet		 := .F.
     While (_cAliasTRB)->(!Eof())
 		SB1->(DbGoto((_cAliasTRB)->NREGSB1))
 		SB2->(DbGoto((_cAliasTRB)->NREGSB2))
 		cFilAnt 	:= SB2->B2_FILIAL
 		_nSaldoSB2 	:= SB2->(SaldoSB2()) //FUNÇÃO PARA CALCULO EM ESTOQUE
+		//GAP005 CORREÇÃO ERRO NO CALCULO SALDO
+
+		If SB2->B2_LOCAL <> _cArmazemPad  .And. _nSaldoSB2 == 0 .And. (_cAliasTRB)->ITENSORC == 0 .And. (_cAliasTRB)->ITENSPIC == 0
+    		(_cAliasTRB)->(DbSkip())
+			Loop 
+		Endif 	
    		If RecLock(_cAliasPlan,.T.)
    			_nSaldo := ( _nSaldoSB2 - ((_cAliasTRB)->ITENSORC ) )
 			(_cAliasPlan)->TRB_FILIAL 	:= SB2->B2_FILIAL
    	   		(_cAliasPlan)->TRB_LOCAL 	:= SB2->B2_LOCAL
   	   		(_cAliasPlan)->TRB_NOMELO 	:= (_cAliasTRB)->DESCRI_LOCAL
    	   		(_cAliasPlan)->TRB_QTDE  	:= _nSaldoSB2
-   	   		(_cAliasPlan)->TRB_ORC  	:= If(AllTrim(SB2->B2_LOCAL) == _cArmazemPad,(_cAliasTRB)->ITENSORC,0)
-   	   		(_cAliasPlan)->TRB_PICKIN	:= If(AllTrim(SB2->B2_LOCAL) == _cArmazemPad,(_cAliasTRB)->ITENSPIC,0)
-   	   		(_cAliasPlan)->TRB_SALDOE  	:= If(AllTrim(SB2->B2_LOCAL) == _cArmazemPad,_nSaldo, _nSaldoSB2)
+   	   		(_cAliasPlan)->TRB_ORC  	:= (_cAliasTRB)->ITENSORC  	//If(AllTrim(SB2->B2_LOCAL) == _cArmazemPad,(_cAliasTRB)->ITENSORC,0)
+   	   		(_cAliasPlan)->TRB_PICKIN	:= (_cAliasTRB)->ITENSPIC  	//If(AllTrim(SB2->B2_LOCAL) == _cArmazemPad,(_cAliasTRB)->ITENSPIC,0)
+   	   		(_cAliasPlan)->TRB_SALDOE  	:= _nSaldo 					//If(AllTrim(SB2->B2_LOCAL) == _cArmazemPad,_nSaldo, _nSaldoSB2)
    	   		(_cAliasPlan)->(MsUnLock())
 			//caso possa não existir o armazem padrão a ser verificado devo preencher os valores de orçamento e picking no primeiro armazem 
 			If SB2->B2_LOCAL == _cArmazemPad
 				_lArmazemPad  := .T.
 			Endif	
-   		Endif
+			_lRet := .T.
+		Endif
     	(_cAliasTRB)->(DbSkip())
     EndDo
 	If _lRet .And. !_lArmazemPad 
@@ -1488,11 +1502,8 @@ Local _lRet 		:= .T.
 Default _lCarrega	:= .T.
 
 Begin Sequence
-	If !_lCarrega
-		_lRet := .F.
-		Break
-	Endif
- 	If ValType(_cCodItem) <> "C"
+ 	If !_lCarrega .Or. ValType(_cCodItem) <> "C" 
+		_aPrdREL := {}
 		_lRet := .F.
 		Break
 	Endif		
@@ -1559,6 +1570,12 @@ If Type("_oBrRelac") == "O"
 	_oBrRelac:setArray(_aPrdREL)	
 	_oBrRelac:GoTop(.T.)
 	_oBrRelac:refresh(.T.)
+	If _lCarrega
+		oArea:SetWinTitle(COL_CENTER, WND_BROWSE, "Relacionamento KIT")
+	Else 
+		oArea:SetWinTitle(COL_CENTER, WND_BROWSE, "Relacionamento")
+	Endif
+	oArea:Refresh()	
 Endif	
 If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
@@ -1589,7 +1606,8 @@ Local _nPos
 Default _lCarrega	:= .T.
 
 Begin Sequence
- 	If ValType(_cCodItem) <> "C"
+ 	If !_lCarrega .Or. ValType(_cCodItem) <> "C" 
+		_aPrdREL := {}
 		_lRet := .F.
 		Break
 	Endif		
@@ -1630,10 +1648,93 @@ If Type("_oBrRelac") == "O"
 	_oBrRelac:setArray(_aPrdREL)	
 	_oBrRelac:GoTop(.T.)
 	_oBrRelac:refresh()
+	If _lCarrega
+		oArea:SetWinTitle(COL_CENTER, WND_BROWSE, "Relacionamento Itens Relacionados")
+	Else
+		oArea:SetWinTitle(COL_CENTER, WND_BROWSE, "Relacionamento ")
+	Endif
+	oArea:Refresh()	
 Endif	
-
 Return _lRet
 
+
+
+
+/*/{Protheus.doc} ZPECF30ITS
+//itens Similar 
+@author DAC denilso
+@since 07/07/2023
+@project    GAP005 | Ajuste itens similar
+@version 1.0
+@parametro 				_lCarrega - indica se esta realizando o carregamento de variaveis neste momento não mostra kits utilizado para fazer atualização no browse
+@return _lRet, Logico
+@history    
+@type Static function
+/*/
+Static Function ZPECF30ITS(_lCarrega)
+Local _lRet			:= .T.
+Local _cCodItem		:= MV_PAR01
+Local _cDescPRd		:= ""
+Local _aItemSim	
+Local _cCodSubst
+Local _cGrupoSubst 
+Local _nPos
+
+Default _lCarrega	:= .T.
+
+Begin Sequence
+ 	If !_lCarrega .Or. ValType(_cCodItem) <> "C" 
+		_aPrdREL := {}
+		_lRet := .F.
+		Break
+	Endif		
+	SB1->(DbSetOrder(1))
+	SB1->(DbSeek(XFilial("SB1")+AllTrim(_cCodItem)))
+
+	oZPEC08Peca:SetGrupo(SB1->B1_GRUPO)
+	oZPEC08Peca:SetCodigo(_cCodItem)
+	_aItemSim := oZPEC08Peca:ItensRelacionados()
+	//aAuxAtu := oZPEC08Peca:EstqSaldo(,.t.,.t.)
+
+	If Len(_aItemSim) == 0 .or. Empty(AllTrim(_aItemSim[1,2]))
+		//	"Não existe item Substitutos para o produto " +AllTrim(_cCodItem)
+		_lRet := .F.
+		Break	
+	Endif
+	_aPrdREL 	:= {}
+	_cDescPRd 	:= SB1->B1_DESC
+	For _nPos := 1 To Len(_aItemSim)
+		_cGrupoSubst	:= _aItemSim[_nPos,1]
+		_cCodSubst 		:= AllTrim(_aItemSim[_nPos,2])
+		_nSaldoSB2 		:= _aItemSim[_nPos,4]
+		Aadd(_aPrdREL,{	;
+						FwXFilial("VPD"),;
+						_cCodSubst,;
+						SB1->B1_DESC,;
+						_cGrupoSubst;
+						})
+	Next
+End Sequence
+If !_lRet .Or. Len(_aPrdREL) == 0
+	_aPrdREL	:= {{	Space(Len(FwXFilial("VE9"))),;
+						Space(Len(SB1->B1_COD)),;
+						Space(Len(SB1->B1_DESC)),;
+						Space(Len(SB1->B1_GRUPO));
+					}}
+EndIf
+If Type("_oBrRelac") == "O"
+	_oBrRelac:SetDescription( "Itens Relacionados Produto "+_cCodItem+" "+_cDescPRd )
+	_oBrRelac:setArray(_aPrdREL)	
+	_oBrRelac:GoTop(.T.)
+	_oBrRelac:refresh()
+	If _lCarrega
+		oArea:SetWinTitle(COL_CENTER, WND_BROWSE, "Relacionamento Similar")
+	Else 
+		oArea:SetWinTitle(COL_CENTER, WND_BROWSE, "Relacionamento")
+	Endif 
+	oArea:Refresh()	
+Endif	
+Return _lRet
 
 
 

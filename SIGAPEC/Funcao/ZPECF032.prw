@@ -284,7 +284,8 @@ Begin Sequence
 	_ObrW:AddLegend("VS1_STATUS = 'C' "  ,"BLUE" 	   	,"cancelado")
 	_ObrW:AddLegend("VS1_STATUS = 'X ' " ,"WHITE" 	   	,"Sem Faturado")
 
-	_ObrW:AddButton("Visualiza Orçamento"  	, { || FWMsgRun(, {|oSay| U_XFVERORC(_cAliasPesq,@_ObrW) }, "Orçamento", "Localizando Orçamento") },,,, .F., 2 )  //função no ZPECFUNA
+	//_ObrW:AddButton("Visualiza Orçamento"  	, { || FWMsgRun(, {|oSay| U_XFVERORC(_cAliasPesq,@_ObrW) }, "Orçamento", "Localizando Orçamento") },,,, .F., 2 )  //função no ZPECFUNA
+	_ObrW:AddButton("Visualiza Orçamento"  	, { || FWMsgRun(, {|oSay| U_MILAXTABELA((_cAliasPesq)->RECNOVS1) }, "Orçamento", "Localizando Orçamento") },,,, .F., 2 )  //função no ZPECFUNA
 
    //Ativamos a classe
     _ObrW:Refresh(.T.)
