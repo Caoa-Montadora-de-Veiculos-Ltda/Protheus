@@ -52,7 +52,7 @@ Private _cNfFor 	:= ""
 Private _cSerFor 	:= ""
 Private _cFornec	:= ""
 Private _cLoja		:= ""
-Private _cTpNf		:= ""
+//Private _cTpNf		:= ""
 Private lDebug 		:= .F.
 Private _aJson		:= {}
 
@@ -113,8 +113,13 @@ Private _aJson		:= {}
 		SetRestFault(400, _cErro)
 		Return(.T.)
  	EndIf
-	
-	If Len(AllTrim(oParseJSON:cod_fornecedor)) == 9  .And. Substr(AllTrim(oParseJSON:cod_fornecedor),1,1) == "9"
+
+	_cNfFor 	:= AllTrim(StrZero(Val(oParseJSON:nota_fiscal),9))
+	_cSerFor 	:= AllTrim(oParseJSON:serie_nf)
+	_cFornec	:= SubStr(AllTrim(oParseJSON:cod_fornecedor), 2, 6)
+	_cLoja		:= SubStr(AllTrim(oParseJSON:cod_fornecedor), 8, 2)
+		
+	/*If Len(AllTrim(oParseJSON:cod_fornecedor)) == 9  .And. Substr(AllTrim(oParseJSON:cod_fornecedor),1,1) == "9"
 		_cNfFor 	:= AllTrim(StrZero(Val(oParseJSON:nota_fiscal),9))
 		//_cNfFor 	:= AllTrim(oParseJSON:nota_fiscal)
 		_cSerFor 	:= AllTrim(oParseJSON:serie_nf)
@@ -127,13 +132,14 @@ Private _aJson		:= {}
 		_cFornec	:= AllTrim(oParseJSON:cod_fornecedor) 
 		_cLoja		:= ""
 		_cTpNf 		:= "S"		
-	EndIf
+	EndIf*/
+
 	_cLog := chr(10)
 	_cLog += "Nf ........: " + _cNfFor      + chr(10)
 	_cLog += "Serie......: " + _cSerFor     + chr(10)
 	_cLog += "Fornecedor.: " + _cFornec     + chr(10)
 	_cLog += "Loja.......: " + _cLoja       + chr(10)
-	_cLog += "Tipo.......: " + _cTpNf       + chr(10)
+	//_cLog += "Tipo.......: " + _cTpNf       + chr(10)
 	_cLog += "Data.......: " + DtoC(Date()) + chr(10)
 	_cLog += "Time.......: " + Time()       + chr(10)
 	_cLog += "JSON.......: " + cJson	    + chr(10)
@@ -156,7 +162,7 @@ Private _aJson		:= {}
 	_aItens := oParseJSON:Itens
 	//Alterado forma de chamada das funções DAC 09/06/2023
 	If _aItens == Nil  .Or. Len(_aItens) == 0
- 		_cErro := "Não informado itens"
+ 		_cErro := "Nao informado itens"
 		ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )	
 		SetRestFault(400, _cErro)
 		Return(.T.)
@@ -164,11 +170,14 @@ Private _aJson		:= {}
 	//Para Transferência
 	_cErro	 := ""
 	_nRetJson:= 0
-	If _cTpNf == "T"
+	_lTransf := zGeraTransf(@_aDivergencia, @_nRetJson)
+	
+	/*If _cTpNf == "T"
 		_lTransf := zGeraTransf(@_aDivergencia, @_nRetJson)
 	ElseIf _cTpNf == "S"
 		_lTransf := zGeraEntrada()
- 	EndIf
+ 	EndIf*/
+	
 	_cLog += "Message....: " + _cErro
 	if Len(_aJson) > 0
 		ojsonLog:set(_aJson)
@@ -294,7 +303,10 @@ Private lAutoErrNoFile 	:= .T.
 		EndIf
 
 		//arquivo recebimento
-		If Select(cAliasZD1) <> 0 ; (cAliasZD1)->(DbCloseArea()) ; EndIf
+		If Select(cAliasZD1) <> 0
+			(cAliasZD1)->(DbCloseArea())
+		EndIf
+		
 		cQryZD1:= ""
 		cQryZD1 += " SELECT ZD1.R_E_C_N_O_ AS NREGZD1													"+(Chr(13)+Chr(10))
 		cQryZD1 += " FROM "+RetSqlName("ZD1")+" ZD1											"+(Chr(13)+Chr(10))
@@ -318,7 +330,7 @@ Private lAutoErrNoFile 	:= .T.
 		ZD1->(DbGoto((cAliasZD1)->NREGZD1))
 		//Se não tiver saldo no titulo não passar DAC 10/06/2023
 		If	ZD1->ZD1_SLDIT <= 0
-		    _cErro := "Produto "+AllTrim(_cProduto)+"  nao possui Saldo para movimentação na tabela de Conferencia de Recebimento no Totvs." 
+		    _cErro := "Produto "+AllTrim(_cProduto)+"  nao possui Saldo para movimentacao na tabela de Conferencia de Recebimento no Totvs." 
 			Aadd(_aErro, _cErro)
 			Aadd(_aDivergencia, {	_cProduto,;
 									Alltrim(_cFornec),;
@@ -379,7 +391,7 @@ Private lAutoErrNoFile 	:= .T.
 		_nSaldoSB2 := SB2->(SaldoSb2())
 		//Não permitir saldo zerado DAC 16/05/2023
 		If _nSaldoSB2 == 0
-			_cErro := "Produto "+AllTrim(_cProduto)+" com Armazém "+_cArmOrig+" de Recebimento sem Saldo no Totvs. " 
+			_cErro := "Produto "+AllTrim(_cProduto)+" com Armazem "+_cArmOrig+" de Recebimento sem Saldo no Totvs. " 
 			Aadd(_aErro, _cErro)
 			Aadd(_aDivergencia, {	_cProduto,;
 									Alltrim(_cFornec),;
@@ -399,7 +411,7 @@ Private lAutoErrNoFile 	:= .T.
 			//ESPFUN.-.PEC042. deixo continuar com o Saldo do SB2 conforme alinhado com José 16/05/2023
 			_nQtdeDiverge := _nQtdeConf
 			_nQtdeConf	  := _nSaldoSB2	
-			_cMsg := "Qtde conferida "+AllTrim(Str(_nQtdeDiverge))+" maior que Saldo do Totvs "+AllTrim(Str(_nSaldoSB2))+". Será utilizado Saldo Totvs" 
+			_cMsg := "Qtde conferida "+AllTrim(Str(_nQtdeDiverge))+" maior que Saldo do Totvs "+AllTrim(Str(_nSaldoSB2))+". Sera utilizado Saldo Totvs" 
 			_cErro:= "Recebimento parcial do produto "+_cProduto+" na qtde " +AllTrim(Str(_nQtdeConf))+ " por falta de saldo no armazem "+_cArmOrig+" divergencia do Saldo Estoque, da Serie/NF "+_cSerFor+"/"+_cNfFor
 			//igualar qtde conferida a saldo B2
 			//Devo enviar e-mail mesmo deixando continuar
@@ -425,7 +437,7 @@ Private lAutoErrNoFile 	:= .T.
 				_nSaldoTec := _nQtdeTec - _nSaldoTec
 			Else
 				CriaSB2(AllTrim(_cProduto),AllTrim(_cArmTec))
-				_cErro := "Produto "+AllTrim(_cProduto)+" nao cadastrado no Estoque "+AllTrim(_cArmTec)+" do Totvs, referente Qtde Técnico "+AllTrim(Str(_nQtdeTec)) 
+				_cErro := "Produto "+AllTrim(_cProduto)+" nao cadastrado no Estoque "+AllTrim(_cArmTec)+" do Totvs, referente Qtde Tecnico "+AllTrim(Str(_nQtdeTec)) 
 				Aadd(_aDivergencia, {	_cProduto,;
 										Alltrim(_cFornec),;
 										Alltrim(_cLoja ),; 
@@ -460,8 +472,8 @@ Private lAutoErrNoFile 	:= .T.
 			//igualar qtde conferida a saldo b2
 			_nQtdeDiverge := _nQtdeConf
 			_nQtdeConf	  := ZD1->ZD1_SLDIT	
-			_cMsg := "Qtde conferida "+AllTrim(Str(_nQtdeDiverge))+" maior que o saldo a conferir - ZD1 "+AllTrim(Str(_nQtdeConf))+", será substituido pelo saldo ZD1 ." 
-			_cErro:= "Recebimento parcial da qtde " +AllTrim(Str(_nQtdeConf))+ " por falta de Saldo a Receber na NF, Armazém "+_cArmOrig+", da Serie/NF "+_cSerFor+"/"+_cNfFor
+			_cMsg := "Qtde conferida "+AllTrim(Str(_nQtdeDiverge))+" maior que o saldo a conferir - ZD1 "+AllTrim(Str(_nQtdeConf))+", sera substituido pelo saldo ZD1 ." 
+			_cErro:= "Recebimento parcial da qtde " +AllTrim(Str(_nQtdeConf))+ " por falta de Saldo a Receber na NF, Armazem "+_cArmOrig+", da Serie/NF "+_cSerFor+"/"+_cNfFor
 			Aadd(_aErro, _cErro)
 			If _nQtdeDiverge > 0					
 				Aadd(_aDivergencia, {	_cProduto,;
@@ -494,7 +506,7 @@ Private lAutoErrNoFile 	:= .T.
 	Endif 	
 	//Retornando falso ja aborto a processo
 	If ! _lRet
-		_cErro := "Problemas na importação:"+' - ' + _cErro
+		_cErro := "Problemas na importacao:"+' - ' + _cErro
 		Return .F.
 	Endif	
 
@@ -523,7 +535,7 @@ Private lAutoErrNoFile 	:= .T.
 				Endif 
 			Next 	
 			If Empty(_cDocumento)
-				_cErro := "Não foi possivel criar numeração TOTVS, não foi gravada a movimentação"
+				_cErro := "Nao foi possivel criar numeracao no TOTVS, nao foi gravada a movimentacao"
 				Aadd(_aDivergencia, {	_cProduto,;
 										Alltrim(_cFornec),;
 										Alltrim(_cLoja ),; 
@@ -541,7 +553,7 @@ Private lAutoErrNoFile 	:= .T.
 			//ZD1->(DbGoto(_nRegZD1))  //posiciono ZD1
 			SB1->(DbSetOrder(1))
 			If !SB1->(DbSeek(FWxFilial("SB1")+PadR(_cProduto, TamSx3('B1_COD') [1])))
-				_cErro := "Não localizado Produto "+_cProduto+" para execução gravação movimentação por ExecAuto"
+				_cErro := "Nao localizado Produto "+_cProduto+" para execucao gravacao da movimentaao por ExecAuto"
 				Aadd(_aDivergencia, {	_cProduto,;
 										Alltrim(_cFornec),;
 										Alltrim(_cLoja ),; 
@@ -587,7 +599,7 @@ Private lAutoErrNoFile 	:= .T.
 			Next _nCount
 
 			If Len(_aAuto) == 0 .Or. Len(_aLinha) == 0
-				_cErro := "Não foi possivel fazer a movimentação interna não carregou dados da movimentação, verificar com ADM Sistemas TOTVS ." 
+				_cErro := "Nao foi possivel fazer a movimentacao interna, nao carregou os dados da movimentacao, verificar com ADM Sistemas TOTVS ." 
 				//ESPFUN.-.PEC042.-.Controle.de.saldo.e.e-mail.apos.integracao.de.armazenagem
 				//igualar qtde conferida a saldo b2
 				add(_aDivergencia, {_cProduto,;
