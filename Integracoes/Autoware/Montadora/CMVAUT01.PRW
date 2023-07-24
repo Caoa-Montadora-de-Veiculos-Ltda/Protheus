@@ -410,7 +410,15 @@ Begin Transaction
         (cTmpAlias)->(DbGoTop())
 
         If (cTmpAlias)->(!Eof())
-            cNumPed := GetSxeNum("SC5","C5_NUM")  
+            
+            cNumPed := GetSxeNum("SC5","C5_NUM")
+                        
+            WHILE ExistCpo("SC5", cNumPed , 1)   //Valido se a numeração já existe para evitar que use uma chave que já existe
+                ConfirmSX8()
+                cNumPed := GetSxeNum("SC5","C5_NUM")
+            ENDDO
+            ConfirmSX8() 
+            
             aCabPed := {}
             Aadd(aCabPed, {"C5_NUM"    ,cNumPed                 , Nil}); Aadd(aCabPed, {"C5_TIPO"   ,"N"                        , Nil})
             Aadd(aCabPed, {"C5_CLIENTE",(cTmpAlias)->VRJ_CODCLI , Nil}); Aadd(aCabPed, {"C5_LOJACLI",(cTmpAlias)->VRJ_LOJA      , Nil})
