@@ -216,7 +216,7 @@ SA1->(DbSetOrder(3))
 If SA1->(DbSeek(xFilial("SA1")+cWSCNPJ))
 	cCodCli := SA1->A1_COD
 	cLjCli  := SA1->A1_LOJA
-	if SA1->A1_MSBLQL == '2'
+	if SA1->A1_MSBLQL == '1'
 		Return {cWSPedido,"0","Cliente Bloqueado: " + cWSCNPJ , "" }
 	Endif
 Else
