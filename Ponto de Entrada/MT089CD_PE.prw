@@ -238,7 +238,3 @@ Static Function zFBarueri()
 	RestArea(_aAreaSA1)
 
 Return({bCond,bSort,bIRWhile,bAddTes,cTpOper})
-
-User Function ZFINF005()
-
-Return .T.
