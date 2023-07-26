@@ -38,6 +38,7 @@ User Function ZFAT002A()
 	Local cMainPath := "C:\"
 	Local cFileOpen := ""
 	Local cArqLog   := ""
+	Local _aArea 	:= GetArea()
 
 		////U_ZGENUSER( <ID User> , <"NOME DA FUNÇÃO"> , <.F.=Não Exibe Msg; .T.=Exibe Msg> )
 		IF U_ZGENUSER( RetCodUsr() ,"ZFATF002" ,.T.) = .F.
@@ -47,12 +48,14 @@ User Function ZFAT002A()
 	cFileOpen	:= cGetFile(cExtens,cTitulo1,,cMainPath,.T.,)
 
 	If !File(cFileOpen)
-	MsgAlert("Arquivo CSV: " + cFileOpen + " não localizado","[ZFATF002] - Atenção")
+		MsgAlert("Arquivo CSV: " + cFileOpen + " não localizado","[ZFATF002] - Atenção")
 	Else
 
 		Processa({|| ZFAT002B(cFileOpen,@cArqLog)}, "[ZFATF002] - Carga de Dados.", "Aguarde .... Realizando a carga dos registros...." )
 		
 	Endif
+
+	RestArea(_aArea)
 
 Return Nil
 
@@ -71,7 +74,7 @@ Local cSeparador    := ";" // Separador do arquivo
 Local aDados        := {} // Array dos dados da linha do laco
 Local aDadosLi      := {}
 Local cItem         := ""
-Local cProduto      := ""
+Local _cProduto      := ""
 Local nQtdven       := 0
 Local _nPunit       := 0
 Local n             := 0
@@ -80,7 +83,6 @@ Local cUm           := ""
 Local cConta        := ""
 Local cCLVL         := ""
 Local cItemcta      := ""
-Local _cQry         := ""
 Local _cPC          := Space(6)
 Local _cTipo        := Space(2)
 Local _cGrupo       := Space(4)
@@ -92,10 +94,10 @@ Local _nPosQtd      := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_QTDVEN' })
 Local _nPosPU       := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_PRCVEN' })
 Local _nPosCONTA    := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_CONTA' })
 Local _nPosIT       := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_ITEMCTA' })
-Local _cAliasQry    := GetNextAlias()
 Local aItens        := {}
 Local _cEmp 		:= FWCodEmp()
-Private aArea       := GetArea()
+Local _lErroImp		:= .F.
+Local _aColsBkp		:= aClone( aCols )
 Public _nLinAc      := 0
 
 	ProcRegua(311)
@@ -104,7 +106,7 @@ Public _nLinAc      := 0
 	FT_FGOTOP()
 	FT_FSKIP()
 
-	aTemp	:= aClone(aCols[1])
+	aTemp	:= aClone(aCols[01])
 		
 	While !FT_FEOF()
 			
@@ -121,27 +123,42 @@ Public _nLinAc      := 0
 	For n	:= 1 to Len(aDadosLi)
 	
 		_nLinAc		:= n
-		cProduto	:= PadR( AllTrim( aDadosLi[n][01] ) , TamSX3( "C6_PRODUTO" )[1]," ") //Posição 01 do lay-out
-	
+		_cProduto	:= PadR( AllTrim( aDadosLi[n][01] ) , TamSX3( "C6_PRODUTO" )[1]," ") //Posição 01 do lay-out
+			
 		SB1->( DbSetOrder( 1 ) )
-		If !SB1->( DbSeek( xFilial( "SB1" ) + cProduto ) )
-			MsgInfo("Produto não cadastrado :" + cProduto , " [ZFATF002]")
+		If !SB1->( DbSeek( xFilial( "SB1" ) + _cProduto ) )
+			MsgInfo("Produto não cadastrado :" + _cProduto , " [ZFATF002]")
 			Loop
 		EndIf
 
-		cItem                := PadL( AllTrim( STR(n) ) , TamSX3( "C6_ITEM" )[1],"0")
-		cDescri              := POSICIONE("SB1",1,XFILIAL("SB1")+cProduto,"SB1->B1_DESC")
-		cUm                  := POSICIONE("SB1",1,XFILIAL("SB1")+cProduto,"SB1->B1_UM")
-		cConta               := POSICIONE("SB1",1,XFILIAL("SB1")+cProduto,"SB1->B1_CONTA")
-		cCLVL                := POSICIONE("SB1",1,XFILIAL("SB1")+cProduto,"SB1->B1_CLVL")
-		cItemcta             := POSICIONE("SB1",1,XFILIAL("SB1")+cProduto,"SB1->B1_ITEMCC")
-		nQtdven              := NoRound(Val(aDadosLi[n][02]), TamSx3("C6_QTDVEN")[02]) //VAL(aDadosLi[n][02]) //Posição 02 do lay-out
+		cItem   	:= PadL( AllTrim( STR(n) ) , TamSX3( "C6_ITEM" )[1],"0")
+		cDescri 	:= POSICIONE("SB1",1,XFILIAL("SB1")+_cProduto,"SB1->B1_DESC")
+		cUm     	:= POSICIONE("SB1",1,XFILIAL("SB1")+_cProduto,"SB1->B1_UM")
+		cConta  	:= POSICIONE("SB1",1,XFILIAL("SB1")+_cProduto,"SB1->B1_CONTA")
+		cCLVL   	:= POSICIONE("SB1",1,XFILIAL("SB1")+_cProduto,"SB1->B1_CLVL")
+		cItemcta	:= POSICIONE("SB1",1,XFILIAL("SB1")+_cProduto,"SB1->B1_ITEMCC")
+		nQtdven 	:= NoRound(Val(aDadosLi[n][02]), TamSx3("C6_QTDVEN")[02]) //VAL(aDadosLi[n][02]) //Posição 02 do lay-out
 		
-		If _cEmp == '2020' 
-			If nQtdven <> NoRound(VAL(aDadosLi[n][02]), 0)
-				MsgInfo("Arquivo com quantidade quebrada, processo será abortado, verifique o arquivo. Produto:" + cProduto , " [ZFATF002]")
-				EXIT
+		If _cEmp == '2020'
+		
+			If At(".", AllTrim(aDadosLi[n][02])) > 0 .Or. At(",", AllTrim(aDadosLi[n][02])) > 0
+				MsgInfo("Não é permitido quantidade com ponto ou virgula no arquivo de importação."+ CRLF + " Produto:" + _cProduto , " [ZFATF002]")
+				_lErroImp := .T.
+				Exit
 			EndIf
+		
+		 
+			If nQtdven <> NoRound(VAL(aDadosLi[n][02]), 0)
+				MsgInfo("Arquivo com quantidade quebrada, processo será abortado, verifique o arquivo."+ CRLF + " Produto:" + _cProduto , " [ZFATF002]")
+				_lErroImp := .T.
+				Exit
+			EndIf
+
+		EndIf
+
+		_nPunit := U_ZGENCST(_cProduto)
+		If _nPunit == 0
+			MsgInfo("O produto esta com o custo zerado, informe o preço unitario manualmente."+ CRLF + " Produto:" + _cProduto , " [ZFATF002]")
 		EndIf
 		
 		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -151,38 +168,11 @@ Public _nLinAc      := 0
 		_cTipo               := ALLTRIM(SB1->B1_TIPO)
 		_cGrupo              := ALLTRIM(SB1->B1_GRUPO)
 
-		IF _cTipo <> 'SV' .AND. _cGrupo <> 'VEIA'
+		If _cTipo <> 'SV' .AND. _cGrupo <> 'VEIA'
 
-			If !Empty( _cPC ) //Se não encontrar CM1 fica zero
-
-				If Select( (_cAliasQry) ) > 0
-		    		(_cAliasQry)->(DbCloseArea())
-	    		EndIf
-
-				_cQry                := " SELECT SB2.B2_COD, SUM(SB2.B2_VATU1) VAL, SUM(SB2.B2_QATU) QTDE"
-				_cQry                += " FROM " + RetSqlName("SB2") + " SB2 "
-				_cQry                += " WHERE SB2.D_E_L_E_T_ = ' ' "
-				_cQry                += " AND SB2.B2_COD = '" + cProduto + "' "
-				_cQry                += " GROUP BY SB2.B2_COD "
-				//_cQry                := ChangeQuery( _cQry )
-				dbUseArea( .T., "TOPCONN", TcGenQry( ,, _cQry ), _cAliasQry, .F., .T. )
-			Else
-				_cPC                 := " "
-			EndIf
-
-			If !(_cAliasQry)->(Eof())
-				If ((_cAliasQry)->VAL/(_cAliasQry)->QTDE) < 0
-					_nPunit	:= 0
-				Else
-					_nPunit	:= ((_cAliasQry)->VAL/(_cAliasQry)->QTDE)
-				EndIF
-			EndIf
-
-			(_cAliasQry)->(dbCloseArea())
-
-			IF n > 1
+			If n > 1
 				aadd(aCols   , aClone(aTemp))
-			ENDIF
+			EndIf
 
 			aCols[n][_nPosItem]  := cItem
 			__READVAR            := "C6_ITEM"
@@ -190,9 +180,9 @@ Public _nLinAc      := 0
 			&(GetSx3Cache(__READVAR,"X3_VALID"))
 			RunTrigger(2,n,nil,,__READVAR)
 
-			aCols[n][_nPosPro]   := cProduto
+			aCols[n][_nPosPro]   := _cProduto
 			__READVAR            := "C6_PRODUTO"
-			&("M->"+__READVAR)   := cProduto
+			&("M->"+__READVAR)   := _cProduto
 			&(GetSx3Cache(__READVAR,"X3_VALID"))
 			RunTrigger(2,n,nil,,__READVAR)
 
@@ -232,14 +222,6 @@ Public _nLinAc      := 0
 			&(GetSx3Cache(__READVAR,"X3_VALID"))
 			RunTrigger(2,n,nil,,__READVAR)
 
-			/*
-			aCols[n][_nPosLiz] := cLocliz	
-			__READVAR	:= "C6_LOCALIZ"
-			&("M->"+__READVAR)	:= cLocliz
-			&(GetSx3Cache(__READVAR,"X3_VALID"))
-			RunTrigger(2,n,nil,,__READVAR)	
-			*/
-
 			aadd(aItens  , aClone(aCols[n]))
 
 			IF n = Len(aDadosLi)
@@ -250,13 +232,15 @@ Public _nLinAc      := 0
 
 	Next n
 
-	aCols	:= aClone( aItens )
+	If _lErroImp
+		aCols	:= aClone( _aColsBkp )
+	Else
+		aCols	:= aClone( aItens )
+	EndIf
 
 	GETDREFRESH()
 	SetFocus(oGetDad:oBrowse:hWnd) // Atualizacao por linha
 	oGetDad:Refresh()
 	//A410LinOk(oGetDad)	
-
-	RestArea(aArea)
 
 Return()
