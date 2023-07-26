@@ -142,23 +142,23 @@ Public _nLinAc      := 0
 		If _cEmp == '2020'
 		
 			If At(".", AllTrim(aDadosLi[n][02])) > 0 .Or. At(",", AllTrim(aDadosLi[n][02])) > 0
-				MsgInfo("Não é permitido quantidade com ponto ou virgula no arquivo de importação."+ CRLF + " Produto:" + _cProduto , " [ZFATF002]")
+				MsgInfo("Não é permitido quantidade com ponto ou virgula no arquivo de importação."+ CRLF + " Produto: " + _cProduto , " [ZFATF002]")
 				_lErroImp := .T.
 				Exit
 			EndIf
 		
 		 
 			If nQtdven <> NoRound(VAL(aDadosLi[n][02]), 0)
-				MsgInfo("Arquivo com quantidade quebrada, processo será abortado, verifique o arquivo."+ CRLF + " Produto:" + _cProduto , " [ZFATF002]")
+				MsgInfo("Arquivo com quantidade quebrada, processo será abortado, verifique o arquivo."+ CRLF + " Produto: " + _cProduto , " [ZFATF002]")
 				_lErroImp := .T.
 				Exit
 			EndIf
 
 		EndIf
 
-		_nPunit := U_ZGENCST(_cProduto)
+		_nPunit := NoRound(U_ZGENCST(_cProduto),TamSx3("C6_PRCVEN")[02])
 		If _nPunit == 0
-			MsgInfo("O produto esta com o custo zerado, informe o preço unitario manualmente."+ CRLF + " Produto:" + _cProduto , " [ZFATF002]")
+			MsgInfo("O produto esta com o custo zerado, informe o preço unitario manualmente."+ CRLF + " Produto: " + _cProduto , " [ZFATF002]")
 		EndIf
 		
 		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
