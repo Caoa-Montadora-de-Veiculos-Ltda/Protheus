@@ -107,13 +107,13 @@ Begin Sequence
             Break
         EndIf
     EndIf
-    Aadd(_aMsgErro, {"ZGENCST02","Não calculado custo pela tabela de Preços Veiculos (VVP), código do produto"+_cCodProd+If(!Empty(_cLocal)," Local"+_cLocal,"")+" ano fab/mod "+_cAnoMod+" !"})
+    Aadd(_aMsgErro, {"ZCSTVEI","Não calculado custo pela tabela de Preços Veiculos (VVP), código do produto"+_cCodProd+If(!Empty(_cLocal)," Local"+_cLocal,"")+" ano fab/mod "+_cAnoMod+" !"})
     //Caso não encontrou na VVP Verificar custo no SB1
 	If SB1->( dbSeek( xFilial("SB1")+_cCodProd ) ) .and. SB1->B1_CUSTD > 0
 		_nCustoRet := SB1->B1_CUSTD 
         Break
     Endif
-    Aadd(_aMsgErro, {"ZGENCST02","Não calculado custo pela tabela de Produtos (SB1), código do produto"+_cCodProd+If(!Empty(_cLocal)," Local"+_cLocal,"")+" ano fab/mod "+_cAnoMod+" !"})
+    Aadd(_aMsgErro, {"ZCSTVEI","Não calculado custo pela tabela de Produtos (SB1), código do produto"+_cCodProd+If(!Empty(_cLocal)," Local"+_cLocal,"")+" ano fab/mod "+_cAnoMod+" !"})
     //Caso não localizou custo verificar no SB2
     If Select(_cAliasPesq) <> 0
 	    (_cAliasPesq)->(DbCloseArea())
@@ -146,7 +146,7 @@ Begin Sequence
         Break
     Endif
     //Se não localizou guardar msg
-    Aadd(_aMsgErro, {"ZGENCST02","Não calculado custo pela tabela de Saldos (SB2), código do produto"+_cCodProd+If(!Empty(_cLocal)," Local"+_cLocal,"")+" ano fab/mod "+_cAnoMod+" !"})
+    Aadd(_aMsgErro, {"ZCSTVEI","Não calculado custo pela tabela de Saldos (SB2), código do produto"+_cCodProd+If(!Empty(_cLocal)," Local"+_cLocal,"")+" ano fab/mod "+_cAnoMod+" !"})
 End Begin
 If Select(_cAliasPesq) <> 0
 	(_cAliasPesq)->(DbCloseArea())

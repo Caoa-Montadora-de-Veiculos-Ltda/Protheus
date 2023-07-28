@@ -20,13 +20,17 @@
 User Function ZFATF005()
 
 //Local _nPosPU  := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_PRCVEN'}) 
-Local _aArea      := GetArea()
-Local _cGrupo     := Space(4)
-Local _cPC        := Space(6)
-Local _cTipo      := Space(2)
-Local _nLaco      := 0
-Local aPergs      := {}
-Local lEnder      := .T.
+Local _aArea         := GetArea()
+Local _cGrupo        := Space(4)
+Local _cPC           := Space(6)
+Local _cTipo         := Space(2)
+Local _nLaco         := 0
+Local aPergs         := {}
+Local lEnder         := .T.
+Local _cEmpresa 	   := FWCodEmp()
+Local _lWLocaliz     := IIf(_cEmpresa=='2010','.T.','.F.')
+Local _lOLocaliz     := IIf(_cEmpresa=='2010',.T.,.F.)
+Local _lOTpOper      := IIf(_cEmpresa=='2010',.F.,.T.)
 
 Private _cCLVL    := space(11)
 Private _cCusto   := space(11)
@@ -43,12 +47,12 @@ Private _nPosOper := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_OPER' })
 Private _nPosTes  := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_TES' })
 Private aRetP     := {}
 
-aadd(aPergs, {1, "TES "            , _cTes   , "@!", '.T.', "SF4", '.T.', 25, .F., , .F.})
-aadd(aPergs, {1, "Armazém "        , _cLocal , "@!", '.T.', " "  , '.T.', 25, .T., , .F.})
-//aadd(aPergs, {1, "Tipo Operação "  , _cOperac, "@!", '.T.', " "  , '.T.', 25, .T., , .F.})
-aAdd(aPergs, {1 ,"Tipo Operação "  , Space(5), ""  , ""   , "DJ" ,  ""  , 10, .F.})
-aadd(aPergs, {1, "Centro de Custo ", _cCusto , "@!", '.T.', "CTT", '.T.', 80, .T., , .F.})
-aadd(aPergs, {1, "Endereço "       , _cLocliz, "@!", '.T.', "SBE", '.T.', 50, .T., , .F.})
+aadd(aPergs, {1, "TES "            , _cTes   , "@!", '.T.', "SF4", '.T.'      , 25, .F.         })
+aadd(aPergs, {1, "Armazém "        , _cLocal , "@!", '.T.', " "  , '.T.'      , 25, .T.         })
+aAdd(aPergs, {1 ,"Tipo Operação "  , Space(5), ""  , ""   , "DJ" ,  ""        , 10, _lOTpOper   })
+aadd(aPergs, {1, "Centro de Custo ", _cCusto , "@!", '.T.', "CTT", '.T.'      , 80, .T.         })
+aadd(aPergs, {1, "Endereço "       , _cLocliz, "@!", '.T.', "SBE", _lWLocaliz , 50, _lOLocaliz  })
+
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //³ Verifica se existe  Pedido de Vendas ³
@@ -71,7 +75,9 @@ IF _cTipo <> 'SV' .AND. _cGrupo <> 'VEIA'
       ACTIVATE MSDIALOG oDlg CENTER
 
       //Validar o armazém com o endereço p/ dar continuidade
-      lEnder   := VerArm()
+      If _cEmpresa == '2010'
+         lEnder   := VerArm()
+      EndIf
 
       If nOpca == 0 .Or. lEnder = .F.
          Return()
@@ -98,6 +104,7 @@ IF _cTipo <> 'SV' .AND. _cGrupo <> 'VEIA'
       For _nLaco    := 1 to 05 //Numero de perguntas no SX1
          DO CASE
          CASE _nLaco = 1
+            DbSeek( _cPerg + '01' )
             RecLock("SX1",.F.)
             SX1->X1_CNT01 := _cTes
             MsUnlock()
