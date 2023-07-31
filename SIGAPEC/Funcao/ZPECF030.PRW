@@ -1296,7 +1296,7 @@ Local _cDirXls    := AllTrim(SuperGetMV( "IQA_XLSIORI"  ,,"Planejamento\xls" )) 
 Local _cArqXLS	:= 	""
 
 Begin Sequence
-		_cArqXLS := cGetFile(_cTipoArq,"Selecione o arquivo que será analisado.",0,_cDirXls,.T.,GETF_LOCALFLOPPY + GETF_LOCALHARD  )
+		_cArqXLS := cGetFile(_cTipoArq,"Selecione o arquivo que será analisado.",0,_cDirXls,.T.,GETF_LOCALFLOPPY + GETF_LOCALHARD , )
 		If !Empty(_cArqXLs)
 			oOle:= TOleContainer():New( 2, 2,560 ,284 ,oPanelVis,.T.,_cArqXLS )
 			If !oOle:OpenFromFile(Alltrim(_cArqXLS),.F.)
@@ -1845,7 +1845,6 @@ Begin Sequence
 	//Localizar a curva ABC
 	BeginSql Alias _cAliasPesq
  		SELECT  NVL(SZO.R_E_C_N_O_,0) AS NREGSZO
-				,NVL(SB2SQL.CUSTO,0)   AS CUSTO_MEDIO 
 				,COALESCE(SBM.BM_CODMAR,' ') AS MARCA
     	FROM %Table:SB1% SB1
 		LEFT JOIN %Table:SZO% SZO
@@ -1856,17 +1855,6 @@ Begin Sequence
     		ON  SBM.%notDel%
 			AND SBM.BM_FILIAL 	= %xFilial:SBM%
     		AND SBM.BM_GRUPO 	= SB1.B1_GRUPO 
-		LEFT JOIN ( 
-    				SELECT B2_COD
-						,  CAST(SUM(NVL(B2_QATU,0)) AS NUMBER (8, 2)) AS SALDO
-						, ( SUM(NVL(B2_VATU1,0)) / SUM(NVL(B2_QATU,0)) ) AS CUSTO 
-					FROM  %Table:SB2% SB2
-					WHERE SB2.B2_FILIAL = %xFilial:SB2%
-					AND SB2.%NotDel%
-					AND SB2.B2_QATU <> 0 
-					GROUP BY B2_COD 
-					) SB2SQL
-					ON SB2SQL.B2_COD = SB1.B1_COD  
      	WHERE   SB1.%notDel% 
             AND SB1.B1_FILIAL 	= %xFilial:SB1%
      		AND SB1.B1_COD      = %Exp:_cCodProd%
@@ -1877,14 +1865,17 @@ Begin Sequence
 			_cCurvaABC 	:= AllTrim(SZO->ZO_CURVQTD) + AllTrim(SZO->ZO_CURVCUS)
 			_cMarca   	:= SZO->ZO_MARCA 
 		Endif 
-		If (_cAliasPesq)->CUSTO_MEDIO > 0
+		/*If (_cAliasPesq)->CUSTO_MEDIO > 0
 			_nCustoMedio := (_cAliasPesq)->CUSTO_MEDIO
-		Endif	
+		Endif	*/
 	EndIf
 	//prioridade marca encontrada no select SBM
 	If !Empty((_cAliasPesq)->MARCA)
 		_cMarca := (_cAliasPesq)->MARCA
-	Endif 
+	Endif
+
+	_nCustoMedio := NoRound(U_ZGENCST(_cCodProd),TamSx3("C6_PRCVEN")[02])
+
 	_nSaldoWis01 := 0
 	_nSaldoWis11 := 0
 
