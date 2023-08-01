@@ -26,13 +26,16 @@ Liberar orçamento verifica se esta disponível para separação e grava separação
 @obs 
 @menu       Nao Informado
 @return		_lRet 		- Verdadeiro ou falso
-@history    
-
+@history    28/07/2023 GAP002  Integração da separação - Informar produto e quantidade da cubagem
+			incluído lAtualiza para atualização do VS1 em alguns casos não será necessário
 /*/
-User Function XOFUNLIB( _cNumOrc, _aSeqVS3, _aVS3Reg )
+User Function XOFUNLIB( _cNumOrc, _aSeqVS3, _aVS3Reg, _lAtualiza )
 	Local _lRet 		:= .T.
 	//Local _cNroConf
 	Local _cDocto
+
+	Default lAtualiza	:= .T.
+
 	//Caso não esteja habilitada crio para que possa retornar mesgs
 	If Type("_aMensAglu") == "U"
 		Private _aMensAglu := {}
@@ -45,15 +48,15 @@ User Function XOFUNLIB( _cNumOrc, _aSeqVS3, _aVS3Reg )
 			Break
 		EndIf
 		DBSELECTAREA("VS1")
-		Private aHeaderP    	:= {} 							// Variavel ultilizada na OX001RESITE
+		Private aHeaderP    	:= {} 						// Variavel ultilizada na OX001RESITE
 		Private _aReservaCAOA 	:= {_cNumOrc,.T.,_aVS3Reg}	// Variavel utilizada no PE OX001RES
 		_cDocto := VS1->(OX001RESITE(VS1->VS1_NUMORC, .T., _aSeqVS3))
 		//Alterado para utilizar reserva CAOA - DAC 16/08/2022
 		//_cDocto := U_XRESCAOAPEC(_cNumOrc, .T., _aSeqVS3)
-		If Empty(_cDocto) .or. _cDocto == "NA"
+		If lAtualiza .And. (Empty(_cDocto) .or. _cDocto == "NA")
 			Aadd(_aMensAglu,"Não foi possivel fazer reserva os status serão retornados, verificar com ADM SISTEMAS !")
 			RecLock('VS1',.F.)
-				VS1->VS1_XBO := 'E'
+			VS1->VS1_XBO := 'E'
 			VS1->(MsUnlock())
 			_lRet := .F.
 			Break

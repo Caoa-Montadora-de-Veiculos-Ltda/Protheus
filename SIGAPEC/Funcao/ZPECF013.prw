@@ -122,12 +122,17 @@ Static Function TelaUnit(_cFilPicking, _cPicking, _lConsultaExt)
 	If SZK->(FieldPos("ZK_STATUS")) > 0 
  		oBrowseUp:AddLegend("SZK->ZK_STATUS=='C'"          												,"RED"    ,"Cancelado")
 		oBrowseUp:AddLegend("SZK->ZK_STATUS=='B'"         												,"WHITE"  ,"Bloqueado")
+		//GAP002 DAC 28/07/2023
+		oBrowseUp:AddLegend("SZK->ZK_STATUS=='D'"         												,"ORANGE" ,"Divergência WIS")
 	EndIf
 	oBrowseUp:AddLegend("Empty(SZK->ZK_XPICKI)"   	                        							,"GREEN"  ,"Sem Picking")
 	oBrowseUp:AddLegend("!Empty(SZK->ZK_NF) .OR. SZK->ZK_STATUS =='F'"   		                     	,"BLACK"  ,"Faturado")
-	oBrowseUp:AddLegend("Empty(SZK->ZK_NF) .AND. !SZK->ZK_STATUS $ 'B_C_F' .AND. !Empty(SZK->ZK_STREG)"	,"YELLOW" ,"A Faturar") 	
-	oBrowseUp:AddLegend("Empty(SZK->ZK_NF) .AND. !SZK->ZK_STATUS $ 'B_C_F' .AND.  Empty(SZK->ZK_STREG)" 	,"BLUE"   ,"Em Separacao") 	
-	
+	//GAP002 DAC 28/07/2023
+	//oBrowseUp:AddLegend("Empty(SZK->ZK_NF) .AND. !SZK->ZK_STATUS $ 'B_C_F' .AND. !Empty(SZK->ZK_STREG)"	,"YELLOW" ,"A Faturar") 	
+	//oBrowseUp:AddLegend("Empty(SZK->ZK_NF) .AND. !SZK->ZK_STATUS $ 'B_C_F' .AND.  Empty(SZK->ZK_STREG)" 	,"BLUE"   ,"Em Separacao") 	
+	oBrowseUp:AddLegend("Empty(SZK->ZK_NF) .AND. !SZK->ZK_STATUS $ 'B_C_F_D' .AND. !Empty(SZK->ZK_STREG)"	,"YELLOW" ,"A Faturar") 	
+	oBrowseUp:AddLegend("Empty(SZK->ZK_NF) .AND. !SZK->ZK_STATUS $ 'B_C_F_D' .AND.  Empty(SZK->ZK_STREG)" 	,"BLUE"   ,"Em Separacao") 	
+
 	//oBrowseUp:AddLegend("SZK->ZK_OBSCON = 'PEDIDO SEPARADO' .AND. Empty(SZK->ZK_NF) ","YELLOW" ,"A Faturar") 	
 	//DAC USUARIO DO RECEBIMENTO RG LOG
 	//oBrowseUp:AddLegend("Empty(SZK->ZK_NF) .AND. ALLTRIM(SZK->ZK_USURECP) = '"+_cUsuario+"' ","YELLOW" ,"A Faturar") 	
@@ -1386,6 +1391,12 @@ Begin Sequence
 		_lControla := .F.  //para não retirar controle ainda não acessou o mesmo
 		Break
 	Endif	
+	//GAP002 DAC 28/03/2023
+	If SZK->ZK_STATUS == "D"
+   		MSGINFO( "Picking com Divergência WIS !!! ", "[ZPECF013_MANUTENCAO] - Atenção" )
+		_lControla := .F.  //para não retirar controle ainda não acessou o mesmo
+		Break
+	Endif	
 
 	If !Empty(SZK->ZK_NF)
    		MSGINFO( "Já possui nota fiscal, não pode ser alterado !!! ", "[ZPECF013_MANUTENCAO] - Atenção" )
@@ -1995,7 +2006,11 @@ Begin Sequence
    		MSGINFO( "Picking Cancelado, não será possível fazer manutenção !!! ", "[ZPECF013_ZPECF13FAS] - Atenção" )
 		Break
 	EndIf				
-
+	//GAP002 DAC 28/03/2023
+	If SZK->ZK_STATUS == "D"
+   		MSGINFO( "Picking com Divergência WIS, não será possível fazer manutenção !!! ", "[ZPECF013_ZPECF13FAS] - Atenção" )
+		Break
+	Endif
 	If Empty(_cNumOrc)
    		MSGINFO( "Problemas com parametros de numero orçamento  !!! ", "[ZPECF013_ZPECF13FAS] - Atenção" )
 		Break
@@ -2067,7 +2082,7 @@ Return Nil
 @version  	P12.1.23
 @since  	06/07/2022
 @return  	NIL
-@obs		ZK_STATUS => A=Aberto;E=Enviado;F=Faturado;B=Bloqueado;C=Cancelado
+@obs		ZK_STATUS => A=Aberto;E=Enviado;F=Faturado;B=Bloqueado;C=Cancelado;D-Divergencia WIS
 @project
 @history   	    
 /*/
@@ -2101,6 +2116,13 @@ Begin Sequence
 		Break
 	EndIf
 
+	//GAP002 DAC 28/03/2023
+	If SZK->ZK_STATUS == "D"
+   		MSGINFO( "Picking esta com Divergência Wis  !!! ", "[ZPECF013I] - Atenção" )
+		_lRet := .f.
+		Break
+	Endif
+
     If !MsgYesNo("Este Picking será bloqueado , confirma o bloqueio do Picking ? ")
 		Break
 	EndIf
@@ -2108,7 +2130,7 @@ Begin Sequence
 	_cQuery := 	" UPDATE " + RetSqlName("SZK") + " SZK " + ;
 				" SET 	SZK.ZK_STATUS = '"+_cStatus+"' "
 	_cQuery +=  " WHERE SZK.ZK_FILIAL = '" +XFilial("SZK")+ "' AND  SZK.ZK_XPICKI = '"+_cPicking + "'"
-	_cQuery +=  "   AND SZK.ZK_NF = ' ' AND SZK.ZK_STATUS NOT IN ('F','C','B') " 	
+	_cQuery +=  "   AND SZK.ZK_NF = ' ' AND SZK.ZK_STATUS NOT IN ('F','C','B','D') " 	
   	_nStatus := TcSqlExec(_cQuery)
   	if (_nStatus < 0)
     	MSGINFO("Erro ao gravar Status na tabela SZK "+ TCSQLError() , "[ZPECF013I] - Atenção" )
@@ -2132,7 +2154,7 @@ Return Nil
 @version  	P12.1.23
 @since  	06/07/2022
 @return  	NIL
-@obs		ZK_STATUS => A=Aberto;E=Enviado;F=Faturado;B=Bloqueado;C=Cancelado
+@obs		ZK_STATUS => A=Aberto;E=Enviado;F=Faturado;B=Bloqueado;C=Cancelado;D=Divergência Wis
 @project
 @history   	    
 /*/
@@ -2196,7 +2218,7 @@ Return Nil
 @version  	P12.1.23
 @since  	07/07/2022
 @return  	NIL
-@obs		ZK_STATUS => A=Aberto;E=Enviado;F=Faturado;B=Bloqueado;C=Cancelado
+@obs		ZK_STATUS => A=Aberto;E=Enviado;F=Faturado;B=Bloqueado;C=Cancelado;D=Divergência WIS
 @project
 @history   	    
 /*/
