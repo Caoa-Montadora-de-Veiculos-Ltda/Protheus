@@ -262,7 +262,7 @@ Static Function zProcRel(_aRetParam)
                                                         (cAliasTRB)->B1_COD,;
                                                         (cAliasTRB)->B1_DESC,;
                                                         (cAliasTRB)->SALDO_ESTOQUE,;
-                                                        NoRound(U_ZGENCST((cAliasTRB)->B1_COD),TamSx3("C6_PRCVEN")[02]),; //(cAliasTRB)->CUSTO_MEDIO,;
+                                                        NoRound(U_ZGENCST((cAliasTRB)->B1_COD),TamSx3("B2_CM1")[02]),; //(cAliasTRB)->CUSTO_MEDIO,;
                                                         (cAliasTRB)->B1_TIPO,;
                                                         (cAliasTRB)->B5_CODLIN,;
                                                         (cAliasTRB)->BM_CODMAR,;

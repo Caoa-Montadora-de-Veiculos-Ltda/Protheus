@@ -1874,7 +1874,7 @@ Begin Sequence
 		_cMarca := (_cAliasPesq)->MARCA
 	Endif
 
-	_nCustoMedio := NoRound(U_ZGENCST(_cCodProd),TamSx3("C6_PRCVEN")[02])
+	_nCustoMedio := NoRound(U_ZGENCST(_cCodProd),TamSx3("B2_CM1")[02])
 
 	_nSaldoWis01 := 0
 	_nSaldoWis11 := 0
