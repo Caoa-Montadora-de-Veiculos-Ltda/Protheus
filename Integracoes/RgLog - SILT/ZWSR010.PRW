@@ -180,7 +180,7 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 				oJsEnt['recebimento']['nu_agenda'] 	          := ""   
 				oJsEnt['recebimento']['dt_emissao']           := Substr((_cAlias)->F1_EMISSAO,7,2)+"/"+Substr((_cAlias)->F1_EMISSAO,5,2)+"/"+Substr((_cAlias)->F1_EMISSAO,1,4)+" "+(_cAlias)->F1_HORA
 				oJsEnt['recebimento']['cd_situacao'] 	      := "3"       //Fixo pelo exemplo RgLog
-				oJsEnt['recebimento']['cd_empresa'] 	      := "1"       //Fixo pelo exemplo RgLog
+				oJsEnt['recebimento']['cd_empresa'] 	      := If(AllTrim((_cAlias)->DEPOSITO)=="PREP",1002,1006)   //PEC069   //"1"       //Fixo pelo exemplo RgLog
 				oJsEnt['recebimento']['importe_nf']           := ""
 				oJsEnt['recebimento']['id_autorizacao']       := ""       //Fixo pelo exemplo RgLog
 				oJsEnt['recebimento']['cd_func_autorizacion'] := ""
@@ -311,7 +311,7 @@ Static Function ZWSR007ITE( _oJsEnt, cNota, cSerie, cForn, cLoja , _cDeposito, _
 			Aadd(_aItens,JsonObject():new())
 			_nPos := Len(_aItens)
 			//_aItens[_nPos]['nu_nota_fiscal']  :=  cNota
-			_aItens[_nPos]['cd_empresa'] 	  	:= "1"      //Fixo pelo exemplo RgLog
+			_aItens[_nPos]['cd_empresa'] 	  	:= If(AllTrim((_cAlias)->DEPOSITO)=="PREP",1002,1006)   //PEC069  //"1"      //Fixo pelo exemplo RgLog
 			_aItens[_nPos]['cd_fornecedor'] 	:= "9"+cForn+cLoja
 			_aItens[_nPos]['nu_nota_fiscal'] 	:= Alltrim((_cAlias)->D1_DOC)
 			_aItens[_nPos]['nu_serie_nf'] 	    := Alltrim((_cAlias)->D1_SERIE)
