@@ -229,14 +229,14 @@ VVR->(DbSetOrder(2))
 VX5->(dbSetOrder(1))
 
 For nX:=1 To Len(aDadosIt)    
-    cWSLinha   := aDadosIt[nX,01]
-    cWSModCom  := aDadosIt[nX,02]
-    cWSModelo  := aDadosIt[nX,03]
+    cWSLinha   := PadR( aDadosIt[nX,01] , TamSX3('VRK_GRUMOD')[1] ) //aDadosIt[nX,01]
+    cWSModCom  := PadR( aDadosIt[nX,02] , TamSX3('VRK_SEGMOD')[1] ) //aDadosIt[nX,02]
+    cWSModelo  := PadR( aDadosIt[nX,03] , TamSX3('VRK_MODVEI')[1] ) //aDadosIt[nX,03]
     cWSAnoM    := Alltrim(aDadosIt[nX,04])
     cWSAnoF    := Alltrim(aDadosIt[nX,05])
     nWSQuant   := aDadosIt[nX,06]
-    cWSCorExt  := aDadosIt[nX,07]
-    cWSCorInt  := aDadosIt[nX,08]
+    cWSCorExt  := PadR( aDadosIt[nX,07] , TamSX3('VRK_COREXT')[1] ) //aDadosIt[nX,07]
+    cWSCorInt  := PadR( aDadosIt[nX,08] , TamSX3('VRK_CORINT')[1] ) //aDadosIt[nX,08]
     nWSID      := aDadosIt[nX,09] 
 
     For nI:= 1 To nWSQuant
@@ -244,7 +244,7 @@ For nX:=1 To Len(aDadosIt)
         cTesFinal := ""
         bTem      := .F.
         VV2->(DbSetOrder(2)) 
-        If VV2->(!DbSeek(xFilial("VV2")+cWSMarca+ cWSModCom ))
+        If VV2->(!DbSeek(xFilial("VV2")+cWSMarca + cWSModCom ))
             Return {cWSPedido,"0",AllTrim(cWSModCom)+" Modelo Comercial nao encontrado.",""}
         EndIf
         Aadd(aLinha,{"VRK_ITEPED"   ,cItem                                                      ,Nil})
