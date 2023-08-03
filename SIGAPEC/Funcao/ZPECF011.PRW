@@ -3,8 +3,9 @@
 
 #define CRLF chr(13) + chr(10)
 
-Static _aRetMsg := ZPEC11AMsg()   	//Carregar tabela com erros
-Static _aMsgRet := {}				//carregar msg de errp
+Static _aRetMsg 	:= ZPEC11AMsg()   	//Carregar tabela com erros
+Static _aMsgRet 	:= {}				//carregar msg de retorno json
+Static _aMsgCAOA 	:= {}				//carrega mensagens para gravar nas tabelas Protheus
 
 /*/{Protheus.doc} ZPECF011
 Serviço de integração RECEBIMENTO SEPARAÇÃO DE PEDIDOS rg log
@@ -62,32 +63,29 @@ Recebe 		Json RG LOG PUT
 Static Function ZPECF011PR( _oJson )
 Local _cEmpresa     := "02"
 Local _cFilAtu      := "2020012001"
-Local _lRet			:= .T.
+Local _lRet			:= .F.
 Local _aRegVS1		:= {}
 Local _cFaseConf 	:= Alltrim(GetNewPar("MV_MIL0095","4")) // Fase de Conferencia e Separacao
 Local _nPos
 Local _cPedido
 Begin Sequence
-	_cUsuario	  := AllTrim(_oJson:GetJsonText("usuario"))
-	_cSenha		  := AllTrim(_oJson:GetJsonText("senha"))	 	 
+	_aMsgCAOA 	:= {}
+	_cUsuario 	:= AllTrim(_oJson:GetJsonText("usuario"))
+	_cSenha		:= AllTrim(_oJson:GetJsonText("senha"))	 	 
     If Empty ( _cEmpresa )
 		ZPEC11RMsg("_cEmpresa", "Campo cEmpresa: Empresa nao pode ser branco, favor verificar !")
-		_lRet := .F.
         Break
     EndIf
     If Empty ( _cFilAtu )
 		ZPEC11RMsg("_cFilAtu", "Campo cFilAtual: Filial nao pode ser branco, favor verificar !")
-		_lRet := .F.
         Break
  	EndIf
     If Empty ( _cUsuario ) .or. AllTrim(_cUsuario) <> "RGLOG.REST"
  		ZPEC11RMsg("_cUsuario", "Aplicação Web não está autorizada a acessar os serviços Protheus (_cUsuario Failed) !")
-		_lRet := .F.
          Break
  	EndIf
     If Empty ( _cSenha ) .or. AllTrim(_cSenha) <> "CaOa!RgLogRest@2021"
  		ZPEC11RMsg("_cSenha", "Aplicação Web não está autorizada a acessar os serviços Protheus (_cUsuario Failed) !")
-		_lRet := .F.
          Break
  	EndIf
     //Tratar abertura da empresa conforme enviado no parametro
@@ -98,40 +96,47 @@ Begin Sequence
 	EndIf
 
 	// Valida os dados do oJson
-	If !ValidOJson(@_oJson,"A")
-		_lRet := .F.
+	_lRet := ValidOJson(@_oJson,"A")
+	If !_lRet 
 		Break
 	EndIf	
-	If !ZPEC11GPIK(@_oJson,"I", @_aRegVS1)
-		_lRet := .F.
+	_lRet := .F.   //necessário pois estara com o ultimo que é verdadeiro caso de erro no programa
+	_lRet := ZPEC11GPIK(@_oJson,"I", @_aRegVS1)
+	If !_lRet 
+		Break
 	EndIf
 End Sequence
-//NO CASO DE ERRO E TENHA PROCESSADO ALGUM ORÇAMENTO IRA RETORNAR OS PROBLEMAS ENCONTRADOS
-If !_lRet .and. Len(_aRegVS1) > 0
-	//neste caso deverei gravar as informações dos erros em todos os orçamentos que confiveram erro
-	_cPedido 	:= AllTrim(_oJson["nu_pedidoorigem"][1]:GetJsonText("nu_pedido")) //"00000510"
-	_cObs		:= "RETORNO DE SEPARAÇÃO RG LOG APRESENTOU PROBLEMAS REFERENTE PICKING "+_cPedido+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+ CRLF		
-	For _nPos := 1 To Len(_aMsgRet)
-		_cObs += _aMsgRet[_nPos,2]
+
+//neste caso deverei gravar as informações dos erros em todos os orçamentos que confiveram erro
+_cPedido 	:= AllTrim(_oJson["nu_pedidoorigem"][1]:GetJsonText("nu_pedido")) //"00000510"
+//Gravar observação
+_cObs		:= "[ZPECF011] RETORNO DE SEPARAÇÃO RG LOG "+If(!_lRet,"APRESENTOU PROBLEMAS ","")+" REFERENTE PICKING "+_cPedido+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+ CRLF		
+_cObs 		+= "Status " + CRLF
+For _nPos := 1 To Len(_aMsgRet)
+	_cObs += _aMsgRet[_nPos,2] + CRLF
+Next
+If Len(_aMsgCaoa) > 0 
+	_cObs += "Processo" + CRLF
+	For _nPos := 1 To Len(_aMsgCaoa)
+		_cObs += _aMsgCaoa[_nPos] + CRLF
 	Next
+Endif 
+_cObs := Upper(_cObs)
+Conout(_cObs)
+//Existindo orçamentos gravar mensagens
+//NO CASO DE ERRO E TENHA PROCESSADO ALGUM ORÇAMENTO IRA RETORNAR OS PROBLEMAS ENCONTRADOS
+If Len(_aRegVS1) > 0
 	_cJson 	:= _oJson:toJSON()
 	_cJson 	:= EncodeUTF8( _cJson )
 	//Gravar em todos os orçamentos
 	For _nPos := 1 To Len(_aRegVS1)
 		VS1->(DbGoto(_aRegVS1[_nPos]))
 		VS1->(RecLock("VS1",.F.))
-		VS1->VS1_OBSAGL	:= Upper(_cObs) +CRLF+ VS1->VS1_OBSAGL
+		VS1->VS1_OBSAGL	:= Upper(_cObs) + CRLF + VS1->VS1_OBSAGL
 		//Garantir que deixara os orçamentos com a fase anterior que é de conferência DAC 29/06/2022
 		If VS1->VS1_STATUS <> _cFaseConf
 			VS1->VS1_STATUS := _cFaseConf  //volto a fase anterior
 		Endif	
-		//mesmo não passando o carregamentp gravo o json para que possa ser verificado DAC 30/06/2022
-		If SZK->(FieldPos("ZK_XJSREC")) > 0
-			SZK->ZK_XJSREC := _cJson
-		EndIf	
-		If SZK->(FieldPos("ZK_XJSSTRE")) > 0
-			SZK->ZK_XJSSTRE := "3" //1=RECEBIDO;2=NAO RECEBIDO;3=INCONSISTENCIA                                                                                      
-		EndIf
 		VS1->(MsUnLock())
 	Next
 EndIf
@@ -141,7 +146,7 @@ Return _lRet
 
 /*/{Protheus.doc} ZPEC11GPIK
 Realiza a atualização do piking recebido pela RG LOG
-@author Denilso Almeida Carvalho
+@author DAC Denilso 
 @since 18/10/2021
 @version undefined
 @param nCode, numeric, descricao
@@ -162,23 +167,24 @@ Realiza a atualização do piking recebido pela RG LOG
 
 /*/
 Static Function ZPEC11GPIK(_oJson, _cTipo, _aRegVS1 )
-Local _lRet			:= .T.
+Local _lRet			:= .F.
 Local _cAlias 		:= GetNextAlias()
 Local _cPedido		:= ""
 Local _cFaseConf 	:= Alltrim(GetNewPar("MV_MIL0095","4")) // Fase de Conferencia e Separacao
 Local _cFaseFat		:= "F"
+Local _cMsgInconWis	:= ""
 Local _cObs
 Local _nPos
+Local _cQueryUPD
 
 Begin Sequence
 	//_nPos := _oJson["nu_pedidoorigem"][1]:GetJsonText("nu_pedido")
 	// numero do pedido
 	DbSelectArea("SZK")
-	_cPedido 	:= AllTrim(_oJson["nu_pedidoorigem"][1]:GetJsonText("nu_pedido")) //"00000510"
+	_cPedido 	:= AllTrim(_oJson["nu_pedidoorigem"][1]:GetJsonText("nu_pedido")) 
 	If !ZPEC11LPIK( _cPedido ) 
 		//GAP002 tratar além de processado se esta bloqueado cancelado
 		//ZPEC11RMsg("nu_pedido","Pedido "+_cPedido+" ja consta no cadastro Picking como recebido, não sera processado !")
-		_lRet	:= .F.
 		Break
 	EndIf
 
@@ -191,7 +197,6 @@ Begin Sequence
 	EndSql      
 	If (_cAlias)->(Eof()) 	
 		ZPEC11RMsg("nexistepick","Pedido "+_cPedido+" não localizou itens !")
-		_lRet	:= .F.
 		Break
 	Endif   
 	//GAP002  guardar oe orçamentos antes de processar
@@ -205,15 +210,13 @@ Begin Sequence
 		//MESMO COM FASE DE CONFERÊNCIA NÃO GRAVOU NO PICKING SZK DAC 08/06/2022
 		If VS1->VS1_STATUS  <> _cFaseConf
 			ZPEC11RMsg("nostatusorc","Item do Pedido "+_cPedido+" correspondente a numeração "+VS1->VS1_NUMORC+" com fase "+VS1->VS1_STATUS+", diferente de Separação, não sera processado !")
-			_lRet	:= .F.
 			Break
 		EndIf
 	Next
 
-	//Controlar a gravação dods dados do orçamento caso tenha 
-	_lRet := .T.
+	//Controlar a gravação dos dados do orçamento caso tenha 
 	Begin Transaction 
-		_lRet := ZPEC11VWIS(_cPedido)
+		_lRet := ZPEC11VWIS(_cPedido, @_cMsgInconWis)
 		//DAC Selecionar processo VS5 e VS6 de carregamento e efetuar baixa
 		//SE NÃO TIVER PASSAR PARA PROXIMO REGISTRO
 		If _lRet 
@@ -225,6 +228,7 @@ Begin Sequence
 					//Atualiza TES Inteligente
 					If !(U_ZPECREGFI(_cPedido)) //cZK_XPICKI _cPedido
 						_cObs		:= 	"ERRO NA ATUALIZAÇÃO TES INTELIGENTE NO PICKING "+_cPedido+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+ CRLF
+						Aadd(_aMsgCAOA, Upper(_cObs) )
 					EndIf
 		
 					VS1->(RecLock("VS1",.F.))
@@ -246,13 +250,32 @@ Begin Sequence
 				Endif 
 			Next	 	 
 		Endif 
-		//Caso tenha erros abortar
-		_lRet := .F.
 		If !_lRet	
 			Disarmtransaction()
 		Endif
 	End Transaction 
 End Sequence
+// atualizar SZK com UPdate
+//Responsável por atuaizar Picking para não ser mais utilizado devido inconsistencia maior na qtde Wis
+If !_lRet  
+	If !Empty(_cMsgInconWis)
+		//Atualizar Status SZK, não será mais atualizado este picking
+		_cQueryUPD := " UPDATE " + RetSqlName("SZK") + " SZK "  
+		_cQueryUPD += " SET  SZK.ZK_STATUS 	= 'D', SZK.ZK_OBSCON = '"+Upper(AllTrim(_cMsgInconWis))+"' "
+		_cQueryUPD += "		,SZK.ZK_XJSREC 	= '"+_cJson+ "' "
+		_cQueryUPD += "     ,SZK.ZK_XJSSTRE = '3' "   //1=RECEBIDO;2=NAO RECEBIDO;3=INCONSISTENCIA
+		_cQueryUPD += " WHERE SZK.ZK_FILIAL='" + xfilial("SZK") + "' AND  SZK.ZK_XPICKI = '"+_cPedido+"' "
+		TcSqlExec(_cQueryUPD)
+	Else 
+		_cQueryUPD := " UPDATE " + RetSqlName("SZK") + " SZK "  
+		_cQueryUPD += " SET  SZK.ZK_STATUS  = 'D', SZK.ZK_OBSCON = '"+Upper(AllTrim(_cMsgInconWis))+"' "
+		_cQueryUPD += "		,SZK.ZK_XJSREC  = '"+_cJson+ "' "
+		_cQueryUPD += "     ,SZK.ZK_XJSSTRE = '3' " //1=RECEBIDO;2=NAO RECEBIDO;3=INCONSISTENCIA
+		_cQueryUPD += " WHERE SZK.ZK_FILIAL='" + xfilial("SZK") + "' AND  SZK.ZK_XPICKI = '"+_cPedido+"' "
+		TcSqlExec(_cQueryUPD)
+	Endif 
+Endif
+
 If Select(_cAlias) <> 0
 	(_cAlias)->(DbCloseArea())
 	Ferase(_cAlias+GetDBExtension())
@@ -393,7 +416,7 @@ Return _lRet
 Recebe 		Verificar se ja existe picking processado na tabela SZK
 @author 	DAC
 @since 		23/06/2022
-@version 	undefined
+@version 	_cPicking
 @param 		oJson
 @type 		function
 @ Obs		Os paremetros de token, empresa e filial serão enviados no cabeçalho reader Json
@@ -446,96 +469,24 @@ Return _lRet
 
 
 
-/*/{Protheus.doc} ValidOJson
-Valida os dados do oJson
-@author DAC - Denilso
-@since 
-@version undefined
-@param nCode, numeric, descricao
-@param cMsg, characters, descricao
-@type function
-/*/
-Static Function ValidOJson(_oJson, _cTipo)
-Local _lRet			:= .T.
-Begin Sequence
-
-	If !ZPEC11Obri(_oJson)  //Tem a função de validar os itens obrigatórios neste caso o vabeçalho
-		_lRet := .F.
-		Break
-	EndIf	
-End Sequence
-Return _lRet
-
-
-
-/*/{Protheus.doc} ZPEC11Obri
-//Verifica informações de campos obrigatórios 
-@author DAC
-@since 12/11/2021
-@version undefined
-@param _aMsg, array, descrição
-@type function
-/*/
-Static Function ZPEC11Obri(_oJson, _lItem, _lTodos)
-Local _lRet 	:= .T.
-Local _xVar
-Local _nPos
-Local _cMsgRet
-Local _nRet
-
-Default _lItem 	:= .F.  //identifica se lera item ou cabeçalho
-Default _lTodos	:= .F.	//determina se retornara todos os erros obrigatórios e ou somente o primeiro erro com obrigatório
-
-Begin Sequence
-	For _nPos := 1 To Len(_aRetMsg)
-		//Caso seja obrigatório devo verificar se item ou cabeçalho  
-		If _aRetMsg[_nPos,4] .And. ;
-			((!_lItem .And. !_aRetMsg[_nPos,3]) .Or. (_lItem .And. _aRetMsg[_nPos,3]))  
-			//armazeno em uma variavel para validar
-			_xVar := _oJson:GetJsonText(_aRetMsg[_nPos,2])
-			If ValType(_xVar) == "N" .and. _xVar == 0
-				_lRet := .F.
-			ElseIf ValType(_xVar) == "L" .and. Empty(_xVar) 
-				_lRet := .F.
-			ElseIf Empty(_xVar)
-				_lRet := .F.
-			EndIf
-		EndIf
-		If !_lRet
-			_nRet := _aRetMsg[_nPos,1] 
-			_cMsgRet := "Tag "+ _aRetMsg[_nPos,2]+" não esta preenchido !"	
-			If Len(_aRetMsg[_nPos]) >= 5 .and. ValType(_aRetMsg[_nPos,5]) == "C" .and. !Empty(_aRetMsg[_nPos,5])
-				_cMsgRet += " Ref. : "+_aRetMsg[_nPos,5]+" !" 
-			EndIf
-			Aadd(_aMsgRet, {_nRet,_cMsgRet})
-			If !_lTodos  //verifica se lera todos os obrigatórios
-				Break
-			EndIF
-		EndIf
-	Next 			
-End Sequence
-Return _lRet
-
 
 /*/{Protheus.doc} ZPEC11VWIS
 //Verificar se existem divergências na Separação 
 @author DAC
 @since 25/07/2023
 @version undefined
-@param _cPedido
+@param _cPedido , _cMsgInconWis
 @type function
 @project	GAP002 | Integração da separação - Informar produto e quantidade da cubagem
 @Obs		
 /*/
-Static Function	ZPEC11VWIS(_cPedido)
+Static Function	ZPEC11VWIS(_cPedido, _cMsgInconWis)
 Local _cAliasPesq	:= GetNextAlias()   
 Local _nPedido		:= Val(_cPedido)  //é numerico no WIS
 Local _lRet			:= .F.
 Local _aPedido		:= {}
-Local _aMens 		:= {}
 Local _aStru		:= {}
 Local _cMens
-Local _cQueryUPD
 Local _nPos
 Local _oTable
 Local _cQuery
@@ -613,7 +564,7 @@ Begin Sequence
 
 	nStatus := TCSqlExec(_cQuery)
     If (nStatus < 0)
-		Aadd(_aMens, Upper("Problemas na Seleção de dados, comunicar ADM SISTEma") )
+		Aadd(_aMsgCAOA, Upper("[ZPECF011] Problemas na Seleção de dados, comunicar ADM SISTEMA"+ CRLF +TCSQLError()) )
 		Conout("[ZPEC11VWIS] Eroor recebimento picking "+TCSQLError())
         Break    
     Endif
@@ -625,29 +576,23 @@ Begin Sequence
 		Break	
 	Endif 	
 	_aPedido 	:= {}
-	_aMens		:= {}
+	_aMsgCAOA		:= {}
 	While (_cAliasPesq)->(!Eof())
 		//No caso de a quantidade WIS for maior que a quantidade Protheus não deixar Prosseguir 
 		If  (_cAliasPesq)->QT_WIS > (_cAliasPesq)->QT_PROT
-			_cMens := "Pedido " + (_cAliasPesq)->PED
-			_cMens += " com Produto " + (_cAliasPesq)->PROD
-			_cMens += " com quantidade WIS " + AllTrim(Str((_cAliasPesq)->QT_WIS) )
-			_cMens += " maior que quantidade "			
-			Aadd(_aMens, Upper(_cMens) )
+			_cMens := "[ZPECF011] Pedido " + _cPedido
+			_cMens += " ref. Produto " + AllTrim((_cAliasPesq)->PROD)
+			_cMens += " com qtde WIS " + AllTrim(Str((_cAliasPesq)->QT_WIS) )
+			_cMens += " maior que qtde Protheus "+ AllTrim(Str((_cAliasPesq)->QT_PROT))			
+			Aadd(_aMsgCAOA, Upper(_cMens) )
+			_cMsgInconWis := _cMens  //gravar no SZK e indica para atualizar status
 			_lRet := .F.
-			//Atualizar Status SZK, não será mais atualizado este picking
-			If SZK->(FieldPos("ZK_STATUS")) > 0   //N=Nao Envidado;E=Enviado;F=Faturado;C=Cancelado;D=Divergencia WIS
-				_cQueryUPD := " UPDATE " + RetSqlName("SZK") + " SZK " + " SET  SZK.ZK_STATUS = 'D' "
-				_cQueryUPD += " WHERE SZK.ZK_FILIAL='" + xfilial("SZK") + "' AND  SZK.ZK_XPICKI = '"+_cPedido+"' "
-				TcSqlExec(_cQueryUPD)
-			Endif	
 			Exit	
-		Endif
 		//Caso seja maior do que no Protheus devo criar um backorder do processo
-		If  (_cAliasPesq)->QT_WIS < (_cAliasPesq)->QT_PROT
+		ElseIf  (_cAliasPesq)->QT_WIS < (_cAliasPesq)->QT_PROT
 			//só adicionar uma vez se estier repetido não adicionar mais
 			If Ascan(_aPedido, {|x| x[2]==(_cAliasPesq)->PROD}) == 0
-				Aadd(_aPedido,{(_cAliasPesq)->PED, (_cAliasPesq)->PROD, (_cAliasPesq)->QT_WIS, (_cAliasPesq)->QT_PROT }) 
+				Aadd(_aPedido,{_cPedido, (_cAliasPesq)->PROD, (_cAliasPesq)->QT_WIS, (_cAliasPesq)->QT_PROT }) 
 			Endif	
 			_lRet := .T.
 		Endif
@@ -659,16 +604,9 @@ Begin Sequence
 	//Realiza as alterações como Backorder no processo
 
 	If Len(_aPedido) > 0
-		_lRet := ZPEC11BKOR(_aPedido, @_aMens)
+		_lRet := ZPEC11BKOR(_aPedido)
 	Endif
 End Sequence 
-
-//tratar _amens
-If Len(_aMens)
-	For _nPos := 1 To Len(_aMens)
-		ZPEC11RMsg("divergencia",Upper(_aMens[_nPos]))
-	Next
-Endif
 
 If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
@@ -687,9 +625,9 @@ Return _lRet
 @param _aPedido
 @type function
 @project	GAP002 | Integração da separação - Informar produto e quantidade da cubagem
-@Obs		
+@Obs		Necessário fazer este ajuste pois os orçamentos são aglutinados para a geração do picking, podendo existir mais de um orçamento com o mesmo código
 /*/
-Static Function ZPEC11BKOR(_aPedido, _aMens)
+Static Function ZPEC11BKOR(_aPedido)
 Local _lRet 		:= .T.
 Local _cAliasPesq	:= GetNextAlias()   
 Local _cCodProd 
@@ -697,7 +635,9 @@ Local _cPicking
 Local _nQtdeDivWiS 
 Local _nQtdeDivPRO 
 Local _nDif
+Local _nSaldoWis
 Local _nPos 
+
 Begin Sequence
 	For _nPos := 1 To Len(_aPedido)
 		_cPicking 		:= _aPedido[_nPos,1]
@@ -716,32 +656,31 @@ Begin Sequence
 			FROM %table:VS3% VS3
 			WHERE VS3.%notDel% 
 				AND VS3.VS3_FILIAL = %XFilial:VS3%
+				AND VS3.VS3_CODITE = %Exp:_cCodProd%
 				AND VS3.VS3_XPICKI = %Exp:_cPicking% 
 			ORDER BY VS3.VS3_QTDITE DESC	
 		EndSql
 		//Caso não localize um produto no picking abortar toda a operação
 		If (_cAliasPesq)->(Eof())
-			Aadd(_aMens,"Não localizado Pedido "+_cPicking+" para o Produto "+_cCodProd)
+			Aadd(_aMsgCAOA,"Não localizado Pedido "+_cPicking+" para o Produto "+_cCodProd)
 			_lRet := .F. 
 			Break
 		Endif	
 		//Processar podem existir mais de um orçamento pois o picking é agrupamento de orçamentos
+		_nSaldoWis	:= _nQtdeDivWiS
 		While (_cAliasPesq)->(!Eof())
 			VS3->(DbGoto((_cAliasPesq)->NREGVS3))
-			_lRet := ZPEC11BKRE(_nDif, _cPicking, @_aMens)
-			If _lRet 
-				If (_cAliasPesq)-> VS3_QTDITE >= _nDif
-					//Gerar backorder e lembrar de tirar  reservas carregar amens
-				_nDif := 0
-				//neste caso ira retirar o item pois é menor que a diferença e gerar backorder	 
-				ElseIf (_cAliasPesq)-> VS3_QTDITE < _nDif
-					_nDif -= (_cAliasPesq)-> VS3_QTDITE
-				Endif
-			Else
-				DisarmTransaction()
-			Endif 
-			If !_lRet .Or. _nDif <= 0
-				Break
+			//Caso o orçamento seja maior que o Wis abater os valores
+			If VS3->VS3_QTDITE > _nSaldoWis
+				_lRet := ZPEC11BKRE(_nSaldoWis, _cPicking)  //tem que gerar backorder
+				Exit  //ja utilizei o saldo
+			//Caso o saldo wis seja menor que o orçamento o mesmo ficará não mecher somente abater da soma
+		   //Caso seja o mesmo valor não fazer movimentação
+			ElseIf VS3->VS3_QTDITE <= _nSaldoWis 
+				_nSaldoWis -= VS3->VS3_QTDITE	
+			Endif
+			If _nSaldoWis <= 0
+				Exit
 			Endif
 			(_cAliasPesq)->(DbSkip())
 		EndDo 
@@ -758,27 +697,35 @@ Return _lRet
 @author DAC
 @since 28/07/2023
 @version undefined
-@param _aPedido
+@param _nSaldoWis, _cPicking
 @type function
 @project	GAP002 | Integração da separação - Informar produto e quantidade da cubagem
 @Obs		
 /*/
 
-Static Function ZPEC11BKRE(_nDif, _cPicking, _aMens)
+Static Function ZPEC11BKRE(_nSaldoWis, _cPicking)
 Local _lRet 		:= .T.
 Local _lZera 		:= .F.	
 Local _cNumOrc		:= VS3->VS3_NUMORC
 Local _cCodProd		:= VS3->VS3_CODITE
 Local _aBackOrder	:= {}
+Local _nRegVS3		:= VS3->(Recno())	
 Local _aSeqVS3 	
 Local _aVS3Reg	
 Local _cDocto	
 Local _nRegVS1
+Local _nSaldo 
 
 Private _aReservaCAOA	:= {}
-Private _aMensAglu		:= {}
+Private _aMsgCAOAAglu		:= {}
 
 Begin Sequence 
+	//montar bakOrder da diferença
+	//posicionar VS1
+	VS1->(DbSetOrder(1))
+	VS1->(DbSeek(_cNumOrc))
+	_nRegVS1 	:= VS1->(Recno())
+
 	//Tenho que testar se esta reservado caso nã não posso retirar a reserva
 	//Necessário fazer esta consistencia devido problemas no Sistema não esta atualizando campo VS3_RESERV = 1 falado com JC sobre o problema 
 	//para abrir chamado pois mesmo no padrão não esta atualizando campo VS3_RESERV
@@ -796,7 +743,7 @@ Begin Sequence
 			_cDocto := OX001RESITE(_cNumOrc,.F.,_aSeqVS3 )
 			//_cDocto := U_XRESCAOAPEC(_cNumOrc, .F., _aSeqVS3)
 			if Empty(_cDocto) .or. _cDocto == "NA"
-				Aadd(_aMens, "Não foi possivel retirar a reserva do item alterado "+AllTrim(_cCodProd)+" orçamento "+_cNumOrc+" devido a Divergencia na qtde")
+				Aadd(_aMsgCAOA, "[ZPECF011] Não foi possivel retirar a reserva do item alterado "+AllTrim(_cCodProd)+" orçamento "+_cNumOrc+" devido a Divergencia na qtde")
 				//DisarmTransaction()
 				_lRet := .F.
 				Break
@@ -808,98 +755,138 @@ Begin Sequence
 				VS3->VS3_RESERV := "0"
 				VS3->(MsUnlock())
 			Endif
-			Aadd(_aMens, "Retirada reserva "+_cDocto+" do item "+AllTrim(_cCodProd)+" orçamento "+_cNumOrc+" devido a Divergencia na qtde" )
+			Aadd(_aMsgCAOA, "[ZPECF011] Retirada reserva "+_cDocto+" do item "+AllTrim(_cCodProd)+" orçamento "+_cNumOrc+" devido a Divergencia na qtde" )
 		EndIf
 	Else
-		Aadd(_aMens, "Não existe reserva do item "+AllTrim(_cCodProd)+" orçamento "+_cNumOrc+" para o processo de Divergencia na qtde")
+		Aadd(_aMsgCAOA, "[ZPECF011] Não existe reserva do item "+AllTrim(_cCodProd)+" orçamento "+_cNumOrc+" para o processo de Divergencia na qtde")
 	Endif
-
-	//montar bakOrder da diferença
-	//posicionar VS1
-	VS1->(DbSetOrder(1))
-	VS1->(DbSeek(_cNumOrc))
-	_nRegVS1 	:= VS1->(Recno())
 
 	_aSeqVS3 := {}
 	_aVS3Reg := {}
-	VS3->(RecLock("VS3",.F.))
 	//primeiro atualizo o registro que irá ficar
-	If VS3->VS3_QTDITE < _nDif 
-		VS3->VS3_QTDITE -= _nDif
-		aAdd(_aSeqVS3, VS3->VS3_SEQUEN)
-		AAdd(_aVS3Reg, VS3->(Recno()))
-	Else
-		_lZera := .T.	//desta forma ira zerar (apagar o item no VS1)		
-	Endif
+	VS3->(RecLock("VS3",.F.))
+	_nSaldo 		:= VS3->VS3_QTDITE - _nSaldoWis
+	VS3->VS3_QTDITE := _nSaldoWis
+	aAdd(_aSeqVS3, VS3->VS3_SEQUEN)
+	AAdd(_aVS3Reg, VS3->(Recno()))
 	//Fazer Reserva do valor atualizado
-	If !_lZera
-		_aReservaCAOA 	:= Aclone({_cNumOrc,.T.,_aVS3Reg})	// Variavel utilizada no PE OX001RES
-		_cDocto := OX001RESITE(_cNumOrc,.T.,_aSeqVS3 )
-		if Empty(_cDocto) .or. _cDocto == "NA"
-			Aadd(_aMens, "Não foi possivel criar a reserva do item alterado "+AllTrim(_cCodProd)+" orçamento "+_cNumOrc+" devido a Divergencia na qtde ")
-			//DisarmTransaction()
-			_lRet := .F.
-			Break
-		Endif
-		//Garanto que o documento tenha sido retirado da reserva
-		If _lRet .and. !Empty(VS3->VS3_DOCSDB)
-			VS3->(RecLock("VS3",.F.))
-			VS3->VS3_DOCSDB	:= _cDocto
-			VS3->VS3_RESERV := "1"
-			VS3->(MsUnlock())
-		Endif
-		Aadd(_aMens, "Incluido reserva "+_cDocto+" do item "+AllTrim(_cCodProd)+" orçamento "+_cNumOrc+" devido a Divergencia na qtde ")
+	_aReservaCAOA 	:= Aclone({_cNumOrc,.T.,_aVS3Reg})	// Variavel utilizada no PE OX001RES
+	_cDocto := OX001RESITE(_cNumOrc,.T.,_aSeqVS3 )
+	if Empty(_cDocto) .or. _cDocto == "NA"
+		Aadd(_aMsgCAOA, "Não foi possivel criar a reserva do item alterado "+AllTrim(_cCodProd)+" orçamento "+_cNumOrc+" devido a Divergencia na qtde ")
+		_lRet := .F.
+		Break
 	Endif
+	//Garanto que o documento tenha sido retirado da reserva
+	If _lRet .and. !Empty(VS3->VS3_DOCSDB)
+		VS3->(RecLock("VS3",.F.))
+		VS3->VS3_DOCSDB	:= _cDocto
+		VS3->VS3_RESERV := "1"
+		VS3->(MsUnlock())
+	Endif
+	Aadd(_aMsgCAOA, "[ZPECF011] Incluido reserva "+_cDocto+" do item "+AllTrim(_cCodProd)+" orçamento "+_cNumOrc+" devido a Divergencia na qtde ")
 	//Peparo para gerar o Backorder da diferença
 	Aadd(_aBackOrder,{VS3->(Recno()),;
 	 				_cCodProd,; 
-					_nDif,;
-					"[ZPECF011] Atualização de Divergência Qtde Protheus X WIS Picking "+_cPicking+" Valor correspondente a diferença de Qtde "+AlTrim(Str(_nDif))+" no produto",; 
+					_nSaldo,;
+					"[ZPECF011] Atualização de Divergência Qtde Protheus X WIS -> "+AllTrim(Str(_nSaldoWis))+", Picking "+_cPicking+" Valor correspondente a diferença de Qtde "+AlTrim(Str(_nSaldo))+" no produto",; 
 					.T. ,;							//_Lxbo 
 					_lZera })					//_lZera	
 
 	If Len(_aBackOrder) > 0
 		_lRet := U_XOFUNCLO( _cNumOrc, /*_cGrupo*/, /*_cCodProd*/, /*_nQtdeItem*/, /*_lZera*/, /*_aVazioCpo*/, _aBackOrder)
 		If ! _lRet
-			Aadd(_aMens,"Ocorrerão problemas para clonar itens que não possuem status para carregamento aos quais passriam para backorder <ZPECF08CAR> !")
+			Aadd(_aMsgCAOA,"[ZPECF011] Ocorrerão problemas para clonar itens que não possuem status para carregamento aos quais passariam para backorder")
 			Break	
 		EndIf
 	EndIf	
-
 	VS1->(DbGoto(_nRegVS1))
-	VS3->(DbSetOrder(1))
-	VS3->(MsSeek(XFilial("VS3")+_cNumOrc))
-	If !VS3->(MsSeek(XFilial("VS3")+_cNumOrc)) .And. !_lZera
-		_lRet := .F.
-		Aadd(_aMens,"Não localizado itens do orçamento "+_cNumOrc+" para ajuste parcial (ZPECF08PARC) do produto principal !")
-		Break
-	EndIF	
-	//organizar a sequencia
-	_cNumSeq := StrZero(0,Len(VS3->VS3_SEQUEN))
-	While VS3->(!Eof()) .and. VS3->VS3_NUMORC == _cNumOrc
-		_cNumSeq 	:= Soma1(_cNumSeq)
-		If ! RecLock("VS3",.F.)
-			_lRet := .F.
-			Aadd(_aMens,"Não foi possivel ajustar a sequencia dos itens, não conseguiu bloquear registro !")
-			Exit
-		Endif
-		VS3->VS3_SEQUEN := _cNumSeq
-		If !Empty(VS3->VS3_SQCONF) 
-			VS3->VS3_SQCONF := ""   //caso não faça isto na troca da sequencia terei problemas na geração do VM5 no retorno do carregamento DAC 04/02/2022 
-		Endif
-		VS3->(MsUnlock())
-		VS3->(DbSkip())
-	EndDo
 
 End Sequence 
+VS3->(DbGoto(_nRegVS3))
 Return _lRet
+
+
+
+
+
+/*/{Protheus.doc} ValidOJson
+Valida os dados do oJson
+@author DAC - Denilso
+@since 
+@version undefined
+@param _oJson, _cTipo
+@param cMsg, characters, descricao
+@type function
+/*/
+Static Function ValidOJson(_oJson, _cTipo)
+Local _lRet			:= .T.
+Begin Sequence
+
+	If !ZPEC11Obri(_oJson)  //Tem a função de validar os itens obrigatórios neste caso o vabeçalho
+		_lRet := .F.
+		Break
+	EndIf	
+End Sequence
+Return _lRet
+
+
+
+/*/{Protheus.doc} ZPEC11Obri
+//Verifica informações de campos obrigatórios 
+@author DAC
+@since 12/11/2021
+@version undefined
+@param _oJson, _lItem, _lTodos
+@type function
+/*/
+Static Function ZPEC11Obri(_oJson, _lItem, _lTodos)
+Local _lRet 	:= .T.
+Local _xVar
+Local _nPos
+Local _cMsgRet
+Local _nRet
+
+Default _lItem 	:= .F.  //identifica se lera item ou cabeçalho
+Default _lTodos	:= .F.	//determina se retornara todos os erros obrigatórios e ou somente o primeiro erro com obrigatório
+
+Begin Sequence
+	For _nPos := 1 To Len(_aRetMsg)
+		//Caso seja obrigatório devo verificar se item ou cabeçalho  
+		If _aRetMsg[_nPos,4] .And. ;
+			((!_lItem .And. !_aRetMsg[_nPos,3]) .Or. (_lItem .And. _aRetMsg[_nPos,3]))  
+			//armazeno em uma variavel para validar
+			_xVar := _oJson:GetJsonText(_aRetMsg[_nPos,2])
+			If ValType(_xVar) == "N" .and. _xVar == 0
+				_lRet := .F.
+			ElseIf ValType(_xVar) == "L" .and. Empty(_xVar) 
+				_lRet := .F.
+			ElseIf Empty(_xVar)
+				_lRet := .F.
+			EndIf
+		EndIf
+		If !_lRet
+			_nRet := _aRetMsg[_nPos,1] 
+			_cMsgRet := "Tag "+ _aRetMsg[_nPos,2]+" não esta preenchido !"	
+			If Len(_aRetMsg[_nPos]) >= 5 .and. ValType(_aRetMsg[_nPos,5]) == "C" .and. !Empty(_aRetMsg[_nPos,5])
+				_cMsgRet += " Ref. : "+_aRetMsg[_nPos,5]+" !" 
+			EndIf
+			Aadd(_aMsgRet, {_nRet,_cMsgRet})
+			If !_lTodos  //verifica se lera todos os obrigatórios
+				Break
+			EndIF
+		EndIf
+	Next 			
+End Sequence
+Return _lRet
+
 
 /*/{Protheus.doc} ZPEC11RMsg
 //Retorna Numero do Erro 
 @author DAC
 @since 12/11/2021
 @version undefined
-@param _aMsg, array, descrição
+@param _cRefMsg, _cMsgRet
 @type function
 /*/
 Static Function ZPEC11RMsg(_cRefMsg, _cMsgRet)
@@ -984,7 +971,7 @@ Seta mensagem retorno de msg do rest
 @author DAC
 @since 01/05/2021
 @version undefined
-@param _aMsg, array, descrição
+@param 
 @type function
 /*/
 Static function SetMsgRet() 
