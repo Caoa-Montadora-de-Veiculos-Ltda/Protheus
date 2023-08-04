@@ -66,8 +66,13 @@ Local _cFilAtu      := "2020012001"
 Local _lRet			:= .F.
 Local _aRegVS1		:= {}
 Local _cFaseConf 	:= Alltrim(GetNewPar("MV_MIL0095","4")) // Fase de Conferencia e Separacao
+Local _lDivergeWis  := .F.
+Local _cMsgInconWis := ""
+Local _cQueryUPD
 Local _nPos
 Local _cPedido
+Local _cJson
+
 Begin Sequence
 	_aMsgCAOA 	:= {}
 	_cUsuario 	:= AllTrim(_oJson:GetJsonText("usuario"))
@@ -113,6 +118,12 @@ _cPedido 	:= AllTrim(_oJson["nu_pedidoorigem"][1]:GetJsonText("nu_pedido")) //"0
 _cObs		:= "[ZPECF011] RETORNO DE SEPARAÇÃO RG LOG "+If(!_lRet,"APRESENTOU PROBLEMAS ","")+" REFERENTE PICKING "+_cPedido+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+ CRLF		
 _cObs 		+= "Status " + CRLF
 For _nPos := 1 To Len(_aMsgRet)
+	//GAP002 quando posui divergencia com Wis tem que atualizar Picking e alterar código pois não possuem este código para retorno 800, passar para 615
+	If _aMsgRet[_nPos,1] == 800   
+		_lDivergeWis 	:= .T.
+		_cMsgInconWis	:= Upper(If(Len(_aMsgRet[_nPos,2]) > 100,SubsTr(_aMsgRet[_nPos,2],1,100),_aMsgRet[_nPos,2]))
+		_aMsgRet[_nPos,1] := 615
+	Endif	
 	_cObs += _aMsgRet[_nPos,2] + CRLF
 Next
 If Len(_aMsgCaoa) > 0 
@@ -123,11 +134,42 @@ If Len(_aMsgCaoa) > 0
 Endif 
 _cObs := Upper(_cObs)
 Conout(_cObs)
+
+_cJson 	:= _oJson:toJSON()
+_cJson 	:= EncodeUTF8( _cJson )
+
+//GAP002 Caso possua divergencia na quantidade WIS maior não deixar utilizar picking alterar status para D=Divergência WIS
+If _lDivergeWis
+	//Atualizar Status SZK, não será mais atualizado este picking
+	_cQueryUPD := " UPDATE " + RetSqlName("SZK") + " SZK " + CRLF 
+	_cQueryUPD += " SET  SZK.ZK_XJSSTRE = '3' " + CRLF  //1=RECEBIDO;2=NAO RECEBIDO;3=INCONSISTENCIA
+	_cQueryUPD += " 	,SZK.ZK_STATUS 	= 'D'
+	_cQueryUPD += " 	,SZK.ZK_OBSCON  = '"+_cMsgInconWis+"' " + CRLF
+	_cQueryUPD += " 	,SZK.ZK_XJSREC 	= RAWTOHEX('"+_cJson+ chr(13) + chr(10) +"' ||  NVL(UTL_RAW.CAST_TO_VARCHAR2(dbms_lob.substr(SZK.ZK_XJSREC 	, 2000, 1)),' ') )" + CRLF
+	_cQueryUPD += " WHERE SZK.ZK_FILIAL='" + xfilial("SZK") + "' AND  SZK.ZK_XPICKI = '"+_cPedido+"' " + CRLF
+	_nStatus := TcSqlExec(_cQueryUPD)
+	if (_nStatus < 0)
+		_lRet := .F.
+ 		ZPEC11RMsg("divergencia", "Não foi possivel gravar Status divergencia WIS")
+ 		Conout( "[ZPECF011] Não foi possivel gravar Status divergencia WIS, ERRO UPD SZK "+TCSQLError())
+	Endif
+ElseIf !_lRet  
+	_cQueryUPD := " UPDATE " + RetSqlName("SZK") + " SZK " + CRLF 
+	_cQueryUPD += " SET  SZK.ZK_XJSSTRE = '3' " + CRLF  //1=RECEBIDO;2=NAO RECEBIDO;3=INCONSISTENCIA
+	//_cQueryUPD += " 	,SZK.ZK_OBSCON  = "+If(Empty(SZK.ZK_OBSCON),'ERRO NO RETORNO CARREGAMENTO WIS','')+ " + CRLF
+	_cQueryUPD += " 	,SZK.ZK_XJSREC 	= RAWTOHEX('"+_cJson+ chr(13) + chr(10) +"' ||  NVL(UTL_RAW.CAST_TO_VARCHAR2(dbms_lob.substr(SZK.ZK_XJSREC , 2000, 1)),' ') )" + CRLF
+	_cQueryUPD += " WHERE SZK.ZK_FILIAL='" + xfilial("SZK") + "' AND  SZK.ZK_XPICKI = '"+_cPedido+"' " + CRLF
+	_nStatus 	:= TcSqlExec(_cQueryUPD)
+	if (_nStatus < 0)
+		_lRet := .F.
+ 		ZPEC11RMsg("divergencia", "Não foi possivel gravar Status divergencia Recebimento")
+ 		Conout( "[ZPECF011] Não foi possivel gravar Status divergencia WIS, ERRO UPD SZK "+TCSQLError())
+	Endif
+Endif
+
 //Existindo orçamentos gravar mensagens
 //NO CASO DE ERRO E TENHA PROCESSADO ALGUM ORÇAMENTO IRA RETORNAR OS PROBLEMAS ENCONTRADOS
 If Len(_aRegVS1) > 0
-	_cJson 	:= _oJson:toJSON()
-	_cJson 	:= EncodeUTF8( _cJson )
 	//Gravar em todos os orçamentos
 	For _nPos := 1 To Len(_aRegVS1)
 		VS1->(DbGoto(_aRegVS1[_nPos]))
@@ -172,10 +214,8 @@ Local _cAlias 		:= GetNextAlias()
 Local _cPedido		:= ""
 Local _cFaseConf 	:= Alltrim(GetNewPar("MV_MIL0095","4")) // Fase de Conferencia e Separacao
 Local _cFaseFat		:= "F"
-Local _cMsgInconWis	:= ""
 Local _cObs
 Local _nPos
-Local _cQueryUPD
 
 Begin Sequence
 	//_nPos := _oJson["nu_pedidoorigem"][1]:GetJsonText("nu_pedido")
@@ -216,7 +256,7 @@ Begin Sequence
 
 	//Controlar a gravação dos dados do orçamento caso tenha 
 	Begin Transaction 
-		_lRet := ZPEC11VWIS(_cPedido, @_cMsgInconWis)
+		_lRet := ZPEC11VWIS(_cPedido)
 		//DAC Selecionar processo VS5 e VS6 de carregamento e efetuar baixa
 		//SE NÃO TIVER PASSAR PARA PROXIMO REGISTRO
 		If _lRet 
@@ -243,7 +283,7 @@ Begin Sequence
 					VS1->(MsUnLock())
 	
 					//efetua a gravação da tabela para controle de picking obtenção de pesos e medidas para a nota
-					_lRet := U_ZPEC11GSZK(_oJson, /*_lGravaIni*/, /*_cPicking*/, /*_cObsMenNF*/, /*_cMarca*/, _lRet)
+					_lRet := U_ZPEC11GSZK(_oJson, /*_lGravaIni*/, /*_cPedido*/, /*_cObsMenNF*/, /*_cMarca*/, _lRet)
 					If !_lRet
 						ZPEC11RMsg("noGrava","Problemas com a gravação de dados em relação aos campos verificar com Administrador !")
 					EndIf
@@ -257,24 +297,6 @@ Begin Sequence
 End Sequence
 // atualizar SZK com UPdate
 //Responsável por atuaizar Picking para não ser mais utilizado devido inconsistencia maior na qtde Wis
-If !_lRet  
-	If !Empty(_cMsgInconWis)
-		//Atualizar Status SZK, não será mais atualizado este picking
-		_cQueryUPD := " UPDATE " + RetSqlName("SZK") + " SZK "  
-		_cQueryUPD += " SET  SZK.ZK_STATUS 	= 'D', SZK.ZK_OBSCON = '"+Upper(AllTrim(_cMsgInconWis))+"' "
-		_cQueryUPD += "		,SZK.ZK_XJSREC 	= '"+_cJson+ "' "
-		_cQueryUPD += "     ,SZK.ZK_XJSSTRE = '3' "   //1=RECEBIDO;2=NAO RECEBIDO;3=INCONSISTENCIA
-		_cQueryUPD += " WHERE SZK.ZK_FILIAL='" + xfilial("SZK") + "' AND  SZK.ZK_XPICKI = '"+_cPedido+"' "
-		TcSqlExec(_cQueryUPD)
-	Else 
-		_cQueryUPD := " UPDATE " + RetSqlName("SZK") + " SZK "  
-		_cQueryUPD += " SET  SZK.ZK_STATUS  = 'D', SZK.ZK_OBSCON = '"+Upper(AllTrim(_cMsgInconWis))+"' "
-		_cQueryUPD += "		,SZK.ZK_XJSREC  = '"+_cJson+ "' "
-		_cQueryUPD += "     ,SZK.ZK_XJSSTRE = '3' " //1=RECEBIDO;2=NAO RECEBIDO;3=INCONSISTENCIA
-		_cQueryUPD += " WHERE SZK.ZK_FILIAL='" + xfilial("SZK") + "' AND  SZK.ZK_XPICKI = '"+_cPedido+"' "
-		TcSqlExec(_cQueryUPD)
-	Endif 
-Endif
 
 If Select(_cAlias) <> 0
 	(_cAlias)->(DbCloseArea())
@@ -416,13 +438,13 @@ Return _lRet
 Recebe 		Verificar se ja existe picking processado na tabela SZK
 @author 	DAC
 @since 		23/06/2022
-@version 	_cPicking
+@version 	_cPedido
 @param 		oJson
 @type 		function
 @ Obs		Os paremetros de token, empresa e filial serão enviados no cabeçalho reader Json
 @history      
 /*/
-Static Function ZPEC11LPIK(_cPicking )
+Static Function ZPEC11LPIK(_cPedido )
 Local _lRet			:= .T.
 Local _cAliasPesq	:= GetNextAlias()
 Begin Sequence
@@ -430,7 +452,7 @@ Begin Sequence
 		SELECT 	SZK.R_E_C_N_O_ NREGSZK
        	FROM %table:SZK% SZK
       	WHERE SZK.ZK_FILIAL  	= %XFilial:SZK%
-			AND SZK.ZK_XPICKI 	= %Exp:_cPicking%
+			AND SZK.ZK_XPICKI 	= %Exp:_cPedido%
 		  	AND SZK.%notDel%		  
 	EndSql      
 	//Alterado GAP002 28/03/2023
@@ -445,16 +467,16 @@ Begin Sequence
 	While (_cAliasPesq)->(!Eof())  
 		SZK->(DbGoto((_cAliasPesq)->NREGSZK)) 
 		//não processar faturado, bloqueado, Cancelado e Divergência 
-		If SZK->ZK_STATUS $ 'B_C_F_D'
+		If !SZK->ZK_STATUS $ 'E_R'  //SZK->ZK_STATUS $ 'B_C_F_D'   //GAP002
 			_lRet	:= .F.
-			_cMens := If(SZK->ZK_STATUS == "B","Bloqueado",If(SZK->ZK_STATUS == "C","Cancelado",If(SZK->ZK_STATUS == "F","Faturado" ,If(SZK->ZK_STATUS == "D","Divergente","Com Problemas" ))))
-			ZPEC11RMsg("nu_pedido","Pedido "+_cPicking+" "+_cMens+", não sera processado !")
+			_cMens := If(SZK->ZK_STATUS == "B","Bloqueado",If(SZK->ZK_STATUS == "C","Cancelado",If(SZK->ZK_STATUS == "F","Faturado" ,If(SZK->ZK_STATUS == "D","Divergente WIS","Status "+SZK->ZK_STATUS ))))
+			ZPEC11RMsg("nu_pedido","Pedido "+_cPedido+" com status "+_cMens+", não sera processado !")
 			Break
 		Endif
 		//o STREG só é atuaiizado após a recepção do registro
 		If !Empty(SZK->ZK_STREG)
 			_lRet	:= .F.
-			ZPEC11RMsg("nu_pedido","Pedido "+_cPicking+" ja consta no cadastro Picking como recebido, não sera processado !")
+			ZPEC11RMsg("nu_pedido","Pedido "+_cPedido+" ja consta no cadastro Picking como recebido, não sera processado !")
 			Break
 		Endif
 		(_cAliasPesq)->(DbSkip())
@@ -475,12 +497,12 @@ Return _lRet
 @author DAC
 @since 25/07/2023
 @version undefined
-@param _cPedido , _cMsgInconWis
+@param _cPedido 
 @type function
 @project	GAP002 | Integração da separação - Informar produto e quantidade da cubagem
 @Obs		
 /*/
-Static Function	ZPEC11VWIS(_cPedido, _cMsgInconWis)
+Static Function	ZPEC11VWIS(_cPedido)
 Local _cAliasPesq	:= GetNextAlias()   
 Local _nPedido		:= Val(_cPedido)  //é numerico no WIS
 Local _lRet			:= .F.
@@ -580,12 +602,13 @@ Begin Sequence
 	While (_cAliasPesq)->(!Eof())
 		//No caso de a quantidade WIS for maior que a quantidade Protheus não deixar Prosseguir 
 		If  (_cAliasPesq)->QT_WIS > (_cAliasPesq)->QT_PROT
-			_cMens := "[ZPECF011] Pedido " + _cPedido
-			_cMens += " ref. Produto " + AllTrim((_cAliasPesq)->PROD)
-			_cMens += " com qtde WIS " + AllTrim(Str((_cAliasPesq)->QT_WIS) )
-			_cMens += " maior que qtde Protheus "+ AllTrim(Str((_cAliasPesq)->QT_PROT))			
-			Aadd(_aMsgCAOA, Upper(_cMens) )
-			_cMsgInconWis := _cMens  //gravar no SZK e indica para atualizar status
+			_cMens := "Pedido " 			+ _cPedido
+			_cMens += " ref. Prod " 		+ AllTrim((_cAliasPesq)->PROD)
+			_cMens += " com qt WIS " 		+ AllTrim(Str((_cAliasPesq)->QT_WIS) )
+			_cMens += " maior que qt CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))
+			_cMens += ", não processado "			
+			//Aadd(_aMsgCAOA, Upper(_cMens) )
+			ZPEC11RMsg("divergewis",_cMens)
 			_lRet := .F.
 			Exit	
 		//Caso seja maior do que no Protheus devo criar um backorder do processo
@@ -631,7 +654,7 @@ Static Function ZPEC11BKOR(_aPedido)
 Local _lRet 		:= .T.
 Local _cAliasPesq	:= GetNextAlias()   
 Local _cCodProd 
-Local _cPicking	
+Local _cPedido	
 Local _nQtdeDivWiS 
 Local _nQtdeDivPRO 
 Local _nDif
@@ -640,7 +663,7 @@ Local _nPos
 
 Begin Sequence
 	For _nPos := 1 To Len(_aPedido)
-		_cPicking 		:= _aPedido[_nPos,1]
+		_cPedido 		:= _aPedido[_nPos,1]
 		_cCodProd 		:= _aPedido[_nPos,2]
 		_nQtdeDivWiS	:= _aPedido[_nPos,3]
 		_nQtdeDivPRO	:= _aPedido[_nPos,4]
@@ -657,12 +680,12 @@ Begin Sequence
 			WHERE VS3.%notDel% 
 				AND VS3.VS3_FILIAL = %XFilial:VS3%
 				AND VS3.VS3_CODITE = %Exp:_cCodProd%
-				AND VS3.VS3_XPICKI = %Exp:_cPicking% 
+				AND VS3.VS3_XPICKI = %Exp:_cPedido% 
 			ORDER BY VS3.VS3_QTDITE DESC	
 		EndSql
 		//Caso não localize um produto no picking abortar toda a operação
 		If (_cAliasPesq)->(Eof())
-			Aadd(_aMsgCAOA,"Não localizado Pedido "+_cPicking+" para o Produto "+_cCodProd)
+			Aadd(_aMsgCAOA,"Não localizado Pedido "+_cPedido+" para o Produto "+_cCodProd)
 			_lRet := .F. 
 			Break
 		Endif	
@@ -672,7 +695,7 @@ Begin Sequence
 			VS3->(DbGoto((_cAliasPesq)->NREGVS3))
 			//Caso o orçamento seja maior que o Wis abater os valores
 			If VS3->VS3_QTDITE > _nSaldoWis
-				_lRet := ZPEC11BKRE(_nSaldoWis, _cPicking)  //tem que gerar backorder
+				_lRet := ZPEC11BKRE(_nSaldoWis, _cPedido)  //tem que gerar backorder
 				Exit  //ja utilizei o saldo
 			//Caso o saldo wis seja menor que o orçamento o mesmo ficará não mecher somente abater da soma
 		   //Caso seja o mesmo valor não fazer movimentação
@@ -697,13 +720,13 @@ Return _lRet
 @author DAC
 @since 28/07/2023
 @version undefined
-@param _nSaldoWis, _cPicking
+@param _nSaldoWis, _cPedido
 @type function
 @project	GAP002 | Integração da separação - Informar produto e quantidade da cubagem
 @Obs		
 /*/
 
-Static Function ZPEC11BKRE(_nSaldoWis, _cPicking)
+Static Function ZPEC11BKRE(_nSaldoWis, _cPedido)
 Local _lRet 		:= .T.
 Local _lZera 		:= .F.	
 Local _cNumOrc		:= VS3->VS3_NUMORC
@@ -789,7 +812,7 @@ Begin Sequence
 	Aadd(_aBackOrder,{VS3->(Recno()),;
 	 				_cCodProd,; 
 					_nSaldo,;
-					"[ZPECF011] Atualização de Divergência Qtde Protheus X WIS -> "+AllTrim(Str(_nSaldoWis))+", Picking "+_cPicking+" Valor correspondente a diferença de Qtde "+AlTrim(Str(_nSaldo))+" no produto",; 
+					"[ZPECF011] Atualização de Divergência Qtde Protheus X WIS -> "+AllTrim(Str(_nSaldoWis))+", Picking "+_cPedido+" Valor correspondente a diferença de Qtde "+AllTrim(Str(_nSaldo))+" no produto",; 
 					.T. ,;							//_Lxbo 
 					_lZera })					//_lZera	
 
@@ -942,9 +965,12 @@ Begin Sequence
 	Aadd(_aRet, {613,	"noseparaVM6"			, .F.	, .F., 	"Sequencia Separação invalida entre conferência e PEdido"})
 	Aadd(_aRet, {614,	"nostatusorc"			, .F.	, .F., 	"Status Separação invalido para pedido"})
 	Aadd(_aRet, {615,	"divergencia"			, .F.	, .F., 	"Divergencia na separação"})
+
 	Aadd(_aRet, {616,	"liberacao"				, .F.	, .F., 	"Problemas com liberação na separação"})
 	Aadd(_aRet, {617,	"nosepara"				, .F.	, .F., 	"Não possui carregamento no Protheus"})
 	Aadd(_aRet, {618,	"noitens"				, .F.	, .F., 	"Não localizado itens para carregamento no Protheus"})
+
+	Aadd(_aRet, {800,	"divergewis"			, .F.	, .F., 	"Divergencia na separação WIS"})
 
 End Sequence
 Return _aRet
