@@ -176,7 +176,8 @@ While !FT_FEof()
 				0 ,; 						//RECSW5
 				nRec,; //Rec da Temporaria
 				"",;
-				.F.;
+				.F.,;
+				iif( nLay == 1 , aLinha[14] , "" );
 			}
 	
 	if nPos == 0
@@ -540,7 +541,8 @@ For nY := 1 to len(aDados)
 						0 ,; 						//RECSW5
 						0 ,; 
 						"",;//Rec da Temporaria
-						.F.;
+						.F.,;
+						aDados[nY,5,nX ,20] ;
 					}
 			aDados[nY,5,nX ,12] := 0
 			aadd(aDados[nY,5],aItem)
@@ -907,7 +909,7 @@ Local cTexto := ""
 							WKEW5->EW5_XCHAV2	:=  cChave
 							
 							If nLay == 1
-								WKEW5->EW5_XLOTE	:=	Alltrim( cPO ) + zRetCarUni(aDados[nY,5,nX,5])
+								WKEW5->EW5_XLOTE	:=	zRetCarUni(aDados[nY,5,nX,20]) + zRetCarUni(aDados[nY,5,nX,5])
 							EndIf
 							
 							If aDados[nY,5,nX,13] == "1"
@@ -1386,7 +1388,7 @@ Default cPedido := ""
 		WKSZM->ZM_PROD   := aLinha[05]
 		WKSZM->ZM_DESCR  := Posicione("SB1", 1, FwxFilial("SB1") + Alltrim(aLinha[05]), "B1_DESC")
 		WKSZM->ZM_QTDE   := val(aLinha[06])
-		WKSZM->ZM_UNIT   := iif(nLay == 1 , zRetCarUni(Alltrim(aLinha[11])) + zRetCarUni(Alltrim(aLinha[09])),' ' )
+		WKSZM->ZM_UNIT   := iif(nLay == 1 , zRetCarUni(Alltrim(aLinha[14])) + zRetCarUni(Alltrim(aLinha[09])),' ' )
 		WKSZM->ZM_DOC    := ""
 		WKSZM->ZM_SERIE  := ""
 		WKSZM->ZM_FORNEC := cFornecedor
@@ -1511,6 +1513,7 @@ if nLayOut == 1
 	aAux[11] := aLinha[11] //NUMERO DA PURCHASE ORDER
 	aAux[12] := aLinha[03] //CONHECIMENTO EMBARQUE SW6
 	aAux[13] := aLinha[08] //NAVIO SW6
+	aadd(aAux,aLinha[01])
 Else
 	aAux := aClone(aLinha)
 endIf
