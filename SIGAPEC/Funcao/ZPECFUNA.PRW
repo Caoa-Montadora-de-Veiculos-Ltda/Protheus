@@ -5049,21 +5049,22 @@ User Function ZPECREGFI(cZK_XPICKI)
 	Local _cNumOrc		:= " "
 	Local _cXREGFI		:= " "
 	Local _cOperVS3		:= " "
-	Local _cStatus		:= "F"
-	
+	Local _cStatus		:=  "4,F" 							  //Por erro na chamada pelo ZWSR009
+	_cStatus			:= '%' + FormatIn(_cStatus,',') + '%' //Por erro na chamada pelo ZWSR009
+
 	BeginSql Alias _cAliasPesq
 		SELECT DISTINCT	VS1_CLIFAT,VS1_LOJA,VS1_NCLIFT,VS1_NUMORC,VS1_TIPORC,VS1_DATORC, VS1_XMARCA
   		FROM %table:VS1% VS1
    		WHERE 	VS1.VS1_FILIAL  	= %XFilial:VS1%
 			AND VS1.VS1_XPICKI  	= %Exp:cZK_XPICKI%
 			AND VS1.VS1_TIPORC 		= '1' 
-			AND VS1.VS1_STATUS  	= %Exp:_cStatus%
+			AND VS1.VS1_STATUS  	IN %Exp:_cStatus% //Por erro na chamada pelo ZWSR009
 			AND VS1.VS1_NUMNFI		= ' '
 		  	AND VS1.%notDel%		  
 	EndSql      
-	If (_cAliasPesq)->(Eof()) 
+	If (_cAliasPesq)->(Eof())
 		MsgInfo("Não localizado orçamentos com Picking "+cZK_XPICKI+" para recalcular !","Atenção") 
-		Break
+		Break //Por erro na chamada pelo ZWSR009
 	EndIf	
 Begin sequence
 	While !(_cAliasPesq)->(Eof())
