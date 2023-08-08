@@ -215,11 +215,6 @@ Begin Sequence
 		If ! _lRet
 			Exit
 		Else
-			//Atualiza TES Inteligente
-			If !(U_ZPECREGFI(_cPedido)) //cZK_XPICKI _cPedido
-				_cObs		:= 	"ERRO NA ATUALIZAÇÃO TES INTELIGENTE NO PICKING "+_cPedido+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+ CRLF
-			EndIf
-		
 			VS1->(RecLock("VS1",.F.))
 			If Empty(_cObs)
 				_cObs	:= "RETORNO DE SEPARAÇÃO REALIZADO COM SUCESSO REFERENTE PICKING "+_cPedido+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+ CRLF
@@ -233,6 +228,10 @@ Begin Sequence
 		EndIf
 		(_cAlias)->(DbSkip())
 	EndDo
+	//Atualiza TES Inteligente
+	If !(U_ZPECREGFI(_cPedido)) //cZK_XPICKI _cPedido
+		_cObs		:= 	"ERRO NA ATUALIZAÇÃO TES INTELIGENTE NO PICKING "+_cPedido+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+ CRLF
+	EndIf
 	//efetua a gravação da tabela para controle de picking obtenção de pesos e medidas para a nota
 	If _lRet .and. !U_ZPEC11GSZK(_oJson, /*_lGravaIni*/, /*_cPicking*/, /*_cObsMenNF*/, /*_cMarca*/, _lRet)
 		ZPEC11RMsg("noGrava","Problemas com a gravação de dados em relação aos campos verificar com Administrador !")

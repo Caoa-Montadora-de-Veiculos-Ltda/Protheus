@@ -5042,7 +5042,9 @@ Return _lRet
 //Atualiza TES inteligente e recalcula Picking 29/03/2023
 User Function ZPECREGFI(cZK_XPICKI)
 	Local _lRet			:= .T.
-	Local _cAliasPesq 	:= GetNextAlias()	
+	Local _cAliasPesq 	:= GetNextAlias()
+	Local _aOrcs2 		:= {}
+	Local _nX 			:= 0
 	Local _cMens
 	Local _cTESVS3		:= " "
 	Local _cCodIte		:= " "
@@ -5061,7 +5063,8 @@ User Function ZPECREGFI(cZK_XPICKI)
 			AND VS1.VS1_STATUS  	IN %Exp:_cStatus% //Por erro na chamada pelo ZWSR009
 			AND VS1.VS1_NUMNFI		= ' '
 		  	AND VS1.%notDel%		  
-	EndSql      
+	EndSql
+	_cAlias2Pesq:=_cAliasPesq       
 	If (_cAliasPesq)->(Eof())
 		MsgInfo("Não localizado orçamentos com Picking "+cZK_XPICKI+" para recalcular !","Atenção") 
 		Break //Por erro na chamada pelo ZWSR009
@@ -5072,6 +5075,7 @@ Begin sequence
 		_cLoja 		:= (_cAliasPesq)->VS1_LOJA
 		_cNumOrc 	:= (_cAliasPesq)->VS1_NUMORC
 		_cMens 		:= " "
+		aadd( _aOrcs2,_cNumOrc)
 		VS1->(dbSetOrder(1))
 		VS3->(dbSetOrder(1))
 		If VS3->(dbSeek(xFilial("VS3")+_cNumOrc))
@@ -5105,7 +5109,9 @@ Begin sequence
 		EndIf
 		(_cAliasPesq)->(dbSkip())
 	EndDo
-	U_ORCCALFIS(_cNumOrc,.F./*atualiza o preço*/)
+	For _nX := 1 to len(_aOrcs2)
+		U_ORCCALFIS(_aOrcs2[_nX],.F./*atualiza o preço*/)
+	Next _nX
 End Sequence
 Return _lRet
 
