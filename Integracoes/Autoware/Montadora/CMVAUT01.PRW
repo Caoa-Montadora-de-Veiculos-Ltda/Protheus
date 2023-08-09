@@ -12,14 +12,18 @@
 #Include "FWMVCDEF.CH"
 #Define CRLF chr(13) + chr(10)             
 
-/*/{Protheus.doc} CMVAUT01
-//TODO WS Pedidos do Atacado.
-@author marcos cavalaro
-@since 25/10/2018
-@version 1.0
-@type function
-/*/
-
+/*
+=====================================================================================
+Programa.:              CMVAUT01
+Autor....:              CAOA - Projeto ImplementaÁ„o Montadora
+Data.....:              
+Descricao / Objetivo:   Processa pedidos do Portal Autoware Veiculos
+Doc. Origem:            
+Solicitante:            
+Uso......:              
+Obs......:
+=====================================================================================
+*/
 WSSTRUCT RetPedido
 	WSDATA cdPedido1       as String
 	WSDATA cdRetorno       as String      
@@ -71,15 +75,24 @@ WSSERVICE CMVAUT01 DESCRIPTION "WebServices de IntegraÁ„o Pedido Atacado Autowar
  	WSMETHOD WSCAOA_INCLUSAO_PEDIDO_ATACADO	DESCRIPTION "Inclui um Pedido de Atacado"
 ENDWSSERVICE
 
-//FunÁ„o para validar o WS
-************************
+/*
+=====================================================================================
+Programa.:              CMVAUT01
+Autor....:              CAOA - Projeto ImplementaÁ„o Montadora
+Data.....:              
+Descricao / Objetivo:   FunÁ„o para executar manualmente
+Doc. Origem:            
+Solicitante:            
+Uso......:              
+Obs......:
+=====================================================================================
+*/
 User Function CMVAUT01()
-************************
 
 Local aITEM := {{'000002','GFSCNNBWW2','S1W7J461KG','2020','2020',1,'WW2','NNB',2019}}
 Local aRet  := {} 
 
-Private _aMatriz := {"01","2010022001"}
+Private _aMatriz := {"01","2010022001" }
 Private lIsBlind := IsBlind() .OR. Type("__LocalDriver") == "U"
 
 IF lIsBlind
@@ -90,10 +103,11 @@ IF lIsBlind
         RpcClearEnv()
         Return
     EndIf
+    Conout("[ CMVAUT01 ] - Empresa: " + AllTrim(_aMatriz[1]) + " - Filial: " + AllTrim(_aMatriz[2])  +" - " + DTOC(dDATABASE) + " - " + TIME() )
 EndIf
 
-MsgAlert('Entrou')
-aRet := ProcWSPed ({'2010022001'    ,;
+//MsgAlert('Entrou')
+aRet := zProcWS ({'2010022001'    ,;
                     '008'           ,;
                     'HYU'           ,;
                     '3902'          ,;
@@ -106,15 +120,22 @@ aRet := ProcWSPed ({'2010022001'    ,;
                     aITEM  )
 
 
-MsgAlert(aRet[01]+CRLF+aRet[02]+CRLF+aRet[03]+CRLF+aRet[04])
-
-U_CAOA_MONITOR( cFilant  ,aRet[02],'001','002',aRet[03], '2010022001-'+aRet[01]+'-'+aRet[04] ,'0','' ,0)
+U_CAOA_MONITOR( FWFilial()  ,aRet[02],'001','002',aRet[03], '2010022001-'+aRet[01]+'-'+aRet[04] ,'0','' ,0)
 
 Return
 
-************************************
-*MÈtodo principal do WebService
-************************************
+/*
+=====================================================================================
+Programa.:              CMVAUT01
+Autor....:              CAOA - Projeto ImplementaÁ„o Montadora
+Data.....:              
+Descricao / Objetivo:   MÈtodo principal do WebService
+Doc. Origem:            
+Solicitante:            
+Uso......:              
+Obs......:
+=====================================================================================
+*/
 WSMETHOD WSCAOA_INCLUSAO_PEDIDO_ATACADO WSRECEIVE aDadosPed WSSEND aRetorno WSSERVICE CMVAUT01
 
 Local aRet  := {}
@@ -136,7 +157,7 @@ For nI := 1 To Len(::aDadosPed:PedItem)
     Aadd(aITEM, aRec)
 Next NI
 
-aRet :=  ProcWSPed ({::aDadosPed:PedCab:Filial              ,;
+aRet :=  zProcWS     ({::aDadosPed:PedCab:Filial              ,;
                      ::aDadosPed:PedCab:cdCondicaoPagamento ,;
                      ::aDadosPed:PedCab:cdMarca             ,;
                      ::aDadosPed:PedCab:cdPedido            ,;
@@ -154,72 +175,112 @@ aRet :=  ProcWSPed ({::aDadosPed:PedCab:Filial              ,;
 ::aRetorno:dsRetorno   := Substr(aRet[3],1,254)
 ::aRetorno:cdPedido    := aRet[4]
 
-U_CAOA_MONITOR( cFilant  ,aRet[02],'001','002',aRet[03], ::aDadosPed:PedCab:Filial+aRet[01]+'-'+aRet[04] ,'0','' ,0)
+U_CAOA_MONITOR( FWFilial()  ,aRet[02],'001','002',aRet[03], ::aDadosPed:PedCab:Filial+aRet[01]+'-'+aRet[04] ,'0','' ,0)
 
 Return .T.
 
-******************************************
-Static Function ProcWSPed(aParam1,aParam2)
-******************************************
+/*
+=====================================================================================
+Programa.:              zProcWS
+Autor....:              CAOA - Projeto ImplementaÁ„o Montadora
+Data.....:              
+Descricao / Objetivo:   Processa o Recebimento do WS
+Doc. Origem:            
+Solicitante:            
+Uso......:              
+Obs......:
+=====================================================================================
+*/
+Static Function zProcWS(aParam1,aParam2)
 
-Local aDadosCab := aParam1
-Local cCodCli   := ""
-Local cLjCli    := ""
+Local aDadosCab     := aParam1
+Local cCodCli       := ""
+Local cLjCli        := ""
 Local dEmis
-Local cOper1    := GetMV("CAOA_AUT1A",.F.,'92')
-Local cOper2    := GetMV("CAOA_AUT1B",.F.,'93')
-Local cTes      := GetMV("CAOA_AUT1C",.F.,'501')
-Local cTesFinal := "" 
-Local nX        := 0
-Local aCabec    := {}
-Local aLinha    := {}
-//Local lRet    := .T.
-Local cItem     := '001'
-Local nI        := 0 
+Local cOper1        := ""
+Local cOper2        := ""
+Local cTes          := ""
+Local cTesFinal     := "" 
+Local nX            := 0
+Local aCabec        := {}
+Local aLinha        := {}
+Local cItem         := '001'
+Local nI            := 0 
+Local cWsFILIAL     := "2010022001"//aDadosCab[01]
+Local cWsPag        := aDadosCab[02]
+Local cWSMarca      := aDadosCab[03]
+Local cWSPedido     := aDadosCab[04]
+Local cWSTipoPed    := aDadosCab[05]
+Local cWSCNPJ       := aDadosCab[06]
+Local cWSDtPed      := aDadosCab[09]
+Local cWSNat        := If(aDadosCab[10] == Nil ,"" , aDadosCab[10])
+Local aDadosIt      := aParam2
+Local cWSLinha      := ''
+Local cWSModCom     := ''
+Local cWSModelo     := ''
+Local cWSAnoM       := ''
+Local cWSAnoF       := ''
+Local nWSQuant      := ''
+Local cWSCorExt     := ''
+Local cWSCorInt     := ''
+Local nWSID         := 0 
+Local bTem          := .F.
+Local _cProduto     := " "
+Local _lRetPed      := .F.
+Local _cEmpresa     := "01"   // CÛdigo da Empresa que deseja manipular
+Local _cFilial      := "2010022001"   // CÛdigo da Filial que deseja manipular
 
-Local cWsFILIAL  := aDadosCab[01]
-Local cWsPag     := aDadosCab[02]
-Local cWSMarca   := aDadosCab[03]
-Local cWSPedido  := aDadosCab[04]
-Local cWSTipoPed := aDadosCab[05]
-Local cWSCNPJ    := aDadosCab[06]
-//Local cWSBanco   := aDadosCab[07]
-//Local cWSOBS     := aDadosCab[08]
-Local cWSDtPed   := aDadosCab[09]
-Local cWSNat     := If(aDadosCab[10] == Nil ,"" , aDadosCab[10])
-//Local cWSObserv    := aDadosCab[11]
-Local aDadosIt   := aParam2
-Local cWSLinha   := ''
-Local cWSModCom  := ''
-Local cWSModelo  := ''
-Local cWSAnoM    := ''
-Local cWSAnoF    := ''
-Local nWSQuant   := ''
-Local cWSCorExt  := ''
-Local cWSCorInt  := ''
-Local nWSID      := 0 
-Local bTem       := .F.
+Private cErro       := ""
+Private aRet        := {}
+Private aItens      := {}
+Private aHeader     := {}
+Private cTipErro    := "0"
+Private cPedido     := ""
 
-Private cErro      := ""
-Private aRet       := {}
-Private aItens     := {}
-Private aHeader    := {}
-Private cTipErro   := "0"
-cFilant := cWsFILIAL
+Conout("[ CMVAUT01 ] - ABRINDO A EMPRESA: " + DTOC(dDATABASE) + " - " + TIME() )
 
-// O WS Jù tem filial parametrizada
-//Private _aMatriz := {"01","2010022001"}
-//Private lIsBlind := IsBlind() .OR. Type("__LocalDriver") == "U"
-//RpcSetType(3)
-//RpcSetEnv(_aMatriz[1],_aMatriz[2])
+RpcClearEnv()
+RPCSetType(3)
+RpcSetEnv(_cEmpresa, _cFilial,,,,GetEnvServer(),{ })
+
+cOper1  := GetMV("CAOA_AUT1A",.F.,'92')
+cOper2  := GetMV("CAOA_AUT1B",.F.,'93')
+cTes    := GetMV("CAOA_AUT1C",.F.,'501')
+
+/*DbSelectArea('SA1')
+DbSelectArea('VV2')
+DbSelectArea('VVR')
+DbSelectArea('VX5')*/
+
+If AllTrim(FWCodEmp()) <> "2010"
+    Conout("[ CMVAUT01 ] - ERRO NA ABERTURA DA EMPRESA: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) +" - " + DTOC(dDATABASE) + " - " + TIME() )
+Else
+    Conout("[ CMVAUT01 ] - EMPRESA ABERTA COM SUCESSO: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) +" - " + DTOC(dDATABASE) + " - " + TIME() )
+EndIf
+
+Conout("[ CMVAUT01 ] - Processando Pedido: " + AllTrim(cWSPedido) +" - INICIO -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) +" - " + DTOC(dDATABASE) + " - " + TIME() )
+
+_lRetPed := zBuscaPed(cWSPedido)
+If _lRetPed
+    Conout("[ CMVAUT01 ] - Pedido: " + AllTrim(cWSPedido) + " - Pedido ja incluido: " + AllTrim(cWSPedido)  +" -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) + " - " + DTOC(dDATABASE) + " - " + TIME() )
+    Return {cWSPedido,"0",AllTrim(cWSPedido)+" - Pedido ja incluido.",cPedido}
+EndIf
+
+If Empty(cWSMarca)
+    Conout("[ CMVAUT01 ] - Pedido: " + AllTrim(cWSPedido) + " - Marca nao informada: " + AllTrim(cWSMarca)  + " -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) + " - " + DTOC(dDATABASE) + " - " + TIME() )
+    Return {cWSPedido,"0",AllTrim(cWSMarca)+" - Marca nao informada.",cPedido}
+EndIf
+
 SA1->(DbSetOrder(3)) 
 If SA1->(DbSeek(xFilial("SA1")+cWSCNPJ))
 	cCodCli := SA1->A1_COD
 	cLjCli  := SA1->A1_LOJA
 	if SA1->A1_MSBLQL == '1'
+        Conout("[ CMVAUT01 ] - Pedido: " + AllTrim(cWSPedido) + " - Cliente Bloqueado: " + AllTrim(cWSCNPJ)  +" -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) +" - " + DTOC(dDATABASE) + " - " + TIME() )
 		Return {cWSPedido,"0","Cliente Bloqueado: " + cWSCNPJ , "" }
 	Endif
 Else
+    Conout("[ CMVAUT01 ] - Pedido: " + AllTrim(cWSPedido) + " - Cliente nao cadastrado: " + AllTrim(cWSCNPJ)  +" -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) +" - " + DTOC(dDATABASE) + " - " + TIME() )
 	Return {cWSPedido,"0","Cliente nao cadastrado: " + cWSCNPJ , ""}
 EndIf
 
@@ -228,25 +289,45 @@ SA1->(DbSetOrder(1))
 VVR->(DbSetOrder(2))
 VX5->(dbSetOrder(1))
 
-For nX:=1 To Len(aDadosIt)    
-    cWSLinha   := PadR( aDadosIt[nX,01] , TamSX3('VRK_GRUMOD')[1] ) //aDadosIt[nX,01]
-    cWSModCom  := PadR( aDadosIt[nX,02] , TamSX3('VRK_SEGMOD')[1] ) //aDadosIt[nX,02]
-    cWSModelo  := PadR( aDadosIt[nX,03] , TamSX3('VRK_MODVEI')[1] ) //aDadosIt[nX,03]
+For nX:=1 To Len(aDadosIt)
+
+    cWSLinha   := aDadosIt[nX,01]
+    cWSModCom  := aDadosIt[nX,02]
+    cWSModelo  := aDadosIt[nX,03]
     cWSAnoM    := Alltrim(aDadosIt[nX,04])
     cWSAnoF    := Alltrim(aDadosIt[nX,05])
     nWSQuant   := aDadosIt[nX,06]
-    cWSCorExt  := PadR( aDadosIt[nX,07] , TamSX3('VRK_COREXT')[1] ) //aDadosIt[nX,07]
-    cWSCorInt  := PadR( aDadosIt[nX,08] , TamSX3('VRK_CORINT')[1] ) //aDadosIt[nX,08]
+    cWSCorExt  := aDadosIt[nX,07]
+    cWSCorInt  := aDadosIt[nX,08]
     nWSID      := aDadosIt[nX,09] 
 
-    For nI:= 1 To nWSQuant
+    For nI := 1 To nWSQuant
+
+        Conout("[ CMVAUT01 ] - Processando Pedido: " + AllTrim(cWSPedido) +" - Antes de Buscar Modelo -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) +" - " + DTOC(dDATABASE) + " - " + TIME() )
+        
         aLinha    := {} 
         cTesFinal := ""
         bTem      := .F.
-        VV2->(DbSetOrder(2)) 
-        If VV2->(!DbSeek(xFilial("VV2")+cWSMarca + cWSModCom ))
-            Return {cWSPedido,"0",AllTrim(cWSModCom)+" Modelo Comercial nao encontrado.",""}
+
+        _cProduto := " "
+        _cProduto := zBuscaModelo( AllTrim(cWSMarca), AllTrim(cWSModelo), AllTrim(cWSModCom), cWSPedido )
+        If Empty(_cProduto)
+            Conout("[ CMVAUT01 ] - Pedido: " + AllTrim(cWSPedido) + " - Modelo/Modelo Comercial nao encontrado - Modelo: " + AllTrim(cWSModelo) + " | Modelo Comercial: " + AllTrim(cWSModCom) + " -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) + " - " + DTOC(dDATABASE) + " - " + TIME() )
+            Return {cWSPedido,"0", AllTrim(cWSModelo) + " | " + AllTrim(cWSModCom) + " Modelo/Modelo Comercial nao encontrado.",""}
         EndIf
+
+        VVR->(DbSetOrder(2)) 
+        If VVR->(!DbSeek(xFilial("VVR")+cWSMarca+cWSLinha ))
+            Conout("[ CMVAUT01 ] - Pedido: " + AllTrim(cWSPedido) + " - Linha nao cadastrada: " + AllTrim(cWSLinha) + " -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) + " - " + DTOC(dDATABASE) + " - " + TIME() )
+            Return {cWSPedido,"0",AllTrim(cWSLinha)+" Linha nao cadastrada.",""}
+        EndIf
+
+        VX5->(DbSetOrder(1)) 
+        If VX5->(!DbSeek(xFilial("VX5")+'067'+cWSCorExt ))
+            Conout("[ CMVAUT01 ] - Pedido: " + AllTrim(cWSPedido) + " - Cor externa nao cadastrada: " + AllTrim(cWSCorExt) + " -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) + " - " + DTOC(dDATABASE) + " - " + TIME() )
+            Return {cWSPedido,"0",AllTrim(cWSCorExt)+" Cor externa nao cadastrada.",""}
+        EndIf
+
         Aadd(aLinha,{"VRK_ITEPED"   ,cItem                                                      ,Nil})
         Aadd(aLinha,{"VRK_CODMAR"   ,cWSMarca                                                   ,Nil})
         Aadd(aLinha,{"VRK_GRUMOD"   ,cWSLinha                                                   ,Nil})
@@ -258,7 +339,8 @@ For nX:=1 To Len(aDadosIt)
         Aadd(aLinha,{"B1COD"        ,Alltrim(cWSModelo)+Alltrim(cWSModCom)                      ,Nil})
 
         IF !Empty(cOper1)
-            cTesFinal := MaTesInt(2,cOper1,cCodCli,cLjCli,"C",VV2->VV2_PRODUT,"C6_TES") 
+            cTesFinal := MaTesInt(2,cOper1,cCodCli,cLjCli,"C",_cProduto,"C6_TES") 
+            Conout("[ CMVAUT01 ] - Processando Pedido: " + AllTrim(cWSPedido) +" - Primeira TES Inteligente - Operacao 01 -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) +" - " + DTOC(dDATABASE) + " - " + TIME() )
             IF !Empty(cTesFinal)
                 AAdd(aLinha,{"VRK_OPER" ,cOper1 ,Nil})
                 bTem       := .T.
@@ -266,7 +348,8 @@ For nX:=1 To Len(aDadosIt)
         EndIf
         
         IF !Empty(cOper2) .And.  !bTem
-              cTesFinal := MaTesInt(2,cOper2,cCodCli,cLjCli,"C",VV2->VV2_PRODUT,"C6_TES")
+              cTesFinal := MaTesInt(2,cOper2,cCodCli,cLjCli,"C",_cProduto,"C6_TES")
+              Conout("[ CMVAUT01 ] - Processando Pedido: " + AllTrim(cWSPedido) +" - Segunda TES Inteligente - Operacao 02 -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) +" - " + DTOC(dDATABASE) + " - " + TIME() )
               IF !Empty(cTesFinal)
                  AAdd(aLinha,{"VRK_OPER"    ,cOper2 ,Nil})
                  bTem       := .T.
@@ -277,30 +360,12 @@ For nX:=1 To Len(aDadosIt)
         Aadd(aLinha,{"VRK_XID"      ,nWSID                                          ,Nil})
         cItem := SOMA1(cItem) 
         Aadd(aItens, aLinha)
-
-        VVR->(DbSetOrder(2)) 
-        If VVR->(!DbSeek(xFilial("VVR")+cWSMarca+cWSLinha ))
-            Return {cWSPedido,"0",AllTrim(cWSLinha)+" Linha nao cadastrada.",""}
-        EndIf
-
-        VV2->(DbSetOrder(4)) 
-        If VV2->(!DbSeek(xFilial("VV2")+cWSModelo ))
-            Return {cWSPedido,"0",AllTrim(cWSModelo)+" Modelo nao cadastrado.",""}
-        EndIf
-
-        VX5->(DbSetOrder(1)) 
-        If VX5->(!DbSeek(xFilial("VX5")+'067'+cWSCorExt ))
-            Return {cWSPedido,"0",AllTrim(cWSCorExt)+" Cor externa nao cadastrada.",""}
-        EndIf
+        
     Next nI
 Next nX
 
-If !BuscaPed(cWsFILIAL,cWSPedido)
-    Return {cWSPedido,"0",AllTrim(cWSPedido)+" - Pedido ja incluido.",""}
-EndIf
-
 // Montando a Data de Emissùo
-dEmis:=Ctod(cWSDtPed)       
+dEmis := Ctod(cWSDtPed)       
 
 Aadd(aCabec,{"VRJ_FILIAL"   ,cWsFILIAL  ,Nil})
 Aadd(aCabec,{"VRJ_PEDCOM"   ,cWSPedido  ,Nil})
@@ -312,30 +377,44 @@ Aadd(aCabec,{"VRJ_DATDIG"   ,dEmis      ,Nil})
 Aadd(aCabec,{"VRJ_NATURE"   ,cWSNat     ,Nil})
 //Aadd(aCabec,{"VRJ_OBSPED" ,cWSObserv  ,Nil})
 
-If !GravaPed(aCabec, aItens )
+Conout("[ CMVAUT01 ] - Pedido: " + AllTrim(cWSPedido) + " - Iniciando gravacao do pedido - INICIO -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) + " - " + DTOC(dDATABASE) + " - " + TIME() )
+
+If !zGravaPed(aCabec, aItens )
     Return {cWSPedido,cTipErro, Alltrim( cErro ),""}
 EndIf
 
+Conout("[ CMVAUT01 ] - Pedido: " + AllTrim(cWSPedido) + " - Finalizado gravacao do pedido - FIM -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) + " - " + DTOC(dDATABASE) + " - " + TIME() )
+
 Return {cWSPedido,"1","Pedido Cadastrado com Sucesso",VRJ->VRJ_PEDIDO}
 
-*********************************************
-Static Function GravaPed(  aCpoVRJ, aCpoVRK )
-*********************************************
+/*
+=====================================================================================
+Programa.:              zGravaPed
+Autor....:              CAOA - Projeto ImplementaÁ„o Montadora
+Data.....:              
+Descricao / Objetivo:   Grava o pedido
+Doc. Origem:            
+Solicitante:            
+Uso......:              
+Obs......:
+=====================================================================================
+*/
+Static Function zGravaPed(  aCpoVRJ, aCpoVRK )
 
-Local lRet     := .T.
-Local aCabPed  := {}
-Local aItePed  := {}
-Local cQuery   := ""
-Local cTmpAlias:= GetNextAlias()
-Local aArea    := GetArea()
-Local aLinha   := {}
-Local cProduto := ""
-Local cCorInt  := ""
-Local cCorExt  := ""
-Local cNumPed  := ""
-Local cStartPath := GetSrvProfString("Startpath","\")
-Local cLog     := ""
-Local cPedAuto := ""
+Local lRet              := .T.
+Local aCabPed           := {}
+Local aItePed           := {}
+Local cQuery            := ""
+Local cTmpAlias         := GetNextAlias()
+Local aArea             := GetArea()
+Local aLinha            := {}
+Local cProduto          := ""
+Local cCorInt           := ""
+Local cCorExt           := ""
+Local cNumPed           := ""
+Local cStartPath        := GetSrvProfString("Startpath","\")
+Local cLog              := ""
+Local cPedAuto          := ""
 
 Private oModel      
 Private oModelVRK
@@ -352,8 +431,12 @@ aArea   := GetArea()
 oModel  := FWLoadModel('VEIA060')
 aRotina := FWLoadMenuDef('VEIA060')
 
+Conout("[ CMVAUT01 ] INICIO - Transaction -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) + " - " + DTOC(dDATABASE) + " - " + TIME() )
+
 Begin Transaction 
-	
+
+    Conout("[ CMVAUT01 ] INICIO - Gravacao Pedido SigaVEI - FWMVCRotAuto -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) + " - " + DTOC(dDATABASE) + " - " + TIME() )
+
 	FWMVCRotAuto(oModel					,; //Model
 				"VRJ"					,; //Alias
 				MODEL_OPERATION_INSERT	,; //Operacao
@@ -372,6 +455,7 @@ Begin Transaction
 		cErro +=  "Valor atribuido:           " + ' [' + AllToChar( aErro[8]  ) + ']'+CRLF
 		cErro +=  "Valor anterior:            " + ' [' + AllToChar( aErro[9]  ) + ']'+CRLF
 		lRet := .F.
+        //DisarmTransaction()
 	EndIf
 
 	oModel:DeActivate()
@@ -391,8 +475,10 @@ Begin Transaction
 
         lRet := .F.
         cTipErro := "0"
-
+        DisarmTransaction()
     Else
+        Conout("[ CMVAUT01 ] FIM - Gravacao Pedido SigaVEI - FWMVCRotAuto -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) + " - " + DTOC(dDATABASE) + " - " + TIME() )
+
         cQuery := ""
         cQuery += " SELECT *                                                                "
         cQuery += " FROM "+RetSqlName("VRJ") + " VRJ                                        "
@@ -404,7 +490,10 @@ Begin Transaction
         cQuery += "     AND VRJ.VRJ_PEDIDO  = '"+VRJ->VRJ_PEDIDO+"'                         "
         cQuery += "     AND VRJ.D_E_L_E_T_  = ' '                                           "
         
-        If Select(cTmpAlias) <> 0 ; (cTmpAlias)->(DbCloseArea()) ; EndIf
+        If Select(cTmpAlias) <> 0
+            (cTmpAlias)->(DbCloseArea())
+        EndIf
+
         DbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cTmpAlias, .F., .T. )
 
         (cTmpAlias)->(DbGoTop())
@@ -438,9 +527,14 @@ Begin Transaction
                 cCorInt := Posicione("VX5",1,xFilial("VX5")+"066"+(cTmpAlias)->VRK_CORINT,"VX5_DESCRI")
                 cCorExt := Posicione("VX5",1,xFilial("VX5")+"067"+(cTmpAlias)->VRK_COREXT,"VX5_DESCRI")
 
-                VVX->(DbSetOrder(1)); VVX->(DbSeek(xFilial("VVX")+(cTmpAlias)->VRK_CODMAR+(cTmpAlias)->VRK_SEGMOD                           ))
-                VE1->(DbSetOrder(1)); VE1->(DbSeek(xFilial("VE1")+(cTmpAlias)->VRK_CODMAR                                                   ))
-                VV2->(DbSetOrder(1)); VV2->(DbSeek(xFilial("VV2")+(cTmpAlias)->VRK_CODMAR+(cTmpAlias)->VRK_MODVEI+(cTmpAlias)->VRK_SEGMOD   ))
+                VVX->(DbSetOrder(1))
+                VVX->(DbSeek(xFilial("VVX")+(cTmpAlias)->VRK_CODMAR+(cTmpAlias)->VRK_SEGMOD))
+                
+                VE1->(DbSetOrder(1))
+                VE1->(DbSeek(xFilial("VE1")+(cTmpAlias)->VRK_CODMAR))
+                
+                VV2->(DbSetOrder(1))
+                VV2->(DbSeek(xFilial("VV2")+(cTmpAlias)->VRK_CODMAR+(cTmpAlias)->VRK_MODVEI+(cTmpAlias)->VRK_SEGMOD))
 
                 aLinha   := {}
                 cProduto := Alltrim((cTmpAlias)->VRK_MODVEI)+Alltrim((cTmpAlias)->VRK_SEGMOD)
@@ -464,6 +558,8 @@ Begin Transaction
                 (cTmpAlias)->(DbSkip())
             EndDo
             
+            Conout("[ CMVAUT01 ] INICIO - Gravacao Pedido SigaFAT - MSExecAuto(MATA410) -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) + " - " + DTOC(dDATABASE) + " - " + TIME() )
+
             cTipErro    := "1"
             lRet        := .T.
             lMsHelpAuto := .T.
@@ -473,8 +569,8 @@ Begin Transaction
                         
             If lMsErroAuto
                             
-                cErro += "Pedido Cadastrado com Sucesso" + CRLF
-                cErro += "Algumas providencias deverar ser tomadas no Protheus para Faturar" + CRLF
+                cErro += "Pedido com Erro" + CRLF
+                cErro += "Algumas providencias deverao ser tomadas no Protheus para Faturar" + CRLF
                 cLog  += mostraerro(cStartPath+'CMVAUTO01.log')
                 cErro += Substr(cLog,1,100)
                 MemoWrite("\autoware\" + cPedAuto + ".Log",cLog)
@@ -485,6 +581,7 @@ Begin Transaction
                 lRet := .F.
 
             EndIf
+            Conout("[ CMVAUT01 ] FIM - Gravacao Pedido SigaFAT - MSExecAuto(MATA410) -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) + " - " + DTOC(dDATABASE) + " - " + TIME() )
         EndIf
     EndIf
 
@@ -492,30 +589,108 @@ Begin Transaction
 
 End Transaction
 
+Conout("[ CMVAUT01 ] FIM - Transaction -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) + " - " + DTOC(dDATABASE) + " - " + TIME() )
+
 RestArea(aArea)
 
 Return lRet
 
-*****************************************
-Static Function BuscaPed(cPedFIl,cPedCOM)
-*****************************************
+/*
+=====================================================================================
+Programa.:              zBuscaPed
+Autor....:              CAOA - Evandro A Mariano dos Santos 
+Data.....:              07/08/2022
+Descricao / Objetivo:   Busca o Pedido
+Doc. Origem:            
+Solicitante:            
+Uso......:              
+Obs......:
+=====================================================================================
+*/
+Static Function zBuscaPed(_cPedido)
 
-Local cQuery := ''
-Local bRet   := .T.
+Local aArea		  	:= GetArea()
+Local cQuery	  	:= ""
+Local cAliasTRB		:= GetNextAlias()
+Local _lRet         := .T.
 
-cQuery := " SELECT * "
-cQuery += " FROM "+RetSQLName("VRJ")
-cQuery += " WHERE D_E_L_E_T_ = ' '          "
-cQuery += "   AND VRJ_FILIAL ='"+cPedFIl+"' "
-cQuery += "   AND VRJ_PEDCOM ='"+cPedCom+"' "                                                                                     "
-cQuery  := ChangeQuery(cQuery)
+Default _cPedido    := " "
 
-If Select("QRY_PED") > 0 ; QRY_PED->(DbCloseArea()) ; EndIf
-DbUseArea(.T.,"TOPCONN",TcGenQry(,,cQuery),"QRY_PED",.T.,.F.)
-DbSelectArea("QRY_PED")
-QRY_PED->(DbGoTop())
-If QRY_PED->(!Eof())
-    bRet   := .F.
+If Select( (cAliasTRB) ) > 0
+    (cAliasTRB)->(DbCloseArea())
 EndIf
 
-Return bRet
+cQuery := " "
+cQuery += " SELECT * FROM "+RetSQLName("VRJ") +"  VRJ "
+cQuery += " WHERE VRJ.D_E_L_E_T_ = ' ' "
+cQuery += "   AND VRJ.VRJ_FILIAL = '" + FWxFilial('VRJ') + "' "
+cQuery += "   AND VRJ.VRJ_PEDCOM ='"+_cPedido+"' " 
+
+// Executa a consulta.
+DbUseArea( .T., "TOPCONN", TcGenQry(,,cQuery), cAliasTRB, .T., .T. )
+
+DbSelectArea((cAliasTRB))
+(cAliasTRB)->(dbGoTop())
+
+If (cAliasTRB)->(EoF())
+    _lRet   := .F.
+EndIf
+
+(cAliasTRB)->(DbCloseArea())
+
+RestArea(aArea)
+
+Return(_lRet)
+
+/*
+=====================================================================================
+Programa.:              zBuscaModelo
+Autor....:              CAOA - Evandro A Mariano dos Santos 
+Data.....:              07/08/2022
+Descricao / Objetivo:   Busca o modelo do veiculo.
+Doc. Origem:            
+Solicitante:            
+Uso......:              
+Obs......:
+=====================================================================================
+*/
+Static Function zBuscaModelo(_cMarca, _cModelo, _cSegmento, _cPedido )
+
+Local _cCod         := " "
+Local aArea		  	:= GetArea()
+Local cQuery	  	:= ""
+Local cAliasTRB		:= GetNextAlias()
+
+Default _cMarca     := " "
+Default _cModelo    := " "
+Default _cSegmento  := " "
+
+If Select( (cAliasTRB) ) > 0
+    (cAliasTRB)->(DbCloseArea())
+EndIf
+
+cQuery := "	"
+cQuery += " SELECT VV2.VV2_PRODUT FROM " + RetSQLName("VV2") +"  VV2 "
+cQuery += " WHERE VV2.VV2_FILIAL = '" + FWxFilial('VV2') + "' " 
+cQuery += " AND VV2.VV2_CODMAR = '" + _cMarca + "' "
+cQuery += " AND VV2.VV2_MODVEI = '" + _cModelo + "' "
+cQuery += " AND VV2.VV2_SEGMOD = '" + _cSegmento + "' "
+cQuery += " AND VV2.D_E_L_E_T_ = ' ' "
+
+// Executa a consulta.
+DbUseArea( .T., "TOPCONN", TcGenQry(,,cQuery), cAliasTRB, .T., .T. )
+
+DbSelectArea((cAliasTRB))
+(cAliasTRB)->(dbGoTop())
+
+If !(cAliasTRB)->(EoF())
+    _cCod := (cAliasTRB)->VV2_PRODUT
+Else
+    Conout("[ CMVAUT01 ] - Pedido: " + AllTrim(_cPedido) + " - Erro na query de Marca: " + AllTrim(_cMarca) + " | Modelo: " + AllTrim(_cModelo) + " | Modelo Comercial: " + AllTrim(_cSegmento) + " | Produto: " + Alltrim(_cCod) + " -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) + " - " + DTOC(dDATABASE) + " - " + TIME() +" - " + Alltrim(cQuery) )
+EndIf
+
+(cAliasTRB)->(DbCloseArea())
+
+RestArea(aArea)
+
+Return(_cCod)
