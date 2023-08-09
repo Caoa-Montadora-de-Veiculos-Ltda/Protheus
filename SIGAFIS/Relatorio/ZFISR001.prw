@@ -20,9 +20,6 @@ User Function ZFISR001() // u_ZFISR001()
 							"Relatório Notas Fiscais de Saida (Excel)"		}
 	Local nRadio	:=	1
 
-	Local nteste    := 'testeGit'
-	
-
 	DEFINE MSDIALOG opPar TITLE "Relatórios de Conferência" FROM 100,0 TO 300,400 PIXEL of oMainWnd STYLE DS_MODALFRAME
 
 	oRadio1:=tRadMenu():New( 010	,010	,aOpcRadio		,{|u|if(PCount()>0,nRadio:=u,nRadio)}	,opPar	,,,,,,,	,290	,50,,,,.T.	)
