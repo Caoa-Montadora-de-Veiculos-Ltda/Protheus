@@ -1310,7 +1310,7 @@ Local _cDirXls    := AllTrim(SuperGetMV( "IQA_XLSIORI"  ,,"Planejamento\xls" )) 
 Local _cArqXLS	:= 	""
 
 Begin Sequence
-		_cArqXLS := cGetFile(_cTipoArq,"Selecione o arquivo que será analisado.",0,_cDirXls,.T.,GETF_LOCALFLOPPY + GETF_LOCALHARD  )
+		_cArqXLS := cGetFile(_cTipoArq,"Selecione o arquivo que será analisado.",0,_cDirXls,.T.,GETF_LOCALFLOPPY + GETF_LOCALHARD,  )
 		If !Empty(_cArqXLs)
 			oOle:= TOleContainer():New( 2, 2,560 ,284 ,oPanelVis,.T.,_cArqXLS )
 			If !oOle:OpenFromFile(Alltrim(_cArqXLS),.F.)
@@ -1869,7 +1869,7 @@ Local _nDiasFat     := 0
 Local _nQtdeFat 	:= 0 
 Local _nValFat  	:= 0
 Local _nValTab 		:= 0
-Local _lProcUF 		:= .T.  ////indica que deve procurar a UF para verificação valores customizados
+//Local _lProcUF 		:= .T.  ////indica que deve procurar a UF para verificação valores customizados
 Local _cAtivo		:= "1"
 Local _cCurvaABC	:= ""
 Local _aArmazen		:= {"01","11"}
@@ -1878,7 +1878,7 @@ Local _nSaldoWis11 	:= 0
 Local _nCustoMedio	:= 0
 Local _cMarca		:= ""
 Local _nRegSD2
-Local _cCampo
+//Local _cCampo
 Local _lRetUsu
 Local _nPos
 
@@ -1911,9 +1911,10 @@ Begin Sequence
 	Endif		
 	(_cAliasPesq)->(DbCloseArea())
 	//Procurar Preço de Venda
-	_cData := DtoS(Date()) //DtOS(_dDataFAT)  //ultimo valor de vendas
+	_cData := DtoS(Date())
     BeginSql Alias _cAliasPesq
         SELECT 	DA1_PRCVEN 
+				, DA1_PRCVEN
 				, DA1.R_E_C_N_O_ AS NREGDA1
         FROM %Table:DA0% DA0
         INNER JOIN %Table:DA1% DA1
@@ -1926,14 +1927,14 @@ Begin Sequence
 			AND %Exp:_cData% BETWEEN DA0.DA0_DATDE AND DA0.DA0_DATATE
 			AND DA0.%notDel%
     EndSql
-	//AND DA0.DA0_ATIVO	= %Exp:_cAtivo%	  //não utilizar ativo pois é o ultimo valor faturamento
-	//	LEFT JOIN %Table:SA2% SA2	
-    //        ON  SA2.%notDel%
-    //        AND SA2.A2_FILIAL = %xFilial:SA2%
-	//		AND SA2.A2_COD    = %Exp:SD2->D2_CLIENTE%
-	//		AND SA2.A2_LOJA   = %Exp:SD2->D2_LOJA%
 
 	If (_cAliasPesq)->(!Eof()) .and. (_cAliasPesq)->NREGDA1 > 0
+		_nValTab 	:= (_cAliasPesq)->DA1_PRCVEN
+	Else	
+		_nValTab 	:= 0
+	EndIf
+
+	/*If (_cAliasPesq)->(!Eof()) .and. (_cAliasPesq)->NREGDA1 > 0
 		DA1->(DbGoto((_cAliasPesq)->NREGDA1))
 		If _lProcUF
 			_cCampo 	:= "DA1_X"+SD2->D2_EST
@@ -1941,7 +1942,7 @@ Begin Sequence
 		Else
 			_nValTab 	:= DA1->DA1_PRCVEN	
 		EndIf	
-	EndIf
+	EndIf*/
 	(_cAliasPesq)->(DbCloseArea())
 	//Localizar a curva ABC
 	BeginSql Alias _cAliasPesq
