@@ -110,34 +110,41 @@ Private _oJSRet     := JsonObject():New()
         _cProc  := SPACE(TamSX3("W6_HAWB")[1])
         _cChave := SPACE(TamSX3("W6_HOUSE")[1])
 		_cProc  := Alltrim(SW6->W6_HAWB)
+		_cChave := Alltrim(SW6->W6_HOUSE)
 
-		Aadd( _aPergs ,{1,"Informe o Processo ",_cProc      ,"@!" , ""  , "SW6"   ,"", 80,.F. })	
+		//Aadd( _aPergs ,{1,"Informe o Processo ",_cProc      ,"@!" , ""  , "SW6"   ,"", 80,.F. })
+		//Aadd( _aPergs ,{1,"Informe o House    ",_cChave     ,"@!" , ""  , "SW6HOU","", 60,.F. })
 
-		If Empty(_aRetP[01])
-	        Aadd( _aPergs ,{1,"Informe o House    ",_cChave     ,"@!" , ""  , "SW6HOU","", 60,.F. })
-        else
-		    _cChave := Alltrim(SW6->W6_HOUSE)			
-		Endif
+		//IF Empty(_cChave)
+        //    _cChave := Alltrim(SW6->W6_HOUSE)
+		//endif	
 
-		
-		If ParamBox(_aPergs, _cTitulo, _aRetP) = .T.	
-			Aadd(_aRetP,_cChave)		
-		Else
-			Aadd(_aRetP,_cChave)
-			Aadd(_aRetP,Space(10))
-		EndIf
+		//If Empty(_aRetP[01])
+	    //    Aadd( _aPergs ,{1,"Informe o House    ",_cChave     ,"@!" , ""  , "SW6HOU","", 60,.F. })
+        //else
+		//    _cChave := Alltrim(SW6->W6_HOUSE)			
+		//Endif
 
-		If Type("nOpc") == "U"
-			nOpc := 2
-		EndIf
+		//If ParamBox(_aPergs, _cTitulo, _aRetP) = .T.	
+		//	Aadd(_aRetP,_cChave)		
+		//Else
+		//	Aadd(_aRetP,_cChave)
+		//	Aadd(_aRetP,Space(10))
+		//EndIf
 
-		If Len(_aRetP) == 0
-			Return Nil
-		EndIf
+		//If Type("nOpc") == "U"
+		//	nOpc := 2
+		//EndIf
 
-		If !Empty(Alltrim(_aRetP[2]))
-			_cUrl += "/"+Alltrim(_aRetP[2])
-		Endif
+		//If Len(_aRetP) == 0
+		//	Return Nil
+		//EndIf
+
+		//If !Empty(Alltrim(_aRetP[2]))
+		//	_cUrl += "/"+Alltrim(_aRetP[2])
+		//Endif
+
+		_cUrl += "/"+_cChave
 		_cRet := Httpget(_cUrl, '', _nTime , _aHeader)
 
 		if Valtype(_cRet) = "U"

@@ -3,7 +3,7 @@
 Programa.:              EIC500MNU
 Autor....:              CAOA - A.Carlos
 Data.....:              08/08/2023
-Descricao / Objetivo:   Cria um menu na tela desembaraço
+Descricao / Objetivo:   Cria um botão em Outras Ações na tela desembaraço
 Solicitante:            Taka
 Uso......:              EIC
 ===================================================================================== */
