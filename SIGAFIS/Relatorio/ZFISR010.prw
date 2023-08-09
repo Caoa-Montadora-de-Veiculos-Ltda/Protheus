@@ -91,7 +91,7 @@ User Function ZFISR010()
     TRCell():New( oSection  ,"D1_UM"        ,cAliasTMP  ,'Un Medida'                      )
     TRCell():New( oSection  ,"D1_QUANT"     ,cAliasTMP  ,'Quant.'                         )
     TRCell():New( oSection  ,"D1_VUNIT"     ,cAliasTMP  ,'Valor Unit. Item'               )
-    TRCell():New( oSection  ,"D1_VALDESC"   ,cAliasTMP  ,'Desconto Item'                  )
+    TRCell():New( oSection  ,"FT_DESCONT"   ,cAliasTMP  ,'Desconto Item'                  )
     TRCell():New( oSection  ,"D1_VALFRE"    ,cAliasTMP  ,'Frete'                          )
     TRCell():New( oSection  ,"D1_DESPESA"   ,cAliasTMP  ,'Despesas Acessorias'            )
     TRCell():New( oSection  ,"D1_SEGURO"    ,cAliasTMP  ,'Seguro'                         )
@@ -467,7 +467,7 @@ Static Function  ReportPrint(oReport)
          oSection:Cell( "D1_UM"     ):SetValue( AllTrim( (cAliasTMP)->D1_UM ) ) //--Un Medida
          oSection:Cell( "D1_QUANT"  ):SetValue( (cAliasTMP)->D1_QUANT ) //--Quant.
          oSection:Cell( "D1_VUNIT"  ):SetValue( (cAliasTMP)->D1_VUNIT ) //--Valor Unit. Item
-         oSection:Cell( "D1_VALDESC"):SetValue( (cAliasTMP)->D1_VALDESC ) //--Desconto Item
+         oSection:Cell( "FT_DESCONT"):SetValue( (cAliasTMP)->FT_DESCONT ) //--Desconto Item
          oSection:Cell( "D1_VALFRE" ):SetValue( (cAliasTMP)->D1_VALFRE ) //--Frete
          oSection:Cell( "D1_DESPESA"):SetValue( (cAliasTMP)->D1_DESPESA ) //--Despesas Acessorias
          oSection:Cell( "D1_SEGURO" ):SetValue( (cAliasTMP)->D1_SEGURO ) //--Seguro
@@ -567,7 +567,7 @@ Static Function zTmpRadio1()
 	cQuery += "	B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, "								  			+ CRLF
 	cQuery += "	F1_ESPECIE, F1_CODNFE, F1_MENNOTA, F1_DOC, F1_SERIE, F1_STATUS, F1_TIPO, FT_CHVNFE, "								+ CRLF
 	cQuery += " FT_VALCONT, D1_CONTA, D1_ITEMCTA, D1_NFORI, D1_SERIORI, D1_VUNIT, D1_TOTAL, "										+ CRLF
-	cQuery += " D1_VALDESC, FT_CLASFIS, FT_BASERET, FT_ICMSRET, D1_DESCZFP, D1_DESCZFC,  "												+ CRLF
+	cQuery += " D1_VALDESC, FT_DESCONT, FT_CLASFIS, FT_BASERET, FT_ICMSRET, D1_DESCZFP, D1_DESCZFC,  "												+ CRLF
 	cQuery += " F1_UFORITR, F1_MUORITR, F1_UFDESTR, F1_MUDESTR,  "																	+ CRLF
 	cQuery += " FT_BASEICM, FT_ALIQICM, FT_VALICM, FT_BRETPIS, FT_ARETPIS, FT_VRETPIS, FT_BRETCOF, FT_ARETCOF, FT_VRETCOF, " 		+ CRLF
 	cQuery += " FT_BASEIPI, FT_ALIQIPI, FT_VALIPI, " 																				+ CRLF
@@ -694,7 +694,7 @@ Static Function zTmpRadio1()
 	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, "											+ CRLF
 	cQuery += "	F1_ESPECIE, F1_CODNFE, F1_MENNOTA, F1_DOC, F1_SERIE, F1_STATUS, F1_TIPO, FT_CHVNFE,"								+ CRLF
 	cQuery += " FT_VALCONT, D1_CONTA, D1_ITEMCTA, D1_NFORI, D1_SERIORI, D1_VUNIT, D1_TOTAL, "										+ CRLF
-	cQuery += " D1_VALDESC, FT_CLASFIS, FT_BASERET, FT_ICMSRET, D1_DESCZFP, D1_DESCZFC,  "												+ CRLF
+	cQuery += " D1_VALDESC, FT_DESCONT, FT_CLASFIS, FT_BASERET, FT_ICMSRET, D1_DESCZFP, D1_DESCZFC,  "												+ CRLF
 	cQuery += " F1_UFORITR, F1_MUORITR, F1_UFDESTR, F1_MUDESTR,  "																	+ CRLF
 	cQuery += " FT_BASEICM, FT_ALIQICM, FT_VALICM, FT_BRETPIS, FT_ARETPIS, FT_VRETPIS, FT_BRETCOF, FT_ARETCOF, FT_VRETCOF, "        + CRLF
 	cQuery += " FT_BASEIPI, FT_ALIQIPI, FT_VALIPI, " 																				+ CRLF
