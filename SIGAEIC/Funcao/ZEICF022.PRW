@@ -21,7 +21,7 @@ Serviço de ZEIC11AMsg integração  Asia Shipping  recebimento de mercadorias
 Z	-Customizado
 EIC	- Modulo
 F 	- Função
-011 - Sequencial
+022 - Sequencial
 /*/
 User Function ZEICF022(_cUrl, _cChave, _lToken)
 Local _aMsg		:= {}
