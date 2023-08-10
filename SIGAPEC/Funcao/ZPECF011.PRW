@@ -209,7 +209,7 @@ Local _cAlias 		:= GetNextAlias()
 Local _cPedido		:= ""
 Local _cFaseConf 	:= Alltrim(GetNewPar("MV_MIL0095","4")) // Fase de Conferencia e Separacao
 Local _cFaseFat		:= "F"
-Local _cObs
+Local _cObs			:= ""
 Local _nPos
 
 Begin Sequence
@@ -256,42 +256,47 @@ Begin Sequence
 		//SE NÃO TIVER PASSAR PARA PROXIMO REGISTRO
 		If _lRet 
 			For _nPos := 1 To Len(_aRegVS1)
-				If _lRet
-					VS1->(DbGoto(_aRegVS1[_nPos]))
-					_lRet := ZPEC11Separa(VS1->VS1_NUMORC, _cPedido)
-					//Gravo dados necessário para o VS1 orçamento
-					//Atualiza TES Inteligente
-					If !(U_ZPECREGFI(_cPedido)) //cZK_XPICKI _cPedido
-						_cObs		:= 	"ERRO NA ATUALIZAÇÃO TES INTELIGENTE NO PICKING "+_cPedido+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)
-						Aadd(_aMsgCAOA, Upper(_cObs) )
-					EndIf
+				VS1->(DbGoto(_aRegVS1[_nPos]))
+				_lRet := ZPEC11Separa(VS1->VS1_NUMORC, _cPedido)
 		
-					VS1->(RecLock("VS1",.F.))
-					If Empty(_cObs)
-						_cObs	:= "RETORNO DE SEPARAÇÃO REALIZADO COM SUCESSO REFERENTE PICKING "+_cPedido+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+ CRLF
-					Else
-						_cObs	+= "RETORNO DE SEPARAÇÃO REALIZADO COM SUCESSO REFERENTE PICKING "+_cPedido+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+ CRLF
-					Endif
-					_cObs 	+= "Gravado a conferência (VM5) para os itens de separação  corretamente no recebimento do REST !"+ CRLF
-					VS1->VS1_STATUS := _cFaseFat
-					VS1->VS1_OBSAGL	:= Upper(_cObs) +CRLF+ VS1->VS1_OBSAGL
-					VS1->(MsUnLock())
-	
-					//efetua a gravação da tabela para controle de picking obtenção de pesos e medidas para a nota
-					_lRet := U_ZPEC11GSZK(_oJson, /*_lGravaIni*/, /*_cPedido*/, /*_cObsMenNF*/, /*_cMarca*/, _lRet)
-					If !_lRet
-						ZPEC11RMsg("noGrava","Problemas com a gravação de dados em relação aos campos verificar com Administrador !")
-					EndIf
-				Endif 
+				If ! _lRet
+					Exit  //sair do for
+				Endif
+				_cObs 	:= "Gravado a conferência (VM5) para os itens de separação  corretamente no recebimento do REST, para o orçamento "+VS1->VS1_NUMORC 
+				Aadd(_aMsgCAOA, Upper(_cObs) )
+
+				//efetua a gravação da tabela para controle de picking obtenção de pesos e medidas para a nota
+				_lRet := U_ZPEC11GSZK(_oJson, /*_lGravaIni*/, _cPedido, /*_cObsMenNF*/, /*_cMarca*/, _lRet)
+				If ! _lRet
+					Exit  //sair do for
+				Endif
+				_cObs	:= "RETORNO DE SEPARAÇÃO REFERENTE PICKING "+_cPedido+", PARA O ORÇAMENTO "+VS1->VS1_NUMORC+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5) 
+				Aadd(_aMsgCAOA, Upper(_cObs) )
+
+				//Gravar como liberado para faturar
+				VS1->(RecLock("VS1",.F.))
+				VS1->VS1_STATUS := _cFaseFat
+				//VS1->VS1_OBSAGL	:= Upper(_cObs) +CRLF+ VS1->VS1_OBSAGL  //GAP002 será gravado posteriormente _aMsgCAOA
+				VS1->(MsUnLock())
+
+				//Gravo dados necessário para o VS1 orçamento
+				//Atualiza TES Inteligente
+				If !U_ZPECREGFI(_cPedido, VS1->VS1_NUMORC) //cZK_XPICKI _cPedido
+					_cObs		:= 	"ERRO NA ATUALIZAÇÃO TES INTELIGENTE NO PICKING "+_cPedido+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)
+					Aadd(_aMsgCAOA, Upper(_cObs) )
+				EndIf
 			Next	 	 
 		Endif 
+		//Caso tenha dado problema abortar
 		If !_lRet	
 			Disarmtransaction()
 		Endif
 	End Transaction 
 End Sequence
 // atualizar SZK com UPdate
-//Responsável por atuaizar Picking para não ser mais utilizado devido inconsistencia maior na qtde Wis
+//If !_lRet
+//	ZPEC11RMsg("noGrava","Problemas com a gravação de dados em relação aos campos verificar com Administrador !")
+//EndIf
 
 If Select(_cAlias) <> 0
 	(_cAlias)->(DbCloseArea())
@@ -664,7 +669,7 @@ Return _lRet
 @Obs		Necessário fazer este ajuste pois os orçamentos são aglutinados para a geração do picking, podendo existir mais de um orçamento com o mesmo código
 /*/
 Static Function ZPEC11BKOR(_aPedido)
-Local _lRet 		:= .T.
+Local _lRet 		:= .F.
 Local _cAliasPesq	:= GetNextAlias()   
 Local _cCodProd 
 Local _cPedido	
@@ -699,20 +704,22 @@ Begin Sequence
 		//Caso não localize um produto no picking abortar toda a operação
 		If (_cAliasPesq)->(Eof())
 			Aadd(_aMsgCAOA,"Não localizado Pedido "+_cPedido+" para o Produto "+_cCodProd)
-			_lRet := .F. 
 			Break
 		Endif	
 		//Processar podem existir mais de um orçamento pois o picking é agrupamento de orçamentos
+		Aadd(_aMsgCAOA, "[ZPECF011] Atualizando produdo "+AllTrim(_cCodProd)+" orçamento "+VS3->VS3_NUMORC+", Saldo Protheus "+AllTrim(STR(VS3->VS3_QTDITE))+" Saldo WIS "+AllTrim(STR(_nQtdeDivWiS)))
 		_nSaldoWis	:= _nQtdeDivWiS
 		While (_cAliasPesq)->(!Eof())
 			VS3->(DbGoto((_cAliasPesq)->NREGVS3))
 			//Caso o orçamento seja maior que o Wis abater os valores
 			If VS3->VS3_QTDITE > _nSaldoWis
+				Aadd(_aMsgCAOA, "[ZPECF011] Item "+AllTrim(VS3->VS3_SEQUEN) +", Saldo Protheus "+AllTrim(STR(VS3->VS3_QTDITE))+" Saldo Restante WIS "+AllTrim(STR(_nSaldoWis)))
 				_lRet := ZPEC11BKRE(_nSaldoWis, _cPedido)  //tem que gerar backorder
 				Exit  //ja utilizei o saldo
 			//Caso o saldo wis seja menor que o orçamento o mesmo ficará não mecher somente abater da soma
 		   //Caso seja o mesmo valor não fazer movimentação
 			ElseIf VS3->VS3_QTDITE <= _nSaldoWis 
+				Aadd(_aMsgCAOA, "[ZPECF011] Item "+ AllTrim(VS3->VS3_SEQUEN)+ ", Saldo Protheus "+AllTrim(STR(VS3->VS3_QTDITE))+" Saldo Restante WIS "+AllTrim(STR(_nSaldoWis)))
 				_nSaldoWis -= VS3->VS3_QTDITE	
 			Endif
 			If _nSaldoWis <= 0
@@ -721,9 +728,9 @@ Begin Sequence
 			(_cAliasPesq)->(DbSkip())
 		EndDo 
 	Next
-End Sequence	
-If Len(_aMsg) > 0
-	ZPEC11EMAI(_aMsg, _cPedido, _cCodProd)
+End Sequence
+If Len(_aMsgCAOA) > 0
+	ZPEC11EMAI(_aMsgCAOA, _cPedido, _cCodProd)
 Endif 
 
 If Select((_cAliasPesq)) <> 0
