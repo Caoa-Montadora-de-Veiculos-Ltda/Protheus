@@ -33,7 +33,7 @@ User Function ZFISR011()
     TRCell():New( oSection  ,"D2_TES"      ,cAliasTMP  ,"Tes"							)
     TRCell():New( oSection  ,"F4_FINALID"  ,cAliasTMP  ,"Finalidade TES"				)
     TRCell():New( oSection  ,"B1_ORIGEM"   ,cAliasTMP  ,"Origem do Produto"			    )
-    TRCell():New( oSection  ,"B1_POSIPI"   ,cAliasTMP  ,"NCM"							)
+    TRCell():New( oSection  ,"B1_POSIPI"   ,cAliasTMP  ,"NCM"	 , "@!", TamSX3("B1_POSIPI")[1] 						)
     TRCell():New( oSection  ,"B1_EX_NCM"   ,cAliasTMP  ,"Ex-NCM"						)
     TRCell():New( oSection  ,"ModVei"      ,cAliasTMP  ,"Modelo Veículo"				)
     TRCell():New( oSection  ,"VRK_OPCION"  ,cAliasTMP  ,"Opcional"						)
@@ -41,7 +41,7 @@ User Function ZFISR011()
     TRCell():New( oSection  ,"BM_DESC"     ,cAliasTMP  ,"Descrição do Grupo"			)
     TRCell():New( oSection  ,"D2_TOTAL"    ,cAliasTMP  ,"Valor Total Item"				)
     TRCell():New( oSection  ,"D2_PRUNIT"   ,cAliasTMP  ,"Valor Unit. Item"				)
-    TRCell():New( oSection  ,"D2_DESCON"   ,cAliasTMP  ,"Valor Desc. Item"				)
+    TRCell():New( oSection  ,"FT_DESCONT"   ,cAliasTMP  ,"Valor Desc. Item"				)
     TRCell():New( oSection  ,"D2_CF"       ,cAliasTMP  ,"Cfop"							)
     TRCell():New( oSection  ,"FT_VALCONT"  ,cAliasTMP  ,"Valor Contábil"				)
     TRCell():New( oSection  ,"FT_BASEICM"  ,cAliasTMP  ,"Base ICMS"					    )
@@ -430,7 +430,7 @@ Static Function ReportPrint(oReport)
         oSection:Cell( "BM_DESC"     ):SetValue( AllTrim( Posicione("SBM",1,xFilial("SBM")+(cAliasTMP)->B1_GRUPO,"BM_DESC") ) ) //--Descrição do Grupo
         oSection:Cell( "D2_TOTAL"    ):SetValue( (cAliasTMP)->D2_TOTAL ) //--Valor Total Item
         oSection:Cell( "D2_PRUNIT"   ):SetValue( (cAliasTMP)->D2_PRUNIT ) //--Valor Unit. Item
-        oSection:Cell( "D2_DESCON"   ):SetValue( (cAliasTMP)->D2_DESCON ) //--Valor Desc. Item
+        oSection:Cell( "FT_DESCONT"   ):SetValue( (cAliasTMP)->FT_DESCONT ) //--Valor Desc. Item
         oSection:Cell( "D2_CF"       ):SetValue( (cAliasTMP)->D2_CF ) //--Cfop
         oSection:Cell( "FT_VALCONT"  ):SetValue( (cAliasTMP)->FT_VALCONT ) //--Valor Contábil
         oSection:Cell( "FT_BASEICM"  ):SetValue( (cAliasTMP)->FT_BASEICM ) //--Base ICMS
@@ -568,7 +568,7 @@ Static Function zTmpRadio3()
 	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, D2_ITEM, "							+ CRLF
 	cQuery += " F2_ESPECIE,F2_CODNFE,F2_MENNOTA,F2_USERLGI,F2_USERLGA,F2_TIPO, FT_CHVNFE,F2_DOC, F2_SERIE, F2_FIMP,  " 		+ CRLF
 	cQuery += " FT_VALCONT, F2_FORMUL, D2_CONTA, D2_NFORI, D2_SERIORI, D2_PRUNIT,D2_TOTAL, "								+ CRLF
-	cQuery += " D2_DESPESA, D2_SEGURO, D2_VALFRE, D2_DESCON, "	                                                            + CRLF
+	cQuery += " D2_DESPESA, D2_SEGURO, D2_VALFRE, D2_DESCON, FT_DESCONT,"	                                                            + CRLF
     cQuery += " FT_CLASFIS, D2_DESCZFP, D2_DESCZFC, D2_TIPO, "														        + CRLF
 	cQuery += " FT_BASEICM, FT_ALIQICM, FT_VALICM, C6_CHASSI, "																+ CRLF
 	cQuery += " FT_BASEIPI, FT_ALIQIPI, FT_VALIPI, FT_BRETPIS, FT_ARETPIS, FT_VRETPIS, FT_BRETCOF, FT_ARETCOF, FT_VRETCOF, "+ CRLF
@@ -685,7 +685,7 @@ Static Function zTmpRadio3()
 	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, D2_ITEM, "							+ CRLF
 	cQuery += " F2_ESPECIE,F2_CODNFE,F2_MENNOTA,F2_USERLGI,F2_USERLGA,F2_TIPO, FT_CHVNFE,F2_DOC, F2_SERIE, F2_FIMP,  " 		+ CRLF
 	cQuery += " FT_VALCONT, F2_FORMUL, D2_CONTA, D2_NFORI, D2_SERIORI, D2_PRUNIT,D2_TOTAL, "								+ CRLF
-	cQuery += " D2_DESPESA, D2_SEGURO, D2_VALFRE, D2_DESCON, "	                                                            + CRLF
+	cQuery += " D2_DESPESA, D2_SEGURO, D2_VALFRE, D2_DESCON, FT_DESCONT,"	                                                            + CRLF
     cQuery += " FT_CLASFIS, D2_DESCZFP, D2_DESCZFC, D2_TIPO, "														        + CRLF
 	cQuery += " FT_BASEICM, FT_ALIQICM, FT_VALICM, C6_CHASSI, "																+ CRLF
 	cQuery += " FT_BASEIPI, FT_ALIQIPI, FT_VALIPI, FT_BRETPIS, FT_ARETPIS, FT_VRETPIS, FT_BRETCOF, FT_ARETCOF, FT_VRETCOF, "+ CRLF
