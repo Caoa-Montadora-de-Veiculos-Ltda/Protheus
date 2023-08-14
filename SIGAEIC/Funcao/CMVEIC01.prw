@@ -157,11 +157,10 @@ User Function CMVEI01A()
 			@ 3.8,nCo2	Combobox cTipPreco ITEMS aTipPreco When aScan( aLayout , cLayout )== 1  SIZE 100,12 Of oDlg
 
 			@ 64,10   BUTTON "Integração" SIZE 50,24 ACTION (IIF(ValidTela(),IntegraInv(),)) Pixel OF oDlg
-
-			@ 70,65   BUTTON "Log"        SIZE 50,12 ACTION (CMVEIC0102()               ) Pixel OF oDlg
-			@ 70,120  BUTTON "Relatorio"  SIZE 50,12 ACTION (CMVEIC0103()               ) Pixel OF oDlg
-			@ 70,262  BUTTON "Layouts"    SIZE 50,12 ACTION (zLayouts()                 ) Pixel OF oDlg
-			@ 02,262  BUTTON "Sair"       SIZE 50,12 ACTION (oDlg:End(),lConfirma := .F.) Pixel OF oDlg
+			@ 70,65   BUTTON "Log"        SIZE 50,12 ACTION (CMVEIC0102()               )    Pixel OF oDlg
+			@ 70,120  BUTTON "Relatorio"  SIZE 50,12 ACTION (CMVEIC0103()               )    Pixel OF oDlg
+			@ 70,262  BUTTON "Layouts"    SIZE 50,12 ACTION (zLayouts()                 )    Pixel OF oDlg
+			@ 02,262  BUTTON "Sair"       SIZE 50,12 ACTION (oDlg:End(),lConfirma := .F.)    Pixel OF oDlg
 
 		Activate MSDialog oDlg Centered
 
@@ -181,12 +180,22 @@ Return
 Static Function ValidTela()
 	Local lRet := .T.
 	Local cExtAux := ""
+	Local cLinha := ""  
+    Local nLinha := 0
+    Local aDados := {}
+    Local nTamLinha := 0
+    Local nTamArq:= 0
+	Local i
+	Local cINTCSV   := AllTrim(cDiretorio)
+	Local cLinhaIT		:= ""
 
 	If !File(AllTrim(cDiretorio))
+
 		MsgStop("Arquivo não existe!")
 		lRet := .F.
 
 	ElseIf Empty(cLayout)
+
 		MsgStop("Selecionar Layout!")
 		lRet := .F.
 
@@ -202,6 +211,7 @@ Static Function ValidTela()
 		cExtAux   := SubsTr(AllTrim(cDiretorio),len(AllTrim(cDiretorio))-3,4)
 
 		If !Upper(cExtAux) $ ".CSV/.TXT/"
+
 			MsgStop("Extensão do arquivo está inválida!")
 			lRet := .F.
 
@@ -220,7 +230,7 @@ Static Function ValidTela()
 
 	If lRet
 
-		cInvNum	 := ""
+		cInvNum	   := ""
 		cRateado   := ""
 		cFornecedor:= ""
 		cForLoj    := ""
@@ -244,6 +254,101 @@ Static Function ValidTela()
 
 	EndIf
 
+	//**************** Inicio da Rotina
+
+	FT_FUse(cINTCSV)	
+	FT_FGotop()
+
+	While !FT_FEof()
+		
+		cLinhaIT := FT_FReadLn()
+		lErro    := .F.
+		nLinha++
+
+		If  Empty(cLinhaIT)                           
+			FT_FSkip()
+			Loop
+		EndIF
+
+		aLinha := {}
+		cLinhaIT := StrTran(cLinhaIT,';;','; ;')
+		aLinha   := StrTokArr(cLinhaIT, ";")
+
+		If nLayout == 1 // Layout CKD
+			cLote         := aLinha[01]
+			cInvoice      := aLinha[02]
+			cConhecimento := aLinha[03]
+			cSeq          := aLinha[04]
+			cProduto      := aLinha[05]
+			cQtde         := aLinha[06]
+			cValor        := aLinha[07]
+			cNavio        := aLinha[08]
+			cContainer    := aLinha[09]
+			cCaixa        := aLinha[10]
+			cPO           := aLinha[11]
+			cUNITIZADOR   := aLinha[12]
+
+			if empty(cLote)
+			FWAlertError("A Planilha contém campos dos Lotes, que estão em branco!", "CMVEIC01")
+			Return
+			Endif
+
+			if empty(cInvoice)
+			FWAlertError("A Planilha contém campos dos Invoices, que estão em branco!", "CMVEIC01")
+			Return
+			Endif
+
+			if empty(cConhecimento)
+			FWAlertError("A Planilha contém campos de Conhecimentos, que estão em branco!", "CMVEIC01")
+			Return
+			Endif
+
+			if empty(cProduto)
+			FWAlertError("A Planilha contém campos de Produtos, que estão em branco!", "CMVEIC01")
+			Return
+			Endif
+
+			if empty(cQtde)
+			FWAlertError("A Planilha contém campos de Quantidades, que estão em branco!", "CMVEIC01")
+			Return
+			Endif
+
+			if empty(cValor)
+			FWAlertError("A Planilha contém campos de Valores Unitários, que estão em branco!", "CMVEIC01")
+			Return
+			Endif
+
+			if empty(cContainer)
+			FWAlertError("A Planilha contém campos de Containers, que estão em branco!", "CMVEIC01")
+			Return
+			Endif
+
+			if empty(cCaixa)
+			FWAlertError("A Planilha contém campos de Caixas, que estão em branco!", "CMVEIC01")
+			Return
+			Endif
+
+			if empty(cPO)
+			FWAlertError("A Planilha contém campos de Purchase Order, que estão em branco!", "CMVEIC01")
+			Return
+			Endif
+
+			if empty(cUNITIZADOR)
+			FWAlertError("A Planilha contém campos da Unitizadores, que estão em branco!", "CMVEIC01")
+			Return
+			Endif
+
+		Endif
+
+
+
+		FT_FSkip()
+		
+	EndDo
+
+	FT_FUse()
+
+//**************** Fim da Rotina
 Return lRet
 
 //----------------------------------------------------------------------------------
