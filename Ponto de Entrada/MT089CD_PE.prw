@@ -80,9 +80,14 @@ Static Function zFMontadora()
 		endif
 		bIRWhile:= {||.T.}
 		bAddTes := {||aAdd(aTes[Len(aTes)],(cAliasSFM)->FM_XORIGEM)}//Acrescento campo a ser considerado na TES Inteligente. 
-	ElseIf cTabela == "" .And. FunName() == "VEIA060" 
-	
-		_nProd := FwFldGet("B1COD") 
+	ElseIf cTabela == "" .And. (FunName() == "VEIA060" .or. FunName() == 'RPC')
+		
+		if FunName() == "RPC"
+			_nProd    := SB1->B1_COD
+		else
+			_nProd    := FwFldGet("B1COD") 
+		endif
+		
 		bCond     := {|| SB1->B1_ORIGEM == (cAliasSFM)->FM_XORIGEM .Or. Empty((cAliasSFM)->FM_XORIGEM)  } 
 		
 		//Acrescenta compo novo a regra, esse campo devera ser acrescentdo no X2_UNICO do SFM. 
