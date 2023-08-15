@@ -289,58 +289,305 @@ Static Function ValidTela()
 			cUNITIZADOR   := aLinha[12]
 
 			if empty(cLote)
-			FWAlertError("A Planilha contém campos dos Lotes, que estão em branco!", "CMVEIC01")
-			Return
+				FWAlertError("A Planilha contém campos dos Lotes, que estão em branco!", "CMVEIC01")
+				Return
 			Endif
 
 			if empty(cInvoice)
-			FWAlertError("A Planilha contém campos dos Invoices, que estão em branco!", "CMVEIC01")
-			Return
+				FWAlertError("A Planilha contém campos dos Invoices, que estão em branco!", "CMVEIC01")
+				Return
 			Endif
 
 			if empty(cConhecimento)
-			FWAlertError("A Planilha contém campos de Conhecimentos, que estão em branco!", "CMVEIC01")
-			Return
+				FWAlertError("A Planilha contém campos de Conhecimentos, que estão em branco!", "CMVEIC01")
+				Return
 			Endif
 
 			if empty(cProduto)
-			FWAlertError("A Planilha contém campos de Produtos, que estão em branco!", "CMVEIC01")
-			Return
+				FWAlertError("A Planilha contém campos de Produtos, que estão em branco!", "CMVEIC01")
+				Return
 			Endif
 
 			if empty(cQtde)
-			FWAlertError("A Planilha contém campos de Quantidades, que estão em branco!", "CMVEIC01")
-			Return
+				FWAlertError("A Planilha contém campos de Quantidades, que estão em branco!", "CMVEIC01")
+				Return
 			Endif
 
 			if empty(cValor)
-			FWAlertError("A Planilha contém campos de Valores Unitários, que estão em branco!", "CMVEIC01")
-			Return
+				FWAlertError("A Planilha contém campos de Valores Unitários, que estão em branco!", "CMVEIC01")
+				Return
 			Endif
 
 			if empty(cContainer)
-			FWAlertError("A Planilha contém campos de Containers, que estão em branco!", "CMVEIC01")
-			Return
+				FWAlertError("A Planilha contém campos de Containers, que estão em branco!", "CMVEIC01")
+				Return
 			Endif
 
 			if empty(cCaixa)
-			FWAlertError("A Planilha contém campos de Caixas, que estão em branco!", "CMVEIC01")
-			Return
+				FWAlertError("A Planilha contém campos de Caixas, que estão em branco!", "CMVEIC01")
+				Return
 			Endif
 
 			if empty(cPO)
-			FWAlertError("A Planilha contém campos de Purchase Order, que estão em branco!", "CMVEIC01")
-			Return
+				FWAlertError("A Planilha contém campos de Purchase Order, que estão em branco!", "CMVEIC01")
+				Return
 			Endif
 
 			if empty(cUNITIZADOR)
-			FWAlertError("A Planilha contém campos da Unitizadores, que estão em branco!", "CMVEIC01")
-			Return
+				FWAlertError("A Planilha contém campos da Unitizadores, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+
+		Endif
+
+		If nLayout == 2 // Layout CBU Hyundai
+
+			cProforma	:= AllTrim(Subs(cLinhaIT,001,005)) // 001 a 005 - nro proforma <<< CONFIRMAR LAYOUT MIT044 COM 4 POSIÇÔES
+			cInvoice	:= AllTrim(Subs(cLinhaIT,054,016)) // 054 a 069 - nro da invoice
+			cModelo	    := AllTrim(Subs(cLinhaIT,070,013)) // AllTrim(Subs(cLinhaIT,070,013)) // 070 a 082 - codigo do modelo (retirar espacos em branco)
+			cOpcional	:= AllTrim(Subs(cLinhaIT,083,004)) // 083 a 086 - codigo do opcional
+			cCor_EXT	:= AllTrim(Subs(cLinhaIT,087,003)) // 087 a 089 - codigo da cor externa
+			cCor_INT	:= AllTrim(Subs(cLinhaIT,090,003)) // 090 a 092 - codigo da cor interna
+			cBL	        := AllTrim(Subs(cLinhaIT,101,016)) // 101 a 116 - numerdo do bl
+			cChassi	    := AllTrim(Subs(cLinhaIT,128,017)) // 128 a 144 - numero do chassi
+			cMotor	    := AllTrim(Subs(cLinhaIT,145,012)) // 145 a 156 - numero do motor
+			cModelo	    := AllTrim(Subs(cLinhaIT,206,004)) // 206 a 209 - ano modelo
+			cAno	    := AllTrim(Subs(cLinhaIT,210,004)) // 210 a 213 - ano fabricacao
+			aEspaco	    := AllTrim(Subs(cLinhaIT,214,046)) // 214 a 260 - Espaco
+
+			if empty(cProforma)
+				FWAlertError("A Planilha contém campos dos Números das Proformas, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			
+			if empty(cInvoice)
+				FWAlertError("A Planilha contém campos de Número da Invoice, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			
+			if empty(cModelo)
+				FWAlertError("A Planilha contém campos de Código de Modelo, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			
+			if empty(cOpcional)
+				FWAlertError("A Planilha contém campos de Código de Opcional, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			
+			if empty(cCor_EXT)
+				FWAlertError("A Planilha contém campos de Cor Externa, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			
+			if empty(cCor_INT)
+				FWAlertError("A Planilha contém campos de Cor Interna, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			
+			if empty(cBL)
+				FWAlertError("A Planilha contém campos da Número do BL, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			
+			if empty(cChassi)
+				FWAlertError("A Planilha contém campos de Chassis, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+
+			if empty(cMotor)
+				FWAlertError("A Planilha contém campos de Numero do Motor, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+
+			if empty(cModelo)
+				FWAlertError("A Planilha contém campos de Ano de Modelo, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+
+			if empty(cAno)
+				FWAlertError("A Planilha contém campos de Ano de Modelo Fabricação, que estão em branco!", "CMVEIC01")
+				Return
 			Endif
 
 		Endif
 
 
+		If nLayout == 3 // Layout CBU Subaru
+
+			cCase     := aLinha[01]
+			cModel    := aLinha[02]
+			cVIN_CODE := aLinha[03]
+			cEngine   := aLinha[04]
+			cColor    := aLinha[05]
+			cOpcional := aLinha[06]
+			cChave    := aLinha[07]
+			cMNO      := aLinha[08]
+			cInvoice  := aLinha[09]
+			cAnoFab   := aLinha[10]
+			cAnoMod   := aLinha[11]
+
+
+			if empty(cModel)
+				FWAlertError("A Planilha contém campos dos Model, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			
+			if empty(cVIN_CODE)
+				FWAlertError("A Planilha contém campos de VIN-CODE (Chassi), que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			
+			if empty(cEngine)
+				FWAlertError("A Planilha contém campos de Engine / Motor, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			
+			if empty(cColor)
+				FWAlertError("A Planilha contém campos de Color / EEII - EE-Cor Externa / II-Cor Interna, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			
+			if empty(cOpcional)
+				FWAlertError("A Planilha contém campos de Opcionais, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			
+			if empty(cMNO)
+				FWAlertError("A Planilha contém campos de T/MNO - Valor Total, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			
+			if empty(cInvoice)
+				FWAlertError("A Planilha contém campos da Invoice, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			
+			if empty(cAnoFab)
+				FWAlertError("A Planilha contém campos de Ano de Fabricação, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+
+			if empty(cAnoMod)
+				FWAlertError("A Planilha contém campos de Ano de Modelo, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+		
+		Endif
+
+		If nLayout == 4 // Layout CBU Chery
+			cModel   := aLinha[01]
+			cChassi  := aLinha[02]
+			cMotor 	 := aLinha[03]
+			cCor_Ext := aLinha[04]
+			cCor_int := aLinha[05]
+			cOpcional:= aLinha[06]
+			cBL      := aLinha[07]
+			cValor   := aLinha[08]
+			cInvoice := aLinha[09]
+			cAnoF    := aLinha[10]
+			cAnoM    := aLinha[11]
+			if empty(cModel)
+				FWAlertError("A Planilha contém campos dos Modelos, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			if empty(cChassi)
+				FWAlertError("A Planilha contém campos dos Chassis, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			if empty(cMotor)
+				FWAlertError("A Planilha contém campos de Motor, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			if empty(cCor_Ext)
+				FWAlertError("A Planilha contém campos de Cor Externa, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			if empty(cCor_int)
+				FWAlertError("A Planilha contém campos de Cor Interna, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			if empty(cOpcional)
+				FWAlertError("A Planilha contém campos de Opcionais, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			if empty(cBL)
+				FWAlertError("A Planilha contém campos de Numero do BL, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			if empty(cValor)
+				FWAlertError("A Planilha contém campos de Valor, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			if empty(cInvoice)
+				FWAlertError("A Planilha contém campos da Invoice, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			if empty(cAnoF)
+				FWAlertError("A Planilha contém campos de Ano de Fabricação, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			if empty(cAnoM)
+				FWAlertError("A Planilha contém campos de Ano de Modelo, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+		Endif
+
+		If nLayout == 5 // Layout Empresa Franco da Rocha (antiga Barueri):
+			cSeq     := aLinha[01]
+			cInvoice := aLinha[02]
+			cNCM	 := aLinha[03]
+			cEX      := aLinha[04]
+			cProduto := aLinha[05]
+			cQtde    := aLinha[06]
+			cValor   := aLinha[07]
+			cContain := aLinha[08]
+			cCaixa   := aLinha[09]
+			cPeso    := aLinha[10]
+			cPO      := aLinha[11]
+			cConhec  := aLinha[12]
+			cNavio   := aLinha[13]
+			if empty(cInvoice)
+				FWAlertError("A Planilha contém campos das Invoices, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			if empty(cNCM)
+				FWAlertError("A Planilha contém campos dos NCMs, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			if empty(cProduto)
+				FWAlertError("A Planilha contém campos de Produtos, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			if empty(cQtde)
+				FWAlertError("A Planilha contém campos de Quantidades, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			if empty(cValor)
+				FWAlertError("A Planilha contém campos de Valores Unitários, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			if empty(cContain)
+				FWAlertError("A Planilha contém campos de Containers, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			if empty(cCaixa)
+				FWAlertError("A Planilha contém campos de Caixas, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			if empty(cPeso)
+				FWAlertError("A Planilha contém campos de Pesos, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			if empty(cPO)
+				FWAlertError("A Planilha contém campos da Purchase Orders, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+			if empty(cConhec)
+				FWAlertError("A Planilha contém campos de Conhecimentos, que estão em branco!", "CMVEIC01")
+				Return
+			Endif
+		Endif
 
 		FT_FSkip()
 		
