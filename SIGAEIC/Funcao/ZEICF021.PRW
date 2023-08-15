@@ -25,7 +25,6 @@ User Function ZEICF021(cINTCSV,cPoNum,nLayout)
 Local aLinha		:= {}
 Local aItem 		:= {}
 
-Local lErro			:= .F.	
 Local lRetorno		:= .T.
 Local lRet 			:= .T.
 
@@ -35,7 +34,10 @@ Local nPos			:= 0
 Local nRec 			:= 0 
 
 Local cLinhaIT		:= ""
-
+Local cLoteHyudai   := SUPERGETMV( "CMV_EICHYU",.F., "" )  //Ajuste no Lote da Invoice antecipada para Hyundai
+Local cLote2Hyudai	:= SUPERGETMV( "CMV_EICHY2",.F., "" )  //Ajuste no Lote da Invoice antecipada para Hyundai se necessario
+Local cLote3Hyudai	:= SUPERGETMV( "CMV_EICHY3",.F., "" )  //Ajuste no Lote da Invoice antecipada para Hyundai se necessario
+Private lErro		:= .F.	
 Private aDados		:= {}
 Private cFornecedor	:= ""
 Private cForloj		:= ""
@@ -58,8 +60,10 @@ Private nLay		:= 1
 
 Default cPoNum     := ""
 Default nLayOut   := 5
-
+aInvoice := {}
 nLay := nLayOut
+
+cLoteHyudai := Alltrim(cLoteHyudai) + alltrim(cLote2Hyudai) + alltrim(cLote3Hyudai)
 
 If Empty(cINTCSV)
 	U_FCMVEIC0101("Caminho do arquivo em Branco!",,,,"R",,,)
@@ -76,7 +80,7 @@ DbSelectArea('SW2')
 SW2->(DbSetOrder(1))
 
 If !Empty(cPoNum) .and. !SW2->(DbSeek(FwXFilial('SW2')+cPoNum))
-	U_FCMVEIC0101("Numero da Purchase Order Não Encontrado",,,,"R",,,)
+	U_FCMVEIC0101("Numero da Purchase Order Não Encontrado",,,,"R",cPoNum,,)
 	MsgInfo("Numero da Purchase Order " + Alltrim(cPoNum) + " Não Encontrado" + CRLF +  "Para ver um log do resultado clique no botão 'Log' ")
 
 	Return(.F.)
@@ -147,12 +151,16 @@ While !FT_FEof()
 	aLinha[11] := Padr(aLinha[11],TamSx3("W2_PO_NUM")[1], " ")
 	
 	If !SW2->(DbSeek(FwXFilial('SW2') + aLinha[11]))
-		U_FCMVEIC0101("Numero da Purchase Order Não Encontrado",nLinha,,cFornecedor,cForloj,"R",,,cInvoice)
+		U_FCMVEIC0101("Numero da Purchase Order Não Encontrado",nLinha,,cFornecedor,cForloj,"R",aLinha[11],,cInvoice)
 		lRetorno := .F.
 	else
 		cFornecedor	:= SW2->W2_FORN
 		cForloj		:= SW2->W2_FORLOJ
 		cPedido 	:= SW2->W2_PO_SIGA
+		if (cFornecedor +cForloj) $  cLoteHyudai
+			aLinha[09]	 := fAjutCaixa(aLinha[09])
+		endif
+		
 	EndIf
 
 	nRec := SetSZM(aLinha,cFornecedor,cForloj,cPedido)
@@ -217,36 +225,37 @@ cInvoice := Padr(aDados[1,1],  TamSX3("EW4_INVOIC")[1] )
 
 If EW4->( dbSeek( xFilial("EW4") + cInvoice ) )
 	conout('Invoice já cadastrada anterioemnte')
-	U_FCMVEIC0101("Número da Invoice já existe!",nLinha,,EW4->EW4_FORN,EW4->EW4_FORLOJ,"R",AllTrim(aDados[1]),,cInvoice)
-	MsgInfo("Número da Invoice " + alltrim(aDados[1]) + " já existe!" + CRLF +  "Para ver um log do resultado clique no botão 'Log' ")
+	U_FCMVEIC0101("Número da Invoice já existe!",nLinha,,EW4->EW4_FORN,EW4->EW4_FORLOJ,"R",AllTrim(aDados[1,8]),,cInvoice)
+	//MsgInfo("Número da Invoice " + alltrim(aDados[1]) + " já existe!" + CRLF +  "Para ver um log do resultado clique no botão 'Log' ")
 	lRetorno := .F.
 Endif
-
-If lRetorno
+lErro := !lRetorno 
+//If lRetorno
 	//if nLay == 1
-		lRet := Val1Dados() // Unificando os Layout da Montadora com Barueri
-	//else
-	//	lRet := ValDados()	
-	//EndIf
+lRet := Val1Dados() // Unificando os Layout da Montadora com Barueri
+	//if lRet	
+SetArea()
+If lRet 
+	CMV01Capa()
+Else
+	lErro := .T.
+endif
 	
-	if lRet	
-		SetArea()
-		CMV01Capa()
-		If lCapaOK 
-			FWMsgRun(, {|| CMV01GravaInv() }, "", "Gravando Tabelas EW4 e EW5...")
+If lCapaOK .and. !lErro
+	FWMsgRun(, {|| CMV01GravaInv() }, "", "Gravando Tabelas EW4 e EW5...")
 		
-			FWMsgRun(, {|| zGrvArq() }, "", "Gravando SZM...")
+	FWMsgRun(, {|| zGrvArq() }, "", "Gravando SZM...")
 		
-			// renomeia arquivo .csv
-			if lOk
-				fRename(cINTCSV,Subs(cINTCSV,1,At(".CSV",Upper(cINTCSV))-1)+".OK")
-			endif
-			MsgInfo("Integração concluida com sucesso!" + CRLF +  "Para ver um log do resultado clique no botão 'Log' ")
-		else
-			MsgStop("Integração Cancelada pelo Usuário!")	
-		EndIf
+	// renomeia arquivo .csv
+	if lOk
+		fRename(cINTCSV,Subs(cINTCSV,1,At(".CSV",Upper(cINTCSV))-1)+".OK")
+	endif
+	MsgInfo("Integração concluida com sucesso!" + CRLF +  "Para ver um log do resultado clique no botão 'Log' ")
+else
+	if lErro
+		MsgStop("Integração Cancelada Consulta Log!")	
 	else
-		lRetorno := .F.
+		MsgStop("Integração Cancelada pelo Usuário!")
 	endif
 
 EndIf
@@ -378,12 +387,12 @@ Return lRet
 Static Function Val1Dados()
 Local lRet 		:= .T.
 Local lErro 	:= .F.
-Local lAux 		:= .T.
+Local lAux 		:= .F.
 
 Local cAliasW3 	  := "TBLW3"
 Local cAliasSaldo := "TBWS5"
 Local cProduto 	  := ""
-Local cChave   	  := ""
+//Local cChave   	  := ""
 Local cTipo 	  := ""
 Local cPGI_NUM    := ""
 
@@ -393,12 +402,11 @@ Local nZ		:= 1
 Local nTotal 	:= 0
 Local nSaldoAnt := 0
 Local nSaldo    := 0
-Local nRec		:= 0
+//Local nRec		:= 0
 Local nQuant    := 0
 Local nLin      := 0
 Local aTotal    := {0,0}
-Local lCriaLin  := .F.
-Local lOk       := .T.
+//Local lCriaLin  := .F.
 Local aSaldos   := {}
 
 For nY := 1 to len(aDados)
@@ -408,7 +416,7 @@ For nY := 1 to len(aDados)
 	nSaldo    := 0
 	nSaldoAnt := 0 
 	aSaldos   := {}
-
+	lErro     := .F.
 	aSort( aDados[nY,5] , , , { |x,y| x[2] > y[2] } )
 	
 	cProduto := aDados[ nY , 4 ]
@@ -423,8 +431,6 @@ For nY := 1 to len(aDados)
 		U_FCMVEIC0101("Item " + AllTrim(cProduto) + " não existe no pedido " + AllTrim(cPoNum) ,nLinha,AllTrim(cProduto) ,cFornecedor,cForloj,"R",AllTrim(cPoNum), , cInvoice)
 		lErro := .T.
 	EndIf
-
-	lAux := .T.
 	
 	While !(cAliasw3)->(eof())
 		
@@ -600,18 +606,20 @@ For nY := 1 to len(aDados)
 	Next nX
 
 	
-	if aDados[nY,6] > aDados[nY,7] .and. !lErro
+	if aDados[nY,6] > aDados[nY,7] //.and. !lErro
 		U_FCMVEIC0101("Não há saldo para o Item " + AllTrim(cProduto) + "  pedido : " + cPoNum ,nLinha,AllTrim(cProduto) ,cFornecedor,cForloj,"R",AllTrim(cPoNum), , cInvoice)
 		lErro := .T.
 	endif
 
-	If  !lErro .and. Empty(GetAdvFVal("SYD", "YD_TEC", FwXFilial("SYD") + aDados[nY,2] + aDados[nY,3], 1, " ")) == .T.
+	If  /*!lErro .and.*/ Empty(GetAdvFVal("SYD", "YD_TEC", FwXFilial("SYD") + aDados[nY,2] + aDados[nY,3], 1, " ")) == .T.
 		U_FCMVEIC0101("NCM + Ex não cadastrado: " + aDados[nY,2] + aDados[nY,3] + " não encontrado no sistema!", nLinha,AllTrim(cProduto),cFornecedor,cForloj,"R",cPoNum,,cInvoice)
 		lErro := .T.
 	EndIF
-
+	if lErro
+		lAux := .T.
+	endif
 Next nY
-
+lErro := lAux
 lRet := !lErro
 
 Return lRet
@@ -1532,6 +1540,14 @@ Static Function zRetCarUni(cConteudo)
 
 Return cConteudo
 
+Static Function fAjutCaixa(cCase)
+
+cCase := alltrim(cCase)
+If Len(cCase) < 3 .and. Type(cCase) == "N"
+	cCase := strzero(val(cCase),3)
+endif
+
+Return cCase
 
 
 /*

@@ -14,7 +14,8 @@ Uso......:              CAOA Montadora de Veiculos - GAP EIC004
 Obs......:              Chamado pelo PE EIVEV100
 Obs......:              - U_CMVEI01A() - Importação de Invoice
 ===================================================================================== */
-Static nNumInte
+Static nNumInte := 0
+Static aStIten  := {} 
 Static cFilExec := "2020"
 
 User Function CMVEIC01()
@@ -1794,7 +1795,7 @@ RETURN
 //----------------------------------------------------------------------------------
 
 Static Function CMVEIC0101(cTexto, nLinha, cProduto, cFornec, cLoja, cStatus, cPO, cPosicao, cInvoice)
-	
+	Local nX := 1
 	Default nLinha   := 0
 	Default cProduto := ""
 	Default cFornec  := ""
@@ -1802,7 +1803,7 @@ Static Function CMVEIC0101(cTexto, nLinha, cProduto, cFornec, cLoja, cStatus, cP
 	Default cPO      := ""
 	Default cPosicao := ""
 	Default cInvoice := ""
-
+	cTexto := 'Linha:' + Strzero(nLinha,5) + '|' + cTexto
 	//Não permite entrar na rotina caso a filial não esteja habilitada.
 	if !cFilAnt $ cFilInv
 
@@ -1820,29 +1821,48 @@ Static Function CMVEIC0101(cTexto, nLinha, cProduto, cFornec, cLoja, cStatus, cP
 	EndIf
 
 	If !lCapaLog
-		CMVEIC0104(cProduto, cFornec, cLoja, cStatus, cPO, cPosicao, cInvoice)
+		CMVEIC0104(cProduto, cFornec, cLoja, cStatus, cPO, cPosicao, cInvoice,.F.)
+	else
+		For nX := 1 to len(aStIten)
+			
+			ZZF->(DbGoto(aStIten[nX]))
+			
+			if (EMPTY(ZZF->ZZF_FORN) .and. !Empty(cFornec) ).or. (Empty(ZZE->ZZE_FORN) .and. !Empty(cFornec))
 
+				CMVEIC0104(cProduto, cFornec, cLoja, cStatus, cPO, cPosicao, cInvoice,.T.)
+				
+				ZZF->(RecLock("ZZF",.F.))
+					ZZF->ZZF_FORN	:=	ZZE->ZZE_FORN//cFornec
+					ZZF->ZZF_LOJA	:=	ZZE->ZZE_LOJA//cLoja
+					ZZF->ZZF_PO_NUM	:=	iif( Empty(ZZF->ZZF_PO_NUM) , cPO , ZZF->ZZF_PO_NUM )
+					ZZF->ZZF_NRINTE	:=	ZZE->ZZE_NRINTE
+				ZZF->(MsUnlock())
+
+			EndIf
+		Next nX
 	EndIf
 
 	ZZF->(RecLock("ZZF",.T.))
 		ZZF->ZZF_FILIAL	:=	xFilial("ZZF")
 		ZZF->ZZF_INVOIC	:=	cInvoice
-		ZZF->ZZF_FORN	:=	cFornec
-		ZZF->ZZF_LOJA	:=	cLoja
-		ZZF->ZZF_NRINTE	:=	nNumInte
+		ZZF->ZZF_FORN	:=	ZZE->ZZE_FORN //,cFornec ,ZZE->ZZE_FORN)
+		ZZF->ZZF_LOJA	:=	ZZE->ZZE_LOJA //cLoja   ,ZZE->ZZE_LOJA)
+		ZZF->ZZF_NRINTE	:=	ZZE->ZZE_NRINTE//nNumInte
 		ZZF->ZZF_STATUS	:=	cStatus
 		ZZF->ZZF_PO_NUM	:=	cPO
 		ZZF->ZZF_COD_I	:=	cProduto
 		ZZF->ZZF_POSICA	:=	cPosicao
 		ZZF->ZZF_MOTIVO	:=	cTexto
-
 	ZZF->(MSUnlock())
-
+	
+	if Empty(ZZF->ZZF_FORN)
+		aadd(aStIten,ZZF->(Recno()))
+	EndIf
+	
 	If cStatus == "R" .AND. ZZE->ZZE_STATUS == "I"
 
 		ZZE->(RecLock("ZZE",.F.))
 			ZZE->ZZE_STATUS	:=	"R"
-
 		ZZE->(MSUnlock())
 
 	EndIf
@@ -1899,7 +1919,7 @@ Static Function CMVEIC0102()
 		ZZE->(dbSetOrder(1))
 
 	EndIf
-
+	ZZE->(DBGOTO(nRecZZe))
 	cInvoice := ZZE->ZZE_INVOIC
 	cFornec  := Posicione("SA2",1,xFilial("SA2")+ZZE->ZZE_FORN+ZZE->ZZE_LOJA,"A2_NREDUZ")
 	dDtProc  := ZZE->ZZE_DTINTE
@@ -1940,30 +1960,51 @@ Return
 
 //----------------------------------------------------------------------------------
 
-Static Function CMVEIC0104(cProduto, cFornec, cLoja, cStatus, cPO, cPosicao, cInvoice)
-
+Static Function CMVEIC0104(cProduto, cFornec, cLoja, cStatus, cPO, cPosicao, cInvoice,lAlte)
+	
 	nNumInte := 1
-	If ZZE->(dbSeek(xFilial("ZZE")+AVKEY(cInvoice,"ZZE_INVOIC")+AVKEY(cFornec,"ZZE_FORN")))
-		ZZE->(dbSeek(xFilial("ZZE")+AVKEY(cInvoice,"ZZE_INVOIC")+AVKEY(cFornec,"ZZE_FORN")+"9999999999",.T.))
-		ZZE->(dbSkip(-1))
-		nNumInte += ZZE->ZZE_NRINTE
+	
+	if lAlte
+		if empty(ZZE->ZZE_FORN) .and. !Empty(cFornec)
+			ZZE->(RecLock("ZZE",.F.))
+				ZZE->ZZE_FORN	:=	cFornec
+				ZZE->ZZE_LOJA	:=	cLoja
+			ZZE->(MSUnlock())
+			
+			ZZE->(dbSeek(xFilial("ZZE")+AVKEY(cInvoice,"ZZE_INVOIC")+AVKEY(cFornec,"ZZE_FORN")+"9999999999",.T.))
+			ZZE->(dbSkip(-1))
+			nNumInte += ZZE->ZZE_NRINTE
+			
+			ZZE->(dbgoto(nRecZZE))
 
+			ZZE->(RecLock("ZZE",.F.))
+				ZZE->ZZE_NRINTE	:=	nNumInte
+			ZZE->(MSUnlock())
+		EndIf
+
+	Else	
+		If ZZE->(dbSeek(xFilial("ZZE")+AVKEY(cInvoice,"ZZE_INVOIC")+AVKEY(cFornec,"ZZE_FORN")))
+			ZZE->(dbSeek(xFilial("ZZE")+AVKEY(cInvoice,"ZZE_INVOIC")+AVKEY(cFornec,"ZZE_FORN")+"9999999999",.T.))
+			ZZE->(dbSkip(-1))
+			nNumInte += ZZE->ZZE_NRINTE
+
+		EndIf
+		ZZE->(RecLock("ZZE",.T.))
+			ZZE->ZZE_FILIAL	:=	xFilial("ZZE")
+			ZZE->ZZE_INVOIC	:=	cInvoice
+			ZZE->ZZE_FORN	:=	cFornec
+			ZZE->ZZE_LOJA	:=	cLoja
+			ZZE->ZZE_DTINTE	:=	dDataBase
+			ZZE->ZZE_HRINTE	:=	Time()
+			ZZE->ZZE_NRINTE	:=	nNumInte
+			ZZE->ZZE_USER	:=	cUsername
+			ZZE->ZZE_STATUS	:=	"I"
+		ZZE->(MSUnlock())
+
+		nRecZZE  := ZZE->(Recno())
 	EndIf
 
-	ZZE->(RecLock("ZZE",.T.))
-		ZZE->ZZE_FILIAL	:=	xFilial("ZZE")
-		ZZE->ZZE_INVOIC	:=	cInvoice
-		ZZE->ZZE_FORN	:=	cFornec
-		ZZE->ZZE_LOJA	:=	cLoja
-		ZZE->ZZE_DTINTE	:=	dDataBase
-		ZZE->ZZE_HRINTE	:=	Time()
-		ZZE->ZZE_NRINTE	:=	nNumInte
-		ZZE->ZZE_USER	:=	cUsername
-		ZZE->ZZE_STATUS	:=	"I"
-	ZZE->(MSUnlock())
-
 	lCapaLog := .T.
-	nRecZZE  := ZZE->(Recno())
 
 Return
 
