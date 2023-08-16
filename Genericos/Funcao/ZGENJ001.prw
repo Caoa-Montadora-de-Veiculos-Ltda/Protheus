@@ -20,25 +20,27 @@ Local _nDias        := SuperGetMV( "CMV_GEN006"  ,,60)  //parametro para habilit
 Local _nPos         := 0
 Local _lJob         := IsBlind()
 
-    If _lProcessa
-	    If _lJob  //Rodando via job.
-		    //Garantir que o processamento seja unico
-	        If !LockByName("ZGENJ001",.T.,.T.)  
-                //tentar locar por 10 segundos caso não consiga não prosseguir
-                _lRet := .F.
-                For _nPos := 1 To 10
-                    Sleep( 1000 ) // Para o processamento por 1 segundo
-                    If LockByName("ZGENJ001",.T.,.T.)
-                        _lRet := .T.
-                    EndIf
-                Next		
-		        If !_lRet
-			    	ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZGENJ001] Já existe um processamento em execução, aguarde!")
-			    EndIf
-		    EndIf
-	    EndIf
+    If _lJob  //Rodando via job.
+	    //Garantir que o processamento seja unico
+	    If !LockByName("ZGENJ001",.T.,.T.)  
+            //tentar locar por 10 segundos caso não consiga não prosseguir
+            _lRet := .F.
+            For _nPos := 1 To 10
+                Sleep( 1000 ) // Para o processamento por 1 segundo
+                If LockByName("ZGENJ001",.T.,.T.)
+                    _lRet := .T.
+                EndIf
+            Next		
+		    If !_lRet
+			    ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZGENJ001] Já existe um processamento em execução, aguarde!")
+			EndIf
+		EndIf
+	EndIf
 
-        If _lRet
+    If _lRet
+
+        If _lProcessa
+
 		    ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZGENJ001] Inicio do processamento.")
 
             U_ZMSBLQUSR(_lJob, _nDias)
@@ -46,7 +48,13 @@ Local _lJob         := IsBlind()
 	        UnLockByName("ZGENJ001",.T.,.T.)
 
 	        ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZGENJ001] Termino do processamento.")
+
+        Else
+
+            ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZGENJ001] Processo de bloqueio esta desabilitado.")
+
         EndIf
     EndIf
+    
 
 Return()

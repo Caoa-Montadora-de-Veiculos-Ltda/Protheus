@@ -18,19 +18,14 @@ Obs......:
 User Function ZMSBLQUSR(_lJob, _nDias)
 
 Local lUserAut      := .F.
-Private _aMatriz    := {"01","2010022001" }
 
-Default _lJob       := IsBlind() 
+Default _lJob       := .F.
 Default _nDias      := 60
 			
 If (_lJob)
     
-    RpcSetType(3)
-    RpcSetEnv(_aMatriz[1],_aMatriz[2])
-
     zProcessa(_lJob, _nDias)
-    ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZGENJ001] Processo Finalizado")
-
+    
 Else
 
     lUserAut := U_ZGENUSER( RetCodUsr() ,"ZMSBLQUSR"	,.T.)
