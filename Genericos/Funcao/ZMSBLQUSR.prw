@@ -101,7 +101,7 @@ Default _nDias      := 60
                 // Incrementa a mensagem na régua.
                 IncProc( "Bloqueando Usuário: " + Alltrim((cAliasTRB)->USR_ID) + " | " + Alltrim((cAliasTRB)->USR_CODIGO) )
             Else
-                ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZGENJ001] Bloqueando Usuario: " + Alltrim((cAliasTRB)->USR_ID) + " | " + Alltrim((cAliasTRB)->USR_CODIGO))          
+                ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZMSBLQUSR] Bloqueando Usuario: " + Alltrim((cAliasTRB)->USR_ID) + " | " + Alltrim((cAliasTRB)->USR_CODIGO))          
             EndIf
             
             //Faz o processamento do Bloqueio
@@ -253,7 +253,7 @@ _cHtml +=    "<br/> <br/> <br/> <br/>"
 _cHtml +=    " <h5>Esse email foi gerado pela rotina " + FunName() + " </h5>"
 
 	
-ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZGENJ001] Enviando e-mail com os usuarios bloquedos")
+ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZMSBLQUSR] Enviando e-mail com os usuarios bloquedos")
 
 /*
 cMailDestino	- E-mail de Destino
@@ -269,9 +269,9 @@ cObsMail		- Observação para Gravação do Log.
 _lEnvia := U_ZGENMAIL(_cEmailDest,_cEMailCopia,_cAssunto,_cHtml,_aAnexos,_lMsgErro,_lMsgOK,_cRotina,_cObsMail,_cReplyTo)
 
 If !_lEnvia
-	ConOut("**** [ ZGENJ001 ] - Erro no envio do e-mail, favor verificar ****"+ CRLF)
+	ConOut("**** [ZMSBLQUSR] - Erro no envio do e-mail, favor verificar ****"+ CRLF)
 Else
-    ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZGENJ001] E-mail enviado com sucesso")
+    ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZMSBLQUSR] E-mail enviado com sucesso")
 EndIf
 
 Return()
