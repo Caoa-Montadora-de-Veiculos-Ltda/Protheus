@@ -434,7 +434,11 @@ Private lAutoErrNoFile 	:= .T.
 			SB2->(DbSetOrder(1))
 			If SB2->(DbSeek(FWxFilial("SB2")+PadR(_cProduto, TamSx3('B2_COD') [1])+PadR(_cArmTec, TamSx3('B2_LOCAL') [1])))				
 				_nSaldoTec := SB2->(SaldoSb2())
-				_nSaldoTec := _nQtdeTec - _nSaldoTec
+				If _nSaldoTec >= _nQtdeTec
+					_nSaldoTec := 0
+				Else
+					_nSaldoTec := _nQtdeTec - _nSaldoTec
+				Endif
 			Else
 				CriaSB2(AllTrim(_cProduto),AllTrim(_cArmTec))
 				_cErro := "Produto "+AllTrim(_cProduto)+" nao cadastrado no Estoque "+AllTrim(_cArmTec)+" do Totvs, referente Qtde Tecnico "+AllTrim(Str(_nQtdeTec)) 
