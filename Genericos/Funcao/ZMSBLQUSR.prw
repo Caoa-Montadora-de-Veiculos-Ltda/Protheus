@@ -235,10 +235,13 @@ _cHtml += "										<th width='10%' height='100%' align='center' valign='middle
 _cHtml += "									</tr>"+ CRLF
 
 For _nX := 1 To Len(_aBloq)
-    _cHtml += "									<tr> <!--while advpl-->"+ CRLF
+    
     _cMsgErro := "Id: " + AllTrim(_aBloq[_nX,01]) +" | Codigo: "+Upper(AllTrim(_aBloq[_nX,02])) +" | Inclusao: "+AllTrim(_aBloq[_nX,03]) +" | Ult. Logon: "+AllTrim(_aBloq[_nX,04])
+
+    _cHtml += "									<tr> <!--while advpl-->"+ CRLF
     _cHtml += "										<td width='10%' height='16' align='left'	valign='middle' bgcolor='#"+_cCorItem+"' scope='col'><font size='1' face='Arial'>"+_cMsgErro+"</font></td>"+ CRLF
     _cHtml += "									</tr>"+ CRLF
+    
 Next
 
 _cHtml += "					</table>"+ CRLF
