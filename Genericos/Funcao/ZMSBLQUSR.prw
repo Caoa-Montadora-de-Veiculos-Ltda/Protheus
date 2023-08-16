@@ -18,12 +18,19 @@ Obs......:
 User Function ZMSBLQUSR(_lJob, _nDias)
 
 Local lUserAut      := .F.
-Default _lJob       := .F.
-Default _nDias      := 60
-			//  U_ZGENUSER( <ID User> , <"NOME DA FUNÇÃO"> , <.F.=Não Exibe Msg; .T.=Exibe Msg> )
+Private _aMatriz    := {"01","2010022001" }
 
+Default _lJob       := IsBlind() 
+Default _nDias      := 60
+			
 If (_lJob)
+    
+    RpcSetType(3)
+    RpcSetEnv(_aMatriz[1],_aMatriz[2])
+
     zProcessa(_lJob, _nDias)
+    ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZGENJ001] Processo Finalizado")
+
 Else
 
     lUserAut := U_ZGENUSER( RetCodUsr() ,"ZMSBLQUSR"	,.T.)
@@ -32,7 +39,9 @@ Else
 
         Processa({|| zProcessa() }, "[ZMSBLQUSR] - Realizando o bloqueio dos usuários", "Aguarde ...." )
         ApMsgAlert( "Bloqueio realizados com Sucesso.","[ ZMSBLQUSR ] - Aviso" )
+
     EndIf
+
 EndIf
 
 Return()
@@ -53,9 +62,10 @@ Static Function zProcessa(_lJob, _nDias)
 
 Local cQuery		:= ""
 Local cAliasTRB		:= GetNextAlias()
-Local cNameUser     := ""
 Local nTotReg       := 0
 Local _dDataProc    := Date()
+Local _aBloq		:= {}
+
 
 Default _lJob       := .F.
 Default _nDias      := 60
@@ -65,12 +75,11 @@ Default _nDias      := 60
     EndIf
 
     _dDataProc := _dDataProc - _nDias
-
+    
+    //Administrador/Fabio/Evandro - Não bloqueia
     cQuery := " "
-
     cQuery += " SELECT USR_ID,USR_CODIGO,USR_MSBLQL,USR_DTINC, USR_DTLOGON FROM ABDHDU_PROT.SYS_USR "                                                       + CRLF
     cQuery += " WHERE  D_E_L_E_T_ = ' ' "                                                                                                                   + CRLF 
-    cQuery += " AND USR_ID <> '000000' "                                                                                                                    + CRLF 
     cQuery += " AND ( ( USR_DTINC < '"+DToS(_dDataProc)+"'  AND USR_DTLOGON = ' ' ) OR ( USR_DTLOGON < '"+DToS(_dDataProc)+"'  AND USR_DTLOGON <> ' ') ) "  + CRLF
     cQuery += " AND USR_MSBLQL = '2' "                                                                                                                      + CRLF
     cQuery += " ORDER BY USR_ID "                                                                                                                           + CRLF
@@ -85,37 +94,67 @@ Default _nDias      := 60
 
         // Conta quantos registros existem, e seta no tamanho da régua.
         ProcRegua( nTotReg )
-    Else
-        zEnviaMail(cAliasTRB, _nDias)
     EndIf
 
-    //Ordena por UserId
-    PswOrder(1)
-
     (cAliasTRB)->(dbGoTop())
-    While (cAliasTRB)->(!Eof())
+    If (cAliasTRB)->(!Eof())
 
-        If !(_lJob)
-            // Incrementa a mensagem na régua.
-            IncProc( "Bloqueando Usuário: " + Alltrim((cAliasTRB)->USR_ID) + " | " + Alltrim((cAliasTRB)->USR_CODIGO) )
-        Else
-            ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZGENJ001] Bloqueando Usuario: " + Alltrim((cAliasTRB)->USR_ID) + " | " + Alltrim((cAliasTRB)->USR_CODIGO))
-        EndIf
-        
-        //Pesquisa no UserId                     
-        If PswSeek((cAliasTRB)->USR_ID)
-            //Se encontrou grava o Username na variavel xNameUser                  
-            cNameUser := PswRet(1)[1][2]
-            //Bloqueia usuário no configurador
-            _lBloq := PswBlock(cNameUser)
-        EndIf
-        (cAliasTRB)->(DbSkip())
-    End
+        While (cAliasTRB)->(!Eof())
+
+            If !(_lJob)
+                // Incrementa a mensagem na régua.
+                IncProc( "Bloqueando Usuário: " + Alltrim((cAliasTRB)->USR_ID) + " | " + Alltrim((cAliasTRB)->USR_CODIGO) )
+            Else
+                ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZGENJ001] Bloqueando Usuario: " + Alltrim((cAliasTRB)->USR_ID) + " | " + Alltrim((cAliasTRB)->USR_CODIGO))          
+            EndIf
+            
+            //Faz o processamento do Bloqueio
+            zProcBloq((cAliasTRB)->USR_ID)
+
+            //Grava o array com os usuários bloqueados
+            Aadd( _aBloq, { AllTrim((cAliasTRB)->USR_ID), Alltrim((cAliasTRB)->USR_CODIGO), AllTrim(DToC(SToD((cAliasTRB)->USR_DTINC))), AllTrim(DToC(SToD((cAliasTRB)->USR_DTLOGON))) } )	
+            
+            (cAliasTRB)->(DbSkip())
+        End
+    
+        //Dispara o e-mail com os usuários bloqueados
+        zEnviaMail(_aBloq, _nDias)
+
+    EndIf
 
     (cAliasTRB)->(DbCloseArea())
 
 Return()
 
+/*
+=====================================================================================
+Programa.:              zProcBloq
+Autor....:              CAOA - Evandro A Mariano dos Santos 
+Data.....:              16/08/2023
+Descricao / Objetivo:   Bloqueia o usuário
+Doc. Origem:            
+Solicitante:            
+Uso......:              Configurador
+Obs......:
+=====================================================================================
+*/
+Static Function zProcBloq(_cId)
+
+Local cNameUser     := ""
+Local _lBloq        := .T.
+
+//Ordena por UserId
+PswOrder(1)
+
+ //Pesquisa no UserId                     
+If PswSeek(_cId)
+    //Se encontrou grava o Username na variavel xNameUser                  
+    cNameUser := PswRet(1)[1][2]
+    //Bloqueia usuário no configurador
+    _lBloq := PswBlock(cNameUser)
+EndIf
+
+Return(_lBloq)
 
 /*
 =====================================================================================
@@ -129,7 +168,8 @@ Uso......:              Configurador
 Obs......:
 =====================================================================================
 */
-Static Function zEnviaMail(cAliasTRB, _nDias)
+Static Function zEnviaMail(_aBloq, _nDias)
+
 Local _cEmailDest 		:= ""
 Local _lMsgOK			:= .T.
 Local _lMsgErro			:= .F.
@@ -137,18 +177,19 @@ Local _cObsMail			:= ""
 Local _cReplyTo			:= ""
 Local _cCorItem			:= "FFFFFF"
 Local _lEnvia			:= .T.
-Local _cLogo  			:= "lg_caoa.png"
 Local _cAssunto		    := "Bloqueio de Usuarios Protheus"
 Local _cEmails 		    := AllTrim(SuperGetMV("CMV_GEN007", .F., "evandro.mariano@caoa.com.br"))
 Local _aAnexos		    := {}
 Local _cEMailCopia	    := ""
 Local _cRotina		    := "ZMSBLQUSR"
+Local _nX               := 0
 
 _cEmailDest := _cEmails
+
 _cHtml := ""
 _cHtml += "<html>"+ CRLF
 _cHtml += "	<head>"+ CRLF
-_cHtml += "		<title>Relacao de usuarios</title>"+ CRLF
+_cHtml += "		<title>Bloqueio dos usuarios do Sistema</title>"+ CRLF
 _cHtml += "	</head>"+ CRLF
 _cHtml += "	<body leftmargin='0' topmargin='0' rightmargin='0' bottommargin='0'>"+ CRLF
 _cHtml += "		<table width='100%' height='100%' border='0' cellpadding='0' cellspacing='0'>"+ CRLF
@@ -159,29 +200,56 @@ _cHtml += "						<tr>"+ CRLF
 _cHtml += "							<th width='100%' height='100' scope='col'>"+ CRLF
 _cHtml += "								<table width='100%' height='60%' border='3' cellpadding='0' cellspacing='0' >"+ CRLF
 _cHtml += "									<tr>"+ CRLF
-_cHtml += "										<th width='12%' height='0' scope='col'><img src='" + _cLogo + "' width='118' height='40'></th>"+ CRLF
-_cHtml += "										<td width='67%' align='center' valign='middle' scope='col'><font face='Arial' size='+1'><b>Usuarios sem acessar o sistema a "+AllTrim(cValToChar(_nDias))+" dias | Corte: " + DToc(Date() - _nDias) +" </b></font></td>"+ CRLF
+_cHtml += "										<th width='12%' height='0' scope='col'><img src='https://upload.wikimedia.org/wikipedia/commons/e/ef/Logo_Caoa.png' width='118' height='40'></th>"+ CRLF
+_cHtml += "										<td width='67%' align='center' valign='middle' scope='col'><font face='Arial' size='+1'><b>Informacoes de Bloqueio</b></font></td>"+ CRLF
 _cHtml += "									</tr>"+ CRLF
 _cHtml += "								</table>"+ CRLF
 _cHtml += "							</th>"+ CRLF
+_cHtml += "						</tr>"+ CRLF
+_cHtml += "						<tr>"+ CRLF
+_cHtml += "							<th width='100' height='100' scope='col'>"+ CRLF
+_cHtml += "								<table width='100%' height='100%' border='2' cellpadding='2' cellspacing='1' >"+ CRLF
+_cHtml += "									<tr>"+ CRLF
+_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Empresa:	</b></font></td>"+ CRLF
+_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>"+AllTrim(FWFilialName(,SM0->M0_CODFIL))+"</font></td>"+ CRLF
+_cHtml += "									</tr>"+ CRLF
+_cHtml += "									<tr>"+ CRLF
+_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Ambiente: </b></font></td>"+ CRLF
+_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>" + AllTrim(GetEnvServer()) + "</font></td>"+ CRLF
+_cHtml += "									</tr>"+ CRLF
+_cHtml += "									<tr>"+ CRLF
+_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Dias sem acesso:	</b></font></td>"+ CRLF
+_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>"+ AllTrim(cValToChar(_nDias)) +"</font></td>"+ CRLF
+_cHtml += "									</tr>"+ CRLF
+_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Data de Corte:	</b></font></td>"+ CRLF
+_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>"+ DToc(Date() - _nDias)  +"</font></td>"+ CRLF
+_cHtml += "									</tr>"+ CRLF
+_cHtml += "								</table>"+ CRLF
+_cHtml += "							</th>"+ CRLF
+_cHtml += "						</tr>"+ CRLF
 _cHtml += "						<tr >"+ CRLF
 _cHtml += "							<td height='25' style='padding-top:1em;'>"+ CRLF
 _cHtml += "								<table width='100%' height='100%' border='2' cellpadding='2' cellspacing='0' >"+ CRLF
 _cHtml += "									<tr bgcolor='#4682B4'>"+ CRLF
-_cHtml += "										<th width='10%' height='100%' align='center' valign='middle' scope='col'><font face='Arial' size='2'><b>Usuários</b></font></th>"+ CRLF
+_cHtml += "										<th width='10%' height='100%' align='center' valign='middle' scope='col'><font face='Arial' size='2'><b>Descrição		</b></font></th>"+ CRLF
 _cHtml += "									</tr>"+ CRLF
 
-(cAliasTRB)->(dbGoTop())
-While (cAliasTRB)->(!Eof())
-	_cHtml += "									<tr> <!--while advpl-->"+ CRLF
-	_cMsgErro := "Id: " + (cAliasTRB)->USR_ID +" | Codigo: "+Upper(AllTrim((cAliasTRB)->USR_CODIGO)) +" | Inclusao: "+AllTrim(DToC(SToD((cAliasTRB)->USR_DTINC))) +" | Ult. Logon: "+AllTrim(DToC(SToD((cAliasTRB)->USR_DTLOGON)))
-	_cHtml += "										<td width='10%' height='16' align='left'	valign='middle' bgcolor='#"+_cCorItem+"' scope='col'><font size='1' face='Arial'>"+_cMsgErro+"</font></td>"+ CRLF
-	_cHtml += "									</tr>"+ CRLF
-    (cAliasTRB)->(DbSkip())
-End
-_cHtml += "								</table>"+ CRLF
-_cHtml += "						<tr > </tr>"+ CRLF
-_cHtml += "						<tr > </tr>"+ CRLF
+For _nX := 1 To Len(_aBloq)
+    _cHtml += "									<tr> <!--while advpl-->"+ CRLF
+    _cMsgErro := "Id: " + AllTrim(_aBloq[_nX,01]) +" | Codigo: "+Upper(AllTrim(_aBloq[_nX,02])) +" | Inclusao: "+AllTrim(_aBloq[_nX,03]) +" | Ult. Logon: "+AllTrim(_aBloq[_nX,04])
+    _cHtml += "										<td width='10%' height='16' align='left'	valign='middle' bgcolor='#"+_cCorItem+"' scope='col'><font size='1' face='Arial'>"+_cMsgErro+"</font></td>"+ CRLF
+    _cHtml += "									</tr>"+ CRLF
+Next
+
+_cHtml += "					</table>"+ CRLF
+_cHtml += "				</th >"+ CRLF
+_cHtml += "			</tr>"+ CRLF
+_cHtml += "		</table >"+ CRLF
+_cHtml += "	</body >"+ CRLF
+
+_cHtml +=    "<br/> <br/> <br/> <br/>" 
+_cHtml +=    " <h5>Esse email foi gerado pela rotina " + FunName() + " </h5>"
+
 	
 /*
 cMailDestino	- E-mail de Destino
