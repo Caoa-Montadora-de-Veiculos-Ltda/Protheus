@@ -96,7 +96,7 @@ User Function CMVEI01A()
 	Private cPoNUM		:= Space(100)
 	Private cTitulo		:= "Integração de Invoice Antecipada"
 	Private cWKEW5		:= "WKEW5"
-
+ 
 	Private cDiretorio	:= GetMV("CMV_EIC01A",.T.,Space(100))
 	Private cDirInicial	:= GetMV("CMV_EIC01A",.T.,Space(100))
 	Private cFilInv	    := Getmv("CMV_EIC01B",.T.,"2010022001|2020012001")
