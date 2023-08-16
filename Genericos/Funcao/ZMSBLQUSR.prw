@@ -200,7 +200,7 @@ _cHtml += "						<tr>"+ CRLF
 _cHtml += "							<th width='100%' height='100' scope='col'>"+ CRLF
 _cHtml += "								<table width='100%' height='60%' border='3' cellpadding='0' cellspacing='0' >"+ CRLF
 _cHtml += "									<tr>"+ CRLF
-_cHtml += "										<th width='12%' height='0' scope='col'><img src='https://upload.wikimedia.org/wikipedia/commons/e/ef/Logo_Caoa.png' width='118' height='40'></th>"+ CRLF
+_cHtml += "										<th width='12%' height='0' scope='col'><img src='https://tinyurl.com/logocaoa' width='118' height='40'></th>"+ CRLF
 _cHtml += "										<td width='67%' align='center' valign='middle' scope='col'><font face='Arial' size='+1'><b>Informacoes de Bloqueio</b></font></td>"+ CRLF
 _cHtml += "									</tr>"+ CRLF
 _cHtml += "								</table>"+ CRLF
@@ -211,7 +211,7 @@ _cHtml += "							<th width='100' height='100' scope='col'>"+ CRLF
 _cHtml += "								<table width='100%' height='100%' border='2' cellpadding='2' cellspacing='1' >"+ CRLF
 _cHtml += "									<tr>"+ CRLF
 _cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Empresa:	</b></font></td>"+ CRLF
-_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>"+AllTrim(FWFilialName(,SM0->M0_CODFIL))+"</font></td>"+ CRLF
+_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>"+ AllTrim(FWFilialName(,SM0->M0_CODFIL)) +"</font></td>"+ CRLF
 _cHtml += "									</tr>"+ CRLF
 _cHtml += "									<tr>"+ CRLF
 _cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Ambiente: </b></font></td>"+ CRLF
