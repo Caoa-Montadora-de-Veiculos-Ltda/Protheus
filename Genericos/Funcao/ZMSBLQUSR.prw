@@ -112,7 +112,10 @@ Default _nDias      := 60
             zProcBloq((cAliasTRB)->USR_ID)
 
             //Grava o array com os usuários bloqueados
-            Aadd( _aBloq, { AllTrim((cAliasTRB)->USR_ID), Alltrim((cAliasTRB)->USR_CODIGO), AllTrim(DToC(SToD((cAliasTRB)->USR_DTINC))), AllTrim(DToC(SToD((cAliasTRB)->USR_DTLOGON))) } )	
+            Aadd( _aBloq, {  AllTrim((cAliasTRB)->USR_ID),;
+                             Alltrim((cAliasTRB)->USR_CODIGO),;
+                             AllTrim(DToC(SToD((cAliasTRB)->USR_DTINC))),;
+                             AllTrim(DToC(SToD((cAliasTRB)->USR_DTLOGON))) } )	
             
             (cAliasTRB)->(DbSkip())
         End
@@ -241,7 +244,7 @@ For _nX := 1 To Len(_aBloq)
     _cHtml += "									<tr> <!--while advpl-->"+ CRLF
     _cHtml += "										<td width='10%' height='16' align='left'	valign='middle' bgcolor='#"+_cCorItem+"' scope='col'><font size='1' face='Arial'>"+_cMsgErro+"</font></td>"+ CRLF
     _cHtml += "									</tr>"+ CRLF
-    
+
 Next
 
 _cHtml += "					</table>"+ CRLF
