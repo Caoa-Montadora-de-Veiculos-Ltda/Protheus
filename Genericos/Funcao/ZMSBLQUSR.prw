@@ -75,6 +75,7 @@ Default _nDias      := 60
     cQuery := " "
     cQuery += " SELECT USR_ID,USR_CODIGO,USR_MSBLQL,USR_DTINC, USR_DTLOGON FROM ABDHDU_PROT.SYS_USR "                                                       + CRLF
     cQuery += " WHERE  D_E_L_E_T_ = ' ' "                                                                                                                   + CRLF 
+    cQuery += " AND USR_ID <> '000000' "                                                                                                                    + CRLF
     cQuery += " AND ( ( USR_DTINC < '"+DToS(_dDataProc)+"'  AND USR_DTLOGON = ' ' ) OR ( USR_DTLOGON < '"+DToS(_dDataProc)+"'  AND USR_DTLOGON <> ' ') ) "  + CRLF
     cQuery += " AND USR_MSBLQL = '2' "                                                                                                                      + CRLF
     cQuery += " ORDER BY USR_ID "                                                                                                                           + CRLF
@@ -252,6 +253,8 @@ _cHtml +=    "<br/> <br/> <br/> <br/>"
 _cHtml +=    " <h5>Esse email foi gerado pela rotina " + FunName() + " </h5>"
 
 	
+ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZGENJ001] Enviando e-mail com os usuarios bloquedos")
+
 /*
 cMailDestino	- E-mail de Destino
 cMailCopia		- E-mail de cópia
@@ -266,7 +269,9 @@ cObsMail		- Observação para Gravação do Log.
 _lEnvia := U_ZGENMAIL(_cEmailDest,_cEMailCopia,_cAssunto,_cHtml,_aAnexos,_lMsgErro,_lMsgOK,_cRotina,_cObsMail,_cReplyTo)
 
 If !_lEnvia
-	ConOut("**** [ ZMSBLQUSR ] - Erro no envio do e-mail, favor verificar ****"+ CRLF)
+	ConOut("**** [ ZGENJ001 ] - Erro no envio do e-mail, favor verificar ****"+ CRLF)
+Else
+    ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZGENJ001] E-mail enviado com sucesso")
 EndIf
 
 Return()
