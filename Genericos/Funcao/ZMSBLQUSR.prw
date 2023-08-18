@@ -15,16 +15,27 @@ Uso......:              Configurador
 Obs......:
 =====================================================================================
 */
-User Function ZMSBLQUSR()
+User Function ZMSBLQUSR(_lJob, _nDias)
 
 Local lUserAut      := .F.
-			//  U_ZGENUSER( <ID User> , <"NOME DA FUNÇÃO"> , <.F.=Não Exibe Msg; .T.=Exibe Msg> )
-lUserAut := U_ZGENUSER( RetCodUsr() ,"ZMSBLQUSR"	,.T.)
 
-If lUserAut
+Default _lJob       := .F.
+Default _nDias      := 60
+			
+If (_lJob)
+    
+    zProcessa(_lJob, _nDias)
+    
+Else
 
-    Processa({|| zProcessa() }, "[ZMSBLQUSR] - Realizando o bloqueio dos usuários", "Aguarde ...." )
-    ApMsgAlert( "Bloqueio realizados com Sucesso.","[ ZMSBLQUSR ] - Aviso" )
+    lUserAut := U_ZGENUSER( RetCodUsr() ,"ZMSBLQUSR"	,.T.)
+
+    If lUserAut
+
+        Processa({|| zProcessa() }, "[ZMSBLQUSR] - Realizando o bloqueio dos usuários", "Aguarde ...." )
+        ApMsgAlert( "Bloqueio realizados com Sucesso.","[ ZMSBLQUSR ] - Aviso" )
+
+    EndIf
 
 EndIf
 
@@ -42,54 +53,225 @@ Uso......:              Configurador
 Obs......:
 =====================================================================================
 */
-Static Function zProcessa()
+Static Function zProcessa(_lJob, _nDias)
 
 Local cQuery		:= ""
 Local cAliasTRB		:= GetNextAlias()
-Local cNameUser     := ""
 Local nTotReg       := 0
+Local _dDataProc    := Date()
+Local _aBloq		:= {}
+
+
+Default _lJob       := .F.
+Default _nDias      := 60
 
     If Select( (cAliasTRB) ) > 0
         (cAliasTRB)->(DbCloseArea())
     EndIf
 
+    _dDataProc := _dDataProc - _nDias
+    
+    //Administrador/Fabio/Evandro - Não bloqueia
     cQuery := " "
-
-    cQuery += " SELECT USR_ID, USR_CODIGO, USR_MSBLQL FROM SYS_USR          "		+ CRLF
-    cQuery += " WHERE D_E_L_E_T_ = ' '                                      "		+ CRLF
-    cQuery += " AND USR_ID IN ('000012','000020','000030','000035','000040','000042','000043','000044','000056','000064','000065','000140','000141','000144','000146','000147','000149','000151','000152','000155','000156','000160','000162','000171','000172','000173','000189','000191','000193','000194','000196','000197','000198','000200','000201','000203','000217','000219','000220','000221','000222','000223','000229','000232','000233','000239','000241','000249','000250','000252','000257','000260','000261','000263','000264','000278','000289','000301','000303','000304','000312','000318','000319','000321','000324','000326','000335','000337','000343','000345','000346','000347','000348','000349','000352','000355','000359','000360','000362','000363','000364','000371','000372','000373','000376','000377','000378','000379','000380','000382','000383','000384','000387','000393','000394','000398','000399','000404','000405','000406','000407','000408','000409','000410','000411','000412','000416','000418','000420','000424','000425','000427','000438','000439','000440','000446','000453','000459','000460','000462','000469','000470','000473','000474','000475','000476','000478','000479','000480','000481','000482','000483','000485','000486','000487','000488','000489','000490','000491','000492','000493','000494','000498','000501','000505','000506','000507','000508','000513','000514','000515','000517','000518','000520','000523','000526','000528','000529','000530','000532','000533','000534','000535','000536','000537','000538','000541','000542','000544','000548','000549','000551','000552','000554','000555','000556','000557','000559','000561','000562','000563','000564','000574','000575','000576','000577','000578','000580','000582','000583','000585','000586','000587','000588','000589','000590','000591','000592','000594','000595','000596','000597','000598','000599','000600','000601','000607','000609','000611','000614','000618','000622','000630','000633','000635','000636','000639','000642','000645','000646','000658','000661','000662','000663','000665','000666','000667','000669','000673','000674','000679','000682','000683','000684','000686','000688','000689','000690','000691','000692','000695','000699','000700','000701','000705','000707','000709','000710','000712','000713','000714','000719','000721','000722','000725','000727','000734','000736','000740','000742','000743','000744','000745','000746','000748','000749','000750','000751','000753','000754','000755','000756','000759','000760','000761','000769','000770','000771','000773','000774','000775','000777','000780','000786','000787','000791','000793','000794','000795','000797','000798','000799','000805','000806','000807','000810','000812','000813','000817','000819','000820','000821','000822','000825','000829','000836','000837','000839','000848','000851','000852','000856','000861','000865','000866','000867','000868','000870','000871','000872','000873','000875','000876','000877','000884','000885','000888','000891','000894','000896','000902','000903','000907','000909','000911','000912','000913','000915','000918','000921','000922','000928','000929','000932','000933','000935','000938','000940','000942','000946','000950','000953','000954','000955','000957','000971','000972','000973','000974','000975','000976','000978','000979','000980','000983','000986','000987','000992','000993','000997','000999','001003','001004','001005','001006','001007','001008','001009','001010','001011','001014','001029','001030','001031','001032','001033','001034','001035','001036','001037','001038','001039','001040','001041','001042','001043','001044','001045','001046','001047','001048','001049','001050','001054','001055','001056','001057','001059','001060','001061','001063','001064','001065','001066','001067','001068','001069','001070','001071','001072','001076','001079','001080','001081','001092','001096','001098','001103','001109','001110','001121','001124','001129','001135')                                    "		+ CRLF
-    cQuery += " AND USR_MSBLQL = '2'                                        "		+ CRLF
-    cQuery += " ORDER BY USR_ID                                             "		+ CRLF
-
-    cQuery := ChangeQuery(cQuery)
+    cQuery += " SELECT USR_ID,USR_CODIGO,USR_MSBLQL,USR_DTINC, USR_DTLOGON FROM ABDHDU_PROT.SYS_USR "                                                       + CRLF
+    cQuery += " WHERE  D_E_L_E_T_ = ' ' "                                                                                                                   + CRLF 
+    cQuery += " AND USR_ID <> '000000' "                                                                                                                    + CRLF
+    cQuery += " AND ( ( USR_DTINC < '"+DToS(_dDataProc)+"'  AND USR_DTLOGON = ' ' ) OR ( USR_DTLOGON < '"+DToS(_dDataProc)+"'  AND USR_DTLOGON <> ' ') ) "  + CRLF
+    cQuery += " AND USR_MSBLQL = '2' "                                                                                                                      + CRLF
+    cQuery += " ORDER BY USR_ID "                                                                                                                           + CRLF
 
     // Executa a consulta.
     DbUseArea( .T., "TOPCONN", TcGenQry(,,cQuery), cAliasTRB, .T., .T. )
 
     DbSelectArea((cAliasTRB))
-    nTotReg := Contar(cAliasTRB,"!Eof()")
+    
+    If !(_lJob)
+        nTotReg := Contar(cAliasTRB,"!Eof()")
 
-    // Conta quantos registros existem, e seta no tamanho da régua.
-    ProcRegua( nTotReg )
-
-    //Ordena por UserId
-    PswOrder(1)
+        // Conta quantos registros existem, e seta no tamanho da régua.
+        ProcRegua( nTotReg )
+    EndIf
 
     (cAliasTRB)->(dbGoTop())
-    While (cAliasTRB)->(!Eof())
+    If (cAliasTRB)->(!Eof())
 
-        // Incrementa a mensagem na régua.
-        IncProc( "Bloqueando Usuário: " + Alltrim((cAliasTRB)->USR_ID) + " | " + Alltrim((cAliasTRB)->USR_CODIGO) )
-        
-        //Pesquisa no UserId                     
-        If PswSeek((cAliasTRB)->USR_ID)
-            //Se encontrou grava o Username na variavel xNameUser                  
-            cNameUser := PswRet(1)[1][2]
-            //Bloqueia usuário no configurador
-            PswBlock(cNameUser)
-        EndIf
-        (cAliasTRB)->(DbSkip())
-    End
+        While (cAliasTRB)->(!Eof())
+
+            If !(_lJob)
+                // Incrementa a mensagem na régua.
+                IncProc( "Bloqueando Usuário: " + Alltrim((cAliasTRB)->USR_ID) + " | " + Alltrim((cAliasTRB)->USR_CODIGO) )
+            Else
+                ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZMSBLQUSR] Bloqueando Usuario: " + Alltrim((cAliasTRB)->USR_ID) + " | " + Alltrim((cAliasTRB)->USR_CODIGO))          
+            EndIf
+            
+            //Faz o processamento do Bloqueio
+            zProcBloq((cAliasTRB)->USR_ID)
+
+            //Grava o array com os usuários bloqueados
+            Aadd( _aBloq, {  AllTrim((cAliasTRB)->USR_ID),;
+                             Alltrim((cAliasTRB)->USR_CODIGO),;
+                             AllTrim(DToC(SToD((cAliasTRB)->USR_DTINC))),;
+                             AllTrim(DToC(SToD((cAliasTRB)->USR_DTLOGON))) } )	
+            
+            (cAliasTRB)->(DbSkip())
+        End
+    
+        //Dispara o e-mail com os usuários bloqueados
+        zEnviaMail(_aBloq, _nDias)
+
+    EndIf
+
     (cAliasTRB)->(DbCloseArea())
+
+Return()
+
+/*
+=====================================================================================
+Programa.:              zProcBloq
+Autor....:              CAOA - Evandro A Mariano dos Santos 
+Data.....:              16/08/2023
+Descricao / Objetivo:   Bloqueia o usuário
+Doc. Origem:            
+Solicitante:            
+Uso......:              Configurador
+Obs......:
+=====================================================================================
+*/
+Static Function zProcBloq(_cId)
+
+Local cNameUser     := ""
+Local _lBloq        := .T.
+
+//Ordena por UserId
+PswOrder(1)
+
+ //Pesquisa no UserId                     
+If PswSeek(_cId)
+    //Se encontrou grava o Username na variavel xNameUser                  
+    cNameUser := PswRet(1)[1][2]
+    //Bloqueia usuário no configurador
+    _lBloq := PswBlock(cNameUser)
+EndIf
+
+Return(_lBloq)
+
+/*
+=====================================================================================
+Programa.:              zEnviaMail
+Autor....:              CAOA - Evandro A Mariano dos Santos 
+Data.....:              01/08/2023
+Descricao / Objetivo:   Envia e-mail com os usuários que serão bloqueados e os que foram bloqueados.
+Doc. Origem:            
+Solicitante:            
+Uso......:              Configurador
+Obs......:
+=====================================================================================
+*/
+Static Function zEnviaMail(_aBloq, _nDias)
+
+Local _cEmailDest 		:= ""
+Local _lMsgOK			:= .T.
+Local _lMsgErro			:= .F.
+Local _cObsMail			:= ""
+Local _cReplyTo			:= ""
+Local _cCorItem			:= "FFFFFF"
+Local _lEnvia			:= .T.
+Local _cAssunto		    := "Bloqueio de Usuarios Protheus"
+Local _cEmails 		    := AllTrim(SuperGetMV("CMV_GEN007", .F., "evandro.mariano@caoa.com.br"))
+Local _aAnexos		    := {}
+Local _cEMailCopia	    := ""
+Local _cRotina		    := "ZMSBLQUSR"
+Local _nX               := 0
+
+_cEmailDest := _cEmails
+
+_cHtml := ""
+_cHtml += "<html>"+ CRLF
+_cHtml += "	<head>"+ CRLF
+_cHtml += "		<title>Bloqueio dos usuarios do Sistema</title>"+ CRLF
+_cHtml += "	</head>"+ CRLF
+_cHtml += "	<body leftmargin='0' topmargin='0' rightmargin='0' bottommargin='0'>"+ CRLF
+_cHtml += "		<table width='100%' height='100%' border='0' cellpadding='0' cellspacing='0'>"+ CRLF
+_cHtml += "			<tr>"+ CRLF
+_cHtml += "				<th width='1200' height='100%' align='center' valign='top' scope='col'>"+ CRLF
+_cHtml += "					<table width='90%' height='50%' border='0' cellpadding='0' cellspacing='0'>"+ CRLF
+_cHtml += "						<tr>"+ CRLF
+_cHtml += "							<th width='100%' height='100' scope='col'>"+ CRLF
+_cHtml += "								<table width='100%' height='60%' border='3' cellpadding='0' cellspacing='0' >"+ CRLF
+_cHtml += "									<tr>"+ CRLF
+_cHtml += "										<th width='12%' height='0' scope='col'><img src='https://tinyurl.com/logocaoa' width='118' height='40'></th>"+ CRLF
+_cHtml += "										<td width='67%' align='center' valign='middle' scope='col'><font face='Arial' size='+1'><b>Informacoes de Bloqueio</b></font></td>"+ CRLF
+_cHtml += "									</tr>"+ CRLF
+_cHtml += "								</table>"+ CRLF
+_cHtml += "							</th>"+ CRLF
+_cHtml += "						</tr>"+ CRLF
+_cHtml += "						<tr>"+ CRLF
+_cHtml += "							<th width='100' height='100' scope='col'>"+ CRLF
+_cHtml += "								<table width='100%' height='100%' border='2' cellpadding='2' cellspacing='1' >"+ CRLF
+_cHtml += "									<tr>"+ CRLF
+_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Empresa:	</b></font></td>"+ CRLF
+_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>"+ AllTrim(FWFilialName(,SM0->M0_CODFIL)) +"</font></td>"+ CRLF
+_cHtml += "									</tr>"+ CRLF
+_cHtml += "									<tr>"+ CRLF
+_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Ambiente: </b></font></td>"+ CRLF
+_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>" + AllTrim(GetEnvServer()) + "</font></td>"+ CRLF
+_cHtml += "									</tr>"+ CRLF
+_cHtml += "									<tr>"+ CRLF
+_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Dias sem acesso:	</b></font></td>"+ CRLF
+_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>"+ AllTrim(cValToChar(_nDias)) +"</font></td>"+ CRLF
+_cHtml += "									</tr>"+ CRLF
+_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Data de Corte:	</b></font></td>"+ CRLF
+_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>"+ DToc(Date() - _nDias)  +"</font></td>"+ CRLF
+_cHtml += "									</tr>"+ CRLF
+_cHtml += "								</table>"+ CRLF
+_cHtml += "							</th>"+ CRLF
+_cHtml += "						</tr>"+ CRLF
+_cHtml += "						<tr >"+ CRLF
+_cHtml += "							<td height='25' style='padding-top:1em;'>"+ CRLF
+_cHtml += "								<table width='100%' height='100%' border='2' cellpadding='2' cellspacing='0' >"+ CRLF
+_cHtml += "									<tr bgcolor='#4682B4'>"+ CRLF
+_cHtml += "										<th width='10%' height='100%' align='center' valign='middle' scope='col'><font face='Arial' size='2'><b>Descrição		</b></font></th>"+ CRLF
+_cHtml += "									</tr>"+ CRLF
+
+For _nX := 1 To Len(_aBloq)
+    
+    _cMsgErro := "Id: " + AllTrim(_aBloq[_nX,01]) +" | Codigo: "+Upper(AllTrim(_aBloq[_nX,02])) +" | Inclusao: "+AllTrim(_aBloq[_nX,03]) +" | Ult. Logon: "+AllTrim(_aBloq[_nX,04])
+
+    _cHtml += "									<tr> <!--while advpl-->"+ CRLF
+    _cHtml += "										<td width='10%' height='16' align='left'	valign='middle' bgcolor='#"+_cCorItem+"' scope='col'><font size='1' face='Arial'>"+_cMsgErro+"</font></td>"+ CRLF
+    _cHtml += "									</tr>"+ CRLF
+
+Next
+
+_cHtml += "					</table>"+ CRLF
+_cHtml += "				</th >"+ CRLF
+_cHtml += "			</tr>"+ CRLF
+_cHtml += "		</table >"+ CRLF
+_cHtml += "	</body >"+ CRLF
+
+_cHtml +=    "<br/> <br/> <br/> <br/>" 
+_cHtml +=    " <h5>Esse email foi gerado pela rotina " + FunName() + " </h5>"
+
+	
+ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZMSBLQUSR] Enviando e-mail com os usuarios bloquedos")
+
+/*
+cMailDestino	- E-mail de Destino
+cMailCopia		- E-mail de cópia
+cAssunto		- Assunto do E-mail
+cHtml			- Corpo do E-mail
+aAnexos			- Anexos que será enviado
+lMsgErro		- .T. Exige msgn na tela - .F. Exibe somente por Conout
+cReplyTo		- Responder para outra pessoa.
+cRotina			- Rotina que está sendo executada.
+cObsMail		- Observação para Gravação do Log.
+*/
+_lEnvia := U_ZGENMAIL(_cEmailDest,_cEMailCopia,_cAssunto,_cHtml,_aAnexos,_lMsgErro,_lMsgOK,_cRotina,_cObsMail,_cReplyTo)
+
+If !_lEnvia
+	ConOut("**** [ZMSBLQUSR] - Erro no envio do e-mail, favor verificar ****"+ CRLF)
+Else
+    ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZMSBLQUSR] E-mail enviado com sucesso")
+EndIf
 
 Return()
