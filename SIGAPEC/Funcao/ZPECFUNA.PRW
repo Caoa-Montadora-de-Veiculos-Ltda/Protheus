@@ -3732,9 +3732,9 @@ User Function zSaldoWis(_cProduto, _cMarca, _cArmazem)
     If Select( (cAlsWis) ) > 0
 	    (cAlsWis)->(DbCloseArea())
 	EndIf
-	//implementado por JosÃ© Totvs 19/05/2023
+	//implementado por JosÃƒÂ© Totvs 19/05/2023
 	If _lResIntegr
-		cQryWis := " SELECT CASE WHEN NVL((SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA-ESTWIS.QT_TRANSITO_SAIDA)),0) > 0 THEN NVL((SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA-ESTWIS.QT_TRANSITO_SAIDA)),0) ELSE 0 END AS QTDE_EST "
+		cQryWis := " SELECT CASE WHEN NVL(NVL(SUM(ESTWIS.QT_ESTOQUE),0)-NVL(SUM(ESTWIS.QT_RESERVA_SAIDA),0)-NVL(MAX(ESTWIS.QT_TRANSITO_SAIDA),0),0)>0 THEN NVL(NVL(SUM(ESTWIS.QT_ESTOQUE),0)-NVL(SUM(ESTWIS.QT_RESERVA_SAIDA),0)-NVL(MAX(ESTWIS.QT_TRANSITO_SAIDA),0),0) ELSE 0 END AS QTDE_EST "
 	Else
 		cQryWis := " SELECT NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) AS QTDE_EST "
 	Endif
@@ -3770,8 +3770,6 @@ User Function zSaldoWis(_cProduto, _cMarca, _cArmazem)
 		Ferase(cAlsWis+GetDBExtension())
 	Endif 
 Return(_nSaldoWis)
-
-
 
 
 /*/{Protheus.doc} U_ZRETMsgJson
@@ -5238,3 +5236,1170 @@ Local _aArea := GetArea()
 RestArea(_aArea)
 Return Nil
        
+
+//Cria Faturamento para orçamento
+User Function ZPECFTORC(_aOrcs, _lTransaction)
+Local _lRet 		:= .F.	
+Local _aMsg 		:= {}
+Local _aRegVS1		:= {}
+Local _cNota		:= ""	
+Local _cSerie		:= ""
+Local _cPedido  	:= ""
+
+Default _aOrcs			:= {}
+Default _lTransaction 	:= .T.  //pode vir de uma operaçao que ja esta em transaction
+
+Private aParcBRNF  	:= {}
+
+Begin Sequence 	
+	If Len(_aOrcs) == 0
+		Aadd(_aMsg,"Não informado orçamentos para Faturar!")
+		Break	
+	Endif	
+	If _lTransaction
+		Begin Transaction 
+			_lRet := ZPECFTORPV(_aOrcs, @_cPedido, @_aRegVS1, _aMsg)
+			If _lRet 
+				_lRet := ZPECFTORFT(_cPedido, @_cNota, @_cSerie, _aRegVS1, @_aMsg)
+			Endif 
+			If !_lRet
+				Disarmtransaction()
+			Endif 		
+		End Transaction
+	Else 
+		If !ZPECFTORPV(_aOrcs, @_cPedido, @_aRegVS1, _aMsg)
+			Break 
+		Endif 	
+		If !ZPECFTORFT(_cPedido, @_cNota, @_cSerie, _aRegVS1, @_aMsg)
+			Break
+		Endif 
+		_lRet := .T. 
+	Endif	
+End Sequence
+Return _aMsg		
+
+
+////////////////////
+//Gerar Pedido
+Static Function ZPECFTORPV(_aOrcs, _cPedido, _aRegVS1, _aMsg)
+Local _lRet 		:= .F.	
+Local _cNumSeq		:= StrZero(0,Len(SC6->C6_ITEM))
+Local _aIteTempPV	:= {}
+Local _aCabPV 		:= {}
+Local _aItePv		:= {}
+Local _aVendedores	:= {}
+Local _aPvlNfs 		:= {}
+Local _aBloqueio	:= {}
+Local _nDESACE 		:= 0
+Local _nVALFRE 		:= 0
+Local _nVALSEG 		:= 0
+Local _nPESOL 		:= 0
+Local _nPESOB 		:= 0
+Local _nVOL1 		:= 0
+Local _nVOL2 		:= 0
+Local _nVOL3 		:= 0
+Local _nVOL4 		:= 0
+Local _nValPis 		:= 0
+Local _nValCof 		:= 0 
+Local _nValICM 		:= 0
+Local _nValDes 		:= 0
+Local _nValTot 		:= 0
+Local _nValDup 		:= 0
+Local _nValST  		:= 0
+Local _nValIPI 		:= 0
+Local _nVALPEC 		:= 0
+Local _nPERDES 		:= 0
+Local _nItVLDESC 	:= 0
+Local _nItVALTOT 	:= 0
+
+Local _cBanco      	:= "" 
+
+Local _cErro
+Local _aError
+Local _nRegVS1  
+Local _cDocto 
+Local _nPos
+Local _nCount
+Local _lReserva
+Local _lExisteReserva
+
+
+
+Private aTitSE1 := {}  //necessário cria pois na chamada da função OX100VS9E1 adicionara  registros 
+Private aHeaderP    	:= {} 							// Variavel ultilizada na OX001RESITE
+Private _aReservaCAOA 	:= {}	// Variavel utilizada no PE OX001RES
+
+Begin Sequence 	
+	// Desreserva dos Itens
+	For _nPos := 1 to Len(_aOrcs)
+		VS1->(DBSetOrder(1))
+		If !VS1->(DBSeek(xFilial("VS1")+_aOrcs[_nPos]))
+			Aadd(_aMsg,"Orçamento "+_aOrcs[_nPos]+ " não localizado, para a geração da Nota Fiscal") 
+			Break
+		Endif 
+		//Tem que estar no Status F = A Faturar
+		If VS1->VS1_STATUS <> "F"			
+			Aadd(_aMsg,"Orçamento com Status "+AllTrim(VS1->VS1_STATUS)+" diferente de Status A FATURAR, para a geração da Nota Fiscal ") 
+			Break
+		Endif	
+	
+		_nRegVS1 	:= VS1->(Recno())
+		Aadd(_aRegVS1,_nRegVS1)
+
+		_lReserva   := VS3->(FieldPos("VS3_RESERV")) > 0 .and. VS1->(FieldPos("VS1_RESERV")) > 0
+		_cBanco     := If(Empty(_cBanco), VS1->VS1_CODBCO, _cBanco)  
+
+		VS3->(DBSetOrder(1))
+		If !VS3->(DBSeek(xFilial("VS3")+VS1->VS1_NUMORC))
+			Aadd(_aMsg,"Não encontrado itens para o Orçamento "+AllTrim(VS1->VS1_NUMORC))
+			Break
+		Endif 
+		_lExisteReserva	:= .F. 
+		While VS3->(!Eof()) .And. FwXFilial("VS3")+VS1->VS1_NUMORC == VS3->VS3_FILIAL+VS3->VS3_NUMORC
+			if VS3->VS3_RESERV == "1"
+				_lExisteReserva := .T.
+			Endif
+			//Preparar carga para gravar Pedido
+			_cNumSeq 	:= Soma1(_cNumSeq)
+			If  VS1->(FieldPos("VS1_VLBRNF")) > 0 .and. VS1->VS1_VLBRNF == "0" // Nao passar o Valor Bruto para NF/Loja
+				_nVALPEC 	:= VS3->VS3_VALPEC - ( VS3->VS3_VALDES / VS3->VS3_QTDITE )
+				_nPERDES 	:= 0
+				_nItVLDESC 	:= 0
+				_nItVALTOT 	:= VS3->VS3_VALTOT+VS3->VS3_VALDES
+			Else // Passar Valor Bruto e Desconto para NF/Loja
+				_nVALPEC 	:= VS3->VS3_VALPEC
+				_nPERDES 	:= VS3->VS3_PERDES
+				_nItVLDESC 	:= VS3->VS3_VALDES
+				_nItVALTOT 	:= VS3->VS3_VALTOT+VS3->VS3_VALDES
+			EndIf
+			_nValPis := VS3->VS3_VALPIS
+			_nValCof := VS3->VS3_VALCOF 
+			_nValICM := VS3->VS3_ICMCAL
+
+			aAdd(_aIteTempPV,{"C6_ITEM"   ,	_cNumSeq			,Nil})
+			aAdd(_aIteTempPV,{"C6_PRODUTO",	SB1->B1_COD  		,Nil})
+			aAdd(_aIteTempPV,{"C6_TES"    ,	VS3->VS3_CODTES  	,Nil})
+			aAdd(_aIteTempPV,{"C6_ENTREG" ,	dDataBase  			,Nil})
+			aAdd(_aIteTempPV,{"C6_UM"     ,	SB1->B1_UM         	,Nil})
+			aAdd(_aIteTempPV,{"C6_LOCAL"  ,	VS3->VS3_LOCAL		,Nil})
+			aAdd(_aIteTempPV,{"C6_QTDVEN" ,	VS3->VS3_QTDITE		,Nil})
+			aAdd(_aIteTempPV,{"C6_QTDLIB" ,	0              		,Nil})
+			aAdd(_aIteTempPV,{"C6_PRUNIT" ,	_nVALPEC			,Nil})
+			aAdd(_aIteTempPV,{"C6_PRCVEN" ,	_nVALPEC			,Nil})
+			aAdd(_aIteTempPV,{"C6_VALOR"  ,	_nItVALTOT			,Nil})
+			aAdd(_aIteTempPV,{"C6_VALDESC",	_nItVLDESC			,Nil})
+			// Ticket: 1932063
+			// ISSUE: MMIL-2426
+			// O TES está sendo enviado novamente pois na base o cliente ocorria uma falha. O conteudo do TES na aCols (MATA410)
+			// ficava com conteúdo VAZIO.
+			// O problema nao foi reproduzido em base teste, mas verificamos que passando o TES novamente a falha não ocorria novamente
+			// A mensagem de HELP disparada era A410VZ.
+			aAdd(_aIteTempPV,{"C6_TES"    	, VS3->VS3_CODTES  					,Nil})
+			if VS3->(FieldPos("VS3_SITTRI")) > 0
+				aAdd(_aIteTempPV,{"C6_CLASFIS", VS3->VS3_SITTRI  				,Nil})
+			Endif
+			aAdd(_aIteTempPV,{"C6_CLI"    	, VS1->VS1_CLIFAT      				,Nil})
+			aAdd(_aIteTempPV,{"C6_LOJA"   	, VS1->VS1_LOJA  				    ,Nil})
+			if VS3->(FieldPos("VS3_LOTECT")) > 0 .and. !Empty(VS3->VS3_LOTECT)
+				aAdd(_aIteTempPV,{"C6_LOTECTL" , VS3->VS3_LOTECT         		,Nil})
+				aAdd(_aIteTempPV,{"C6_NUMLOTE" , VS3->VS3_NUMLOT         		,Nil})			
+			endif
+			if VS3->(FieldPos("VS3_LOCALI")) > 0 .and. !Empty(VS3->VS3_LOCALI)
+				aAdd(_aIteTempPV,{"C6_LOCALIZ" , VS3->VS3_LOCALI         		,Nil})
+			endif                                       
+			if VS1->VS1_TIPORC == "1"
+				If SC6->(FieldPos("C6_CC"))>0 .and. VS3->(FieldPos("VS3_CENCUS"))>0 
+					aAdd(_aIteTempPV,{"C6_CC" , VS3->VS3_CENCUS 				,Nil})
+				Endif
+				If SC6->(FieldPos("C6_CONTA"))>0 .and. VS3->(FieldPos("VS3_CONTA"))>0
+					aAdd(_aIteTempPV,{"C6_CONTA" , VS3->VS3_CONTA 				,Nil})
+				Endif
+				If SC6->(FieldPos("C6_ITEMCTA"))>0 .and. VS3->(FieldPos("VS3_ITEMCT"))>0
+					aAdd(_aIteTempPV,{"C6_ITEMCTA" , VS3->VS3_ITEMCT 			,Nil})
+				Endif
+				If SC6->(FieldPos("C6_CLVL"))>0 .and. VS3->(FieldPos("VS3_CLVL"))>0
+					aAdd(_aIteTempPV,{"C6_CLVL" , VS3->VS3_CLVL 				,Nil})
+				Endif
+			Endif
+			If SC6->(FieldPos("C6_FCICOD"))>0 .and. (VS3->(FieldPos("VS3_FCICOD"))>0 .and. !Empty(VS3->VS3_FCICOD) )
+				aAdd(_aIteTempPV,{"C6_FCICOD" , VS3->VS3_FCICOD 				,Nil})
+			Endif                
+			If SC6->(FieldPos("C6_NUMPCOM"))>0 .and. (VS3->(FieldPos("VS3_PEDXML"))>0 .and. !Empty(VS3->VS3_PEDXML) )
+				aAdd(_aIteTempPV,{"C6_NUMPCOM" , VS3->VS3_PEDXML 				,Nil})
+			Endif                
+			If SC6->(FieldPos("C6_ITEMPC"))>0 .and. (VS3->(FieldPos("VS3_ITEXML"))>0 .and. !Empty(VS3->VS3_ITEXML) )
+				aAdd(_aIteTempPV,{"C6_ITEMPC" , VS3->VS3_ITEXML 				,Nil})
+			Endif
+			// NT 2021.004 v1.21 - Alecsandre Ferreira
+			if SC6->(FieldPos("C6_OBSCONT")) > 0 .AND. (VS3->(FieldPos("VS3_OBSCON")) > 0 .and. !Empty(VS3->VS3_OBSCON) )
+				aAdd(_aIteTempPV,{"C6_OBSCONT", VS3->VS3_OBSCON					,Nil})
+			endif          
+			if SC6->(FieldPos("C6_OBSCCMP")) > 0 .AND. (VS3->(FieldPos("VS3_OBSCCM")) > 0 .and. !Empty(VS3->VS3_OBSCCM) )
+				aAdd(_aIteTempPV,{"C6_OBSCCMP", VS3->VS3_OBSCCM					,Nil})
+			endif         
+			if SC6->(FieldPos("C6_OBSFISC")) > 0 .AND. (VS3->(FieldPos("VS3_OBSFIS")) > 0 .and. !Empty(VS3->VS3_OBSFIS) )
+				aAdd(_aIteTempPV,{"C6_OBSFISC", VS3->VS3_OBSFIS					,Nil})
+			endif         
+			if SC6->(FieldPos("C6_OBSFCMP")) > 0 .AND. (VS3->(FieldPos("VS3_OBSFCP")) > 0 .and. !Empty(VS3->VS3_OBSFCP) )
+				aAdd(_aIteTempPV,{"C6_OBSFCMP", VS3->VS3_OBSFCP					,Nil})
+			endif
+			// NT 2021.004 v1.21        
+			If ( ExistBlock("OXX004AIPV") )
+				_aIteTempPV := ExecBlock("OXX004AIPV",.f.,.f.,{_aIteTempPV})
+			EndIf
+			// CUSTOMIZACAO DO ITEM DO PEDIDO DE VENDA MATA410
+			If ( ExistBlock("OX004AIP") )
+				_aIteTempPV := ExecBlock("OX004AIP",.f.,.f.,{_aIteTempPV})
+			EndIf
+			aAdd(_aItePv,aClone(_aIteTempPV))
+
+			VS3->(DBSkip())
+		Enddo
+		If _lExisteReserva 
+			Reclock("VS1",.f.)
+			VS1->VS1_RESERV := "1"
+			VS1->(MsUnlock())
+		Endif 	
+	
+		// PE ANTES DE DESRESERVAR O ITEM
+		If  ExistBlock("OX04RESITE")       // O B S O L E T O
+			VS1->(DbGoto(_nRegVS1))
+		 	If !ExecBlock("OX04RESITE",.F.,.F.,{VS1->VS1_NUMORC})
+				Aadd(_aMsg,"Orçamento "+AllTrim(VS1->VS1_NUMORC)+" com problemas PE OX04RESITE")
+				Break
+			Endif
+		Endif
+		If ExistBlock("OX004RIT")
+			VS1->(DbGoto(_nRegVS1))
+			If !ExecBlock("OX004RIT",.F.,.F.,{VS1->VS1_NUMORC})
+				Aadd(_aMsg,"Orçamento "+AllTrim(VS1->VS1_NUMORC)+" com problemas PE OX004RIT")
+				Break
+			Endif
+		Endif
+
+		//Retirar as reservas
+		VS1->(DbGoto(_nRegVS1))
+		If _lReserva .And. _lExisteReserva
+			if VS1->(FieldPos("VS1_RESERV")) > 0 .and. VS1->VS1_RESERV == "1"
+				HeaderP    	:= {} 							// Variavel ultilizada na OX001RESITE
+				_aReservaCAOA 	:= {VS1->VS1_NUMORC,.F.}	// Variavel utilizada no PE OX001RES
+				_cDocto := VS1->(OX001RESITE(VS1->VS1_NUMORC, .F.))
+				if Empty(_cDocto) .Or. _cDocto == "NA"
+					Aadd(_aMsg,"Orçamento "+AllTrim(VS1->VS1_NUMORC)+" não foi possivel retirar a reserva")
+					Break
+				Endif	
+			EndIf
+		Elseif At("R",OI001GETFASE(VS1->VS1_NUMORC)) != 0 .or. At("T",OI001GETFASE(VS1->VS1_NUMORC)) != 0 ;
+				.And. _lExisteReserva
+			aHeaderP    	:= {} 							// Variavel ultilizada na OX001RESITE
+			_aReservaCAOA 	:= {VS1->VS1_NUMORC,.F.}	// Variavel utilizada no PE OX001RES
+			_cDocto := VS1->(OX001RESITE(VS1->VS1_NUMORC, .F.))
+			if Empty(_cDocto) .Or. _cDocto == "NA"
+				Aadd(_aMsg,"Orçamento "+AllTrim(VS1->VS1_NUMORC)+" não foi possivel retirar a reserva para documentos com fase R")
+				Break
+			Endif	
+		Endif
+
+		_nValFre 	+= VS1->VS1_VALFRE
+		_nValDes 	+= VS1->VS1_DESACE
+		_nValTot 	+= VS1->VS1_VTOTNF
+		_nValDup 	+= VS1->VS1_VALDUP
+		_nValSeg 	+= VS1->VS1_VALSEG
+		_nValST  	+= VS1->VS1_ICMRET
+		_nValIPI 	+= VS1->VS1_VALIPI
+		_nDESACE 	+= VS1->VS1_DESACE
+		_nVALFRE 	+= VS1->VS1_VALFRE
+		_nVALSEG 	+= VS1->VS1_VALSEG
+		//Guardar pesos acumulado para o cabeçalho
+		If VS1->(Fieldpos('VS1_PESOB')) > 0 // Se possui o update dos novos campos processa
+			_nPESOL += VS1->VS1_PESOL
+			_nPESOB += VS1->VS1_PESOB
+			_nVOL1 	+= VS1->VS1_VOLUM1
+			_nVOL2 	+= VS1->VS1_VOLUM2
+			_nVOL3 	+= VS1->VS1_VOLUM3
+			_nVOL4 	+= VS1->VS1_VOLUM4
+		EndIf
+	Next
+
+
+	//Se gera Pedido de Venda, verifica se tem estoque disponivel  #
+	//para atender o pedido                                        #
+	if GetMV("MV_ESTNEG") <> "S"
+		if OFXFA0034_AlgumaPecaSemSaldo(_aOrcs, .t.)
+			Aadd(_aMsg,"Existem Orçamentos sem saldo para faturamento")
+			Break
+		Endif
+	EndIf
+
+	//Pego o ultimo orçamento para referenciar no SC5 cabeçalho
+	VS1->(DbGoto(_nRegVS1))
+
+	//Carrega Cabeçalho
+	_aVendedores := {{VS1->VS1_CODVEN,0},{VS1->VS1_CODVE2,0},{VS1->VS1_CODVE3,0},{VS1->VS1_CODVE4,0},{VS1->VS1_CODVE5,0}}
+	SA3->(DBSetOrder(1))
+	For _nCount := 1 to 5
+		If !Empty(_aVendedores[_nCount,1])
+			SA3->(DBSeek(xFilial("SA3")+_aVendedores[_nCount,1]))
+			_aVendedores[_nCount,2] := SA3->A3_COMIS
+		Endif
+	Next
+
+	_cTipPag := RetCondVei()  //Condição de Pagamento
+
+	aAdd(_aCabPV,{"C5_TIPO"   ,"N"				,Nil})
+	aAdd(_aCabPV,{"C5_CLIENTE",VS1->VS1_CLIFAT  	,Nil})
+	aAdd(_aCabPV,{"C5_LOJACLI",VS1->VS1_LOJA  	,Nil})
+	if ( VS1->(FieldPos("VS1_TIPCLI")) > 0 .And. !Empty(VS1->VS1_TIPCLI) )
+		aAdd(_aCabPV,{"C5_TIPOCLI",VS1->VS1_TIPCLI ,Nil})
+	Else
+		aAdd(_aCabPV,{"C5_TIPOCLI",SA1->A1_TIPO		 ,Nil})
+	endif
+	aAdd(_aCabPV,{"C5_TRANSP" , VS1->VS1_TRANSP  	,Nil})
+	aAdd(_aCabPV,{"C5_CONDPAG", _cTipPag				,Nil})
+	aAdd(_aCabPV,{"C5_VEND1"  , _aVendedores[1,1]	,Nil})
+	aAdd(_aCabPV,{"C5_COMIS1" , _aVendedores[1,2] 	,Nil})
+	aAdd(_aCabPV,{"C5_VEND2"  , _aVendedores[2,1]	,Nil})
+	aAdd(_aCabPV,{"C5_COMIS2" , _aVendedores[2,2]	,Nil})
+	aAdd(_aCabPV,{"C5_VEND3"  , _aVendedores[3,1]	,Nil})
+	aAdd(_aCabPV,{"C5_COMIS3" , _aVendedores[3,2]	,Nil})
+	aAdd(_aCabPV,{"C5_VEND4"  , _aVendedores[4,1]	,Nil})
+	aAdd(_aCabPV,{"C5_COMIS4" , _aVendedores[4,2]	,Nil})
+	aAdd(_aCabPV,{"C5_VEND5"  , _aVendedores[5,1]	,Nil})
+	aAdd(_aCabPV,{"C5_COMIS5" , _aVendedores[5,2]	,Nil})
+	aAdd(_aCabPV,{"C5_EMISSAO", ddatabase         	,Nil})
+	if VS1->(FieldPos("VS1_MENNOT")) > 0
+		aAdd(_aCabPV,{"C5_MENNOTA", VS1->VS1_MENNOT ,Nil})
+		aAdd(_aCabPV,{"C5_MENPAD" , VS1->VS1_MENPAD ,Nil})
+	endif
+	aAdd(_aCabPV,{"C5_MOEDA"  , 1                ,Nil}) // Moeda
+	If !Empty(_cBanco) // Caso exista a informação do banco
+		aAdd(_aCabPV,{"C5_BANCO"  , _cBanco   ,Nil})
+	Else
+		aAdd(_aCabPV,{"C5_BANCO"  , VS1->VS1_CODBCO   ,Nil})
+	EndIf
+	aadd(_aCabPV,{"C5_DESPESA", _nDESACE   ,Nil}) // Despesas na Venda a Integrar na NF
+	aadd(_aCabPV,{"C5_FRETE"  , _nVALFRE   ,Nil}) // Despesas na Venda a Integrar na NF
+	aadd(_aCabPV,{"C5_SEGURO" , _nVALSEG   ,Nil}) // Despesas na Venda a Integrar na NF
+	aadd(_aCabPV,{"C5_TPFRETE", VS1->VS1_PGTFRE   ,Nil})
+	If VS1->(Fieldpos('VS1_PESOB')) > 0 // Se possui o update dos novos campos processa
+		aAdd(_aCabPV, {"C5_PESOL"  , _nPESOL  , Nil})
+		aAdd(_aCabPV, {"C5_PBRUTO" , _nPESOB  , Nil})
+		aAdd(_aCabPV, {"C5_VEICULO", VS1->VS1_VEICUL , Nil})
+		aAdd(_aCabPV, {"C5_VOLUME1", _nVOL1 , Nil})
+		aAdd(_aCabPV, {"C5_VOLUME2", _nVOL2 , Nil})
+		aAdd(_aCabPV, {"C5_VOLUME3", _nVOL3 , Nil})
+		aAdd(_aCabPV, {"C5_VOLUME4", _nVOL4 , Nil})
+		aAdd(_aCabPV, {"C5_ESPECI1", VS1->VS1_ESPEC1 , Nil})
+		aAdd(_aCabPV, {"C5_ESPECI2", VS1->VS1_ESPEC2 , Nil})
+		aAdd(_aCabPV, {"C5_ESPECI3", VS1->VS1_ESPEC3 , Nil})
+		aAdd(_aCabPV, {"C5_ESPECI4", VS1->VS1_ESPEC4 , Nil})
+	EndIf
+
+	If SC5->(FieldPos("C5_NATUREZ")) <> 0
+		aAdd(_aCabPV,{"C5_NATUREZ" , VS1->VS1_NATURE , Nil } ) // Natureza no Pedido
+	EndIf
+	If SC5->(FieldPos("C5_INDPRES")) > 0 .and. ( VS1->(FieldPos("VS1_INDPRE")) > 0 .and. !Empty(VS1->VS1_INDPRE) )
+		aAdd(_aCabPV, {"C5_INDPRES",  VS1->VS1_INDPRE , Nil}) //Presenca do Comprador
+	Endif
+	If SC5->(FieldPos("C5_NTEMPEN")) > 0 .And. ( VS1->(FieldPos("VS1_NTEMPE")) > 0 .and. !Empty(VS1->VS1_NTEMPE) )
+		aAdd(_aCabPV, {"C5_NTEMPEN",  VS1->VS1_NTEMPE , Nil}) // Nt Empenho
+	EndIf
+	If SC5->(FieldPos("C5_CODA1U")) > 0 .and. ( VS1->(FieldPos("VS1_CODA1U")) > 0 .and. !Empty(VS1->VS1_CODA1U) )
+		aAdd(_aCabPV, {"C5_CODA1U",  VS1->VS1_CODA1U , Nil})
+	Endif
+
+	//Pego o ultimo orçamento para a referenciar no SC5 cabeçalho
+	// PE ANTES DA MONTAGEM DO PEDIDO DE VENDA
+	if ExistBlock("OXX004AMPV") // O B S O L E T O
+		VS1->(DbGoto(_nRegVS1))
+		if !ExecBlock("OXX004AMPV",.f.,.f.)
+			Aadd(_aMsg,"Retorno PE OXX004AMPV não esta permitindo faturamento")
+			Break
+		Endif
+	Endif
+
+	//Pego o ultimo orçamento para a referenciar no SC5 cabeçalho
+	if ExistBlock("OX004AMP")
+		VS1->(DbGoto(_nRegVS1))
+		if !ExecBlock("OX004AMP",.f.,.f.)
+			Aadd(_aMsg,"Retorno PE OX004AMP não esta permitindo faturamento")
+			Break
+		Endif
+	Endif
+
+	// PE ANTES DA GERACAO DO PEDIDO DE VENDA
+	if ExistBlock("OXX004APV")
+		//Pego o ultimo orçamento par a referenciar no SC5 cabeçalho
+		VS1->(DbGoto(_nRegVS1))
+		if !ExecBlock("OXX004APV",.f.,.f.)
+			Aadd(_aMsg,"Retorno PE OXX004APV não esta permitindo faturamento")
+			Break
+		Endif
+	Endif
+	if ExistBlock("OX004APV")
+		//Pego o ultimo orçamento par a referenciar no SC5 cabeçalho
+		VS1->(DbGoto(_nRegVS1))
+		if !ExecBlock("OX004APV",.f.,.f.)
+			Aadd(_aMsg,"Retorno PE OX004APV não esta permitindo faturamento")
+			Break
+		Endif
+	Endif
+
+	//Pego o ultimo orçamento par a referenciar no SC5 cabeçalho
+	VS1->(DbGoto(_nRegVS1))
+	ZPECFTONEG() // Carrega negociacao quando condicao de pagamento do tipo 9 ou A verifica VS9
+
+	// CHAMADA DO MATA410 COM OS DADOS DA INTEGRACAO #
+	Private lMsErroAuto 	:= .F.	// variável que define que o help deve ser gravado no arquivo de log e que as informações estão vindo à partir da rotina automática.
+	//Private lMsHelpAuto 	:= .T.  // força a gravação das informações de erro em array para manipulação da gravação ao invés de gravar direto no arquivo temporário 
+	Private lAutoErrNoFile 	:= .T.  //Variavel de Controle do GetAutoGRLog
+
+	MSExecAuto({|x,y,z|Mata410(x,y,z)},_aCabPV,_aItePv,3)
+	//
+	If lMsErroAuto
+		_cErro := "[ZPECFTORC] Problemas no execauto Mata410" + CRLF
+		// se estiver em debug, pega o log inteiro do erro para uma analise mais detalhada
+		_aError := GetAutoGRLog()
+		For _nPos := 1 To Len(_aError)
+			If !Empty((AllTrim(_aError[_nPos])))  	
+				_cErro	+= 	AllTrim(_aError[_nPos]) + CRLF
+			EndIf		
+		Next _nPos			
+		Aadd(_aMsg,_cErro)
+		Break 
+	EndIf
+	// Liberacao de pedidos
+	Ma410LbNfs( 2, @_aPvlNfs, @_aBloqueio )
+	// Checa itens liberados
+	Ma410LbNfs( 1, @_aPvlNfs, @_aBloqueio )
+
+	_cPedido := SC5->C5_NUM
+/*
+	If Len(_aBloqueio) > 0
+		_cErro := "Existe bloqueio de Crédito para a aprovação do Pedido "+_cPedido+" o mesmo não será gravado"
+		Aadd(_aMsg,_cErro)
+		_lRet := .F. 
+		Break
+	Endif 
+*/
+	If VS1->(FieldPos("C5_NUMORC")) > 0
+		reclock("SC5",.f.)
+		SC5->C5_NUMORC = VS1->VS1_NUMORC
+		MsUnlock()
+	Endif
+	_lRet := .T.
+	/*
+	lCredito := .t.
+	lEstoque := .t.
+	lLiber   := .t.
+	lTransf  := .f.
+	
+	SC9->(dbSetOrder(1))
+	SC6->(dbSetOrder(1))
+	SC6->(dbSeek(xFilial("SC6") + SC5->C5_NUM + "01"))
+	While !SC6->(Eof()) .and. SC6->C6_FILIAL == xFilial("SC6") .and. SC6->C6_NUM == SC5->C5_NUM
+
+		If !SC9->(dbSeek(xFilial("SC9")+SC5->C5_NUM+SC6->C6_ITEM))
+			nQtdLib := SC6->C6_QTDVEN
+			nQtdLib := MaLibDoFat(SC6->(RecNo()),nQtdLib,@lCredito,@lEstoque,.F.,(!lESTNEG),lLiber,lTransf)
+		EndIf
+
+		SC6->(dbSkip())
+	Enddo
+	*/
+End Sequence 
+Return _lRet 
+
+
+
+
+//Gerar nota fiscal
+Static Function ZPECFTORFT(_cPedido, _cNota, _cSerie, _aRegVS1, _aMsg)
+Local _lRet 		:= .F.
+Local _nPrcVen		:= 0
+Local _cCliente 	:= ""
+Local _cLoja		:= "" 
+Local _cAtuGerFin	:= ""
+Local _nModBkp 		:= nModulo
+Local _cModBkp 		:= cModulo
+Local _cPrefBAL 	:= GetNewPar("MV_PREFBAL","BAL")
+Local _cTipPer     	:= Left(Alltrim(GetNewPar("MV_TIPPER","TP"))+space(3),Len(SE1->E1_TIPO)) // Tipo de Titulo Provisorio
+Local _aPvlNfs		:= {}
+Local _cSerieHYU 	:= Alltrim(SuperGetmv("ZCD_FAT001",.F.,"")) //Serie HYU (Barueri)
+Local _cSerieCHE 	:= Alltrim(SuperGetmv("ZCD_FAT002",.F.,"")) //Serie Che (Barueri)
+Local _cSerieSBR 	:= Alltrim(SuperGetmv("ZCD_FAT003",.F.,"")) //Serie SBR (Barueri)
+
+Local _cPrefNF
+Local _lMostraCtb	
+Local _lAglutCtb 	
+Local _lCtbOnLine	
+Local _lCtbCusto 	
+Local _lReajuste 	
+Local _cPrefAnt
+Local _cMens
+Local _cStatusAnt
+Local _nPos
+
+Default _cPedido:= ""
+Default _cNota 	:= ""
+Default _cSerie	:= ""
+
+Begin Sequence
+	If Empty(_cPedido)
+   		Aadd(_aMsg, "Pedido não informado para faturamento")
+  		Break
+	Endif
+
+	SC5->(DbSetOrder(1))
+	SC6->(DbSetOrder(1))
+	SE4->(DbSetOrder(1))
+	SB1->(DbSetOrder(1))
+	SB2->(DbSetOrder(1))
+	SF4->(DbSetOrder(1))
+	SC9->(DbSetOrder(2)) //C9_FILIAL+C9_CLIENTE+C9_LOJA+C9_PEDIDO+C9_ITEM
+
+	If _cPedido <> SC5->C5_NUM 
+		If !SC5->(DbSeek(FWxFilial("SC5")+_cPedido))
+     		Aadd(_aMsg, "Não localizado Pedido "+_cPedido+" para faturamento")
+	  		Break
+		Endif 
+	Endif
+
+    //Carregar perguntas
+	Pergunte("MT460A",.F.) 
+	_lMostraCtb := MV_PAR01 == 1
+	_lAglutCtb  := MV_PAR02 == 1
+	_lCtbOnLine := MV_PAR03 == 1
+	_lCtbCusto  := MV_PAR04 == 1
+	_lReajuste  := MV_PAR05 == 1
+	_cCliente 	:= SC5->C5_CLIENTE
+	_cLoja		:= SC5->C5_LOJACLI 
+
+	SA1->(DBSeek(xFilial("SA1")+VS1->VS1_CLIFAT+VS1->VS1_LOJA))
+	_lPeriodico := .F.
+	If SA1->A1_COND == VS1->VS1_FORPAG .And. !Empty(SA1->A1_COND)
+		_lPeriodico := .t.
+	Endif
+
+	SC6->(DbGotop())
+	If !SC6->( DbSeek(xFilial('SC6') + _cPedido) )
+      	Aadd(_aMsg, "Itens do Pedido "+_cPedido+" nao localizado para faturamento")
+	  	Break
+	Endif
+	
+    While SC6->( !Eof() ) .AND. SC6->C6_FILIAL == FWxFilial("SC6") .And.  SC6->C6_NUM ==  _cPedido
+      	If !SC9->( DbSeek( xFilial('SC9') + _cCliente + _cLoja + SC6->C6_NUM + SC6->C6_ITEM) )
+        	Aadd(_aMsg, "Pedido "+_cPedido+" não esta Liberados Para Faturamento")
+			_lRet := .F.
+        	Break
+      	Endif
+      	// Posiciona na condicao de pagamento
+      	SE4->( DbSeek(xFilial('SE4') + SC5->C5_CONDPAG) )
+      	// Posiciona no produto
+      	SB1->( DbSeek(xFilial('SB1') + SC6->C6_PRODUTO) )
+      	// Posiciona no saldo em estoque
+      	SB2->( DbSeek(xFilial('SB2') + SC6->C6_PRODUTO + SC6->C6_LOCAL) )
+      	// Posiciona no TES
+      	SF4->( DbSeek(xFilial('SF4') + SC6->C6_TES) )
+      	// Converte o valor unitario em Reais quando pedido em outra moeda
+      	_nPrcVen := SC9->C9_PRCVEN
+		//INDICAR SE USA FINACEIRO
+		If SF4->F4_DUPLIC == "S"
+			If Alltrim(SE4->E4_TIPO)=="A"
+				_cAtuGerFin := "0"
+			Else
+				_cAtuGerFin := "1"
+			Endif
+		Endif
+
+		/* JA ESTA GRAVADO NO SE5 DAC, ESTA CONDIÇÃO EXISTE NO OGIXX004
+		// Altera natureza para gerar o titulo na natureza correta ...
+		if !(Alltrim(SE4->E4_TIPO) $ "A.9")
+			if !Empty(VS1->VS1_NATURE)
+				If c1DUPNAT == "SA1->A1_NATUREZ" .and. SA1->A1_NATUREZ <> VS1->VS1_NATURE
+					lAltSA1 := .t.
+					cBkpNatSA1 := SA1->A1_NATUREZ
+					RecLock("SA1",.f.)
+					SA1->A1_NATUREZ := VS1->VS1_NATURE
+					SA1->(MsUnLock())
+				EndIf
+   				nRecSA1 := SA1->(Recno())
+	        Endif
+        Endif
+		*/
+      	// Monta array para gerar a nota fiscal
+      	Aadd(_aPvlNfs,{	SC9->C9_PEDIDO	,;  //01
+						SC9->C9_ITEM	,;  //02
+						SC9->C9_SEQUEN	,;  //03
+						SC9->C9_QTDLIB	,;  //04
+						_nPrcVen		,;  //05
+						SC9->C9_PRODUTO	,;  //06
+						.F.				,;  //07
+						SC9->(RecNo())	,;  //08
+						SC5->(RecNo())	,;  //09
+						SC6->(RecNo())	,;  //10
+						SE4->(RecNo())	,;  //11
+						SB1->(RecNo())	,;  //12
+						SB2->(RecNo())	,;  //13
+						SF4->(RecNo())	,;  //14
+						SC6->C6_LOCAL	,;  //15
+						1				,;  //16
+						SC9->C9_QTDLIB2	}	)
+			
+      	SC6->( DBSkip() )
+    EndDo
+	nModulo := 5
+	cModulo := "FAT"
+
+
+//	lUsaNewKey := GetSX3Cache("F2_SERIE","X3_TAMANHO") == 14 // Verifica se o novo formato de gravacao do Id nos campos _SERIE esta em uso
+//	cSerieId   := IIf( lUsaNewKey , SerieNfId("SF2",4,"F2_SERIE",dDataBase,A460Especie(cSerie),cSerie) , cSerie )
+
+//	lContinua := Sx5NumNota(@cSerie,SuperGetMV("MV_TPNRNFS"),,,,@cSerieId,dDataBase ) // O parametro cSerieId deve ser passado para funcao Sx5NumNota afim de tratar a existencia ou nao do mesmo numero na funcao VldSx5Num do MATXFUNA.PRX
+
+	//Private cSerie    := ""
+	//lRet := SX5NumNota(@cSerie, GetNewPar("MV_TPNRNFS","1"))
+
+	//_lRet := SX5NumNota(@_cSerie, GetNewPar("MV_TPNRNFS","1"))
+	//If !_lRet
+	//	Aadd(_aMsg,"Não foi possivel criar numero da Nota Fiscal") 
+	//	Break
+	//Endif
+ 	//Criar a Série da NF caso não exista
+ 	//_RetVar := CriaSerSx5(SC5->C5_SERIE)
+    
+    //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+    //³Valida a inclusao da Nota Fiscal. ³
+    //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	// CHAMADA DO MATA410 COM OS DADOS DA INTEGRACAO #
+	_cSerie := ""
+    If FWFilial() == "2001" //Barueri CD
+   		If VS1->VS1_XMARCA $ "HYU"
+            _cSerie := AllTrim(_cSerieHYU)
+        ElseIf VS1->VS1_XMARCA $ "CHE"
+            _cSerie := AllTrim(_cSerieCHE)
+        ElseIf VS1->VS1_XMARCA $ "SBR"
+            _cSerie := AllTrim(_cSerieSBR)
+        Endif
+    Endif 
+	If Empty(_cSerie)	
+   		Aadd(_aMsg, "PProblemas com Série não foi possivel faturar")
+		Break
+	Endif
+
+	Private lMsErroAuto 	:= .F.	// variável que define que o help deve ser gravado no arquivo de log e que as informações estão vindo à partir da rotina automática.
+	//Private lMsHelpAuto 	:= .T.  // força a gravação das informações de erro em array para manipulação da gravação ao invés de gravar direto no arquivo temporário 
+	Private lAutoErrNoFile 	:= .T.  //Variavel de Controle do GetAutoGRLog
+	_cNota := MaPvlNfs( _aPvlNfs,;         //1
+					   _cSerie,;			 //2
+					   (mv_par01 == 1),; //3
+					   (mv_par02 == 1),; //4
+					   (mv_par03 == 1),; //5
+					   (mv_par04 == 1),; //6
+					   .F.,;					//7
+					    0,;					//8
+					    0,; 					//9
+					   .T.,;					//10
+					   .F.,;					//11
+						,;          		//12
+						{ |x| OX100VS9E1(x,_cPrefBal,(SE4->E4_TIPO == "9"),_lPeriodico,_cTipPer) } ,;  //13
+						,;          		//14
+						,;          		//15
+						,)          		//16
+								
+
+
+	If lMsErroauto
+		_cErro := "[ZPECFTORC] Problemas no execauto MaPvlNfs" + CRLF
+		// se estiver em debug, pega o log inteiro do erro para uma analise mais detalhada
+		_aError := GetAutoGRLog()
+		For _nPos := 1 To Len(_aError)
+			If !Empty((AllTrim(_aError[_nPos])))  	
+				_cErro	+= 	AllTrim(_aError[_nPos]) + CRLF
+			EndIf		
+		Next
+		AAdd(_aMsg,_cErro)
+		Break
+	EndIf
+
+	_cNota 		:= PadR(_cNota		,TAMSX3("F2_DOC")[1])
+	_cSerie 	:= PadR(_cSerie		,TAMSX3("F2_SERIE")[1])
+	_cCliente 	:= PadR(_cCliente	,TAMSX3("F2_CLIENTE")[1])
+	_cLoja 		:= PadR(_cLoja		,TAMSX3("F2_LOJA")[1])
+
+    If Empty(_cNota)
+     	_cMens := "Problema ocorrido na gravação da Not Fiscal de Saida verificar tabelas relacionadas com processo, Pedido "+cPedido
+       	Aadd(_aMsg, _cMens)
+      	Break
+    Endif 
+    SF2->(dbSetOrder(1))	//F2_FILIAL+F2_DOC+F2_SERIE+F2_CLIENTE+F2_LOJA+F2_FORMUL+F2_TIPO
+    If !(SF2->( dbSeek( xFilial("SF2") + _cNota + _cSerie + _cCliente + _cLoja ) ))
+   	 	_cMens := "Problema ocorrido na gravação da Nota Fiscal de Saida "+_cNota +" serie "+ _cSerie+". Nota Fiscal ja cadastrada, mas nao foi gerada Nota Fiscal para o pedido "+_cPedido
+       	Aadd(_aMsg, _cMens)
+	    Break
+    EndIf
+	//Gravar dados da nova
+	Reclock("SF2",.f.)
+	_cPrefAnt 		:= SF2->F2_PREFIXO
+	SF2->F2_PREFORI := _cPrefBAL
+	_cPrefNF 		:= &(GetNewPar("MV_1DUPREF","cSerie"))
+	SF2->F2_PREFIXO := _cPrefNF
+	SF2->(MsUnLock())
+
+	//Atualizar financeiro caso exista
+	_lFinanceiro	:= .F.
+	If !Empty(SF2->F2_DUPL)
+		BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT 	ISNULL(SE1.R_E_C_N_O_,0) NREGSE1
+			FROM  	%Table:SE1% SE1
+			WHERE 	SE1.E1_FILIAL 	= %xFilial:SE1%
+				AND SE1.E1_PREFIXO 	= %Exp:_cPrefAnt%
+				AND SE1.E1_NUM		= %Exp:SF2->F2_DUPL%
+				AND SE1.%notDel%
+		EndSql
+		While (_cAliasPesq)->(!Eof())
+			SE1->(DbGoto((_cAliasPesq)->NREGSE1))
+			If RecLock("SE1",.F.)		
+				SE1->E1_PREFIXO := SF2->F2_PREFIXO
+				SE1->E1_PREFORI := SF2->F2_PREFORI
+				if _lPeriodico
+					SE1->E1_TIPO := _cTipPer // MV_TIPPER - Tipo de Titulo Provisorio
+				Endif
+				SE1->(MsUnLock())
+			Endif 
+			_lFinanceiro := .T.	
+			(_cAliasPesq)->(DbSkip())
+		EndDo 
+	EndIf
+	//atualizar orçamento
+	For _nPos := 1 To Len(_aRegVS1)
+		VS1->(DbGoto(_aRegVS1[_nPos]))
+		_cStatusAnt 	:= VS1->VS1_STATUS
+		RecLock("VS1",.f.)
+		VS1->VS1_STATUS := "X"
+		VS1->VS1_FORPAG := SC5->C5_CONDPAG  //cTipPag // Gravar o VS1_FORPAG em todos os Orcamentos
+		VS1->VS1_CFNF   := "1"  //indica 1=NF  2=Cupon Fiscal 
+		VS1->VS1_NUMPED := SC5->C5_NUM
+		VS1->VS1_NUMNFI := _cNota
+		VS1->VS1_SERNFI := _cSerie
+		If VS1->(FieldPos("VS1_STARES")) > 0 
+			VS1->VS1_STARES := "3"
+		Endif
+		If VS1->(FieldPos("VS1_GERFIN")) > 0
+			VS1->VS1_GERFIN := _cAtuGerFin
+		Endif
+		//Caso gerou financeiro
+		VS1->VS1_GERFIN := IIf(_lFinanceiro,"1","0")
+		VS1->(MsUnLock())
+
+		If ExistFunc("OA3700011_Grava_DTHR_Status_Orcamento")
+			OA3700011_Grava_DTHR_Status_Orcamento( VS1->VS1_NUMORC , VS1->VS1_STATUS , "Alterado Status anterior "+_cStatusAnt ) // Grava Data/Hora na Mudança de Status do Orçamento / Orçamento por Fases
+		EndIf
+		If FindFunction("FM_GerLog")
+			//grava log das alteracoes das fases do orcamento
+			FM_GerLog("F",VS1->VS1_NUMORC,,VS1->VS1_FILIAL,_cStatusAnt)
+		EndIF
+	Next _nPos
+
+	// DEPOIS DA GERACAO DA NOTA FISCAL
+	if ExistBlock("OX004DNF")
+		if !ExecBlock("OX004DNF",.f.,.f.)
+			Break
+		Endif
+	Endif
+	//
+	FM_GVECVSC(SF2->F2_DOC,SF2->F2_SERIE,"VEC")
+	//
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ TEMPORARIO - Desbloqueia SX6 pois a MAPVLNFS esta na dentro da Transacao ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	SX6->(MsRUnLock())
+    _lRet := .T.
+End Sequence
+
+nModulo := _nModBkp
+cModulo := _cModBkp
+
+If Select((_cAliasPesq)) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif 
+Return _lRet
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+/*/{Protheus.doc} OX004GERFIN
+Funcao responsavel por gerar o Financeiro 
+@author Manoel
+@since 29/11/2017
+@version 1.0
+/*/
+
+/*
+Static Function ZPECFTORFI(_aRegVS1,_cNota,_cSerie)
+Local _cAliasPesq	:= GetNextAlias()
+Local _cDupNat    	:= GetMV("MV_1DUPNAT")
+
+Local _cFinanceiro	:= ""
+Local _cTipo 		:= ""
+Local _nPosCpo
+Local _cPrefNF
+Local _nParcelas
+Local _cParcela
+Local _cNumOrc
+Local _cNatureza
+Local _cCodBco
+Local _cTipCob
+Local _cNumBord 
+Local _dDatBord 
+
+
+
+Local cPrefNF     := ""
+Local cNatureza   := ""
+Local nCntFor     := 0
+Local cNumPed     := ""
+Local _nRecSC5    := 0
+Local _nRecSA1    := 0
+Local lVS1_GERFIN := ( VS1->(FieldPos("VS1_GERFIN")) > 0 )
+Local cQuery      := ""
+Local cAliasVS1   := "SQLVS1"
+
+
+//#############################################################################
+//# Gravacao dos Titulos a receber                                            #
+//#############################################################################
+if Alltrim(SE4->E4_TIPO)=="A" .and. SF4->F4_DUPLIC == "S"
+
+
+
+Begin Sequence 
+	_nPosCpo := Ascan(_aFin,{|x| x[1] == "E4_TIPO"})
+	If _nPosCpo > 0
+		_cTipo   := _aFin[_nPosCpo,2]
+	Endif	
+	_nPosCpo := Ascan(_aFin,{|x| x[1] == "F4_DUPLIC"})
+	If _nPosCpo > 0
+		_cFinanceiro := _aFin[_nPosCpo,2]
+	Endif 
+	//Verifica se a fatura é A Vista e se gera financeiro, caso necessário grava os titulos a recebe
+	If AllTrim(_cTipo) == "A" .Or. _cFinanceiro == "S"
+		SA3->(DbSetOrder(1))
+		_cPrefNF := &(GetNewPar("MV_1DUPREF","_cSerie"))
+		_nParcelas := 0
+		//Passar por todos os orçamentos para verificar se possuem titulos ja pagos
+		For _nPos := 1 To Len(_aRegVS1)
+			VS1->(DbGoto(_aRegVS1[_nPos]))
+			_cNumOrc := VS1.VS1_NUMORC
+			BeginSql Alias _cAliasPesq //Define o nome do alias temporário 			
+				SELECT 	  ISNULL(VS9.R_E_C_N_O_,0) NREGVS9
+						, ISNULL(SA3.R_E_C_N_O_,0) NREGSA3
+
+				FROM %Table:VS9% VS9
+				JOIN %Table:SA3% SA3
+					ON  SA3.SA3_FILIAL  = %xFilial:SA3%
+					AND SA3.A3_COD		= %Exp:VS1->VS1_CODVEN%
+					AND SA3.%notDel%
+
+
+				WHERE 	VS9.VS9_FILIAL 	= %xFilial:VS9% 
+					AND VS9.VS9_NUMIDE	= %Exp:_cNumOrc%
+					AND VS9.%notDel%
+			EndSql
+
+			If (_cAliasPesq)->(Eof()) .or. (_cAliasPesq)->NREGVS9 == 0
+				Break 
+			Endif	
+
+			_cNatureza := VS9->VS9_NATURE
+			//
+			if Empty(_cNatureza) .and. !Empty(VS1->VS1_NATURE)
+				_cNatureza := VS1->VS1_NATURE
+			EndIf
+			if Empty(_cNatureza) .and. !Empty(SA1->A1_NATUREZ)
+				_cNatureza := SA1->A1_NATUREZ
+			EndIf
+			If Empty(cNatureza)
+				cNatureza := _cDupNat
+			Endif
+			_cCodBco :=  VS9->VS9_PORTAD  
+			_cTipCob  := if(!Empty(_cCodBco),"1","0") // TODO:
+			if Empty(_cCodBco)
+				_cCodBco := VS1->VS1_CODBCO
+				if Empty(_cCodBco)
+					_cCodBco := GetNewPar("MV_BCOCXA","")
+					Break
+					Endif
+				Endif
+			endif
+			//
+			FG_Seek("SA6","_cCodBco",1,.f.)
+			if SA6->A6_BORD == "0"
+				_cNumBord := "BCO"+SA6->A6_COD
+				_dDatBord := dDataBase
+			Else
+				_cNumBord :=""
+				_dDatBord := cTod("")
+			Endif
+			//
+			_nParcelas ++
+			if TamSx3("E1_PARCELA")[1] = 1
+				_cParcela := ConvPN2PC(_nParcelas)
+			Else
+				_cParcela := Soma1( strzero(_nParcelas-1,TamSx3("E1_PARCELA")[1]) )
+			Endif
+
+			If lVS1_VLBRNF .and. VS1->VS1_VLBRNF == "0" .and. lVS1_FPGBAS .and. !Empty(VS1->VS1_FPGBAS) .and. !lMultOrc
+				nValTit := aParcBRNF[nCntFor,2]
+			Else
+				nValTit := oGetP004:aCols[nCntFor,FG_POSVAR("VS9_VALPAG","aHeaderCP")]
+			EndIf
+			//
+			aTitulo := {{"E1_PREFIXO" ,cPrefNF																	,Nil},;
+			{"E1_NUM"     ,_cNota 																				,Nil},;
+			{"E1_PARCELA" ,cParcela																				,Nil},;
+			{"E1_TIPO"    ,oGetP004:aCols[nCntFor,FG_POSVAR("VS9_TIPPAG","aHeaderCP")]	,Nil},;
+			{"E1_NATUREZ" , _cNatureza																			,Nil},;
+			{"E1_SITUACA",cTipCob			  																	,Nil},;
+			{"E1_CLIENTE" ,SF2->F2_CLIENTE																,Nil},;
+			{"E1_LOJA"    ,SF2->F2_LOJA																		,Nil},;
+			{"E1_EMISSAO" ,dDataBase																			,Nil},;
+			{"E1_VENCTO"  ,oGetP004:aCols[nCntFor,FG_POSVAR("VS9_DATPAG","aHeaderCP")]     		        		,Nil},;
+			{"E1_VENCREA" ,DataValida(oGetP004:aCols[nCntFor,FG_POSVAR("VS9_DATPAG","aHeaderCP")]) 				,Nil},;
+			{"E1_VALOR"   ,nValTit													    			         	,Nil},;
+			{"E1_NUMBOR"  ,cNumBord																				,Nil},;
+			{"E1_DATABOR" ,dDatBord																				,Nil},;
+			{"E1_PORTADO" ,cCodBco																				,Nil},;
+			{"E1_PREFORI" ,cPrefBAL 																			,Nil},;
+			{"E1_VEND1"  , SA3->A3_COD																		,nil},;
+			{"E1_COMIS1" , SA3->A3_COMIS																	,nil},;
+			{"E1_BASCOM1", oGetP004:aCols[nCntFor,FG_POSVAR("VS9_VALPAG","aHeaderCP")]							,nil},;
+			{"E1_PEDIDO" , cNumPed																				,nil},;
+			{"E1_NUMNOTA", _cNota				  																,nil},;
+			{"E1_ORIGEM" , "MATA460"																			,nil},;
+			{"E1_SERIE"  , _cSerie																				,nil} }
+
+			cMsgErr := OX0040143_LogArrayExecAuto(aTitulo)
+			pergunte("FIN040",.F.)
+			//
+			_nRecSA1 := SA1->(Recno())//Salva posicao SA1
+			//
+
+			//PE para permitir a manipulação do vetor aTitulo
+			If ExistBlock("OX004TIT")
+				aTitulo := ExecBlock("OX004TIT",.f.,.f.,{aTitulo,oGetP004:aCols[nCntFor]})
+				
+				cMsgErr +=  CRLF + CRLF + "OX004TIT" + CRLF + OX0040143_LogArrayExecAuto(aTitulo)
+
+			EndIf
+
+			lMsErroAuto := .f.
+			MSExecAuto({|x| FINA040(x)},aTitulo)
+			//
+			SA1->(Dbgoto(_nRecSA1))//Volta posicao SA1
+			//
+			If lMsErroAuto
+				DisarmTransaction()
+				cMsgErr +=  CRLF + CRLF + "lMsErroAuto" + CRLF + MostraErro()
+
+				aLogVQL := {}
+
+				cVQLDados := STR0093
+
+				//Gerar log de execução no VQL
+				aAdd(aLogVQL,{'VQL_AGROUP'     , 'OFIXX004'                })
+				aAdd(aLogVQL,{'VQL_TIPO'       , 'VS1-' + VS1->VS1_NUMORC  })
+				aAdd(aLogVQL,{'VQL_FILORI'     , VS1->VS1_FILIAL           })
+				aAdd(aLogVQL,{'VQL_DADOS'      , cVQLDados }) // 'PROBLEMA NA GERAÇÃO DAS PARCELAS'
+
+				If VQL->(FieldPos("VQL_MSGLOG")) > 0
+					aAdd(aLogVQL,{'VQL_MSGLOG'     , cMsgErr })
+				EndIf
+
+				cTblLogCod := oLogger:LogToTable(aLogVQL)
+
+				Return .f.
+			EndIf
+			//
+		endif
+	next
+endif
+//
+// #######################################
+// # BAIXA AUTOMATICA DO TITULO A VISTA  #
+// #######################################
+if GetNewPar("MV_BXPEC","N") == "S"
+	DBSelectArea("SE1")
+	DBSetOrder(1)
+	DBSeek(xFilial("SE1")+cPrefNF+_cNota)
+	//
+	while !eof() .and. Alltrim(xFilial("SE1")+cPrefNF+_cNota) == Alltrim(SE1->E1_FILIAL+SE1->E1_PREFIXO+SE1->E1_NUM)
+		//
+		if SE1->E1_VENCTO == ddatabase
+			aBaixa  := {;
+				{"E1_PREFIXO"  ,E1_PREFIXO             ,Nil } ,;
+				{"E1_NUM"	   ,E1_NUM                 ,Nil } ,;
+				{"E1_PARCELA"  ,E1_PARCELA             ,Nil } ,;
+				{"E1_TIPO"	   ,E1_TIPO                ,Nil } ,;
+				{"AUTMOTBX"	   ,"NOR"                  ,Nil } ,;
+				{"AUTDTBAIXA"  ,dDataBase              ,Nil } ,;
+				{"AUTDTCREDITO",dDataBase              ,Nil } ,;
+				{"AUTHIST"	   ,"BAIXA AUTOMATICA"     ,Nil } ,;
+				{"AUTVALREC"   ,SE1->E1_VALOR          ,Nil }}
+			//
+
+			//PE criado para passagem de parâmetros customizados no ExecAuto do FINA070, seguindo o parâmetro MV_BXPEC
+			If ExistBlock("OX004BXF")
+				aBaixa := ExecBlock("OX004BXF", .F., .F., aBaixa)
+			Endif
+
+			MSExecAuto({|x| FINA070(x)},aBaixa)
+			//
+			If lMsErroAuto
+				DisarmTransaction()
+				cMsgErr := VarInfo("",aBaixa,NIL,.F.,.F.)
+				cMsgErr +=   CRLF + CRLF + "lMsErroAuto" + CRLF + MostraErro()
+
+				aLogVQL := {}
+
+				cVQLDados := STR0094
+				//Gerar log de execução no VQL
+				aAdd(aLogVQL,{'VQL_AGROUP'     , 'OFIXX004'         })
+				aAdd(aLogVQL,{'VQL_TIPO'       , 'VS1-' + VS1->VS1_NUMORC         })
+				aAdd(aLogVQL,{'VQL_FILORI'     , VS1->VS1_FILIAL           })
+				aAdd(aLogVQL,{'VQL_DADOS'      , cVQLDados }) // "PROBLEMA NA BAIXA AUTOMÁTICA DAS PARCELAS A VISTA"
+
+				If VQL->(FieldPos("VQL_MSGLOG")) > 0
+					aAdd(aLogVQL,{'VQL_MSGLOG'     , cMsgErr })
+				EndIf
+
+				cTblLogCod := oLogger:LogToTable(aLogVQL)
+
+				Return .f.
+			EndIf
+		EndIf
+		DBSelectArea("SE1")
+		DBSkip()
+	enddo
+Endif
+//
+//////////////////////////////////////////////////////////////////////
+// Gravar o F2_VALFAT com a soma de todos os titulos referente a NF //
+//////////////////////////////////////////////////////////////////////
+If !Empty(VS1->VS1_NUMNFI+VS1->VS1_SERNFI)
+	dbSelectArea("SF2")
+	dbSetOrder(1)
+	If dbSeek(xFilial("SF2")+VS1->VS1_NUMNFI+VS1->VS1_SERNFI)
+		RecLock("SF2",.f.)
+		SF2->F2_DUPL := VS1->VS1_NUMNFI
+		SE4->(DBSetOrder(1))
+		If SE4->(dbSeek(xFilial("SE4")+SF2->F2_COND)) .and. SE4->E4_TIPO == "A"
+			SE1->(Dbgoto(SE1->(RecNo()))) // Reposiciona no SE1 para ser considerado no SQL dentro da transacao
+			SF2->F2_VALFAT := FMX_VALFIN( SF2->F2_PREFIXO , SF2->F2_DUPL , SF2->F2_CLIENTE , SF2->F2_LOJA )
+		EndIf
+		MsUnLock()
+	EndIf
+EndIf
+//
+If lVS1_GERFIN
+	cQuery := "SELECT VS1.R_E_C_N_O_ AS RECVS1 "
+	cQuery += "FROM "
+	cQuery += RetSqlName( "VS1" ) + " VS1 " 
+	cQuery += "WHERE " 
+	cQuery += "VS1.VS1_FILIAL = '"+xFilial("VS1") +"' AND "
+	cQuery += "VS1.VS1_NUMNFI = '"+VS1->VS1_NUMNFI+"' AND "
+	cQuery += "VS1.VS1_SERNFI = '"+VS1->VS1_SERNFI+"' AND "
+	cQuery += "VS1.D_E_L_E_T_=' '"		
+	dbUseArea( .T., "TOPCONN", TcGenQry(,,cQuery), cAliasVS1, .T., .T. )
+	Do While !( cAliasVS1 )->( Eof() )  
+		DbSelectArea("VS1")
+		DbGoTo( ( cAliasVS1 )->RECVS1 )
+		reclock("VS1",.f.)
+		VS1->VS1_GERFIN := "1"
+		msunlock()
+		( cAliasVS1 )->(dbSkip())
+	Enddo
+	( cAliasVS1 )->( dbCloseArea() )
+
+		// Se foi possivel gerar financeiro, vamos excluir todos os registros de logs ja gravados
+		If lOkTit
+			// Exclui os LOGS gerados no momento do faturamento 
+			cQuery := "DELETE FROM "+ RetSqlName("VQL")
+			cQuery += " WHERE VQL_FILIAL = '"+xFilial("VQL")+"' "
+			cQuery += "   AND VQL_AGROUP = 'OFIXX004' "
+			cQuery += "   AND VQL_FILORI = '" + VS1->VS1_FILIAL + "' "
+			cQuery += "   AND VQL_TIPO = 'VS1-" + VS1->VS1_NUMORC + "'"
+			cQuery += "   AND D_E_L_E_T_ = ' '"
+			TcSqlExec(cQuery)
+		EndIf
+
+EndIf
+//
+//
+DBSelectArea("VS1")
+DBSetOrder(1)
+DBSeek(xFilial("VS1")+_cOrcOrcT)
+//
+DBSelectArea("SE4")
+DBSetOrder(1)
+DBSeek(xFilial("SE4")+cTipPag)
+//
+Return .t.
+*/
+
+
+
+
+/*/{Protheus.doc} ZPECFTONEG
+Funcao responsavel por montar as parcelas  no cabecalho do pedido de venda quando utilizada uma condicao de pagamento do tipo '9'
+@author Rubens / Manoel
+@since 14/10/2016
+@version 1.0
+@param 
+/*/
+Static Function ZPECFTONEG()
+Local _cAliasPesq	:= GetNextAlias()   
+Local _aVS9			:= {}
+Local _cParcela		:= ""
+Local _nPos
+
+Begin Sequence
+	//If SE4->E4_TIPO == "9" .OR. SE4->E4_TIPO == "A"
+	//Caso não esteja contido posso sair do processo
+	If AllTrim(SE4->E4_TIPO) $ "9_A" 
+		Break 
+	Endif	
+	BeginSql Alias _cAliasPesq 
+		SELECT VS9_TIPPAG, VS9_DATPAG , VS9_VALPAG , VS9_TIPPAG 
+		FROM %table:VS9% VS9
+		WHERE VS9.VS9_FILIAL 	= %XFilial:VS9%
+			AND VS9.VS9_TIPOPE 	= ' '
+			AND VS9.VS9_NUMIDE = %Exp:VS1->VS1_NUMORC% 
+			AND VS9.%notDel%	
+		ORDER BY VS9_NUMIDE , VS9_DATPAG , VS9_SEQUEN"
+	EndSql	
+	//não tendo dados posso sair
+	If (_cAliasPesq)->(Eof())
+		Break
+	Endif
+	While (_cAliasPesq)->(!Eof())
+		If (_nPos := aScan( _aVS9 ,{ |x| x[1] == (_cAliasPesq)->VS9_DATPAG .and. x[2] == (_cAliasPesq)->VS9_TIPPAG })) == 0
+			AADD( _aVS9 , { (_cAliasPesq)->VS9_DATPAG , (_cAliasPesq)->VS9_TIPPAG , "" } )
+			_nPos := Len(_aVS9)
+			_aVS9[_nPos,3]  := SubStr(_cParcela,_nPos,1)
+			aAdd(aCabPV,{"C5_DATA" + _aVS9[_nPos,3] , StoD((_cAliasPesq)->VS9_DATPAG)  , Nil }) // Data da Parcela
+			aAdd(aCabPV,{"C5_PARC" + _aVS9[_nPos,3] , (_cAliasPesq)->VS9_VALPAG        , Nil }) // Valor da Parcela
+		Else
+			nPosSC5 := aScan(aCabPV,{ |x| x[1] == "C5_PARC" + _aVS9[_nPos,3] })
+			aCabPV[ nPosSC5 , 2 ] += (_cAliasPesq)->VS9_VALPAG
+		EndIf
+		(_cAliasPesq)->(dbSkip())
+	EndDo 
+End Sequence
+//
+Return Nil
+
+
+
