@@ -3964,6 +3964,9 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 	Local _cOpVdUsoZF		:= AllTrim(SuperGetMV( "CMV_WSR042"  ,,"ZF|xx;ZD|xy"))		//Operação Venda/uso ZF
 	Local _cOpRemessaZF		:= AllTrim(SuperGetMV( "CMV_WSR024"  ,,"ZF|77;ZD|77"))		//Operação Venda/uso ZF
 
+	Local _cOpVendaZFFM     := ' '
+	Local _cUFCliente		:= ' '
+
 	//SB1->( DbSetOrder(1))
 	//SB1->( DbSeek(XFilial("SB1")+_cCodItem) )
 	//lGRTrib := AllTrim(SB1->B1_GRTRIB) $ _cGRTrib		
@@ -3985,23 +3988,25 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 	If SA1->(DbSeek(XFilial("SA1")+_cCliente+_cLoja))
 
 		lSeekSA1 := .T.
-		If SA1->A1_EST $ _cZFranca
+		_cUFCliente := SA1->A1_EST
+		If _cUFCliente $ _cZFranca
 			lZFMan := .T.
 		EndIf
 
 		_cQuery := " SELECT "
-		_cQuery += " FM_CLIENTE, FM_LOJACLI "
+		_cQuery += " FM_CLIENTE, FM_LOJACLI, FM_TIPO "
 		_cQuery += " FROM "+RetSqlName("SFM")
 		_cQuery += " WHERE "
 		_cQuery += " FM_FILIAL  = '"+xFilial("SFM")+"' AND "
 		_cQuery += " FM_CLIENTE = '"+_cCliente+"' AND "
-		_cQuery += " FM_LOJACLI = '"+_cLoja+"' AND "
-		_cQuery += " D_E_L_E_T_ = ' ' "
+		_cQuery += " FM_LOJACLI = '"+_cLoja+"' OR (FM_EST = '"+_cUFCliente+"' AND FM_CLIENTE = ' ') AND "
+		_cQuery += " D_E_L_E_T_ = ' ' ORDER BY FM_CLIENTE DESC "
 		dbUseArea( .T., "TOPCONN", TcGenQry(,,_cQuery), _cAliasSFM, .T., .T. )
 
 		(_cAliasSFM)->(dbGoTop())
 		If !(_cAliasSFM)->(EoF())
 			lZFDed := .T.
+			_cOpVendaZFFM := ((_cAliasSFM)->FM_TIPO)
 		EndIf
 		(_cAliasSFM)->(DbCloseArea())
 
@@ -4027,7 +4032,7 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 		If _cTipoOrc == "VENDA"
 
 			If lZFDed
-				_cRet := Substr( _cOpVEndaZF,(At("ZD", _cOpVEndaZF )+3),2)
+				_cRet := _cOpVendaZFFM // Substr( _cOpVEndaZF,(At("ZD", _cOpVEndaZF )+3),2)
 			ElseIf lZFMan
 				_cRet := Substr( _cOpVEndaZF,(At("ZF", _cOpVEndaZF )+3),2)
 			Else
