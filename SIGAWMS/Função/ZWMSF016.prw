@@ -231,6 +231,7 @@ Static Function TelaUnit(nOpc)
 			aAdd(afields    ,{"Container"   		,"Container"	,"C"  ,020	,0 ,"@!" })
 			aAdd(afields    ,{"Unitizador"  		,"Unitizador"	,"C"  ,040	,0 ,"@!" })
 			aAdd(afields    ,{"Qtd por Unitz"		,"Qtd"			,"N"  ,013	,0 ,	 })
+			aAdd(afields    ,{"Serie"        		,"Serie"		,"N"  ,003	,0 ,"@!" })
 
 			oBrowseUp:SetFields(afields)
 			
@@ -927,7 +928,7 @@ Static Function CargaUnit( cInvoice, cCont, cUnit )
 								
 				cQry := CRLF + " SELECT D0Q.D0Q_SERVIC, D0Q.D0Q_LOCAL, D0Q.D0Q_ENDER, D0Q.D0Q_PRDORI, "
 				cQry += CRLF + " D0Q.D0Q_CODPRO, D0Q.D0Q_LOTECT, D0Q.D0Q_NUMLOT, D0Q.D0Q_QUANT, D0Q.D0Q_NUMSEQ, "
-				cQry += CRLF + " D0Q.D0Q_DOCTO, D0Q.D0Q_SERIE, D0Q.D0Q_CLIFOR, D0Q.D0Q_LOJA "
+				cQry += CRLF + " D0Q.D0Q_DOCTO, D0Q.D0Q_SERIE, D0Q.D0Q_CLIFOR, D0Q.D0Q_LOJA,D0Q_ID "
 				cQry += CRLF + " FROM " + RetSQLName( "SD1" ) + " SD1 "
 				
 				cQry += CRLF + " JOIN " + RetSQLName( "D0Q" ) + " D0Q "
@@ -953,7 +954,8 @@ Static Function CargaUnit( cInvoice, cCont, cUnit )
 				cQry += CRLF + " 		AND SD1.D1_XCASE  = '" + ( cAliasUnit )->ZM_CASE + "' " 
 				//--Remove demandas consumidas, validação necessaria por conta do cenario de produtos iguais em um mesmo unitizador
 				If !Empty( cNumSeq )
-					cQry += CRLF + "		AND SD1.D1_NUMSEQ NOT IN " + FormatIn(cNumSeq, ";") 
+					//cQry += CRLF + "		AND SD1.D1_NUMSEQ NOT IN " + FormatIn(cNumSeq, ";") 
+					cQry += CRLF + "		AND D0Q.D0Q_ID NOT IN " + FormatIn(cNumSeq, ";") 
 				EndIf
 
 				cQry += CRLF + "		AND SD1.D_E_L_E_T_ = ' ' "
@@ -1051,9 +1053,9 @@ Static Function CargaUnit( cInvoice, cCont, cUnit )
 					If (cAliasQry)->TOTUNIT == ( cAliasD0Q )->D0Q_QUANT
 						//--Guarda Numseq para avaliação de demandas ja consumidas
 						If Empty(cNumSeq)
-							cNumSeq := AllTrim( ( cAliasD0Q )->D0Q_NUMSEQ )
+							cNumSeq := AllTrim( ( cAliasD0Q )->D0Q_ID )//cNumSeq := AllTrim( ( cAliasD0Q )->D0Q_NUMSEQ )
 						Else
-							cNumSeq := cNumSeq + ";" + AllTrim( ( cAliasD0Q )->D0Q_NUMSEQ )
+							cNumSeq := cNumSeq + ";" + AllTrim( ( cAliasD0Q )->D0Q_ID )//cNumSeq := cNumSeq + ";" + AllTrim( ( cAliasD0Q )->D0Q_NUMSEQ )
 						EndIf
 
 					EndIf
@@ -1578,7 +1580,7 @@ Static Function zTmpMnt()
 	EndIf
 
 	cQry  :=  " SELECT SZM.ZM_FILIAL, SZM.ZM_INVOICE, SZM.ZM_CONT, SZM.ZM_UNIT, " + CRLF
-    cQry  +=  "  SUM(ZM_QTDE) AS QTD " + CRLF
+    cQry  +=  "  SUM(ZM_QTDE) AS QTD ,SZM.ZM_SERIE" + CRLF
 	cQry  +=  " FROM " + RetSQLName( "SZM" ) + " SZM " + CRLF
  	cQry  +=  " WHERE SZM.ZM_FILIAL = '" + FWxFilial("SZM") + "' " + CRLF
 	cQry  +=  "		AND SZM.ZM_BL = '" + (cTmpInv)->BL + "' " + CRLF 
@@ -1586,7 +1588,7 @@ Static Function zTmpMnt()
 	cQry  +=  "		AND SZM.ZM_FORNEC = '" + (cTmpInv)->Fornecedor + "' " + CRLF 
 	cQry  +=  "		AND SZM.ZM_LOJA = '" + (cTmpInv)->Loja + "' " + CRLF 
 	cQry  +=  "		AND SZM.D_E_L_E_T_ = ' ' " + CRLF
- 	cQry  +=  " GROUP BY SZM.ZM_FILIAL, SZM.ZM_INVOICE, SZM.ZM_CONT, SZM.ZM_UNIT " + CRLF
+ 	cQry  +=  " GROUP BY SZM.ZM_FILIAL, SZM.ZM_INVOICE, SZM.ZM_CONT, SZM.ZM_UNIT,SZM.ZM_SERIE " + CRLF
 	cQry  +=  " ORDER BY SZM.ZM_FILIAL, SZM.ZM_INVOICE, SZM.ZM_CONT, SZM.ZM_UNIT " + CRLF
 
 	cQry	:= ChangeQuery( cQry )
@@ -1609,6 +1611,7 @@ Static Function zTmpMnt()
 		aAdd(aCampos, {"Container"  	,"C"    ,020    ,0  })
 		aAdd(aCampos, {"Unitizador" 	,"C"    ,040    ,0  })
 		aAdd(aCampos, {"Qtd" 			,"N"    ,013    ,0  })
+		aAdd(aCampos, {"Serie" 			,"C"    ,003    ,0  })
 		aAdd(aCampos, {"Finalizado"		,"L"    ,001    ,0  })
 		aAdd(aCampos, {"MsgErro"		,"C"    ,240    ,0  })
 
@@ -1629,6 +1632,7 @@ Static Function zTmpMnt()
 				(cTmpMnt)->Container 	:= AllTrim( (cAliasTmp)->ZM_CONT )
 				(cTmpMnt)->Unitizador 	:= AllTrim( (cAliasTmp)->ZM_UNIT )		
 				(cTmpMnt)->Qtd 			:= (cAliasTmp)->QTD
+				(cTmpMnt)->Serie 			:= (cAliasTmp)->ZM_SERIE
 				(cTmpMnt)->Finalizado	:= RetD0R( (cAliasTmp)->ZM_UNIT )
 				(cTmpMnt)->MsgErro		:= cMsgErro
 				(cTmpMnt)->(MsUnLock())
@@ -2064,7 +2068,7 @@ Static Function zVldMont(cIdUnit)
 		cErro += eol + "Diferenca SZM - D14..:" + Transform(nQtdSZM - nQtdD14 , "@E 999,999.999")
 		cErro += eol + "Transferencia do Unitizador sera cancelada
 		Conout(cErro)
-		MsgAlert("Divergencia de Saldo do do Unitizador " + cIdUnit + " ") 
+		MsgAlert("Divergencia de Saldo do Unitizador " + cIdUnit + " ") 
 		zPegMont(cIdUnit)
 	EndIf
 
@@ -2098,7 +2102,7 @@ Static Function zPegMont(cIdUnit)
         cMemo += Alltrim((cAliasQry)->D14_PRODUT) + ";" + alltrim( Transform((cAliasQry)->QTDD14 , "@E 999,999.99") ) + eol
 		(cAliasQry)->(DbSkip())
     EndDo
-	MemoWrite("C:\Temp\D14_" + alltrim(cIdUnit) + ".csv",cMemo)
+	MemoWrite("\Data\D14_" + alltrim(cIdUnit) + ".csv",cMemo)
     (cAliasQry)->( DbCloseArea() )
 
 	cAliasQry := GetNextAlias()
