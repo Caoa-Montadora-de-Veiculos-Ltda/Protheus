@@ -2196,7 +2196,7 @@ User Function ZPEC11GSZK(_oJson, _lGravaIni, _cPicking, _cObsMenNF, _cMarca, _lI
 					Endif	
 				Endif                                            
 				//Caso seja somente para gravar inicial posso sair
-				If SZK->(FieldPos("ZK_STATUS")) > 0   //N=Nao Envidado;E=Enviado;F=Faturado;C=Cancelado
+				If SZK->(FieldPos("ZK_STATUS")) > 0   //A=Aberto;E=Enviado;F=Faturado;C=Cancelado;B=Bloqueado;R=Reprocessado,D-Divergente WIS
 					SZK->ZK_STATUS := "A"
 				EndIf				
 				//IndicaÃ§Ã£o do armazÃ©m que esta direcionado o SZK
@@ -2286,7 +2286,7 @@ User Function ZPEC11GSZK(_oJson, _lGravaIni, _cPicking, _cObsMenNF, _cMarca, _lI
 					SZK->ZK_XJSSTRE := If(!_lIncon,"1","3") //1=RECEBIDO;2=NAO RECEBIDO;3=INCONSISTENCIA                                                                                      
 				EndIf
 				//implementado status DAC 05/07/2022
-				If SZK->(FieldPos("ZK_STATUS")) > 0   //N=Nao Envidado;E=Enviado;F=Faturado;C=Cancelado
+				If SZK->(FieldPos("ZK_STATUS")) > 0   //A=Aberto;E=Enviado;F=Faturado;C=Cancelado;B=Bloqueado;R=Reprocessado,D-Divergente WIS
 					SZK->ZK_STATUS := "E"
 				EndIf				
 				//IndicaÃ§Ã£o do armazÃ©m que esta direcionado o SZK
@@ -3915,11 +3915,11 @@ Return _cNumRet
 
 
 /*/{Protheus.doc} zTpOper
-//Verifica informaÃ§Ãµes de campos obrigatÃ³rios 
+//Verifica informaÃƒÂ§ÃƒÂµes de campos obrigatÃƒÂ³rios 
 @author Evandro Mariano
 @since 06/05/2022
 @version undefined
-@param _aMsg, array, descriÃ§Ã£o
+@param _aMsg, array, descriÃƒÂ§ÃƒÂ£o
 @type function
 /*/
 User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
@@ -3932,7 +3932,7 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 	//Local lGRTrib			:= .F.
 	Local _cRet 			:= " "
 	Local _aAreaSA1			:= SA1->(GetArea())
-	Local _cTipoOrc			:= AllTrim(Posicione("VX5", 1, XFilial("VX5") + "Z02" + PadR( AllTrim(_cTipoPed), TamSX3("VX5_CODIGO")[1] ), "VX5_DESCRI")) //Tipo do Orçamento (Venda/Transferencia/Remessa)
+	Local _cTipoOrc			:= AllTrim(Posicione("VX5", 1, XFilial("VX5") + "Z02" + PadR( AllTrim(_cTipoPed), TamSX3("VX5_CODIGO")[1] ), "VX5_DESCRI")) //Tipo do OrÃƒÂ§amento (Venda/Transferencia/Remessa)
 	Local _cCnpjTransf  	:= AllTrim(SuperGetMV( "CMV_WSR019"  ,,"03471344"))	//Raiz CNPJ de transferencia
 
 	//Local _cZFVenda		:= AllTrim(SuperGetMV( "CMV_WSR021"  ,,"AC|93;AP|92;AM|93;RO|93;RR|93"))	//Zona Franca - Venda
@@ -3942,28 +3942,31 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 	//Local _cGRTrib			:= AllTrim(SuperGetMV( "CMV_WSR052"  ,,"100;200"))	//Zona Franca
 
 	Local _cBxInter 		:= AllTrim(SuperGetMV( "CMV_WSR039"  ,,"011"))		//Codigo Baixa Interna
-	Local _cOpUsoInt		:= AllTrim(SuperGetMV( "CMV_WSR043"  ,,"75"))		//OperaÃ§Ã£o Uso Interno
+	Local _cOpUsoInt		:= AllTrim(SuperGetMV( "CMV_WSR043"  ,,"75"))		//OperaÃƒÂ§ÃƒÂ£o Uso Interno
 
 	Local _cBxScrap			:= AllTrim(SuperGetMV( "CMV_WSR027"  ,,"013"))		//Codigo Scrap
-	Local _cOpRefugo		:= AllTrim(SuperGetMV( "CMV_WSR022"  ,,"59"))		//OperaÃ§Ã£o Refugo
+	Local _cOpRefugo		:= AllTrim(SuperGetMV( "CMV_WSR022"  ,,"59"))		//OperaÃƒÂ§ÃƒÂ£o Refugo
 
 	Local _cBxTfUso			:= AllTrim(SuperGetMV( "CMV_WSR040"  ,,"014"))		//Codigo Transferencia Uso
-	Local _cOpTfUso			:= AllTrim(SuperGetMV( "CMV_WSR044"  ,,"98"))		//OperaÃ§Ã£o Transferencia Uso
+	Local _cOpTfUso			:= AllTrim(SuperGetMV( "CMV_WSR044"  ,,"98"))		//OperaÃƒÂ§ÃƒÂ£o Transferencia Uso
 
 	Local _cBxRemAr			:= AllTrim(SuperGetMV( "CMV_WSR046"  ,,"015"))		//Codigo Remessa Armazenamento
-	Local _cOpRemAr			:= AllTrim(SuperGetMV( "CMV_WSR048"  ,,"XA"))		//OperaÃ§Ã£o Remessa Armazenamento
+	Local _cOpRemAr			:= AllTrim(SuperGetMV( "CMV_WSR048"  ,,"XA"))		//OperaÃƒÂ§ÃƒÂ£o Remessa Armazenamento
 
 	Local _cBxRemTs			:= AllTrim(SuperGetMV( "CMV_WSR047"  ,,"016"))		//Codigo Remessa Teste
-	Local _cOpRemTs			:= AllTrim(SuperGetMV( "CMV_WSR049"  ,,"XB"))		//OperaÃ§Ã£o Remessa Teste
+	Local _cOpRemTs			:= AllTrim(SuperGetMV( "CMV_WSR049"  ,,"XB"))		//OperaÃƒÂ§ÃƒÂ£o Remessa Teste
 
-	Local _cOpTransf		:= AllTrim(SuperGetMV( "CMV_WSR020"  ,,"81"))		//OperaÃ§Ã£o Transferencia
-	Local _cOpVenda			:= AllTrim(SuperGetMV( "CMV_WSR023"  ,,"90"))		//OperaÃ§Ã£o Venda
-	Local _cOpVdUso			:= AllTrim(SuperGetMV( "CMV_WSR041"  ,,"XX"))		//OperaÃ§Ã£o Venda/uso
-	Local _cOpRemessa		:= AllTrim(SuperGetMV( "CMV_WSR025"  ,,"77"))		//OperaÃ§Ã£o Remessa
+	Local _cOpTransf		:= AllTrim(SuperGetMV( "CMV_WSR020"  ,,"81"))		//OperaÃƒÂ§ÃƒÂ£o Transferencia
+	Local _cOpVenda			:= AllTrim(SuperGetMV( "CMV_WSR023"  ,,"90"))		//OperaÃƒÂ§ÃƒÂ£o Venda
+	Local _cOpVdUso			:= AllTrim(SuperGetMV( "CMV_WSR041"  ,,"XX"))		//OperaÃƒÂ§ÃƒÂ£o Venda/uso
+	Local _cOpRemessa		:= AllTrim(SuperGetMV( "CMV_WSR025"  ,,"77"))		//OperaÃƒÂ§ÃƒÂ£o Remessa
 
-	Local _cOpVEndaZF		:= AllTrim(SuperGetMV( "CMV_WSR021"  ,,"ZF|93;ZD|92"))		//OperaÃ§Ã£o Venda/uso ZF
-	Local _cOpVdUsoZF		:= AllTrim(SuperGetMV( "CMV_WSR042"  ,,"ZF|xx;ZD|xy"))		//OperaÃ§Ã£o Venda/uso ZF
-	Local _cOpRemessaZF		:= AllTrim(SuperGetMV( "CMV_WSR024"  ,,"ZF|77;ZD|77"))		//OperaÃ§Ã£o Venda/uso ZF
+	Local _cOpVEndaZF		:= AllTrim(SuperGetMV( "CMV_WSR021"  ,,"ZF|93;ZD|92"))		//OperaÃƒÂ§ÃƒÂ£o Venda/uso ZF
+	Local _cOpVdUsoZF		:= AllTrim(SuperGetMV( "CMV_WSR042"  ,,"ZF|xx;ZD|xy"))		//OperaÃƒÂ§ÃƒÂ£o Venda/uso ZF
+	Local _cOpRemessaZF		:= AllTrim(SuperGetMV( "CMV_WSR024"  ,,"ZF|77;ZD|77"))		//OperaÃƒÂ§ÃƒÂ£o Venda/uso ZF
+
+	Local _cOpVendaZFFM     := ' '
+	Local _cUFCliente		:= ' '
 
 	//SB1->( DbSetOrder(1))
 	//SB1->( DbSeek(XFilial("SB1")+_cCodItem) )
@@ -3986,23 +3989,25 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 	If SA1->(DbSeek(XFilial("SA1")+_cCliente+_cLoja))
 
 		lSeekSA1 := .T.
-		If SA1->A1_EST $ _cZFranca
+		_cUFCliente := SA1->A1_EST
+		If _cUFCliente $ _cZFranca
 			lZFMan := .T.
 		EndIf
 
 		_cQuery := " SELECT "
-		_cQuery += " FM_CLIENTE, FM_LOJACLI "
+		_cQuery += " FM_CLIENTE, FM_LOJACLI, FM_TIPO "
 		_cQuery += " FROM "+RetSqlName("SFM")
 		_cQuery += " WHERE "
 		_cQuery += " FM_FILIAL  = '"+xFilial("SFM")+"' AND "
 		_cQuery += " FM_CLIENTE = '"+_cCliente+"' AND "
-		_cQuery += " FM_LOJACLI = '"+_cLoja+"' AND "
-		_cQuery += " D_E_L_E_T_ = ' ' "
+		_cQuery += " FM_LOJACLI = '"+_cLoja+"' OR (FM_EST = '"+_cUFCliente+"' AND FM_CLIENTE = ' ') AND "
+		_cQuery += " D_E_L_E_T_ = ' ' ORDER BY FM_CLIENTE DESC "
 		dbUseArea( .T., "TOPCONN", TcGenQry(,,_cQuery), _cAliasSFM, .T., .T. )
 
 		(_cAliasSFM)->(dbGoTop())
 		If !(_cAliasSFM)->(EoF())
 			lZFDed := .T.
+			_cOpVendaZFFM := ((_cAliasSFM)->FM_TIPO)
 		EndIf
 		(_cAliasSFM)->(DbCloseArea())
 
@@ -4028,7 +4033,7 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 		If _cTipoOrc == "VENDA"
 
 			If lZFDed
-				_cRet := Substr( _cOpVEndaZF,(At("ZD", _cOpVEndaZF )+3),2)
+				_cRet := _cOpVendaZFFM // Substr( _cOpVEndaZF,(At("ZD", _cOpVEndaZF )+3),2)
 			ElseIf lZFMan
 				_cRet := Substr( _cOpVEndaZF,(At("ZF", _cOpVEndaZF )+3),2)
 			Else
@@ -4075,7 +4080,6 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 	RestArea(_aAreaSA1)
 
 Return(_cRet)
-
 
 /*/{Protheus.doc} XRESCAOAPEC
 @param  	
@@ -5238,15 +5242,18 @@ Return Nil
        
 
 //Cria Faturamento para orçamento
-User Function ZPECFTORC(_aOrcs, _lTransaction)
+User Function ZPECFTORC(_aOrcs, _cPicking, _lEnviaEmail, _lTransaction)
 Local _lRet 		:= .F.	
 Local _aMsg 		:= {}
 Local _aRegVS1		:= {}
 Local _cNota		:= ""	
 Local _cSerie		:= ""
 Local _cPedido  	:= ""
+Local _cTitulo		:= ""
 
 Default _aOrcs			:= {}
+Default _cPicking		:= ""
+Default _lEnviaEmail	:= .T.	
 Default _lTransaction 	:= .T.  //pode vir de uma operaçao que ja esta em transaction
 
 Private aParcBRNF  	:= {}
@@ -5258,24 +5265,38 @@ Begin Sequence
 	Endif	
 	If _lTransaction
 		Begin Transaction 
-			_lRet := ZPECFTORPV(_aOrcs, @_cPedido, @_aRegVS1, _aMsg)
+			_lRet := ZPECFTORPV(_aOrcs, @_cPedido, @_aRegVS1, @_aMsg)
 			If _lRet 
-				_lRet := ZPECFTORFT(_cPedido, @_cNota, @_cSerie, _aRegVS1, @_aMsg)
+				_lRet := ZPECFTORFT(_cPedido, @_cNota, @_cSerie, @_cTitulo, _aRegVS1, @_aMsg)
 			Endif 
+		    If _lRet
+				_lRet := ZPECFTORAT(_cPedido, _cNota, _cSerie, _cTitulo, _aRegVS1, @_aPicking, @_aMsg)
+			Endif
 			If !_lRet
 				Disarmtransaction()
 			Endif 		
 		End Transaction
 	Else 
-		If !ZPECFTORPV(_aOrcs, @_cPedido, @_aRegVS1, _aMsg)
+		If !ZPECFTORPV(_aOrcs, @_cPedido, @_aRegVS1, @_aMsg)
 			Break 
 		Endif 	
-		If !ZPECFTORFT(_cPedido, @_cNota, @_cSerie, _aRegVS1, @_aMsg)
+		If !ZPECFTORFT(_cPedido, @_cNota, @_cSerie, @_cTitulo, _aRegVS1, @_aMsg)
 			Break
 		Endif 
+		If ZPECFTORAT(_cPedido, _cNota, _cSerie, _cTitulo, _aRegVS1, @_aPicking, @_aMsg)
+			Break
+		Endif	
 		_lRet := .T. 
-	Endif	
+	Endif 	
 End Sequence
+If _lEnviaEmail		
+	//Caso tenha sido enviado numero do picking e não passou para carregar o numero 
+	If Len(_aPicking) == 0 .and. !Empty(_cPicking)
+		_aPicking  := {_cPicking}
+	Endif
+	ZPECEMAIFT(_aMsg, _cPedido, _aPicking, "Problemas no Faturamento")
+Endif 
+
 Return _aMsg		
 
 
@@ -5714,7 +5735,8 @@ Return _lRet
 
 
 //Gerar nota fiscal
-Static Function ZPECFTORFT(_cPedido, _cNota, _cSerie, _aRegVS1, _aMsg)
+Static Function ZPECFTORFT(_cPedido, _cNota, _cSerie, _cTitulo, _aRegVS1, _aMsg)
+Local _cAliasPesq 	:= GetNextAlias()
 Local _lRet 		:= .F.
 Local _nPrcVen		:= 0
 Local _cCliente 	:= ""
@@ -5737,7 +5759,6 @@ Local _lCtbCusto
 Local _lReajuste 	
 Local _cPrefAnt
 Local _cMens
-Local _cStatusAnt
 Local _nPos
 
 Default _cPedido:= ""
@@ -5883,7 +5904,7 @@ Begin Sequence
         Endif
     Endif 
 	If Empty(_cSerie)	
-   		Aadd(_aMsg, "PProblemas com Série não foi possivel faturar")
+   		Aadd(_aMsg, "Problemas com Série não foi possivel faturar")
 		Break
 	Endif
 
@@ -5938,68 +5959,6 @@ Begin Sequence
        	Aadd(_aMsg, _cMens)
 	    Break
     EndIf
-	//Gravar dados da nova
-	Reclock("SF2",.f.)
-	_cPrefAnt 		:= SF2->F2_PREFIXO
-	SF2->F2_PREFORI := _cPrefBAL
-	_cPrefNF 		:= &(GetNewPar("MV_1DUPREF","cSerie"))
-	SF2->F2_PREFIXO := _cPrefNF
-	SF2->(MsUnLock())
-
-	//Atualizar financeiro caso exista
-	_lFinanceiro	:= .F.
-	If !Empty(SF2->F2_DUPL)
-		BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
-		SELECT 	ISNULL(SE1.R_E_C_N_O_,0) NREGSE1
-			FROM  	%Table:SE1% SE1
-			WHERE 	SE1.E1_FILIAL 	= %xFilial:SE1%
-				AND SE1.E1_PREFIXO 	= %Exp:_cPrefAnt%
-				AND SE1.E1_NUM		= %Exp:SF2->F2_DUPL%
-				AND SE1.%notDel%
-		EndSql
-		While (_cAliasPesq)->(!Eof())
-			SE1->(DbGoto((_cAliasPesq)->NREGSE1))
-			If RecLock("SE1",.F.)		
-				SE1->E1_PREFIXO := SF2->F2_PREFIXO
-				SE1->E1_PREFORI := SF2->F2_PREFORI
-				if _lPeriodico
-					SE1->E1_TIPO := _cTipPer // MV_TIPPER - Tipo de Titulo Provisorio
-				Endif
-				SE1->(MsUnLock())
-			Endif 
-			_lFinanceiro := .T.	
-			(_cAliasPesq)->(DbSkip())
-		EndDo 
-	EndIf
-	//atualizar orçamento
-	For _nPos := 1 To Len(_aRegVS1)
-		VS1->(DbGoto(_aRegVS1[_nPos]))
-		_cStatusAnt 	:= VS1->VS1_STATUS
-		RecLock("VS1",.f.)
-		VS1->VS1_STATUS := "X"
-		VS1->VS1_FORPAG := SC5->C5_CONDPAG  //cTipPag // Gravar o VS1_FORPAG em todos os Orcamentos
-		VS1->VS1_CFNF   := "1"  //indica 1=NF  2=Cupon Fiscal 
-		VS1->VS1_NUMPED := SC5->C5_NUM
-		VS1->VS1_NUMNFI := _cNota
-		VS1->VS1_SERNFI := _cSerie
-		If VS1->(FieldPos("VS1_STARES")) > 0 
-			VS1->VS1_STARES := "3"
-		Endif
-		If VS1->(FieldPos("VS1_GERFIN")) > 0
-			VS1->VS1_GERFIN := _cAtuGerFin
-		Endif
-		//Caso gerou financeiro
-		VS1->VS1_GERFIN := IIf(_lFinanceiro,"1","0")
-		VS1->(MsUnLock())
-
-		If ExistFunc("OA3700011_Grava_DTHR_Status_Orcamento")
-			OA3700011_Grava_DTHR_Status_Orcamento( VS1->VS1_NUMORC , VS1->VS1_STATUS , "Alterado Status anterior "+_cStatusAnt ) // Grava Data/Hora na Mudança de Status do Orçamento / Orçamento por Fases
-		EndIf
-		If FindFunction("FM_GerLog")
-			//grava log das alteracoes das fases do orcamento
-			FM_GerLog("F",VS1->VS1_NUMORC,,VS1->VS1_FILIAL,_cStatusAnt)
-		EndIF
-	Next _nPos
 
 	// DEPOIS DA GERACAO DA NOTA FISCAL
 	if ExistBlock("OX004DNF")
@@ -6007,26 +5966,206 @@ Begin Sequence
 			Break
 		Endif
 	Endif
-	//
-	FM_GVECVSC(SF2->F2_DOC,SF2->F2_SERIE,"VEC")
-	//
-	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-	//³ TEMPORARIO - Desbloqueia SX6 pois a MAPVLNFS esta na dentro da Transacao ³
-	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-	SX6->(MsRUnLock())
-    _lRet := .T.
-End Sequence
 
+	//Gravar dados da nova
+	Reclock("SF2",.f.)
+	_cPrefAnt 		:= SF2->F2_PREFIXO
+	SF2->F2_PREFORI := _cPrefBAL
+	_cPrefNF 		:= &(GetNewPar("MV_1DUPREF","cSerie"))
+	SF2->F2_PREFIXO := _cPrefNF
+	SF2->(MsUnLock())
+	//Atualizar o financeiro caso crie
+	_cTitulo := SF2->F2_DUPL
+	If Empty(_cTitulo)
+		Break
+	Endif 
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT 	ISNULL(SE1.R_E_C_N_O_,0) NREGSE1
+			FROM  	%Table:SE1% SE1
+			WHERE 	SE1.E1_FILIAL 	= %xFilial:SE1%
+				AND SE1.E1_PREFIXO 	= %Exp:_cPrefAnt%
+				AND SE1.E1_NUM		= %Exp:_cTitulo%
+				AND SE1.%notDel%
+	EndSql
+	While (_cAliasPesq)->(!Eof())
+		SE1->(DbGoto((_cAliasPesq)->NREGSE1))
+		If RecLock("SE1",.F.)		
+			SE1->E1_PREFIXO := SF2->F2_PREFIXO
+			SE1->E1_PREFORI := SF2->F2_PREFORI
+			if _lPeriodico
+				SE1->E1_TIPO := _cTipPer // MV_TIPPER - Tipo de Titulo Provisorio
+			Endif
+			SE1->(MsUnLock())
+		Endif 
+		(_cAliasPesq)->(DbSkip())
+	EndDo 
+End Sequence
 nModulo := _nModBkp
 cModulo := _cModBkp
+If Select((_cAliasPesq)) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif 
+
+Return _lRet
+
+
+//Atualizar dados
+Static Function ZPECFTORAT(_cPedido, _cNota, _cSerie, _cTitulo, _aRegVS1, _aPicking, _aMsg) 
+Local _cAliasPesq 	:= GetNextAlias()
+Local _lRet  		:= .T. 
+Local _cStatusAnt	:= ""
+Local _cCliente 	:= ""
+Local _cLoja 		:= ""
+Local _nPesoL 		:= 0 
+Local _nPesoB 		:= 0
+Local _nPesoS 		:= 0
+Local _nRegSF2      := 0
+
+Local _cQuery 
+Local _nStatus
+Local _cObs
+Local _cPicking
+Local _nPos
+
+Default _aPicking	:= {}
+
+Begin Sequence 
+	//Locallizar a nota gerada
+  	SF2->(dbSetOrder(1))	//F2_FILIAL+F2_DOC+F2_SERIE+F2_CLIENTE+F2_LOJA+F2_FORMUL+F2_TIPO
+    If !(SF2->( dbSeek( xFilial("SF2") + _cNota + _cSerie + _cCliente + _cLoja ) ))
+   	 	_cObs := "Problema ocorrido na gravação da Nota Fiscal de Saida "+_cNota +" serie "+ _cSerie+". Nota Fiscal ja cadastrada, mas nao foi gerada Nota Fiscal para o pedido "+_cPedido
+       	Aadd(_aMsg, _cObs)
+	    Break
+    EndIf
+	_nRegSF2 := SF2->(RECNO())
+
+	//Prepara as observações para o processo
+	_cObs := "Orçamento Faturado com fatura nr. " +_cNota+ " Serie " +_cSerie+ " em " +DtoC(date()) + " as " + Time() + CRLF
+	For _nPos := 1 To Len(_aMsg)
+		_cObs += Upper(_aMsg[_nPos]) + CRLF
+	Next
+	//atualizar orçamento
+	For _nPos := 1 To Len(_aRegVS1)
+		VS1->(DbGoto(_aRegVS1[_nPos]))
+		//Guardo Cliente para poder utilizar
+		If Empty(_cCliente)
+			_cCliente  	:= VS1->VS1_CLIFAT
+			_cLoja		:= VS1->VS1_LOJA
+		Endif	
+		_cStatusAnt 	:= VS1->VS1_STATUS
+
+		//Separar o Picking para atualizar faturamento
+		If Ascan(_aPicking,VS1->VS1_XPICKI)
+			Aadd(_aPicking,VS1->VS1_XPICKI)
+		Endif
+
+		RecLock("VS1",.f.)
+		VS1->VS1_STATUS := "X"
+		VS1->VS1_FORPAG := SC5->C5_CONDPAG  //cTipPag // Gravar o VS1_FORPAG em todos os Orcamentos
+		VS1->VS1_CFNF   := "1"  //indica 1=NF  2=Cupon Fiscal 
+		VS1->VS1_NUMPED := _cPedido
+		VS1->VS1_NUMNFI := _cNota
+		VS1->VS1_SERNFI := _cSerie
+		If VS1->(FieldPos("VS1_STARES")) > 0 
+			VS1->VS1_STARES := "3"
+		Endif
+		If VS1->(FieldPos("VS1_GERFIN")) > 0
+			VS1->VS1_GERFIN := IIf(!Empty(_cTitulo),"1","0")
+		Endif
+		//Verificar empresa
+		SM0->(dbSetOrder(1))
+		If SM0->(dbSeek(cEmpAnt + VS1->VS1_FILIAL))  //FWSM0Util():setSM0PositionBycFilAnt()
+			VS1->VS1_XCGCEM := AllTrim(SM0->M0_CGC)
+			VS1->VS1_DATALT := Date()
+			VS1->VS1_XHRALT := Time()
+		EndIf
+		If ExistFunc("OA3700011_Grava_DTHR_Status_Orcamento")
+			OA3700011_Grava_DTHR_Status_Orcamento( VS1->VS1_NUMORC , VS1->VS1_STATUS , "Alterado Status anterior "+_cStatusAnt ) // Grava Data/Hora na Mudança de Status do Orçamento / Orçamento por Fases
+		EndIf
+		If FindFunction("FM_GerLog")
+			//grava log das alteracoes das fases do orcamento
+			FM_GerLog("F",VS1->VS1_NUMORC,,VS1->VS1_FILIAL,_cStatusAnt)
+		EndIF
+
+		// Gerar CEV na Finalizacao do Orcamento ( Pos-Venda )
+		OX001CEV("F",VS1->VS1_NUMORC,VS1->VS1_TIPORC) 
+
+		//Atualizar VS3
+		_cObs := "Atualizado status de reserva para 0, faturamento nota fiscal "+_cNota+" serie "+_cSerie 
+		_cQuery += "UPDATE " +RetSqlName("VS3")+ " VS3" + CRLF
+		_cQuery += "SET 	VS3.VS3_RESERV 	= '0' " + CRLF
+		_cQuery += " 	,	VS3.VS3_QTDRES 	= '0' " + CRLF
+		_cQuery += " 	,	VS3.VS3_OBSAGL 	=  RAWTOHEX('"+Upper(_cObs)+ chr(13) + chr(10) +"' ||  NVL(UTL_RAW.CAST_TO_VARCHAR2(dbms_lob.substr(VS3.VS3_OBSAGL , 2000, 1)),' ') )" + CRLF   
+		_cQuery += "WHERE VS3.D_E_L_E_T_  = ' ' " 				+ CRLF
+		_cQuery += " 	AND VS3.VS3_FILIAL = '"+FWxFilial("VS3")+"' "  	+ CRLF	
+		_cQuery += " 	AND VS3.VS3_NUMORC = '"+VS1->VS1_NUMORC+"' "  	+ CRLF	
+
+		_nStatus := TcSqlExec(_cQuery)
+		if (_nStatus < 0)
+			_cObs += "Não foi possivel atualizar status da Reserva no VS3 - VS3_RESERV" + CRLF
+		Endif	
+		VS1->VS1_OBSAGL		:= Upper(_cObs) + CRLF + AllTrim(VS1->VS1_OBSAGL)
+		VS1->(MsUnLock())
+		Conout("[ZPECFTORC] "+ CRLF + _cObs )
+	Next _nPos
+
+	//Atualizando Status do Picking caso exista
+	For _nPos := 1 To Len(_aPicking)
+		_cPicking := _aPicking[_nPos]
+		If SZK->(FieldPos("ZK_STATUS")) > 0   //N=Nao Envidado;E=Enviado;F=Faturado;C=Cancelado
+			_cQuery := " UPDATE " + RetSqlName("SZK") + " SZK " 		+ CRLF
+			_cQuery += " SET 	SZK.ZK_NF = '" 		+ _cDoc 	+ "' " 	+ CRLF
+			_cQuery += " 	, 	SZK.ZK_SERIE = '" 	+ _cSerie 	+"' " 	+ CRLF
+			_cQuery += " 	, 	SZK.ZK_STATUS = 'F' " 					+ CRLF
+		Else
+			_cQuery := " UPDATE " + RetSqlName("SZK") + " SZK " 		+ CRLF
+			_cQuery += " SET 	SZK.ZK_NF='" 	+ _cDoc 	+ "' " 		+ CRLF
+			_cQuery += " 	, 	SZK.ZK_SERIE='" + _cSerie 	+"' " 		+ CRLF
+		EndIf
+		_cQuery += " WHERE ZK_XPICKI = '"+_cPicking+"' AND ZK_FILIAL='" + xfilial("SZK") + "'"
+		TcSqlExec(_cQuerup)
+	Next	
+
+	//Pegar a somatoria do peso para atualizar na nota
+	BeginSql Alias _cAliasPesq
+		SELECT SUM(ZK_PLIQUI) PLIQUI, SUM(ZK_PBRUTO) PBRUTO, SUM(ZK_XPESOC) XPESOC 
+       		FROM %table:SZK% SZK
+       		WHERE 	SZK.ZK_FILIAL  	= %XFilial:SZK%
+				AND SZK.ZK_XPICKI  	= %Exp:_cPicking%
+			  	AND SZK.%notDel%		  
+	EndSql      
+	If (_cAliasPesq)->(!Eof()) 	
+		_nPesoL += (_cAliasPesq)->PLIQUI 
+		_nPesoB += (_cAliasPesq)->PBRUTO
+		_nPesoS += (_cAliasPesq)->XPESOC
+	EndIf
+	//reposiciono na nota
+	SF2->(DbGoto(_nRegSF2))
+	//SD2->( DbSetOrder(3) ) // D2_FILIAL + D2_DOC + D2_SERIE + D2_CLIENTE + D2_LOJA + D2_COD + D2_ITEM
+	If SF2->( DbSeek( xFilial("SF2") + _cDoc + _cSerie + _cCliente + _cLoja ) )
+		RecLock("SF2",.F.)
+       	SF2->F2_PLIQUI := nPesol
+       	SF2->F2_PBRUTO := nPesob
+		SF2->F2_XPESOC := nPesos
+		SF2->(MsUnlock())
+	EndIf
+
+	//--Efetua a gravação dos pesos bruto e cubado na tabela GW8 - GFE
+	U_ZGFEF001(	_cDoc, _cSerie, _cCliente, _cLoja )
+	//--Efetua a gravação do campo GW1_XTPTRA - GFE
+	U_ZGFEF003()
+	//Gravacao da tabela VEC e VSC
+	FM_GVECVSC(SF2->F2_DOC,SF2->F2_SERIE,"VEC")
+    _lRet := .T.
+
+End Sequence
 
 If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif 
 Return _lRet
-
-
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -6403,3 +6542,193 @@ Return Nil
 
 
 
+//Enviar e-mail para enviar relativo ao Faturamento
+Static Function ZPECEMAIFT(_aMsg, _cPedido, _aPicking, _cAssunto )
+Local _cAliasPesq	:= GetNextAlias()   
+Local _cEmail		:= ""
+
+Begin Sequence 
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT SX5.X5_DESCRI
+		FROM %Table:SX5% SX5	
+		WHERE SX5.%notDel%
+			AND SX5.X5_FILIAL 	= %XFilial:SX5%
+			AND	SX5.X5_TABELA   = "2D"
+			AND SX5.X5_DESCRI 	<> ' '				
+	EndSql
+	If (_cAliasPesq)->(Eof())
+		Conout("[ZPECF011] - Não cadatrado email SX5 Tabela 2E, referente a problemas ocorridos no recebimento do Picking")
+		Break
+	Endif 
+	While (_cAliasPesq)->(!Eof())
+		_cEmail += AllTrim((_cAliasPesq)->X5_DESCRI)+","
+		(_cAliasPesq)->(DbSkip())
+	EndDo
+	//Retirar ", do final"
+	_cEmail := SubsTr(_cEmail,1,Len(_cEmail)-1)
+	ZPECEMAIEV(_aMsg, _cPedido, _aPicking, _cAssunto, _cEmail, /*_cEMailCopia*/, /*_aAnexos*/,  /*lSchedule*/)	
+End Sequence 
+
+Return Nil
+
+
+
+/*
+=====================================================================================
+Programa.:              ZPECEMAIEV
+@param 					_aMens   	= Mensagens de erro 
+						_cAssunto   = Assunto do e-mail 
+						_cEmails    = Destinatário do e-mail 
+						_cEMailCopia= Destinatarios em cópia 
+						_aAnexos 	= Localização e nome do arquivo anexo 
+						_cRotina    = Rotina que chamou o processo
+						lSchedule	= Esta rodando em job se verdadeiro não emitira msg em tela
+Autor....:              CAOA - DAC Denilso 
+Data.....:              10/07/2020
+Descricao / Objetivo:   Funcao para processar o envio das notificacoes
+Doc. Origem:            GAP COM027
+Solicitante:            Compras
+Uso......:              ZCOLF001
+Obs......:
+
+=====================================================================================
+*/
+Static Function ZPECEMAIEV(_aMsg, _cPedido, _aPicking, _cAssunto, _cEmails, _cEMailCopia, _aAnexos,  lSchedule)
+Local _cTexto   		:= ""
+Local _cEmailDest 		:= ""
+Local _lMsgOK			:= .T.
+Local _lMsgErro			:= .F.
+Local _cObsMail			:= ""
+Local _cReplyTo			:= ""
+Local _cCorItem			:= "FFFFFF"
+Local _lEnvia			:= .T.
+Local _cLogo  			:= 'https://tinyurl.com/logocaoa'  
+Local _cNomeUsu 		:= "RECEBIMENTO RETORNO PICKING RGLOG [ZPECF011]"  //Upper(FwGetUserName(RetCodUsr())) //Retorna o nome completo do usuário  __cUserId
+Local _cCodUsu			:= "RGLOG_JS" //RetCodUsr()
+Local _cDescricao		:= ""
+Local _cRotina			:= "ZPECF011"
+Local _nPos
+
+Default _aMsg			:= {}
+Default _cPedido		:= ""
+Default _aPicking		:= {}
+Default _cAssunto		:= "Informacoes Retorno Picking [ZPECF011]"
+Default _cEmails 		:= "evandro.mariano@caoa.com.br"  //E-mail para envio problemas integração  
+Default _cEMailCopia	:= ""
+Default _aAnexos		:= {}
+Default _lSchedule   	:= IsBlind()
+
+Begin Sequence 
+	_lMsgErro			:= IF( _lSchedule == .F., .T. , .F. )
+	If Empty(_cEmails)
+		_cTexto := "**** Erros referente ao processo de importação Retorno Picking função [ZPECF011] não possui e-mail cadastrado no SX5 Tabela 2E ****"
+		_cTexto += "     Os mesmos serão gravados no log do Sistema conforme informações abaixo" 
+		Conout(_cTexto)
+		For _nPos := 1 To Len(_aMsg)
+			Conout( _aMsg[_nPos])
+		Next 
+		Break
+	EndIf	
+
+	//localizar o produto
+	If !Empty(_aPicking)
+		_cDescricao := ""
+		For _nPos := 1 To Len(_aPicking)
+			_cDescricao += _aPicking[_nPos] +"|"
+		Next
+		_cDescricao := SubsTr(_cDescricao,1,Len(_cDescricao))
+	Endif
+
+	_cEmailDest := _cEmails
+	_cHtml := ""
+	_cHtml += "<html>"+ CRLF
+	_cHtml += "	<head>"+ CRLF
+	_cHtml += "		<title>Processo de importação Retorno Picking [ZPECF011] Informações/Erros</title>"+ CRLF
+	_cHtml += "	</head>"+ CRLF
+	_cHtml += "	<body leftmargin='0' topmargin='0' rightmargin='0' bottommargin='0'>"+ CRLF
+	_cHtml += "		<table width='100%' height='100%' border='0' cellpadding='0' cellspacing='0'>"+ CRLF
+	_cHtml += "			<tr>"+ CRLF
+	_cHtml += "				<th width='1200' height='100%' align='center' valign='top' scope='col'>"+ CRLF
+	_cHtml += "					<table width='90%' height='50%' border='0' cellpadding='0' cellspacing='0'>"+ CRLF
+	_cHtml += "						<tr>"+ CRLF
+	_cHtml += "							<th width='100%' height='100' scope='col'>"+ CRLF
+	_cHtml += "								<table width='100%' height='60%' border='3' cellpadding='0' cellspacing='0' >"+ CRLF
+	_cHtml += "									<tr>"+ CRLF
+	_cHtml += "										<th width='12%' height='0' scope='col'><img src='" + _cLogo + "' width='118' height='40'></th>"+ CRLF
+	_cHtml += "										<td width='67%' align='center' valign='middle' scope='col'><font face='Arial' size='+1'><b>Recebimento PICKING RGLOG Informações</b></font></td>"+ CRLF
+	_cHtml += "									</tr>"+ CRLF
+	_cHtml += "								</table>"+ CRLF
+	_cHtml += "							</th>"+ CRLF
+	_cHtml += "						</tr>"+ CRLF
+	_cHtml += "						<tr>"+ CRLF
+	_cHtml += "							<th width='100' height='100' scope='col'>"+ CRLF
+	_cHtml += "								<table width='100%' height='100%' border='2' cellpadding='2' cellspacing='1' >"+ CRLF
+	_cHtml += "									<tr>"+ CRLF
+	_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Empresa:	</b></font></td>"+ CRLF
+	_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>"+AllTrim(FWFilialName(,SM0->M0_CODFIL))+"</font></td>"+ CRLF
+	_cHtml += "									</tr>"+ CRLF
+	_cHtml += "									<tr>"+ CRLF
+	_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Responsável(is):	</b></font></td>"+ CRLF
+	_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>" + _cCodUsu+"-"+_cNomeUsu + "</font></td>"+ CRLF
+	_cHtml += "									</tr>"+ CRLF
+	_cHtml += "									<tr>"+ CRLF
+	_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Picking:	</b></font></td>"+ CRLF
+	_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>"+ _cPedido +"</font></td>"+ CRLF
+	_cHtml += "									</tr>"+ CRLF
+	_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Picking:	</b></font></td>"+ CRLF
+	_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>"+_cDescricao+"</font></td>"+ CRLF
+	_cHtml += "									</tr>"+ CRLF
+
+	_cHtml += "								</table>"+ CRLF
+	_cHtml += "							</th>"+ CRLF
+	_cHtml += "						</tr>"+ CRLF
+	_cHtml += "						<tr >"+ CRLF
+	_cHtml += "							<td height='25' style='padding-top:1em;'>"+ CRLF
+	_cHtml += "								<table width='100%' height='100%' border='2' cellpadding='2' cellspacing='0' >"+ CRLF
+	_cHtml += "									<tr bgcolor='#4682B4'>"+ CRLF
+	_cHtml += "										<th width='10%' height='100%' align='center' valign='middle' scope='col'><font face='Arial' size='2'><b>Descrição		</b></font></th>"+ CRLF
+	_cHtml += "									</tr>"+ CRLF
+
+	For _nPos := 1 To Len(_aMsg)
+		_cHtml += "									<tr> <!--while advpl-->"+ CRLF
+		_cMsgErro := _aMsg[_nPos]
+		_cHtml += "										<td width='10%' height='16' align='left'	valign='middle' bgcolor='#"+_cCorItem+"' scope='col'><font size='1' face='Arial'>"+_cMsgErro+"</font></td>"+ CRLF
+		_cHtml += "									</tr>"+ CRLF
+	Next
+	
+	_cHtml += "					</table>"+ CRLF
+	_cHtml += "				</th >"+ CRLF
+	_cHtml += "			</tr>"+ CRLF
+	_cHtml += "		</table >"+ CRLF
+	_cHtml += "	</body >"+ CRLF
+
+    _cHtml +=    "<br/> <br/> <br/> <br/>" 
+    _cHtml +=    " <h5>Esse email foi gerado pela rotina " + FunName() + " </h5>"       
+
+
+	/*
+	cMailDestino	- E-mail de Destino
+	cMailCopia		- E-mail de cópia
+	cAssunto		- Assunto do E-mail
+	cHtml			- Corpo do E-mail
+	aAnexos			- Anexos que será enviado
+	lMsgErro		- .T. Exige msgn na tela - .F. Exibe somente por Conout
+	cReplyTo		- Responder para outra pessoa.
+	cRotina			- Rotina que está sendo executada.
+	cObsMail		- Observação para Gravação do Log.
+	*/
+	If _lSchedule
+		_lEnvia := U_ZGENMAIL(_cEmailDest,_cEMailCopia,_cAssunto,_cHtml,_aAnexos,_lMsgErro,_lMsgOK,_cRotina,_cObsMail,_cReplyTo)
+	Else
+		MsgRun("Enviando e-mail de notificação. Aguarde!!!","CAOA",{|| _lEnvia := U_ZGENMAIL(_cEmailDest,_cEMailCopia,_cAssunto,_cHtml,_aAnexos,_lMsgErro,_lMsgOK,_cRotina,_cObsMail,_cReplyTo) })
+	EndIf
+
+	If !_lEnvia
+		If lSchedule
+			ConOut("**** [ ZPCPF11EM ] - E-mail não enviado por problemas no envio função ZGENMAIL - Solicitar apoio do administrador! (Totvs Integração RETORNO PICKING) ****"+ CRLF)
+		Else
+			ApMsgInfo("E-mail não enviado - Solicitar apoio do administrador!! (Totvs Integração RETORNO PICKING)","ERRO EMAIL")
+		EndIf
+	EndIf
+End Sequence
+Return nil

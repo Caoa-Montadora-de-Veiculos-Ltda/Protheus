@@ -65,7 +65,7 @@ Local _cEmpresa     := "02"
 Local _cFilAtu      := "2020012001"
 Local _lRet			:= .F.
 Local _aRegVS1		:= {}
-Local _cFaseConf 	:= Alltrim(GetNewPar("MV_MIL0095","4")) // Fase de Conferencia e Separacao
+//Local _cFaseConf 	:= Alltrim(GetNewPar("MV_MIL0095","4")) // Fase de Conferencia e Separacao
 Local _lDivergeWis  := .F.
 Local _cMsgInconWis := ""
 Local _cQueryUPD
@@ -171,9 +171,9 @@ If Len(_aRegVS1) > 0
 		VS1->(RecLock("VS1",.F.))
 		VS1->VS1_OBSAGL	:= Upper(_cObs) + CRLF + VS1->VS1_OBSAGL
 		//Garantir que deixara os orçamentos com a fase anterior que é de conferência DAC 29/06/2022
-		If VS1->VS1_STATUS <> _cFaseConf
-			VS1->VS1_STATUS := _cFaseConf  //volto a fase anterior
-		Endif	
+		//If !_lRet .And. VS1->VS1_STATUS <> _cFaseConf
+		//	VS1->VS1_STATUS := _cFaseConf  //volto a fase anterior
+		//Endif	
 		VS1->(MsUnLock())
 	Next
 EndIf
@@ -210,7 +210,6 @@ Local _cPedido		:= ""
 Local _cFaseConf 	:= Alltrim(GetNewPar("MV_MIL0095","4")) // Fase de Conferencia e Separacao
 Local _cFaseFat		:= "F"
 Local _cObs			:= ""
-Local _aMsg         := {}
 Local _aMsgCAOA		:= {}
 Local _aOrc			:= {}
 Local _lFatAutomatico  := SuperGetMV( "CMV_PEC045"  ,,.F.)  //"WIS.T_DET_PEDIDO_SAIDA@DBLINK_WISHML"
@@ -309,13 +308,7 @@ Begin Sequence
 			VS1->(DbGoto(_aRegVS1[_nPos]))
 			Aadd(_aOrc,VS1->VS1_NUMORC)
 		Next 
-		_aMsg := U_ZPECFTORC(_aOrc, /*Indica para não utilizar transaction*/)
-		If Len(_aMsg) > 0  //Retorna erros caso ocorra
-			For _nPos := 1 To Len(_aMsg)
-				Aadd(_aMsgCAOA, _aMsg)
-			Next
-			ZPEC11EMAI(_aMsg, _cPedido, , "Problemas no Faturamento do Pedido " + _cPedido )
-		Endif 
+		U_ZPECFTORC(_aOrc, _cPedido, /*ENVIA EMAIL*/, /*Indica para não utilizar transaction*/)
 	Endif
 
 End Sequence
