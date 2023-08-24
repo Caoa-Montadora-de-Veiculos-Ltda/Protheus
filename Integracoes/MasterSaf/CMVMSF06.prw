@@ -343,6 +343,7 @@ static _VLR_UNIT
 			- Correção na Extração da SAFX08  valores de ICMS para pegar da Tabela SFT para pegar o valro correto após manutenção.
 			- Manutenção na Static Function ExecQuery separando a geração de cada arquivo MasterSaf em funções separada.
 */
+
 User Function CMVMSF06()
 
 	Local nOpc := 0
@@ -3067,7 +3068,7 @@ Static Function fSAFX08()
 					nPosCmpCab:=PosCabArray(aItens,"VLR_DESCONTO")
 					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_DESCONT")
 					nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_A")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf((Empty(SFT->FT_CLASFIS) .or. !Len(Alltrim(SFT->FT_CLASFIS)) == 3),"@",Subs(SFT->FT_CLASFIS,1,1))
+					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_ORIGEM")
 					nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_B")
 					aItens[Len(aItens)][nPosCmpCab][2] := IIf((Empty(SFT->FT_CLASFIS) .or. !Len(Alltrim(SFT->FT_CLASFIS)) == 3),"@",Subs(SFT->FT_CLASFIS,2,2))
 					nPosCmpCab:=PosCabArray(aItens,"VLR_FRETE")
@@ -4351,24 +4352,34 @@ Descricao / Objetivo:   Ordem de Produção
 
 Static Function fSAFX108()
 	
-	cQ := CRLF + "	SELECT  "
-	cQ += CRLF + "		(SELECT nvl(SUM(D3_CUSTO1),0)*100 D3_CUSTO1  "
-	cQ += CRLF + "			FROM  " + RetSqlName( "SD3" ) + " SD3  "
-	cQ += CRLF + "			WHERE SD3.D_E_L_E_T_ = ' '  "
-	cQ += CRLF + "				AND SD3.D3_FILIAL = SC2.C2_FILIAL  "
-	cQ += CRLF + "				AND SD3.D3_OP = SC2.C2_NUM||SC2.C2_ITEM||SC2.C2_SEQUEN "
-	cQ += CRLF + "				AND SD3.D3_OP <> ' ' "
-	cQ += CRLF + "				AND SD3.D3_CF NOT IN  ('PR0','PR1' ) "
-	cQ += CRLF + "				AND SD3.D3_ESTORNO <> 'S' ) as D3_CUSTO1 "
+	cQ := CRLF + " SELECT DISTINCT C2_FILIAL,C2_NUM,C2_ITEM,C2_SEQUEN,C2_PRODUTO ,D3_CUSTO1,C2_EMISSAO,C2_DATPRI,C2_DATPRF,C2_QUANT,C2_QUJE FROM ( "
+	cQ += CRLF + "	SELECT  "
+	cQ += CRLF + "		(SELECT nvl(SUM(SD3C.D3_CUSTO1),0)*100 D3_CUSTO1  "
+	cQ += CRLF + "			FROM  " + RetSqlName( "SD3" ) + " SD3C  "
+	cQ += CRLF + "			WHERE   SD3C.D_E_L_E_T_ = ' '  "
+	cQ += CRLF + "				AND SD3C.D3_FILIAL  = SC2.C2_FILIAL  "
+	cQ += CRLF + "				AND SD3C.D3_OP      = SC2.C2_NUM||SC2.C2_ITEM||SC2.C2_SEQUEN "
+	cQ += CRLF + "				AND SD3C.D3_OP      <> ' ' "
+	cQ += CRLF + "				AND SD3C.D3_CF      NOT IN  ('PR0','PR1' ) "
+	cQ += CRLF + "				AND SD3C.D3_ESTORNO <> 'S' ) as D3_CUSTO1 "
 	cQ += CRLF + "		,SC2.*  "
 	
 	cQ += CRLF + "	FROM " + RetSqlName( "SC2" ) + " SC2
+	
+	cQ += CRLF + "  	INNER JOIN " + RetSqlName("SD3") + " SD3  "
+	cQ += CRLF + "  		ON  SD3.D_E_L_E_T_  = ' '  "
+	cQ += CRLF + "  		AND SD3.D3_FILIAL   = SC2.C2_FILIAL  "
+	cQ += CRLF + "  		AND TRIM(SD3.D3_OP) = TRIM(SC2.C2_NUM) || TRIM(SC2.C2_ITEM) || TRIM(SC2.C2_SEQUEN) "
+	cQ += CRLF + "         	AND SD3.D3_ESTORNO  <> 'S' "
+	cQ += CRLF + "         	AND SD3.D3_OP       <> ' '  "
+	cQ += CRLF + "  		AND SD3.D3_CF NOT IN  ('PR0','PR1' ) "
+	
 	cQ += CRLF + "		WHERE   SC2.D_E_L_E_T_ = ' '  "
 	cQ += CRLF + "			AND SC2.C2_FILIAL BETWEEN '" + cFilDe + "' AND '" + cFilAte + "' "
-	cQ += CRLF + "			AND SC2.C2_DATPRI  >= '" + dTos( dDataIni ) + "' "
-	cQ += CRLF + "			AND SC2.C2_DATPRF  <= '" + dTos( dDataFim ) + "' "
+	cQ += CRLF + "			AND SC2.C2_DATPRI >= '" + dTos( dDataIni ) + "' "
+	cQ += CRLF + "			AND SC2.C2_DATPRF <= '" + dTos( dDataFim ) + "' "
 
-	cQ += CRLF + "	ORDER BY SC2.C2_FILIAL,SC2.C2_NUM,SC2.C2_ITEM,SC2.C2_SEQUEN "
+	cQ += CRLF + ")	ORDER BY C2_FILIAL,C2_NUM,C2_ITEM,C2_SEQUEN "
 
 
 	If lDebug
@@ -4468,7 +4479,7 @@ Static Function fSAFX109()
 	
 	cQ += CRLF + "  FROM " + RetSqlName("SC2") + " SC2  "
 
-	cQ += CRLF + "  	LEFT JOIN " + RetSqlName("SD3") + " SD3  "
+	cQ += CRLF + "  	INNER JOIN " + RetSqlName("SD3") + " SD3  "
 	cQ += CRLF + "  		ON  SD3.D_E_L_E_T_ = ' '  "
 	cQ += CRLF + "  		AND SD3.D3_FILIAL  = SC2.C2_FILIAL  "
 	cQ += CRLF + "  		AND TRIM(SD3.D3_OP) = TRIM(SC2.C2_NUM) || TRIM(SC2.C2_ITEM) || TRIM(SC2.C2_SEQUEN) "
@@ -6322,3 +6333,31 @@ Static Function fSAFX2018()
 		
 
 Return
+
+
+Static Function aJustSXe()
+Local cAlias := "TRBSXE"
+cQuery := " SELECT Max(GXL_NRIMP) as GXL_NRIMP  FROM " + RetSqlName("GXL") + " "
+cQuery += " WHERE D_E_L_E_T_ =' ' 
+
+dbUseArea(.T.,"TOPCONN",TCGenQry(,,cQuery),cAlias,.T.,.F.)
+
+_cChaInt 	:= GETSXENUM("GXL","GXL_NRIMP")
+
+While  (cAlias)->(!Eof()) .and. (cAlias)->GXL_NRIMP >= _cChaInt
+	ConfirmSX8()
+	_cChaInt 	:= GETSXENUM("GXL","GXL_NRIMP")
+
+EndDo
+	ConfirmSX8()
+
+(cAlias)->(dbCloseArea())
+Return
+
+/*
+user Function ZGENQTDQBR()
+
+	
+Return .t.
+
+*/
