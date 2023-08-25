@@ -10,17 +10,17 @@
 */
 User Function ZEICF009()
 	Local aStru    := {}
-     Local cAux     := ""
+    Local cAux     := ""
 	Local cQr      := getNextAlias() 
 	Local cmd      := "" 
 	Local i        := 1
 	Local cErr     := ""	
 
-     If Vazio(SF1->F1_HAWB) = .T.
-          Return
-     EndIf     
+    If Vazio(SF1->F1_HAWB) = .T.
+        Return
+    EndIf     
 
-     cAux := Posicione("SW6", 1, Xfilial("SW6") + SF1->F1_HAWB, "W6_XTIPIMP") //W6_FILIAL+W6_HAWB   
+    cAux := Posicione("SW6", 1, Xfilial("SW6") + SF1->F1_HAWB, "W6_XTIPIMP") //W6_FILIAL+W6_HAWB   
 	If Vazio(cAux) = .T.
 		FWAlertError("Processo de inclusão dos dados complementares de produtos na nota não pode ser executado, pois falta o tipo de importação na SW6->W6_XTIPIMP", "ZEICF009")
 		Return
@@ -136,7 +136,7 @@ Static Function DeParaComb( cCombVV1 )
 	Case cCombVV1 == "3" ; cRetorno := "15" // Gas Natural
 	Case cCombVV1 == "4" ; cRetorno := "16" // Alcool/Gasolina
 	Case cCombVV1 == "5" ; cRetorno := "17" // Alcool/Gasolina/GNV
-	Case cCombVV1 == "9" ; cRetorno := ""// Sem Combustivel
+	Case cCombVV1 == "9" ; cRetorno := ""   // Sem Combustivel
 	Case cCombVV1 == "A" ; cRetorno := "04" // Gasogenio
 	Case cCombVV1 == "B" ; cRetorno := "05" // Gas Metano
 	Case cCombVV1 == "C" ; cRetorno := "06" // Eletrico/Fonte Interna

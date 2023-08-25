@@ -17,7 +17,9 @@ Local aAreaSF1      := SF1->(GetArea())
 Local aAreaSD1      := SD1->(GetArea())
 Local cAliasCD5     := GetNextAlias() 
 Local cAliasCD9     := GetNextAlias() 
-Local cCD5_VTRANS   := ''
+Local nCD5_VTRANS   := 0
+Local nCD5_VAFRMM   := 0
+Local cDesp         := '405'
 Local cCD9_TPPINT   := ''
 Local cNFOrig       := ''
 Local cSerOrig      := ''
@@ -50,7 +52,7 @@ IF SF1->F1_EST= 'EX'
 
 		SELECT DISTINCT SW6.W6_DI_NUM AS CD5_NDI,SW6.W6_DTREG_D AS CD5_DT_DI,SW6.W6_LOCALN AS CD5_LOCDES,SW6.W6_UFDESEM AS CD5_UFDES,;
 		    SW6.W6_LOCALN LOCAL_NOME,SW6.W6_DT_DESE AS CD5_DTDES,SW8.W8_ADICAO AS CD5_NADIC,SW6.W6_IMPORT IMPORT,SW6.W6_DA_NUM NUM_DI,SW6.W6_VIA_TRA VIA_TRA,;
-		    SW8.W8_SEQ_ADI AS CD5_SEQADI,SW8.W8_FABR AS CD5_CODFAB,SW8.W8_FABLOJ AS CD5_LOJFAB,SD1.D1_ITEM AS CD5_ITEM
+		    SW8.W8_SEQ_ADI AS CD5_SEQADI,SW8.W8_FABR AS CD5_CODFAB,SW8.W8_FABLOJ AS CD5_LOJFAB,SD1.D1_ITEM AS CD5_ITEM,WD_VALOR_R AS VALFREM
 		FROM %table:SW6% SW6 
 		LEFT JOIN %table:SD1% SD1 ON SD1.%NotDel%
 			AND SD1.D1_FILIAL = %Exp:cFilF1%
@@ -62,6 +64,11 @@ IF SF1->F1_EST= 'EX'
 			AND SW8.W8_COD_I  = SD1.D1_COD 
 			AND SW8.W8_FORN   = %Exp:cFornec%
 			AND SW8.W8_FORLOJ = %Exp:cLoja%
+		LEFT JOIN %table:SWD% SWD ON SWD.%NotDel%
+			AND SWD.WD_FILIAL = %Exp:cFilF1%
+			AND SWD.WD_HAWB   = %Exp:cHAWB%
+			AND SWD.WD_DESPESA= %Exp:cDesp%
+
 		WHERE  SW6.%NotDel% 
 		    AND SW6.W6_FILIAL = %xFilial:SW6% 
 			AND SW6.W6_HAWB   = %Exp:cHAWB%
@@ -73,9 +80,10 @@ IF SF1->F1_EST= 'EX'
 		If (cAliasCD5)->(!EOF())
 
 			If (cAliasCD5)->VIA_TRA = 'M'
-				cCD5_VTRANS := '1'
+				nCD5_VTRANS := 1
+				nCD5_VAFRMM := (cAliasCD5)->VALFREM
 			ElseIf (cAliasCD5)->VIA_TRA = 'A' 
-				cCD5_VTRANS := '4'
+				nCD5_VTRANS := 4
 			EndIf 
 
 			DbSelectArea('CD5')
@@ -87,8 +95,8 @@ IF SF1->F1_EST= 'EX'
 				RecLock('CD5', .T.)
 			EndIf
 			CD5_FILIAL := cFilF1					
-			CD5_TPIMP  := '0'
 			CD5_LOCAL  := '0'
+			CD5_TPIMP  := '0'
 			CD5_INTERM := '1'
 			CD5_SQADIC := '001'
 			CD5_DOC    := cNota
@@ -109,7 +117,7 @@ IF SF1->F1_EST= 'EX'
 			CD5_CODFAB := (cAliasCD5)->CD5_CODFAB
 			CD5_LOJFAB := (cAliasCD5)->CD5_LOJFAB
 			CD5_ITEM   := (cAliasCD5)->CD5_ITEM
-			CD5_VTRANS := (cAliasCD5)->VIA_TRA
+			CD5_VTRANS := nCD5_VTRANS
 
 			CD5->(MsUnlock())
 		EndIf
@@ -174,14 +182,14 @@ IF SF1->F1_EST= 'EX'
 			CD9_TPPINT := cCD9_TPPINT
 			CD9_TPCOMB := cCD9_TPCOMB
 
-			CD5->(MsUnlock())
+			CD9->(MsUnlock())
 		EndIf
 
 		
 		DbSelectArea('CDD')
 		CDD->(DbSetOrder(1))   //CDD_FILIAL+CDD_TPMOV+CDD_DOC+CDD_SERIE+CDD_CLIFOR+CDD_LOJA+CDD_DOCREF+CDD_SERREF+CDD_PARREF+CDD_LOJREF
 
-		If CDD->(DbSeek(FWxFilial('CDD') + 'E' + SF1->F1_DOC + SF1->F1_SERIE + SF1->F1_FORNECE + SF1->F1_LOJA ))
+		If CDD->(DbSeek(FWxFilial('CDD') + 'E' + cNota + cSerie + cFornec + cLoja ))
 			RecLock('CDD', .F.)
 			CDD_IFCOMP := '00004'
 			CDD->(MsUnlock())

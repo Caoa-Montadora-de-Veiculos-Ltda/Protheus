@@ -13,10 +13,12 @@ Uso......:              mt103fimn
 ===================================================================================== */
 
 USER FUNCTION ZEICF017()
-     Local cAux   := ""
-     Local cQr    := GetNextAlias()
-     Local cmd    := ""
-     Local areaD1 := SD1->(GetArea())
+     Local cAux        := ""
+     Local cQr         := GetNextAlias()
+     Local cmd         := ""
+     Local areaD1      := SD1->(GetArea())
+     Local nCD5_VTRANS := 0
+     Local nCD5_VAFRMM := 0
      
      DbSelectArea("SD1")
      DbSetOrder(1)
@@ -28,8 +30,8 @@ USER FUNCTION ZEICF017()
 
      cmd := CRLF + " SELECT DISTINCT "
      cmd += CRLF + " W2_PO_NUM, W2_TIPO_EM,
-     cmd += CRLF + " W6_DI_NUM, W6_DTREG_D, W6_DT_DESE, W6_LOCAL, "
-     cmd += CRLF + " F1_COND, F1_SERIE, F1_DOC, ZM_INVOICE, W8_HAWB, "
+     cmd += CRLF + " W6_DI_NUM, W6_DTREG_D, W6_DT_DESE, W6_LOCAL, W6_LOCALN "
+     cmd += CRLF + " F1_COND, F1_SERIE, F1_DOC, ZM_INVOICE, W8_HAWB, W8_FABLOJ "
      cmd += CRLF + " W6_UFDESEM"
      cmd += CRLF + " FROM " + RetSqlName("SZM") + " SZM "
      cmd += CRLF + " LEFT JOIN " + RetSqlName("SW8") + " SW8 ON SW8.D_E_L_E_T_ = ' ' AND W8_FILIAL = ZM_FILIAL AND W8_INVOICE = ZM_INVOICE 
@@ -60,11 +62,16 @@ USER FUNCTION ZEICF017()
                CD5->CD5_LOJA   := SF1->F1_LOJA
                CD5->CD5_ITEM   := SD1->D1_ITEM
                CD5->CD5_ESPEC  := SF1->F1_ESPECIE
-               CD5->CD5_LOCDES := "PORTO SECO ANAPOLIS"
-               CD5->CD5_INTERM := "1"   
+               CD5->CD5_LOCDES := W6_LOCALN  //"PORTO SECO ANAPOLIS"
                CD5->CD5_CODEXP := SF1->F1_FORNECE
-               CD5->CD5_NADIC  := "1" 
-               CD5->CD5_SQADIC := "1" 
+			CD5->CD5_LOJEXP := SF1->F1_LOJA
+			CD5->CD5_DOCIMP := (cQr)->W8_HAWB
+               CD5->CD5_NADIC  := '1' 
+    			CD5->CD5_LOCAL  := '0'
+			CD5->CD5_TPIMP  := '0'
+			CD5->CD5_INTERM := '1'
+			CD5->CD5_SQADIC := '001'
+
                CD5->CD5_NDI    := (cQr)->W6_DI_NUM
                CD5->CD5_UFDES  := (cQr)->W6_UFDESEM
 
@@ -75,8 +82,18 @@ USER FUNCTION ZEICF017()
                CD5->CD5_DTDES  := CTOD(Substr(cAux, 7, 2) + '/' + Substr(cAux, 5, 2) + '/' + Substr(cAux, 1, 4))
 
                CD5->CD5_CODFAB := SF1->F1_FORNECE
-               CD5->CD5_VTRANS := IIF( (cQr)->W2_TIPO_EM = "M", "1", "2")          
-          
+               CD5->CD5_LOJFAB := (cQr)->W8_FABLOJ
+               
+			If (cAliasCD5)->VIA_TRA = 'M'
+				nCD5_VTRANS := 1
+				nCD5_VAFRMM := Posicione("SWD", 1, SD1->D1_FILIAL + F1_HAWB + '405', "WD_VALOR_R")
+			ElseIf (cAliasCD5)->VIA_TRA = 'A' 
+				nCD5_VTRANS := 4
+			EndIf  
+
+               CD5->CD5_VTRANS := nCD5_VTRANS
+               CD5->CD5_VAFRMM := nCD5_VAFRMM
+  
           CD5->(MsUnLock())
           SD1->(DbSkip())
      EndDo          
