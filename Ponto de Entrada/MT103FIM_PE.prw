@@ -72,7 +72,7 @@ Static Function zMontadora()
 
 	// Insere dados adicionais da nota de entrada quando for nota DE CONTAINER "filha"
 	// EIC 108
-	If Vazio(SF1->F1_XMSGADI) = .F. .AND. nConfirma = 1
+	If nConfirma = 1 .AND. Vazio(SF1->F1_HAWB) = .F.    //Vazio(SF1->F1_XMSGADI) = .F. .AND. 
 		If Findfunction("U_ZEICF017") 
 			Processa({|| U_ZEICF017() }, 'EIC', 'Dados adicionais Doc Entrada (CD5)')		
 		Endif
