@@ -1,6 +1,5 @@
 #include 'protheus.ch'
 #include 'parmtype.ch'
-
 /*
 Grava Lancamento Contabil para ser enviado ao SAP
 Chamado pelo PE DPCTB102GR

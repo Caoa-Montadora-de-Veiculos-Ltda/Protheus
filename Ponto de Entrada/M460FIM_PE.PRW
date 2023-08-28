@@ -1,6 +1,9 @@
 #Include "Protheus.Ch" 
 #Include "TopConn.Ch" 
-
+#Include 'RwMake.Ch'
+#Include 'Font.Ch'
+#Include 'Colors.Ch'
+#Include "TbiConn.CH"
 //------------------------------------------------------------------------------------------
 /* 
 {Protheus.doc} M460FIM
@@ -8,13 +11,13 @@ Ponto de Entrada Depois da Gravacao da Nota Fiscal
 @author    Leonardo Miranda
 @version   12.1.27
 @since     07/06/2022
-@param     CMV_FAT012 Liga a geração de NF automatica de entrada emergencial
+@History   Incluído a chamda da função para emissão de Boleto qdo RA 
 */
 //------------------------------------------------------------------------------------------
 
 User Function M460FIM()
-    Local _cProcessa    := GetMV("CMV_FAT012",,.T.)
-    Local _cEmp		    := FWCodEmp()
+
+    Local _cEmp		:= FWCodEmp()
     Local _cQuery       := ""
     Local _cTmpAlias    := GetNextAlias()
     Local aArea         := GetArea()
@@ -54,16 +57,29 @@ User Function M460FIM()
         If Select(_cTmpAlias) <> 0
             (_cTmpAlias)->(DbCloseArea())
         EndIf
-    else 
 
-        IF  _cProcessa 
+        If Findfunction("U_ZFINF004")  //gravar a forma de pagamento no título de RA
+            U_ZFINF004()
+        EndIf
 
-            If FindFunction("U_ZFATF018")
-                U_ZFATF018()
-            EndIf
+        SE4->(DbSetOrder(1))
+        SE4->(DbSeek(xFilial("SE4")+SC5->C5_CONDPAG))
 
-        ENDIF
-        
+        DbSelectArea("SE1")
+        SE1->(DbSetOrder(1))   //E1_FILIAL+E1_PREFIXO+E1_NUM+E1_PARCELA+E1_TIPO
+        If SE1->(DbSeek(xFilial("SE1") + "5  " + SC5->C5_NOTA))
+            WHILE SE1->( !EOF() .AND. SE1->E1_NUM = SC5->C5_NOTA) 
+                //chamda da função para emissão de Boleto qdo RA 
+                IF SE1->E1_XFORMA = 'BOL'
+                    U_RF01B062(E1_PORTADO,E1_AGENCIA,E1_CONTA,'001',/*lSetup*/,/*cNotIni*/,/*cNotFim*/,/*cSerie*/,SE1->(E1_FILIAL+E1_PREFIXO+E1_NUM))
+                ENDIF
+                SE1->(DbSkip())
+            END
+        EndIf
+    else
+        If FindFunction("U_ZFATF018")
+			U_ZFATF018()
+		EndIf
     EndIf
 
     RestArea(aArea   )
