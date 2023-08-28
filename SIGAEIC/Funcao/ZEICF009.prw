@@ -118,7 +118,17 @@ User Function ZEICF009()
 		CD9->CD9_RESTR  := "0" //Restrição
 	CD9->( MsUnLock() )
 
+	DbSelectArea('CDD')
+	CDD->(DbSetOrder(1))   //CDD_FILIAL+CDD_TPMOV+CDD_DOC+CDD_SERIE+CDD_CLIFOR+CDD_LOJA+CDD_DOCREF+CDD_SERREF+CDD_PARREF+CDD_LOJREF
+
+	If CDD->(DbSeek(FWxFilial('CDD') + 'E' + (cQr)->F1_DOC + (cQr)->F1_SERIE + (cQr)->F1_FORNECE + (cQr)->F1_LOJAoja ))
+		RecLock('CDD', .F.)
+		CDD_IFCOMP := '00004'
+		CDD->(MsUnlock())
+	EndIf 
+	
 	(cQr)->(DbCloseArea())
+
  Return
 
 Static Function DeParaComb( cCombVV1 )
