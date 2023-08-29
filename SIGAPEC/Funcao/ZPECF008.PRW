@@ -64,6 +64,8 @@ User Function ZPECF008()
 	Private _aMensAglu	:= {}
 	
 	Begin Sequence
+	U_ZPECF036({"00965875"}, "00965883", /*ENVIA EMAIL*/, /*Indica para não utilizar transaction*/)
+
 		If !_lZPECF008                             
 			Break
 		Endif        
