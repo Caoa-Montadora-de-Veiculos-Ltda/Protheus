@@ -57,12 +57,13 @@ Private nVlrDesc	:= 0
 Private nVlOutD		:= 0
 Private cWKSZM      := 'WKSZM'
 Private nLay		:= 1
+Private lOk_Anu		:= "2-Não"
 
 Default cPoNum     := ""
 Default nLayOut   := 5
 aInvoice := {}
 nLay := nLayOut
-
+ 
 cLoteHyudai := Alltrim(cLoteHyudai) + alltrim(cLote2Hyudai) + alltrim(cLote3Hyudai)
 
 If Empty(cINTCSV)
@@ -78,7 +79,7 @@ EndIF
 
 DbSelectArea('SW2')
 SW2->(DbSetOrder(1))
-
+ 
 If !Empty(cPoNum) .and. !SW2->(DbSeek(FwXFilial('SW2')+cPoNum))
 	U_FCMVEIC0101("Numero da Purchase Order Não Encontrado",,,,"R",cPoNum,,)
 	MsgInfo("Numero da Purchase Order " + Alltrim(cPoNum) + " Não Encontrado" + CRLF +  "Para ver um log do resultado clique no botão 'Log' ")
@@ -115,15 +116,16 @@ While !FT_FEof()
 	lErro    := .F.
 	nLinha++
 
-	If  Empty(cLinhaIT)                          .Or. ;
-        cLinhaIT                == ";"           .Or. ;
-        SubStr(cLinhaIT,1,10)   == "Engine No."  .Or. ;
+	If  Empty(cLinhaIT)                                      .Or. ;
+        cLinhaIT                == ";"                       .Or. ;
+        SubStr(cLinhaIT,1,10)   == "Engine No."              .Or. ;
         cLinhaIT                == "CASE;MODEL;VIN-CODE;ENGINE;COLOR;SPECOP;KEYNO;T/MNO;"
 		FT_FSkip()
 		Loop
 	EndIF
 
     aLinha := {}
+	cLinhaIT := StrTran(cLinhaIT,';;','; ;')
 	cLinhaIT := StrTran(cLinhaIT,';;','; ;')
     aLinha   := StrTokArr(cLinhaIT, ";")
     
@@ -465,7 +467,7 @@ For nY := 1 to len(aDados)
 	nZ := 0
 	 
 	For nX := 1 to  len(aDados[nY,5]) 
-		
+		 
 		if aDados[nY,5,nX,19] 
 			LOOP
 		EndIf
@@ -923,6 +925,7 @@ Local cTexto := ""
 							If aDados[nY,5,nX,13] == "1"
 								lAnuente := .T.
 								WKEW5->EW5_XFLUXO := "1"
+								lOk_Anu		      := "1-Sim"
 							Else
 								WKEW5->EW5_XFLUXO := "2"
 							EndIF
@@ -1252,6 +1255,8 @@ Static Function CMV01Capa()
 		@ 8.6 + nOffP12,nCo2	Combobox lOk_Shp ITEMS {"1-Sim", "2-Não"} When .T. SIZE 40,12 Of oDlg2
 		@ 8.6 + nOffP12,nCo1 + nOffP12+15	Say "Ok Ship:"
 		@ 8.6 + nOffP12,nCo2 + nOffP12+15	MsGet	dOk_Shp Picture "@E" When lOk_Shp="1"  SIZE 80,12 Of oDlg2
+	    @ 9.6 + nOffP12,nCo1	Say "Itens Anuente:" SIZE 8,2 Of oDlg2
+		@ 9.6 + nOffP12,nCo2	MSGet lOk_Anu  When .F. SIZE 40,12 Of oDlg2
 	Activate MSDialog oDlg2 ON INIT EnchoiceBar(oDlg2,{|| IIF(CMV01ValCapa(),(lCapaOK := .T.,oDlg2:End()),)},{|| lCapaOk := .F. ,oDlg2:End() },) Centered
 
 Return
