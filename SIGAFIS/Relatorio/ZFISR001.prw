@@ -1174,7 +1174,7 @@ Static Function zRel0002(cArquivo)
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Finalidade TES"				,1	,1	,.F.	) // Left - Texto
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Origem do Produto"			,1	,1	,.F.	) // Left - Texto
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"NCM"							,1	,1	,.F.	) // Left - Texto
-		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Ex-NBM"						,1	,1	,.F.	) // Left - Texto
+		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Ex-NCM"						,1	,1	,.F.	) // Left - Texto
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Modelo Veículo"				,1	,1	,.F.	) // Left - Texto
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Opcional"						,1	,1	,.F.	) // Left - Texto
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Grupo\Linha"					,1	,1	,.F.	) // Left - Texto
