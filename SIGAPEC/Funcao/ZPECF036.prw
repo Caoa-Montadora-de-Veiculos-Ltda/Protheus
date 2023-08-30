@@ -487,6 +487,7 @@ Begin Sequence
 	
 	//INCLUIR VS9
 	_cTipo := "DP"
+	VS9->(DbSetOrder(1))  //	
 	VS9->(reclock("VS9",.T.))
 	VS9->VS9_FILIAL := xFilial("VS9")
 	VS9->VS9_NUMIDE := VS1->VS1_NUMORC
@@ -494,6 +495,7 @@ Begin Sequence
 	VS9->VS9_DATPAG := dDataBase
 	VS9->VS9_VALPAG := _nValFat
 	VS9->VS9_TIPPAG := _cTipo
+	VS9->VS9_ENTRAD := "N"
 	VS9->(MsUnlock())
 	
 	//Pego o ultimo orçamento par a referenciar no SC5 cabeçalho
@@ -1140,7 +1142,7 @@ Begin Sequence
 						{"E1_BASCOM1" 	, VS9->VS9_VALPAG	,nil},;
 						{"E1_PEDIDO"  	, _cNumPed			,nil},;
 						{"E1_NUMNOTA" 	, _cNota			,nil},;
-						{"E1_ORIGEM"  	, "MATA460"			,nil},;
+						{"E1_ORIGEM"  	, "ZPECF036"		,nil},;
 						{"E1_SERIE"   	, _cSerie			,nil} }
 		//cMsgErr := OX0040143_LogArrayExecAuto(aTitulo)
 		Pergunte("FIN040",.F.)
