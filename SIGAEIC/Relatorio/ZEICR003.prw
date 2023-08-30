@@ -44,7 +44,7 @@ User Function ZEICR003()
 	aAdd(aPergs ,{5,"Proximo embarque"		,.F./*Ini*/	,90 /*Size*/,/*Valid*/	,.F.}) 							//MV_PAR11
 	aAdd(aPergs ,{5,"Material em transito"	,.F./*Ini*/	,90 /*Size*/,/*Valid*/	,.F.}) 							//MV_PAR12
 	aAdd(aPergs ,{5,"Em rota de entrega"	,.F./*Ini*/	,90 /*Size*/,/*Valid*/	,.F.}) 							//MV_PAR13
-	aAdd(aPergs ,{2,"Canal:",01,aCanal,50,"",.T.})		
+	aAdd(aPergs ,{2,"Canal:",01,aCanal,50,"",.T.})																//MV_PAR14
 	
 	If ParamBox(aPergs, "Informe os parâmetros", , , , , , , , , .F., .F.)
    
@@ -106,7 +106,7 @@ Static Function fReportDef() //Definições do relatório
 	TRCell():New( oSection  ,"W9_NOM_FOR"      	,cTabela ,"Fornecedor"		,/*cPicture*/,TamSx3("W9_NOM_FOR")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 	TRCell():New( oSection  ,"W8_PO_NUM"      	,cTabela ,"Num PO"			,/*cPicture*/,TamSx3("W8_PO_NUM")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 	TRCell():New( oSection  ,"W8_COD_I"      	,cTabela ,"Codigo"			,/*cPicture*/,TamSx3("W8_COD_I")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
-	TRCell():New( oSection  ,"QTDE"      		,cTabela ,"QTDE"			,/*cPicture*/,TamSx3("ZM_QTDE")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+	TRCell():New( oSection  ,"QTDE"      		,cTabela ,"Qtde"			,/*cPicture*/,TamSx3("ZM_QTDE")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 	TRCell():New( oSection  ,"PESO_NET"      	,cTabela ,"Peso Net"		,/*cPicture*/,TamSx3("W7_PESO")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 	TRCell():New( oSection  ,"PESO_BRT"      	,cTabela ,"Peso Brt"		,/*cPicture*/,TamSx3("W8_PESO_BR")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 	TRCell():New( oSection  ,"ZM_CASE"      	,cTabela ,"Case"			,/*cPicture*/,TamSx3("ZM_CASE")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
@@ -193,65 +193,76 @@ Static Function ReportPrint(oReport)
 	cQry += "			AND SD1TMP.D_E_L_E_T_ 	= ' ' " 							+ CRLF
 	cQry += "		) AS DOC_MAE " 													+ CRLF
 	cQry += "	FROM "																+ CRLF
-	cQry +=	" 	" + RetSqlName("SW9") + " SW9"   								+ CRLF
-	cQry += "	LEFT JOIN "														+ CRLF
-	cQry += "	" + RetSqlName("SW8") + " SW8"									+ CRLF
-	cQry += "	 	ON SW8.W8_FILIAL 	= '" + FWxFilial("SW9") + "'"			+ CRLF
-	cQry += "		AND SW8.W8_HAWB    	= SW9.W9_HAWB "							+ CRLF
-	cQry += "		AND SW8.W8_INVOICE 	= SW9.W9_INVOICE "						+ CRLF
-	cQry += "		AND SW8.D_E_L_E_T_ 	= ' ' "									+ CRLF
-	cQry += "	LEFT JOIN "														+ CRLF
-	cQry += "	" + RetSqlName("SF1") + " SF1"									+ CRLF
-	cQry += "	 	ON SF1.F1_FILIAL 	= '" + FWxFilial("SW9") + "'"			+ CRLF
-	cQry += "		AND ((SF1.F1_HAWB 	= SW9.W9_HAWB) "						+ CRLF
-	cQry += "		 OR (SF1.F1_XHAWB 	= SW9.W9_HAWB)) "						+ CRLF
-	cQry += "		AND SF1.D_E_L_E_T_ 	= ' ' "									+ CRLF
-	cQry += "	LEFT JOIN "														+ CRLF
-	cQry += "	" + RetSqlName("SD1") + " SD1"									+ CRLF
-	cQry += "	 	ON SD1.D1_FILIAL 	= '" + FWxFilial("SW8") + "'"			+ CRLF
-	cQry += "		AND ((SD1.D1_CONHEC = SW8.W8_HAWB) "						+ CRLF
-	cQry += "		 OR (SD1.D1_XCONHEC = SW8.W8_HAWB)) "						+ CRLF
-	cQry += "		AND SD1.D1_FORNECE 	= SW8.W8_FORN "							+ CRLF
-	cQry += "	    AND SD1.D1_LOJA 	= SW8.W8_FORLOJ "						+ CRLF
-	cQry += "	    AND SD1.D1_COD 		= SW8.W8_COD_I "						+ CRLF
-	cQry += "	    AND SD1.D1_DOC 		= SF1.F1_DOC "							+ CRLF
-	cQry += "	    AND SD1.D1_SERIE 	= SF1.F1_SERIE "						+ CRLF
-	cQry += "		AND SD1.D_E_L_E_T_ 	= ' '"									+ CRLF
-	cQry += "	LEFT JOIN "														+ CRLF
-	cQry += "	" + RetSqlName("SW6") + " SW6"									+ CRLF
-	cQry += "	 	ON SW6.W6_FILIAL 	= '" + FWxFilial("SW9") + "'"			+ CRLF
-	cQry += " 		AND SW6.W6_HAWB 	= SW9.W9_HAWB " 						+ CRLF
-	cQry += "		AND SW6.D_E_L_E_T_ 	= ' '"									+ CRLF
-	cQry += "	LEFT JOIN "														+ CRLF
-	cQry += "	" + RetSqlName("SW7") + " SW7"									+ CRLF
-	cQry += "	 	ON SW7.W7_FILIAL 	= '" + FWxFilial("SW8") + "'"			+ CRLF
-	cQry += " 		AND SW7.W7_HAWB 	= SW8.W8_HAWB " 						+ CRLF
-	cQry += "		AND SW7.W7_COD_I 	= SW8.W8_COD_I "						+ CRLF
-	cQry += "		AND SW7.W7_PO_NUM 	= SW8.W8_PO_NUM "						+ CRLF
-	cQry += "		AND SW7.W7_INVOICE 	= SW8.W8_INVOICE " 						+ CRLF
-	cQry += "		AND SW7.D_E_L_E_T_ 	= ' '"									+ CRLF
-	cQry += "	LEFT JOIN "														+ CRLF
-	cQry += "	" + RetSqlName("SF4") + " SF4"									+ CRLF
-	cQry += "	 	ON SF4.F4_FILIAL 	= '" + FWxFilial("SF4") + "'"			+ CRLF
-	cQry += " 		AND SF4.F4_CODIGO 	= SD1.D1_TES " 							+ CRLF
-	cQry += "		AND SF4.D_E_L_E_T_ 	= ' '"									+ CRLF
-	cQry += "	LEFT JOIN "														+ CRLF
-	cQry += "	" + RetSqlName("SZM") + " SZM"									+ CRLF
-	cQry += "	 	ON SZM.ZM_FILIAL 	= '" + FWxFilial("SW8") + "'"			+ CRLF
-	cQry += "		AND SZM.ZM_INVOICE 	= SW8.W8_INVOICE "						+ CRLF
-	cQry += "		AND SZM.ZM_PROD    	= SW8.W8_COD_I "						+ CRLF
-	cQry += "		AND SZM.ZM_PO_NUM  	= SW8.W8_PO_NUM "						+ CRLF
-	cQry += "		AND SZM.ZM_POSICAO  = SW8.W8_POSICAO "						+ CRLF
-	cQry += "	    AND SZM.ZM_CASE     = SD1.D1_XCASE "						+ CRLF
-	cQry += "	    AND SZM.ZM_CONT     = SD1.D1_XCONT "						+ CRLF
-	cQry += "	    AND SZM.ZM_QTDE     = SD1.D1_QUANT "						+ CRLF
-	cQry += "		AND SZM.D_E_L_E_T_ 	= ' '"									+ CRLF
-	cQry += "	WHERE "															+ CRLF
-	cQry += "		SW9.W9_FILIAL 		= '" + FWxFilial("SW9") + "'"			+ CRLF
-	cQry += "		AND SF1.F1_DOC 		= D1_DOC "								+ CRLF
-	cQry += "		AND SF1.F1_DOC 		!= ' ' "								+ CRLF
-	cQry += "		AND SF1.F1_SERIE	= D1_SERIE "							+ CRLF
-	cQry += "		AND SF4.F4_ESTOQUE 	= 'S' "									+ CRLF
+	cQry +=	" 	" + RetSqlName("SW9") + " SW9"   									+ CRLF
+	cQry += "	LEFT JOIN "															+ CRLF
+	cQry += "	" + RetSqlName("SW8") + " SW8"										+ CRLF
+	cQry += "	 	ON SW8.W8_FILIAL 	= '" + FWxFilial("SW9") + "'"				+ CRLF
+	cQry += "		AND SW8.W8_HAWB    	= SW9.W9_HAWB "								+ CRLF
+	cQry += "		AND SW8.W8_INVOICE 	= SW9.W9_INVOICE "							+ CRLF
+	cQry += "		AND SW8.D_E_L_E_T_ 	= ' ' "										+ CRLF
+	cQry += "	LEFT JOIN "															+ CRLF
+	cQry += "	" + RetSqlName("SF1") + " SF1"										+ CRLF
+	cQry += "	 	ON SF1.F1_FILIAL 	= '" + FWxFilial("SW9") + "'"				+ CRLF
+	cQry += "		AND ((SF1.F1_HAWB 	= SW9.W9_HAWB) "							+ CRLF
+	cQry += "		 OR (SF1.F1_XHAWB 	= SW9.W9_HAWB)) "							+ CRLF
+	cQry += "		AND SF1.D_E_L_E_T_ 	= ' ' "										+ CRLF
+	cQry += "	LEFT JOIN "															+ CRLF
+	cQry += "	" + RetSqlName("SD1") + " SD1"										+ CRLF
+	cQry += "	 	ON SD1.D1_FILIAL 	= '" + FWxFilial("SW8") + "'"				+ CRLF
+	cQry += "		AND ((SD1.D1_CONHEC = SW8.W8_HAWB) "							+ CRLF
+	cQry += "		 OR (SD1.D1_XCONHEC = SW8.W8_HAWB)) "							+ CRLF
+	cQry += "		AND SD1.D1_FORNECE 	= SW8.W8_FORN "								+ CRLF
+	cQry += "	    AND SD1.D1_LOJA 	= SW8.W8_FORLOJ "							+ CRLF
+	cQry += "	    AND SD1.D1_COD 		= SW8.W8_COD_I "							+ CRLF
+	cQry += "	    AND SD1.D1_DOC 		= SF1.F1_DOC "								+ CRLF
+	cQry += "	    AND SD1.D1_SERIE 	= SF1.F1_SERIE "							+ CRLF
+	cQry += "		AND SD1.D_E_L_E_T_ 	= ' '"										+ CRLF
+	cQry += "	LEFT JOIN "															+ CRLF
+	cQry += "	" + RetSqlName("SW6") + " SW6"										+ CRLF
+	cQry += "	 	ON SW6.W6_FILIAL 	= '" + FWxFilial("SW9") + "'"				+ CRLF
+	cQry += " 		AND SW6.W6_HAWB 	= SW9.W9_HAWB " 							+ CRLF
+	cQry += "		AND SW6.D_E_L_E_T_ 	= ' '"										+ CRLF
+	cQry += "	LEFT JOIN "															+ CRLF
+	cQry += "	" + RetSqlName("SW7") + " SW7"										+ CRLF
+	cQry += "	 	ON SW7.W7_FILIAL 	= '" + FWxFilial("SW8") + "'"				+ CRLF
+	cQry += " 		AND SW7.W7_HAWB 	= SW8.W8_HAWB " 							+ CRLF
+	cQry += "		AND SW7.W7_COD_I 	= SW8.W8_COD_I "							+ CRLF
+	cQry += "		AND SW7.W7_PO_NUM 	= SW8.W8_PO_NUM "							+ CRLF
+	cQry += "		AND SW7.W7_INVOICE 	= SW8.W8_INVOICE " 							+ CRLF
+	cQry += "		AND SW7.W7_REG 		= 				" 							+ CRLF
+	cQry += "				(SELECT MIN(SW7.W7_REG) " 									+ CRLF
+	cQry += "					FROM "  											+ CRLF
+	cQry += "    "				+ RetSqlName("SW7") + " SW7"			 			+ CRLF
+	cQry += "			        WHERE SW7.W7_FILIAL = '" + FWxFilial("SW7") + "'"	+ CRLF
+	cQry += "			        AND SW7.W7_HAWB 	= SW7.W7_HAWB "				 	+ CRLF
+	cQry += "			        AND SW7.W7_COD_I 	= SW7.W7_COD_I "			 	+ CRLF
+	cQry += "			        AND SW7.W7_PO_NUM 	= SW7.W7_PO_NUM "			 	+ CRLF
+	cQry += "			        AND SW7.W7_INVOICE 	= SW7.W7_INVOICE "	 			+ CRLF
+	cQry += "			        AND D_E_L_E_T_ 		= ' ' "					 		+ CRLF
+	cQry += "			     ) "										 			+ CRLF
+	cQry += "		AND SW7.D_E_L_E_T_ 	= ' '"										+ CRLF
+	cQry += "	LEFT JOIN "															+ CRLF
+	cQry += "	" + RetSqlName("SF4") + " SF4"										+ CRLF
+	cQry += "	 	ON SF4.F4_FILIAL 	= '" + FWxFilial("SF4") + "'"				+ CRLF
+	cQry += " 		AND SF4.F4_CODIGO 	= SD1.D1_TES " 								+ CRLF
+	cQry += "		AND SF4.D_E_L_E_T_ 	= ' '"										+ CRLF
+	cQry += "	LEFT JOIN "															+ CRLF
+	cQry += "	" + RetSqlName("SZM") + " SZM"										+ CRLF
+	cQry += "	 	ON SZM.ZM_FILIAL 	= '" + FWxFilial("SW8") + "'"				+ CRLF
+	cQry += "		AND SZM.ZM_INVOICE 	= SW8.W8_INVOICE "							+ CRLF
+	cQry += "		AND SZM.ZM_PROD    	= SW8.W8_COD_I "							+ CRLF
+	cQry += "		AND SZM.ZM_PO_NUM  	= SW8.W8_PO_NUM "							+ CRLF
+	cQry += "		AND SZM.ZM_POSICAO  = SW8.W8_POSICAO "							+ CRLF
+	cQry += "	    AND SZM.ZM_CASE     = SD1.D1_XCASE "							+ CRLF
+	cQry += "	    AND SZM.ZM_CONT     = SD1.D1_XCONT "							+ CRLF
+	cQry += "	    AND SZM.ZM_QTDE     = SD1.D1_QUANT "							+ CRLF
+	cQry += "		AND SZM.D_E_L_E_T_ 	= ' '"										+ CRLF
+	cQry += "	WHERE "																+ CRLF
+	cQry += "		SW9.W9_FILIAL 		= '" + FWxFilial("SW9") + "'"				+ CRLF
+	cQry += "		AND SF1.F1_DOC 		= D1_DOC "									+ CRLF
+	cQry += "		AND SF1.F1_DOC 		!= ' ' "									+ CRLF
+	cQry += "		AND SF1.F1_SERIE	= D1_SERIE "								+ CRLF
+	cQry += "		AND SF4.F4_ESTOQUE 	= 'S' "										+ CRLF
 	
 	If !Empty(MV_PAR01) // NUM INVOICE
 		cQry += "	AND SW9.W9_INVOICE 	= '" + MV_PAR01 + "'" + CRLF
@@ -306,7 +317,7 @@ Static Function ReportPrint(oReport)
 	DbSelectArea(cTabela)
 		(cTabela)->(DbGotop())
 		While (cTabela)->(!EoF())
-			(cTabela)->(DbGoto())
+			
 			//Incrementando a regua
 			nAtual++
 
