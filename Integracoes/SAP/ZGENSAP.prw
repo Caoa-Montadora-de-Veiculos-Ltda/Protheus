@@ -211,6 +211,7 @@ Local lSF1 := IIf(CT2->CT2_LP $ "650/655",.T.,.F.)
 Local lSF2 := IIf(CT2->CT2_LP $ "610/630",.T.,.F.)
 Local lCT2 := IIf(!CT2->CT2_LP $ "610/650/630/655/510/515/513/514/511/512",.T.,.F.) .and. !Subs(CT2->CT2_LP,1,1) == "5"
 Local lSE2 := IIf(CT2->CT2_LP $ "510/515/513/514/511/512",.T.,.F.)
+Local lSE1 := IIf(CT2->CT2_LP $ "501/502",.T.,.F.)
 Local cAliasTrb := GetNextAlias()
 Local lValidGnre := .T.
 Local cChaveGnre := ""
@@ -245,6 +246,13 @@ If !nOpc == 6 .and. Subs(CT2->CT2_HIST,1,4) == "EST."
 Endif	
 
 // excessoes da regra
+// PA com moeda 1, gera como SE2
+If Subs(CT2->CT2_ORIGEM,1,7) $ "501-001/501-002"
+	lSE1 := .T.
+	lCT2 := .F.
+	lValidGnre := .F.
+Endif
+
 // PA com moeda 1, gera como SE2
 If Subs(CT2->CT2_ORIGEM,1,7) $ "513-001/513-002/514-001/514-002"
 	lSE2 := .T.
@@ -366,6 +374,23 @@ If nOpc == 3
 		aRet[2] := CT2->(DTOS(CT2_DATA)+CT2_LOTE+CT2_SBLOTE+CT2_DOC)
 		aAdd(aRet[1],"CT2")
 	Endif
+
+    //Tituloa Receber usado para RA
+    If lSE1 .and. !Empty(cChaveGnre)
+		SE1->(dbSetOrder(2))
+		If SE1->(!dbSeek(xFilial("SF2")+cChaveGnre))
+			aEval(aArea,{|x| RestArea(x)})
+			Return(aRet)
+		Endif
+		aAdd(aRet[1],"SE1")
+		aRet[2] := SE1->(E1_PREFIXO+E1_NUM+E1_PARCELA+E1_TIPO)
+	Elseif lSE1
+		// posiciona no titulo para verificar a origem e tipo
+		IF SE1->E1_TIPO = 'RA ' .AND. SE2->E2_MOEDA == 1           //If U_ZF01GENSAP()
+			aAdd(aRet[1],"SE1")
+			aRet[2] := SE1->E1_PREFIXO+SE1->E1_NUM+SE1->E1_PARCELA+SE1->E1_TIPO
+		Endif
+	Endif
 	
 	If lSE2 .and. !Empty(cChaveGnre)
 		SF2->(dbSetOrder(2))
@@ -419,6 +444,15 @@ If nOpc == 5 .or. nOpc == 6
 		If !Empty(cKey)
 			aRet := U_ZF06GENSAP("SF2",Subs(cKey,TamSX3("F2_FILIAL")[1]+1,TamSX3("F2_DOC")[1]+TamSX3("F2_SERIE")[1]+TamSX3("F2_CLIENTE")[1]+TamSX3("F2_LOJA")[1]),nOpc)
 		Endif	
+	Endif
+
+    //Gravar daos originais p/ título a receber de RA
+    If lSE1
+		/*If Subs(CT2->CT2_KEY,TamSX3("E1_FILIAL")[1]+1,TamSX3("E1_PREFIXO")[1]) == "ICM" // titulos de gnre
+			aRet := U_ZF06GENSAP("SE1",Subs(CT2->CT2_KEY,TamSX3("E1_FILIAL")[1]+1,TamSX3("E1_PREFIXO")[1]+TamSX3("E1_NUM")[1]),nOpc)
+		Else // demais titulos RA
+			aRet := U_ZF06GENSAP("SE1",Subs(CT2->CT2_KEY,TamSX3("E1_FILIAL")[1]+1,TamSX3("E1_PREFIXO")[1]+TamSX3("E1_NUM")[1]+TamSX3("E1_PARCELA")[1]+TamSX3("E1_TIPO")[1]+TamSX3("E1_FORNECE")[1]+TamSX3("E1_LOJA")[1]),nOpc)
+		Endif*/
 	Endif
 	
 	If lSE2
@@ -474,6 +508,7 @@ If cTab == "SE2" .and. !IsInCallStack("MATA520")
 		(cAliasTrb)->(dbSkip())
 	Enddo
 	(cAliasTrb)->(dbCloseArea())
+
 Endif
 
 nLen := Len(cKey)
@@ -808,6 +843,14 @@ User Function ZF11GENSAP(cxFil,cTab,cIndice,cChave,nOperPro,nOperSAP,cXMLSZ7,cSt
             SZ7->Z7_RECORI := SE2->(Recno())
             SZ7->Z7_CLIFOR := SE2->E2_FORNECE
             SZ7->Z7_LOJA := SE2->E2_LOJA
+        Elseif cTab == "SE1" .and. FWIsInCallStack("FINA040") //.and. nOperPro == 1
+            SZ7->Z7_DOCORI := SE1->E1_NUM
+            SZ7->Z7_SERORI := SE1->E1_PREFIXO
+            //If (Len(aDadosOri) > 1 .and. Empty(aDadosOri[4])) .or. Empty(aDadosOri)
+                SZ7->Z7_RECORI := SE1->(Recno())
+            //Endif
+            SZ7->Z7_CLIFOR := SE1->E1_CLIENTE
+            SZ7->Z7_LOJA   := SE1->E1_LOJA
         // contabilizacao de movimentos de estoque, excluindo nota de entrada e saida
 //        Elseif cTab == "CT2" .and. "MATA" $ Alltrim(SZ7->Z7_ORIGEM) .and. SD3->(!Eof()) .and. SD3->(!Bof()) ;
 //        .and. !"MATA103/GFEA065/MATA140/MATA460/MATA460A/MATA460B/MATA116" $ Alltrim(SZ7->Z7_ORIGEM)
