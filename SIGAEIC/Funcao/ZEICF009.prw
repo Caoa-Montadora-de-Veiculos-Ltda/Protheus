@@ -14,22 +14,41 @@ User Function ZEICF009()
 	Local cQr      := getNextAlias() 
 	Local cmd      := "" 
 	Local i        := 1
-	Local cErr     := ""	
+	Local cErr     := ""
+	Local cWhere   := ""
+	
+    IF ctipo <> "I"
 
-    If Vazio(SF1->F1_HAWB) = .T.
-        Return
-    EndIf     
+		If Vazio(SF1->F1_HAWB) = .T.
+			Return
+		EndIf     
 
-    cAux := Posicione("SW6", 1, Xfilial("SW6") + SF1->F1_HAWB, "W6_XTIPIMP") //W6_FILIAL+W6_HAWB   
-	If Vazio(cAux) = .T.
-		FWAlertError("Processo de inclusão dos dados complementares de produtos na nota não pode ser executado, pois falta o tipo de importação na SW6->W6_XTIPIMP", "ZEICF009")
-		Return
-	EndIf
+		cAux := Posicione("SW6", 1, Xfilial("SW6") + _cHawb, "W6_XTIPIMP") //W6_FILIAL+W6_HAWB   
+		If Vazio(cAux) = .T.
+			FWAlertError("Processo de inclusão dos dados complementares de produtos na nota não pode ser executado, pois falta o tipo de importação na SW6->W6_XTIPIMP", "ZEICF009")
+			Return
+		EndIf
 
-	cAux := Posicione("ZZ8", 1, Xfilial("ZZ8") + cAux, "ZZ8_TIPO") //W6_FILIAL+W6_HAWB   
-	If Alltrim(cAux) <> "000005" // nao é importacao de CBU (veiculos), então não precisa fazer nada 
-		Return
-	EndIf
+		cAux := Posicione("ZZ8", 1, Xfilial("ZZ8") + cAux, "ZZ8_TIPO") //W6_FILIAL+W6_HAWB   
+		If Alltrim(cAux) <> "000005" // nao é importacao de CBU (veiculos), então não precisa fazer nada 
+			Return
+		EndIf
+
+	    cWhere += "  AND SF1.F1_DOC	    = '" + SF1->F1_DOC     + "' "
+	    cWhere += "  AND SF1.F1_SERIE   = '" + SF1->F1_SERIE   + "' "
+	    cWhere += "  AND SF1.F1_FORNECE = '" + SF1->F1_FORNECE + "' "  
+	    cWhere += "  AND SF1.F1_LOJA    = '" + SF1->F1_LOJA    + "' "
+	    cWhere += "  AND SD1.D1_CHASSI <> ' ' "	
+
+	ELSE
+
+	    cWhere += "  AND SF1.F1_DOC	    = '" + SF1->F1_DOC     + "' "
+	    cWhere += "  AND SF1.F1_SERIE   = '" + SF1->F1_SERIE   + "' "
+	    cWhere += "  AND SF1.F1_FORNECE = '" + SF1->F1_FORNECE + "' "  
+	    cWhere += "  AND SF1.F1_LOJA    = '" + SF1->F1_LOJA    + "' "
+	    --cWhere += "  AND SD1.D1_CHASSI <> ' ' "	
+
+	ENDIF
 
 	cmd := CRLF + "SELECT SB1.B1_GRTRIB, SB1.B1_LOCPAD, SB1.B1_ORIGEM, SB1.B1_PESO, SB1.B1_POSIPI, SD1.D1_BASEICM, SD1.D1_BASEIPI, "
 	cmd += CRLF + "  SD1.D1_CHASSI, SD1.D1_CLASFIS, SD1.D1_FILIAL, SD1.D1_COD, SD1.D1_ITEM, SD1.D1_FILIAL, SD1.D1_ITEMPC, SD1.D1_LOCAL, "
@@ -47,28 +66,26 @@ User Function ZEICF009()
 	cmd += CRLF + "  left  JOIN " + RetSqlName("VV2") + " VV2 ON VV2.D_E_L_E_T_ = ' ' AND VV2.VV2_FILIAL = '" + FwXfilial("VV2") + "' AND VV2.VV2_PRODUT = SWV.WV_COD_I "
 	cmd += CRLF + "  WHERE "
 	cmd += CRLF + "      SF1.F1_FILIAL  = '" + FwXfilial("SF1")+ "' "
-	cmd += CRLF + "  AND SF1.F1_DOC	    = '" + SF1->F1_DOC     + "' "
-	cmd += CRLF + "  AND SF1.F1_SERIE   = '" + SF1->F1_SERIE   + "' "
-	cmd += CRLF + "  AND SF1.F1_FORNECE = '" + SF1->F1_FORNECE + "' "  
-	cmd += CRLF + "  AND SF1.F1_LOJA    = '" + SF1->F1_LOJA    + "' "
-	cmd += CRLF + "  AND SD1.D1_CHASSI <> ' ' "
+	cmd += CRLF + cWhere
 
 	TcQuery cmd new alias (cQr)
 
 	(cQr)->(Dbgotop())
 
-	aStru := (cQr)->(DbSTruct())
-	
-	For i:=1 to Len(aStru)
-		If Empty((cQr)->&(aStru[i,1]))
-			cErr += CRLF + " - " + AllTrim(GetSx3Cache(aStru[i,1], "X3_TITULO")) + " (" + aStru[i,1] + ")"
+	IF ctipo <> "I" 
+		aStru := (cQr)->(DbSTruct())
+		
+		For i:=1 to Len(aStru)
+			If Empty((cQr)->&(aStru[i,1]))
+				cErr += CRLF + " - " + AllTrim(GetSx3Cache(aStru[i,1], "X3_TITULO")) + " (" + aStru[i,1] + ")"
+			EndIf
+		Next
+		
+		If !Empty(cErr)
+			cErr := "Alguns campos necessários não estão preenchidos, solicite a correção antes de transmitir a nota fiscal." + CRLF + "Doc: " + SF1->F1_SERIE + "/" + SF1->F1_DOC + CRLF + cErr
+			FWAlertError(cErr, "ZEICF009")
 		EndIf
-	Next
-	
-	If !Empty(cErr)
-		cErr := "Alguns campos necessários não estão preenchidos, solicite a correção antes de transmitir a nota fiscal." + CRLF + "Doc: " + SF1->F1_SERIE + "/" + SF1->F1_DOC + CRLF + cErr
-		FWAlertError(cErr, "ZEICF009")
-	EndIf
+	ENDIF
 
 	DbSelectArea("CD9")
 	DbSetOrder(1)
@@ -121,7 +138,7 @@ User Function ZEICF009()
 	DbSelectArea('CDD')
 	CDD->(DbSetOrder(1))   //CDD_FILIAL+CDD_TPMOV+CDD_DOC+CDD_SERIE+CDD_CLIFOR+CDD_LOJA+CDD_DOCREF+CDD_SERREF+CDD_PARREF+CDD_LOJREF
 
-	If CDD->(DbSeek(FWxFilial('CDD') + 'E' + (cQr)->F1_DOC + (cQr)->F1_SERIE + (cQr)->F1_FORNECE + (cQr)->F1_LOJAoja ))
+	If CDD->(DbSeek(FWxFilial('CDD') + 'E' + SD1->D1_NFORI + SD1->D1_SERIORI + SF1->F1_FORNECE + SF1->F1_LOJA ))
 		RecLock('CDD', .F.)
 		CDD_IFCOMP := '00004'
 		CDD->(MsUnlock())
@@ -162,5 +179,3 @@ Static Function DeParaComb( cCombVV1 )
 	EndCase 
 
 Return cRetorno
-
-

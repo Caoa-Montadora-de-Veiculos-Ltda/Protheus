@@ -5,6 +5,7 @@ User function MT103FIM()
 
    Local _cEmp    := FWCodEmp()
    Local aArea	  := GetArea()
+   Private _cHawb := ''
 
    If _cEmp == "2010" //Executa o p.e. Anapolis.
       zMontadora()
@@ -65,14 +66,17 @@ Static Function zMontadora()
 	
 	// Insere dados adicionais da nota de entrada quando for nota de importacao cbu
 	// EIC 108
-	If findfunction("U_ZEICF009") .and. nConfirma = 1 .And. nOpcao <> 5
+	_cRecno := SF1->(Recno())
+	_cHawb  := Posicione("SF1",1,xFilial("SF1")+SD1->D1_NFORI+SD1->D1_SERIORI+SD1->D1_FORNECE+SD1->D1_LOJA,"F1_HAWB")
+	SF1->(DBGOTO(_cRecno))
+	If findfunction("U_ZEICF009") .and. nConfirma = 1 .And. nOpcao <> 5 .AND. Vazio(_cHawb) = .F.
 		Processa({|| U_ZEICF009() }, 'EIC', 'Dados adicionais Doc Entrada (CD9)')		
 	Endif
 
 
 	// Insere dados adicionais da nota de entrada quando for nota DE CONTAINER "filha"
 	// EIC 108
-	If nConfirma = 1 .AND. Vazio(SF1->F1_HAWB) = .F.    //Vazio(SF1->F1_XMSGADI) = .F. .AND. 
+	If nConfirma = 1 .AND. Vazio(_cHawb) = .F.    //Vazio(SF1->F1_XMSGADI) = .F. .AND. Vazio(SF1->F1_HAWB) = .F. 
 		If Findfunction("U_ZEICF017") 
 			Processa({|| U_ZEICF017() }, 'EIC', 'Dados adicionais Doc Entrada (CD5)')		
 		Endif
