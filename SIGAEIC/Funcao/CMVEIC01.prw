@@ -36,12 +36,12 @@ Return
 User Function CMVEI01A()
 
 	Local oDLg
-	Local nCo1      := 1
-	Local nCo2      := 5
-	Local nPos      := 0
-	Local lConfirma := .T.
-	Local bGetDir   := Nil 
-	
+	Local nCo1          := 1
+	Local nCo2          := 5
+	Local nPos          := 0
+	Local lConfirma     := .T.
+	Local bGetDir       := Nil 
+
 	Private cArqFalta
 	Private cFalta		:= ""
 	Private cTipPreco   := ""
@@ -109,6 +109,13 @@ User Function CMVEI01A()
 	Private cPicVlr 	:= "@E 999,999,999.99"
 	Private lAgt_Ok		:= "1"
 	Private lOk_Shp		:= "1"
+    //Private lOk_Anu		:= "2-Não"
+
+	Private _aPergs     := {}
+	Private _aRetP      := {}
+	Private _cTitulo    := "Informe o Número da Invoice"
+	Private _cRet        
+	Private _cChave     := SPACE(TamSX3("EW4_INVOIC")[1])
 
 	If (nPos:=RAt("\",cDirInicial)) > 0
 		cDirInicial := Subs(cDirInicial,1,nPos)
@@ -182,6 +189,8 @@ Return
 Static Function ValidTela()
 	Local lRet := .T.
 	Local cExtAux := ""
+	Local cINTCSV   := AllTrim(cDiretorio)
+	Local cLinhaIT		:= ""
 
 	If !File(AllTrim(cDiretorio))
 		MsgStop("Arquivo não existe!")
@@ -219,9 +228,423 @@ Static Function ValidTela()
 
 	EndIf
 
-	If lRet
+    //Ajustes Referente ao GAP023
+	if  (FWCodEmp() = cFilExec .AND. nLayout = 5 .and. lRet)
+		_aPergs     := {}
+	    _aRetP      := {}
 
-		cInvNum	 := ""
+		Aadd( _aPergs ,{1,"Informe o Número de Invoice", _cChave      ,"@!" , ""  , "EW4"   ,"", 80, .F. })
+
+		If ParamBox(_aPergs, _cTitulo, _aRetP , , , .T. /*lCentered*/, 0, 0, , , .F. /*lCanSave*/, .T. /*lUserSave*/) = .T.	
+	  	   Aadd(_aRetP,_cChave)		
+		Else
+		   Aadd(_aRetP,_cChave)
+		   Aadd(_aRetP,Space(30))
+		EndIf
+
+		If Empty(_aRetP[1])
+		   MsgStop("Deve ser informado o Número da Invoice para validação com a planilha informada!")
+		   lRet := .F.
+		else
+			FT_FUse(cINTCSV)	
+	        FT_FGotop()
+			cLinhaIT := FT_FReadLn()
+			If  Empty(cLinhaIT)                           
+				MsgStop("Planilha informada sem informações ou vazia!")
+				lRet := .F.
+			EndIF
+
+			aLinha := {}
+			cLinhaIT := StrTran(cLinhaIT,';;','; ;')
+			aLinha   := StrTokArr(cLinhaIT, ";")
+            cInvoice := aLinha[02]
+			If ( _aRetP[1] <> cInvoice )
+				MsgStop("O Número da Invoice: " + alltrim(_aRetP[1]) + " não foi localizada na Planilha informada!")
+				lRet := .F.
+            Endif
+			fclose(cINTCSV)
+		EndIf
+
+	Endif
+	//Fim dos Ajustes do GAP023
+
+	//Ajustes referente ao GAP024
+	//**************** Inicio da Rotina
+	If lRet
+		FT_FUse(cINTCSV)	
+		FT_FGotop()
+
+		While !FT_FEof()
+			
+			cLinhaIT := FT_FReadLn()
+			lErro    := .F.
+			//nLinha++
+
+			If  Empty(cLinhaIT)                           
+				FT_FSkip()
+				Loop
+			EndIF
+
+			aLinha := {}
+			cLinhaIT := StrTran(cLinhaIT,';;','; ;')
+			cLinhaIT := StrTran(cLinhaIT,';;','; ;')
+			aLinha   := StrTokArr(cLinhaIT, ";")
+
+			if cLinhaIT <> "; ; ; ; ; ; ; ; ; ; ; ;" .and.  ;//Layout Franco da Rocha com linhas em branco
+			   cLinhaIT <> "; ; ; ; ; ; ; ; ; ; ;"   .and.  ;//Layout CBU Chery  com linhas em branco
+			   cLinhaIT <> "; ; ; ; ; ; ; ; ; ;"            ;//Layout CBU Subaru com linhas em branco
+
+
+				If nLayout == 1 .and. lRet   // Layout CKD
+					If len(aLinha) == 12
+						cLote         := IF (!EMPTY(aLinha[01]),aLinha[01]," ")
+						cInvoice      := IF (!EMPTY(aLinha[02]),aLinha[02]," ")
+						cConhecimento := IF (!EMPTY(aLinha[03]),aLinha[03]," ")
+						cSeq          := IF (!EMPTY(aLinha[04]),aLinha[04]," ")
+						cProduto      := IF (!EMPTY(aLinha[05]),aLinha[05]," ")
+						cQtde         := IF (!EMPTY(aLinha[06]),aLinha[06]," ")
+						cValor        := IF (!EMPTY(aLinha[07]),aLinha[07]," ")
+						cNavio        := IF (!EMPTY(aLinha[08]),aLinha[08]," ")
+						cContainer    := IF (!EMPTY(aLinha[09]),aLinha[09]," ")
+						cCaixa        := IF (!EMPTY(aLinha[10]),aLinha[10]," ")
+						cPO           := IF (!EMPTY(aLinha[11]),aLinha[11]," ")
+						cUNITIZADOR   := IF (!EMPTY(aLinha[12]),aLinha[12]," ")
+
+						if empty(cLote)
+							MsgStop("A Planilha " + cINTCSV + " contém campos dos Lotes, que estão em branco!")
+							lRet := .F.
+						Endif
+
+						if empty(cInvoice) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos dos Invoices, que estão em branco!")
+							lRet := .F.
+						Endif
+
+						if empty(cConhecimento) .and. lRet
+							MsgStop("A Planilha  " + cINTCSV + " contém campos de Conhecimentos, que estão em branco!")
+							lRet := .F.
+						Endif
+
+						if empty(cProduto) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Produtos, que estão em branco!")
+							lRet := .F.
+						Endif
+
+						if empty(cQtde) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Quantidades, que estão em branco!")
+							lRet := .F.
+						Endif
+
+						if empty(cValor) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Valores Unitários, que estão em branco!")
+							lRet := .F.
+						Endif
+
+						if empty(cContainer) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Containers, que estão em branco!")
+							lRet := .F.
+						Endif
+
+						if empty(cCaixa) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Caixas, que estão em branco!")
+							lRet := .F.
+						Endif
+
+						if empty(cPO) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Purchase Order, que estão em branco!")
+							lRet := .F.
+						Endif
+
+						if empty(cUNITIZADOR) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos da Unitizadores, que estão em branco!")
+							lRet := .F.
+						Endif
+					else
+						cSeq    := IF (!EMPTY(aLinha[04]),aLinha[04]," ")
+						MsgStop("A Planilha " + cINTCSV + " contém erro na linha: " + cSeq + " Processamento abortado!" )
+						lRet := .F.					
+					Endif
+				Endif
+
+				If nLayout == 2 .and. lRet   // Layout CBU Hyundai
+					cProforma	:= AllTrim(Subs(cLinhaIT,001,005)) // 001 a 005 - nro proforma <<< CONFIRMAR LAYOUT MIT044 COM 4 POSIÇÔES
+					cInvoice	:= AllTrim(Subs(cLinhaIT,054,016)) // 054 a 069 - nro da invoice
+					cModelo	    := AllTrim(Subs(cLinhaIT,070,013)) // AllTrim(Subs(cLinhaIT,070,013)) // 070 a 082 - codigo do modelo (retirar espacos em branco)
+					cOpcional	:= AllTrim(Subs(cLinhaIT,083,004)) // 083 a 086 - codigo do opcional
+					cCor_EXT	:= AllTrim(Subs(cLinhaIT,087,003)) // 087 a 089 - codigo da cor externa
+					cCor_INT	:= AllTrim(Subs(cLinhaIT,090,003)) // 090 a 092 - codigo da cor interna
+					cBL	        := AllTrim(Subs(cLinhaIT,101,016)) // 101 a 116 - numerdo do bl
+					cChassi	    := AllTrim(Subs(cLinhaIT,128,017)) // 128 a 144 - numero do chassi
+					cMotor	    := AllTrim(Subs(cLinhaIT,145,012)) // 145 a 156 - numero do motor
+					cModelo	    := AllTrim(Subs(cLinhaIT,206,004)) // 206 a 209 - ano modelo
+					cAno	    := AllTrim(Subs(cLinhaIT,210,004)) // 210 a 213 - ano fabricacao
+					aEspaco	    := AllTrim(Subs(cLinhaIT,214,046)) // 214 a 260 - Espaco
+
+					if empty(cProforma)
+						MsgStop("A Planilha " + cINTCSV + " contém campos dos Números das Proformas, que estão em branco!")
+						lRet := .F.
+					Endif
+					
+					if empty(cInvoice) .and. lRet
+						MsgStop("A Planilha " + cINTCSV + " contém campos de Número da Invoice, que estão em branco!")
+						lRet := .F.
+					Endif
+					
+					if empty(cModelo) .and. lRet
+						MsgStop("A Planilha " + cINTCSV + " contém campos de Código de Modelo, que estão em branco!")
+						lRet := .F.
+					Endif
+					
+					if empty(cOpcional) .and. lRet
+						MsgStop("A Planilha " + cINTCSV + " contém campos de Código de Opcional, que estão em branco!")
+						lRet := .F.
+					Endif
+					
+					if empty(cCor_EXT) .and. lRet
+						MsgStop("A Planilha " + cINTCSV + " contém campos de Cor Externa, que estão em branco!")
+						lRet := .F.
+					Endif
+					
+					if empty(cCor_INT) .and. lRet
+						MsgStop("A Planilha " + cINTCSV + " contém campos de Cor Interna, que estão em branco!")
+						lRet := .F.
+					Endif
+					
+					if empty(cBL) .and. lRet
+						MsgStop("A Planilha " + cINTCSV + " contém campos da Número do BL, que estão em branco!")
+						lRet := .F.
+					Endif
+					
+					if empty(cChassi) .and. lRet
+						MsgStop("A Planilha " + cINTCSV + " contém campos de Chassis, que estão em branco!")
+						lRet := .F.
+					Endif
+
+					if empty(cMotor) .and. lRet
+						MsgStop("A Planilha " + cINTCSV + " contém campos de Numero do Motor, que estão em branco!")
+						lRet := .F.
+					Endif
+
+					if empty(cModelo) .and. lRet
+						MsgStop("A Planilha " + cINTCSV + " contém campos de Ano de Modelo, que estão em branco!")
+						lRet := .F.
+					Endif
+
+					if empty(cAno) .and. lRet
+						MsgStop("A Planilha " + cINTCSV + " contém campos de Ano de Modelo Fabricação, que estão em branco!")
+						lRet := .F.
+					Endif
+
+				Endif
+
+
+				If nLayout == 3 .and. lRet   // Layout CBU Subaru
+					If len(aLinha) == 11
+						cCase     := IF (!EMPTY(aLinha[01]),aLinha[01]," ")
+						cModel    := IF (!EMPTY(aLinha[02]),aLinha[02]," ")
+						cVIN_CODE := IF (!EMPTY(aLinha[03]),aLinha[03]," ")
+						cEngine   := IF (!EMPTY(aLinha[04]),aLinha[04]," ")
+						cColor    := IF (!EMPTY(aLinha[05]),aLinha[05]," ")
+						cOpcional := IF (!EMPTY(aLinha[06]),aLinha[06]," ")
+						cChave    := IF (!EMPTY(aLinha[07]),aLinha[07]," ")
+						cMNO      := IF (!EMPTY(aLinha[08]),aLinha[08]," ")
+						cInvoice  := IF (!EMPTY(aLinha[09]),aLinha[09]," ")
+						cAnoFab   := IF (!EMPTY(aLinha[10]),aLinha[10]," ")
+						cAnoMod   := IF (!EMPTY(aLinha[11]),aLinha[11]," ")
+
+
+						if empty(cModel)
+							MsgStop("A Planilha " + cINTCSV + " contém campos dos Model, que estão em branco!")
+							lRet := .F.
+						Endif
+						
+						if empty(cVIN_CODE) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de VIN-CODE (Chassi), que estão em branco!")
+							lRet := .F.
+						Endif
+						
+						if empty(cEngine) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Engine / Motor, que estão em branco!")
+							lRet := .F.
+						Endif
+						
+						if empty(cColor) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Color / EEII - EE-Cor Externa / II-Cor Interna, que estão em branco!")
+							lRet := .F.
+						Endif
+						
+						if empty(cOpcional) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Opcionais, que estão em branco!")
+							lRet := .F.
+						Endif
+						
+						if empty(cMNO) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de T/MNO - Valor Total, que estão em branco!")
+							lRet := .F.
+						Endif
+						
+						if empty(cInvoice) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos da Invoice, que estão em branco!")
+							lRet := .F.
+						Endif
+						
+						if empty(cAnoFab) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Ano de Fabricação, que estão em branco!")
+							lRet := .F.
+						Endif
+
+						if empty(cAnoMod) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Ano de Modelo, que estão em branco!")
+							lRet := .F.
+						Endif
+					ELSE
+						cSeq    := IF (!EMPTY(aLinha[01]),aLinha[01]," ")
+						MsgStop("A Planilha " + cINTCSV + " contém erro na linha: " + cSeq + " Processamento abortado!" )
+						lRet    := .F.	
+					ENDIF
+				Endif
+ 
+				If nLayout == 4 .and. lRet  // Layout CBU Chery
+				    If len(aLinha) == 12
+						cSeq      := IF (!EMPTY(aLinha[01]),aLinha[01]," ")
+						cModel    := IF (!EMPTY(aLinha[02]),aLinha[02]," ")
+						cChassi   := IF (!EMPTY(aLinha[03]),aLinha[03]," ")
+						cMotor    := IF (!EMPTY(aLinha[04]),aLinha[04]," ")
+						cCor_Ext  := IF (!EMPTY(aLinha[05]),aLinha[05]," ")
+						cCor_int  := IF (!EMPTY(aLinha[06]),aLinha[06]," ")
+						cOpcional := IF (!EMPTY(aLinha[07]),aLinha[07]," ")
+						cBL       := IF (!EMPTY(aLinha[08]),aLinha[08]," ")
+						cValor    := IF (!EMPTY(aLinha[09]),aLinha[09]," ")
+						cInvoice  := IF (!EMPTY(aLinha[10]),aLinha[10]," ")
+						cAnof     := IF (!EMPTY(aLinha[11]),aLinha[11]," ")
+						cAnoM     := IF (!EMPTY(aLinha[12]),aLinha[12]," ")
+						if empty(cModel)
+							MsgStop("A Planilha " + cINTCSV + " contém campos dos Modelos, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cChassi) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos dos Chassis, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cMotor) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Motor, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cCor_Ext) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Cor Externa, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cCor_int) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Cor Interna, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cOpcional) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Opcionais, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cBL) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Numero do BL, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cValor) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Valor, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cInvoice) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos da Invoice, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cAnoF) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Ano de Fabricação, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cAnoM) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Ano de Modelo, que estão em branco!")
+							lRet := .F.
+						Endif
+					ELSE
+						cSeq    := IF (!EMPTY(aLinha[01]),aLinha[01]," ")
+						MsgStop("A Planilha " + cINTCSV + " contém erro na linha: " + cSeq + " Processamento abortado!" )
+						lRet    := .F.	
+					ENDIF
+				Endif
+
+				If nLayout == 5   .and. lRet    // Layout Empresa Franco da Rocha (antiga Barueri):
+					If len(aLinha) == 13
+						cSeq     := IF (!EMPTY(aLinha[01]),aLinha[01]," ")
+						cInvoice := IF (!EMPTY(aLinha[02]),aLinha[02]," ")
+						cNCM	 := IF (!EMPTY(aLinha[03]),aLinha[03]," ")
+						cEX      := IF (!EMPTY(aLinha[04]),aLinha[04]," ")
+						cProduto := IF (!EMPTY(aLinha[05]),aLinha[05]," ")
+						cQtde    := IF (!EMPTY(aLinha[06]),aLinha[06]," ")
+						cValor   := IF (!EMPTY(aLinha[07]),aLinha[07]," ")
+						cContain := IF (!EMPTY(aLinha[08]),aLinha[08]," ")
+						cCaixa   := IF (!EMPTY(aLinha[09]),aLinha[09]," ")
+						cPeso    := IF (!EMPTY(aLinha[10]),aLinha[10]," ")
+						cPO      := IF (!EMPTY(aLinha[11]),aLinha[11]," ")
+						cConhec  := IF (!EMPTY(aLinha[12]),aLinha[12]," ")
+						cNavio   := IF (!EMPTY(aLinha[13]),aLinha[13]," ")
+						if empty(cInvoice)
+							MsgStop("A Planilha " + cINTCSV + " contém campos das Invoices, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cNCM) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos dos NCMs, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cProduto) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Produtos, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cQtde) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Quantidades, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cValor) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Valores Unitários, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cContain) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Containers, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cCaixa) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Caixas, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cPeso) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Pesos, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cPO) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos da Purchase Orders, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cConhec) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Conhecimentos, que estão em branco!")
+							lRet := .F.
+						Endif
+					ELSE
+						cSeq    := IF (!EMPTY(aLinha[01]),aLinha[01]," ")
+						MsgStop("A Planilha " + cINTCSV + " contém erro na linha: " + cSeq + " Processamento abortado!" )
+						lRet    := .F.	
+					ENDIF
+				Endif
+			Else	
+				MsgStop("A Planilha " + cINTCSV + " contém linha(s) que estão em branco!")
+				lRet := .F.
+			Endif
+
+			FT_FSkip()
+			
+		EndDo
+
+		FT_FUse()
+
+		//Fim dos ajustes do GAP024
+
+
+		cInvNum	   := ""
 		cRateado   := ""
 		cFornecedor:= ""
 		cForLoj    := ""
@@ -244,6 +667,8 @@ Static Function ValidTela()
 		aSINUM	   := {}
 
 	EndIf
+
+//Validação do número da Invoice Antecipada - Somente para Franco da Rocha
 
 Return lRet
 
@@ -1342,6 +1767,9 @@ Static Function CMV01Capa()
 		@ 8.6 + nOffP12,nCo2	Combobox lOk_Shp ITEMS {"1-Sim", "2-Não"} When .T. SIZE 40,12 Of oDlg2
 		@ 8.6 + nOffP12,nCo1 + nOffP12+15	Say "Ok Ship:"
 		@ 8.6 + nOffP12,nCo2 + nOffP12+15	MsGet	dOk_Shp Picture "@E" When lOk_Shp="1"  SIZE 80,12 Of oDlg2
+	    @ 9.6 + nOffP12,nCo1	Say "Itens Anuente:" SIZE 8,2 Of oDlg2
+		//@ 9.6 + nOffP12,nCo2	Combobox lOk_Anu ITEMS {"1-Sim", "2-Não"} When .F. SIZE 40,12 Of oDlg2
+		//@ 9.6 + nOffP12,nCo2	MSGet lOk_Anu  When .F. SIZE 40,12 Of oDlg2
 
 	Activate MSDialog oDlg2 ON INIT EnchoiceBar(oDlg2,{|| IIF(CMV01ValCapa(),(lCapaOK := .T.,oDlg2:End()),)},{|| oDlg2:End() },) Centered
 
