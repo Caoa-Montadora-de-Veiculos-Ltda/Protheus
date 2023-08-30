@@ -82,7 +82,6 @@ return
 
 
 Static Function xIncZA7(aTab,cChave)
-
 Local aArea			:= GetArea()
 Local aAreaCT2		:= CT2->(GetArea())
 

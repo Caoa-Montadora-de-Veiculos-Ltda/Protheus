@@ -26,6 +26,9 @@ User Function MT410TOK()
 		//Endif
         If FindFunction("U_ZFATF003")
 			lRet := U_ZFATF003()
+		Endif
+		If FindFunction("U_ZFINF004")
+			lRet := U_ZFINF004()
 		Endif	
 	Endif	
 

@@ -14,7 +14,6 @@ Ponto de Entrada Depois da Gravacao da Nota Fiscal
 @History   Incluído a chamda da função para emissão de Boleto qdo RA 
 */
 //------------------------------------------------------------------------------------------
-
 User Function M460FIM()
 
     Local _cEmp		:= FWCodEmp()

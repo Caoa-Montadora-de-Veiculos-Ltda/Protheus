@@ -4,7 +4,6 @@
 #include "topconn.ch"
 #include "apwebsrv.ch"
 #include "apwebex.ch"
-
 /* =====================================================================================
 Programa.:              ZGENSAPF01
 Autor....:              Evandro Mariano
