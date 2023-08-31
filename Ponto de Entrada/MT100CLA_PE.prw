@@ -3,7 +3,7 @@
 #Include 'Protheus.ch'
 #Include 'TOTVS.ch'
 
-/*/{Protheus.doc} MT100CLA
+/*/{Protheus.doc} U_ZEICF023
 @author A.Carlos
 @since 	21/08/2023
 @version 1.0
@@ -12,7 +12,7 @@
 @history    Preenchimento automático ICMS NF-Complemento
 @type function
 /*/
-User Function MT100CLA()
+User Function ZEICF033()
 Local aAreaSF1      := SF1->(GetArea())
 Local aAreaSD1      := SD1->(GetArea())
 Local cAliasCD5     := GetNextAlias() 
