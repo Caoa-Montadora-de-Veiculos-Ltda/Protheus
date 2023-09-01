@@ -450,7 +450,8 @@ For nY := 1 to len(aDados)
 							(cAliasW3)->W5_SALDO_Q,;
 							(cAliasW3)->W5_SALDO_Q ,;
 							SubStr((cAliasW3)->CHVW5,1,88),;
-							(cAliasW3)->SW5REC;
+							(cAliasW3)->SW5REC,;
+							(cAliasW3)->W5_PGI_NUM ;
 							})
 		else
 			aadd( aSaldos, {cProduto,;
@@ -458,7 +459,8 @@ For nY := 1 to len(aDados)
 							(cAliasW3)->W3_SALDO_Q,;
 							(cAliasW3)->W3_SALDO_Q ,;
 							SUBSTR((cAliasW3)->CHVW3,1,80),;
-							(cAliasW3)->SW3REC;
+							(cAliasW3)->SW3REC,;
+							"";
 							})
 			
 		EndIf
@@ -483,7 +485,7 @@ For nY := 1 to len(aDados)
 			aDados[nY,5,nX,13] := cTipo
 			aDados[nY,5,nX,14] := aSaldos[nZ,6] //Rec
 			aDados[nY,5,nX,15] := aSaldos[nZ,5] //Chave
-			aDados[nY,5,nX,18] := cPGI_NUM
+			aDados[nY,5,nX,18] := aSaldos[nZ,7]  //cPGI_NUM
 			aDados[nY,5,nX,19] := .T.
 			aSaldos[nZ,4] := 0
 			aDados[nY,7] += aDados[nY,5,nX,16]
@@ -501,7 +503,7 @@ For nY := 1 to len(aDados)
 			aDados[nY,5,nX,13] := cTipo
 			aDados[nY,5,nX,14] := aSaldos[nZ,6] //Rec
 			aDados[nY,5,nX,15] := aSaldos[nZ,5] //Chave
-			aDados[nY,5,nX,18] := cPGI_NUM
+			aDados[nY,5,nX,18] := aSaldos[nZ,7] //cPGI_NUM
 			aDados[nY,5,nX,19] := .T.
 			aSaldos[nZ,4] := 0
 			aDados[nY,7] += aDados[nY,5,nX,16]
@@ -518,7 +520,7 @@ For nY := 1 to len(aDados)
 			aDados[nY,5,nX,13] := cTipo
 			aDados[nY,5,nX,14] := aSaldos[nZ,6] //Rec
 			aDados[nY,5,nX,15] := aSaldos[nZ,5] //Chave
-			aDados[nY,5,nX,18] := cPGI_NUM
+			aDados[nY,5,nX,18] := aSaldos[nZ,7] //cPGI_NUM
 			aDados[nY,5,nX,19] := .T.
 			aSaldos[nZ,4] := aSaldos[nZ,4] - nQuant
 			aDados[nY,7] += aDados[nY,5,nX,16]
@@ -565,7 +567,7 @@ For nY := 1 to len(aDados)
 				aDados[nY,5,nLin,13] := cTipo
 				aDados[nY,5,nLin,14] := aSaldos[nZ,6] //Rec
 				aDados[nY,5,nLin,15] := aSaldos[nZ,5] //Chave
-				aDados[nY,5,nLin,18] := cPGI_NUM
+				aDados[nY,5,nLin,18] := aSaldos[nZ,7] //cPGI_NUM
 				aDados[nY,5,nLin,19] := .T.
 				aSaldos[nZ,4] := 0
 				aDados[nY,7] += aDados[nY,5,nLin,16]
@@ -582,7 +584,7 @@ For nY := 1 to len(aDados)
 				aDados[nY,5,nLin,13] := cTipo
 				aDados[nY,5,nLin,14] := aSaldos[nZ,6] //Rec
 				aDados[nY,5,nLin,15] := aSaldos[nZ,5] //Chave
-				aDados[nY,5,nLin,18] := cPGI_NUM
+				aDados[nY,5,nLin,18] := aSaldos[nZ,7] //cPGI_NUM
 				aDados[nY,5,nLin,19] := .T.
 				aSaldos[nZ,4] := 0
 				aDados[nY,7] += aDados[nY,5,nLin,16]
@@ -598,7 +600,7 @@ For nY := 1 to len(aDados)
 				aDados[nY,5,nLin,13] := cTipo
 				aDados[nY,5,nLin,14] := aSaldos[nZ,6] //Rec
 				aDados[nY,5,nLin,15] := aSaldos[nZ,5] //Chave
-				aDados[nY,5,nLin,18] := cPGI_NUM
+				aDados[nY,5,nLin,18] := aSaldos[nZ,7] //cPGI_NUM
 				aDados[nY,5,nLin,19] := .T.
 				aSaldos[nZ,4] := aSaldos[nZ,4] - nQuant
 				aDados[nY,7] += aDados[nY,5,nLin,16]
@@ -810,7 +812,7 @@ Local cTexto := ""
 				cTipo     := aDados[nY,5,nX ,13]
 			endIf
 
-			nLinha := aDados[nY,5,nX ,1]
+			nLinha := Val(aDados[nY,5,nX ,1])
 						
 			if  cTipo == "7" .or. ( cTipo == "1" .and. !empty( aDados[nY,5,nX ,18]) )
 				if SW5->(DbSeek(cChave))
@@ -933,7 +935,7 @@ Local cTexto := ""
 					WKEW5->(MSUnlock())
 				EndIf
 			Else
-				U_FCMVEIC0101("Chave não encontrado " + AllTrim(cProduto) + " pedido : " + cPoNum ,nLinha,AllTrim(cProduto) ,cFornecedor,cForloj,"R",AllTrim(cPoNum), , cInvoice)
+				U_FCMVEIC0101("Produto não encontrado " + AllTrim(cProduto) + " no pedido : " + cPoNum ,nLinha,AllTrim(cProduto) ,cFornecedor,cForloj,"R",AllTrim(cPoNum), , cInvoice)
 				lErro := .T.
 			EndIf
 		Next nY
