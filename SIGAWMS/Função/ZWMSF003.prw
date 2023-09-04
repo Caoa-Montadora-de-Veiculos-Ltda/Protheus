@@ -80,7 +80,7 @@ User Function ZWMSF003()
 
 				If alltrim( aRet[ 1 ] ) == alltrim( aCombo[ 2 ] ) //--Com erro
     				oBrowse:SetFilterDefault( "AllTrim(SZJ->ZJ_STATUS) == 'E'" )
-				ElseIf Alltrim( aRet[ 1 ] ) == Alltrim( aCombo[ 3 ] ) //--Não executada
+				ElseIf Alltrim( aRet[ 1 ] ) == Alltrim( aCombo[ 3 ] ) //--Não executadaGAP054
 					oBrowse:SetFilterDefault( "Empty(ZJ_STATUS)" )	
 				ElseIf Alltrim( aRet[ 1 ] ) == Alltrim( aCombo[ 4 ] ) //--Finalizada
 					oBrowse:SetFilterDefault( "AllTrim(SZJ->ZJ_STATUS) == 'F'" )
@@ -94,7 +94,7 @@ User Function ZWMSF003()
 	EndIf
 
 	Conout("ZWMSF003 | Fim | " + Time() )
-
+ 
 Return
 
 /*
