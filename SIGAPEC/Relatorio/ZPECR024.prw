@@ -74,8 +74,6 @@ Static Function fReportDef() //Definições do relatório
 
 	Local oReport
 	Local oSection	:= Nil
-	Local nMV_PAR10 	:= Val(Substr(MV_PAR10,1,1))
-    Local nMV_PAR11 	:= Val(Substr(MV_PAR11,1,1))
 
 
 	oReport:= TReport():New("ZPECR024",;				// --Nome da impressão
@@ -111,10 +109,8 @@ Static Function fReportDef() //Definições do relatório
 	TRCell():New( oSection  ,"CANAL"      		,cTabela ,"Canal"			,/*cPicture*/,TamSx3("W6_CANAL")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 	TRCell():New( oSection  ,"W9_NOM_FOR"      	,cTabela ,"Fornecedor"		,/*cPicture*/,TamSx3("W9_NOM_FOR")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 	TRCell():New( oSection  ,"W8_PO_NUM"      	,cTabela ,"Num PO"			,/*cPicture*/,TamSx3("W8_PO_NUM")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-	
 	TRCell():New( oSection  ,"PREVISA_CHEGADA"  ,cTabela ,"Dt Prev Chegada"	,/*cPicture*/,TamSx3("W6_DT_ETA")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-	TRCell():New( oSection  ,"DT_REAL_CHEGADA"  ,cTabela ,"Dt Real Chegada"	,/*cPicture*/,TamSx3("W6_CHEG")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-		
+	TRCell():New( oSection  ,"DT_REAL_CHEGADA"  ,cTabela ,"Dt Real Chegada"	,/*cPicture*/,TamSx3("W6_CHEG")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
 	TRCell():New( oSection  ,"W8_COD_I"      	,cTabela ,"Codigo"			,/*cPicture*/,TamSx3("W8_COD_I")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
 	TRCell():New( oSection  ,"QTDE"      		,cTabela ,"Qtde"			,/*cPicture*/,TamSx3("ZM_QTDE")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 	TRCell():New( oSection  ,"PESO_NET"      	,cTabela ,"Peso Net"		,/*cPicture*/,TamSx3("W7_PESO")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
@@ -122,21 +118,15 @@ Static Function fReportDef() //Definições do relatório
 	TRCell():New( oSection  ,"ZM_CASE"      	,cTabela ,"Case"			,/*cPicture*/,TamSx3("ZM_CASE")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 	TRCell():New( oSection  ,"ZM_CONT"      	,cTabela ,"Container"		,/*cPicture*/,TamSx3("ZM_CONT")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 	TRCell():New( oSection  ,"STATUS"     	 	,cTabela ,"Status"			,/*cPicture*/,30						, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-	
 	TRCell():New( oSection  ,"W6_DI_NUM"       	,cTabela ,"Num DI"			,/*cPicture*/,TamSx3("W6_DI_NUM")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
     TRCell():New( oSection  ,"DT_DI"     		,cTabela ,"Dt DI"			,/*cPicture*/,TamSx3("W6_DTREG_D")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-
 	TRCell():New( oSection  ,"DOLAR_DIA"      	,cTabela ,"Dolar dia"		,/*cPicture*/,TamSx3("W9_TX_FOB")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 	TRCell():New( oSection  ,"TIPO_NF"      	,cTabela ,"Tipo de NF"		,/*cPicture*/,20						, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-	
-	//if (MV_PAR11 = 1 .OR. MV_PAR11 = 3 ) // MV_PAR11 -> 1 = Com NF; 2 = Sem NF; 3 = Todos; 
-		TRCell():New( oSection  ,"F1_DOC"      		,cTabela ,"Numero NF"		,/*cPicture*/,TamSx3("F1_DOC")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-		TRCell():New( oSection  ,"F1_SERIE"      	,cTabela ,"Serie NF"		,/*cPicture*/,TamSx3("F1_SERIE")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-		TRCell():New( oSection  ,"DT_EMIS_NF"      	,cTabela ,"Dt Emiss NF"		,/*cPicture*/,TamSx3("F1_EMISSAO")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-		TRCell():New( oSection  ,"DOC_MAE"      	,cTabela ,"Num NF Mae"		,/*cPicture*/,TamSx3("F1_DOC")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-		TRCell():New( oSection  ,"DT_DOC_MAE"      	,cTabela ,"Data NF Mae"		,/*cPicture*/,TamSx3("F1_EMISSAO")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-	//EndIf //O ideal é que isso funcione sem o IF.
-
+	TRCell():New( oSection  ,"F1_DOC"      		,cTabela ,"Numero NF"		,/*cPicture*/,TamSx3("F1_DOC")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+	TRCell():New( oSection  ,"F1_SERIE"      	,cTabela ,"Serie NF"		,/*cPicture*/,TamSx3("F1_SERIE")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+	TRCell():New( oSection  ,"DT_EMIS_NF"      	,cTabela ,"Dt Emiss NF"		,/*cPicture*/,TamSx3("F1_EMISSAO")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+	TRCell():New( oSection  ,"DOC_MAE"      	,cTabela ,"Num NF Mae"		,/*cPicture*/,TamSx3("F1_DOC")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+	TRCell():New( oSection  ,"DT_DOC_MAE"      	,cTabela ,"Data NF Mae"		,/*cPicture*/,TamSx3("F1_EMISSAO")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 	TRCell():New( oSection  ,"PRC_TOT_FOB"      ,cTabela ,"Prc Total FOB"	,/*cPicture*/,TamSx3("W8_PRECO")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 	TRCell():New( oSection  ,"W8_FRETEIN"      	,cTabela ,"Valor frete"	 	,/*cPicture*/,TamSx3("W8_FRETEIN")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 	TRCell():New( oSection  ,"W8_SEGURO"      	,cTabela ,"Valor seguro"	,/*cPicture*/,TamSx3("W8_SEGURO")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
@@ -166,7 +156,8 @@ Static Function ReportPrint(oReport)
 		cQry += "		, SW6.R_E_C_N_O_ 	AS SW6 " 				+ CRLF
 		cQry += "		, SW7.R_E_C_N_O_ 	AS SW7 " 				+ CRLF	
 		cQry += "		, SW9.W9_INVOICE" 							+ CRLF
-		cQry += "		, SUBSTR(SW9.W9_DT_EMIS,7,2)||'/'||SUBSTR(SW9.W9_DT_EMIS,5,2)||'/'||SUBSTR(SW9.W9_DT_EMIS,1,4) AS DT_EMISSAO " 		+ CRLF 
+		cQry += "		, SW9.W9_DT_EMIS AS DT_EMISSAO " 		+ CRLF 
+		//cQry += "		, SUBSTR(SW9.W9_DT_EMIS,7,2)||'/'||SUBSTR(SW9.W9_DT_EMIS,5,2)||'/'||SUBSTR(SW9.W9_DT_EMIS,1,4) AS DT_EMISSAO " 		+ CRLF 
 		cQry += "		, SW6.W6_IDENTVE"	 						+ CRLF
 		cQry += "		, SW6.W6_VIA_TRA"	 						+ CRLF
 		cQry += "		, SW9.W9_NOM_FOR"   						+ CRLF
@@ -360,7 +351,8 @@ Static Function ReportPrint(oReport)
 		cQry += "		, SW6.R_E_C_N_O_ 	AS SW6 " 				+ CRLF
 		cQry += "		, SW7.R_E_C_N_O_ 	AS SW7 " 				+ CRLF	
 		cQry += "		, SW9.W9_INVOICE" 							+ CRLF
-		cQry += "		, SUBSTR(SW9.W9_DT_EMIS,7,2)||'/'||SUBSTR(SW9.W9_DT_EMIS,5,2)||'/'||SUBSTR(SW9.W9_DT_EMIS,1,4) AS DT_EMISSAO " 		+ CRLF 
+		cQry += "		, SW9.W9_DT_EMIS AS DT_EMISSAO " 			+ CRLF 
+		//cQry += "		, SUBSTR(SW9.W9_DT_EMIS,7,2)||'/'||SUBSTR(SW9.W9_DT_EMIS,5,2)||'/'||SUBSTR(SW9.W9_DT_EMIS,1,4) AS DT_EMISSAO " 		+ CRLF 
 		cQry += "		, SW6.W6_IDENTVE"	 						+ CRLF
 		cQry += "		, SW6.W6_VIA_TRA"	 						+ CRLF
 		cQry += "		, SW9.W9_NOM_FOR"   						+ CRLF
@@ -501,8 +493,9 @@ Static Function ReportPrint(oReport)
 			oReport:SetMsgPrint("Imprimindo registo " + cValToChar(nAtual) + " de " + cValToChar(nTotal) + " ...")
 			oReport:IncMeter()
 
-			//Imprimindo a linha atual
+			oSectDad:Cell("DT_EMISSAO"      ):SetValue(StoD((cTabela)->DT_EMISSAO))
 			
+			//Imprimindo a linha atual
 			oSectDad:PrintLine()
 
 			(cTabela)->(DbSkip())
