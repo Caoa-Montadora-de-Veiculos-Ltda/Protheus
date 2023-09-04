@@ -162,8 +162,10 @@ Static Function ReportPrint(oReport)
 		cQry += "		, SW6.W6_VIA_TRA"	 						+ CRLF
 		cQry += "		, SW9.W9_NOM_FOR"   						+ CRLF
 		cQry += "		, SW8.W8_PO_NUM" 							+ CRLF
-		cQry += "		, SUBSTR(SW6.W6_DT_ETA,7,2)||'/'||SUBSTR(SW6.W6_DT_ETA,5,2)||'/'||SUBSTR(SW6.W6_DT_ETA,1,4) AS PREVISA_CHEGADA "	+ CRLF
-		cQry += "		, SUBSTR(SW6.W6_CHEG,7,2)||'/'||SUBSTR(SW6.W6_CHEG,5,2)||'/'||SUBSTR(SW6.W6_CHEG,1,4) AS DT_REAL_CHEGADA " 			+ CRLF
+		//cQry += "		, SUBSTR(SW6.W6_DT_ETA,7,2)||'/'||SUBSTR(SW6.W6_DT_ETA,5,2)||'/'||SUBSTR(SW6.W6_DT_ETA,1,4) AS PREVISA_CHEGADA "	+ CRLF
+		//cQry += "		, SUBSTR(SW6.W6_CHEG,7,2)||'/'||SUBSTR(SW6.W6_CHEG,5,2)||'/'||SUBSTR(SW6.W6_CHEG,1,4) AS DT_REAL_CHEGADA " 			+ CRLF
+		cQry += "		, SW6.W6_DT_ETA AS PREVISA_CHEGADA " 		+ CRLF
+		cQry += "		, SW6.W6_CHEG AS DT_REAL_CHEGADA " 			+ CRLF		
 		cQry += "		, SW8.W8_COD_I" 							+ CRLF
 		cQry += "		, NVL(SZM.ZM_QTDE,0) AS QTDE "		 		+ CRLF
 		cQry += "		, NVL(SW7.W7_PESO,0) AS PESO_NET "		 	+ CRLF
@@ -191,7 +193,8 @@ Static Function ReportPrint(oReport)
 		cQry += "			WHEN SW6.W6_CANAL = '4' THEN 'CINZA' " 		+ CRLF
 		cQry += "		END 					AS CANAL "				+ CRLF		
 		cQry += "		, SW6.W6_DI_NUM " 								+ CRLF			
-		cQry += "		, SUBSTR(SW6.W6_DTREG_D,7,2)||'/'||SUBSTR(SW6.W6_DTREG_D,5,2)||'/'||SUBSTR(SW6.W6_DTREG_D,1,4) AS DT_DI " + CRLF
+		//cQry += "		, SUBSTR(SW6.W6_DTREG_D,7,2)||'/'||SUBSTR(SW6.W6_DTREG_D,5,2)||'/'||SUBSTR(SW6.W6_DTREG_D,1,4) AS DT_DI " + CRLF
+		cQry += "		, SW6.W6_DTREG_D AS DT_DI " + CRLF
 		cQry += "		, NVL(SW9.W9_TX_FOB,0)	AS DOLAR_DIA "			+ CRLF
 		cQry += "		, CASE	"										+ CRLF
 		cQry += "			WHEN SF1.F1_HAWB != ' ' THEN 'NF MAE' " 	+ CRLF
@@ -199,7 +202,8 @@ Static Function ReportPrint(oReport)
 		cQry += "		END 					AS TIPO_NF "			+ CRLF					
 		cQry += "		, SF1.F1_DOC "									+ CRLF	
 		cQry += "		, SF1.F1_SERIE " 								+ CRLF
-		cQry += "		, SUBSTR(SF1.F1_EMISSAO,7,2)||'/'||SUBSTR(SF1.F1_EMISSAO,5,2)||'/'||SUBSTR(SF1.F1_EMISSAO,1,4) AS DT_EMIS_NF " + CRLF
+		//cQry += "		, SUBSTR(SF1.F1_EMISSAO,7,2)||'/'||SUBSTR(SF1.F1_EMISSAO,5,2)||'/'||SUBSTR(SF1.F1_EMISSAO,1,4) AS DT_EMIS_NF " + CRLF
+		cQry += "		, SF1.F1_EMISSAO AS DT_EMIS_NF " 				+ CRLF
 		cQry += "		, NVL((SW8.W8_QTDE * SW8.W8_PRECO),0) AS PRC_TOT_FOB "  		+ CRLF
 		cQry += "		, SW8.W8_FRETEIN "  											+ CRLF		
 		cQry += "		, SW8.W8_SEGURO "  												+ CRLF
@@ -357,8 +361,10 @@ Static Function ReportPrint(oReport)
 		cQry += "		, SW6.W6_VIA_TRA"	 						+ CRLF
 		cQry += "		, SW9.W9_NOM_FOR"   						+ CRLF
 		cQry += "		, SW8.W8_PO_NUM" 							+ CRLF
-		cQry += "		, SUBSTR(SW6.W6_DT_ETA,7,2)||'/'||SUBSTR(SW6.W6_DT_ETA,5,2)||'/'||SUBSTR(SW6.W6_DT_ETA,1,4) AS PREVISA_CHEGADA "	+ CRLF
-		cQry += "		, SUBSTR(SW6.W6_CHEG,7,2)||'/'||SUBSTR(SW6.W6_CHEG,5,2)||'/'||SUBSTR(SW6.W6_CHEG,1,4) AS DT_REAL_CHEGADA " 			+ CRLF
+		cQry += "		, SW6.W6_DT_ETA AS PREVISA_CHEGADA " 		+ CRLF
+		cQry += "		, SW6.W6_CHEG AS DT_REAL_CHEGADA " 			+ CRLF	
+		//cQry += "		, SUBSTR(SW6.W6_DT_ETA,7,2)||'/'||SUBSTR(SW6.W6_DT_ETA,5,2)||'/'||SUBSTR(SW6.W6_DT_ETA,1,4) AS PREVISA_CHEGADA "	+ CRLF
+		//cQry += "		, SUBSTR(SW6.W6_CHEG,7,2)||'/'||SUBSTR(SW6.W6_CHEG,5,2)||'/'||SUBSTR(SW6.W6_CHEG,1,4) AS DT_REAL_CHEGADA " 			+ CRLF
 		cQry += "		, SW8.W8_COD_I" 							+ CRLF
 		cQry += "		, NVL(SZM.ZM_QTDE,0) AS QTDE "		 		+ CRLF
 		cQry += "		, NVL(SW7.W7_PESO,0) AS PESO_NET "		 	+ CRLF
@@ -386,7 +392,8 @@ Static Function ReportPrint(oReport)
 		cQry += "			WHEN SW6.W6_CANAL = '4' THEN 'CINZA' " 		+ CRLF
 		cQry += "		END 					AS CANAL "				+ CRLF		
 		cQry += "		, SW6.W6_DI_NUM " 								+ CRLF			
-		cQry += "		, SUBSTR(SW6.W6_DTREG_D,7,2)||'/'||SUBSTR(SW6.W6_DTREG_D,5,2)||'/'||SUBSTR(SW6.W6_DTREG_D,1,4) AS DT_DI " + CRLF
+		//cQry += "		, SUBSTR(SW6.W6_DTREG_D,7,2)||'/'||SUBSTR(SW6.W6_DTREG_D,5,2)||'/'||SUBSTR(SW6.W6_DTREG_D,1,4) AS DT_DI " + CRLF
+		cQry += "		, SW6.W6_DTREG_D AS DT_DI " + CRLF
 		cQry += "		, NVL(SW9.W9_TX_FOB,0)	AS DOLAR_DIA "			+ CRLF
 		cQry += "		, NULL	"										+ CRLF //, CASE	" ... END AS TIPO_NF "			
 		cQry += "		, NULL	"										+ CRLF //, SF1.F1_DOC "	
@@ -494,6 +501,10 @@ Static Function ReportPrint(oReport)
 			oReport:IncMeter()
 
 			oSectDad:Cell("DT_EMISSAO"      ):SetValue(StoD((cTabela)->DT_EMISSAO))
+			oSectDad:Cell("PREVISA_CHEGADA" ):SetValue(StoD((cTabela)->PREVISA_CHEGADA))
+			oSectDad:Cell("DT_REAL_CHEGADA" ):SetValue(StoD((cTabela)->DT_REAL_CHEGADA))
+			oSectDad:Cell("DT_DI" 			):SetValue(StoD((cTabela)->DT_DI))
+			oSectDad:Cell("DT_DOC_MAE" 		):SetValue(StoD((cTabela)->DT_DOC_MAE))
 			
 			//Imprimindo a linha atual
 			oSectDad:PrintLine()
