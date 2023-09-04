@@ -170,16 +170,21 @@ IF SF1->F1_EST= 'EX'
 			else
 				RecLock('CD9', .T.)
 			EndIf
-			CD9_FILIAL := xFilial("SF1")					
-			CD9_DOC    := cNota
-			CD9_SERIE  := cSerie
-			CD9_TPMOV  := 'E'
-			CD9_TPOPER := '0' 
-			CD9_CONVIN := 'R'
-			CD9_CONVEI := '1'
-			CD9_RESTR  := '0'
-			CD9_TPPINT := cCD9_TPPINT
-			CD9_TPCOMB := cCD9_TPCOMB
+			CD9->CD9_FILIAL := xFilial("SF1")					
+			CD9->CD9_DOC    := cNota
+			CD9->CD9_SERIE  := cSerie
+			CD9->CD9_ESPEC  := cEspec
+		    CD9->CD9_CLIFOR := cFornec
+			CD9->CD9_LOJA   := cLoja
+			CD9->CD9_ITEM   := (cAliasCD9)->CD9_ITEM
+			CD9->CD9_COD    := (cAliasCD9)->CD9_COD
+			CD9->CD9_TPMOV  := 'E'
+			CD9->CD9_TPOPER := '0' 
+			CD9->CD9_CONVIN := 'R'
+			CD9->CD9_CONVEI := '1'
+			CD9->CD9_RESTR  := '0'
+			CD9->CD9_TPPINT := cCD9_TPPINT
+			CD9->CD9_TPCOMB := cCD9_TPCOMB
 
 			CD9->(MsUnlock())
 		EndIf
@@ -188,7 +193,7 @@ IF SF1->F1_EST= 'EX'
 		DbSelectArea('CDD')
 		CDD->(DbSetOrder(1))   //CDD_FILIAL+CDD_TPMOV+CDD_DOC+CDD_SERIE+CDD_CLIFOR+CDD_LOJA+CDD_DOCREF+CDD_SERREF+CDD_PARREF+CDD_LOJREF
 
-		If CDD->(DbSeek(FWxFilial('CDD') + 'E' + cNFOrig + cSerOrig + cFornec + cLoja ))
+		If CDD->(DbSeek(FWxFilial('CDD') + 'E' + cNota + cSerie + cFornec + cLoja + cNFOrig + cSerOrig ))   //+ parref + lojref
 			RecLock('CDD', .F.)
 			CDD_IFCOMP := '00004'
 			CDD->(MsUnlock())
