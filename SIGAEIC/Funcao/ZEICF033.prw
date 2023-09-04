@@ -2,7 +2,6 @@
 #Include 'TopConn.ch'
 #Include 'Protheus.ch'
 #Include 'TOTVS.ch'
-
 /*/{Protheus.doc} U_ZEICF023
 @author A.Carlos
 @since 	21/08/2023
