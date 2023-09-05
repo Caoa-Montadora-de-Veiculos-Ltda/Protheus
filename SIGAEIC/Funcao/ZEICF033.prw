@@ -149,12 +149,13 @@ IF SF1->F1_EST= 'EX'
 		LEFT JOIN %table:VVE% VVE ON VVE.%NotDel% 
 			AND SUBSTR(VVE.VVE_FILIAL,1,6) = SUBSTR(SD1.D1_FILIAL,1,6) 
 			AND VVE.VVE_ESPVEI = VV2.VV2_ESPVEI
-		LEFT JOIN %table:SWN% SWN ON SWN.%NotDel% 		
-            AND SWN.WN_FILIAL  = SD1.D1_FILIAL
-            AND SWN.WN_DOC     = SD1.D1_NFORI        //SF1.F1_DOC      originais
-            AND SWN.WN_SERIE   = SD1.D1_SERIORI      //SF1.F1_SERIE
-			AND SWN.WN_FORNECE = %Exp:cFornec%             //SF1.F1_FORNECE
-            AND SWN.WN_LOJA    = %Exp:cLoja%               //SF1.F1_LOJA
+		LEFT JOIN %table:SWN% SWN ON SWN.%NotDel% 
+            AND SWN.WN_FILIAL  = %xFilial:SWN%
+		    AND SWN.WN_HAWB    = %Exp:cHAWB%		
+            //AND SWN.WN_DOC     = SD1.D1_NFORI               //SF1.F1_DOC      originais
+            //AND SWN.WN_SERIE   = SD1.D1_SERIORI             //SF1.F1_SERIE
+			//AND SWN.WN_FORNECE = %Exp:cFornec%             //SF1.F1_FORNECE
+            //AND SWN.WN_LOJA    = %Exp:cLoja%               //SF1.F1_LOJA
 		LEFT JOIN %table:SWV% SWV ON SWV.%NotDel% 
 		    AND SWV.WV_FILIAL = SD1.D1_FILIAL 	
             AND SWV.WV_HAWB   = %Exp:cHAWB%
