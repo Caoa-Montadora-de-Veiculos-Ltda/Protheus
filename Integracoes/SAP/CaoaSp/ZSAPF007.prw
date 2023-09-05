@@ -23,7 +23,7 @@ Obs......:				WS ja deve estar com alguma filial Aberta
 
 WSSERVICE ZSAPF007 DESCRIPTION "Inclusão Lancto Contabil" NAMESPACE "http://www.totvs.com.br/ZSAPF007"
 	
-	WSDATA WSDADOS 	as SAP07_LANCTO
+	WSDATA WSDADOS 	 as SAP07_LANCTO
 	WSDATA WSRETORNO as SAP07_RETORNO
 	
 	WSMETHOD IncLancto DESCRIPTION "Inclusão Lancto Contabil"
@@ -41,22 +41,30 @@ WSMETHOD IncLancto WSRECEIVE WSDADOS WSSEND WSRETORNO WSSERVICE ZSAPF007
 	
 	Local bError 	:= ErrorBlock( { |oError| MyError( oError ) } )
 	Local aRetorno	:= {}
-	
-	//Local cxFilial	:= ::WSDADOS:cabecalho:FilialProtheus
-	Private cxFilial	:= ""    //"2010022001"
+	Local _cEmpresa := "02"
+	Local cxFilial	:= "2020012001"
+	Private _cFilAtu	:= ::WSDADOS:cabecalho:FilialProtheus
 
-	IF _cEmp = '2010' 
-		cxFilial = '2010022001'
-	ELSEIF _cEmp = '2020' 
-		cxFilial := '2020012001'
-	ENDIF
-	
 	BEGIN SEQUENCE
 		
-		cFilAnt := cxFilial 
+		cFilAnt := cxFilial
+		if _cFilAtu == cxFilial
+
+			RpcClearEnv()
+			RPCSetType(3)
+			RpcSetEnv(_cEmpresa, _cFilAtu,,,,GetEnvServer(),{ })
+			
+			Conout("[ZSAPF007] Conectando " + DTOC(dDATABASE) + " - " + TIME() )
+			
+			aRetorno := xIncCT2(::WSDADOS)
+
+			Conout("[ZSAPF007] Disconetando  " + DTOC(dDATABASE) + " - " + TIME() )		
+		else
 		
-		aRetorno := xIncCT2(::WSDADOS)
+			AADD(aRetorno, "3"	 )//Status
+			AADD(aRetorno, "Empresa Protheus não encontrada" )//Msg
 		
+		ENDIF
 	RECOVER
 		Conout('Problema Ocorreu as Horas: ' + TIME() )
 	END SEQUENCE
@@ -86,10 +94,10 @@ Static Function xIncCT2(oDados)
 	Local aRet		:= {}
 	
 	Local cLote 	:= SUPERGETMV("CMV_LCTSAP", Nil, "009900")
-	Local cSubLote	:= ""
+	Local cSubLote	:= "001"
 	Local cDoc		:= ""
 	Local cErro 	:= ""
-	Local CTF_LOCK	:= 0
+	//Local CTF_LOCK	:= 0
 	
 	Local nTamHis 	:= TamSX3("CT2_HIST")[1] 
 	
@@ -100,9 +108,9 @@ Static Function xIncCT2(oDados)
 	Local aItens 	:= {}
 	Local aCab 		:= {}
 	
-	Local oSubLote
-	Local oDoc
-	Local oLote
+	//Local oSubLote
+	//Local oDoc
+	//Local oLote
 
 	Local dDataLanc := StoD(oDados:cabecalho:DataLancto) 
 	Local aCont		:= nil
@@ -110,13 +118,15 @@ Static Function xIncCT2(oDados)
 	private lMsHelpAuto     := .T. // Se .T. direciona as mensagens de help para o arq. de log
 	private lMsErroAuto     := .F.
 	private lAutoErrNoFile  := .T. // Precisa estar como .T. para GetAutoGRLog() retornar o array com erros
-	Private lSubLote 	:= Empty(cSubLote)
-		
+	Private lSubLote 		:= Empty(cSubLote)
+
 	aCont := xValGer(oDados)//Validações para processeguir com o lançamento
 	
 	If Empty(aCont) //se a Função retornar um array em branco quer dizer que não encontrou nenhum erro
 	
-		C050Next(dDataLanc,@cLote,@cSubLote,@cDoc,oLote,oSubLote,oDoc,@CTF_LOCK,3,1)//Função padrão para retornar SubLote e Documento
+		//C050Next(dDataLanc,@cLote,@cSubLote,@cDoc,oLote,oSubLote,oDoc,@CTF_LOCK,3,1)//Função padrão para retornar SubLote e Documento
+		
+		cDoc := U_GetCTFDoc(dDataLanc,cLote,cSubLote)
 		
 		//Dados Cabeçalho
 		AADD(aCab,{'DDATALANC' 	, dDataLanc 							,NIL})
@@ -132,10 +142,10 @@ Static Function xIncCT2(oDados)
 			aItem := {}
 			
 			//AADD(aItem,{'CT2_FILIAL' 	 , oDados:cabecalho:FilialProtheus 						, NIL})
-			AADD(aItem,{'CT2_FILIAL' 	 , cxFilial              								, NIL})
+			AADD(aItem,{'CT2_FILIAL' 	 , _cFilAtu             								, NIL})
 			AADD(aItem,{'CT2_LINHA'  	 , oDados:itens[nI]:Item 		   						, NIL})
 			AADD(aItem,{'CT2_DC'  	 	 , oDados:itens[nI]:TipoLancto	   						, NIL})
-			AADD(aItem,{'CT2_MOEDLC'	 ,'01' 							   						, NIL}) 
+			AADD(aItem,{'CT2_MOEDLC'	 ,'01' 							   						, NIL})
 			AADD(aItem,{'CT2_TPSALD'	 ,'1' 							   						, NIL})
 			AADD(aItem,{'CT2_VALOR'	  	 , oDados:itens[nI]:Valor	   			   				, NIL})
 			AADD(aItem,{'CT2_ORIGEM'  	 , "INTSAP - " + dToc(dDataBase) + " - " + Time()		, NIL})
@@ -197,10 +207,17 @@ Static Function xIncCT2(oDados)
 		
 				for nI := 1 to len(aErro)
 					cErro += aErro[ nI ] + CRLF
+					
 				next nI
 				
-				AADD(aRet, "2"	 )//Status
-				AADD(aRet, cErro )//Msg
+				IF "AJUDA:" $ cErro
+					AADD(aRet, "1"	 )//Status
+					AADD(aRet, "Lancto Incluido com Sucesso" )//Msg
+				ELSE
+					AADD(aRet, "2"	 )//Status
+					AADD(aRet, cErro )//Msg
+				EndIf
+				Memowrite('\Data\' + cDoc + '_' + Dtos(Date()) + ".log",cErro )
 	
 			EndIf
 		EndIf
@@ -217,7 +234,9 @@ Static Function xValGer(oDados)
 	
 	Local lRet		:= .T.
 	Local cMsgErro	:= "Erro: " + CRLF
+	Local cMsgAviso	:= "Aviso: " + CRLF
 	
+	Local lAviso    := .F.
 	Local aRet 		:= {}
 	Local ni		:= 1
 	Local qtdReg	:= 0
@@ -226,10 +245,23 @@ Static Function xValGer(oDados)
 	Local nValCre	:= 0
 	Local nNumLin	:= SUPERGETMV("MV_NUMLIN",Nil,996)
 	
+	//Variaveis para auxiliar na validação contabil
+	Local cContaDebito  := ""
+	Local cCustoDebito  := ""
+	Local cItemDebito   := ""
+	Local cCLVLDebito	:= ""
+	
+	Local cContaCredito := ""
+	Local cCustoCredito := ""
+	Local cItemCredito  := ""
+	Local cCLVLCredito	:= ""
+	
 	dbSelectArea("CT1")
 	dbSelectArea("CTT")
 	dbSelectArea("CTD")
 	dbSelectArea("CT2")
+	dbSelectArea("CTH")
+
 	CT2->(DbOrderNickName("CMVIDSAP"))//CT2_FILIAL+CT2_XSAP
 
 	If Empty(oDados:cabecalho:LoteSAP)
@@ -244,8 +276,10 @@ Static Function xValGer(oDados)
 
 	If lRet
 		If (CT2->(DbSeek( xFilial("CT2") + oDados:cabecalho:LoteSAP + Substr(AllTrim(oDados:cabecalho:DataLancto),1,4) )))
-			cMsgErro += "Lancto Contabil Já existe na base, Lote: " + Alltrim(oDados:cabecalho:LoteSAP) + CRLF 
+			//cMsgErro += "Lancto Contabil Já existe na base, Lote: " + Alltrim(oDados:cabecalho:LoteSAP) + CRLF 
+			cMsgAviso += "Lancto Contabil Já existe na base, Lote: " + Alltrim(oDados:cabecalho:LoteSAP) + CRLF 
 			lRet	:= .F.
+			lAviso  := .T.
 		EndIf
 	EndIf
 	
@@ -280,7 +314,7 @@ Static Function xValGer(oDados)
 					nValCre	+= oDados:itens[nI]:Valor
 				EndIf
 			EndIf  
-		EndIf		
+		EndIf
 		
 		If oDados:itens[nI]:Valor <= 0
 			cMsgErro += "Valor do lançamento deve ser maior que Zero" + CRLF
@@ -289,8 +323,13 @@ Static Function xValGer(oDados)
 		
 		//Validação conta Debito
 		If !Empty(oDados:itens[nI]:ContaDebito)
+			//Para o Texto ficar no tamanho certo do dicionario para evitar falha no Seek
+			cContaDebito := oDados:itens[nI]:ContaDebito
+			cContaDebito := fTamSx3(cContaDebito,"CT1_CONTA")
+			
 			CT1->(dbSetOrder(1))//CT1_FILIAL+CT1_CONTA
-			If CT1->(dbSeek(xFilial("CT1") + oDados:itens[nI]:ContaDebito))
+			//If CT1->(dbSeek(xFilial('CT1') + oDados:itens[nI]:ContaDebito))
+			If CT1->(dbSeek(xFilial('CT1') + cContaDebito))
 				If CT1->CT1_BLOQ == "1"//Bloqueado
 					cMsgErro += "Conta Debito Esta Bloqueada Conta:" + Alltrim(oDados:itens[nI]:ContaDebito) + CRLF 
 					lRet	:= .F.							
@@ -358,8 +397,13 @@ Static Function xValGer(oDados)
 
 		//Validação conta Credito
 		If !Empty(oDados:itens[nI]:ContaCredito)
+			//Para o Texto ficar no tamanho certo do dicionario para evitar falha no Seek
+			cContaCredito := oDados:itens[nI]:ContaCredito
+			cContaCredito := fTamSx3(cContaCredito,"CT1_CONTA")
+			
 			CT1->(dbSetOrder(1))//CT1_FILIAL+CT1_CONTA
-			If CT1->(dbSeek(xFilial("CT1") + oDados:itens[nI]:ContaCredito))
+			//If CT1->(dbSeek(xFilial('CT1') + oDados:itens[nI]:ContaCredito))
+			If CT1->(dbSeek(xFilial('CT1') + cContaCredito))
 				If CT1->CT1_BLOQ == "1"//Bloqueado
 					cMsgErro 	+= "Conta Credito Esta Bloqueada Conta:" + Alltrim(oDados:itens[nI]:ContaCredito) + CRLF
 					lRet		:= .F.
@@ -427,8 +471,13 @@ Static Function xValGer(oDados)
 		
 		//Validação CC de Debito
 		If !Empty(oDados:itens[nI]:CentroCustoDebito)
+			//Para o Texto ficar no tamanho certo do dicionario para evitar falha no Seek
+			cCustoDebito := oDados:itens[nI]:CentroCustoDebito
+			cCustoDebito := fTamSx3(cCustoDebito,"CTT_CUSTO")
+
 			CTT->(dbSetOrder(1))//CTT_FILIAL+CTT_CUSTO
-			If CTT->(dbSeek(xFilial("CTT") + oDados:itens[nI]:CentroCustoDebito))
+			//If CTT->(dbSeek(xFilial('CTT') + oDados:itens[nI]:CentroCustoDebito))
+			If CTT->(dbSeek(xFilial('CTT') + cCustoDebito))
 				If CTT->CTT_BLOQ == "1"//Bloqueado
 					cMsgErro 	+= "Centro Custo Debito Esta Bloqueado CC:" + Alltrim(oDados:itens[nI]:CentroCustoDebito) + CRLF
 					lRet		:= .F.
@@ -441,8 +490,13 @@ Static Function xValGer(oDados)
 
 		//Validação CC de Credito
 		If !Empty(oDados:itens[nI]:CentroCustoCredito)
+			//Para o Texto ficar no tamanho certo do dicionario para evitar falha no Seek
+			cCustoCredito := oDados:itens[nI]:CentroCustoCredito
+			cCustoCredito := fTamSx3(cCustoCredito,"CTT_CUSTO")
+
 			CTT->(dbSetOrder(1))//CTT_FILIAL+CTT_CUSTO
-			If CTT->(dbSeek(xFilial("CTT") + oDados:itens[nI]:CentroCustoCredito))
+			//If CTT->(dbSeek(xFilial('CTT') + oDados:itens[nI]:CentroCustoCredito))
+			If CTT->(dbSeek(xFilial('CTT') + cCustoCredito))
 				If CTT->CTT_BLOQ == "1"//Bloqueado
 					cMsgErro 	+= "Centro Custo Credito Esta Bloqueado CC:" + Alltrim(oDados:itens[nI]:CentroCustoCredito) + CRLF
 					lRet		:= .F.
@@ -455,8 +509,13 @@ Static Function xValGer(oDados)
 
 		//Validação Item Contabil de Debito
 		If !Empty(oDados:itens[nI]:ItemContaDebito)
+			//Para o Texto ficar no tamanho certo do dicionario para evitar falha no Seek
+			cItemDebito := oDados:itens[nI]:ItemContaDebito
+			cItemDebito := fTamSx3(cItemDebito,"CTD_ITEM")
+			
 			CTD->(dbSetOrder(1))//CTD_FILIAL+CTD_ITEM
-			If CTD->(dbSeek(xFilial("CTD") + oDados:itens[nI]:ItemContaDebito))
+			//If CTD->( dbSeek(xFilial('CTD') + oDados:itens[nI]:ItemContaDebito ))
+			If CTD->( dbSeek(xFilial('CTD') + cItemDebito ))
 				If CTD->CTD_BLOQ == "1"//Bloqueado
 					cMsgErro 	+= "Item Contabil Debito Esta Bloqueado Item:" + Alltrim(oDados:itens[nI]:ItemContaDebito) + CRLF
 					lRet		:= .F.
@@ -469,8 +528,13 @@ Static Function xValGer(oDados)
 
 		//Validação Item Contabil de Credito
 		If !Empty(oDados:itens[nI]:ItemContaCredito)
+			//Para o Texto ficar no tamanho certo do dicionario para evitar falha no Seek
+			cItemCredito := oDados:itens[nI]:ItemContaCredito
+			cItemCredito := fTamSx3(cItemCredito,"CTD_ITEM")
+
 			CTD->(dbSetOrder(1))//CTD_FILIAL+CTD_ITEM
-			If CTD->(dbSeek(xFilial("CTD") + oDados:itens[nI]:ItemContaCredito))
+			//If CTD->(dbSeek(xFilial('CTD') + oDados:itens[nI]:ItemContaCredito))
+			If CTD->(dbSeek(xFilial('CTD') + cItemCredito))
 				If CTD->CTD_BLOQ == "1"//Bloqueado
 					cMsgErro 	+= "Item Contabil Credito Esta Bloqueado Item:" + Alltrim(oDados:itens[nI]:ItemContaCredito) + CRLF
 					lRet		:= .F.
@@ -483,8 +547,13 @@ Static Function xValGer(oDados)
 
 		//Validação Item Contabil de Debito
 		If !Empty(oDados:itens[nI]:ClasseValorDebito)
+			//Para o Texto ficar no tamanho certo do dicionario para evitar falha no Seek
+			cCLVLDebito := oDados:itens[nI]:ClasseValorDebito
+			cCLVLDebito := fTamSx3(cCLVLDebito,"CTH_CLVL")
+			
 			CTH->(dbSetOrder(1))//CTH_FILIAL+CTH_CLVL
-			If CTH->(dbSeek(xFilial("CTH") + oDados:itens[nI]:ClasseValorDebito))
+			//If CTH->(dbSeek(xFilial('CTH') + oDados:itens[nI]:ClasseValorDebito))
+			If CTH->(dbSeek(xFilial('CTH') + cCLVLDebito))
 				If CTH->CTH_BLOQ == "1"//Bloqueado
 					cMsgErro 	+= "Classe Valor Debito Esta Bloqueado Item:" + Alltrim(oDados:itens[nI]:ClasseValorDebito) + CRLF
 					lRet		:= .F.
@@ -497,8 +566,13 @@ Static Function xValGer(oDados)
 
 		//Validação Item Contabil de Credito
 		If !Empty(oDados:itens[nI]:ClasseValorCredito)
+			//Para o Texto ficar no tamanho certo do dicionario para evitar falha no Seek
+			cCLVLCredito := oDados:itens[nI]:ClasseValorCredito
+			cCLVLCredito := fTamSx3(cCLVLCredito,"CTH_CLVL")
+
 			CTH->(dbSetOrder(1))//CTH_FILIAL+CTH_CLVL
-			If CTH->(dbSeek(xFilial("CTH") + oDados:itens[nI]:ClasseValorCredito))
+			//If CTH->(dbSeek(xFilial('CTH') + oDados:itens[nI]:ClasseValorCredito))
+			If CTH->(dbSeek(xFilial('CTH') + cCLVLCredito))
 				If CTH->CTH_BLOQ == "1"//Bloqueado
 					cMsgErro 	+= "Classe Valor Credito Esta Bloqueado Classe:" + Alltrim(oDados:itens[nI]:ClasseValorCredito) + CRLF
 					lRet		:= .F.
@@ -528,8 +602,14 @@ Static Function xValGer(oDados)
 	Endif 
 	
 	If !lRet
-		AADD(aRet, "3"	 		)//Status
-		AADD(aRet, cMsgErro  	)//Msg					
+		if lAviso
+			AADD(aRet, "1"	 		)//Status
+			AADD(aRet, cMsgAviso 	)//Msg
+		else
+			AADD(aRet, "3"	 		)//Status
+			AADD(aRet, cMsgErro  	)//Msg
+		EndIf	
+		
 	EndIf
 
 	
@@ -555,13 +635,13 @@ Static Function xEncCod(cCgc,cTp)
 	If cTp == "C"
 		dbSelectArea("SA1")
 		SA1->(dbSetOrder(3))//A1_FILIAL+A1_CGC
-		If SA1->(dbSeek(xFilial("SA1") + cCgc))
+		If SA1->(dbSeek(FwxFilial("SA1") + cCgc))
 			cRet := SA1->A1_COD + SA1->A1_LOJA
 		EndIf
 	Else
 		dbSelectArea("SA2")
 		SA2->(dbSetOrder(3))//A2_FILIAL+A2_CGC
-		If SA2->(dbSeek(xFilial("SA2") + cCgc))
+		If SA2->(dbSeek(FwxFilial("SA2") + cCgc))
 			cRet := SA2->A2_COD + SA2->A2_LOJA	
 		EndIf		
 	EndIf
@@ -597,3 +677,83 @@ Static Function MyError(oError)
 	
 Return .T.
 
+
+/*
+=========================================================================================
+Função:              	fTamSx3
+Data.....:           	09/10/2022
+Descricao / Objetivo:   Função que retorna o Texto no tamanho do campo do Dicionario
+						para auxiliar no Seek.
+==========================================================================================
+*/
+Static Function fTamSx3(cTexto,cCampo)
+Local cRet := ""
+Local nTam := 10//TAMSX3(cCampo)[1]
+
+Do CASE
+	
+	Case alltrim(cCampo) == "CT1_CONTA"
+		nTam := Len(CT1->CT1_CONTA)
+	
+	Case alltrim(cCampo) == "CTT_CUSTO"
+		nTam := Len(CTT->CTT_CUSTO)
+	
+	Case alltrim(cCampo) == "CTD_ITEM"
+		nTam := Len(CTD->CTD_ITEM)
+	
+	Case alltrim(cCampo) == "CTH_CLVL"
+		nTam := Len(CTH->CTH_CLVL)
+	
+	OtherWise
+		nTam := Len(cTexto)
+
+EndCase
+
+cRet := Pad(cTexto,nTam)
+
+Return cRet
+
+
+//-----------------------------------------------------------------
+//Rotina para pegar o ultimo numero do documento 
+//-----------------------------------------------------------------
+
+
+User Function GetCTFDoc(_dData,_cLote,_cSubLote)
+Local cQuery := ""
+Local cAlias := GetNextAlias()
+Local cDoc   := "000000"
+
+Default _dData    := Date()
+Default _cLote    := "000001"
+Default _cSubLote := Space(3)
+
+cQuery := "SELECT NVL(MAX(CTF.CTF_DOC),'000000')AS CDOC from " + RetSqlName("CTF") + " CTF "
+/*
+cQuery += " INNER JOIN " + RetSqlName("CT2") + " CT2 "
+cQuery += "     ON  CT2.CT2_DATA   = CTF.CTF_DATA "
+cQuery += "     AND CT2.CT2_LOTE   = CTF.CTF_LOTE "
+cQuery += "     AND CT2.CT2_SBLOTE = CTF.CTF_SBLOTE "
+cQuery += "     AND CT2.CT2_FILIAL = '" + xFilial("CT2") + "' "
+cQuery += "     AND CT2.D_E_L_E_T_ = ' ' "
+*/
+cQuery += " WHERE   CTF.CTF_DATA   = '" + DtoS(_dData) + "' "
+cQuery += "     AND CTF.CTF_LOTE   = '" + _cLote       + "' "
+cQuery += "     AND CTF.CTF_SBLOTE = '" + _cSubLote    + "' "
+cQuery += "     AND CTF.CTF_USADO  = 'S' "
+cQuery += "     AND CTF.CTF_FILIAL = '" + xFilial("CTF") + "' "
+cQuery += "     AND CTF.D_E_L_E_T_ = ' ' "
+
+dbUseArea(.T.,"TOPCONN",TcGenQry(,,cQuery),cAlias)
+
+If (cAlias)->(!Eof())
+	cDoc := Soma1((cAlias)->CDOC)
+else
+	cDoc := Soma1(cDoc)
+EndIf
+
+If Select(cAlias) > 0
+	(cAlias)->(DbCloseArea())
+EndIf
+
+Return cDoc
