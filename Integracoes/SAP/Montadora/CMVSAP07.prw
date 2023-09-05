@@ -136,7 +136,6 @@ Static Function xIncCT2(oDados)
 		//FWLogMsg("INFO", /*cTransactionId*/, "LOGSAP07", /*cCategory*/, /*cStep*/, /*cMsgId*/, CTOD(Date()) + " - Hora: " + Time() + " - Iniciando interação", /*nMensure*/, /*nElapseTime*/, /*aMessage*/)
 	
 		//C050Next(dDataLanc,@cLote,@cSubLote,@cDoc,oLote,oSubLote,oDoc,@CTF_LOCK,3,1)//Função padrão para retornar SubLote e Documento		
-	
 		/*
 		cQuery := "SELECT Max(CTF_DOC) MAXDOC "
 		cQuery += "FROM "+RetSqlName("CTF")+" CTF "

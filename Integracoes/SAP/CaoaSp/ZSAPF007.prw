@@ -42,8 +42,8 @@ WSMETHOD IncLancto WSRECEIVE WSDADOS WSSEND WSRETORNO WSSERVICE ZSAPF007
 	Local bError 	:= ErrorBlock( { |oError| MyError( oError ) } )
 	Local aRetorno	:= {}
 	Local _cEmpresa := "02"
-	Local _cFilAtu	:= ::WSDADOS:cabecalho:FilialProtheus
 	Local cxFilial	:= "2020012001"
+	Private _cFilAtu	:= ::WSDADOS:cabecalho:FilialProtheus
 
 	BEGIN SEQUENCE
 		
@@ -142,7 +142,7 @@ Static Function xIncCT2(oDados)
 			aItem := {}
 			
 			//AADD(aItem,{'CT2_FILIAL' 	 , oDados:cabecalho:FilialProtheus 						, NIL})
-			AADD(aItem,{'CT2_FILIAL' 	 , cxFilial              								, NIL})
+			AADD(aItem,{'CT2_FILIAL' 	 , _cFilAtu             								, NIL})
 			AADD(aItem,{'CT2_LINHA'  	 , oDados:itens[nI]:Item 		   						, NIL})
 			AADD(aItem,{'CT2_DC'  	 	 , oDados:itens[nI]:TipoLancto	   						, NIL})
 			AADD(aItem,{'CT2_MOEDLC'	 ,'01' 							   						, NIL})
@@ -328,8 +328,8 @@ Static Function xValGer(oDados)
 			cContaDebito := fTamSx3(cContaDebito,"CT1_CONTA")
 			
 			CT1->(dbSetOrder(1))//CT1_FILIAL+CT1_CONTA
-			//If CT1->(dbSeek(cFilCT1 + oDados:itens[nI]:ContaDebito))
-			If CT1->(dbSeek(cFilCT1 + cContaDebito))
+			//If CT1->(dbSeek(xFilial('CT1') + oDados:itens[nI]:ContaDebito))
+			If CT1->(dbSeek(xFilial('CT1') + cContaDebito))
 				If CT1->CT1_BLOQ == "1"//Bloqueado
 					cMsgErro += "Conta Debito Esta Bloqueada Conta:" + Alltrim(oDados:itens[nI]:ContaDebito) + CRLF 
 					lRet	:= .F.							
@@ -402,8 +402,8 @@ Static Function xValGer(oDados)
 			cContaCredito := fTamSx3(cContaCredito,"CT1_CONTA")
 			
 			CT1->(dbSetOrder(1))//CT1_FILIAL+CT1_CONTA
-			//If CT1->(dbSeek(cFilCT1 + oDados:itens[nI]:ContaCredito))
-			If CT1->(dbSeek(cFilCT1 + cContaCredito))
+			//If CT1->(dbSeek(xFilial('CT1') + oDados:itens[nI]:ContaCredito))
+			If CT1->(dbSeek(xFilial('CT1') + cContaCredito))
 				If CT1->CT1_BLOQ == "1"//Bloqueado
 					cMsgErro 	+= "Conta Credito Esta Bloqueada Conta:" + Alltrim(oDados:itens[nI]:ContaCredito) + CRLF
 					lRet		:= .F.
@@ -476,8 +476,8 @@ Static Function xValGer(oDados)
 			cCustoDebito := fTamSx3(cCustoDebito,"CTT_CUSTO")
 
 			CTT->(dbSetOrder(1))//CTT_FILIAL+CTT_CUSTO
-			//If CTT->(dbSeek(cFilCTt + oDados:itens[nI]:CentroCustoDebito))
-			If CTT->(dbSeek(cFilCTt + cCustoDebito))
+			//If CTT->(dbSeek(xFilial('CTT') + oDados:itens[nI]:CentroCustoDebito))
+			If CTT->(dbSeek(xFilial('CTT') + cCustoDebito))
 				If CTT->CTT_BLOQ == "1"//Bloqueado
 					cMsgErro 	+= "Centro Custo Debito Esta Bloqueado CC:" + Alltrim(oDados:itens[nI]:CentroCustoDebito) + CRLF
 					lRet		:= .F.
@@ -495,8 +495,8 @@ Static Function xValGer(oDados)
 			cCustoCredito := fTamSx3(cCustoCredito,"CTT_CUSTO")
 
 			CTT->(dbSetOrder(1))//CTT_FILIAL+CTT_CUSTO
-			//If CTT->(dbSeek(cFilCTt + oDados:itens[nI]:CentroCustoCredito))
-			If CTT->(dbSeek(cFilCTt + cCustoCredito))
+			//If CTT->(dbSeek(xFilial('CTT') + oDados:itens[nI]:CentroCustoCredito))
+			If CTT->(dbSeek(xFilial('CTT') + cCustoCredito))
 				If CTT->CTT_BLOQ == "1"//Bloqueado
 					cMsgErro 	+= "Centro Custo Credito Esta Bloqueado CC:" + Alltrim(oDados:itens[nI]:CentroCustoCredito) + CRLF
 					lRet		:= .F.
@@ -514,8 +514,8 @@ Static Function xValGer(oDados)
 			cItemDebito := fTamSx3(cItemDebito,"CTD_ITEM")
 			
 			CTD->(dbSetOrder(1))//CTD_FILIAL+CTD_ITEM
-			//If CTD->( dbSeek(cFilCTD + oDados:itens[nI]:ItemContaDebito ))
-			If CTD->( dbSeek(cFilCTD + cItemDebito ))
+			//If CTD->( dbSeek(xFilial('CTD') + oDados:itens[nI]:ItemContaDebito ))
+			If CTD->( dbSeek(xFilial('CTD') + cItemDebito ))
 				If CTD->CTD_BLOQ == "1"//Bloqueado
 					cMsgErro 	+= "Item Contabil Debito Esta Bloqueado Item:" + Alltrim(oDados:itens[nI]:ItemContaDebito) + CRLF
 					lRet		:= .F.
@@ -533,8 +533,8 @@ Static Function xValGer(oDados)
 			cItemCredito := fTamSx3(cItemCredito,"CTD_ITEM")
 
 			CTD->(dbSetOrder(1))//CTD_FILIAL+CTD_ITEM
-			//If CTD->(dbSeek(cFilCTD + oDados:itens[nI]:ItemContaCredito))
-			If CTD->(dbSeek(cFilCTD + cItemCredito))
+			//If CTD->(dbSeek(xFilial('CTD') + oDados:itens[nI]:ItemContaCredito))
+			If CTD->(dbSeek(xFilial('CTD') + cItemCredito))
 				If CTD->CTD_BLOQ == "1"//Bloqueado
 					cMsgErro 	+= "Item Contabil Credito Esta Bloqueado Item:" + Alltrim(oDados:itens[nI]:ItemContaCredito) + CRLF
 					lRet		:= .F.
@@ -552,8 +552,8 @@ Static Function xValGer(oDados)
 			cCLVLDebito := fTamSx3(cCLVLDebito,"CTH_CLVL")
 			
 			CTH->(dbSetOrder(1))//CTH_FILIAL+CTH_CLVL
-			//If CTH->(dbSeek(cFilCTH + oDados:itens[nI]:ClasseValorDebito))
-			If CTH->(dbSeek(cFilCTH + cCLVLDebito))
+			//If CTH->(dbSeek(xFilial('CTH') + oDados:itens[nI]:ClasseValorDebito))
+			If CTH->(dbSeek(xFilial('CTH') + cCLVLDebito))
 				If CTH->CTH_BLOQ == "1"//Bloqueado
 					cMsgErro 	+= "Classe Valor Debito Esta Bloqueado Item:" + Alltrim(oDados:itens[nI]:ClasseValorDebito) + CRLF
 					lRet		:= .F.
@@ -571,8 +571,8 @@ Static Function xValGer(oDados)
 			cCLVLCredito := fTamSx3(cCLVLCredito,"CTH_CLVL")
 
 			CTH->(dbSetOrder(1))//CTH_FILIAL+CTH_CLVL
-			//If CTH->(dbSeek(cFilCTH + oDados:itens[nI]:ClasseValorCredito))
-			If CTH->(dbSeek(cFilCTH + cCLVLCredito))
+			//If CTH->(dbSeek(xFilial('CTH') + oDados:itens[nI]:ClasseValorCredito))
+			If CTH->(dbSeek(xFilial('CTH') + cCLVLCredito))
 				If CTH->CTH_BLOQ == "1"//Bloqueado
 					cMsgErro 	+= "Classe Valor Credito Esta Bloqueado Classe:" + Alltrim(oDados:itens[nI]:ClasseValorCredito) + CRLF
 					lRet		:= .F.
