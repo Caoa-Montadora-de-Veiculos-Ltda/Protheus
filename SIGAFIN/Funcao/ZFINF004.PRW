@@ -21,7 +21,7 @@ IF _cEmp == "2010" .AND. SE1->E1_TIPO = 'RA ' .AND. SE1->E1_PARCELA = '1 '
         GrvDBSe1()
 	Endif
     
-	IF FWIsInCallStack("U_MT410TOK")
+	IF FWIsInCallStack("U_MT410TOK")  .AND.  SC5->C5_CONDPAG <> M->C5_CONDPAG 
 	    GeraTitulo('Abat. RA','NF ','1','NF ')
     ENDIF
 
@@ -84,18 +84,18 @@ Local _dVencReal  := SE1->E1_VENCREA
 Local _nValor     := SE1->E1_VALOR
 Local lMsErroAuto := .F.
 
-    _cNomCli := POSICIONE("SA1",1,xFilial("SA1")+SC5->C5_CLIENTE+SC5->C5_LOJACLI,"A1_NOME")
+    _cNomCli := POSICIONE("SA1",1,xFilial("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_NOME")
     _cForma  := SE4->E4_XFORMA
 
     //Prepara o array para o execauto
     aAdd(_aVSE1, {"E1_FILIAL",  FWxFilial("SE1"),  Nil})
-    aAdd(_aVSE1, {"E1_NUM",     SC5->C5_NUM,       Nil})
+    aAdd(_aVSE1, {"E1_NUM",     M->C5_NUM,         Nil})
     aAdd(_aVSE1, {"E1_PREFIXO", _cPrefixo,         Nil})
     aAdd(_aVSE1, {"E1_PARCELA", _cParcela,         Nil})
     aAdd(_aVSE1, {"E1_TIPO",    _cTipo,            Nil})
-    aAdd(_aVSE1, {"E1_NATUREZ", SC5->C5_NATUREZ,   Nil})
-    aAdd(_aVSE1, {"E1_CLIENTE", SC5->C5_CLIENTE,   Nil})
-    aAdd(_aVSE1, {"E1_LOJA",    SC5->C5_LOJACLI,   Nil})
+    aAdd(_aVSE1, {"E1_NATUREZ", M->C5_NATUREZ,     Nil})
+    aAdd(_aVSE1, {"E1_CLIENTE", M->C5_CLIENTE,     Nil})
+    aAdd(_aVSE1, {"E1_LOJA",    M->C5_LOJACLI,     Nil})
     aAdd(_aVSE1, {"E1_NOMCLI",  _cNomCli,          Nil})
     aAdd(_aVSE1, {"E1_EMISSAO", _dEmissao,         Nil})   //DTOC(_dEmissao)
     aAdd(_aVSE1, {"E1_VENCTO",  _dVenc,            Nil})   //DTOC(_dVenc)
@@ -113,7 +113,7 @@ Local lMsErroAuto := .F.
         Begin Transaction
         dbSelectArea("SE1")
         dbSetOrder(1)
-        If !dbSeek(xFilial("SE1") + _cPrefixo + SC5->C5_NUM + '   ' + _cParcela + _cTipo)//E1_FILIAL+E1_PREFIXO+E1_NUM+E1_PARCELA+E1_TIPO                                                                                                                  
+        If !dbSeek(xFilial("SE1") + _cPrefixo + M->C5_NUM + '   ' + _cParcela + _cTipo)//E1_FILIAL+E1_PREFIXO+E1_NUM+E1_PARCELA+E1_TIPO                                                                                                                  
                 lMsErroAuto := .F.
                 MSExecAuto({|x,y| FINA040(x,y)}, _aVSE1, 3)
                 If lMsErroAuto
