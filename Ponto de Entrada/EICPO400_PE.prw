@@ -51,6 +51,9 @@ user function EICPO400 ()
 
 		    SetKey (VK_F4,{||U_ZEICF020()})
 			//SetKey (VK_F4,{||})
+
+		Case Paramixb == "ANTES_ELIMINA" 
+ 			 SetKey (VK_F4,{||U_ZEICF020()})
 		
 	EndCase
 	
