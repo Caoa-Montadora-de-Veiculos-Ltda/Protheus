@@ -42,18 +42,18 @@ WSMETHOD IncLancto WSRECEIVE WSDADOS WSSEND WSRETORNO WSSERVICE CMVSAP07
 	
 	Local bError 	:= ErrorBlock( { |oError| MyError( oError ) } )
 	Local aRetorno	:= {}
-	Local _cEmpresa   := "01"
+	Local _cEmpresa := "01"
 	Local _cFilAtu	:= ::WSDADOS:cabecalho:FilialProtheus
 	Local cxFilial	:= "2010022001"
-	
+
 	BEGIN SEQUENCE
 		
 		cFilAnt := cxFilial
 		if _cFilAtu == cxFilial
-		
-    		RpcClearEnv() 
-    		RPCSetType(3) 
-    		RpcSetEnv(_cEmpresa, _cFilAtu,,,,GetEnvServer(),{ })
+
+			RpcClearEnv()
+			RPCSetType(3)
+			RpcSetEnv(_cEmpresa, _cFilAtu,,,,GetEnvServer(),{ })
 			
 			Conout("[CMVSAP07] Conectando " + DTOC(dDATABASE) + " - " + TIME() )
 			
@@ -127,8 +127,8 @@ Static Function xIncCT2(oDados)
 	private lMsHelpAuto     := .T. // Se .T. direciona as mensagens de help para o arq. de log
 	private lMsErroAuto     := .F.
 	private lAutoErrNoFile  := .T. // Precisa estar como .T. para GetAutoGRLog() retornar o array com erros
-	Private lSubLote 	:= Empty(cSubLote)
-		
+	Private lSubLote 		:= Empty(cSubLote)
+
 	aCont := xValGer(oDados)//Validações para processeguir com o lançamento
 	
 	If Empty(aCont) //se a Função retornar um array em branco quer dizer que não encontrou nenhum erro
@@ -224,7 +224,7 @@ Static Function xIncCT2(oDados)
 			AADD(aItem,{'CT2_FILIAL' 	 , '2010022001' 										, NIL})
 			AADD(aItem,{'CT2_LINHA'  	 , oDados:itens[nI]:Item 		   						, NIL})
 			AADD(aItem,{'CT2_DC'  	 	 , oDados:itens[nI]:TipoLancto	   						, NIL})
-			AADD(aItem,{'CT2_MOEDLC'	 ,'01' 							   						, NIL}) 
+			AADD(aItem,{'CT2_MOEDLC'	 ,'01' 							   						, NIL})
 			AADD(aItem,{'CT2_TPSALD'	 ,'1' 							   						, NIL})
 			AADD(aItem,{'CT2_VALOR'	  	 , oDados:itens[nI]:Valor	   			   				, NIL})
 			AADD(aItem,{'CT2_ORIGEM'  	 , "INTSAP - " + dToc(dDataBase) + " - " + Time()		, NIL})
@@ -306,11 +306,12 @@ Static Function xIncCT2(oDados)
 				
 				IF "AJUDA:" $ cErro
 					AADD(aRet, "1"	 )//Status
-					AADD(aRet, STUFF( cErro, 1, 5, "Aviso" ) )//Msg
+					AADD(aRet, "Lancto Incluido com Sucesso" )//STUFF( cErro, 1, 5, "Aviso" ) )//Msg
 				ELSE
 					AADD(aRet, "2"	 )//Status
 					AADD(aRet, cErro )//Msg
-				eNDiF
+				EndIf
+				Memowrite('\Data\' + cDoc + '_' + Dtos(Date()) + ".log",cErro )
 	
 			EndIf
 		EndIf
