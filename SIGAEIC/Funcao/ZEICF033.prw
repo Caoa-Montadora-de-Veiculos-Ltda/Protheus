@@ -19,14 +19,14 @@ Local cAliasCD9     := GetNextAlias()
 Local nCD5_VTRANS   := 0
 Local nCD5_VAFRMM   := 0
 Local cDesp         := '405'
+Local cCD9_PROD     := ''
 Local cCD9_TPPINT   := ''
 Local cCOMVEI       := ''
-Local cNFOrig       := SD1->D1_NFORI
-Local cSerOrig      := SD1->D1_SERIORI
 Local cHAWB         := ''
 Local cChassi       := ''
+Local cNFOrig       := SD1->D1_NFORI
+Local cSerOrig      := SD1->D1_SERIORI
 Local cTipo         := SF1->F1_TIPO
-Local cProduto      := SD1->D1_COD
 Local cFilF1        := SF1->F1_FILIAL
 Local cNota         := SF1->F1_DOC
 Local cSerie        := SF1->F1_SERIE
@@ -38,10 +38,11 @@ Private cCD9_TPCOMB := ''
 IF SF1->F1_EST= 'EX' 
 
 	SD1->(dbSetOrder(1))
-	SD1->(dbSeek(xFilial("SD1")+SD1->D1_NFORI+SD1->D1_SERIORI+cFornec+cLoja))
+	SD1->(dbSeek(xFilial("SD1")+cNFOrig+cSerOrig+cFornec+cLoja))
 
-    cChassi := SD1->D1_CHASSI    //Posicione("SD1", 1, cFilF1 + cNFOrig + cSerOrig + cFornec + cLoja + cProduto, "D1_CHASSI")	
-    cHAWB   := Posicione("SF1", 1, cFilF1 + cNFOrig + cSerOrig + cFornec + cLoja, "F1_HAWB")	
+    cCD9_PROD := SD1->D1_COD
+    cChassi   := SD1->D1_CHASSI    //Posicione("SD1", 1, cFilF1 + cNFOrig + cSerOrig + cFornec + cLoja + cProduto, "D1_CHASSI")	
+    cHAWB     := Posicione("SF1", 1, xFilial("SF1") + cNFOrig + cSerOrig + cFornec + cLoja, "F1_HAWB")	
 
     IF !Empty(cChassi) .AND. !Empty(cHAWB) .AND. cTipo == 'I' 
 
@@ -65,11 +66,9 @@ IF SF1->F1_EST= 'EX'
 			AND SWD.WD_FILIAL = %Exp:cFilF1%
 			AND SWD.WD_HAWB   = %Exp:cHAWB%
 			AND SWD.WD_DESPESA= %Exp:cDesp%
-
 		WHERE  SW6.%NotDel% 
 		    AND SW6.W6_FILIAL = %xFilial:SW6% 
 			AND SW6.W6_HAWB   = %Exp:cHAWB%
-
 		EndSql
 
 		DbSelectArea((cAliasCD5))
@@ -116,22 +115,30 @@ IF SF1->F1_EST= 'EX'
 			CD5_ITEM   := (cAliasCD5)->CD5_ITEM
 			CD5_VTRANS := nCD5_VTRANS
 			CD5_VAFRMM := nCD5_VAFRMM
-
+ 
 			CD5->(MsUnlock())
 		EndIf
 
 		BeginSql Alias cAliasCD9
 
 		SELECT SD1.D1_FILIAL AS CD9_FILIAL, SD1.D1_ITEM AS CD9_ITEM, SD1.D1_COD AS CD9_COD, SD1.D1_CHASSI AS CD9_CHASSI,;
+            SD1.D1_NFORI, SD1.D1_SERIORI,;
 			VV1.VV1_SERMOT AS CD9_SERIAL, VV1.VV1_NUMMOT AS CD9_NMOTOR, VV1.VV1_FABMOD AS CD9_ANOFAB, VV1.VV1_FABMOD AS CD9_ANOMOD,;
-		    VVC.VVC_GRUCOR AS CD9_CODCOR, VVC.VVC_DESCRI AS CD9_DSCCOR, VV2.VV2_POTMOT AS CD9_POTENC, VVC.VVC_TIPCOR AS CD9_TIPCOR,;
-		    VV2.VV2_PESLIQ AS CD9_PESOLI, VV2.VV2_PESBRU AS CD9_PESOBR, VV2.VV2_CAPTRA AS CD9_TRACAO,;
-		    VV2.VV2_DISEIX AS CD9_DISTEI, VV2.VV2_TIPVEI AS CD9_TPVEIC, VV2.VV2_MODFAB AS CD9_CODMOD,;
-			VV2.VV2_QTDPAS AS CD9_LOTAC,  VV2.VV2_CILMOT AS CD9_CILIND, VV2.VV2_COMVEI AS CD9_COMBUS,VVE.VVE_ESPREN AS CD9_ESPEVEI
+		    VVC.VVC_GRUCOR AS CD9_CODCOR, VVC.VVC_DESCRI AS CD9_DSCCOR, VV2.VV2_POTMOT AS CD9_POTENC,;
+			CASE 
+				WHEN VVC.VVC_TIPCOR = '0' THEN  '1'
+				WHEN VVC.VVC_TIPCOR = '1' THEN  '2'				
+			END  AS  cCD9_TPPINT, 
+		    VV2.VV2_PESLIQ AS CD9_PESOLI, VV2.VV2_PESBRU AS CD9_PESOBR, VV2.VV2_CAPTRA AS CD9_TRACAO,VV2.VV2_CM3 AS CD9_CM3,;
+		    VV2.VV2_DISEIX AS CD9_DISTEI, VV2.VV2_TIPVEI AS CD9_TPVEIC, VV2.VV2_MODFAB AS CD9_CODMOD,VV2_ESPVEI AS CD9_ESPVEI,;
+			VV2.VV2_QTDPAS AS CD9_LOTAC,  VV2.VV2_CILMOT AS CD9_CILIND, VV2.VV2_COMVEI AS CD9_COMBUS,VV2.VV2_QTDPAS AS CD9_QTDPAS,;
+			VV2.VV2_CODMAR AS CD9_CODMAR, VV2.VV2_COREXT AS CD9_COREXT, VVE.VVE_ESPREN AS CD9_ESPEVEI,;
+			SWV.WV_XMOTOR  AS CD9_XMOTOR, SWN.WN_ANOFAB  AS CD9_ANOFAB, SWN.WN_ANOMOD  AS CD9_ANOMOD
 		FROM %table:VV1% VV1 
 		LEFT JOIN %table:SD1% SD1 ON SD1.%NotDel% 
-			AND SUBSTR(VV1.VV1_FILIAL,1,6) = SUBSTR(SD1.D1_FILIAL,1,6) 
-			AND VV1.VV1_CHASSI = %Exp:cChassi%
+			AND SUBSTR(SD1.D1_FILIAL,1,6) = SUBSTR(VV1.VV1_FILIAL,1,6)  
+			AND SD1.D1_COD = %Exp:cCD9_PROD%
+			AND SD1.D1_CHASSI = %Exp:cChassi%
 		LEFT JOIN %table:VV2% VV2 ON VV2.%NotDel%
 			AND VV2.VV2_FILIAL = SD1.D1_FILIAL
 			AND VV2.VV2_PRODUT = SD1.D1_COD
@@ -142,6 +149,16 @@ IF SF1->F1_EST= 'EX'
 		LEFT JOIN %table:VVE% VVE ON VVE.%NotDel% 
 			AND SUBSTR(VVE.VVE_FILIAL,1,6) = SUBSTR(SD1.D1_FILIAL,1,6) 
 			AND VVE.VVE_ESPVEI = VV2.VV2_ESPVEI
+		LEFT JOIN %table:SWN% SWN ON SWN.%NotDel% 		
+            AND SWN.WN_FILIAL  = SD1.D1_FILIAL
+            AND SWN.WN_DOC     = SD1.D1_NFORI        //SF1.F1_DOC      originais
+            AND SWN.WN_SERIE   = SD1.D1_SERIORI      //SF1.F1_SERIE
+			AND SWN.WN_FORNECE = %Exp:cFornec%             //SF1.F1_FORNECE
+            AND SWN.WN_LOJA    = %Exp:cLoja%               //SF1.F1_LOJA
+		LEFT JOIN %table:SWV% SWV ON SWV.%NotDel% 
+		    AND SWV.WV_FILIAL = SD1.D1_FILIAL 	
+            AND SWV.WV_HAWB   = %Exp:cHAWB%
+	        AND SWV.WV_XVIN   = SWN.WN_XVIN "
 		WHERE  VV1.%NotDel% 
 			AND VV1.VV1_CHASSI   = %Exp:cChassi% 
 
@@ -150,17 +167,7 @@ IF SF1->F1_EST= 'EX'
 		DbSelectArea((cAliasCD9))
 		(cAliasCD9)->(dbGoTop())
 		If (cAliasCD9)->(!EOF())
-
-			If (cAliasCD9)->CD9_TIPCOR = '0'
-				cCD9_TPPINT := '1'
-			ElseIf (cAliasCD9)->CD9_TIPCOR = '1'
-				cCD9_TPPINT := '2'
-			ENDIF
-
-            cCOMVEI := (cAliasCD9)->CD9_COMBUS
-            
-			fSX5CV(cCOMVEI)  //De x Para combustíveis    ,CD5.R_E_C_N_O_ RECNOCD5
-
+  
 			DbSelectArea('CD9')
 			CD9->(DbSetOrder(1)) //CD9_FILIAL+CD9_TPMOV+CD9_SERIE+CD9_DOC+CD9_CLIFOR+CD9_LOJA+CD9_ITEM+CD9_COD                                                                                                                                                                      
 
@@ -169,6 +176,7 @@ IF SF1->F1_EST= 'EX'
 			else
 				RecLock('CD9', .T.)
 			EndIf
+
 			CD9->CD9_FILIAL := xFilial("SF1")					
 			CD9->CD9_DOC    := cNota
 			CD9->CD9_SERIE  := cSerie
@@ -177,13 +185,34 @@ IF SF1->F1_EST= 'EX'
 			CD9->CD9_LOJA   := cLoja
 			CD9->CD9_ITEM   := (cAliasCD9)->CD9_ITEM
 			CD9->CD9_COD    := (cAliasCD9)->CD9_COD
+			CD9->CD9_CHASSI := cChassi
 			CD9->CD9_TPMOV  := 'E'
 			CD9->CD9_TPOPER := '0' 
 			CD9->CD9_CONVIN := 'R'
 			CD9->CD9_CONVEI := '1'
 			CD9->CD9_RESTR  := '0'
-			CD9->CD9_TPPINT := cCD9_TPPINT
-			CD9->CD9_TPCOMB := cCD9_TPCOMB
+			CD9->CD9_TPPINT := (cAliasCD9)->cCD9_TPPINT 
+			CD9->CD9_CODCOR := (cAliasCD9)->CD9_CODCOR                 //Codigo da cor definido pela montadora
+			CD9->CD9_DSCCOR := (cAliasCD9)->CD9_DSCCOR                 //Descrição da Cor
+			CD9->CD9_POTENC := cValToChar( (cAliasCD9)->CD9_POTENC )  //Potência máxima do motor do veículo em cavalo vapor (CV - potência veículo).
+			CD9->CD9_CM3POT := (cAliasCD9)->CD9_CM3                   //Capacidade voluntária do motor expressa em centímetros cúbicos (CC - cilindradas).
+			CD9->CD9_PESOLI := (cAliasCD9)->CD9_PESOLI                //Peso Liquido
+			CD9->CD9_PESOBR := (cAliasCD9)->CD9_PESOBR                //Peso Bruto
+		    CD9->CD9_SERIAL := (cAliasCD9)->CD9_XMOTOR                //Serial (série)
+			CD9->CD9_NMOTOR := (cAliasCD9)->CD9_XMOTOR                //Serial (série)
+		    CD9->CD9_CMKG   := cValToChar( (cAliasCD9)->CD9_TRACAO )  //CMT - Capacidade máxima de tração - em toneladas
+			CD9->CD9_DISTEI := cValToChar( (cAliasCD9)->CD9_DISTEI )  //Distancia entre eixos
+		    CD9->CD9_RENAVA := Val( "0" )    
+			CD9->CD9_ANOMOD := Val( AllTrim( SubStr( (cAliasCD9)->CD9_ANOMOD, 1, 4 ) ) ) //Ano Modelo
+			CD9->CD9_ANOFAB := Val( AllTrim( SubStr( (cAliasCD9)->CD9_ANOFAB, 1, 4 ) ) ) //Ano Frabricação                         
+			CD9->CD9_TPVEIC := (cAliasCD9)->CD9_TPVEIC //Tipo de Veículo 06 = Automovel; 14 = Caminhao; 07 = Microonibus; 08 = Onibus; 10 = Reboque; 17 = C Trator
+			CD9->CD9_ESPVEI := AllTrim( GetAdvFVal("VVE", "VVE_ESPREN", xFilial( "VVE" ) + (cAliasCD9)->CD9_ESPVEI, 1, "") )
+			CD9->CD9_CODMOD := (cAliasCD9)->CD9_CODMOD 
+			CD9->CD9_TRACAO := cValToChar( (cAliasCD9)->CD9_TRACAO)   //Máxima Tração
+			CD9->CD9_LOTAC  := (cAliasCD9)->CD9_QTDPAS                //Quantidade máxima permitida de passageiros sentados, inclusive motorista.
+			CD9->CD9_CILIND := cValToChar( (cAliasCD9)->CD9_CILIND )  //Cilindradas
+			CD9->CD9_CORDE  := AllTrim( GetAdvFVal("VVC","VVC_GRUCOR",xFilial( "VVC" ) + (cAliasCD9)->CD9_CODMAR + (cAliasCD9)->CD9_COREXT, 1, "") ) //Código da Cor segundo as regras de pré-cadastro do DENATRAN.
+			CD9->CD9_TPCOMB := DeParaComb( (cAliasCD9)->CD9_COMBUS )  //Tipo Combustível
 
 			CD9->(MsUnlock())
 		EndIf
@@ -208,42 +237,35 @@ RestArea(aAreaSD1)
 Return(.T.)
 
 
-/*/{Protheus.doc} MT100CLA
-@author A.Carlos
-@since 	21/08/2023
-@version 1.0
-@return ${return}, ${return_description}
-@obs	
-@history    Tabela De x Para de Combustível do Vículo
-@type function
-/*/
-Static Function fSX5CV(cCOMVEI)
-Local _cAliasSX5 := GetNextAlias() 
-Local _cChaveSX5 := '2F'
-Local _lRet      := .T.
 
-    BeginSql Alias _cAliasSX5
+Static Function DeParaComb( cCOMVEI )
 
-    SELECT SX5.R_E_C_N_O_ SX5_RECNO, X5_CHAVE CHAVE, SX5.X5_DESCRI DESCRI 
-	FROM %table:SX5% SX5 
-	WHERE SX5.%NotDel%
-	    AND SX5.X5_FILIAL = %xFilial:SX5%
-	    AND SX5.X5_TABELA = %Exp:_cChaveSX5%
-		AND SX5.X5_CHAVE  = %Exp:cCOMVEI%
-	    ORDER BY X5_FILIAL,X5_TABELA,X5_CHAVE 
+	Local cRetorno := ""
 
-	EndSql
+	Conout(" ")
+	Conout(" DeParaComb ")
+	Conout(" ")
 
-	(_cAliasSX5)->(DbGotop())
+	Do Case
+	Case cCOMVEI == "0" ; cRetorno := "02" // Gasolina
+	Case cCOMVEI == "1" ; cRetorno := "01" // Alcool
+	Case cCOMVEI == "2" ; cRetorno := "03" // Diesel
+	Case cCOMVEI == "3" ; cRetorno := "15" // Gas Natural
+	Case cCOMVEI == "4" ; cRetorno := "16" // Alcool/Gasolina
+	Case cCOMVEI == "5" ; cRetorno := "17" // Alcool/Gasolina/GNV
+	Case cCOMVEI == "9" ; cRetorno := ""// Sem Combustivel
+	Case cCOMVEI == "A" ; cRetorno := "04" // Gasogenio
+	Case cCOMVEI == "B" ; cRetorno := "05" // Gas Metano
+	Case cCOMVEI == "C" ; cRetorno := "06" // Eletrico/Fonte Interna
+	Case cCOMVEI == "D" ; cRetorno := "07" // Eletrico/Fonte Externa
+	Case cCOMVEI == "E" ; cRetorno := "08" // Gasol/Gas Natural Combustivel
+	Case cCOMVEI == "F" ; cRetorno := "09" // Alcool/Gas Natural Combustivel
+	Case cCOMVEI == "G" ; cRetorno := "10" // Diesel/Gas Natural Combustivel
+	Case cCOMVEI == "H" ; cRetorno := "12" // Alcool/Gas Natural Veicular
+	Case cCOMVEI == "I" ; cRetorno := "13" // Gasolina/Gas Natural Veicular
+	Case cCOMVEI == "J" ; cRetorno := "14" // Diesel/Gas Natural Veicular    
+	Case cCOMVEI == "K" ; cRetorno := "18" // Gasolina/Eletrico
+	Case cCOMVEI == "L" ; cRetorno := "19" // Gasolina/Alcool/Eletrico
+	EndCase 
 
-	If (_cAliasSX5)->(Eof())
-		Conout("MT100CLA - Código Não informado na SX5, referente ! Verificar com ADM Sistemas")
-		_lRet := .F.
-		Break
-    Else
-		cCD9_TPCOMB	:= AllTrim((_cAliasSX5)->DESCRI)
-	EndIf	
-
-	(_cAliasSX5)->(dbCloseArea())	
-
-Return(_lRet) 
+Return cRetorno
