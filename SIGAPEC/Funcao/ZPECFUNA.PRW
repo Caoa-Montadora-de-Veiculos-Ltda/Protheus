@@ -3213,6 +3213,8 @@ Static Function RETRESERVAVS3(_cNumOrc)
 			If !Empty(VS3->VS3_DOCSDB)
 				VS3->(RecLock("VS3",.f.))
 				VS3->VS3_DOCSDB := ""
+				VS3->VS3_RESERV := "0"
+				VS3->VS3_QTDRES := 0				
 				VS3->(MsUnlock())
 			EndIf			
 			VS3->(DbSkip())
