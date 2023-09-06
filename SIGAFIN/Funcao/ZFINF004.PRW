@@ -10,20 +10,25 @@
     @version 	1.0
     /*/
 User Function ZFINF004()
-Local _lRet  := .T.
-Local _aArea := GetArea()
-Local _cEmp  := FWCodEmp()
+Local _lRet    := .T.
+Local _aArea   := GetArea()
+Private _cEmp  := FWCodEmp()
 
 IF _cEmp == "2010" .AND. SE1->E1_TIPO = 'RA ' .AND. SE1->E1_PARCELA = '1 ' 
+	
+    Begin Transaction
+	IF FWIsInCallStack("U_MT410TOK") .AND. ALTERA = .T.  .AND.  SC5->C5_CONDPAG <> M->C5_CONDPAG 
+	    GeraTitulo('Abat. RA','NF ','1 ','NF ')
+    ENDIF
+    If !_lRet
+        Disarmtransaction()
+    EndIf	
+    End Transaction
 
-	SE4->(DbSetOrder(1))
+    SE4->(DbSetOrder(1))
 	If SE4->(DbSeek(xFilial("SE4")+SC5->C5_CONDPAG)) .AND. FWIsInCallStack("U_M460FIM_PE")
         GrvDBSe1()
 	Endif
-    
-	IF FWIsInCallStack("U_MT410TOK")  .AND.  SC5->C5_CONDPAG <> M->C5_CONDPAG 
-	    GeraTitulo('Abat. RA','NF ','1','NF ')
-    ENDIF
 
 ELSEIF _cEmp == "2010" .AND. SE1->E1_TIPO = 'RA ' .AND. SE1->E1_PARCELA = '2 ' .AND. !Empty(SC5->C5_XNPG)
 
@@ -83,6 +88,16 @@ Local _dVenc      := SE1->E1_VENCTO
 Local _dVencReal  := SE1->E1_VENCREA
 Local _nValor     := SE1->E1_VALOR
 Local lMsErroAuto := .F.
+Local nOpc        := 3
+Local cxFil       := xFilial("SZ7")
+Local cTab        := "SE1"
+Local cChave      := ""   //E1_PREFIXO+E1_NUM+E1_PARCELA+E1_TIPO 
+Local cIndice     := "1"
+Local cLote       := ""
+Local cSequen     := ""
+Local cStatusSZ7  := "P"
+Local nOperPro    := 1    
+Local nOperSAP    := 1  
 
     _cNomCli := POSICIONE("SA1",1,xFilial("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_NOME")
     _cForma  := SE4->E4_XFORMA
@@ -113,14 +128,62 @@ Local lMsErroAuto := .F.
         Begin Transaction
         dbSelectArea("SE1")
         dbSetOrder(1)
-        If !dbSeek(xFilial("SE1") + _cPrefixo + M->C5_NUM + '   ' + _cParcela + _cTipo)//E1_FILIAL+E1_PREFIXO+E1_NUM+E1_PARCELA+E1_TIPO                                                                                                                  
+        If !dbSeek(xFilial("SE1") + _cPrefixo + M->C5_NUM + '   ' + _cParcela + _cTipo)//E1_FILIAL+                                                                                                                 
                 lMsErroAuto := .F.
-                MSExecAuto({|x,y| FINA040(x,y)}, _aVSE1, 3)
+                MSExecAuto({|x,y| FINA040(x,y)}, _aVSE1, nOpc)
                 If lMsErroAuto
                     lRet := .F.
                     MostraErro()
                 else
                     lRet := .T.
+                    If SZ7->(RecLock("SZ7",.T.))
+                        
+                        cChave  := _cPrefixo + M->C5_NUM + '   ' + _cParcela + _cTipo                                     
+                        cLote 	:= GetSxeNum("SZ7","Z7_XLOTE")                                                                                                                   
+                        cSequen	:= U_ZF20GENSAP(cxFil , cTab , cChave)
+                        
+                        If nOperSAP == 2//Cancelamento
+                            SZ7->Z7_XXML := U_ZF23GENSAP(cxFil,cTab,cChave)
+                        EndIf
+
+                        SZ7->Z7_FILIAL 	:= cxFil
+                        SZ7->Z7_XLOTE 	:= cLote
+                        SZ7->Z7_XTABELA := cTab
+                        SZ7->Z7_XINDICE := cIndice
+                        SZ7->Z7_XCHAVE 	:= cChave
+                        SZ7->Z7_XSEQUEN := cSequen
+                        SZ7->Z7_XSTATUS := cStatusSZ7 //IIf(FWIsInCallStack("xBaixTit"),"O",cStatusSZ7)
+                        SZ7->Z7_XOPEPRO	:= nOperPro //1=Inclusao/2=Alteracao/3=Exclusao
+                        SZ7->Z7_XOPESAP	:= nOperSAP //1=Inclusao/2=Cancelamento
+                        SZ7->Z7_XDTINC	:= dDataBase
+                        SZ7->Z7_XHRINC	:= Time()
+
+                        If _cEmp == "2010" //Executa o p.e. Anapolis.
+                            SZ7->Z7_ORIGEM  := IIf(IsInCallStack("FINA040"),FunName(),"FINA050")
+                        Else
+                            SZ7->Z7_ORIGEM  := IIf(IsInCallStack("MATA020") .or. IsInCallStack("MATA030"),FunName(),IIf(Len(aDadosOri) > 1 .and. !Empty(aDadosOri[1]),aDadosOri[1],IIf(FWIsInCallStack("xBaixTit"),"ZSAPF006",IIf(FWIsInCallStack("FINA040"),"FINA040",IIf(FWIsInCallStack("FINA050"),"FINA050",CT2->CT2_ROTINA)))))
+                        EndIf
+
+                        //SZ7->Z7_LOTEINC := IIf(!Empty(aDadosOri) .and. Len(aDadosOri) > 7,aDadosOri[8],"")
+
+                        /*If !Empty(aOcor)
+                            If aOcor[2] == "1" // erro protheus
+                                SZ7->Z7_ERROPRO := aOcor[1]
+                            Elseif aOcor[2] == "2" // erro sap
+                                SZ7->Z7_ERROSAP := aOcor[1]
+                            Endif
+                        Endif*/
+
+                        SZ7->Z7_DOCORI := SE1->E1_NUM
+                        SZ7->Z7_SERORI := SE1->E1_PREFIXO
+                        SZ7->Z7_RECORI := SE1->(Recno())
+                        SZ7->Z7_CLIFOR := SE1->E1_CLIENTE
+                        SZ7->Z7_LOJA   := SE1->E1_LOJA
+
+                        SZ7->(MsUnLock())
+                        ConfirmSX8()
+                    EndIf    
+
                 EndIf
 
             IF !lRet
@@ -134,5 +197,5 @@ Local lMsErroAuto := .F.
         Endif
         End Transaction
     Endif
-    
+
 Return()
