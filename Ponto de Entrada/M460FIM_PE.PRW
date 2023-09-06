@@ -12,7 +12,7 @@ Ponto de Entrada Depois da Gravacao da Nota Fiscal
 @version   12.1.27
 @since     07/06/2022
 @History   Incluído a chamda da função para emissão de Boleto qdo RA 
-*/
+*/ //    U_RF01B062(E1_PORTADO,E1_AGEDEP,E1_CONTA,'001',/*lSetup*/,/*cNotIni*/,/*cNotFim*/,/*cSerie*///,SE1->(E1_FILIAL+E1_PREFIXO+E1_NUM))
 //------------------------------------------------------------------------------------------
 User Function M460FIM()
 
@@ -64,17 +64,17 @@ User Function M460FIM()
         SE4->(DbSetOrder(1))
         SE4->(DbSeek(xFilial("SE4")+SC5->C5_CONDPAG))
 
-        DbSelectArea("SE1")
+        /*DbSelectArea("SE1")
         SE1->(DbSetOrder(1))   //E1_FILIAL+E1_PREFIXO+E1_NUM+E1_PARCELA+E1_TIPO
         If SE1->(DbSeek(xFilial("SE1") + "5  " + SC5->C5_NOTA))
             WHILE SE1->( !EOF() .AND. SE1->E1_NUM = SC5->C5_NOTA) 
                 //chamda da função para emissão de Boleto qdo RA 
                 IF SE1->E1_XFORMA = 'BOL'
-                    U_RF01B062(E1_PORTADO,E1_AGEDEP,E1_CONTA,'001',/*lSetup*/,/*cNotIni*/,/*cNotFim*/,/*cSerie*/,SE1->(E1_FILIAL+E1_PREFIXO+E1_NUM))
-                ENDIF
-                SE1->(DbSkip())
-            END
-        EndIf
+              
+                //ENDIF
+                //SE1->(DbSkip())
+            //END
+        //EndIf*/
     else
         If FindFunction("U_ZFATF018")
 			U_ZFATF018()

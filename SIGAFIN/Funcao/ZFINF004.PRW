@@ -26,21 +26,21 @@ IF _cEmp == "2010" .AND. SE1->E1_TIPO = 'RA ' .AND. SE1->E1_PARCELA = '1 '
     End Transaction
 
     SE4->(DbSetOrder(1))
-	If SE4->(DbSeek(xFilial("SE4")+SC5->C5_CONDPAG)) .AND. FWIsInCallStack("U_M460FIM_PE")
+	If SE4->(DbSeek(xFilial("SE4")+M->C5_CONDPAG)) .AND. FWIsInCallStack("MATA410")
         GrvDBSe1()
 	Endif
 
-ELSEIF _cEmp == "2010" .AND. SE1->E1_TIPO = 'RA ' .AND. SE1->E1_PARCELA = '2 ' .AND. !Empty(SC5->C5_XNPG)
+ELSEIF _cEmp == "2010" .AND. SE1->E1_TIPO = 'RA ' .AND. SE1->E1_PARCELA = '2 ' .AND. !Empty(M->C5_XNPG)
 
 	SE4->(DbSetOrder(1))
-	If SE4->(DbSeek(xFilial("SE4")+SC5->C5_XNPG)) .AND. FWIsInCallStack("U_M460FIM_PE")
+	If SE4->(DbSeek(xFilial("SE4")+M->C5_XNPG)) .AND. FWIsInCallStack("U_M460FIM_PE")
         GrvDBSe1()
 	Endif
 
-ELSEIF _cEmp == "2010" .AND. SE1->E1_TIPO = 'RA ' .AND. SE1->E1_PARCELA = '3 ' .AND. !Empty(SC5->C5_XNPG1)
+ELSEIF _cEmp == "2010" .AND. SE1->E1_TIPO = 'RA ' .AND. SE1->E1_PARCELA = '3 ' .AND. !Empty(M->C5_XNPG1)
 
 	SE4->(DbSetOrder(1))
-	If SE4->(DbSeek(xFilial("SE4")+SC5->C5_XNPG1)) .AND. FWIsInCallStack("U_M460FIM_PE")
+	If SE4->(DbSeek(xFilial("SE4")+M->C5_XNPG1)) .AND. FWIsInCallStack("U_M460FIM_PE")
         GrvDBSe1()
 	Endif
 
@@ -138,7 +138,7 @@ Local nOperSAP    := 1
                     lRet := .T.
                     If SZ7->(RecLock("SZ7",.T.))
                         
-                        cChave  := _cPrefixo + M->C5_NUM + '   ' + _cParcela + _cTipo                                     
+                        cChave  := _cPrefixo + M->C5_NUM + '   ' + _cParcela + _cTipo + M->C5_CLIENTE + M->C5_LOJACLI                                    
                         cLote 	:= GetSxeNum("SZ7","Z7_XLOTE")                                                                                                                   
                         cSequen	:= U_ZF20GENSAP(cxFil , cTab , cChave)
                         
@@ -164,6 +164,8 @@ Local nOperSAP    := 1
                             SZ7->Z7_ORIGEM  := IIf(IsInCallStack("MATA020") .or. IsInCallStack("MATA030"),FunName(),IIf(Len(aDadosOri) > 1 .and. !Empty(aDadosOri[1]),aDadosOri[1],IIf(FWIsInCallStack("xBaixTit"),"ZSAPF006",IIf(FWIsInCallStack("FINA040"),"FINA040",IIf(FWIsInCallStack("FINA050"),"FINA050",CT2->CT2_ROTINA)))))
                         EndIf
 
+                        SZ7->Z7_OPERACA := IIf(cTab$"SA2","1",IIf(cTab$"SA1","2",IIf(cTab$"SF1/SE2","3",IIf(cTab$"SF2/SE1","4",IIf(cTab$"CT2","5","")))))
+
                         //SZ7->Z7_LOTEINC := IIf(!Empty(aDadosOri) .and. Len(aDadosOri) > 7,aDadosOri[8],"")
 
                         /*If !Empty(aOcor)
@@ -174,6 +176,7 @@ Local nOperSAP    := 1
                             Endif
                         Endif*/
 
+                        SZ7->Z7_TIPONF := "N"
                         SZ7->Z7_DOCORI := SE1->E1_NUM
                         SZ7->Z7_SERORI := SE1->E1_PREFIXO
                         SZ7->Z7_RECORI := SE1->(Recno())

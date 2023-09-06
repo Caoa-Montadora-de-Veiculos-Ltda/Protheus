@@ -382,12 +382,12 @@ If nOpc == 3
 			Return(aRet)
 		Endif
 		aAdd(aRet[1],"SE1")
-		aRet[2] := SE1->(E1_PREFIXO+E1_NUM+E1_PARCELA+E1_TIPO)
+		aRet[2] := SE1->(E1_PREFIXO+E1_NUM+E1_PARCELA+E1_TIPO+E1_CLIENTE+E1_LOJA)
 	Elseif lSE1
 		// posiciona no titulo para verificar a origem e tipo
 		IF SE1->E1_TIPO = 'RA ' .AND. SE2->E2_MOEDA == 1           //If U_ZF01GENSAP()
 			aAdd(aRet[1],"SE1")
-			aRet[2] := SE1->E1_PREFIXO+SE1->E1_NUM+SE1->E1_PARCELA+SE1->E1_TIPO
+			aRet[2] := SE1->E1_PREFIXO+SE1->E1_NUM+SE1->E1_PARCELA+SE1->E1_TIPO+E1_CLIENTE+E1_LOJA
 		Endif
 	Endif
 	
@@ -848,6 +848,7 @@ User Function ZF11GENSAP(cxFil,cTab,cIndice,cChave,nOperPro,nOperSAP,cXMLSZ7,cSt
             //If (Len(aDadosOri) > 1 .and. Empty(aDadosOri[4])) .or. Empty(aDadosOri)
                 SZ7->Z7_RECORI := SE1->(Recno())
             //Endif
+            SZ7->Z7_TIPONF := "N"
             SZ7->Z7_CLIFOR := SE1->E1_CLIENTE
             SZ7->Z7_LOJA   := SE1->E1_LOJA
         // contabilizacao de movimentos de estoque, excluindo nota de entrada e saida
