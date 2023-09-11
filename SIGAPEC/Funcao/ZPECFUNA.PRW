@@ -3215,7 +3215,8 @@ Static Function RETRESERVAVS3(_cNumOrc)
 		While VS3->(!Eof()) .and. VS3->VS3_FILIAL == XFilial("VS3") .and.  VS3->VS3_NUMORC == _cNumOrc
 			If !Empty(VS3->VS3_DOCSDB)
 				VS3->(RecLock("VS3",.f.))
-				//VS3->VS3_DOCSDB := ""
+				VS3->VS3_DOCSDB := ""
+				//conforme ajuste Zé 05/09/2021  atualizar reserva
 				VS3->VS3_RESERV := "0"
 				VS3->VS3_QTDRES := 0
 				VS3->(MsUnlock())
