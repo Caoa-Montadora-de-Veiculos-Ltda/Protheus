@@ -294,7 +294,7 @@ Static Function zTmpInv(lJob)
 	_cQuery += CRLF + "	 	   AND SZM.ZM_PROD    	= SW8.W8_COD_I "
 	_cQuery += CRLF + "	 	   AND SZM.ZM_PO_NUM  	= SW8.W8_PO_NUM "
 	_cQuery += CRLF + "	 	   AND SZM.ZM_POSICAO 	= SW8.W8_POSICAO "
-	_cQuery += CRLF + "	 	   AND SZM.ZM_CASE 	    = SW8.W8_XCASE "
+	//_cQuery += CRLF + "	 	   AND SZM.ZM_CASE 	    = SW8.W8_XCASE "
 	_cQuery += CRLF + "	 	   AND SZM.R_E_C_N_O_   > 0 
 	_cQuery += CRLF + "        AND SZM.D_E_L_E_T_   = ' ' " 
 
