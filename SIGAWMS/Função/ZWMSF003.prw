@@ -43,6 +43,7 @@ Doc. Origem:
 Solicitante:            
 =====================================================================================
 */
+
 User Function ZWMSF003() 
 	Local aPergs   	:= {}
     Local aCombo    := {"Todas O.S.","O.S. com Erro", "O.S. Não Executada", "O.S. Finalizada", "O.S. em processamento"}
@@ -76,11 +77,11 @@ User Function ZWMSF003()
 				oBrowse:AddButton("Deletar O.S. com Erro"				, { || ZWMSDelete()                    } , , , , .F. , 3 )
 				oBrowse:AddButton("Visualizar"							, { || AxVisual("SZJ",SZJ->(Recno()),2)} , , , , .F. , 4 )
 				oBrowse:AddButton("Limpar Fila"							, { || zLimpFila()                     } , , , , .F. , 5 )
-				//oBrowse:AddButton("Erros Transferencia de Container"	, { || u_ZWMSF011()                    } , , , , .F. , 5 )
+				oBrowse:AddButton("Importa Arquivo CSV"             	, { || u_ZWMSF019()                    } , , , , .F. , 6 )
 
 				If alltrim( aRet[ 1 ] ) == alltrim( aCombo[ 2 ] ) //--Com erro
     				oBrowse:SetFilterDefault( "AllTrim(SZJ->ZJ_STATUS) == 'E'" )
-				ElseIf Alltrim( aRet[ 1 ] ) == Alltrim( aCombo[ 3 ] ) //--Não executada
+				ElseIf Alltrim( aRet[ 1 ] ) == Alltrim( aCombo[ 3 ] ) //--Não executadaGAP054
 					oBrowse:SetFilterDefault( "Empty(ZJ_STATUS)" )	
 				ElseIf Alltrim( aRet[ 1 ] ) == Alltrim( aCombo[ 4 ] ) //--Finalizada
 					oBrowse:SetFilterDefault( "AllTrim(SZJ->ZJ_STATUS) == 'F'" )
@@ -94,7 +95,7 @@ User Function ZWMSF003()
 	EndIf
 
 	Conout("ZWMSF003 | Fim | " + Time() )
-
+ 
 Return
 
 /*
