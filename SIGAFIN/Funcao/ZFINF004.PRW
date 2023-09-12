@@ -10,14 +10,20 @@
     @version 	1.0
     /*/
 User Function ZFINF004()
-Local _lRet    := .T.
-Local _aArea   := GetArea()
-Private _cEmp  := FWCodEmp()
+Local _lRet     := .T.
+Local _aArea    := GetArea()
+Private _cEmp   := FWCodEmp()
+Private _cBanco := ''
+Private _cAge   := ''
+Private _cConta := ''
 
 IF _cEmp == "2010" .AND. SE1->E1_TIPO = 'RA ' .AND. SE1->E1_PARCELA = '1 ' 
 	
     Begin Transaction
 	IF FWIsInCallStack("U_MT410TOK") .AND. ALTERA = .T.  .AND.  SC5->C5_CONDPAG <> M->C5_CONDPAG 
+        _cBanco := SE1->E1_PORTADO 
+        _cAge   := SE1->E1_AGEDEP
+        _cConta := SE1->E1_CONTA
 	    GeraTitulo('Abat. RA','NF ','1 ','NF ')
     ENDIF
     If !_lRet
@@ -93,8 +99,8 @@ Local cxFil       := xFilial("SZ7")
 Local cTab        := "SE1"
 Local cChave      := ""   //E1_PREFIXO+E1_NUM+E1_PARCELA+E1_TIPO 
 Local cIndice     := "1"
-Local cLote       := ""
-Local cSequen     := ""
+//Local cLote       := ""
+//Local cSequen     := ""
 Local cStatusSZ7  := "P"
 Local nOperPro    := 1    
 Local nOperSAP    := 1  
@@ -121,6 +127,9 @@ Local nOperSAP    := 1
     aAdd(_aVSE1, {"E1_XFORMA",  _cForma,           Nil})
     aAdd(_aVSE1, {"E1_HIST",    _cHist,            Nil})
     aAdd(_aVSE1, {"E1_MOEDA",   1,                 Nil})
+    aAdd(_aVSE1, {"E1_PORTADO", _cBanco,           Nil})
+    aAdd(_aVSE1, {"E1_AGEDEP",  _cAge,             Nil})
+    aAdd(_aVSE1, {"E1_CONTA",   _cConta,           Nil})
 
     //aAdd(_aVetSE1, aClone(_aVSE1))
 
@@ -135,10 +144,14 @@ Local nOperSAP    := 1
                     lRet := .F.
                     MostraErro()
                 else
+
                     lRet := .T.
-                    If SZ7->(RecLock("SZ7",.T.))
+                    cChave  := _cPrefixo + M->C5_NUM + '   ' + _cParcela + _cTipo + M->C5_CLIENTE + M->C5_LOJACLI 
+                    U_ZF11GENSAP(cxFil,cTab,cIndice,cChave,nOperPro,nOperSAP,,,,)
+
+                    /*If SZ7->(RecLock("SZ7",.T.))
                         
-                        cChave  := _cPrefixo + M->C5_NUM + '   ' + _cParcela + _cTipo + M->C5_CLIENTE + M->C5_LOJACLI                                    
+                                   
                         cLote 	:= GetSxeNum("SZ7","Z7_XLOTE")                                                                                                                   
                         cSequen	:= U_ZF20GENSAP(cxFil , cTab , cChave)
                         
@@ -168,13 +181,13 @@ Local nOperSAP    := 1
 
                         //SZ7->Z7_LOTEINC := IIf(!Empty(aDadosOri) .and. Len(aDadosOri) > 7,aDadosOri[8],"")
 
-                        /*If !Empty(aOcor)
+                        If !Empty(aOcor)
                             If aOcor[2] == "1" // erro protheus
                                 SZ7->Z7_ERROPRO := aOcor[1]
                             Elseif aOcor[2] == "2" // erro sap
                                 SZ7->Z7_ERROSAP := aOcor[1]
                             Endif
-                        Endif*/
+                        Endif
 
                         SZ7->Z7_TIPONF := "N"
                         SZ7->Z7_DOCORI := SE1->E1_NUM
@@ -185,7 +198,7 @@ Local nOperSAP    := 1
 
                         SZ7->(MsUnLock())
                         ConfirmSX8()
-                    EndIf    
+                    EndIf*/    
 
                 EndIf
 

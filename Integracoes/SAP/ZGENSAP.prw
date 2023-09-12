@@ -851,6 +851,7 @@ User Function ZF11GENSAP(cxFil,cTab,cIndice,cChave,nOperPro,nOperSAP,cXMLSZ7,cSt
             SZ7->Z7_TIPONF := "N"
             SZ7->Z7_CLIFOR := SE1->E1_CLIENTE
             SZ7->Z7_LOJA   := SE1->E1_LOJA
+
         // contabilizacao de movimentos de estoque, excluindo nota de entrada e saida
 //        Elseif cTab == "CT2" .and. "MATA" $ Alltrim(SZ7->Z7_ORIGEM) .and. SD3->(!Eof()) .and. SD3->(!Bof()) ;
 //        .and. !"MATA103/GFEA065/MATA140/MATA460/MATA460A/MATA460B/MATA116" $ Alltrim(SZ7->Z7_ORIGEM)

@@ -61,8 +61,8 @@ User Function M460FIM()
             U_ZFINF004()
         EndIf
 
-        SE4->(DbSetOrder(1))
-        SE4->(DbSeek(xFilial("SE4")+SC5->C5_CONDPAG))
+        //SE4->(DbSetOrder(1))
+        //SE4->(DbSeek(xFilial("SE4")+SC5->C5_CONDPAG))
 
         /*DbSelectArea("SE1")
         SE1->(DbSetOrder(1))   //E1_FILIAL+E1_PREFIXO+E1_NUM+E1_PARCELA+E1_TIPO
