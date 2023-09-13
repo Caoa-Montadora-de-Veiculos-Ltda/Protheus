@@ -5,7 +5,7 @@
 #INCLUDE "DBSTRUCT.CH"
 #INCLUDE "MSGRAPHI.CH"
 
-/*/                                                                                                                               {Protheus.doc} ZFATF002
+/*/{Protheus.doc} ZFATF002
 @param
 @author Antonio Oliveira
 @version P12.1.23
