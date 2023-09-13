@@ -2221,7 +2221,7 @@ RETURN
 
 
 //----------------------------------------------------------------------------------
-
+// CRIAR ARQUIVO DE LOG
 Static Function CMVEIC0101(cTexto, nLinha, cProduto, cFornec, cLoja, cStatus, cPO, cPosicao, cInvoice)
 	Local nX := 1
 	Default nLinha   := 0

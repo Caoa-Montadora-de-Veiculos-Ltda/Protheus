@@ -20,7 +20,7 @@ Historico:
 
 ===============================================================================================
 */
-User Function ZEICF021(cINTCSV,cPoNum,nLayout)
+User Function ZEICF021(cINTCSV,cPoNum,nLayout) //	if nLayout == 5 .or. nLayout == 1
 
 Local aLinha		:= {}
 Local aItem 		:= {}
@@ -77,7 +77,7 @@ EndIF
 	//Return(.F.)
 //EndIf
 
-DbSelectArea('SW2')
+DbSelectArea('SW2') //CAPA DE PURCHASE ORDER
 SW2->(DbSetOrder(1))
  
 If !Empty(cPoNum) .and. !SW2->(DbSeek(FwXFilial('SW2')+cPoNum))
@@ -108,9 +108,9 @@ Lay-out do arquivo de importação
 FT_FUse(cINTCSV)	
 FT_FGotop()
 
-MontaSZM()
+MontaSZM() //Monta tabela SZM
 
-While !FT_FEof()
+While !FT_FEof() //Grava linha a linha as info na SZM
 	
 	cLinhaIT := FT_FReadLn()
 	lErro    := .F.
@@ -165,7 +165,7 @@ While !FT_FEof()
 		
 	EndIf
 
-	nRec := SetSZM(aLinha,cFornecedor,cForloj,cPedido)
+	nRec := SetSZM(aLinha,cFornecedor,cForloj,cPedido) //Grava info na tab SZM
 	nPos := aScan(aDados, {|x| AllTrim(Upper(x[4])) == UPPER(ALLTRIM(aLinha[5])) .and. AllTrim(Upper(x[8])) == UPPER(ALLTRIM(aLinha[11]))})
 	//aItem := {}
 	aItem := {	StrZero( Val( aLinha[01] ), 4 ),;										//Linha
@@ -1385,7 +1385,7 @@ Return
 
 //----------------------------------------------------------------------------------
 
-Static Function SetSZM(aLinha,cFornecedor,cForloj,cPedido)
+Static Function SetSZM(aLinha,cFornecedor,cForloj,cPedido) //Grava informações na SZM
 Local nRec := 0
 
 Default cFornecedor := ""
@@ -1454,7 +1454,7 @@ Static Function zGrvArq()
 	Local lLimpaAnt:= .F.
 	Local cErr	:= ""
 	
-	DbSelectArea('WKSZM')
+	DbSelectArea('WKSZM') 
 	WKSZM->(DBGOTOP())
 
 	while WKSZM->(!Eof())
