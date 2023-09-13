@@ -20,7 +20,7 @@ Historico:
 
 ===============================================================================================
 */
-User Function ZEICF021(cINTCSV,cPoNum,nLayout) //	if nLayout == 5 .or. nLayout == 1
+User Function ZEICF021(cINTCSV,cPoNum,nLayout) //	
 
 Local aLinha		:= {}
 Local aItem 		:= {}
@@ -62,7 +62,7 @@ Private lOk_Anu		:= "2-Não"
 Default cPoNum     := ""
 Default nLayOut   := 5
 aInvoice := {}
-nLay := nLayOut
+nLay := nLayOut //Tipo do Layout
  
 cLoteHyudai := Alltrim(cLoteHyudai) + alltrim(cLote2Hyudai) + alltrim(cLote3Hyudai)
 
@@ -89,20 +89,20 @@ EndIf
 
 
 /*
-Lay-out do arquivo de importação
-[01] SEQUENCIA DO ITEM
-[02] NUMERO DA INVOICE
-[03] NCM
-[04] EX
-[05] CODIGO PRODUTO
-[06] QUANTIDADE
-[07] VALOR UNITÁRIO
-[08] CONTAINER
-[09] CAIXA
-[10] PESO LIQUIDO
-[11] NUMERO DA PURCHASE ORDER
-[12] CONHECIMENTO EMBARQUE
-[13] NAVIO
+	Lay-out do arquivo de importação
+	[01] SEQUENCIA DO ITEM
+	[02] NUMERO DA INVOICE
+	[03] NCM
+	[04] EX
+	[05] CODIGO PRODUTO
+	[06] QUANTIDADE
+	[07] VALOR UNITÁRIO
+	[08] CONTAINER
+	[09] CAIXA
+	[10] PESO LIQUIDO
+	[11] NUMERO DA PURCHASE ORDER
+	[12] CONHECIMENTO EMBARQUE
+	[13] NAVIO
 */
 
 FT_FUse(cINTCSV)	
@@ -112,7 +112,7 @@ MontaSZM() //Monta tabela SZM
 
 While !FT_FEof() //Grava linha a linha as info na SZM
 	
-	cLinhaIT := FT_FReadLn()
+	cLinhaIT := FT_FReadLn() //Essa função traz todas as informações da linha do arquivo
 	lErro    := .F.
 	nLinha++
 
@@ -127,27 +127,27 @@ While !FT_FEof() //Grava linha a linha as info na SZM
     aLinha := {}
 	cLinhaIT := StrTran(cLinhaIT,';;','; ;')
 	cLinhaIT := StrTran(cLinhaIT,';;','; ;')
-    aLinha   := StrTokArr(cLinhaIT, ";")
+    aLinha   := StrTokArr(cLinhaIT, ";") //Distribui todas as informaçõs da linha para cada posição do array
     
-	cInvoice := aLinha[02]
+	cInvoice := aLinha[02] //Num do invoice
 	
-	if !Empty(cPoNum) .and. alltrim(cPoNum) <> alltrim(aLinha[11]) 
+	if !Empty(cPoNum) .and. alltrim(cPoNum) <> alltrim(aLinha[11]) //VALIDAÇÃO DE PO NUM
 		FT_FSkip()
 		loop
 	Endif
 	
-	If (Len(aLinha) <> 13 .and. nLay == 5) .or. (Len(aLinha) <> 12 .and. nLay == 1)
+	If (Len(aLinha) <> 13 .and. nLay == 5) .or. (Len(aLinha) <> 12 .and. nLay == 1) //VALIDÇÃO
  		U_FCMVEIC0101("Layout da linha inválido!",nLinha,,cFornecedor,cForloj,"R",,,cInvoice)
 		lRetorno := .F.
 	EndIF
 	
-	If Empty(AllTrim(aLinha[5]))
+	If Empty(AllTrim(aLinha[5])) //VALIDAÇÃO
 		U_FCMVEIC0101("Código de produto em branco!",nLinha,,cFornecedor,cForloj,"R",AllTrim(cPoNum),,cInvoice)
 		lRetorno := .F.
 	EndIf
 
 	if nLay <> 5
-		aLinha := aClone( fAjuArr(aLinha,nLay) )
+		aLinha := aClone( fAjuArr(aLinha,nLay) ) //Atribui aLinha em aAux e obtém valores de cod prod + NCM + ExNCM
 	EndIf
 
 	aLinha[11] := Padr(aLinha[11],TamSx3("W2_PO_NUM")[1], " ")
@@ -165,10 +165,10 @@ While !FT_FEof() //Grava linha a linha as info na SZM
 		
 	EndIf
 
-	nRec := SetSZM(aLinha,cFornecedor,cForloj,cPedido) //Grava info na tab SZM
+	nRec := SetSZM(aLinha,cFornecedor,cForloj,cPedido) //Grava info na tab temp WKSZM
 	nPos := aScan(aDados, {|x| AllTrim(Upper(x[4])) == UPPER(ALLTRIM(aLinha[5])) .and. AllTrim(Upper(x[8])) == UPPER(ALLTRIM(aLinha[11]))})
 	//aItem := {}
-	aItem := {	StrZero( Val( aLinha[01] ), 4 ),;										//Linha
+	aItem := {	StrZero( Val( aLinha[01] ), 4 ),;					//Linha
 				VAL(aLinha[06]),;									//Quantidade
 				VAL(StrTran(aLinha[07], ",", ".")),;				//Valor
 				aLinha[08],;										//Container
@@ -243,7 +243,7 @@ Else
 	lErro := .T.
 endif
 	
-If lCapaOK .and. !lErro
+If lCapaOK .and. !lErro //.T. and !.F.
 	FWMsgRun(, {|| CMV01GravaInv() }, "", "Gravando Tabelas EW4 e EW5...")
 		
 	FWMsgRun(, {|| zGrvArq() }, "", "Gravando SZM...")
@@ -1337,7 +1337,7 @@ Return lRet
 
 //----------------------------------------------------------------------------------
 
-Static Function MontaSZM()
+Static Function MontaSZM() //Verificar se a tabela SZM existe e cria ela caso necessário.
 	Local aStrut1 := {}
 	Local nArea	  := Select()
 	Local cArqSZM_1 := soma1(cWKSZM)
@@ -1428,21 +1428,21 @@ Return nRec
 //----------------------------------------------------------------------------------
 
 Static Function fUpdSZM(nReg,cPos,cForn,cLoja)
-Local aArea := GetArea()
+	Local aArea := GetArea()
 
-If nReg > 0
+	If nReg > 0
 
-	DbSelectArea('WKSZM')
-	WKSZM->(DbGoto(nReg))
-	RecLock('WKSZM', .F.)
-		WKSZM->ZM_POSICAO 	:= cPos
-		WKSZM->ZM_FORNEC	:= cForn
-		WKSZM->ZM_LOJA		:= cLoja	
-	WKSZM->(MsUnlock())
+		DbSelectArea('WKSZM')
+		WKSZM->(DbGoto(nReg))
+		RecLock('WKSZM', .F.)
+			WKSZM->ZM_POSICAO 	:= cPos
+			WKSZM->ZM_FORNEC	:= cForn
+			WKSZM->ZM_LOJA		:= cLoja	
+		WKSZM->(MsUnlock())
 
-EndIf
+	EndIf
 
-RestArea(aArea)
+	RestArea(aArea)
 
 Return
 

@@ -186,13 +186,13 @@ Return
 
 //----------------------------------------------------------------------------------
 
-Static Function ValidTela()
+Static Function ValidTela() //Validação de todas as informações do CSV
 	Local lRet := .T.
 	Local cExtAux := ""
 	Local cINTCSV   := AllTrim(cDiretorio)
 	Local cLinhaIT		:= ""
 
-	If !File(AllTrim(cDiretorio))
+	If !File(AllTrim(cDiretorio)) //Valida se o arquvio existe
 		MsgStop("Arquivo não existe!")
 		lRet := .F.
 
@@ -274,7 +274,7 @@ Static Function ValidTela()
 		FT_FUse(cINTCSV)	
 		FT_FGotop()
 
-		While !FT_FEof()
+		While !FT_FEof()  //Roda o arquivo todo
 			
 			cLinhaIT := FT_FReadLn()
 			lErro    := .F.
@@ -295,7 +295,7 @@ Static Function ValidTela()
 			   cLinhaIT <> "; ; ; ; ; ; ; ; ; ;"            ;//Layout CBU Subaru com linhas em branco
 
 
-				If nLayout == 1 .and. lRet   // Layout CKD
+				If nLayout == 1 .and. lRet   // Layout CKD - Atrela aLinha nas variáveis e valida as variáveis
 					If len(aLinha) == 12
 						cLote         := IF (!EMPTY(aLinha[01]),aLinha[01]," ")
 						cInvoice      := IF (!EMPTY(aLinha[02]),aLinha[02]," ")
@@ -680,7 +680,10 @@ Return lRet
 Static Function IntegraInv()
 	
 	Local cINTCSV   := AllTrim(cDiretorio)
-	
+	Local _cChave	:= ""	//GAP081
+	Local _lRet		:= .T. 	//GAP081
+	Local _nPos 	:= 0 	//GAP081
+
 	Private cItAcerto	:= ""
 	Private cMoedaP		:= ""
 	Private cArqFalta	:= Upper(AllTrim(cDiretorio))
@@ -692,9 +695,37 @@ Static Function IntegraInv()
 	cArqFalta	+= "-FALTA-"+DTOS(Date())+StrTran(Time(),":")+".CSV"
 	cFalta		:= ""
 
+
 	MontaWork1()
 	if nLayout == 5 .or. nLayout == 1
-		Processa( {|| lErroGer := !(U_ZEICF021(cINTCSV,cPoNum,nLayout))}, "Lendo Arquivo de Integração...", OemToAnsi("Lendo dados do arquivo..."),.F.)
+		
+		//-------------------- INÍCIO ALTERAÇÕES---------------------
+		_cChave		:= "CMVEIC01" + cPoNum //Chave de processamento
+		//Garantir que o processamento seja unico
+		If !LockByName(_cChave,.T.,.T.) //Se não Lockar a variácel cChave
+			_lRet := .F. //Variável de retorno
+			//Tentar locar por 10 segundos caso não consiga não prosseguir
+			For _nPos := 1 To 10
+				Sleep( 3000 ) // Para o processamento por 3 segundos
+				If LockByName(_cChave,.T.,.T.)
+					_lRet := .T.
+				EndIf
+			Next	
+			If !_lRet
+				MSGINFO("Já existe um processamento em execução rotina CMVEIC01, aguarde!", "Registro em processamento - Atenção" )
+			EndIf
+		EndIf
+
+		If _lRet  //Conferir isso, acho que lRet executa será sempre .T.
+		// Se lRet foi .F.
+			
+		
+			Processa( {|| lErroGer := !(U_ZEICF021(cINTCSV,cPoNum,nLayout))}, "Lendo Arquivo de Integração...", OemToAnsi("Lendo dados do arquivo..."),.F.)
+			UnLockByName(_cChave,.T.,.T.) //VERIFICAR ONDE COLOCAR ISSO, ALTERAR A VARIÁVEL
+		EndIf 
+	MSGINFO("Avaliação" + lRet, "CMVEIC01 - Atenção" )
+	//-------------------- FIM DAS ALTERAÇÕES
+	
 	Else
 		Processa( {|| LerDados(cINTCSV)  }, "Lendo Arquivo de Integração...", OemToAnsi("Lendo dados do arquivo..."),.F.)
 	EndIf
