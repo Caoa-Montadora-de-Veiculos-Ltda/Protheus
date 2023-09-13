@@ -3514,7 +3514,7 @@ STATIC FUNCTION RptSendMail(aElements,aDest,cArqPedido)
 	LOCAL cPictImg   := "lg_caoa.png"
 	LOCAL cRotina	 := "ZCOMR001"
 	LOCAL cObsMail	 := ""
-	LOCAL oFile      := FWFileReader():New("/templates/compras/pedido_zcomr001_R02.html")
+	LOCAL oFile      := FWFileReader():New("/templates/compras/pedido_zcomr001.html")
 	LOCAL aLinhas
 	Local i          := 0
 	
