@@ -131,11 +131,11 @@ Public _nLinAc      	:= 0
 			If AllTrim(SB1->B1_TIPO) <> 'SV' .AND. AllTrim(SB1->B1_GRUPO) <> 'VEIA'
 
 				_cItem   		:= PadL( AllTrim( Str(_nX) ) , TamSX3( "C6_ITEM" )[1],"0")
-				_cDescricao 	:= Posicione("SB1",1,FWxFilial("SB1")+_cProduto,"SB1->B1_DESC")
-				_cUm     		:= Posicione("SB1",1,FWxFilial("SB1")+_cProduto,"SB1->B1_UM")
-				_cConta  		:= Posicione("SB1",1,FWxFilial("SB1")+_cProduto,"SB1->B1_CONTA")
-				_cClasseValor	:= Posicione("SB1",1,FWxFilial("SB1")+_cProduto,"SB1->B1_CLVL")
-				_cItemConta		:= Posicione("SB1",1,FWxFilial("SB1")+_cProduto,"SB1->B1_ITEMCC")
+				_cDescricao 	:= SB1->B1_DESC
+				_cUm     		:= SB1->B1_UM
+				_cConta  		:= SB1->B1_CONTA
+				_cClasseValor	:= SB1->B1_CLVL
+				_cItemConta		:= SB1->B1_ITEMCC
 				_nQtde 			:= NoRound(Val(_aDados[_nX][02]), TamSx3("C6_QTDVEN")[02])
 				
 				If _cEmpresa == '2020'
@@ -155,18 +155,12 @@ Public _nLinAc      	:= 0
 
 				EndIf
 
+				//Retorna o preço unitario baseado nas regras de cada empresa.
 				_nPrcUnit := NoRound(U_ZGENCST(_cProduto),TamSx3("C6_PRCVEN")[02])
 				If _nPrcUnit == 0
 					MsgInfo("O produto esta com o custo zerado, informe o preço unitario manualmente."+ CRLF + " Produto: " + _cProduto , " [ZFATF002]")
 				EndIf
 			
-				//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-				//³ Verifica se existe  Pedido de Vendas ³
-				//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-				//_cPC                 := ALLTRIM(M->C5_NUM)
-				//_cTipo               := ALLTRIM(SB1->B1_TIPO)
-				//_cGrupo              := ALLTRIM(SB1->B1_GRUPO)
-
 				If _nX > 1
 					aadd(aCols   , aClone(_aTemp))
 				EndIf

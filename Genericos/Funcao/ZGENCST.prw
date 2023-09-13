@@ -28,6 +28,7 @@ Local _cError       := ""
 Local _nPos         := ""
 Local _nCusto       := 0
 Local _aArea 		:= GetArea()
+Local _cEmpresa 	:= FWCodEmp()
 
 Default _cCodProd   := ""
 Default _cLocal     := ""
@@ -39,10 +40,14 @@ If Empty(_cCodProd)
     Break
 EndIF
 
-If !Empty(_cAnoMod)
-    _nCusto := ZCSTVEI(_cCodProd, _cLocal, _cAnoMod, @_aMsgErro)
+If _cEmpresa == "2010"
+    If !Empty(_cAnoMod)
+        _nCusto := ZCSTVEI(_cCodProd, _cLocal, _cAnoMod, @_aMsgErro)
+    Else
+        _nCusto := zEmp2010(_cCodProd)
+    EndIf
 Else
-    _nCusto := ZCSTPROD(_cCodProd)
+    _nCusto := zEmp2020(_cCodProd)
 EndIf
 
 
@@ -152,10 +157,10 @@ If Select(_cAliasPesq) <> 0
 	(_cAliasPesq)->(DbCloseArea())
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif  
-Return _nCustoRet
+Return(_nCustoRet)
 
 //-------------------------------------------------------------------
-/*/{Protheus.doc} ZCSTPROD
+/*/{Protheus.doc} zEmp2020
 Rdmake 		Localizar valores para informação de custo de Peças   
 @author 	Evandro Mariano
 @since 		25/07/2023
@@ -166,7 +171,7 @@ Rdmake 		Localizar valores para informação de custo de Peças
 /*/
 //-------------------------------------------------------------------
 
-Static Function ZCSTPROD(_cCodProd)
+Static Function zEmp2020(_cCodProd)
 
 Local _cQry01	  	:= ""
 Local _cAls01		:= GetNextAlias()
@@ -275,5 +280,65 @@ RestArea(_aAreaSB1)
 RestArea(_aAreaSB2)
 RestArea(_aAreaSB9)
 
-Return _nCustoRet
+Return( _nCustoRet)
+
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} zEmp2010
+Rdmake 		Localizar valores para informação de custo de Peças   
+@author 	Evandro Mariano
+@since 		25/07/2023
+@version 	1.0
+@param      cCodProd, _cLocal
+			_aMsgErro	- Array onde consta os erros caso ocorra na leitura se o mesmo existir deve ser mandado como referência para retornar preenchido 
+@obs 		
+/*/
+//-------------------------------------------------------------------
+
+Static Function zEmp2010(_cCodProd)
+
+Local _cQry01	  	:= ""
+Local _cAls01		:= GetNextAlias()
+Local _nCustoRet    := 0
+Local _aAreaSB1		:= SB1->(GetArea())
+
+SB1->(DBSetOrder(1))
+If SB1->(MsSeek( FwxFilial("SB1") + AvKey(_cCodProd , "B1_COD") ))
+    
+        If Select( (_cAls01) ) > 0
+            (_cAls01)->(DbCloseArea())
+        EndIf
+
+        //1a - Etada - Busca nota fiscal de entrada (Compra)
+        _cQry01 := "	"
+        _cQry01 += " SELECT SB2.B2_COD, SUM(SB2.B2_VATU1) VALOR, SUM(SB2.B2_QATU) QTDE "            + CRLF
+        _cQry01 += " FROM " +  RetSQLName("SB2") +" SB2 "                                           + CRLF
+        _cQry02 += " WHERE SB2.B2_FILIAL = '" + FWxFilial('SB2') + "' "                             + CRLF
+        _cQry01 += " AND SB2.B2_COD = '" + _cCodProd + "' "                                         + CRLF
+        _cQry01 += " AND SB2.D_E_L_E_T_ = ' ' "                                                     + CRLF
+        _cQry01 += " GROUP BY SB2.B2_COD "                                                          + CRLF
+
+        // Executa a consulta.
+        DbUseArea( .T., "TOPCONN", TcGenQry(,,_cQry01), _cAls01, .T., .T. )
+
+        DbSelectArea((_cAls01))
+        (_cAls01)->(dbGoTop())
+
+        If !(_cAls01)->(EoF())
+           If ( (_cAls01)->VALOR / (_cAls01)->QTDE ) < 0
+			    _nCustoRet	:= 0
+			Else
+			    _nCustoRet	:= ((_cAls01)->VALOR/(_cAls01)->QTDE)
+			EndIF
+        EndIf 
+
+        (_cAls01)->(DbCloseArea())
+EndIf
+
+//Caso o custo seja negativo, retorna 0
+_nCustoRet := IIf( _nCustoRet <= 0, 0, _nCustoRet)
+
+RestArea(_aAreaSB1)
+
+Return(_nCustoRet)
 
