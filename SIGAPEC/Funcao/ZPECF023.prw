@@ -1,6 +1,7 @@
-#INCLUDE "Protheus.ch"
+#include "Protheus.ch"
 #include "TOTVS.ch"
-#INCLUDE "FWMVCDEF.CH"
+#include "TOPCONN.CH"
+#include "FWMVCDEF.CH"
 
 #define CMD_OPENWORKBOOK			1
 #define CMD_CLOSEWORKBOOK			2
@@ -25,6 +26,8 @@ User Function ZPECF023()
     LOCAL nOpcao      := 0
     Local aPergs 	  := {}
     Local cCaminho    := Space(60)
+    Local _cEmp  	  := FWCodEmp()
+    
     Private _cUser    := Substr(cUserName,1,20)
     Private _cCdUser  := RetCodUsr()
     Private _dData    := Dtoc(DATE())
@@ -95,39 +98,54 @@ User Function ZPECF023()
 
     Private aRetP 	  := {}
 
+    If _cEmp == "2020" //Executa o p.e. Anapolis.
+
     aAdd( aPergs ,{6,"Diretorio do Arquivo ",cCaminho     ,"@!" ,     ,'.T.' ,80,.T.,"Arquivos .xls |*.xls " })
+    aAdd( aPergs ,{4,"Somente FOB ?",.F.,"Marque p/atualizar apenas o FOB.",90,"",.F.})
     
     If ParamBox(aPergs, "Parametros ", aRetP, , , , , , , , ,.T.) 
 
         DEFINE MSDIALOG oDlg FROM  96,9 TO 310,592 TITLE OemToAnsi("Importação Cadastro de Produtos") PIXEL
         @ 18, 6 TO 66, 287 LABEL "" OF oDlg  PIXEL
         @ 29, 15 SAY OemToAnsi("Esta rotina realiza a importação de Planilha Excel para Geração de Cadastro de Produtos") SIZE 268, 8 OF oDlg PIXEL
-        @ 38, 15 SAY OemToAnsi("Da Caoa Montadora conforme Lay-Out pré definido.") SIZE 268, 8 OF oDlg PIXEL
+        IF MV_PAR02 = .F.
+            @ 38, 15 SAY OemToAnsi("Da Caoa Montadora conforme Lay-Out pré definido.") SIZE 268, 8 OF oDlg PIXEL
+        ELSE
+            @ 38, 15 SAY OemToAnsi("Da Caoa Montadora conforme Lay-Out: Código, Val_FOB, MoedaFOB") SIZE 268, 8 OF oDlg PIXEL
+        ENDIF
         @ 48, 15 SAY OemToAnsi("Confirma Geração da Documento?") SIZE 268, 8 OF oDlg PIXEL
         DEFINE SBUTTON FROM 80, 223 TYPE 1 ACTION (oDlg:End(),nOpcao:=1) ENABLE OF oDlg
         DEFINE SBUTTON FROM 80, 250 TYPE 2 ACTION oDlg:End() ENABLE OF oDlg
         ACTIVATE MSDIALOG oDlg CENTER
 
-        If nOpcao == 1
+        If nOpcao == 1 .AND. MV_PAR02 = .F.
             Processa ({|| FImpExcel()},"Aguarde! Efetuando Importação da Planilha "+"[ZPECF023]")
+        ElseIf nOpcao == 1 .AND. MV_PAR02 = .T.
+            Processa ({|| u_ZPECF037(oDlg,_nX,nOpcao,aPergs,cCaminho)},"Aguarde! Efetuando Importação da Planilha Custo FOB "+"[ZPECF037]")    //Chamar a função que importa apenas o FOB
+        ElseIf nOpcao == 0
+            lRet := .F.
         Endif
 
     Endif
 
-    For _nX := 1 to Len(aPrdInt)
-        SB1->(dbSetOrder(1))
-        SB1->(dbGotop())
-        SB1->(DBSeek(xFilial("SB1")+aPrdInt[_nX][1]))
-        RecLock('SB1', .F.)
-            SB1->B1_XINTEG := "S"
-        SB1->(MsUnlock())
-    NEXT
+    IF  !MV_PAR02 .AND. lRet
+        For _nX := 1 to Len(aPrdInt)
+            SB1->(dbSetOrder(1))
+            SB1->(dbGotop())
+            SB1->(DBSeek(xFilial("SB1")+aPrdInt[_nX][1]))
+            RecLock('SB1', .F.)
+                SB1->B1_XINTEG := "S"
+            SB1->(MsUnlock())
+        NEXT
 
-    U_ZWSR004(,.T.)
+        U_ZWSR004(,.T.)
+    ENDIF
 
-Ferase(cINTCSV)
+    Ferase(cINTCSV)
 
-//LogExec()
+    //LogExec()
+
+    ENDIF
 
 Return()
 
@@ -390,6 +408,12 @@ Local _nItem     := 0
         Endif
 
         aDados  := Separa(cLinha,cSeparador)
+
+        IF LEN(aDados) < 4
+            MSGINFO("Lay-Out do arquivo invalido! "+"[ZPECF023]")
+            lRet := .F.
+            Exit 
+        ENDIF
 
         cItens    :=    '0000'
 
