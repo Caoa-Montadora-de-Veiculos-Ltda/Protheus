@@ -1951,7 +1951,7 @@ User function xExec(nOpc,xI,aAutoCab,aAutoDet,cEmpresa,aFil,cLogFile,dData,lGrid
 	Local nX := 0
 	//Local aLog := {}
 	Local bError	:= ErrorBlock( { |oError| MyError( oError ) } )
-	Local cLogDir	:= "\CMV\IMP\"
+	//Local cLogDir	:= "\CMV\IMP\"
 	Local cCodigo, cStatus, cAliasTRB
 
 	Private cError
@@ -2594,10 +2594,12 @@ User function MyExec(nOpc,aExecAuto,aExecAutod)
 			cClaImp	:=	Alltrim(aExecAuto[nClaImp,2])
 			cClaImp	:=	Stuff( Space( TamSX3("W2_XCLAIMP")[1] )	, 1 , Len(cClaImp) , cClaImp )
 			
-			 RecLock("SW2",.F.)
-			SW2->W2_XTIPIMP	:= cTipImp
-			SW2->W2_XCLAIMP	:= cClaImp
-			SW2->( msUnlock() )
+			if Emtpy(SW2->W2_XTIPIMP)
+				RecLock("SW2",.F.)
+					SW2->W2_XTIPIMP	:= cTipImp
+					SW2->W2_XCLAIMP	:= cClaImp
+				SW2->( msUnlock() )
+			EndIf
 		EndIf
 
 	ElseIf nOpc == 22
