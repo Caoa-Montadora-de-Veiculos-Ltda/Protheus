@@ -2933,10 +2933,9 @@ Return AVS1Reg
 
 //Funcionalidade responsável por apagar o numero do picking e as suas relações com Or�amento
 //DAC 27/04/2022
-User Function XAPAGAPicking(_cPicking, _cFase, _lMsg)
+User Function XAPAGAPicking(_cPicking, _cFase, _lMsg, _aMsg)
 	Local _lRet 		:= .T.
 	Local _cAliasPesq   := GetNextAlias()     
-	Local _aMsg			:= {}
 	Local _aColsAnt		:= {}
 	Local _aRegSZK		:= {}
 	Local _aArea		:= GetArea()
@@ -2952,6 +2951,7 @@ User Function XAPAGAPicking(_cPicking, _cFase, _lMsg)
 	Default	_cPicking	:= ""
 	Default _cFase		:= "0"
 	Default _lMsg		:= .T.
+	Default _aMsg		:= {}
 
 	Begin Sequence
 		//controle para que sempre seja enviado o picking

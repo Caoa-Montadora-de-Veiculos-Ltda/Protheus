@@ -64,10 +64,13 @@ Static Function ZPECF011PR( _oJson )
 Local _cEmpresa     := "02"
 Local _cFilAtu      := "2020012001"
 Local _lRet			:= .F.
-Local _aRegVS1		:= {}
-//Local _cFaseConf 	:= Alltrim(GetNewPar("MV_MIL0095","4")) // Fase de Conferencia e Separacao
+Local _lDivergencia := .F.
 Local _lDivergeWis  := .F.
 Local _cMsgInconWis := ""
+Local _lCancela 	:= .F.
+Local _cFaseCancela := "0"
+Local _aMsg			:= {}
+Local _aRegVS1		:= {}
 Local _cQueryUPD
 Local _nPos
 Local _cPicking
@@ -119,13 +122,6 @@ _cObs		:= "[ZPECF011] RETORNO DE SEPARAÇÃO RG LOG "+If(!_lRet,"APRESENTOU PROBLE
 _cObs 		+= "Status " + CRLF
 For _nPos := 1 To Len(_aMsgRet)
 	//GAP002 quando posui divergencia com Wis tem que atualizar Picking e alterar código pois não possuem este código para retorno 800, passar para 615
-    /*
-	If _aMsgRet[_nPos,1] == 800   
-		_lDivergeWis 	:= .T.
-		_cMsgInconWis	:= Upper(If(Len(_aMsgRet[_nPos,2]) > 100,SubsTr(_aMsgRet[_nPos,2],1,100),_aMsgRet[_nPos,2]))
-		_aMsgRet[_nPos,1] := 615
-	Endif
-	*/	
 	If _lDivergencia    
 		_lDivergeWis 	:= .T.
 		_cMsgInconWis	:= Upper(If(Len(_aMsgRet[_nPos,2]) > 100,SubsTr(_aMsgRet[_nPos,2],1,100),_aMsgRet[_nPos,2]))
@@ -167,6 +163,13 @@ If !_lRet .Or. _lDivergeWis
  		ZPEC11RMsg("divergencia", "Não foi possivel gravar Status divergencia WIS")
  		Conout( "[ZPECF011] Não foi possivel gravar Status divergencia WIS, ERRO UPD SZK "+TCSQLError())
 	Endif
+	//Se estiver com divergência cancelar picking
+	If _lDivergeWis
+		_lCancela := U_XAPAGAPicking(_cPicking, _cFaseCancela, .F. /*_lMsg*/, @_aMsg)
+		If !_lCancela
+			_cObs += "Não foi possivel cancelar o Picking "+_cPicking+" o mesmo estara com inciação de divergente (Status = D) verificar " 
+		Endif
+	Endif 	 
 Endif
 
 //Existindo orçamentos gravar mensagens
@@ -533,13 +536,13 @@ Local _cConectCabWis   	:= AllTrim(SuperGetMV( "CMV_PEC046"  ,,""))  //"WIS.T_CA
 Local _lRet				:= .F.
 Local _aDiverge			:= {}
 Local _aStru			:= {}
-Local _aMsgRet 	       	:= {}
+//Local _aMsgRet 	       	:= {}
+Local _aMsg				:= {}
 Local _lAborta 			:= .F.
 Local _lProcessa 		:= .F.
 Local _cErro			:= "" 
 Local _lQtdWIS			:= .F.
 Local _lQtdPRT			:= .F.
-
 Local _cMens
 Local _nPos
 Local _oTable
@@ -748,7 +751,6 @@ Begin Sequence
 			_cMens += "Qtde maior no WIS, carregamento não permitido"			
 			AAdd(_aMsgCAOA, _cMens)
 			_lAborta 		:= .T.
-			_lDivergencia 	:= .T.
 			Exit	
 		//No caso de a quantidade WIS for maior que a quantidade Protheus deixar Prosseguir 
 		ElseIf  (_cAliasPesq)->QT_WIS  == 0
@@ -798,18 +800,20 @@ Begin Sequence
 			_lQtdWIS 	:= .T.
 			_lQtdprt 	:= .T. 
 		Endif
-		//Carregar os valores em uma matriz para processamento posterior
-		_nPosCpo := Ascan(_aDiverge, {|x| x[2]==(_cAliasPesq)->PROD})  
-		If _nPosCpo > 0 
-			_aDiverge[_nPosCpo, 2] += (_cAliasPesq)->QT_WIS
-			_aDiverge[_nPosCpo, 3] += (_cAliasPesq)->QT_PROT
-		Else
-			Aadd(_aDiverge,{ _cPicking,; 
-							(_cAliasPesq)->PROD,; 
-							(_cAliasPesq)->QT_WIS,;  
-							(_cAliasPesq)->QT_PROT,;
-							_cErro}) 
-		Endif	
+		If !Empty(_cErro)
+			//Carregar os valores em uma matriz para processamento posterior
+			_nPosCpo := Ascan(_aDiverge, {|x| x[2]==(_cAliasPesq)->PROD})  
+			If _nPosCpo > 0 
+				_aDiverge[_nPosCpo, 2] += (_cAliasPesq)->QT_WIS
+				_aDiverge[_nPosCpo, 3] += (_cAliasPesq)->QT_PROT
+			Else
+				Aadd(_aDiverge,{ _cPicking,; 
+								(_cAliasPesq)->PROD,; 
+								(_cAliasPesq)->QT_WIS,;  
+								(_cAliasPesq)->QT_PROT,;
+								_cErro}) 
+			Endif	
+		Endif
 		(_cAliasPesq)->(DbSkip())
 	EndDo
 	//caso seja para abortar processo   1 Abortrar pois qtde WIS maior que PRT
@@ -818,7 +822,7 @@ Begin Sequence
 	If _lAborta .Or. ! _lQtdWIS .Or. ! _lQtdPRT 
 		//1 Abortrar pois qtde WIS maior que PRT 	
 		If _lAborta
-			_cMens 		:= _aMsgRet[Len(_aMsgRet)]
+			_cMens 		:= _aMsgCAOA[Len(_aMsgCAOA)]
 			//_aMsgCAOA	:= {_cMens}  //posso gerar as demais mensagens pois será enviado para RG
 			ZPEC11RMsg("divergencia",_cMens)  //divergewis deverá ser utilizada esta tag somente se ocorrer este processo
 			//ZPEC11EMAI({_cMens}, _cPicking, (_cAliasPesq)->QT_PROT)  //Envio e-mail
@@ -829,7 +833,14 @@ Begin Sequence
 			//rotina para cancelr picking
 			//Deixar continuar pois ira verificar todos os itens e enviar via e-mail
 		Endif	
+		_lDivergencia 	:= .T.
 		//montar processo de calcelamento do Picking 
+		_aMsg := {}
+		If Len(_aMsg)
+			For _nPos := 1 To Len(_aMsg)
+				Aadd( _aMsgCAOA, _aMsg[_nPos] ) 
+			Next _nPos 
+		Endif
 		Break
 	Endif 
 
@@ -844,6 +855,8 @@ Begin Sequence
 	If Len(_aDiverge) > 0
 		_lRet := ZPEC11BKOR( _aDiverge )
 		If ! _lRet
+			_cMens		:= "Não foi possivel desmembrar Pedido "+_cPicking
+			ZPEC11RMsg("divergencia",_cMens)  //divergewis deverá ser utilizada esta tag somente se ocorrer este processo
 			Break 
 		Endif 
 	Endif
@@ -877,6 +890,8 @@ Static Function ZPEC11BKOR( _aDiverge )
 Local _lRet 		:= .F.
 Local _cAliasPesq	:= GetNextAlias()   
 Local _aBackOrder	:= {}
+Local _aRegVS3 		:= {}    		 //registros para reserva
+Local _aBak 		:= {}
 Local _cCodProd 
 Local _cPicking	
 Local _nQtdeDivWiS 
@@ -884,6 +899,10 @@ Local _nQtdeDivPRO
 Local _nSaldoWis
 Local _nSaldoProt
 Local _nPos 
+Local _lZera 
+Local _cNumOrc
+Local _nQtde
+Local _cMsg
 
 Begin Sequence
 	For _nPos := 1 To Len(_aDiverge)
@@ -896,17 +915,8 @@ Begin Sequence
 			(_cAliasPesq)->(DbCloseArea())
 		Endif
 
-		/*
-		If _nQtdeDivWiS == 0  
-			_cMens := "Pedido com divergência de valores os valores WIS estão zerados"
-			Aadd(_aMsgCAOA, _cMens)
-			//ZPEC11RMsg("divergewis",_cMens)
-			//_lRet := .F.
-			//Break
-		Endif
-		*/
 		BeginSql Alias _cAliasPesq
-			SELECT 	VS3.VS3_NUMORC
+			SELECT 	  VS3.VS3_NUMORC
 					, VS3.VS3_CODITE
 					, VS3.VS3_QTDITE
 					, VS3.R_E_C_N_O_ NREGVS3
@@ -915,58 +925,109 @@ Begin Sequence
 				AND VS3.VS3_FILIAL = %XFilial:VS3%
 				AND VS3.VS3_CODITE = %Exp:_cCodProd%
 				AND VS3.VS3_XPICKI = %Exp:_cPicking% 
-			ORDER BY VS3.VS3_QTDITE DESC	
+			ORDER BY VS3.VS3_NUMORC	
 		EndSql
 		//Caso não localize um produto no picking abortar toda a operação
 		If (_cAliasPesq)->(Eof())
 			Aadd(_aMsgCAOA,"Não localizado Pedido "+_cPicking+" para o Produto "+_cCodProd)
 			Break
 		Endif	
+
 		//Processar podem existir mais de um orçamento pois o picking é agrupamento de orçamentos
 		Aadd(_aMsgCAOA, "Atualizando produdo "+AllTrim(_cCodProd)+" orçamento "+VS3->VS3_NUMORC+", Saldo Protheus "+AllTrim(STR(VS3->VS3_QTDITE))+" Saldo WIS "+AllTrim(STR(_nQtdeDivWiS)))
 		_nSaldoWis	:= _nQtdeDivWiS
 		_nSaldoProt := _nQtdeDivPRO
-		//_nQtdeDivWiS pode vir igual a zero
-		//If _nQtdeDivWiS <= 0
-		//	Aadd(_aMsgCAOA,"Não localizado Pedido "+_cPicking+" para o Produto "+_cCodProd+" com valor zerado, no momento da geração do BackOrder")
-		//	Break
-		//Endif 
 		While (_cAliasPesq)->(!Eof())
+			_lZera 	:= .F.
+			_nQtde 	:= 0
+			_cObs 	:= "Atualização de Divergência Qtde Protheus X WIS , Picking "+_cPicking+" Valor correspondente a diferença entre as QtdeS  no produto, orçamento Principar "+VS1->VS1_NUMORC + CRLF
 			VS3->(DbGoto((_cAliasPesq)->NREGVS3))
 			//necessário retirar a reserva
-
 			If _nSaldoWis == 0 .Or. _nSaldoProt == 0
-				_lRet := ZPEC11BKRE( VS3->VS3_QTDITE, _cPicking, @_aBackOrder)  //tem que gerar backorder
-			//Caso o orçamento seja maior que o Wis abater os valores
+				_nQtde 		:= VS3->VS3_QTDITE
+				_lZera 	:= .T.
+				_cObs   += "Devido Qtde "+If(_nSaldoWis == 0,"WIS","Prothes")+" igual a zero" + CRLF
+				//Caso o orçamento seja maior que o Wis abater os valores
 			ElseIf VS3->VS3_QTDITE > _nSaldoWis
-				Aadd(_aMsgCAOA, "Item "+AllTrim(VS3->VS3_SEQUEN) +", Saldo Protheus "+AllTrim(STR(VS3->VS3_QTDITE))+" Saldo Restante  "+AllTrim(STR(_nSaldoWis)))
-				_lRet := ZPEC11BKRE(_nSaldoWis , _cPicking, @_aBackOrder)  //tem que gerar backorder
-				Exit  //ja utilizei o saldo
+				_nQtde 		:= _nSaldoWis
+				_lZera 		:= .F.
+				_cMsg   	:= "Item "+AllTrim(VS3->VS3_SEQUEN) +", Qtde Protheus "+AllTrim(STR(VS3->VS3_QTDITE))+" Qtde Restante  "+AllTrim(STR(_nSaldoWis)) + CRLF
+				_cObs   	+= _cMsg
+				Aadd(_aMsgCAOA, _cMsg)
 			//Caso o saldo wis seja menor que o orçamento o mesmo ficará não mecher somente abater da soma
-		   //Caso seja o mesmo valor não fazer movimentação
+	   		//Caso seja o mesmo valor não fazer movimentação
 			ElseIf VS3->VS3_QTDITE <= _nSaldoWis 
-				Aadd(_aMsgCAOA, "Item "+ AllTrim(VS3->VS3_SEQUEN)+ ", Saldo Protheus "+AllTrim(STR(VS3->VS3_QTDITE))+" Saldo Restante  "+AllTrim(STR(_nSaldoWis)))
-				_nSaldoWis -= VS3->VS3_QTDITE	
-				_lRet := .T.
+				_nQtde 		:= VS3->VS3_QTDITE
+				_lZera 		:= If(VS3->VS3_QTDITE < _nSaldoWis,.F.,.T.)
+				_cMsg		:= "Item "+ AllTrim(VS3->VS3_SEQUEN)+ ", Qtde Protheus "+AllTrim(STR(VS3->VS3_QTDITE))+" Qtde Restante  "+AllTrim(STR(_nSaldoWis)) + CRLF
+				_cObs   	+= _cMsg
+				Aadd(_aMsgCAOA,_cObs)
 			Else  
-				_lRet := ZPEC11BKRE( VS3->VS3_QTDITE, _cPicking, @_aBackOrder)  //tem que gerar backorder
+				_nQtde := VS3->VS3_QTDITE
+				_lZera := .T.
+				_cObs   += "Devido Qtde divergências de Qtde "+ AllTrim(Str(VS3->VS3_QTDITE)) + CRLF
+			Endif
+			_nSaldoWis	-= _nQtde
+			If _nQtde > 0
+				Aadd(_aBak,{	(_cAliasPesq)->NREGVS3,;
+								 _cCodProd,; 
+								_nQtde,; 
+								_cObs,;
+								.T.,;    ///*_LXBO*/
+								_lZera /*indica se zera ou*/,;
+								(_cAliasPesq)->VS3_NUMORC })
+
+			Endif
+			//Caso ja utilizei as quantidades posso sair
+			If _nSaldoWis <= 0
+				Exit
 			Endif
 			(_cAliasPesq)->(DbSkip())
 		EndDo 
 	Next
+	//cASO NÃO TENHA BACKORDER
+	If  Len(_aBak) == 0
+		_lRet := .T.
+	Endif 	
+	//Gravar BackOrder, necessário fazer isto pois pode ser varios orçamentos
+	//Organizo por numero de orçamento
+	Asort(_aBak,,, { |x, y| x[7] > y[7] } )
+	_cNumOrc 	:= _aBak[1,7]   //numero do orçamento
+	_aRegVS3 	:= {}    		 //registros para reserva
+	_aBackOrder	:= {}
+	For _nPos := 1 To Len(_aBak)
+		Aadd(_aBackOrder,{_aBak[_nPos,1], _aBak[_nPos,2], _aBak[_nPos,3], _aBak[_nPos,4],_aBak[_nPos,5],_aBak[_nPos,6]})
+		//Sera necessário retirar reserva
+		//mudando orçamento e ou no fim do for  
+		If _cNumOrc <> _aBak[_nPos,7] .Or. _nPos == Len(_aBak)
+			//primeiro tiro as reservas do produto antes de abater as diferenças
+			_lRet := ZPEC11BKRE( _cNumOrc, _cPicking, .F., /*_aRegVS3*/)  
+			If ! _lRet
+				_cMsg :=  "Problemas para retirar as reservas orçamento "+_cNumOrc
+				Aadd(_aMsgCAOA, _cMsg)
+				Break	
+			Endif
+			//Fazer a Clonagem do registro
+			_lRet := U_XOFUNCLO( _cNumOrc, /*_cGrupo*/, /*_cCodProd*/, /*_nQtdeItem*/, /*_lZera*/, /*_aVazioCpo*/, _aBackOrder)
+			If ! _lRet
+				_cMsg :=  "Ocorrerão problemas para clonar itens que não possuem status para carregamento aos quais passariam para backorder"
+				Aadd(_aMsgCAOA, _cMsg)
+				Break	
+			EndIf
+			_cMsg := "Criado Backorder para orçamento(s) "+ _cNumOrc +" diferença de qtde Protheus  em relação ao retorno Picking WIS"
+			Aadd(_aMsgCAOA, _cMsg)
+			_lRet := ZPEC11BKRE( _cNumOrc, _cPicking, .T., /*_aRegVS3*/)  
+			If ! _lRet
+				_cMsg :=  "Problemas para criar as reservas orçamento "+_cNumOrc
+				Aadd(_aMsgCAOA, _cMsg)
+				Break	
+			Endif
+			_cNumOrc 	:= _aBak[_nPos,7]
+			_aBackOrder	:= {}
+		Endif 
+	Next	
+	_lRet 	:= .T. 
 End Sequence
-//Carregar registros em BOs
-If Len(_aBackOrder) > 0
-	_lRet := U_XOFUNCLO( _cNumOrc, /*_cGrupo*/, /*_cCodProd*/, /*_nQtdeItem*/, /*_lZera*/, /*_aVazioCpo*/, _aBackOrder)
-	If ! _lRet
-		_cMsg :=  "[ZPECF011] Ocorrerão problemas para clonar itens que não possuem status para carregamento aos quais passariam para backorder"
-		Aadd(_aMsgCAOA, _cMsg)
-		Break	
-	EndIf
-	_cMsg := "Criado Backorder para orçamento "+ _cNumOrc +" diferença de saldo Protheus qtde "+AllTrim(Str(_nSaldo))+ " maior que retorno Picking WIS"
-	Aadd(_aMsgCAOA, _cMsg)
-EndIf	
-
 
 If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
@@ -984,109 +1045,53 @@ Return _lRet
 @project	GAP002 | Integração da separação - Informar produto e quantidade da cubagem
 @Obs		
 /*/
-
-Static Function ZPEC11BKRE(_nSaldoDif, _cPicking, _aBackOrder)
+Static Function ZPEC11BKRE(_cNumOrc, _cPicking, _lReserva, _aRegVS3)
 Local _lRet 		:= .F.
-Local _lZera 		:= .F.	
-Local _cNumOrc		:= VS3->VS3_NUMORC
-Local _cCodProd		:= VS3->VS3_CODITE
-Local _nRegVS3		:= VS3->(Recno())	
 Local _aSeqVS3 	
-Local _aVS3Reg	
 Local _cDocto	
-Local _nRegVS1
-Local _nSaldo 
 Local _cMsg
+Local _nPos
 
-Default _aBackOrder	:= {}
+DeFault _aRegVS3 		:= {}
 
+Private aHeaderP    	:= {} // Variavel ultilizada na OX001RESITE
 Private _aReservaCAOA	:= {}
-Private _aMsgCAOAAglu		:= {}
+Private _aMsgCAOAAglu	:= {}
 
 Begin Sequence 
+
 	//montar bakOrder da diferença
 	//posicionar VS1
 	VS1->(DbSetOrder(1))
 	VS1->(DbSeek(FwXFilial("VS1")+ _cNumOrc))
-	_nRegVS1 	:= VS1->(Recno())
 
-	//Tenho que testar se esta reservado caso nã não posso retirar a reserva
-	//Necessário fazer esta consistencia devido problemas no Sistema não esta atualizando campo VS3_RESERV = 1 falado com JC sobre o problema 
-	//para abrir chamado pois mesmo no padrão não esta atualizando campo VS3_RESERV
-	If VS3->VS3_RESERV  == "1" .And. VS3->VS3_QTDRES > 0//!Empty(VS3->VS3_DOCSDB) 
-		_aSeqVS3 	:= Aclone({})
-		_aVS3Reg	:= Aclone({})
-		_cDocto		:= ""
-		Private aHeaderP    := {} // Variavel ultilizada na OX001RESITE
-		aAdd(_aSeqVS3,VS3->VS3_SEQUEN)
-		AAdd(_aVS3Reg,VS3->(Recno()))
-		If Len(_aSeqVS3) > 0
-			//retira as reservas dos itens
-			//Alterado para utilizar reserva CAOA - DAC 16/08/2022
-			_aReservaCAOA 	:= Aclone({_cNumOrc,.F.,_aVS3Reg})	// Variavel utilizada no PE OX001RES
-			_cDocto := OX001RESITE(_cNumOrc,.F.,_aSeqVS3 )
-			//_cDocto := U_XRESCAOAPEC(_cNumOrc, .F., _aSeqVS3)
-			if Empty(_cDocto) .or. _cDocto == "NA"
-				Aadd(_aMsgCAOA, "[ZPECF011] Não foi possivel retirar a reserva do item alterado "+AllTrim(_cCodProd)+" orçamento "+_cNumOrc+" devido a Divergencia na qtde")
-				Break
-			Endif
-			//Garanto que o documento tenha sido retirado da reserva
-			If _lRet .and. !Empty(VS3->VS3_DOCSDB)
-				VS3->(RecLock("VS3",.F.))
-				VS3->VS3_DOCSDB	:= ""
-				VS3->VS3_RESERV := "0"
-				VS3->(MsUnlock())
-			Endif
-			_cMsg := "[ZPECF011] Retirada reserva "+_cDocto+" do item "+AllTrim(_cCodProd)+" orçamento "+_cNumOrc+" devido a Divergencia na qtde"
-			Aadd(_aMsgCAOA, _cMsg )
-		EndIf
-	Else
-		_cMsg := "[ZPECF011] Não existe reserva do item "+AllTrim(_cCodProd)+" orçamento "+_cNumOrc+" para o processo de Divergencia na qtde"
-		Aadd(_aMsgCAOA, _cMsg)
+	_aSeqVS3 	:= Aclone({})
+	_cDocto		:= ""
+	If Len(_aRegVS3) > 0
+		For _nPos := 1 To Len(_aRegVS3)
+			VS3->( DbGoto( _aRegVS3[_nPos]) )
+			Aadd(_aSeqVS3, VS3->VS3_SEQUEN)
+		Next
+	Endif	 
+	_aReservaCAOA 	:= Aclone({ _cNumOrc, _lReserva, _aRegVS3 })	// Variavel utilizada no PE OX001RES
+	_cDocto := OX001RESITE(_cNumOrc,.F.,_aSeqVS3 )
+	if Empty(_cDocto) .or. _cDocto == "NA"
+		If _lReserva
+			_cMsg := "Não foi possivel criar a reserva do item, orçamento "+_cNumOrc+" devido a Divergencia na qtde "
+		Else 
+			Aadd(_aMsgCAOA, "Não foi possivel retirar a reserva do item, alterado orçamento "+_cNumOrc+" devido a Divergencia na qtde")
+		Endif 	
+		Aadd(_aMsgCAOA, _cMsg )
+		Break
 	Endif
-
-	_aSeqVS3 := {}
-	_aVS3Reg := {}
-	//primeiro atualizo o registro que irá ficar
-	VS3->(RecLock("VS3",.F.))
-	_nSaldo 		:= VS3->VS3_QTDITE - _nSaldoDif
-	VS3->VS3_QTDITE := _nSaldo 
-	VS3->(MsUnlock())
-
-	If _nSaldo > 0
-		aAdd(_aSeqVS3, VS3->VS3_SEQUEN)
-		AAdd(_aVS3Reg, VS3->(Recno()))
-		//Fazer Reserva do valor atualizado
-		_aReservaCAOA 	:= Aclone({_cNumOrc,.T.,_aVS3Reg})	// Variavel utilizada no PE OX001RES
-		_cDocto := OX001RESITE(_cNumOrc,.T.,_aSeqVS3 )
-		if Empty(_cDocto) .or. _cDocto == "NA"
-			_cMsg := "Não foi possivel criar a reserva do item alterado "+AllTrim(_cCodProd)+" orçamento "+_cNumOrc+" devido a Divergencia na qtde "
-			Aadd(_aMsgCAOA, _cMsg)
-			Break
-		Endif
-		//Garanto que o documento tenha sido retirado da reserva
-		If _lRet .and. !Empty(VS3->VS3_DOCSDB)
-			VS3->(RecLock("VS3",.F.))
-			VS3->VS3_DOCSDB	:= _cDocto
-			VS3->VS3_RESERV := "1"
-			VS3->(MsUnlock())
-		Endif
-		_cMsg := "[ZPECF011] Incluido reserva "+_cDocto+" do item "+AllTrim(_cCodProd)+" orçamento "+_cNumOrc+" devido a Divergencia na qtde "
-		Aadd(_aMsgCAOA, _cMsg)
+	If _lReserva 
+		_cMsg := "Incluido reserva "+_cDocto+" do item, orçamento "+_cNumOrc+" devido a Divergencia na qtde "
 	Else
-		_lZera	:= .T.  //Caso esteja zerado posso apagar
+		_cMsg := "Retirada reserva "+_cDocto+" do item, orçamento "+_cNumOrc+" devido a Divergencia na qtde"
 	Endif
-	//Peparo para gerar o Backorder da diferença
-	Aadd(_aBackOrder,{VS3->(Recno()),;
- 				_cCodProd,; 
-				_nSaldo,;
-				"[ZPECF011] Atualização de Divergência Qtde Protheus X WIS -> Valor Qtde Anterior "+AllTrim(Str(VS3->VS3_QTDITE))+", Picking "+_cPicking+" Valor correspondente a diferença de Qtde "+AllTrim(Str(_nSaldoDif))+" no produto, orçamento "+VS3->VS3_NUMORC,; 
-				.T. ,;							//_Lxbo 
-				_lZera })					//_lZera	
-	VS1->(DbGoto(_nRegVS1))
+	Aadd(_aMsgCAOA, _cMsg )
 	_lRet := .T.
 End Sequence 
-VS3->(DbGoto(_nRegVS3))
 Return _lRet
 
 
