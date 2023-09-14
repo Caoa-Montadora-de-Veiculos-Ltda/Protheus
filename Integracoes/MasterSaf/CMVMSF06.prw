@@ -295,6 +295,7 @@ static _VLR_SERVI
 static _VLR_TOT
 static _VLR_TRANS
 static _VLR_UNIT
+
 /*/
 ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
 ±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
@@ -342,6 +343,8 @@ static _VLR_UNIT
 			- Correção na Extração da SAFX113 valores de ICMS para pegar da Tabela SFT 
 			- Correção na Extração da SAFX08  valores de ICMS para pegar da Tabela SFT para pegar o valro correto após manutenção.
 			- Manutenção na Static Function ExecQuery separando a geração de cada arquivo MasterSaf em funções separada.
+			Sandro Ferreira  13/09/2023
+			- Criado a opção na tela de parametros para separar por Entrada/Saida/Ambas
 */
 
 User Function CMVMSF06()
@@ -374,6 +377,7 @@ User Function CMVMSF06()
 	Private cFilAte  := ""
 	Private lSAFX108 := .F.
 	Private lSAFX109 := .F.
+	Private cTpMov   := "Entrada"
 	Private lSAFX16  := .F.
 	Private lSAFX17  := .F.
 	Private lSAFX18  := .F.
@@ -431,9 +435,11 @@ User Function CMVMSF06()
 		aAdd(aParamBox,{1 ,"Nota Fiscal Inicial:"        ,Space(TamSX3("F1_DOC")[1])   ,""    ,"",""   ,"", 80,.F.}) // Tipo caractere
 		aAdd(aParamBox,{1 ,"Nota Fiscal Final:"          ,Repl("Z",TamSX3("F1_DOC")[1]),""    ,"",""   ,"", 80,.F.}) // Tipo caractere
 		aAdd(aParamBox,{1 ,"Local do Arquivo:"           ,"C:\TEMP\"+Space(50)         ,"@S50","","",""   ,100,.T.}) // Tipo caractere
-		
+
 		aAdd(aParamBox,{2 ,"Gera com cabeçalho:"         ,1,{"Não","Sim"},40,"",.F.})
 		aAdd(aParamBox,{2 ,"Selecionar Notas Fiscais:"   ,1,{"Não","Sim"},40,"",.F.})
+
+		aAdd(aParamBox,{2 ,"Tipo de Nota Fiscal:"        ,"Entrada",{"Entrada","Saída","Ambas"},40,"",.F.})
 
 		If ParamBox(aParamBox,"Parametros para geração do Arquivo...",@aRet)
 			cFilDe     := aRet[1]
@@ -455,7 +461,9 @@ User Function CMVMSF06()
 			If aRet[13] == IIf( ValType(aRet[13]) == "N", 2, "Sim" )
 				zSelNfs()
 			EndIf
-			
+
+			cTpMov :=  aRet[14]
+
 			MontaBrw()
 		EndIF
 	EndIF
@@ -754,6 +762,7 @@ User Function MS06ExpTab()
 			//SAFXxx_EEE_FF_DDMMAAAA	
 			cFileOut := ALLTRIM(cTabela)+"_"+ALLTRIM(cEmpAnt)+ALLTRIM(cFilAnt)+"_"+dtos(DATE()) + "_" + cHour+cMin+cSecs+ ".TXT"
 			FWMsgRun(, {|| GeraTXT( @cMsgFinal ) },'Exportação Protheus -> MasterSAF','Gerando arquivo '+alltrim(cTabela)+', aguarde...')
+
 		Endif
 		
 		DbSelectArea("TRB")
@@ -829,7 +838,7 @@ Static Function GeraTXT(cMsgFinal)
 		MSGALERT("Erro ao criar arquivo TXT " + Str(Ferror()))
 		Return()
 	Endif
-
+ 
 	ExecQuery(cTab,@aCab,@aItens)
 	//Ajustar o tamanho para seek
 
@@ -1166,15 +1175,15 @@ Static Function ExecQuery(cTab,aCab,aItens)
 	DbSelectArea("SA1")
 	DbSelectArea("SA2")
 	
-	If Alltrim(cTab) == "SAFX07"
+	If Alltrim(cTab) == "SAFX07" //Sandro
 		fSAFX07()
 	Endif
 	
-	If Alltrim(cTab) == "SAFX08"
+	If Alltrim(cTab) == "SAFX08" //Sandro
 		fSAFX08()
 	Endif
 	
-	If Alltrim(cTab) == "SAFX09"
+	If Alltrim(cTab) == "SAFX09" //Sandro
 		fSAFX09()
 	Endif
 	
@@ -2766,15 +2775,15 @@ Static Function fSAFX07()
 	Else
 		cQ += CRLF + " 		AND SF3.F3_NFISCAL IN " + FormatIn(__cSelNfs, ";")
 	EndIf
-	
-	If lSAFX08 .and. !lSAFX09
+
+	IF cTpMov = "Entrada" 
 		cQ += CRLF + " 		AND NOT (SF3.F3_TIPO = 'S' OR SF3.F3_ESPECIE = 'RPS' OR (SF3.F3_ESPECIE = 'NFS' AND SF3.F3_CODNFE <> ' ')) "
 	Endif		 
 
-	If !lSAFX08 .and. lSAFX09
-		cQ += CRLF + " 		AND (SF3.F3_TIPO = 'S' OR SF3.F3_ESPECIE = 'RPS' OR (SF3.F3_ESPECIE = 'NFS' AND SF3.F3_CODNFE <> ' ')) "
+	If  cTpMov = "Saída" 
+		cQ += CRLF + " 		AND     (SF3.F3_TIPO = 'S' OR SF3.F3_ESPECIE = 'RPS' OR (SF3.F3_ESPECIE = 'NFS' AND SF3.F3_CODNFE <> ' ')) "
 	Endif
-	
+
 	cQ += CRLF + " ORDER BY SF3.F3_FILIAL,SF3.F3_ENTRADA,SF3.F3_NFISCAL "
 	
 	If lDebug
@@ -2937,258 +2946,261 @@ Descricao / Objetivo:   Itens Notas Fiscais Mercadorias e Produtos
 */
 
 Static Function fSAFX08()
+    
+	//ENTRADA
 	
-	cQ := CRLF + " SELECT R_E_C_N_O_ SFT_RECNO "
-	cQ += CRLF + " 	FROM " + RetSqlName("SFT") + " SFT "
-	cQ += CRLF + " 	WHERE   SFT.D_E_L_E_T_ = ' ' "
-	cQ += CRLF + " 		AND SFT.FT_DTCANC = ' ' "
-	cQ += CRLF + " 		AND SFT.FT_FILIAL  BETWEEN '" + cFilDe         + "' AND '" + cFilAte        + "' "
-	cQ += CRLF + " 		AND SFT.FT_CLIEFOR BETWEEN '" + cCliForDe      + "' AND '" + cCliForAte     + "' "
-	cQ += CRLF + " 		AND SFT.FT_ENTRADA BETWEEN '" + dTos(dDataIni) + "' AND '" + dTos(dDataFim) + "' "
-	cQ += CRLF + " 		AND NOT (SFT.FT_TIPO = 'S' OR SFT.FT_ESPECIE = 'RPS' OR (SFT.FT_ESPECIE = 'NFS' AND SFT.FT_CODNFE <> ' ')) "
+	IF cTpMov = "Entrada"  .or. cTpMov = "Ambas"
+		cQ := CRLF + " SELECT R_E_C_N_O_ SFT_RECNO "
+		cQ += CRLF + " 	FROM " + RetSqlName("SFT") + " SFT "
+		cQ += CRLF + " 	WHERE   SFT.D_E_L_E_T_ = ' ' "
+		cQ += CRLF + " 		AND SFT.FT_DTCANC = ' ' "
+		cQ += CRLF + " 		AND SFT.FT_FILIAL  BETWEEN '" + cFilDe         + "' AND '" + cFilAte        + "' "
+		cQ += CRLF + " 		AND SFT.FT_CLIEFOR BETWEEN '" + cCliForDe      + "' AND '" + cCliForAte     + "' "
+		cQ += CRLF + " 		AND SFT.FT_ENTRADA BETWEEN '" + dTos(dDataIni) + "' AND '" + dTos(dDataFim) + "' "
+		cQ += CRLF + " 		AND NOT (SFT.FT_TIPO = 'S' OR SFT.FT_ESPECIE = 'RPS' OR (SFT.FT_ESPECIE = 'NFS' AND SFT.FT_CODNFE <> ' ')) "
 
-	If Empty( __cSelNfs )
-		cQ += CRLF + " 		AND SFT.FT_NFISCAL BETWEEN '" + cDocFisDe + "' AND '" + cDocFisAte + "' "
-	Else
-		cQ += CRLF + " 		AND SFT.FT_NFISCAL IN " + FormatIn(__cSelNfs, ";")
-	EndIf
+		If Empty( __cSelNfs )
+			cQ += CRLF + " 		AND SFT.FT_NFISCAL BETWEEN '" + cDocFisDe + "' AND '" + cDocFisAte + "' "
+		Else
+			cQ += CRLF + " 		AND SFT.FT_NFISCAL IN " + FormatIn(__cSelNfs, ";")
+		EndIf
 
-	cQ += CRLF + " ORDER BY SFT.FT_FILIAL,SFT.FT_ENTRADA,SFT.FT_NFISCAL "
+		cQ += CRLF + " ORDER BY SFT.FT_FILIAL,SFT.FT_ENTRADA,SFT.FT_NFISCAL "
 
-	If lDebug
-		MemoWrite(cLocDest+cTab+".txt",cQ)
-	EndIf
-		
-	dbUseArea(.T.,"TOPCONN",TCGenQry(,,cQ),cAliasTrb,.T.,.F.)
+		If lDebug
+			MemoWrite(cLocDest+cTab+".txt",cQ)
+		EndIf
+			
+		dbUseArea(.T.,"TOPCONN",TCGenQry(,,cQ),cAliasTrb,.T.,.F.)
 
-	// monta array com campos do arquivo
-	MontaCab(Alltrim(cTab),@aCab)
+		// monta array com campos do arquivo
+		MontaCab(Alltrim(cTab),@aCab)
 
-	If !Empty(aCab)
-		While (cAliasTrb)->(!Eof())
-			SFT->(dbGoto((cAliasTrb)->SFT_RECNO))
-			If SFT->(Recno()) == (cAliasTrb)->SFT_RECNO
-				lSA1 := .F.
-				lSA2 := .F.
-				lContinua := .T.
-				
-				// posiciona tabelas auxiliares
-				SB1->(dbSetOrder(1))
-				If SB1->(!dbSeek(Padr(Subs(SFT->FT_FILIAL,1,6),TamSX3("B1_FILIAL")[1])+SFT->FT_PRODUTO))
-					cErro := cTab+": Não encontrado tabela: SB1, filial/produto: "+Padr(Subs(SFT->FT_FILIAL,1,6),TamSX3("B1_FILIAL")[1])+"/"+SFT->FT_PRODUTO+", serie/documento: "+SFT->FT_SERIE+"/"+SFT->FT_NFISCAL+"." 
-					MS06GrvLog(cErro)
-					lContinua := .F.
-				Endif	
-
-				If lContinua
-					lContinua := .F.
-					SF3->(dbSetOrder(1))
-					If SF3->(dbSeek(SFT->FT_FILIAL+dTos(SFT->FT_ENTRADA)+SFT->FT_NFISCAL+SFT->FT_SERIE+SFT->FT_CLIEFOR+SFT->FT_LOJA))
-						While SF3->(!Eof()) .and. SFT->FT_FILIAL+dTos(SFT->FT_ENTRADA)+SFT->FT_NFISCAL+SFT->FT_SERIE+SFT->FT_CLIEFOR+SFT->FT_LOJA == ;
-						SF3->F3_FILIAL+dTos(SF3->F3_ENTRADA)+SF3->F3_NFISCAL+SF3->F3_SERIE+SF3->F3_CLIEFOR+SF3->F3_LOJA
-							If SFT->FT_CFOP == SF3->F3_CFO
-								lContinua := .T.
-								Exit
-							Endif
-							SF3->(dbSkip())
-						Enddo
-					Endif
-				Endif				
-							
-				If lContinua
-					lContinua := PosCliForSF3(SF3->F3_CFO,SF3->F3_TIPO,SF3->F3_CLIEFOR,SF3->F3_LOJA,@lSA1,@lSA2,.T.,SFT->FT_ITEM)
-				Else
-					If SB1->(Found())
-						cErro := cTab+": Não encontrada tabela: SF3, serie/documento: "+SFT->FT_SERIE+"/"+SFT->FT_NFISCAL+"."
-						MS06GrvLog(cErro)
-					Endif	
-				Endif					
-
-				If lContinua	
-
-					MontaItens(aCab,@aItens,SF3->F3_FILIAL)
-
-					SF1->(dbSetOrder(1))
-					SF1->(DbSeek(xFilial("SF1") + SFT->FT_NFISCAL + SFT->FT_SERIE + SFT->FT_CLIEFOR + SFT->FT_LOJA ))
-
-					SW6->(dbSetOrder(1))
-					SW6->(DbSeek(xFilial("SW6")+SF1->F1_HAWB))
-
-					// comeca gravar campos do layout
-					nPosCmpCab:=PosCabArray(aItens,"COD_EMPRESA")
-					aItens[Len(aItens)][nPosCmpCab][2] := SZPMSaf("ZP_EMPMS",SF3->F3_FILIAL)
-					nPosCmpCab:=PosCabArray(aItens,"COD_ESTAB")
-					aItens[Len(aItens)][nPosCmpCab][2] := SZPMSaf("ZP_ESTMS",SF3->F3_FILIAL)
-					nPosCmpCab:=PosCabArray(aItens,"DATA_FISCAL")
-					aItens[Len(aItens)][nPosCmpCab][2] := dTos(SF3->F3_ENTRADA)
-					nPosCmpCab:=PosCabArray(aItens,"MOVTO_E_S")
-					aItens[Len(aItens)][nPosCmpCab][2] := MOVTO_E_S(SF3->F3_CFO,SF3->F3_FORMUL)
-					nPosCmpCab:=PosCabArray(aItens,"NORM_DEV")
-					aItens[Len(aItens)][nPosCmpCab][2] := NORM_DEV(SF3->F3_TIPO)
-					nPosCmpCab:=PosCabArray(aItens,"COD_DOCTO")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf(Alltrim(Eval(bCmpZerado,"SF3->F3_ESPECIE"))=="SPED","NFE",IIf(Alltrim(Eval(bCmpZerado,"SF3->F3_ESPECIE"))=="RPS","NFS",Eval(bCmpZerado,"SF3->F3_ESPECIE"))) //Eval(bCmpZerado,"SF3->F3_ESPECIE")
-					nPosCmpCab:=PosCabArray(aItens,"IND_FIS_JUR")
-					aItens[Len(aItens)][nPosCmpCab][2] := IDENT_FIS_JUR(SF3->F3_CFO,SF3->F3_TIPO)
-					nPosCmpCab:=PosCabArray(aItens,"COD_FIS_JUR")
-					aItens[Len(aItens)][nPosCmpCab][2] := CmpSZeroEsq(IIf(lSA1,Eval(bCmpZerado,"SA1->A1_XCDSAP"),Eval(bCmpZerado,"SA2->A2_XCDSAP"))) //COD_FIS_JUR(SF3->F3_CFO,SF3->F3_TIPO,SF3->F3_CLIEFOR,SF3->F3_LOJA)
-					nPosCmpCab:=PosCabArray(aItens,"NUM_DOCFIS")
-					aItens[Len(aItens)][nPosCmpCab][2] := SF3->F3_NFISCAL
-					nPosCmpCab:=PosCabArray(aItens,"SERIE_DOCFIS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SF3->F3_SERIE")
-					nPosCmpCab:=PosCabArray(aItens,"IND_BEM_PATR")
-					aItens[Len(aItens)][nPosCmpCab][2] := "N"
-					nPosCmpCab:=PosCabArray(aItens,"IND_PRODUTO")
-					aItens[Len(aItens)][nPosCmpCab][2] := IND_PRODUTO("SB1")
-					nPosCmpCab:=PosCabArray(aItens,"COD_PRODUTO")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_PRODUTO")
-					nPosCmpCab:=PosCabArray(aItens,"COD_UND_PADRAO")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_UM")
-					nPosCmpCab:=PosCabArray(aItens,"NUM_ITEM")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ITEM")
-					nPosCmpCab:=PosCabArray(aItens,"COD_CFO")
-	
-					if alltrim(SF3->F3_ESPECIE) == 'CTE' .and. IIf(lSA1,SA1->A1_EST == cEStFil, SA2->A2_EST == cEStFil)
-						aItens[Len(aItens)][nPosCmpCab][2] := "1353 "
-					else
-						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CFOP")
-					ENDIF
-	
-					nPosCmpCab:=PosCabArray(aItens,"COD_NATUREZA_OP")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_NATOPER")
-					nPosCmpCab:=PosCabArray(aItens,"QUANTIDADE")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_QUANT")
-					nPosCmpCab:=PosCabArray(aItens,"COD_MEDIDA")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_UM")
-					nPosCmpCab:=PosCabArray(aItens,"COD_NBM")						
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_POSIPI")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_UNIT")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_PRCUNIT")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_ITEM")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_TOTAL")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_DESCONTO")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_DESCONT")
-					nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_A")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_ORIGEM")
-					nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_B")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf((Empty(SFT->FT_CLASFIS) .or. !Len(Alltrim(SFT->FT_CLASFIS)) == 3),"@",Subs(SFT->FT_CLASFIS,2,2))
-					nPosCmpCab:=PosCabArray(aItens,"VLR_FRETE")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_FRETE")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_OUTRAS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_OUTRICM")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_ICMS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQICM")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_ICMS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALICM") //IIf(!Empty(SFT->FT_VALICM),IIf(SFT->FT_CFOP>="5",Eval(bCmpZerado,"SD2->D2_VALICM"),Eval(bCmpZerado,"SD1->D1_VALICM")),"@") //Eval(bCmpZerado,"SFT->FT_VALICM")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_IPI")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQIPI")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_IPI")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALIPI")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_SUB_ICMS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQSOL")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_SUBST_ICMS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ICMSRET")
-					nPosCmpCab:=PosCabArray(aItens,"TRIB_ICMS")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SFT->FT_BASEICM),"1",IIf(Empty(SFT->FT_BASEICM) .and. !Empty(SFT->FT_ISENICM),"2",IIf(Empty(SFT->FT_BASEICM) .and. Empty(SFT->FT_ISENICM) .and. !Empty(SFT->FT_OUTRICM),"3","3")))
-					nPosCmpCab:=PosCabArray(aItens,"BASE_ICMS") 
-					//aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SFT->FT_BASEICM),IIf(SFT->FT_CFOP>="5",Eval(bCmpZerado,"SD2->D2_BASEICM"),Eval(bCmpZerado,"SD1->D1_BASEICM")),IIf(Empty(SFT->FT_BASEICM) .and. !Empty(SFT->FT_ISENICM),Eval(bCmpZerado,"SFT->FT_ISENICM"),IIf(Empty(SFT->FT_BASEICM) .and. Empty(SFT->FT_ISENICM) .and. !Empty(SFT->FT_OUTRICM),Eval(bCmpZerado,"SFT->FT_OUTRICM"),IIf(SFT->FT_CFOP>="5",Eval(bCmpZerado,"SD2->D2_BASEICM"),Eval(bCmpZerado,"SD1->D1_BASEICM"))))) //IIf(!Empty(SFT->FT_BASEICM),Eval(bCmpZerado,"SFT->FT_BASEICM"),IIf(Empty(SFT->FT_BASEICM) .and. !Empty(SFT->FT_ISENICM),Eval(bCmpZerado,"SFT->FT_ISENICM"),IIf(Empty(SFT->FT_BASEICM) .and. Empty(SFT->FT_ISENICM) .and. !Empty(SFT->FT_OUTRICM),Eval(bCmpZerado,"SFT->FT_OUTRICM"),Eval(bCmpZerado,"SFT->FT_BASEICM"))))
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SFT->FT_BASEICM),Eval(bCmpZerado,"SFT->FT_BASEICM"),IIf(Empty(SFT->FT_BASEICM) .and. !Empty(SFT->FT_ISENICM),Eval(bCmpZerado,"SFT->FT_ISENICM"),IIf(Empty(SFT->FT_BASEICM) .and. Empty(SFT->FT_ISENICM) .and. !Empty(SFT->FT_OUTRICM),Eval(bCmpZerado,"SFT->FT_OUTRICM"),Eval(bCmpZerado,"SFT->FT_BASEICM"))))
+		If !Empty(aCab)
+			While (cAliasTrb)->(!Eof())
+				SFT->(dbGoto((cAliasTrb)->SFT_RECNO))
+				If SFT->(Recno()) == (cAliasTrb)->SFT_RECNO
+					lSA1 := .F.
+					lSA2 := .F.
+					lContinua := .T.
 					
-					nPosCmpCab:=PosCabArray(aItens,"TRIB_IPI")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SFT->FT_BASEIPI),"1",IIf(Empty(SFT->FT_BASEIPI) .and. !Empty(SFT->FT_ISENIPI),"2",IIf(Empty(SFT->FT_BASEIPI) .and. Empty(SFT->FT_ISENIPI) .and. !Empty(SFT->FT_OUTRIPI),"3","3")))
-					nPosCmpCab:=PosCabArray(aItens,"BASE_IPI")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SFT->FT_BASEIPI),Eval(bCmpZerado,"SFT->FT_BASEIPI"),IIf(Empty(SFT->FT_BASEIPI) .and. !Empty(SFT->FT_ISENIPI),Eval(bCmpZerado,"SFT->FT_ISENIPI"),IIf(Empty(SFT->FT_BASEIPI) .and. Empty(SFT->FT_ISENIPI) .and. !Empty(SFT->FT_OUTRIPI),Eval(bCmpZerado,"SFT->FT_OUTRIPI"),Eval(bCmpZerado,"SFT->FT_BASEIPI"))))
-					nPosCmpCab:=PosCabArray(aItens,"BASE_SUB_TRIB_ICMS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_BASERET")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_CONTAB_ITEM")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALCONT")
-					nPosCmpCab:=PosCabArray(aItens,"TRIB_ICMS_AUX")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SFT->FT_BASEICM) .and. !Empty(SFT->FT_ISENICM),"2",IIf(!Empty(SFT->FT_BASEICM) .and. !Empty(SFT->FT_OUTRICM),"3","@"))
-					nPosCmpCab:=PosCabArray(aItens,"BASE_ICMS_AUX")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SFT->FT_BASEICM) .and. !Empty(SFT->FT_ISENICM),Eval(bCmpZerado,"SFT->FT_ISENICM"),IIf(!Empty(SFT->FT_BASEICM) .and. !Empty(SFT->FT_OUTRICM),Eval(bCmpZerado,"SFT->FT_OUTRICM"),"@"))
-					nPosCmpCab:=PosCabArray(aItens,"TRIB_IPI_AUX")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SFT->FT_BASEIPI) .and. !Empty(SFT->FT_ISENIPI),"2",IIf(!Empty(SFT->FT_BASEIPI) .and. !Empty(SFT->FT_OUTRIPI),"3","@"))
-					nPosCmpCab:=PosCabArray(aItens,"BASE_IPI_AUX")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SFT->FT_BASEIPI) .and. !Empty(SFT->FT_ISENIPI),Eval(bCmpZerado,"SFT->FT_ISENIPI"),IIf(!Empty(SFT->FT_BASEIPI) .and. !Empty(SFT->FT_OUTRIPI),Eval(bCmpZerado,"SFT->FT_OUTRIPI"),"@"))
-					nPosCmpCab:=PosCabArray(aItens,"VLR_BASE_COFINS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_BASECOF")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_COFINS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALCOF")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_BASE_COFINS_ST")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_BASECF3")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_COFINS_ST")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQCF3")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_COFINS_ST")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALCF3")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_COFINS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQCOF")
-					nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_COFINS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CSTCOF")
-	
-					If !Empty(SFT->FT_VALCF3) .and. SFT->FT_CSTCOF == "06"
-						nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_COFINS_ST")
-						aItens[Len(aItens)][nPosCmpCab][2] := "05"
+					// posiciona tabelas auxiliares
+					SB1->(dbSetOrder(1))
+					If SB1->(!dbSeek(Padr(Subs(SFT->FT_FILIAL,1,6),TamSX3("B1_FILIAL")[1])+SFT->FT_PRODUTO))
+						cErro := cTab+": Não encontrado tabela: SB1, filial/produto: "+Padr(Subs(SFT->FT_FILIAL,1,6),TamSX3("B1_FILIAL")[1])+"/"+SFT->FT_PRODUTO+", serie/documento: "+SFT->FT_SERIE+"/"+SFT->FT_NFISCAL+"." 
+						MS06GrvLog(cErro)
+						lContinua := .F.
 					Endif	
-	
-					nPosCmpCab:=PosCabArray(aItens,"VLR_BASE_PIS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_BASEPIS")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_PIS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALPIS")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_BASE_PIS_ST")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_BASEPS3")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_PIS_ST")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQPS3")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_PIS_ST")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALPS3")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_PIS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQPIS")
-					nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_PIS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CSTPIS")
-	
-					If !Empty(SFT->FT_VALPS3) .and. SFT->FT_CSTPIS == "06"
-						nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_PIS_ST")
-						aItens[Len(aItens)][nPosCmpCab][2] := "05"
-					Endif
-	
-					nPosCmpCab:=PosCabArray(aItens,"DAT_LANC_PIS_COFINS")
-	
-					If SFT->FT_TIPOMOV=="S" .and. AllTrim(SFT->FT_CSTPIS) == "49" .and. AllTrim(SFT->FT_CSTCOF) == "49" 
-						aItens[Len(aItens)][nPosCmpCab][2] := "@"
-					ElseIf SFT->FT_TIPOMOV=="E" .and. AllTrim(SFT->FT_CSTPIS) == "70" .and. AllTrim(SFT->FT_CSTCOF) == "70"
-						aItens[Len(aItens)][nPosCmpCab][2] := "@"
-					Else
-						aItens[Len(aItens)][nPosCmpCab][2] := If(SFT->FT_TIPOMOV=="E", DtoS(SFT->FT_ENTRADA),DtoS(SFT->FT_EMISSAO))
-					EndIf						
-	
-					nPosCmpCab:=PosCabArray(aItens,"COD_TRIB_IPI")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CTIPI")
-					nPosCmpCab:=PosCabArray(aItens,"COD_CONTA")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CONTA")
-					nPosCmpCab:=PosCabArray(aItens,"DAT_DI")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SW6->W6_DTREG_D")
-					nPosCmpCab:=PosCabArray(aItens,"NUM_DEC_IMP_REF")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SW6->W6_DI_NUM")
-					nPosCmpCab:=PosCabArray(aItens,"IND_NATUREZA_FRETE")
-					aItens[Len(aItens)][nPosCmpCab][2] := If(!Empty(SFT->FT_INDNTFR),AllTrim(SFT->FT_INDNTFR),"@") 
-					nPosCmpCab:=PosCabArray(aItens,"IND_NAT_BASE_CRED")
-					aItens[Len(aItens)][nPosCmpCab][2] := If(!Empty(SFT->FT_CODBCC),AllTrim(SFT->FT_CODBCC),"@") 
-				
-					if len(aItens) >= _nLimite  //a cada 1000 linhas é gravado no arquivo para liberar a memória
-						SalvaTXT(aCab,aItens)
-						aItens := {}
-						IF LDebug
-							(cAliasTrb)->(dbCloseArea())
-							RETURN
-						ENDIF
-					ENDIF
-				Endif	
-			Endif
-			(cAliasTrb)->(dbSkip())
-		Enddo
-	Else
-		APMsgAlert(cTab+": Estrutura não cadastrada na tabela 'SZR - CAMPOS TABELA MASTERSAF'.Verifique.")
-	Endif
-	(cAliasTrb)->(dbCloseArea())	
 
+					If lContinua
+						lContinua := .F.
+						SF3->(dbSetOrder(1))
+						If SF3->(dbSeek(SFT->FT_FILIAL+dTos(SFT->FT_ENTRADA)+SFT->FT_NFISCAL+SFT->FT_SERIE+SFT->FT_CLIEFOR+SFT->FT_LOJA))
+							While SF3->(!Eof()) .and. SFT->FT_FILIAL+dTos(SFT->FT_ENTRADA)+SFT->FT_NFISCAL+SFT->FT_SERIE+SFT->FT_CLIEFOR+SFT->FT_LOJA == ;
+							SF3->F3_FILIAL+dTos(SF3->F3_ENTRADA)+SF3->F3_NFISCAL+SF3->F3_SERIE+SF3->F3_CLIEFOR+SF3->F3_LOJA
+								If SFT->FT_CFOP == SF3->F3_CFO
+									lContinua := .T.
+									Exit
+								Endif
+								SF3->(dbSkip())
+							Enddo
+						Endif
+					Endif				
+								
+					If lContinua
+						lContinua := PosCliForSF3(SF3->F3_CFO,SF3->F3_TIPO,SF3->F3_CLIEFOR,SF3->F3_LOJA,@lSA1,@lSA2,.T.,SFT->FT_ITEM)
+					Else
+						If SB1->(Found())
+							cErro := cTab+": Não encontrada tabela: SF3, serie/documento: "+SFT->FT_SERIE+"/"+SFT->FT_NFISCAL+"."
+							MS06GrvLog(cErro)
+						Endif	
+					Endif					
+
+					If lContinua	
+
+						MontaItens(aCab,@aItens,SF3->F3_FILIAL)
+
+						SF1->(dbSetOrder(1))
+						SF1->(DbSeek(xFilial("SF1") + SFT->FT_NFISCAL + SFT->FT_SERIE + SFT->FT_CLIEFOR + SFT->FT_LOJA ))
+
+						SW6->(dbSetOrder(1))
+						SW6->(DbSeek(xFilial("SW6")+SF1->F1_HAWB))
+
+						// comeca gravar campos do layout
+						nPosCmpCab:=PosCabArray(aItens,"COD_EMPRESA")
+						aItens[Len(aItens)][nPosCmpCab][2] := SZPMSaf("ZP_EMPMS",SF3->F3_FILIAL)
+						nPosCmpCab:=PosCabArray(aItens,"COD_ESTAB")
+						aItens[Len(aItens)][nPosCmpCab][2] := SZPMSaf("ZP_ESTMS",SF3->F3_FILIAL)
+						nPosCmpCab:=PosCabArray(aItens,"DATA_FISCAL")
+						aItens[Len(aItens)][nPosCmpCab][2] := dTos(SF3->F3_ENTRADA)
+						nPosCmpCab:=PosCabArray(aItens,"MOVTO_E_S")
+						aItens[Len(aItens)][nPosCmpCab][2] := MOVTO_E_S(SF3->F3_CFO,SF3->F3_FORMUL)
+						nPosCmpCab:=PosCabArray(aItens,"NORM_DEV")
+						aItens[Len(aItens)][nPosCmpCab][2] := NORM_DEV(SF3->F3_TIPO)
+						nPosCmpCab:=PosCabArray(aItens,"COD_DOCTO")
+						aItens[Len(aItens)][nPosCmpCab][2] := IIf(Alltrim(Eval(bCmpZerado,"SF3->F3_ESPECIE"))=="SPED","NFE",IIf(Alltrim(Eval(bCmpZerado,"SF3->F3_ESPECIE"))=="RPS","NFS",Eval(bCmpZerado,"SF3->F3_ESPECIE"))) //Eval(bCmpZerado,"SF3->F3_ESPECIE")
+						nPosCmpCab:=PosCabArray(aItens,"IND_FIS_JUR")
+						aItens[Len(aItens)][nPosCmpCab][2] := IDENT_FIS_JUR(SF3->F3_CFO,SF3->F3_TIPO)
+						nPosCmpCab:=PosCabArray(aItens,"COD_FIS_JUR")
+						aItens[Len(aItens)][nPosCmpCab][2] := CmpSZeroEsq(IIf(lSA1,Eval(bCmpZerado,"SA1->A1_XCDSAP"),Eval(bCmpZerado,"SA2->A2_XCDSAP"))) //COD_FIS_JUR(SF3->F3_CFO,SF3->F3_TIPO,SF3->F3_CLIEFOR,SF3->F3_LOJA)
+						nPosCmpCab:=PosCabArray(aItens,"NUM_DOCFIS")
+						aItens[Len(aItens)][nPosCmpCab][2] := SF3->F3_NFISCAL
+						nPosCmpCab:=PosCabArray(aItens,"SERIE_DOCFIS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SF3->F3_SERIE")
+						nPosCmpCab:=PosCabArray(aItens,"IND_BEM_PATR")
+						aItens[Len(aItens)][nPosCmpCab][2] := "N"
+						nPosCmpCab:=PosCabArray(aItens,"IND_PRODUTO")
+						aItens[Len(aItens)][nPosCmpCab][2] := IND_PRODUTO("SB1")
+						nPosCmpCab:=PosCabArray(aItens,"COD_PRODUTO")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_PRODUTO")
+						nPosCmpCab:=PosCabArray(aItens,"COD_UND_PADRAO")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_UM")
+						nPosCmpCab:=PosCabArray(aItens,"NUM_ITEM")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ITEM")
+						nPosCmpCab:=PosCabArray(aItens,"COD_CFO")
+		
+						if alltrim(SF3->F3_ESPECIE) == 'CTE' .and. IIf(lSA1,SA1->A1_EST == cEStFil, SA2->A2_EST == cEStFil)
+							aItens[Len(aItens)][nPosCmpCab][2] := "1353 "
+						else
+							aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CFOP")
+						ENDIF
+		
+						nPosCmpCab:=PosCabArray(aItens,"COD_NATUREZA_OP")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_NATOPER")
+						nPosCmpCab:=PosCabArray(aItens,"QUANTIDADE")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_QUANT")
+						nPosCmpCab:=PosCabArray(aItens,"COD_MEDIDA")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_UM")
+						nPosCmpCab:=PosCabArray(aItens,"COD_NBM")						
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_POSIPI")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_UNIT")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_PRCUNIT")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_ITEM")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_TOTAL")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_DESCONTO")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_DESCONT")
+						nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_A")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_ORIGEM")
+						nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_B")
+						aItens[Len(aItens)][nPosCmpCab][2] := IIf((Empty(SFT->FT_CLASFIS) .or. !Len(Alltrim(SFT->FT_CLASFIS)) == 3),"@",Subs(SFT->FT_CLASFIS,2,2))
+						nPosCmpCab:=PosCabArray(aItens,"VLR_FRETE")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_FRETE")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_OUTRAS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_OUTRICM")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_ICMS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQICM")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_ICMS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALICM") //IIf(!Empty(SFT->FT_VALICM),IIf(SFT->FT_CFOP>="5",Eval(bCmpZerado,"SD2->D2_VALICM"),Eval(bCmpZerado,"SD1->D1_VALICM")),"@") //Eval(bCmpZerado,"SFT->FT_VALICM")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_IPI")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQIPI")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_IPI")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALIPI")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_SUB_ICMS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQSOL")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_SUBST_ICMS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ICMSRET")
+						nPosCmpCab:=PosCabArray(aItens,"TRIB_ICMS")
+						aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SFT->FT_BASEICM),"1",IIf(Empty(SFT->FT_BASEICM) .and. !Empty(SFT->FT_ISENICM),"2",IIf(Empty(SFT->FT_BASEICM) .and. Empty(SFT->FT_ISENICM) .and. !Empty(SFT->FT_OUTRICM),"3","3")))
+						nPosCmpCab:=PosCabArray(aItens,"BASE_ICMS") 
+						//aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SFT->FT_BASEICM),IIf(SFT->FT_CFOP>="5",Eval(bCmpZerado,"SD2->D2_BASEICM"),Eval(bCmpZerado,"SD1->D1_BASEICM")),IIf(Empty(SFT->FT_BASEICM) .and. !Empty(SFT->FT_ISENICM),Eval(bCmpZerado,"SFT->FT_ISENICM"),IIf(Empty(SFT->FT_BASEICM) .and. Empty(SFT->FT_ISENICM) .and. !Empty(SFT->FT_OUTRICM),Eval(bCmpZerado,"SFT->FT_OUTRICM"),IIf(SFT->FT_CFOP>="5",Eval(bCmpZerado,"SD2->D2_BASEICM"),Eval(bCmpZerado,"SD1->D1_BASEICM"))))) //IIf(!Empty(SFT->FT_BASEICM),Eval(bCmpZerado,"SFT->FT_BASEICM"),IIf(Empty(SFT->FT_BASEICM) .and. !Empty(SFT->FT_ISENICM),Eval(bCmpZerado,"SFT->FT_ISENICM"),IIf(Empty(SFT->FT_BASEICM) .and. Empty(SFT->FT_ISENICM) .and. !Empty(SFT->FT_OUTRICM),Eval(bCmpZerado,"SFT->FT_OUTRICM"),Eval(bCmpZerado,"SFT->FT_BASEICM"))))
+						aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SFT->FT_BASEICM),Eval(bCmpZerado,"SFT->FT_BASEICM"),IIf(Empty(SFT->FT_BASEICM) .and. !Empty(SFT->FT_ISENICM),Eval(bCmpZerado,"SFT->FT_ISENICM"),IIf(Empty(SFT->FT_BASEICM) .and. Empty(SFT->FT_ISENICM) .and. !Empty(SFT->FT_OUTRICM),Eval(bCmpZerado,"SFT->FT_OUTRICM"),Eval(bCmpZerado,"SFT->FT_BASEICM"))))
+						
+						nPosCmpCab:=PosCabArray(aItens,"TRIB_IPI")
+						aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SFT->FT_BASEIPI),"1",IIf(Empty(SFT->FT_BASEIPI) .and. !Empty(SFT->FT_ISENIPI),"2",IIf(Empty(SFT->FT_BASEIPI) .and. Empty(SFT->FT_ISENIPI) .and. !Empty(SFT->FT_OUTRIPI),"3","3")))
+						nPosCmpCab:=PosCabArray(aItens,"BASE_IPI")
+						aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SFT->FT_BASEIPI),Eval(bCmpZerado,"SFT->FT_BASEIPI"),IIf(Empty(SFT->FT_BASEIPI) .and. !Empty(SFT->FT_ISENIPI),Eval(bCmpZerado,"SFT->FT_ISENIPI"),IIf(Empty(SFT->FT_BASEIPI) .and. Empty(SFT->FT_ISENIPI) .and. !Empty(SFT->FT_OUTRIPI),Eval(bCmpZerado,"SFT->FT_OUTRIPI"),Eval(bCmpZerado,"SFT->FT_BASEIPI"))))
+						nPosCmpCab:=PosCabArray(aItens,"BASE_SUB_TRIB_ICMS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_BASERET")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_CONTAB_ITEM")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALCONT")
+						nPosCmpCab:=PosCabArray(aItens,"TRIB_ICMS_AUX")
+						aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SFT->FT_BASEICM) .and. !Empty(SFT->FT_ISENICM),"2",IIf(!Empty(SFT->FT_BASEICM) .and. !Empty(SFT->FT_OUTRICM),"3","@"))
+						nPosCmpCab:=PosCabArray(aItens,"BASE_ICMS_AUX")
+						aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SFT->FT_BASEICM) .and. !Empty(SFT->FT_ISENICM),Eval(bCmpZerado,"SFT->FT_ISENICM"),IIf(!Empty(SFT->FT_BASEICM) .and. !Empty(SFT->FT_OUTRICM),Eval(bCmpZerado,"SFT->FT_OUTRICM"),"@"))
+						nPosCmpCab:=PosCabArray(aItens,"TRIB_IPI_AUX")
+						aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SFT->FT_BASEIPI) .and. !Empty(SFT->FT_ISENIPI),"2",IIf(!Empty(SFT->FT_BASEIPI) .and. !Empty(SFT->FT_OUTRIPI),"3","@"))
+						nPosCmpCab:=PosCabArray(aItens,"BASE_IPI_AUX")
+						aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SFT->FT_BASEIPI) .and. !Empty(SFT->FT_ISENIPI),Eval(bCmpZerado,"SFT->FT_ISENIPI"),IIf(!Empty(SFT->FT_BASEIPI) .and. !Empty(SFT->FT_OUTRIPI),Eval(bCmpZerado,"SFT->FT_OUTRIPI"),"@"))
+						nPosCmpCab:=PosCabArray(aItens,"VLR_BASE_COFINS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_BASECOF")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_COFINS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALCOF")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_BASE_COFINS_ST")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_BASECF3")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_COFINS_ST")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQCF3")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_COFINS_ST")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALCF3")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_COFINS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQCOF")
+						nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_COFINS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CSTCOF")
+		
+						If !Empty(SFT->FT_VALCF3) .and. SFT->FT_CSTCOF == "06"
+							nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_COFINS_ST")
+							aItens[Len(aItens)][nPosCmpCab][2] := "05"
+						Endif	
+		
+						nPosCmpCab:=PosCabArray(aItens,"VLR_BASE_PIS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_BASEPIS")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_PIS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALPIS")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_BASE_PIS_ST")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_BASEPS3")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_PIS_ST")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQPS3")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_PIS_ST")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALPS3")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_PIS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQPIS")
+						nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_PIS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CSTPIS")
+		
+						If !Empty(SFT->FT_VALPS3) .and. SFT->FT_CSTPIS == "06"
+							nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_PIS_ST")
+							aItens[Len(aItens)][nPosCmpCab][2] := "05"
+						Endif
+		
+						nPosCmpCab:=PosCabArray(aItens,"DAT_LANC_PIS_COFINS")
+		
+						If SFT->FT_TIPOMOV=="S" .and. AllTrim(SFT->FT_CSTPIS) == "49" .and. AllTrim(SFT->FT_CSTCOF) == "49" 
+							aItens[Len(aItens)][nPosCmpCab][2] := "@"
+						ElseIf SFT->FT_TIPOMOV=="E" .and. AllTrim(SFT->FT_CSTPIS) == "70" .and. AllTrim(SFT->FT_CSTCOF) == "70"
+							aItens[Len(aItens)][nPosCmpCab][2] := "@"
+						Else
+							aItens[Len(aItens)][nPosCmpCab][2] := If(SFT->FT_TIPOMOV=="E", DtoS(SFT->FT_ENTRADA),DtoS(SFT->FT_EMISSAO))
+						EndIf						
+		
+						nPosCmpCab:=PosCabArray(aItens,"COD_TRIB_IPI")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CTIPI")
+						nPosCmpCab:=PosCabArray(aItens,"COD_CONTA")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CONTA")
+						nPosCmpCab:=PosCabArray(aItens,"DAT_DI")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SW6->W6_DTREG_D")
+						nPosCmpCab:=PosCabArray(aItens,"NUM_DEC_IMP_REF")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SW6->W6_DI_NUM")
+						nPosCmpCab:=PosCabArray(aItens,"IND_NATUREZA_FRETE")
+						aItens[Len(aItens)][nPosCmpCab][2] := If(!Empty(SFT->FT_INDNTFR),AllTrim(SFT->FT_INDNTFR),"@") 
+						nPosCmpCab:=PosCabArray(aItens,"IND_NAT_BASE_CRED")
+						aItens[Len(aItens)][nPosCmpCab][2] := If(!Empty(SFT->FT_CODBCC),AllTrim(SFT->FT_CODBCC),"@") 
+					
+						if len(aItens) >= _nLimite  //a cada 1000 linhas é gravado no arquivo para liberar a memória
+							SalvaTXT(aCab,aItens)
+							aItens := {}
+							IF LDebug
+								(cAliasTrb)->(dbCloseArea())
+								RETURN
+							ENDIF
+						ENDIF
+					Endif	
+				Endif
+				(cAliasTrb)->(dbSkip())
+			Enddo
+		Else
+			APMsgAlert(cTab+": Estrutura não cadastrada na tabela 'SZR - CAMPOS TABELA MASTERSAF'.Verifique.")
+		Endif
+		(cAliasTrb)->(dbCloseArea())	
+    Endif
 Return
 
 /*
@@ -3201,187 +3213,189 @@ Descricao / Objetivo:   Itens Notas Fiscais de Serviços
 */
 
 Static Function fSAFX09()
-	
-	cQ := CRLF + " SELECT SFT.R_E_C_N_O_ SFT_RECNO "
-	cQ += CRLF + " FROM " + RetSqlName("SFT") + " SFT "
-	cQ += CRLF + " 	  WHERE SFT.D_E_L_E_T_ = ' ' "
-	cQ += CRLF + " 		AND SFT.FT_DTCANC  = ' ' "
-	cQ += CRLF + " 		AND SFT.FT_FILIAL  BETWEEN '" + cFilDe         + "' AND '" + cFilAte        + "' "
-	cQ += CRLF + " 		AND SFT.FT_ENTRADA BETWEEN '" + dTos(dDataIni) + "' AND '" + dTos(dDataFim) + "' "
-	cQ += CRLF + " 		AND SFT.FT_CLIEFOR BETWEEN '" + cCliForDe      + "' AND '" + cCliForAte     + "' "
-	cQ += CRLF + " 		AND (SFT.FT_TIPO = 'S' OR SFT.FT_ESPECIE = 'RPS' OR (SFT.FT_ESPECIE = 'NFS' AND SFT.FT_CODNFE <> ' ')) "
+    //Saida
+    IF cTpMov = "Saída" .or. cTpMov = "Ambas"
+		cQ := CRLF + " SELECT SFT.R_E_C_N_O_ SFT_RECNO "
+		cQ += CRLF + " FROM " + RetSqlName("SFT") + " SFT "
+		cQ += CRLF + " 	  WHERE SFT.D_E_L_E_T_ = ' ' "
+		cQ += CRLF + " 		AND SFT.FT_DTCANC  = ' ' "
+		cQ += CRLF + " 		AND SFT.FT_FILIAL  BETWEEN '" + cFilDe         + "' AND '" + cFilAte        + "' "
+		cQ += CRLF + " 		AND SFT.FT_ENTRADA BETWEEN '" + dTos(dDataIni) + "' AND '" + dTos(dDataFim) + "' "
+		cQ += CRLF + " 		AND SFT.FT_CLIEFOR BETWEEN '" + cCliForDe      + "' AND '" + cCliForAte     + "' "
+		cQ += CRLF + " 		AND (SFT.FT_TIPO = 'S' OR SFT.FT_ESPECIE = 'RPS' OR (SFT.FT_ESPECIE = 'NFS' AND SFT.FT_CODNFE <> ' ')) "
 
-	If Empty( __cSelNfs )
-		cQ += CRLF + " 		AND SFT.FT_NFISCAL BETWEEN '" + cDocFisDe + "' AND '" + cDocFisAte + "' "
-	Else
-		cQ += CRLF + " 		AND SFT.FT_NFISCAL IN " + FormatIn(__cSelNfs, ";")
-	EndIf
+		If Empty( __cSelNfs )
+			cQ += CRLF + " 		AND SFT.FT_NFISCAL BETWEEN '" + cDocFisDe + "' AND '" + cDocFisAte + "' "
+		Else
+			cQ += CRLF + " 		AND SFT.FT_NFISCAL IN " + FormatIn(__cSelNfs, ";")
+		EndIf
 
-	cQ += CRLF + " ORDER BY SFT.FT_FILIAL,SFT.FT_ENTRADA,SFT.FT_NFISCAL "
-	
-	If lDebug
-		MemoWrite(cLocDest+cTab+".txt",cQ)
-	EndIf
-	
-	dbUseArea(.T.,"TOPCONN",TCGenQry(,,cQ),cAliasTrb,.T.,.F.)
-	
-	// monta array com campos do arquivo
-	MontaCab(Alltrim(cTab),@aCab)
+		cQ += CRLF + " ORDER BY SFT.FT_FILIAL,SFT.FT_ENTRADA,SFT.FT_NFISCAL "
+		
+		If lDebug
+			MemoWrite(cLocDest+cTab+".txt",cQ)
+		EndIf
+		
+		dbUseArea(.T.,"TOPCONN",TCGenQry(,,cQ),cAliasTrb,.T.,.F.)
+		
+		// monta array com campos do arquivo
+		MontaCab(Alltrim(cTab),@aCab)
 
-	If !Empty(aCab)
-		While (cAliasTrb)->(!Eof())
-			SFT->(dbGoto((cAliasTrb)->SFT_RECNO))
-			If SFT->(Recno()) == (cAliasTrb)->SFT_RECNO
-				lSA1 := .F.
-				lSA2 := .F.
-				lContinua := .T.
-				
-				// posiciona tabelas auxiliares
-				SB1->(dbSetOrder(1))
-				If SB1->(!dbSeek(Padr(Subs(SFT->FT_FILIAL,1,6),TamSX3("B1_FILIAL")[1])+SFT->FT_PRODUTO))
-					lContinua := .F.
-					cErro := cTab+": Não encontrado tabela: SB1, filial/produto: "+Padr(Subs(SFT->FT_FILIAL,1,6),TamSX3("B1_FILIAL")[1])+"/"+SFT->FT_PRODUTO+", serie/documento: "+SFT->FT_SERIE+"/"+SFT->FT_NFISCAL+"."
-					MS06GrvLog(cErro)
-				Endif	
-
-				If lContinua
-					lContinua := .F.
-					SF3->(dbSetOrder(1))
-					If SF3->(dbSeek(SFT->FT_FILIAL+dTos(SFT->FT_ENTRADA)+SFT->FT_NFISCAL+SFT->FT_SERIE+SFT->FT_CLIEFOR+SFT->FT_LOJA))
-						While SF3->(!Eof()) .and. SFT->FT_FILIAL+dTos(SFT->FT_ENTRADA)+SFT->FT_NFISCAL+SFT->FT_SERIE+SFT->FT_CLIEFOR+SFT->FT_LOJA == ;
-						SF3->F3_FILIAL+dTos(SF3->F3_ENTRADA)+SF3->F3_NFISCAL+SF3->F3_SERIE+SF3->F3_CLIEFOR+SF3->F3_LOJA
-							If SFT->FT_CFOP == SF3->F3_CFO
-								lContinua := .T.
-								Exit
-							Endif
-							SF3->(dbSkip())
-						Enddo
-					Endif
-				Endif				
-							
-				If lContinua
-					lContinua := PosCliForSF3(SF3->F3_CFO,SF3->F3_TIPO,SF3->F3_CLIEFOR,SF3->F3_LOJA,@lSA1,@lSA2,.T.)
-				Else
-					If SB1->(Found())
-						cErro := cTab+": Não encontrada tabela: SF3, serie/documento: "+SFT->FT_SERIE+"/"+SFT->FT_NFISCAL+"."
+		If !Empty(aCab)
+			While (cAliasTrb)->(!Eof())
+				SFT->(dbGoto((cAliasTrb)->SFT_RECNO))
+				If SFT->(Recno()) == (cAliasTrb)->SFT_RECNO
+					lSA1 := .F.
+					lSA2 := .F.
+					lContinua := .T.
+					
+					// posiciona tabelas auxiliares
+					SB1->(dbSetOrder(1))
+					If SB1->(!dbSeek(Padr(Subs(SFT->FT_FILIAL,1,6),TamSX3("B1_FILIAL")[1])+SFT->FT_PRODUTO))
+						lContinua := .F.
+						cErro := cTab+": Não encontrado tabela: SB1, filial/produto: "+Padr(Subs(SFT->FT_FILIAL,1,6),TamSX3("B1_FILIAL")[1])+"/"+SFT->FT_PRODUTO+", serie/documento: "+SFT->FT_SERIE+"/"+SFT->FT_NFISCAL+"."
 						MS06GrvLog(cErro)
 					Endif	
-				Endif					
 
-				If lContinua	
-					MontaItens(aCab,@aItens,SF3->F3_FILIAL)
+					If lContinua
+						lContinua := .F.
+						SF3->(dbSetOrder(1))
+						If SF3->(dbSeek(SFT->FT_FILIAL+dTos(SFT->FT_ENTRADA)+SFT->FT_NFISCAL+SFT->FT_SERIE+SFT->FT_CLIEFOR+SFT->FT_LOJA))
+							While SF3->(!Eof()) .and. SFT->FT_FILIAL+dTos(SFT->FT_ENTRADA)+SFT->FT_NFISCAL+SFT->FT_SERIE+SFT->FT_CLIEFOR+SFT->FT_LOJA == ;
+							SF3->F3_FILIAL+dTos(SF3->F3_ENTRADA)+SF3->F3_NFISCAL+SF3->F3_SERIE+SF3->F3_CLIEFOR+SF3->F3_LOJA
+								If SFT->FT_CFOP == SF3->F3_CFO
+									lContinua := .T.
+									Exit
+								Endif
+								SF3->(dbSkip())
+							Enddo
+						Endif
+					Endif				
 								
-					// comeca gravar campos do layout
-					nPosCmpCab:=PosCabArray(aItens,"COD_EMPRESA")
-					aItens[Len(aItens)][nPosCmpCab][2] := SZPMSaf("ZP_EMPMS",SF3->F3_FILIAL)
-					nPosCmpCab:=PosCabArray(aItens,"COD_ESTAB")
-					aItens[Len(aItens)][nPosCmpCab][2] := SZPMSaf("ZP_ESTMS",SF3->F3_FILIAL)
-					nPosCmpCab:=PosCabArray(aItens,"DATA_FISCAL")
-					aItens[Len(aItens)][nPosCmpCab][2] := dTos(SF3->F3_ENTRADA)
-					nPosCmpCab:=PosCabArray(aItens,"MOVTO_E_S")
-					aItens[Len(aItens)][nPosCmpCab][2] := MOVTO_E_S(SF3->F3_CFO,SF3->F3_FORMUL)
-					nPosCmpCab:=PosCabArray(aItens,"NORM_DEV")
-					aItens[Len(aItens)][nPosCmpCab][2] := NORM_DEV(SF3->F3_TIPO)
-					nPosCmpCab:=PosCabArray(aItens,"COD_DOCTO")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf(Alltrim(Eval(bCmpZerado,"SF3->F3_ESPECIE"))=="SPED","NFE",IIf(Alltrim(Eval(bCmpZerado,"SF3->F3_ESPECIE"))=="RPS","NFS",Eval(bCmpZerado,"SF3->F3_ESPECIE"))) //Eval(bCmpZerado,"SF3->F3_ESPECIE")
-					nPosCmpCab:=PosCabArray(aItens,"IND_FIS_JUR")
-					aItens[Len(aItens)][nPosCmpCab][2] := IDENT_FIS_JUR(SF3->F3_CFO,SF3->F3_TIPO)
-					nPosCmpCab:=PosCabArray(aItens,"COD_FIS_JUR")
-					aItens[Len(aItens)][nPosCmpCab][2] := CmpSZeroEsq(IIf(lSA1,Eval(bCmpZerado,"SA1->A1_XCDSAP"),Eval(bCmpZerado,"SA2->A2_XCDSAP"))) //COD_FIS_JUR(SF3->F3_CFO,SF3->F3_TIPO,SF3->F3_CLIEFOR,SF3->F3_LOJA)
-					nPosCmpCab:=PosCabArray(aItens,"NUM_DOCFIS")
-					aItens[Len(aItens)][nPosCmpCab][2] := SF3->F3_NFISCAL
-					nPosCmpCab:=PosCabArray(aItens,"SERIE_DOCFIS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SF3->F3_SERIE")
-					nPosCmpCab:=PosCabArray(aItens,"COD_SERVICO")
-					aItens[Len(aItens)][nPosCmpCab][2] := Right(Alltrim(SFT->FT_PRODUTO),TamSZR(cTab)[1]) //Eval(bCmpZerado,"SFT->FT_PRODUTO")
-					nPosCmpCab:=PosCabArray(aItens,"NUM_ITEM")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ITEM")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_SERVICO")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_PRCUNIT")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_TOT")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_TOTAL")
-					nPosCmpCab:=PosCabArray(aItens,"COD_CFO")
-					//aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CFOP")
-					if alltrim(SF3->F3_ESPECIE) == 'CTE' .and. IIf(lSA1,SA1->A1_EST == cEStFil, SA2->A2_EST == cEStFil)
-						aItens[Len(aItens)][nPosCmpCab][2] := "1353 " //fCmpZerado("SFT->FT_CFOP")//*****************//
-					else
-						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CFOP")//*****************//
-					ENDIF
-					nPosCmpCab:=PosCabArray(aItens,"COD_NATUREZA_OP")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_NATOPER")
-					nPosCmpCab:=PosCabArray(aItens,"QUANTIDADE")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_QUANT")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_UNIT")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_PRCUNIT")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_DESCONTO")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_DESCONT")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_IR")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQIRR")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_IR")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALIRR")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_ISS")
-					aItens[Len(aItens)][nPosCmpCab][2] := VlrCD2(SF3->F3_FILIAL,SF3->F3_SERIE,SF3->F3_NFISCAL,SF3->F3_CLIEFOR,SF3->F3_LOJA,SF3->F3_CFO,"CD2_ALIQ",.F.,.F.,"ISS",SFT->FT_ITEM,SFT->FT_PRODUTO,SFT->FT_TIPOMOV)
-					nPosCmpCab:=PosCabArray(aItens,"VLR_ISS")
-					aItens[Len(aItens)][nPosCmpCab][2] := VlrCD2(SF3->F3_FILIAL,SF3->F3_SERIE,SF3->F3_NFISCAL,SF3->F3_CLIEFOR,SF3->F3_LOJA,SF3->F3_CFO,"CD2_VLTRIB",.F.,.F.,"ISS",SFT->FT_ITEM,SFT->FT_PRODUTO,SFT->FT_TIPOMOV)
-					nPosCmpCab:=PosCabArray(aItens,"TRIB_IR")
-					aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SFT->FT_BASEIRR),"1","@")
-					nPosCmpCab:=PosCabArray(aItens,"BASE_IR")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_BASEIRR")
-					nPosCmpCab:=PosCabArray(aItens,"BASE_ISS")
-					aItens[Len(aItens)][nPosCmpCab][2] := VlrCD2(SF3->F3_FILIAL,SF3->F3_SERIE,SF3->F3_NFISCAL,SF3->F3_CLIEFOR,SF3->F3_LOJA,SF3->F3_CFO,"CD2_BC",.F. ,.F. ,"ISS",SFT->FT_ITEM,SFT->FT_PRODUTO,SFT->FT_TIPOMOV) //Eval(bCmpZerado,"SFT->FT_BASEICM")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_BASE_CSLL")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_BASECSL")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_CSLL")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQCSL")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_CSLL")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALCSL")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_BASE_PIS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_BASEPIS")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_PIS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQPIS")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_PIS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALPIS")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_BASE_COFINS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_BASECOF")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_COFINS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQCOF")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_COFINS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALCOF")
-					nPosCmpCab:=PosCabArray(aItens,"COD_TRIB_ISS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SF3->F3_CSTISS")
-					nPosCmpCab:=PosCabArray(aItens,"IND_VLR_PIS_COFINS")
-					aItens[Len(aItens)][nPosCmpCab][2] := "N"
-					nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_PIS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CSTPIS")
-					nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_COFINS")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CSTCOF")
-					nPosCmpCab:=PosCabArray(aItens,"IND_LOCAL_EXEC_SERV")
-					aItens[Len(aItens)][nPosCmpCab][2] := "0"
-					nPosCmpCab:=PosCabArray(aItens,"VLR_COFINS_RETIDO")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALCF3")
-					nPosCmpCab:=PosCabArray(aItens,"VLR_PIS_RETIDO")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALPS3")
-					nPosCmpCab:=PosCabArray(aItens,"COD_CONTA")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CONTA")
+					If lContinua
+						lContinua := PosCliForSF3(SF3->F3_CFO,SF3->F3_TIPO,SF3->F3_CLIEFOR,SF3->F3_LOJA,@lSA1,@lSA2,.T.)
+					Else
+						If SB1->(Found())
+							cErro := cTab+": Não encontrada tabela: SF3, serie/documento: "+SFT->FT_SERIE+"/"+SFT->FT_NFISCAL+"."
+							MS06GrvLog(cErro)
+						Endif	
+					Endif					
 
-					//Conforme Chamado 422291 DAC 26/08/2020
-					nPosCmpCab:=PosCabArray(aItens,"IND_NAT_BASE_CRED")
-					aItens[Len(aItens)][nPosCmpCab][2] := If(!Empty(SFT->FT_CODBCC),AllTrim(SFT->FT_CODBCC),"@") 
+					If lContinua	
+						MontaItens(aCab,@aItens,SF3->F3_FILIAL)
+									
+						// comeca gravar campos do layout
+						nPosCmpCab:=PosCabArray(aItens,"COD_EMPRESA")
+						aItens[Len(aItens)][nPosCmpCab][2] := SZPMSaf("ZP_EMPMS",SF3->F3_FILIAL)
+						nPosCmpCab:=PosCabArray(aItens,"COD_ESTAB")
+						aItens[Len(aItens)][nPosCmpCab][2] := SZPMSaf("ZP_ESTMS",SF3->F3_FILIAL)
+						nPosCmpCab:=PosCabArray(aItens,"DATA_FISCAL")
+						aItens[Len(aItens)][nPosCmpCab][2] := dTos(SF3->F3_ENTRADA)
+						nPosCmpCab:=PosCabArray(aItens,"MOVTO_E_S")
+						aItens[Len(aItens)][nPosCmpCab][2] := MOVTO_E_S(SF3->F3_CFO,SF3->F3_FORMUL)
+						nPosCmpCab:=PosCabArray(aItens,"NORM_DEV")
+						aItens[Len(aItens)][nPosCmpCab][2] := NORM_DEV(SF3->F3_TIPO)
+						nPosCmpCab:=PosCabArray(aItens,"COD_DOCTO")
+						aItens[Len(aItens)][nPosCmpCab][2] := IIf(Alltrim(Eval(bCmpZerado,"SF3->F3_ESPECIE"))=="SPED","NFE",IIf(Alltrim(Eval(bCmpZerado,"SF3->F3_ESPECIE"))=="RPS","NFS",Eval(bCmpZerado,"SF3->F3_ESPECIE"))) //Eval(bCmpZerado,"SF3->F3_ESPECIE")
+						nPosCmpCab:=PosCabArray(aItens,"IND_FIS_JUR")
+						aItens[Len(aItens)][nPosCmpCab][2] := IDENT_FIS_JUR(SF3->F3_CFO,SF3->F3_TIPO)
+						nPosCmpCab:=PosCabArray(aItens,"COD_FIS_JUR")
+						aItens[Len(aItens)][nPosCmpCab][2] := CmpSZeroEsq(IIf(lSA1,Eval(bCmpZerado,"SA1->A1_XCDSAP"),Eval(bCmpZerado,"SA2->A2_XCDSAP"))) //COD_FIS_JUR(SF3->F3_CFO,SF3->F3_TIPO,SF3->F3_CLIEFOR,SF3->F3_LOJA)
+						nPosCmpCab:=PosCabArray(aItens,"NUM_DOCFIS")
+						aItens[Len(aItens)][nPosCmpCab][2] := SF3->F3_NFISCAL
+						nPosCmpCab:=PosCabArray(aItens,"SERIE_DOCFIS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SF3->F3_SERIE")
+						nPosCmpCab:=PosCabArray(aItens,"COD_SERVICO")
+						aItens[Len(aItens)][nPosCmpCab][2] := Right(Alltrim(SFT->FT_PRODUTO),TamSZR(cTab)[1]) //Eval(bCmpZerado,"SFT->FT_PRODUTO")
+						nPosCmpCab:=PosCabArray(aItens,"NUM_ITEM")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ITEM")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_SERVICO")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_PRCUNIT")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_TOT")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_TOTAL")
+						nPosCmpCab:=PosCabArray(aItens,"COD_CFO")
+						//aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CFOP")
+						if alltrim(SF3->F3_ESPECIE) == 'CTE' .and. IIf(lSA1,SA1->A1_EST == cEStFil, SA2->A2_EST == cEStFil)
+							aItens[Len(aItens)][nPosCmpCab][2] := "1353 " //fCmpZerado("SFT->FT_CFOP")//*****************//
+						else
+							aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CFOP")//*****************//
+						ENDIF
+						nPosCmpCab:=PosCabArray(aItens,"COD_NATUREZA_OP")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_NATOPER")
+						nPosCmpCab:=PosCabArray(aItens,"QUANTIDADE")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_QUANT")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_UNIT")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_PRCUNIT")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_DESCONTO")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_DESCONT")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_IR")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQIRR")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_IR")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALIRR")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_ISS")
+						aItens[Len(aItens)][nPosCmpCab][2] := VlrCD2(SF3->F3_FILIAL,SF3->F3_SERIE,SF3->F3_NFISCAL,SF3->F3_CLIEFOR,SF3->F3_LOJA,SF3->F3_CFO,"CD2_ALIQ",.F.,.F.,"ISS",SFT->FT_ITEM,SFT->FT_PRODUTO,SFT->FT_TIPOMOV)
+						nPosCmpCab:=PosCabArray(aItens,"VLR_ISS")
+						aItens[Len(aItens)][nPosCmpCab][2] := VlrCD2(SF3->F3_FILIAL,SF3->F3_SERIE,SF3->F3_NFISCAL,SF3->F3_CLIEFOR,SF3->F3_LOJA,SF3->F3_CFO,"CD2_VLTRIB",.F.,.F.,"ISS",SFT->FT_ITEM,SFT->FT_PRODUTO,SFT->FT_TIPOMOV)
+						nPosCmpCab:=PosCabArray(aItens,"TRIB_IR")
+						aItens[Len(aItens)][nPosCmpCab][2] := IIf(!Empty(SFT->FT_BASEIRR),"1","@")
+						nPosCmpCab:=PosCabArray(aItens,"BASE_IR")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_BASEIRR")
+						nPosCmpCab:=PosCabArray(aItens,"BASE_ISS")
+						aItens[Len(aItens)][nPosCmpCab][2] := VlrCD2(SF3->F3_FILIAL,SF3->F3_SERIE,SF3->F3_NFISCAL,SF3->F3_CLIEFOR,SF3->F3_LOJA,SF3->F3_CFO,"CD2_BC",.F. ,.F. ,"ISS",SFT->FT_ITEM,SFT->FT_PRODUTO,SFT->FT_TIPOMOV) //Eval(bCmpZerado,"SFT->FT_BASEICM")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_BASE_CSLL")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_BASECSL")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_CSLL")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQCSL")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_CSLL")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALCSL")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_BASE_PIS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_BASEPIS")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_PIS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQPIS")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_PIS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALPIS")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_BASE_COFINS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_BASECOF")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_ALIQ_COFINS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ALIQCOF")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_COFINS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALCOF")
+						nPosCmpCab:=PosCabArray(aItens,"COD_TRIB_ISS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SF3->F3_CSTISS")
+						nPosCmpCab:=PosCabArray(aItens,"IND_VLR_PIS_COFINS")
+						aItens[Len(aItens)][nPosCmpCab][2] := "N"
+						nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_PIS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CSTPIS")
+						nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_COFINS")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CSTCOF")
+						nPosCmpCab:=PosCabArray(aItens,"IND_LOCAL_EXEC_SERV")
+						aItens[Len(aItens)][nPosCmpCab][2] := "0"
+						nPosCmpCab:=PosCabArray(aItens,"VLR_COFINS_RETIDO")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALCF3")
+						nPosCmpCab:=PosCabArray(aItens,"VLR_PIS_RETIDO")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_VALPS3")
+						nPosCmpCab:=PosCabArray(aItens,"COD_CONTA")
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CONTA")
 
-					//Atualização conforme chamado INC0012933 - Notas de Serviço sem DATA LANC PIS COFINS DAC 27/01/2021
-					//incluido o campo DAT_LANC_PIS_COFINS o mesmo não existia no programa
-					nPosCmpCab:=PosCabArray(aItens,"DAT_LANC_PIS_COFINS")
-					aItens[Len(aItens)][nPosCmpCab][2] := If(SFT->FT_TIPOMOV=="E", DtoS(SFT->FT_ENTRADA),DtoS(SFT->FT_EMISSAO))
+						//Conforme Chamado 422291 DAC 26/08/2020
+						nPosCmpCab:=PosCabArray(aItens,"IND_NAT_BASE_CRED")
+						aItens[Len(aItens)][nPosCmpCab][2] := If(!Empty(SFT->FT_CODBCC),AllTrim(SFT->FT_CODBCC),"@") 
 
-	
-				Endif	
-			Endif
-			(cAliasTrb)->(dbSkip())
-		Enddo
-	Else
-		APMsgAlert(cTab+": Estrutura não cadastrada na tabela 'SZR - CAMPOS TABELA MASTERSAF'.Verifique.")
-	Endif
-	(cAliasTrb)->(dbCloseArea())	
+						//Atualização conforme chamado INC0012933 - Notas de Serviço sem DATA LANC PIS COFINS DAC 27/01/2021
+						//incluido o campo DAT_LANC_PIS_COFINS o mesmo não existia no programa
+						nPosCmpCab:=PosCabArray(aItens,"DAT_LANC_PIS_COFINS")
+						aItens[Len(aItens)][nPosCmpCab][2] := If(SFT->FT_TIPOMOV=="E", DtoS(SFT->FT_ENTRADA),DtoS(SFT->FT_EMISSAO))
+
+		
+					Endif	
+				Endif
+				(cAliasTrb)->(dbSkip())
+			Enddo
+		Else
+			APMsgAlert(cTab+": Estrutura não cadastrada na tabela 'SZR - CAMPOS TABELA MASTERSAF'.Verifique.")
+		Endif
+		(cAliasTrb)->(dbCloseArea())
+	ENDIF	
 Return 
 
 /*
