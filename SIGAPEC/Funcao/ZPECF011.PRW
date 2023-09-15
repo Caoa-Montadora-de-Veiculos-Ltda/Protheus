@@ -735,51 +735,52 @@ Begin Sequence
 		//Caso a quaantidade WIS e Protheus esteja igual a Zero não processar
 		If  (_cAliasPesq)->QT_WIS  == 0 .And. (_cAliasPesq)->QT_PROT  == 0
 			_cErro := "divergencia"
-			_cMens := "Pedido " 			+ _cPicking +"|"
-			_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+"|"
-			_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+"|"
-			_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+"|"
-			_cMens += "Qtde zerado no WIS e Protheus permitido"			
+			_cMens := "Pedido " 			+ _cPicking +" | "
+			_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
+			_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+" | "
+			_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
+			_cMens += "Qtde zerado no WIS e Protheus"			
 			Aadd(_aMsgCAOA, Upper(_cMens) )
 		//No caso do Qtde WIS for maior que o Protheus não prosseguir 	
 		ElseIf (_cAliasPesq)->QT_WIS > (_cAliasPesq)->QT_PROT
 			_cErro := "divergencia"
-			_cMens := "Pedido " 			+ _cPicking +"|"
-			_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+"|"
-			_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+"|"
-			_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+"|"
-			_cMens += "Qtde maior no WIS, carregamento não permitido"			
+			_cMens := "Pedido " 			+ _cPicking +" | "
+			_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
+			_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+" | "
+			_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
+			_cMens += "Qtde maior no WIS"	+" | "
+			_cMens += "Picking sera cancelado"			
 			AAdd(_aMsgCAOA, _cMens)
 			_lAborta 		:= .T.
 			Exit	
 		//No caso de a quantidade WIS for maior que a quantidade Protheus deixar Prosseguir 
 		ElseIf  (_cAliasPesq)->QT_WIS  == 0
 			_cErro := "divergewis"
-			_cMens := "Pedido " 			+ _cPicking +"|"
-			_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+"|"
-			_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+"|"
-			_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+"|"
-			_cMens += "Qtde zerado no WIS zerado, será utilizado Qtde Protheus"			
+			_cMens := "Pedido " 			+ _cPicking +" | "
+			_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
+			_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+" | "
+			_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
+			_cMens += "Qtde zerado no WIS zerado"			
 			AAdd(_aMsgCAOA, _cMens)
 			_lProcessa	:= .T.  //indico que irei processar pelo menos um registro
 			_lQtdPRT	:= .T.
 		//No caso de a quantidade Protheus for maior que a quantidade WIS não deixar Prosseguir 
 		ElseIf  (_cAliasPesq)->QT_PROT  == 0
 			_cErro := "divergewis"   //abortar somente o item
-			_cMens := "Pedido " 			+ _cPicking +"|"
-			_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+"|"
-			_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+"|"
-			_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+"|"
-			_cMens += "Qtde zerado no Protheus zerado, não será realizado processamento para este item"			
+			_cMens := "Pedido " 			+ _cPicking +" | "
+			_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
+			_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+" | "
+			_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
+			_cMens += "Qtde zerado no Protheus zerado"			
 			AAdd(_aMsgCAOA, _cMens)
 			_lQtdWIS 	:= .T. 
 		//Caso seja maior do que no Protheus devo criar um backorder do processo
 		ElseIf  (_cAliasPesq)->QT_WIS > 0 .And. (_cAliasPesq)->QT_WIS < (_cAliasPesq)->QT_PROT
 			_cErro := "divergewis"
-			_cMens := "Pedido " 			+ _cPicking +"|"
-			_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+"|"
-			_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+"|"
-			_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+"|"
+			_cMens := "Pedido " 			+ _cPicking +" | "
+			_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
+			_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+" | "
+			_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
 			_cMens += "Será processado parcialmente devido Qtde maior no WIS, mas contendo Qtde no Protheus"			
 			AAdd(_aMsgCAOA, _cMens)
 			_lProcessa	:= .T.  //indico que irei processar pelo menos um registro
@@ -787,10 +788,10 @@ Begin Sequence
 		//Caso seja maior do que no Protheus devo criar um backorder do processo
 		ElseIf  (_cAliasPesq)->QT_PROT > 0 .And. (_cAliasPesq)->QT_PROT > (_cAliasPesq)->QT_WIS 
 			_cErro := "divergewis"
-			_cMens := "Pedido " 			+ _cPicking +"|"
-			_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+"|"
-			_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+"|"
-			_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+"|"
+			_cMens := "Pedido " 			+ _cPicking +" | "
+			_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
+			_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+" | "
+			_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
 			_cMens += "Será processado parcialmente devido Qtde a menor no WIS"			
 			AAdd(_aMsgCAOA, _cMens)
 			_lProcessa	:= .T.  //indico que irei processar pelo menos um registro
@@ -825,11 +826,12 @@ Begin Sequence
 			_cMens 		:= _aMsgCAOA[Len(_aMsgCAOA)]
 			//_aMsgCAOA	:= {_cMens}  //posso gerar as demais mensagens pois será enviado para RG
 			ZPEC11RMsg("divergencia",_cMens)  //divergewis deverá ser utilizada esta tag somente se ocorrer este processo
+			//AAdd(_aMsgCAOA,_cMens)  
 			//ZPEC11EMAI({_cMens}, _cPicking, (_cAliasPesq)->QT_PROT)  //Envio e-mail
 		Else 
-			_cMens		:= "Todos os itens estão com quantidades zeradas tanto para WIS como Protheus nao será processado e status dos orçamentos voltarão ao status inicial"
+			_cMens		:= "Todos os itens estao com quantidades zeradas tanto para WIS como Protheus nao será processado e status dos orçamentos voltarão ao status inicial, Picking sera cancelado"
 			ZPEC11RMsg("divergewis",_cMens)  //divergewis deverá ser utilizada esta tag somente se ocorrer este processo
-			AAdd(_aMsgCAOA,_cMens)  
+			AAdd(_aMsgCAOA,_cMens)   
 			//rotina para cancelr picking
 			//Deixar continuar pois ira verificar todos os itens e enviar via e-mail
 		Endif	
@@ -929,18 +931,18 @@ Begin Sequence
 		EndSql
 		//Caso não localize um produto no picking abortar toda a operação
 		If (_cAliasPesq)->(Eof())
-			Aadd(_aMsgCAOA,"Não localizado Pedido "+_cPicking+" para o Produto "+_cCodProd)
+			Aadd(_aMsgCAOA,"Nao localizado Pedido "+_cPicking+" para o Produto "+_cCodProd)
 			Break
 		Endif	
 
 		//Processar podem existir mais de um orçamento pois o picking é agrupamento de orçamentos
-		Aadd(_aMsgCAOA, "Atualizando produdo "+AllTrim(_cCodProd)+" orçamento "+VS3->VS3_NUMORC+", Saldo Protheus "+AllTrim(STR(VS3->VS3_QTDITE))+" Saldo WIS "+AllTrim(STR(_nQtdeDivWiS)))
+		Aadd(_aMsgCAOA, "Atualizando produdo "+AllTrim(_cCodProd)+" orcamento "+VS3->VS3_NUMORC+", Qtde Protheus "+AllTrim(STR(VS3->VS3_QTDITE))+" Qtde WIS "+AllTrim(STR(_nQtdeDivWiS)))
 		_nSaldoWis	:= _nQtdeDivWiS
 		_nSaldoProt := _nQtdeDivPRO
 		While (_cAliasPesq)->(!Eof())
 			_lZera 	:= .F.
 			_nQtde 	:= 0
-			_cObs 	:= "Atualização de Divergência Qtde Protheus X WIS , Picking "+_cPicking+" Valor correspondente a diferença entre as QtdeS  no produto, orçamento Principar "+VS1->VS1_NUMORC + CRLF
+			_cObs 	:= "Atualizacao de Divergencia Qtde Protheus X WIS , Picking "+_cPicking+" Valor correspondente a diferenca entre as Qtde  no produto, orcamento Principal "+VS1->VS1_NUMORC + CRLF
 			VS3->(DbGoto((_cAliasPesq)->NREGVS3))
 			//necessário retirar a reserva
 			If _nSaldoWis == 0 .Or. _nSaldoProt == 0
@@ -965,7 +967,7 @@ Begin Sequence
 			Else  
 				_nQtde := VS3->VS3_QTDITE
 				_lZera := .T.
-				_cObs   += "Devido Qtde divergências de Qtde "+ AllTrim(Str(VS3->VS3_QTDITE)) + CRLF
+				_cObs   += "Devido Qtde divergencias de Qtde "+ AllTrim(Str(VS3->VS3_QTDITE)) + CRLF
 			Endif
 			_nSaldoWis	-= _nQtde
 			If _nQtde > 0
@@ -1016,6 +1018,8 @@ Begin Sequence
 			EndIf
 			_cMsg := "Criado Backorder para orçamento(s) "+ _cNumOrc +" diferença de qtde Protheus  em relação ao retorno Picking WIS"
 			Aadd(_aMsgCAOA, _cMsg)
+			//Ajustar as quantidades após a Clonagem
+			ZPEC11BKAJ(_aBackOrder)
 			_lRet := ZPEC11BKRE( _cNumOrc, _cPicking, .T., /*_aRegVS3*/)  
 			If ! _lRet
 				_cMsg :=  "Problemas para criar as reservas orçamento "+_cNumOrc
@@ -1040,7 +1044,7 @@ Return _lRet
 @author DAC
 @since 28/07/2023
 @version undefined
-@param _nSaldoWis, _cPicking
+@param _cNumOrc, _cPicking, _lReserva, _aRegVS3
 @type function
 @project	GAP002 | Integração da separação - Informar produto e quantidade da cubagem
 @Obs		
@@ -1074,7 +1078,7 @@ Begin Sequence
 		Next
 	Endif	 
 	_aReservaCAOA 	:= Aclone({ _cNumOrc, _lReserva, _aRegVS3 })	// Variavel utilizada no PE OX001RES
-	_cDocto := OX001RESITE(_cNumOrc,.F.,_aSeqVS3 )
+	_cDocto := OX001RESITE(_cNumOrc,_lReserva,_aSeqVS3 )
 	if Empty(_cDocto) .or. _cDocto == "NA"
 		If _lReserva
 			_cMsg := "Não foi possivel criar a reserva do item, orçamento "+_cNumOrc+" devido a Divergencia na qtde "
@@ -1093,6 +1097,39 @@ Begin Sequence
 	_lRet := .T.
 End Sequence 
 Return _lRet
+
+
+
+/*/{Protheus.doc} ZPEC11BKAJ
+//Função para atualizar qtde de itens que sofreram backorder, abatndo do seu total existente 
+@author DAC
+@since 14/08/2023
+@version undefined
+@param _aBackOrder
+@type function
+@project	GAP002 | Integração da separação - Informar produto e quantidade da cubagem
+@Obs		
+/*/
+Static Function ZPEC11BKAJ(_aBackOrder)
+Local _lRet 		:= .F.
+Local _nPos
+
+DeFault _aRegVS3 		:= {}
+
+Begin Sequence 
+	For _nPos := 1 To Len(_aBackOrder)
+		//Ajustar somente os itens que não foram feitos backorder do seu total
+		If !_aBackOrder[_nPos,6]  
+			VS3->(DbGoto(_aBackOrder[_nPos,1]))
+			VS3->(RecLock("VS3",.F.))
+			VS3->VS3_QTDITE	-= _aBackOrder[_nPos,3]
+			VS3->(MsUnlock())
+		Endif
+	Next
+	_lRet := .T.
+End Sequence 
+Return _lRet
+
 
 
 /*/{Protheus.doc} ValidOJson
@@ -1360,7 +1397,7 @@ Local _cReplyTo			:= ""
 Local _cCorItem			:= "FFFFFF"
 Local _lEnvia			:= .T.
 Local _cLogo  			:= 'https://tinyurl.com/logocaoa'  
-Local _cNomeUsu 		:= "RECEBIMENTO RETORNO PICKING RGLOG [ZPECF011]"  //Upper(FwGetUserName(RetCodUsr())) //Retorna o nome completo do usuário  __cUserId
+Local _cNomeUsu 		:= "RECEBIMENTO RETORNO PICKING RGLOG [ZPECF011]" //Upper(FwGetUserName(RetCodUsr())) //Retorna o nome completo do usuário  __cUserId
 Local _cCodUsu			:= "RGLOG_JS" //RetCodUsr()
 Local _cDescProd		:= ""
 Local _cRotina			:= "ZPECF011"
@@ -1369,7 +1406,7 @@ Local _nPos
 Default _aMsg			:= {}
 Default _cPicking		:= ""
 Default _cCodProd		:= ""
-Default _cAssunto		:= "Informacoes Retorno Picking [ZPECF011]"
+Default _cAssunto		:= Upper("Informacoes Retorno Picking "+AllTrim(_cPicking)+" [ZPECF011]") 
 Default _cEmails 		:= "evandro.mariano@caoa.com.br"  //E-mail para envio problemas integração  
 Default _cEMailCopia	:= ""
 Default _aAnexos		:= {}
