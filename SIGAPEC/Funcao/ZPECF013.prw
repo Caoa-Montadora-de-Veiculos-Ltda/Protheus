@@ -1349,7 +1349,7 @@ Local _aRegVS1
 Local _nPos
 Local _nTentativas
 Local _cMens
-Local _cLike		:= "PEDIDO: "+cZK_XPICKI+"%"
+Local _cLike		:= "PEDIDO: "+cZK_XPICKI
 Local _cDtEpi		:= " "
 
 

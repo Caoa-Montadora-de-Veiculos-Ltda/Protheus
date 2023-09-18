@@ -33,10 +33,12 @@ Default _lTransaction 	:= .T.  //pode vir de uma operaçao que ja esta em transac
 Private aParcBRNF  	:= {}
 
 Begin Sequence 	
+
 	If Len(_aOrcs) == 0
 		Aadd(_aMsg,"Não informado orçamentos para Faturar!")
 		Break	
 	Endif	
+	Private aOrcs := _aOrcs  //necessario para utilizar PE OX004APV
 	If _lTransaction
 		Begin Transaction 
 			_lRet := ZPECF036PV(_aOrcs, _cPicking, @_cPedido, @_aRegVS1, @_aPicking, @_aVS9, @_aMsg)
@@ -120,8 +122,8 @@ Local _nVALPEC 		:= 0
 Local _nPERDES 		:= 0
 Local _nItVLDESC 	:= 0
 Local _nItVALTOT 	:= 0
-Local _nAcresFin	:= 0
-Local _aLivroVEC    := {}
+//Local _nAcresFin	:= 0
+//Local _aLivroVEC    := {}
 Local _cBanco      	:= "" 
 Local _cObs			:= ""
 Local _lESTNEG     	:= GetMV("MV_ESTNEG") == "S"
@@ -182,7 +184,10 @@ Begin Sequence
 		Endif 
 		_lExisteReserva	:= .F. 
 		_nPosItem := 1
+		U_XFUNIPOSTO(VS3->VS3_NUMORC, cEmpAnt, cFilAnt, .T. /*_lJob*/)  
+
 		While VS3->(!Eof()) .And. FwXFilial("VS3")+VS1->VS1_NUMORC == VS3->VS3_FILIAL+VS3->VS3_NUMORC
+			/*
 			OX001PecFis()
 			//VS1_VLBRNF = 0 recalcula valores com o desconto zerado (não é enviado para o faturamento)
 			If VS1->(FieldPos("VS1_VLBRNF")) > 0 .and. VS1->VS1_VLBRNF == "0" .and. VS1->(FieldPos("VS1_FPGBAS")) > 0 .and. !Empty(VS1->VS1_FPGBAS)
@@ -207,6 +212,7 @@ Begin Sequence
 			if VS3->VS3_RESERV == "1"
 				_lExisteReserva := .T.
 			Endif
+			*/
 			//Preparar carga para gravar Pedido
 			_cNumSeq 	:= Soma1(_cNumSeq)
 			If  VS1->(FieldPos("VS1_VLBRNF")) > 0 .and. VS1->VS1_VLBRNF == "0" // Nao passar o Valor Bruto para NF/Loja
@@ -223,7 +229,6 @@ Begin Sequence
 			_nValPis := VS3->VS3_VALPIS
 			_nValCof := VS3->VS3_VALCOF 
 			_nValICM := VS3->VS3_ICMCAL
-
 			_nValDes := _nItVLDESC
 
 			aAdd(_aIteTempPV,{"C6_ITEM"   ,	_cNumSeq			,Nil})
@@ -305,11 +310,14 @@ Begin Sequence
 
 			VS3->(DBSkip())
 		Enddo
+
+		Reclock("VS1",.f.)
 		If _lExisteReserva .And. VS1->VS1_RESERV <> "1"
-			Reclock("VS1",.f.)
 			VS1->VS1_RESERV := "1"
-			VS1->(MsUnlock())
+		ElseIf !_lExisteReserva .And. VS1->VS1_RESERV <> "0"
+			VS1->VS1_RESERV := "0"
 		Endif 	
+		VS1->(MsUnlock())
 	
 		// PE ANTES DE DESRESERVAR O ITEM
 		If  ExistBlock("OX04RESITE")       // O B S O L E T O
@@ -344,7 +352,7 @@ Begin Sequence
 				Aadd(_aObsVS1, _cObs)
 			Endif
 			//Caso onde não são marcados os controles de Reserva
-		Elseif  At("R",OI001GETFASE(VS1->VS1_NUMORC)) != 0 .or. At("T",OI001GETFASE(VS1->VS1_NUMORC)) != 0 
+		Elseif  _lExisteReserva .And. At("R",OI001GETFASE(VS1->VS1_NUMORC)) != 0 .or. At("T",OI001GETFASE(VS1->VS1_NUMORC)) != 0 
 			aHeaderP    	:= {} 							// Variavel ultilizada na OX001RESITE
 			_aReservaCAOA 	:= {VS1->VS1_NUMORC,.F.}	// Variavel utilizada no PE OX001RES
 			_cDocto := VS1->(OX001RESITE(VS1->VS1_NUMORC, .F.))
@@ -376,19 +384,19 @@ Begin Sequence
 			_nVOL4 	+= VS1->VS1_VOLUM4
 		EndIf
 	Next
-
+	/*
 	//Ajustar valores
 	MaFisRef("NF_DESPESA"	,, _nValDes)
 	MaFisRef("NF_SEGURO"	,, _nValSeg)
 	MaFisRef("NF_FRETE"		,, _nValFre)
 	_nValTot := MaFisRet(,"NF_TOTAL") 	- MaFisRet(,"NF_DESCZF")
 	_nValDup := MaFisRet(,"NF_BASEDUP") 	- MaFisRet(,"NF_DESCZF")
-
+	*/
 	//Se gera Pedido de Venda, verifica se tem estoque disponivel  #
 	//para atender o pedido                                        #
 	if GetMV("MV_ESTNEG") <> "S"
-		if OFXFA0034_AlgumaPecaSemSaldo(_aOrcs, .t.)
-			Aadd(_aMsg,"Existem Orçamentos sem saldo para faturamento")
+		if OFXFA0034_AlgumaPecaSemSaldo(_aOrcs, .F.)
+			Aadd(_aMsg,"Existem Orçamentos sem saldo para faturamento para o picking "+_cPicking)
 			Break
 		Endif
 	EndIf
@@ -469,6 +477,9 @@ Begin Sequence
 	If SC5->(FieldPos("C5_CODA1U")) > 0 .and. ( VS1->(FieldPos("VS1_CODA1U")) > 0 .and. !Empty(VS1->VS1_CODA1U) )
 		aAdd(_aCabPV, {"C5_CODA1U",  VS1->VS1_CODA1U ,Nil})
 	Endif
+	//Necessário pois os PEs tratam privates
+	Private aCabPV 		:= _aCabPV
+	Private aItePv 		:= _aItePv
 
 	//Pego o ultimo orçamento para a referenciar no SC5 cabeçalho
 	// PE ANTES DA MONTAGEM DO PEDIDO DE VENDA
@@ -486,6 +497,9 @@ Begin Sequence
 		if !ExecBlock("OX004AMP",.f.,.f.)
 			Aadd(_aMsg,"Retorno PE OX004AMP não esta permitindo faturamento")
 			Break
+		Else
+			_aCabPV 	:= aCabPV  
+			_aItePv		:= aItePv 
 		Endif
 	Endif
 
@@ -493,17 +507,24 @@ Begin Sequence
 	if ExistBlock("OXX004APV")
 		//Pego o ultimo orçamento par a referenciar no SC5 cabeçalho
 		VS1->(DbGoto(_nRegVS1))
-		if !ExecBlock("OXX004APV",.f.,.f.)
+		if !ExecBlock("OXX004APV",.f.,.f.,)
 			Aadd(_aMsg,"Retorno PE OXX004APV não esta permitindo faturamento")
 			Break
+		Else
+			_aCabPV 	:= aCabPV  
+			_aItePv		:= aItePv 
 		Endif
 	Endif
+
 	if ExistBlock("OX004APV")
 		//Pego o ultimo orçamento par a referenciar no SC5 cabeçalho
 		VS1->(DbGoto(_nRegVS1))
-		if !ExecBlock("OX004APV",.f.,.f.)
+		if !ExecBlock("OX004APV",.f.,.f.,{@_aCabPV, @_aItePv})
 			Aadd(_aMsg,"Retorno PE OX004APV não esta permitindo faturamento")
 			Break
+		Else 
+			_aCabPV 	:= aCabPV  
+			_aItePv		:= aItePv
 		Endif
 	Endif
 
@@ -609,7 +630,7 @@ End Sequence
 //No caso de Ter abortado e não ter trazido os orçamentos com seus numeros de registros Pego estes numeros pelo Picking
 If Len(_aRegVS1) == 0 .And. !Empty(_cPicking)
 	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
-		SELECT 	ISNULL(SE1.R_E_C_N_O_,0) NREGVS1
+		SELECT 	ISNULL(VS1.R_E_C_N_O_,0) NREGVS1
 				, VS1.VS1_XPICKI
 			FROM  	%Table:VS1% VS1
 			WHERE 	VS1.VS1_FILIAL 	= %xFilial:VS1%

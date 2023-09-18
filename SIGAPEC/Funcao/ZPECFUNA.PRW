@@ -3916,7 +3916,6 @@ User Function XVERNUMeracao( _cTab, _cCampo, _cNum )
 Return _cNumRet 
 
 
-
 /*/{Protheus.doc} zTpOper
 //Verifica informaÃ§Ãµes de campos obrigatÃ³rios 
 @author Evandro Mariano
@@ -3924,6 +3923,7 @@ Return _cNumRet
 @version undefined
 @param _aMsg, array, descriÃ§Ã£o
 @type function
+@Obs 	Atualiza��o realizada por Z� em 15/09/2023
 /*/
 User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 
@@ -4003,8 +4003,8 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 		_cQuery += " WHERE "
 		_cQuery += " FM_FILIAL  = '"+xFilial("SFM")+"' AND "
 		_cQuery += " FM_CLIENTE = '"+_cCliente+"' AND "
-		_cQuery += " FM_LOJACLI = '"+_cLoja+"' OR (FM_EST = '"+_cUFCliente+"' AND FM_CLIENTE = ' ') AND "
-		_cQuery += " D_E_L_E_T_ = ' ' ORDER BY FM_CLIENTE DESC "
+		_cQuery += " FM_LOJACLI = '"+_cLoja+"' AND D_E_L_E_T_ = ' ' OR (FM_EST = '"+_cUFCliente+"' AND FM_CLIENTE = ' ')"
+		_cQuery += " ORDER BY FM_CLIENTE DESC "
 		dbUseArea( .T., "TOPCONN", TcGenQry(,,_cQuery), _cAliasSFM, .T., .T. )
 
 		(_cAliasSFM)->(dbGoTop())
@@ -4083,6 +4083,8 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 	RestArea(_aAreaSA1)
 
 Return(_cRet)
+
+
 
 /*/{Protheus.doc} XRESCAOAPEC
 @param  	
