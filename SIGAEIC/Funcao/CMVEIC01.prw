@@ -117,6 +117,9 @@ User Function CMVEI01A()
 	Private _cRet        
 	Private _cChave     := SPACE(TamSX3("EW4_INVOIC")[1])
 
+	Private _cChaveLock	:= ""	//GAP081
+	Private _cPoLock	:= ""	//GAP081
+
 	If (nPos:=RAt("\",cDirInicial)) > 0
 		cDirInicial := Subs(cDirInicial,1,nPos)
 	EndIf
@@ -308,7 +311,7 @@ Static Function ValidTela() //Validação de todas as informações do CSV
 						cContainer    := IF (!EMPTY(aLinha[09]),aLinha[09]," ")
 						cCaixa        := IF (!EMPTY(aLinha[10]),aLinha[10]," ")
 						cPO           := IF (!EMPTY(aLinha[11]),aLinha[11]," ")
-						cUNITIZADOR   := IF (!EMPTY(aLinha[12]),aLinha[12]," ")
+						cUNITIZADOR   := IF (!EMPTY(aLinha[12]),aLinha[12]," ")	
 
 						if empty(cLote)
 							MsgStop("A Planilha " + cINTCSV + " contém campos dos Lotes, que estão em branco!")
@@ -437,7 +440,6 @@ Static Function ValidTela() //Validação de todas as informações do CSV
 
 				Endif
 
-
 				If nLayout == 3 .and. lRet   // Layout CBU Subaru
 					If len(aLinha) == 11
 						cCase     := IF (!EMPTY(aLinha[01]),aLinha[01]," ")
@@ -451,7 +453,6 @@ Static Function ValidTela() //Validação de todas as informações do CSV
 						cInvoice  := IF (!EMPTY(aLinha[09]),aLinha[09]," ")
 						cAnoFab   := IF (!EMPTY(aLinha[10]),aLinha[10]," ")
 						cAnoMod   := IF (!EMPTY(aLinha[11]),aLinha[11]," ")
-
 
 						if empty(cModel)
 							MsgStop("A Planilha " + cINTCSV + " contém campos dos Model, que estão em branco!")
@@ -518,6 +519,7 @@ Static Function ValidTela() //Validação de todas as informações do CSV
 						cInvoice  := IF (!EMPTY(aLinha[10]),aLinha[10]," ")
 						cAnof     := IF (!EMPTY(aLinha[11]),aLinha[11]," ")
 						cAnoM     := IF (!EMPTY(aLinha[12]),aLinha[12]," ")
+					
 						if empty(cModel)
 							MsgStop("A Planilha " + cINTCSV + " contém campos dos Modelos, que estão em branco!")
 							lRet := .F.
@@ -634,11 +636,12 @@ Static Function ValidTela() //Validação de todas as informações do CSV
 				MsgStop("A Planilha " + cINTCSV + " contém linha(s) que estão em branco!")
 				lRet := .F.
 			Endif
-
+			
 			FT_FSkip()
 			
 		EndDo
 
+		_cPoLock := cPo //GAP081
 		FT_FUse()
 
 		//Fim dos ajustes do GAP024
@@ -679,11 +682,11 @@ Return lRet
 
 Static Function IntegraInv()
 	
-	Local cINTCSV   := AllTrim(cDiretorio)
-	Local _cChave	:= ""	//GAP081
-	Local _lRet		:= .T. 	//GAP081
-	Local _nPos 	:= 0 	//GAP081
+	Local cINTCSV   	:= AllTrim(cDiretorio)
+	Local _cFornLock 	:= ""   //GAP081
+	Local _cForLojLock	:= ""	//GAP081
 
+	Private _lRet		:= .T. 	//GAP081
 	Private cItAcerto	:= ""
 	Private cMoedaP		:= ""
 	Private cArqFalta	:= Upper(AllTrim(cDiretorio))
@@ -695,36 +698,37 @@ Static Function IntegraInv()
 	cArqFalta	+= "-FALTA-"+DTOS(Date())+StrTran(Time(),":")+".CSV"
 	cFalta		:= ""
 
-
 	MontaWork1()
-	if nLayout == 5 .or. nLayout == 1
+
+	//Ajustes Referente ao GAP081 ----------------------------------------------------
+
+	DbSelectArea('SW2') //Capa de Purchase Order
+	SW2->(DbSetOrder(1))
+	SW2->(DbSeek(FwXFilial('SW2') + (_cPoLock)))
+	_cFornLock 			:= AllTrim(SW2->W2_FORN)
+	_cForLojLock 		:= AllTrim(SW2->W2_FORLOJ)
+	_cChaveLock 		:= "CMVEIC01" + _cFornLock + _cForLojLock
+	SW2->(DbCloseArea())
 		
-		//-------------------- INÍCIO ALTERAÇÕES---------------------
-		_cChave		:= "CMVEIC01" + cPoNum //Chave de processamento
+	if nLayout == 5 .or. nLayout == 1
+		_lRet := .F. 
+		
 		//Garantir que o processamento seja unico
-		If !LockByName(_cChave,.T.,.T.) //Se não Lockar a variácel cChave
-			_lRet := .F. //Variável de retorno
-			//Tentar locar por 10 segundos caso não consiga não prosseguir
-			For _nPos := 1 To 10
-				Sleep( 3000 ) // Para o processamento por 3 segundos
-				If LockByName(_cChave,.T.,.T.)
-					_lRet := .T.
-				EndIf
-			Next	
-			If !_lRet
-				MSGINFO("Já existe um processamento em execução rotina CMVEIC01, aguarde!", "Registro em processamento - Atenção" )
-			EndIf
+		If !LockByName(_cChaveLock ,.T.,.T.) //Se não Lockar a variável _cChaveLock
+			FWMsgRun(,{|| ProcessaLock()} , "Processando", "Existe outro arquivo em importação em outra aba. " + CRLF; 
+			+ " Deseja aguardar?")		
+		Else
+			_lRet := .T.
 		EndIf
 
-		If _lRet  //Conferir isso, acho que lRet executa será sempre .T.
-		// Se lRet foi .F.
-			
-		
+		If _lRet  
 			Processa( {|| lErroGer := !(U_ZEICF021(cINTCSV,cPoNum,nLayout))}, "Lendo Arquivo de Integração...", OemToAnsi("Lendo dados do arquivo..."),.F.)
-			UnLockByName(_cChave,.T.,.T.) //VERIFICAR ONDE COLOCAR ISSO, ALTERAR A VARIÁVEL
+			UnLockByName(_cChaveLock ,.T.,.T.) //VERIFICAR ONDE COLOCAR ISSO, ALTERAR A VARIÁVEL
+		Else 
+			MsgStop("Integração não pode ser concluída.","Erro",1,0,1)
+			Return
 		EndIf 
-	MSGINFO("Avaliação" + lRet, "CMVEIC01 - Atenção" )
-	//-------------------- FIM DAS ALTERAÇÕES
+	//Fim dos ajustes Referente ao GAP081 ----------------------------------------------------
 	
 	Else
 		Processa( {|| LerDados(cINTCSV)  }, "Lendo Arquivo de Integração...", OemToAnsi("Lendo dados do arquivo..."),.F.)
@@ -824,9 +828,11 @@ Static Function MontaWork1()
 		cArqEW5_2 := CriaTrab(Nil, .F.)
 		dbUseArea(.t.,,cArqEW5,cWKEW5,.T.,.F.)
 
+
 		(cWKEW5)->(DBClearIndex() )
   		DBCreateIndex(cWKEW5+'1', "EW5_INVOIC+EW5_PO_NUM+EW5_COD_I+EW5_SI_NUM+EW5_POSICA" , {|| EW5_INVOIC+EW5_PO_NUM+EW5_COD_I+EW5_SI_NUM+EW5_POSICA })
 		DBCreateIndex(cWKEW5+'2', "EW5_INVOIC+EW5_CC+EW5_SI_NUM+EW5_PO_NUM+EW5_POSICA+EW5_COD_I+EW5_XCASE", {|| EW5_INVOIC+EW5_CC+EW5_SI_NUM+EW5_PO_NUM+EW5_POSICA+EW5_COD_I+EW5_XCASE})
+	
 	EndIf
 
 
@@ -1746,7 +1752,7 @@ Return
 
 //----------------------------------------------------------------------------------
 
-Static Function CMV01Capa()
+Static Function CMV01Capa() //Apenas para layouts <> 1 E <> 5
 	Local oDlg2
 	Local cDados  := cInvoice
 	Local nCo1    := 1
@@ -1811,7 +1817,7 @@ Return
 
 //----------------------------------------------------------------------------------
 
-Static Function CMV01ValCapa()
+Static Function CMV01ValCapa() // Valida capa para layouts <> 1 E <> 5
 	Local lRet := .T.
 
 	If Empty(cIncoterm)
@@ -1892,7 +1898,7 @@ Return lRet
 
 //----------------------------------------------------------------------------------
 
-Static Function CMV01GravaInv()
+Static Function CMV01GravaInv() //Gravação da tabela EW5
 	
 	Local cQuery	:= ""
 	Local nTotInv	:= 0
@@ -1907,7 +1913,7 @@ Static Function CMV01GravaInv()
 	
 	WKEW5->(dbSetOrder(2))
 
-	dbSelectAre('SW2')
+	dbSelectArea('SW2')
 	SW2->(dbSetOrder(1))
 
 	dbSelectArea("EW4")
@@ -3221,7 +3227,7 @@ Return aLoad
 
 //----------------------------------------------------------------------------------
 
-Static Function zGrvArq()
+Static Function zGrvArq() //Grava info nas variaveis da SZM apenas nLayout == 1 .OR. nLayout == 5 
 	
 	Local cErr	     := ""
 	Local cZM_BL     := ""
@@ -3332,7 +3338,7 @@ Return
 
 //----------------------------------------------------------------------------------
 
-Static function zLayouts()
+Static function zLayouts() //Configuração dos Layouts
 	Local cmd := ""
 	Local cDivi := CRLF + "------------------------------------------------" + CRLF
 
@@ -3426,12 +3432,12 @@ Return
 //----------------------------------------------------------------------------------
 
 Static Function fValTotal(nPosTot,nVal,lTipo)
-Local nRet := 0
-Local n    := 0 
-Local y    := 1
-Local aAux := {}
+	Local nRet := 0
+	Local n    := 0 
+	Local y    := 1
+	Local aAux := {}
 
-Default lTipo = .T.
+	Default lTipo = .T.
 	
 	if nLayOut == 5
 		if len(aQuantTot[nPosTot]) <> 6
@@ -3602,7 +3608,7 @@ Descricao / Objetivo:   Função para remoção de caracteres especiais do unitizado
 os caracteres removidos são baseados nos criterios da função padrão WmsVlStr 
 =====================================================================================
 */
-Static Function zRetCarUni(cConteudo)
+Static Function zRetCarUni(cConteudo) //Substituir caracter especial
 	Local cCarEsp		:= "!@#$%¨&()+{}^~´`][;.>,<=/¢¬§ªº'?|"+'"'
 	Local nI			:= 0
 
@@ -3612,3 +3618,17 @@ Static Function zRetCarUni(cConteudo)
 	Next nI
 
 Return cConteudo
+
+//Ajustes Referente ao GAP081 ----------------------------------------------------
+Static Function ProcessaLock() //Verificar se o a chave esta lockada e libera no momento correto.
+
+	While _lRet <> .T.
+		Sleep( 3000 ) // Para o processamento por 3 segundos
+
+		If LockByName(_cChaveLock ,.T.,.T.)
+			_lRet := .T.
+		EndIf
+	EndDo
+Return
+//Fim dos ajustes Referente ao GAP081 ----------------------------------------------------
+

@@ -66,7 +66,7 @@ nLay := nLayOut //Tipo do Layout
  
 cLoteHyudai := Alltrim(cLoteHyudai) + alltrim(cLote2Hyudai) + alltrim(cLote3Hyudai)
 
-If Empty(cINTCSV)
+If Empty(cINTCSV) //Verifica o caminho do arquivo
 	U_FCMVEIC0101("Caminho do arquivo em Branco!",,,,"R",,,)
 	MsgInfo("Caminho do arquivo em Branco!" + CRLF +  "Para ver um log do resultado clique no botão 'Log' ")
 	Return(.F.)
@@ -77,7 +77,7 @@ EndIF
 	//Return(.F.)
 //EndIf
 
-DbSelectArea('SW2') //CAPA DE PURCHASE ORDER
+DbSelectArea('SW2') //Capa de Purchase Order
 SW2->(DbSetOrder(1))
  
 If !Empty(cPoNum) .and. !SW2->(DbSeek(FwXFilial('SW2')+cPoNum))
@@ -105,18 +105,18 @@ EndIf
 	[13] NAVIO
 */
 
-FT_FUse(cINTCSV)	
+FT_FUse(cINTCSV) //Abre o arquivo .csv
 FT_FGotop()
 
 MontaSZM() //Monta tabela SZM
 
-While !FT_FEof() //Grava linha a linha as info na SZM
+While !FT_FEof() //Grava linha a linha as info na WKSZM
 	
-	cLinhaIT := FT_FReadLn() //Essa função traz todas as informações da linha do arquivo
+	cLinhaIT := FT_FReadLn() //Traz todas as informações da linha do arquivo
 	lErro    := .F.
 	nLinha++
 
-	If  Empty(cLinhaIT)                                      .Or. ;
+	If  Empty(cLinhaIT)                                      .Or. ; //Se a linha estiver vazia ou conter as info abaixo, pular linha
         cLinhaIT                == ";"                       .Or. ;
         SubStr(cLinhaIT,1,10)   == "Engine No."              .Or. ;
         cLinhaIT                == "CASE;MODEL;VIN-CODE;ENGINE;COLOR;SPECOP;KEYNO;T/MNO;"
@@ -124,7 +124,7 @@ While !FT_FEof() //Grava linha a linha as info na SZM
 		Loop
 	EndIF
 
-    aLinha := {}
+    aLinha 	 := {}
 	cLinhaIT := StrTran(cLinhaIT,';;','; ;')
 	cLinhaIT := StrTran(cLinhaIT,';;','; ;')
     aLinha   := StrTokArr(cLinhaIT, ";") //Distribui todas as informaçõs da linha para cada posição do array
@@ -136,18 +136,18 @@ While !FT_FEof() //Grava linha a linha as info na SZM
 		loop
 	Endif
 	
-	If (Len(aLinha) <> 13 .and. nLay == 5) .or. (Len(aLinha) <> 12 .and. nLay == 1) //VALIDÇÃO
+	If (Len(aLinha) <> 13 .and. nLay == 5) .or. (Len(aLinha) <> 12 .and. nLay == 1) //Valida o comprimento do array aLinha com o tipo de layout
  		U_FCMVEIC0101("Layout da linha inválido!",nLinha,,cFornecedor,cForloj,"R",,,cInvoice)
 		lRetorno := .F.
 	EndIF
 	
-	If Empty(AllTrim(aLinha[5])) //VALIDAÇÃO
+	If Empty(AllTrim(aLinha[5])) //Valida cod de produto preenchido
 		U_FCMVEIC0101("Código de produto em branco!",nLinha,,cFornecedor,cForloj,"R",AllTrim(cPoNum),,cInvoice)
 		lRetorno := .F.
 	EndIf
 
 	if nLay <> 5
-		aLinha := aClone( fAjuArr(aLinha,nLay) ) //Atribui aLinha em aAux e obtém valores de cod prod + NCM + ExNCM
+		aLinha := aClone( fAjuArr(aLinha,nLay) ) //Reposiciona array aLinha e obtém valores de: cod prod + NCM + ExNCM
 	EndIf
 
 	aLinha[11] := Padr(aLinha[11],TamSx3("W2_PO_NUM")[1], " ")
