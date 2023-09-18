@@ -1,4 +1,5 @@
 #include "Protheus.ch"
+#include 'parmtype.ch'
 #include "TOTVS.ch"
 #include "TOPCONN.CH"
 #include "FWMVCDEF.CH"
@@ -103,7 +104,7 @@ User Function ZPECF023()
     aAdd( aPergs ,{6,"Diretorio do Arquivo ",cCaminho     ,"@!" ,     ,'.T.' ,80,.T.,"Arquivos .xls |*.xls " })
     aAdd( aPergs ,{4,"Somente FOB ?",.F.,"Marque p/atualizar apenas o FOB.",90,"",.F.})
     
-    If ParamBox(aPergs, "Parametros ", aRetP, , , , , , , , ,.T.) 
+    If ParamBox(aPergs, "Parametros ", aRetP, , , , , , , , ,.F.,.F.) //Não salvar os dados por usuário
 
         DEFINE MSDIALOG oDlg FROM  96,9 TO 310,592 TITLE OemToAnsi("Importação Cadastro de Produtos") PIXEL
         @ 18, 6 TO 66, 287 LABEL "" OF oDlg  PIXEL
@@ -410,7 +411,7 @@ Local _nItem     := 0
         aDados  := Separa(cLinha,cSeparador)
 
         IF LEN(aDados) < 4
-            MSGINFO("Lay-Out do arquivo invalido! "+"[ZPECF023]")
+            MSGINFO("Lay-Out do arquivo invalido! Verifique o Fleg p/ somente FOB. "+"[ZPECF023]")
             lRet := .F.
             Exit 
         ENDIF

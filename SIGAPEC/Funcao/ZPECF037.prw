@@ -138,7 +138,7 @@ User Function ZPECF037(oDlg,_nX,nOpcao,aPergs,cCaminho)
         
         IF lRet = .F.
             FCLOSE(nHdl)
-            //Return()
+            Return()
         ENDIF
 
         dbSelectArea("TRB1")
@@ -229,7 +229,8 @@ Local _nItem     := 0
 
         IF LEN(aDados) <> 3
             lRet := .F.
-            DisarmTransaction()
+            DisarmTransaction()            
+            MSGINFO("Lay-out invalido para esta importação ! Verifique o Fleg p/ somente FOB. "+"[ZPECF037]")
 	        Return(.F.)   
         ENDIF
 
