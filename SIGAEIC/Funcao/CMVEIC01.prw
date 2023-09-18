@@ -698,8 +698,6 @@ Static Function IntegraInv()
 	cArqFalta	+= "-FALTA-"+DTOS(Date())+StrTran(Time(),":")+".CSV"
 	cFalta		:= ""
 
-	MontaWork1()
-
 	//Ajustes Referente ao GAP081 ----------------------------------------------------
 
 	DbSelectArea('SW2') //Capa de Purchase Order
@@ -709,30 +707,36 @@ Static Function IntegraInv()
 	_cForLojLock 		:= AllTrim(SW2->W2_FORLOJ)
 	_cChaveLock 		:= "CMVEIC01" + _cFornLock + _cForLojLock
 	SW2->(DbCloseArea())
-		
-	if nLayout == 5 .or. nLayout == 1
+	
+	If nLayout == 5 .or. nLayout == 1
 		_lRet := .F. 
 		
 		//Garantir que o processamento seja unico
-		If !LockByName(_cChaveLock ,.T.,.T.) //Se não Lockar a variável _cChaveLock
-			FWMsgRun(,{|| ProcessaLock()} , "Processando", "Existe outro arquivo em importação em outra aba. " + CRLF; 
-			+ " Deseja aguardar?")		
+		If !LockByName(_cChaveLock ,.T.,.T.)
+			If !MsgYesNo("Já existe um processo em andamento, deseja aguardar?", "Processo em andamento.")
+				Return
+			Endif
+			//Abre tela de processamento e aguarda a outra improtação terminar.
+			FWMsgRun(,{|| ProcessaLock()} , "Processando", "Outra importação em andamento, por favor aguarde...")		
 		Else
 			_lRet := .T.
 		EndIf
 
 		If _lRet  
+			MontaWork1()
 			Processa( {|| lErroGer := !(U_ZEICF021(cINTCSV,cPoNum,nLayout))}, "Lendo Arquivo de Integração...", OemToAnsi("Lendo dados do arquivo..."),.F.)
 			UnLockByName(_cChaveLock ,.T.,.T.) //VERIFICAR ONDE COLOCAR ISSO, ALTERAR A VARIÁVEL
 		Else 
-			MsgStop("Integração não pode ser concluída.","Erro",1,0,1)
+			MsgStop("Integração não pode ser concluída." + CRLF + "Já existe um processo em andamento.","Erro",1,0,1)
 			Return
 		EndIf 
-	//Fim dos ajustes Referente ao GAP081 ----------------------------------------------------
 	
 	Else
+		MontaWork1()
 		Processa( {|| LerDados(cINTCSV)  }, "Lendo Arquivo de Integração...", OemToAnsi("Lendo dados do arquivo..."),.F.)
 	EndIf
+
+	//Fim dos ajustes Referente ao GAP081 ----------------------------------------------------
 
 	If lErroGer
 		If !Empty(cFalta)

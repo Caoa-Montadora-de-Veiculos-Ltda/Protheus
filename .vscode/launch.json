@@ -22,5 +22,6 @@
 			"label": "SIGAEIC"
 		}
 	],
-	"lastProgramExecuted": "SIGAEIC"
+	"lastProgramExecuted": "<cancel>",
+	"lastProgramArguments": []
 }
