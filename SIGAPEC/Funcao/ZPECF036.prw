@@ -13,7 +13,7 @@ Geração do Faturamento a partir do recebimento do Picking
 @obs        Esta funcionalidade poderá ser utilizada para o faturamento do SIGAPEC
 /*/
 
-User Function ZPECF036(_aOrcs, _cPicking, _lEnviaEmail, _lTransaction)
+User Function ZPECF036(_aOrcs, _cPicking, _lEnviaEmail, _lTransaction, _cEmpresa, _cFilial, _lJob)
 Local _lRet 		:= .F.	
 Local _aMsg 		:= {}
 Local _aRegVS1		:= {}
@@ -29,11 +29,27 @@ Default _aOrcs			:= {}
 Default _cPicking		:= ""
 Default _lEnviaEmail	:= .T.	
 Default _lTransaction 	:= .T.  //pode vir de uma operaçao que ja esta em transaction
+Default _lJob			:= IsBlind()
+//Default _cEmpresa       := ""  
+//Default _cFilial		:= ""
 
 Private aParcBRNF  	:= {}
 
 Begin Sequence 	
-
+	//Tratar abertura da empresa conforme enviado no parametro
+	If _lJob 
+	 	If ValType(_cEmpresa) <> "C" .Or. ValType(_cFilial) <> "C"
+			Aadd(_aMsg,"Problemas na informação de Empresa e Filial para executar ZPECF036, Faturamento não realizado para este Picking !")
+			Break	
+		Endif 
+		Conout("ZPECF036 - Iniciando JOB")
+		If Type("cEmpAnt") <> "C" .or. cEmpAnt <> _cEmpresa .or. cFilAnt <> _cFilial
+			Conout("ZPECF036 - Abrindo empresa "+_cEmpresa+" Filial "+_cFilial)
+			RpcClearEnv() 
+			RPCSetType(3) 
+			RpcSetEnv(_cEmpresa,_cFilial,,,,GetEnvServer(),{ })
+		Endif
+	Endif	
 	If Len(_aOrcs) == 0
 		Aadd(_aMsg,"Não informado orçamentos para Faturar!")
 		Break	
@@ -59,7 +75,7 @@ Begin Sequence
 		If !ZPECF036FT(_cPedido, _cPicking, @_cNota, @_cSerie, @_cTitulo, _aRegVS1, _aVS9, @_aMsg)
 			Break
 		Endif 
-		If ZPECF036AT(_cPedido, _cNota, _cSerie, _cTitulo, _aRegVS1, _aPicking, @_aMsg)
+		If !ZPECF036AT(_cPedido, _cNota, _cSerie, _cTitulo, _aRegVS1, _aPicking, @_aMsg)
 			Break
 		Endif	
 		_lRet := .T. 
@@ -159,14 +175,37 @@ Begin Sequence
 			Aadd(_aMsg,"Orçamento "+_aOrcs[_nPos]+ " não localizado, para a geração da Nota Fiscal") 
 			Break
 		Endif 
-		//Tem que estar no Status F = A Faturar
-		If VS1->VS1_STATUS <> "F"			
-			Aadd(_aMsg,"Orçamento com Status "+AllTrim(VS1->VS1_STATUS)+" diferente de Status A FATURAR, para a geração da Nota Fiscal ") 
-			Break
-		Endif	
 		//Guardar informações pois serão utilizadas em diversos processamentos
 		_nRegVS1 	:= VS1->(Recno())
 		Aadd(_aRegVS1,_nRegVS1)
+		//Tem que estar no Status F = A Faturar
+		If VS1->VS1_STATUS <> "F"			
+			Aadd(_aMsg,"Orçamento "+VS1->VS1_NUMORC+" com Status "+AllTrim(VS1->VS1_STATUS)+" diferente de Status A FATURAR, para a geração da Nota Fiscal ") 
+			Break
+		Endif	
+		//Não permitir faturamento caso não esteja preenchido o picking
+		If Empty(VS1->VS1_XPICKI) 
+			Aadd(_aMsg,"Orçamento "+VS1->VS1_NUMORC+" não possui Picking, não será gerado Nota Fiscal") 
+			Break
+		Endif 
+		//localizar picking
+		SZK->(DbSetOrder(1))
+		If !SZK->(DbSeek(FWxFilial("SZK")+VS1->VS1_XPICKI))
+			Aadd(_aMsg,"Orçamento "+VS1->VS1_NUMORC+" com Picking "+VS1->VS1_XPICKI+" não localizado, não será gerado Nota Fiscal") 
+			Break
+		Endif 
+		//Verificar se o Picking esta liberado para faturamento
+		If 	!Empty(SZK->ZK_NF) .Or. SZK->ZK_STATUS $ 'B_C_F_D' .Or. Empty(SZK->ZK_STREG)
+			Aadd(_aMsg,"Orçamento "+VS1->VS1_NUMORC+" com Picking "+VS1->VS1_XPICKI+" o picking não possui status para faturamento, não será gerado Nota Fiscal") 
+			Break
+		Endif
+		/*
+		//Caso informado picking validar com orçamento, desta forma estou permitindo somente faturar um picking 
+		If !Empty(_cPicking) .And. AllTrim(_cPicking) <> AllTrim(VS1->VS1_XPICKI)
+			Aadd(_aMsg,"Orçamento "+VS1->VS1_NUMORC+" com Picking "+VS1->VS1_XPICKI+" diferente do Picking para faturamento "+_cPicking+", não será geraco notafiscal Nota Fiscal ") 
+			Break
+		Endif
+		*/
 		//Guardar numero do picking
 		If Ascan(_aPicking,VS1->VS1_XPICKI) == 0
 			Aadd(_aPicking,VS1->VS1_XPICKI)
@@ -352,7 +391,7 @@ Begin Sequence
 				Aadd(_aObsVS1, _cObs)
 			Endif
 			//Caso onde não são marcados os controles de Reserva
-		Elseif  _lExisteReserva .And. At("R",OI001GETFASE(VS1->VS1_NUMORC)) != 0 .or. At("T",OI001GETFASE(VS1->VS1_NUMORC)) != 0 
+		Elseif  At("R",OI001GETFASE(VS1->VS1_NUMORC)) != 0 .or. At("T",OI001GETFASE(VS1->VS1_NUMORC)) != 0 
 			aHeaderP    	:= {} 							// Variavel ultilizada na OX001RESITE
 			_aReservaCAOA 	:= {VS1->VS1_NUMORC,.F.}	// Variavel utilizada no PE OX001RES
 			_cDocto := VS1->(OX001RESITE(VS1->VS1_NUMORC, .F.))
@@ -987,7 +1026,7 @@ Begin Sequence
 	Endif
 	//Atualizar o financeiro caso crie
 	_cTitulo := SF2->F2_DUPL
-	//Baixa titulos a vista
+	//Baixa titulos a vista, não esta validando retorno pois caso não consiga baixar deve continuar com processo
 	ZPECF036BX(_cNota, @_aMsg)
 
 	If VS1->(FieldPos("VS1_GERFIN")) > 0 
@@ -1043,7 +1082,7 @@ Funcao responsavel por gerar o Financeiro
 @since 29/11/2017
 @version 1.0
 /*/
-Static Function ZPEFF036FN(_cNota,_cSerie,  _nRegSC5, _nRegSF2, _nRegSE4, _aRegVS1, _aVS9, _aMsg)
+Static Function ZPEFF036FN(_cNota, _cSerie,  _nRegSC5, _nRegSF2, _nRegSE4, _aRegVS1, _aVS9, _aMsg)
 Local _lRet 		:= .F.
 
 Local _cAliasPesq 	:= GetNextAlias()
@@ -1286,17 +1325,17 @@ Begin Sequence
 		Break 
 	Endif 
 	While (_cAliasPesq)->(!Eof())
-		(_cAliasPesq)->(DbGoto((_cAliasPesq)->NREGSE1))
+		SE1->(DbGoto((_cAliasPesq)->NREGSE1))
 		_aBaixa  := {;
-					{"E1_PREFIXO"  ,SE1->E1_PREFIXO             ,Nil } ,;
-					{"E1_NUM"	   ,SE1->E1_NUM                 ,Nil } ,;
-					{"E1_PARCELA"  ,SE1->E1_PARCELA             ,Nil } ,;
-					{"E1_TIPO"	   ,SE1->E1_TIPO                ,Nil } ,;
-					{"AUTMOTBX"	   ,"NOR"                  ,Nil } ,;
-					{"AUTDTBAIXA"  ,dDataBase              ,Nil } ,;
-					{"AUTDTCREDITO",dDataBase              ,Nil } ,;
-					{"AUTHIST"	   ,"BAIXA AUTOMATICA"     ,Nil } ,;
-					{"AUTVALREC"   ,SE1->E1_VALOR          ,Nil }}
+					{"E1_PREFIXO"  ,SE1->E1_PREFIXO   		,Nil } ,;
+					{"E1_NUM"	   ,SE1->E1_NUM        		,Nil } ,;
+					{"E1_PARCELA"  ,SE1->E1_PARCELA      	,Nil } ,;
+					{"E1_TIPO"	   ,SE1->E1_TIPO      		,Nil } ,;
+					{"AUTMOTBX"	   ,"NOR"                  	,Nil } ,;
+					{"AUTDTBAIXA"  ,dDataBase              	,Nil } ,;
+					{"AUTDTCREDITO",dDataBase              	,Nil } ,;
+					{"AUTHIST"	   ,"BAIXA AUTOMATICA"     	,Nil } ,;
+					{"AUTVALREC"   ,SE1->E1_VALOR          	,Nil }}
 		//PE criado para passagem de parâmetros customizados no ExecAuto do FINA070, seguindo o parâmetro MV_BXPEC
 		If ExistBlock("OX004BXF")
 			_aBaixa := ExecBlock("OX004BXF", .F., .F., _aBaixa)
@@ -1314,10 +1353,11 @@ Begin Sequence
 					_cErro	+= 	AllTrim(_aError[_nPos]) + CRLF
 				EndIf		
 			Next _nPos			
+			_cErro += "Faturamento ja foi realizado, não foi possivel baixar o titulo a vista"
 			Aadd(_aMsg,_cErro)
 			Break 
 		EndIf
-		SE1->(DbSkip())
+		(_cAliasPesq)->(DbSkip())
 	Enddo
 	_lRet := .T.
 End Sequence
@@ -1425,6 +1465,10 @@ Begin Sequence
 	Next _nPos
 
 	//Atualizando Status do Picking caso exista
+	_nPesoL := 0 
+	_nPesoB := 0
+	_nPesoS := 0
+
 	For _nPos := 1 To Len(_aPicking)
 		_cPicking := _aPicking[_nPos]
 		If SZK->(FieldPos("ZK_STATUS")) > 0   //N=Nao Envidado;E=Enviado;F=Faturado;C=Cancelado
@@ -1438,27 +1482,30 @@ Begin Sequence
 			_cQuery += " 	, 	SZK.ZK_SERIE ='" 	+ _cSerie 	+"' " 	+ CRLF
 		EndIf
 		_cQuery += " WHERE ZK_XPICKI = '"+_cPicking+"' AND ZK_FILIAL='" + xfilial("SZK") + "'"
-
 		_nStatus := TcSqlExec(_cQuery)
 		if (_nStatus < 0)
 			_cObs += "Não foi possivel atualizar status do Picking "+_cPicking+" para Faturado com a nota "+_cNota+" Serie "+_cSerie+", alterar o dados com ADM SISTEMA"+ CRLF
        		Aadd(_aMsg, _cObs)
 		Endif	
-	Next	
 
-	//Pegar a somatoria do peso para atualizar na nota
-	BeginSql Alias _cAliasPesq
-		SELECT SUM(ZK_PLIQUI) PLIQUI, SUM(ZK_PBRUTO) PBRUTO, SUM(ZK_XPESOC) XPESOC 
+		If Select((_cAliasPesq)) <> 0
+			(_cAliasPesq)->(DbCloseArea())
+		Endif 
+		//Pegar a somatoria do peso para atualizar na nota
+		BeginSql Alias _cAliasPesq
+			SELECT SUM(ZK_PLIQUI) PLIQUI, SUM(ZK_PBRUTO) PBRUTO, SUM(ZK_XPESOC) XPESOC 
        		FROM %table:SZK% SZK
        		WHERE 	SZK.ZK_FILIAL  	= %XFilial:SZK%
 				AND SZK.ZK_XPICKI  	= %Exp:_cPicking%
 			  	AND SZK.%notDel%		  
-	EndSql      
-	If (_cAliasPesq)->(!Eof()) 	
-		_nPesoL += (_cAliasPesq)->PLIQUI 
-		_nPesoB += (_cAliasPesq)->PBRUTO
-		_nPesoS += (_cAliasPesq)->XPESOC
-	EndIf
+		EndSql      
+		If (_cAliasPesq)->(!Eof()) 	
+			_nPesoL += (_cAliasPesq)->PLIQUI 
+			_nPesoB += (_cAliasPesq)->PBRUTO
+			_nPesoS += (_cAliasPesq)->XPESOC
+		EndIf
+	Next	
+
 	//reposiciono na nota
 	SF2->(DbGoto(_nRegSF2))
 	RecLock("SF2",.F.)

@@ -28,7 +28,6 @@ F 	- Função
 011 - Sequencial
 /*/
 
-
 User Function ZPECF011(_oJson)
 Local _aMsg		:= {}
 
@@ -222,7 +221,7 @@ Local _cFaseFat		:= "F"
 Local _cObs			:= ""
 Local _aMsgCAOA		:= {}
 Local _aOrc			:= {}
-Local _lFatAutomatico  := SuperGetMV( "CMV_PEC045"  ,,.F.)  //"WIS.T_DET_PEDIDO_SAIDA@DBLINK_WISHML"
+Local _lFatAutomaTico  := SuperGetMV( "CMV_PEC045"  ,,.F.)  //"WIS.T_DET_PEDIDO_SAIDA@DBLINK_WISHML"
 
 Local _nPos
 
@@ -319,7 +318,8 @@ Begin Sequence
 			VS1->(DbGoto(_aRegVS1[_nPos]))
 			Aadd(_aOrc,VS1->VS1_NUMORC)
 		Next 
-		U_ZPECF036(_aOrc, _cPicking, /*ENVIA EMAIL*/, /*Indica para não utilizar transaction*/)
+		StartJob("U_ZPECF036",GetEnvServer(),.F.,_aOrc, _cPicking, /*ENVIA EMAIL*/, /*Indica para não utilizar transaction*/, cEmpAnt, cFilAnt)
+		//U_ZPECF036(_aOrc, _cPicking, /*ENVIA EMAIL*/, /*Indica para não utilizar transaction*/)
 	Endif
 
 End Sequence
@@ -829,7 +829,7 @@ Begin Sequence
 			//AAdd(_aMsgCAOA,_cMens)  
 			//ZPEC11EMAI({_cMens}, _cPicking, (_cAliasPesq)->QT_PROT)  //Envio e-mail
 		Else 
-			_cMens		:= "Todos os itens estao com quantidades zeradas tanto para WIS como Protheus nao será processado e status dos orçamentos voltarão ao status inicial, Picking sera cancelado"
+			_cMens		:= "Todos os itens estao com quantidades zeradas para WIS ou Protheus,  Picking nao será processado e status dos orçamentos voltarão ao status inicial, Picking sera cancelado"
 			ZPEC11RMsg("divergewis",_cMens)  //divergewis deverá ser utilizada esta tag somente se ocorrer este processo
 			AAdd(_aMsgCAOA,_cMens)   
 			//rotina para cancelr picking
