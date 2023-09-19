@@ -108,7 +108,6 @@ User Function ZPECF037(oDlg,_nX,nOpcao,aPergs,cCaminho)
 		    Endif
 	    End
     Endif
-
     
 // Elementos da Matriz _aCelulas
 // 1o.-> Descrição do Campo
