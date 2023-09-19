@@ -28,8 +28,8 @@ User Function ZPECR024()
 	Local	dDtEmissAte	:= Ctod(Space(8))    //Ajustar isso
 	Local	cProduto	:= Space(TamSX3('W8_COD_I')[1]) //o que é [1] ?
 	Local	cContainer	:= Space(TamSX3('ZM_CONT')[1]) //o que é [1] ?
-	local   aCanal   	:= {"","1 - Todos"	,"2 - Vermelho","3 - Amarelo","4 - Verde","5 - Cinza"}
-	local   aNfEmitida  := {"","1 - Com NF","2 - Sem NF","3 - Todos"}
+	local   aCanal   	:= {"1 - Todos"	,"2 - Vermelho","3 - Amarelo","4 - Verde","5 - Cinza"}
+	local   aNfEmitida  := {"1 - Com NF","2 - Sem NF","3 - Todos"}
 	Private cTabela 	:= GetNextAlias()
 
  	aAdd(aPergs, {1,"Invoice"				,cInvoice	,/*Pict*/	,".T."		,"SW9"		,".T."	 ,80,.F.}) 	//MV_PAR01
@@ -41,14 +41,16 @@ User Function ZPECR024()
 	aAdd(aPergs, {1,"Dt emissao ate"		,dDtEmissAte,/*Pict*/	,MV_PAR07 > MV_PAR06	,/*F3*/	,/*When*/,50,.F.})  //MV_PAR07
 	aAdd(aPergs, {1,"Produto"				,cProduto	,/*Pict*/	,".T."		,"SB1"		,".T."	 ,80,.F.})  //MV_PAR08
 	aAdd(aPergs, {1,"Container"				,cContainer	,/*Pict*/	,".T."		,"_SZM"		,".T."	 ,80,.F.}) 	//MV_PAR09
-	aAdd(aPergs ,{2,"Canal"					,01,aCanal		,50,"",.T.})					//MV_PAR10 
-	aAdd(aPergs ,{2,"Invoice c/ NF emitida"	,01,aNfEmitida 	,50,"",.T.})					//MV_PAR11 
+	aAdd(aPergs ,{2,"Canal"					, 1, aCanal		,50,"",.T.})					//MV_PAR10 
+	aAdd(aPergs ,{2,"Invoice c/ NF emitida"	, 1, aNfEmitida ,50,"",.T.})					//MV_PAR11 
 	aAdd(aPergs ,{9,"Status invoice"		,200/*Larg*/,40 /*Alt */,.T./*Font Verdana*/}) 	//MV_PAR12
 	aAdd(aPergs ,{5,"Proximo embarque"		,.F./*Ini*/	,90 /*Size*/,/*Valid*/	,.F.}) 		//MV_PAR13
 	aAdd(aPergs ,{5,"Material em transito"	,.F./*Ini*/	,90 /*Size*/,/*Valid*/	,.F.}) 		//MV_PAR14
 	aAdd(aPergs ,{5,"Em rota de entrega"	,.F./*Ini*/	,90 /*Size*/,/*Valid*/	,.F.}) 		//MV_PAR15
 	aAdd(aPergs ,{5,"Entregue"	,.F./*Ini*/	,90 /*Size*/,/*Valid*/	,.F.}) 					//MV_PAR16
 	
+	
+
 	If ParamBox(aPergs, "Informe os parâmetros", , , , , , , , , .F., .F.)
    
 		oReport := fReportDef()
@@ -74,7 +76,6 @@ Static Function fReportDef() //Definições do relatório
 
 	Local oReport
 	Local oSection	:= Nil
-
 
 	oReport:= TReport():New("ZPECR024",;				// --Nome da impressão
                             "Status Invoice",;  // --Título da tela de parâmetros
@@ -140,8 +141,20 @@ Static Function ReportPrint(oReport)
 	Local oSectDad  := Nil
 	Local nAtual	:= 0
 	Local nTotal	:= 0
-	Local nMV_PAR10 	:= Val(Substr(MV_PAR10,1,1)) //CANAL
-    Local nMV_PAR11 	:= Val(Substr(MV_PAR11,1,1)) //INVOICE COM NF
+	Local nMV_PAR10
+    Local nMV_PAR11 
+
+	If ValType(MV_PAR10) == "N"	
+		nMV_PAR10 	:= MV_PAR10
+	else
+		nMV_PAR10 	:= Val(Substr(MV_PAR10,1,1)) //CANAL
+	EndIf
+	
+	If ValType(MV_PAR11) == "N"	
+		nMV_PAR11 	:= MV_PAR11
+	else
+		nMV_PAR11 	:= Val(Substr(MV_PAR11,1,1)) //INVOICE COM NF
+	EndIf
 
 	//Pegando as secoes do relatório
 	oSectDad := oReport:Section(1) //Primeira seção disponível
@@ -194,7 +207,9 @@ Static Function ReportPrint(oReport)
 				cQry += " 	AND SD1.D1_TES 		!= ' ' " 			+ CRLF
 				cQry += " THEN 'ENTREGUE' " 						+ CRLF
 			EndIf
-			cQry += " END AS STATUS "									+ CRLF		 
+			cQry += " END AS STATUS "								+ CRLF	
+		else
+			cQry += " , NULL AS STATUS " 								+ CRLF 	 
 		EndIf
 
 		cQry += "		, CASE	"										+ CRLF
@@ -220,7 +235,7 @@ Static Function ReportPrint(oReport)
 		cQry += "		, SW8.W8_SEGURO "  												+ CRLF
 		cQry += "		, SW6.W6_NF_ENT	 "  											+ CRLF
 		cQry += "		, (SELECT MAX(SD1TMP.D1_DOC) FROM " + RetSqlName("SD1") + " SD1TMP"	+ CRLF
-		cQry += "			WHERE SD1TMP.D1_FILIAL 	= '" + FWxFilial("SD1TMP") + "'" 	+ CRLF
+		cQry += "			WHERE SD1TMP.D1_FILIAL 	= SW8.W8_FILIAL " 					+ CRLF
 		cQry += "			AND SD1TMP.D1_CONHEC   	= SW8.W8_HAWB " 					+ CRLF
 		cQry += "			AND SD1TMP.D1_FORNECE  	= SF1.F1_FORNECE " 					+ CRLF
 		cQry += "			AND SD1TMP.D1_LOJA 		= SF1.F1_LOJA " 					+ CRLF
@@ -228,7 +243,7 @@ Static Function ReportPrint(oReport)
 		cQry += "			AND SD1TMP.D_E_L_E_T_ 	= ' ' " 							+ CRLF
 		cQry += "		) AS DOC_MAE " 													+ CRLF
 		cQry += "		,(SELECT MAX(SD1TMP.D1_EMISSAO) FROM " + RetSqlName("SD1") + " SD1TMP" + CRLF
-		cQry += "			WHERE SD1TMP.D1_FILIAL 	= '" + FWxFilial("SD1TMP") + "'" 	+ CRLF
+		cQry += "			WHERE SD1TMP.D1_FILIAL 	= SW8.W8_FILIAL " 					+ CRLF
 		cQry += "			AND SD1TMP.D1_CONHEC   	= SW8.W8_HAWB " 					+ CRLF
 		cQry += "			AND SD1TMP.D1_FORNECE  	= SF1.F1_FORNECE " 					+ CRLF
 		cQry += "			AND SD1TMP.D1_LOJA 		= SF1.F1_LOJA " 					+ CRLF
@@ -419,6 +434,8 @@ Static Function ReportPrint(oReport)
 				cQry += " THEN 'MATERIAL EM TRANSITO' " 			+ CRLF
 			EndIf
 			cQry += " END AS STATUS "								+ CRLF		
+		else
+			cQry += " , NULL AS STATUS "							+ CRLF
 		EndIf
 		
 		cQry += "		, CASE	"										+ CRLF
