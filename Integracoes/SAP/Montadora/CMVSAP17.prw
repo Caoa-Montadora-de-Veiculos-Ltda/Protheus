@@ -275,7 +275,8 @@ while !(cAliasNF)->(Eof())
 				SE1->(dbSkip())
 			Enddo
 
-			// reposiciona no 1 registro novamente
+			// reposiciona no 1 registro novamente caso não seja RA  (PVF)
+			//IF SE1->E1_TIPO = 'RA ' .AND. SE1->E1_PREFIXO = 'PVF'
 			SE1->(dbGoto(nRegSE1))
 
 			// posiciona cliente
