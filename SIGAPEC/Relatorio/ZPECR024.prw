@@ -28,8 +28,8 @@ User Function ZPECR024()
 	Local	dDtEmissAte	:= Ctod(Space(8))    //Ajustar isso
 	Local	cProduto	:= Space(TamSX3('W8_COD_I')[1]) //o que é [1] ?
 	Local	cContainer	:= Space(TamSX3('ZM_CONT')[1]) //o que é [1] ?
-	local   aCanal   	:= {" ","1 - Todos"	,"2 - Vermelho","3 - Amarelo","4 - Verde","5 - Cinza"}
-	local   aNfEmitida  := {" ","1 - Com NF","2 - Sem NF","3 - Todos"}
+	local   aCanal   	:= {"","1 - Todos"	,"2 - Vermelho","3 - Amarelo","4 - Verde","5 - Cinza"}
+	local   aNfEmitida  := {"","1 - Com NF","2 - Sem NF","3 - Todos"}
 	Private cTabela 	:= GetNextAlias()
 
  	aAdd(aPergs, {1,"Invoice"				,cInvoice	,/*Pict*/	,".T."		,"SW9"		,".T."	 ,80,.F.}) 	//MV_PAR01
@@ -140,14 +140,13 @@ Static Function ReportPrint(oReport)
 	Local oSectDad  := Nil
 	Local nAtual	:= 0
 	Local nTotal	:= 0
-	Local nMV_PAR10 	:= Val(Substr(MV_PAR10,1,1))
-    Local nMV_PAR11 	:= Val(Substr(MV_PAR11,1,1))
+	Local nMV_PAR10 	:= Val(Substr(MV_PAR10,1,1)) //CANAL
+    Local nMV_PAR11 	:= Val(Substr(MV_PAR11,1,1)) //INVOICE COM NF
 
 	//Pegando as secoes do relatório
 	oSectDad := oReport:Section(1) //Primeira seção disponível
 
-	If 	((nMV_PAR11 = 1) .OR. (nMV_PAR11 = 3)) // ------------ Query 1
-		//Montando a Query QUERY 1
+	If 	((nMV_PAR11 = 1) .OR. (nMV_PAR11 = 3)) // ------------ Query 1 com Nota Fiscal
 		cQry += " 	SELECT " 		 								+ CRLF
 		cQry += "		SW9.W9_FILIAL" 								+ CRLF
 		cQry += "		, NVL(SZM.R_E_C_N_O_,0)  AS SZM_REC " 		+ CRLF
@@ -156,7 +155,7 @@ Static Function ReportPrint(oReport)
 		cQry += "		, SW6.R_E_C_N_O_ 	AS SW6 " 				+ CRLF
 		cQry += "		, SW7.R_E_C_N_O_ 	AS SW7 " 				+ CRLF	
 		cQry += "		, SW9.W9_INVOICE" 							+ CRLF
-		cQry += "		, SW9.W9_DT_EMIS AS DT_EMISSAO " 		+ CRLF 
+		cQry += "		, SW9.W9_DT_EMIS AS DT_EMISSAO " 			+ CRLF 
 		//cQry += "		, SUBSTR(SW9.W9_DT_EMIS,7,2)||'/'||SUBSTR(SW9.W9_DT_EMIS,5,2)||'/'||SUBSTR(SW9.W9_DT_EMIS,1,4) AS DT_EMISSAO " 		+ CRLF 
 		cQry += "		, SW6.W6_IDENTVE"	 						+ CRLF
 		cQry += "		, SW6.W6_VIA_TRA"	 						+ CRLF
@@ -177,15 +176,27 @@ Static Function ReportPrint(oReport)
 		
 		If (MV_PAR15 .OR. MV_PAR16)
 			cQry += "	, CASE "								    + CRLF
-			If MV_PAR15 = .T.
-				cQry += " SW6.W6_DT_DESE != ' '  							THEN 'EM ROTA DE ENTREGA' " 	+ CRLF
+			If MV_PAR15 //EM ROTA DE ENTREGA
+				cQry += " WHEN " 									+ CRLF
+				cQry += " 	SW6.W6_DT_EMB 		!= ' ' " 			+ CRLF
+				cQry += " 	AND SW6.W6_CHEG 	!= ' ' " 			+ CRLF
+				cQry += " 	AND SW6.W6_DT_DESE 	!= ' ' " 			+ CRLF
+				cQry += " 	AND SD1.D1_TESACLA 	!= ' ' " 			+ CRLF
+				cQry += " 	AND SD1.D1_TES 		= ' ' " 			+ CRLF
+				cQry += " THEN 'EM ROTA DE ENTREGA' " 				+ CRLF
 			EndIf
-			If MV_PAR16 = .T.
-				cQry += " SW6.W6_DT_DESE = ' '   							THEN 'ENTREGUE' " 				+ CRLF
+			If MV_PAR16 //ENTREGUE
+				cQry += " WHEN " 									+ CRLF
+				cQry += " 	SW6.W6_DT_EMB 		!= ' ' " 			+ CRLF
+				cQry += " 	AND SW6.W6_CHEG 	!= ' ' " 			+ CRLF
+				cQry += " 	AND SW6.W6_DT_DESE 	!= ' ' " 			+ CRLF
+				cQry += " 	AND SD1.D1_TESACLA 	!= ' ' " 			+ CRLF
+				cQry += " 	AND SD1.D1_TES 		!= ' ' " 			+ CRLF
+				cQry += " THEN 'ENTREGUE' " 						+ CRLF
 			EndIf
 			cQry += " END AS STATUS "									+ CRLF		 
 		EndIf
-		
+
 		cQry += "		, CASE	"										+ CRLF
 		cQry += "			WHEN SW6.W6_CANAL = '1' THEN 'VERMELHO' " 	+ CRLF
 		cQry += "			WHEN SW6.W6_CANAL = '2' THEN 'AMARELO' " 	+ CRLF
@@ -294,7 +305,6 @@ Static Function ReportPrint(oReport)
 		cQry += "		    SW9.W9_FILIAL 		= '" + FWxFilial("SW9") + "'"			+ CRLF
 		cQry += "		AND SF1.F1_DOC 		= D1_DOC "									+ CRLF
 		cQry += "		AND SF1.F1_SERIE	= SD1.D1_SERIE "							+ CRLF
-		cQry += "		AND SF4.F4_ESTOQUE 	= 'S' "										+ CRLF
 		
 		If !Empty(DtoS(MV_PAR03)) //DT INVOICE ATE
 			cQry += " 	AND SW9.W9_DT_EMIS BETWEEN '" 	+ DtoS(MV_PAR02) + "' AND '" + DtoS(MV_PAR03) + "'" + CRLF
@@ -326,7 +336,7 @@ Static Function ReportPrint(oReport)
 		
 		Do case //COD CANAL
 			case nMV_PAR10 = 2 
-				cQry += "	AND SW6.W6_CANAL 		= '1'" 			+ CRLF //Vermelho
+			cQry += "	AND SW6.W6_CANAL 		= '1'" 			+ CRLF //Vermelho
 			case nMV_PAR10 = 3 
 			cQry += "	AND SW6.W6_CANAL 		= '2'" 			+ CRLF //Verde
 			case nMV_PAR10 = 4 
@@ -334,10 +344,29 @@ Static Function ReportPrint(oReport)
 			case nMV_PAR10 = 5 
 			cQry += "	AND SW6.W6_CANAL 		= '4'" 			+ CRLF //Cinza
 		EndCase
+		
+		If (MV_PAR15 .or. MV_PAR16)
+			If MV_PAR15 //EM ROTA DE ENTREGA
+				cQry += " 	AND SW6.W6_DT_EMB 	!= ' ' " 			+ CRLF
+				cQry += " 	AND SW6.W6_CHEG 	!= ' ' " 			+ CRLF
+				cQry += " 	AND SW6.W6_DT_DESE 	!= ' ' " 			+ CRLF
+				cQry += " 	AND SD1.D1_TESACLA 	!= ' ' " 			+ CRLF
+				cQry += " 	AND SD1.D1_TES 		= ' ' " 			+ CRLF
+			EndIf
+			
+			If MV_PAR16 //ENTREGUE
+				cQry += " 	AND SW6.W6_DT_EMB 	!= ' ' " 			+ CRLF
+				cQry += " 	AND SW6.W6_CHEG 	!= ' ' " 			+ CRLF
+				cQry += " 	AND SW6.W6_DT_DESE 	!= ' ' " 			+ CRLF
+				cQry += " 	AND SD1.D1_TESACLA 	!= ' ' " 			+ CRLF
+				cQry += " 	AND SD1.D1_TES 		!= ' ' " 			+ CRLF
+			EndIf
+		Else
+				cQry += "	AND SF4.F4_ESTOQUE 	= 'S' "				+ CRLF
+		EndIf
 
 		cQry += "		AND SW9.D_E_L_E_T_ 	= ' '"					+ CRLF
 		//cQry += "		ORDER BY SW9.W9_DT_EMIS, SW9.W9_INVOICE "	+ CRLF
-
 	
 	EndIf
 	
@@ -345,8 +374,7 @@ Static Function ReportPrint(oReport)
 		cQry += "		UNION "			+ CRLF
 	EndIf
 
-	If ((nMV_PAR11 = 3) .OR. (nMV_PAR11 = 2)) // ------------ Query 2
-		//Montando a Query QUERY 2 
+	If ((nMV_PAR11 = 3) .OR. (nMV_PAR11 = 2)) // ------------ Query 2 sem Nota Fiscal
 		cQry += " 	SELECT " 		 								+ CRLF
 		cQry += "		SW9.W9_FILIAL" 								+ CRLF
 		cQry += "		, NVL(SZM.R_E_C_N_O_,0)  AS SZM_REC " 		+ CRLF
@@ -376,13 +404,21 @@ Static Function ReportPrint(oReport)
 		
 		If (MV_PAR13 .OR. MV_PAR14) //STATUS INVOICE
 			cQry += "	, CASE "								    + CRLF
-			If MV_PAR15 = .T.
-				cQry += " SW6.W6_DT_EMB  = ' '  							THEN 'PROXIMO EMBARQUE' " 		+ CRLF
+			If MV_PAR13 //PROXIMO EMBARQUE
+				cQry += " WHEN " 									+ CRLF
+				cQry += " 	SW6.W6_DT_EMB 		= ' ' " 			+ CRLF
+				cQry += " 	AND SW6.W6_CHEG 	= ' ' " 			+ CRLF
+				cQry += " 	AND SW6.W6_DT_DESE 	= ' ' " 			+ CRLF
+				cQry += " THEN 'PROXIMO EMBARQUE' " 				+ CRLF
 			EndIf
-			If MV_PAR16 = .T.
-				cQry += " SW6.W6_DT_EMB  != ' ' AND SW6.W6_CHEG = ' '		THEN 'MATERIAL EM TRANSITO' " 	+ CRLF
+			If MV_PAR14 //MATERIAL EM TRANSITO
+				cQry += " WHEN " 									+ CRLF
+				cQry += " 	SW6.W6_DT_EMB 		!= ' ' " 			+ CRLF
+				cQry += " 	AND SW6.W6_CHEG 	= ' ' " 			+ CRLF
+				cQry += " 	AND SW6.W6_DT_DESE 	= ' ' " 			+ CRLF
+				cQry += " THEN 'MATERIAL EM TRANSITO' " 			+ CRLF
 			EndIf
-			cQry += " END AS STATUS "									+ CRLF		 
+			cQry += " END AS STATUS "								+ CRLF		
 		EndIf
 		
 		cQry += "		, CASE	"										+ CRLF
@@ -467,7 +503,7 @@ Static Function ReportPrint(oReport)
 		
 		Do case //COD CANAL
 			case nMV_PAR10 = 2 
-				cQry += "	AND SW6.W6_CANAL 		= '1'" 			+ CRLF //Vermelho
+			cQry += "	AND SW6.W6_CANAL 		= '1'" 			+ CRLF //Vermelho
 			case nMV_PAR10 = 3 
 			cQry += "	AND SW6.W6_CANAL 		= '2'" 			+ CRLF //Verde
 			case nMV_PAR10 = 4 
@@ -476,7 +512,19 @@ Static Function ReportPrint(oReport)
 			cQry += "	AND SW6.W6_CANAL 		= '4'" 			+ CRLF //Cinza
 		EndCase
 
-		cQry += "		AND SW9.D_E_L_E_T_ 	= ' '"					+ CRLF
+		If MV_PAR13 //PROXIMO EMBARQUE
+			cQry += " 	AND SW6.W6_DT_EMB 	= ' ' " 			+ CRLF
+			cQry += " 	AND SW6.W6_CHEG 	= ' ' " 			+ CRLF
+			cQry += " 	AND SW6.W6_DT_DESE 	= ' ' " 			+ CRLF
+		EndIf
+		
+		If MV_PAR14 //MATERIAL EM TRANSITO
+			cQry += " 	AND SW6.W6_DT_EMB 	!= ' ' " 			+ CRLF
+			cQry += " 	AND SW6.W6_CHEG 	= ' ' " 			+ CRLF
+			cQry += " 	AND SW6.W6_DT_DESE 	= ' ' " 			+ CRLF
+		EndIf
+
+		cQry += "		AND SW9.D_E_L_E_T_ 	= ' '"				+ CRLF
 		//cQry += "		ORDER BY SW9.W9_DT_EMIS, SW9.W9_INVOICE "	+ CRLF
 
 	EndIf
