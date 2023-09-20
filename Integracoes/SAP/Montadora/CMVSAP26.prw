@@ -29,7 +29,7 @@ Rdmake 	responsavel Integração SAP Contas a Receber RA
 @history  	
 --------------------------------------------------------------------------------------*/
 
-User Function CMVSAP12( aParam )
+User Function CMVSAP26( aParam )
 
 local oWsdl
 local cAliasCtb		:= ""
@@ -142,7 +142,7 @@ VRJ->(dbSetOrder(1))
 cQ := "SELECT SZ7.*,SZ7.R_E_C_N_O_ SZ7_RECNO "
 cQ += "FROM "+RetSqlName("SZ7")+" SZ7 "
 //cQ += "WHERE (Z7_XSTATUS = 'P' OR (Z7_XSTATUS = 'E' AND Z7_XDTINC >= '"+dTos(dDataBase-nDiasErro)+"') OR (Z7_XSTATUS = 'A' AND Z7_XDTINC >= '"+dTos(dDataBase-nDiasAguar)+"' AND Z7_XDTINC < '"+dTos(dDataBase-1)+"')) "
-cQ += "WHERE ((Z7_XTABELA = 'SE1' AND Z7_TIPONF NOT IN ('B','D')) "
+cQ += "WHERE (Z7_XTABELA = 'SE1' AND Z7_TIPONF NOT IN ('B','D')) "
 cQ += "   AND Z7_SERORI = 'PVF' "
 cQ += "   AND (Z7_XSTATUS = 'P' OR (Z7_XSTATUS = 'E' AND Z7_XDTINC >= '"+dTos(dDataBase-nDiasErro)+"')) "
 //cQ += "WHERE Z7_XSTATUS = 'P' "
@@ -1312,8 +1312,8 @@ return cRet
 
 
 // chamada via job por arquivo .INI
-user function xCMVSA12(xParam1,xParam2,xParam3)
+user function xCMVSA26(xParam1,xParam2,xParam3)
 
-U_CMVSAP12({{xParam1,xParam2,Val(xParam3)}})
+U_CMVSAP26({{xParam1,xParam2,Val(xParam3)}})
 
 Return()

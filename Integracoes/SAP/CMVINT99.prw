@@ -636,7 +636,8 @@ User Function xCMVREP()
 
     Local cAlias 		:= oBrowse:Alias()
     Local nRec			:= (cAlias)->RECSZ7
-    Local _cEmp    := FWCodEmp()
+    Local _cEmp         := FWCodEmp()
+    Local _nPos         := 0
 
     dbSelectArea("SZ7")
     SZ7->(dbSetOrder(0))
@@ -650,6 +651,9 @@ User Function xCMVREP()
         EndIf
 
         If _cEmp == "2010" //Executa o p.e. Anapolis.
+
+            _nPos := At("RA", (cAlias)->Z7_XCHAVE)
+
             If (cAlias)->Z7_XTABELA == "SA1"
                 //U_CMVSAP02( nil , nil , nRec )
                 U_CMVSAP02( { { cEmpAnt , cFilAnt , nRec } } )
@@ -674,8 +678,12 @@ User Function xCMVREP()
                 If SZ7->Z7_XSTATUS == "P"
                     U_CMVSAP03( { { cEmpAnt , cFilAnt , nRec } } )
                 Endif
-            ElseIf (cAlias)->Z7_XTABELA == "SE1"
-                U_CMVSAP17( { { cEmpAnt , cFilAnt , nRec } } )
+            ElseIf SZ7->Z7_XTABELA == "SE1" 
+                IF _nPos = 0
+                    U_CMVSAP17( { { cEmpAnt , cFilAnt , nRec } } )
+                ELSE
+                    U_CMVSAP26( { { cEmpAnt , cFilAnt , nRec } } )
+                ENDIF
             Else
                 //Alert("Tipo não contemplado no reprocessamento")
                 Help("",1,"Reprocessamento",,"Tipo não contemplado no reprocessamento",1,0)
