@@ -318,7 +318,7 @@ Begin Sequence
 			VS1->(DbGoto(_aRegVS1[_nPos]))
 			Aadd(_aOrc,VS1->VS1_NUMORC)
 		Next 
-		StartJob("U_ZPECF036",GetEnvServer(),.F.,_aOrc, _cPicking, /*ENVIA EMAIL*/, /*Indica para não utilizar transaction*/, cEmpAnt, cFilAnt)
+		StartJob("U_ZPECF036",GetEnvServer(),.F.,_aOrc, _cPicking, cEmpAnt, cFilAnt, /*ENVIA EMAIL*/, /*Indica transaction*/,/*indica job*/)
 		//U_ZPECF036(_aOrc, _cPicking, /*ENVIA EMAIL*/, /*Indica para não utilizar transaction*/)
 	Endif
 

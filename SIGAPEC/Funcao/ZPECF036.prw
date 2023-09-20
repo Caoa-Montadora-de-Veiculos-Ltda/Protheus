@@ -13,7 +13,7 @@ Geração do Faturamento a partir do recebimento do Picking
 @obs        Esta funcionalidade poderá ser utilizada para o faturamento do SIGAPEC
 /*/
 
-User Function ZPECF036(_aOrcs, _cPicking, _lEnviaEmail, _lTransaction, _cEmpresa, _cFilial, _lJob)
+User Function ZPECF036(_aOrcs, _cPicking, _cEmpresa, _cFilial, _lEnviaEmail, _lTransaction, _lJob)
 Local _lRet 		:= .F.	
 Local _aMsg 		:= {}
 Local _aRegVS1		:= {}
@@ -337,6 +337,10 @@ Begin Sequence
 			if SC6->(FieldPos("C6_OBSFCMP")) > 0 .AND. (VS3->(FieldPos("VS3_OBSFCP")) > 0 .and. !Empty(VS3->VS3_OBSFCP) )
 				aAdd(_aIteTempPV,{"C6_OBSFCMP", VS3->VS3_OBSFCP					,Nil})
 			endif
+			If SC6->(FieldPos("C6_XORCVS3")) > 0 
+				aAdd(_aIteTempPV,{"C6_XORCVS3" , VS3->VS3_NUMORC 				,Nil})
+			Endif
+
 			// NT 2021.004 v1.21        
 			If ( ExistBlock("OXX004AIPV") )
 				_aIteTempPV := ExecBlock("OXX004AIPV",.f.,.f.,{_aIteTempPV})
@@ -629,9 +633,9 @@ Begin Sequence
 	Enddo
 	_cPedido := SC5->C5_NUM
 	//Atualizar Pedido com o numero da Cotação sempre será utilizado o numero inicial
-	If SC5->(FieldPos("C5_NUMORC")) > 0
+	If SC5->(FieldPos("C5_XPICKI")) > 0
 		SC5->(RecLock("SC5",.f.))
-		SC5->C5_NUMORC = VS1->VS1_NUMORC
+		SC5->C5_XPICKI = VS1->VS1_NUMORC
 		SC5->(MsUnlock())
 	Endif
 
@@ -1601,7 +1605,7 @@ Begin Sequence
 			AND SX5.X5_DESCRI 	<> ' '				
 	EndSql
 	If (_cAliasPesq)->(Eof())
-		Conout("[ZPECF011] - Não cadatrado email SX5 Tabela 2E, referente a problemas ocorridos no recebimento do Picking")
+		Conout("[ZPECF036] - Não cadatrado email SX5 Tabela 2D, referente a problemas ocorridos no recebimento do Picking")
 		Break
 	Endif 
 	While (_cAliasPesq)->(!Eof())
@@ -1647,16 +1651,16 @@ Local _cReplyTo			:= ""
 Local _cCorItem			:= "FFFFFF"
 Local _lEnvia			:= .T.
 Local _cLogo  			:= 'https://tinyurl.com/logocaoa'  
-Local _cNomeUsu 		:= "RECEBIMENTO RETORNO PICKING RGLOG [ZPECF011]"  //Upper(FwGetUserName(RetCodUsr())) //Retorna o nome completo do usuário  __cUserId
+Local _cNomeUsu 		:= "RECEBIMENTO RETORNO PICKING RGLOG FATURAMENTO AUTOMATICO[ZPECF036]"  //Upper(FwGetUserName(RetCodUsr())) //Retorna o nome completo do usuário  __cUserId
 Local _cCodUsu			:= "RGLOG_JS" //RetCodUsr()
 Local _cDescricao		:= ""
-Local _cRotina			:= "ZPECF011"
+Local _cRotina			:= "ZPECF036"
 Local _nPos
 
 Default _aMsg			:= {}
 Default _cPedido		:= ""
 Default _aPicking		:= {}
-Default _cAssunto		:= "Informacoes Retorno Picking [ZPECF011]"
+Default _cAssunto		:= "Informacoes Retorno Picking Faturamento Automatico [ZPECF036]"
 Default _cEmails 		:= "evandro.mariano@caoa.com.br"  //E-mail para envio problemas integração  
 Default _cEMailCopia	:= ""
 Default _aAnexos		:= {}
@@ -1665,7 +1669,7 @@ Default _lSchedule   	:= IsBlind()
 Begin Sequence 
 	_lMsgErro			:= IF( _lSchedule == .F., .T. , .F. )
 	If Empty(_cEmails)
-		_cTexto := "**** Erros referente ao processo de importação Retorno Picking função [ZPECF011] não possui e-mail cadastrado no SX5 Tabela 2E ****"
+		_cTexto := "**** Erros referente ao processo de importação Retorno Picking função [ZPECF036] não possui e-mail cadastrado no SX5 Tabela 2E ****"
 		_cTexto += "     Os mesmos serão gravados no log do Sistema conforme informações abaixo" 
 		Conout(_cTexto)
 		For _nPos := 1 To Len(_aMsg)
@@ -1687,7 +1691,7 @@ Begin Sequence
 	_cHtml := ""
 	_cHtml += "<html>"+ CRLF
 	_cHtml += "	<head>"+ CRLF
-	_cHtml += "		<title>Processo de importação Retorno Picking [ZPECF011] Informações/Erros</title>"+ CRLF
+	_cHtml += "		<title>Processo de importação Retorno Picking [ZPECF036] Faturamento Automatico Informações/Erros</title>"+ CRLF
 	_cHtml += "	</head>"+ CRLF
 	_cHtml += "	<body leftmargin='0' topmargin='0' rightmargin='0' bottommargin='0'>"+ CRLF
 	_cHtml += "		<table width='100%' height='100%' border='0' cellpadding='0' cellspacing='0'>"+ CRLF
