@@ -136,7 +136,7 @@ Static Function TmpDados()
 	//cQuery += " AND	STJ.TJ_SERVICO BETWEEN '" + MV_PAR05 + "' AND '" + MV_PAR06 + "' "	                      	        				    	+ CRLF		                                                                       					+ CRLF
 	//cQuery += " AND STJ.D_E_L_E_T_  =   ' '       "                                                                         					+ CRLF
 
-	cQuery += " SELECT T9_CODBEM,T9_NOME,T9_PRIORID,T9_CCUSTO,T9_DESCRIC,T9_LOCAL  FROM " + RetSqlName("ST9") + " ST9 " 	+ CRLF
+	cQuery += " SELECT T9_CODBEM,T9_NOME,T9_PRIORID,T9_CCUSTO,T9_DESCRIC,T9_LOCAL  FROM " + RetSqlName("ST9") + " ST9 "                     	+ CRLF
 	cQuery += "     WHERE "                                                                                                 					+ CRLF
 	cQuery += "     ST9.T9_FILIAL = '" + xfilial("ST9") + "'"                                                               					+ CRLF
 	cQuery += "     AND	ST9.T9_CODBEM BETWEEN '" + MV_PAR01 + "' AND '" + MV_PAR02 + "' "	                      	        					+ CRLF
@@ -171,8 +171,8 @@ Static Function CriaSx1()
 	aAdd(aReg,{cPerg,"04","Localizacao Até","mv_ch4","C", 17,0,0,"G","(mv_par04>=mv_par03)","mv_par04","","ZZZZZZZZZ","","","","","","","","","","","","","STJA","","","",""})
 	aAdd(aReg,{cPerg,"05","Servico De     ","mv_ch5","C", 17,0,0,"G","","mv_par05","","","","","","","","","","","","","","","STJS","","","",""})
 	aAdd(aReg,{cPerg,"06","Servico Até    ","mv_ch6","C", 17,0,0,"G","(mv_par06>=mv_par05)","mv_par06","","ZZZZZZZZZ","","","","","","","","","","","","","STJS","","","",""})	
-	aAdd(aReg,{"X1_GRUPO","X1_ORDEM","X1_PERGUNT","X1_VARIAVL","X1_TIPO","X1_TAMANHO","X1_DECIMAL","X1_PRESEL","X1_GSC","X1_VALID","X1_VAR01","X1_DEF01","X1_CNT01","X1_VAR02","X1_DEF02","X1_CNT02","X1_VAR03","X1_DEF03","X1_CNT03","X1_VAR04","X1_DEF04","X1_CNT04","X1_VAR05","X1_DEF05","X1_CNT05","X1_F3","X1_PYME","X1_GRPSXG","X1_HELP","X1_PICTURE"})
-*/	
+*/	aAdd(aReg,{"X1_GRUPO","X1_ORDEM","X1_PERGUNT","X1_VARIAVL","X1_TIPO","X1_TAMANHO","X1_DECIMAL","X1_PRESEL","X1_GSC","X1_VALID","X1_VAR01","X1_DEF01","X1_CNT01","X1_VAR02","X1_DEF02","X1_CNT02","X1_VAR03","X1_DEF03","X1_CNT03","X1_VAR04","X1_DEF04","X1_CNT04","X1_VAR05","X1_DEF05","X1_CNT05","X1_F3","X1_PYME","X1_GRPSXG","X1_HELP","X1_PICTURE"})
+	
 	DbSelectArea("SX1")
 	DbSetOrder(1)
 	For ny := 1 To Len(aReg) - 1
