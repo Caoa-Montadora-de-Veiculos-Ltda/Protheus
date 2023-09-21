@@ -2,7 +2,20 @@
 #Include 'FWMVCDef.ch'
 #INCLUDE "FWBROWSE.CH"
 
-User Function ZPECF040()
+/*/{Protheus.doc} ZPECF040
+Calculo Curva ABC 
+@param  	
+@author 	DAC - Denilso
+@version  	P12.1.25
+@since  	15/07/2022
+@return  	NIL
+@obs
+@project	GAP014 | Cálculo da Curva ABC
+@history    Validar Inclusão campos obrigatório e Alteração o que tiver na planilha alterar no produto existente 
+/*/
+
+
+User Function ZPECF040
 Local _oBrw
 Local _oSay
     _oBrw := FWMBrowse():New()
@@ -12,18 +25,18 @@ Local _oSay
 	_oBrw:AddButton("Processar"  	, { || FwMsgRun(,{ | _oSay | ZPECF040PR(@_oBrw, @_oSay) }, "Processando Curva ABC", "Aguarde...")  },,,, .F., 2 )  
 
     _oBrw:Activate()
+Return Nil 
 
-Return
-
-/*
-=====================================================================================
-Programa.:              MenuDef
-Autor....:              CAOA - Fagner Ferraz Barreto
-Data.....:              08/12/2020
-Descricao / Objetivo:   Menu
-=====================================================================================
-*/
-
+/*/{Protheus.doc} MenuDef
+Inclusão dados no menu 		
+@author 	DAC
+@since 		15/07/2023
+@version 	undefined
+@param 		
+@type 		Static function
+@ Obs		
+@history    
+/*/
 Static Function MenuDef()
     Local _aRet := {}
     ADD OPTION _aRet TITLE 'Gerar Excel'    ACTION 'VIEWDEF.ZPECF040'   OPERATION 7                     ACCESS 0
@@ -31,14 +44,16 @@ Static Function MenuDef()
 Return _aRet
 
 
-/*
-=====================================================================================
-Programa.:              ModelDef
-Autor....:              CAOA - Fagner Ferraz Barreto
-Data.....:              08/12/2020
-Descricao / Objetivo:   Model       
-=====================================================================================
-*/
+/*/{Protheus.doc} MenuModelDefDef
+Modelo de Dados 		
+@author 	DAC
+@since 		15/07/2023
+@version 	undefined
+@param 		
+@type 		Static function
+@ Obs		
+@history    
+/*/
 Static Function ModelDef()
     Local _oModel    := Nil
     Local _oStruSZO  := FWFormStruct(1, "SZO")
@@ -52,14 +67,17 @@ Static Function ModelDef()
 
 Return _oModel
 
-/*
-=====================================================================================
-Programa.:              ViewDef
-Autor....:              CAOA - Fagner Ferraz Barreto
-Data.....:              08/12/2020
-Descricao / Objetivo:   View  
-=====================================================================================
-*/
+
+/*/{Protheus.doc} ViewDef
+View 		
+@author 	DAC
+@since 		15/07/2023
+@version 	undefined
+@param 		
+@type 		Static function
+@ Obs		
+@history    
+/*/
 Static Function ViewDef()
     Local _oModel        := ModelDef()
     Local _oStruSZO      := FWFormStruct(2, "SZO")
@@ -85,7 +103,16 @@ Return _oView
 
 
 
-//Função para processar Curva
+/*/{Protheus.doc} ZPECF040PR
+Função para processar Curva
+@author 	DAC
+@since 		15/07/2023
+@version 	undefined
+@param 		
+@type 		Static function
+@ Obs		
+@history    
+/*/
 Static Function ZPECF040PR(_ObrW, _oSay)
 Local _aSays	    := {}
 Local _aButtons	    := {}
@@ -160,7 +187,16 @@ Return Nil
 
 
 
-//Query de processamento Curva
+/*/{Protheus.doc} ZPECF040PR
+Query de processamento Curva
+@author 	DAC
+@since 		15/07/2023
+@version 	undefined
+@param 		
+@type 		Static function
+@ Obs		
+@history    
+/*/
 Static Function ZPECF040QY(_aRet, _oSay)
 Local _cTable 		:= RetSqlName("SZO")
 Local _cProdutoDe 	:= _aRet[1]
@@ -171,9 +207,12 @@ Local _nMesExcesso  := _aRet[5]
 Local _cAliasPesq   := GetNextAlias()      
 Local _cFilDe		:= Space(TamSx3("B1_FILIAL")[1])
 Local _cFilAte		:= Repl("Z",TamSx3("B1_FILIAL")[1])  
-Local _cCFVenda     := AllTrim(SuperGetMV( "CMV_PECxx1" , ,"5102;5152;5403;6102;6110;6403" ))   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
-Local _cCFCompra    := AllTrim(SuperGetMV( "CMV_PECxx2" , ,"1102;2102;3102" ))   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
-Local _nMesRef      := (SuperGetMV( "CMV_PECxx2" , ,12 ))   //meses referencias para calculo cruva ABC
+//Local _cCFVenda     := AllTrim(SuperGetMV( "CMV_PEC047" , ,"5102;5152;5403;6102;6110;6403" ))   //Parâmetro para indicação CF de Venda, para controlar select da curva ABC para notas de saida
+//Local _cCFCompra    := AllTrim(SuperGetMV( "CMV_PEC048" , ,"1102;2102;3102" ))   ///Parâmetro para indicação CF de Compras, para controlar select da curva ABC para notas de Compras
+//Local _nMesRef      := (SuperGetMV( "CMV_PEC049" , ,12 ))   //meses referencias para calculo cruva ABC
+Local _cCFVenda     := AllTrim(SuperGetMV( "CMV_PEC047" , ,"" ))   //Parâmetro para indicação CF de Venda, para controlar select da curva ABC para notas de saida
+Local _cCFCompra    := AllTrim(SuperGetMV( "CMV_PEC048" , ,"" ))   ///Parâmetro para indicação CF de Compras, para controlar select da curva ABC para notas de Compras
+Local _nMesRef      := (SuperGetMV( "CMV_PEC049" , ,0 ))   //meses referencias para calculo cruva ABC
 Local _aPontos		:= {}
 Local _aStruct 		:= {}	//SZO->(DbStruct())
 Local _aPontoCurva	:= {}
@@ -193,6 +232,24 @@ Begin Sequence
 	If !MsgYesNo( _cMens, _cTititulo )
 		Break
 	Endif	
+
+	If Empty(_cCFVenda)
+		_cMens 		:= "Necessário informar parâmetros CF Vendas CMV_PEC047"
+		MSGINFO(_cMens , "Atenção" )
+		Break
+	Endif 
+	
+	If Empty(_cCFCompra)
+		_cMens 		:= "Necessário informar parâmetros CF Compras CMV_PEC048"
+		MSGINFO(_cMens , "Atenção" )
+		Break
+	Endif 
+
+	If _nMesRef <= 0
+		_cMens 		:= "Necessário informar quantidade de meses para calculo Curva CMV_PEC049"
+		MSGINFO(_cMens , "Atenção" )
+		Break
+	Endif 
 
 	//montar regra procura de pontos
 	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
