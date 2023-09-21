@@ -188,7 +188,7 @@ while !(cAliasNF)->(Eof())
 	
 	// verifica se trata-se de nota de devolucao de vendas por LP
 	If (cAliasNF)->Z7_XTABELA == "SE1" .and. (cAliasNF)->Z7_TIPONF == "N"
-		cOrigRet := GetMv("CAOAORESTR",,"510-001/510-002")
+		cOrigRet := GetMv("CAOAORESTR",,"501-001/501-002")
 	Endif	
 
 	//Exclusão SAP
@@ -221,12 +221,25 @@ while !(cAliasNF)->(Eof())
 
 	// para inclusao no sap eh obrigatorio que esteja contabilizado, 
 	//para exclusao nao precisa desta verificacao, pois se presume que a contabilizacao jah tenha sido excluida
-	If (cAliasNF)->Z7_XOPESAP == 1 .AND. SE1->E1_LA <> 'S'  //Verificar se o título está contabilizado
-		(cAliasNF)->(dbSkip())
-		Help("",1,"Envio movimento SAP",,"RA não contabilizado.",1,0)
-		LOOP
-	EndIf
-	
+	SE1->(dbSetOrder(1))
+	If SE1->(dbSeek(xFilial("SE1")+SZ7->Z7_XCHAVE))
+
+		If (cAliasNF)->Z7_XOPESAP == 1 .AND. SE1->E1_LA <> 'S'  //Verificar se o título está contabilizado
+			(cAliasNF)->(dbSkip())
+			Help("",1,"Envio movimento SAP",,"RA não contabilizado.",1,0)
+			LOOP
+		EndIf
+
+		lContinua := .T.
+		If Empty(nRegSE1)
+			nRegSE1 := SE1->(Recno())
+		Endif
+		nTit++
+    
+	endif
+
+
+
 	cAutorizat := encode64( allTrim( cUser ) + ":" + allTrim( cPass ) )
 	
 	aadd( aHeadOut	, 'Content-Type: text/xml; charset=UTF-8'								)
@@ -306,14 +319,14 @@ while !(cAliasNF)->(Eof())
 			lContinua := .F.
 
 			// verifica se gerou financeiro
-			SE1->(dbSetOrder(1))
-			If SE1->(dbSeek(xFilial("SE1")+SZ7->Z7_XCHAVE))
+			//SE1->(dbSetOrder(1))
+			//If SE1->(dbSeek(xFilial("SE1")+SZ7->Z7_XCHAVE))
 				If Alltrim(SE1->E1_TIPO) $ cTiposFin
 					lContinua := .T.
-					If Empty(nRegSE1)
-						nRegSE1 := SE1->(Recno())
-					Endif
-					nTit++
+					//If Empty(nRegSE1)
+					//	nRegSE1 := SE1->(Recno())
+					//Endif
+					//nTit++
 				Endif
 
 				// reposiciona no 1 registro novamente
@@ -350,7 +363,7 @@ while !(cAliasNF)->(Eof())
 				Enddo
 				// reposiciona no 1 registro novamente
 				SE1->(dbGoto(nRegSE1))
-			Endif
+			//Endif
 				
 			If !lContinua
 				(cAliasNF)->(dbSkip())
@@ -359,7 +372,7 @@ while !(cAliasNF)->(Eof())
 				
 			// posiciona cliente
 			SA1->(dbSetOrder(1))
-			SA1->(dbSeek(xFilial("SA1")+SE1->E1_CLIENTE+SE1_LOJA))
+			SA1->(dbSeek(xFilial("SA1")+SE1->E1_CLIENTE+SE1->E1_LOJA))
 		
 			// verifica se cliente jah foi enviado ao sap
 			If Empty(SA1->A1_XCDSAP)
@@ -385,22 +398,22 @@ while !(cAliasNF)->(Eof())
 			(cAliasCtb)->(DBCLOSEAREA())
 		endif
 		
-		cQ := " SELECT MAX(CT2_SEQUEN) CT2_SEQUEN "
+		cQ := " SELECT MAX(CT2_SEQUEN) CT2_SEQUEN "  + CRLF
 		cQ += " FROM " + RetSqlName("CT2") + " CT2 " + CRLF
 		cQ += " INNER JOIN " + RetSqlName("CV3") + " CV3 " + CRLF
-		cQ += " ON TRIM(CV3.CV3_RECDES) = TRIM(CT2.R_E_C_N_O_) "
-		cQ += " AND CV3.D_E_L_E_T_ <> '*' "
+		cQ += " ON TRIM(CV3.CV3_RECDES) = TRIM(CT2.R_E_C_N_O_) " + CRLF
+		cQ += " AND CV3.D_E_L_E_T_ <> '*' " + CRLF
 		cQ += " AND CT2.D_E_L_E_T_ <> '*' " + CRLF
 		cQ += " WHERE " + CRLF
 		//cQ += " CV3.CV3_RECORI='"+ALLTRIM(STR((cAliasTit)->SD2_RECNO))+"' AND CV3.CV3_TABORI='SD2' AND CT2.CT2_AT01DB=' ' AND CT2.CT2_TPSALD = '1' "
 		//cQ += " CV3.CV3_RECORI = '"+ALLTRIM(STR((cAliasTit)->SD2_RECNO))+"' AND CV3.CV3_TABORI = 'SD2' AND CT2.CT2_TPSALD = '1' "
 		If !lDev
-			cQ += " CV3.CV3_RECORI     = "+(cAliasNF)->Z7_RECORI+" "
-			cQ += " AND CV3.CV3_TABORI = 'SE1' "
-			cQ += " AND CT2.CT2_TPSALD = '1' "
-			cQ += " AND CT2_LP = '510' "
+			cQ += " CV3.CV3_RECORI     =  '" + ALLTRIM(STR((cAliasNF)->Z7_RECORI)) + "'" + CRLF 
+			cQ += " AND CV3.CV3_TABORI = 'SE1' " + CRLF
+			cQ += " AND CT2.CT2_TPSALD = '1' "   + CRLF
+			cQ += " AND CT2_LP = '501' "         + CRLF
 		Endif
-		cQ += " AND SUBSTR(CT2_ORIGEM,1,7) NOT IN "+FormatIn(cOrigRet,"/")+" "	
+		cQ += " AND SUBSTR(CT2_ORIGEM,1,7) IN "+FormatIn(cOrigRet,"/")+" "	+ CRLF
 
 		cAliasCtb := GetNextAlias()
 		cQ := ChangeQuery(cQ)
@@ -437,15 +450,15 @@ while !(cAliasNF)->(Eof())
 		//cQ += " CV3.CV3_RECORI='"+ALLTRIM(STR((cAliasTit)->SD2_RECNO))+"' AND CV3.CV3_TABORI='SD2' AND CT2.CT2_AT01DB=' ' AND CT2.CT2_TPSALD = '1' "
 		//cQ += " CV3.CV3_RECORI = '"+ALLTRIM(STR((cAliasTit)->SD2_RECNO))+"' AND CV3.CV3_TABORI = 'SD2' AND CT2.CT2_TPSALD = '1' "
 		If !lDev
-			cQ += " CV3.CV3_RECORI     = "+(cAliasNF)->Z7_RECORI+" "
+			cQ += " CV3.CV3_RECORI     = '" + Alltrim(Str((cAliasNF)->Z7_RECORI)) + "' "  //missing
 			cQ += " AND CV3.CV3_TABORI = 'SE1' "
 			cQ += " AND CT2.CT2_TPSALD = '1' "
-			cQ += " AND CT2_LP = '510' "
+			cQ += " AND CT2_LP = '501' "
 		Endif	
-		cQ += " AND CT2_SEQUEN = '"+cSeq+"' "
-		cQ += " AND SUBSTR(CT2_ORIGEM,1,7) NOT IN "+FormatIn(cOrigRet,"/")+" "
+		cQ += " AND CT2_SEQUEN = '" + cSeq + "' "
+		cQ += " AND SUBSTR(CT2_ORIGEM,1,7) IN "+FormatIn(cOrigRet,"/")+" "
 		cQ += " ORDER BY CT2_LINHA "
-		//Fim query
+		//Fim query   NOT IN
 		
 		cAliasCtb := GetNextAlias()
 		cQ := ChangeQuery(cQ)
@@ -646,7 +659,7 @@ while !(cAliasNF)->(Eof())
 			EndIf
 			
 			nPos := aScan( aSimple, {|aVet| aVet[2] == "numeroDocumentoReferencia" .and. aVet[5] == "ContasAReceberRequest#1.documentos#"+cDoc+".DocumentHeader#1" } )
-			xRet := oWsdl:SetValue( aSimple[nPos][1], IIf(!lDev,Alltrim(SD2->D2_DOC)+IIf(!Empty(SD2->D2_SERIE),"/"+Alltrim(SD2->D2_SERIE),""),Alltrim(SD1->D1_DOC)+IIf(!Empty(SD1->D1_SERIE),"/"+Alltrim(SD1->D1_SERIE),"")))	//numeroDocumentoReferencia ???
+			xRet := oWsdl:SetValue( aSimple[nPos][1],Alltrim(SE1->E1_NUM)+Alltrim(SE1->E1_PARCELA))     	//numeroDocumentoReferencia ???
 			If !xRet
 				U_ZF12GENSAP((cAliasNF)->Z7_FILIAL,(cAliasNF)->Z7_XTABELA,(cAliasNF)->Z7_XCHAVE,(cAliasNF)->Z7_XSEQUEN,"E","numeroDocumentoReferencia Erro: " + oWsdl:cError)
 				lContinua := .F.
@@ -655,7 +668,7 @@ while !(cAliasNF)->(Eof())
 			EndIf
 			
 			nPos := aScan( aSimple, {|aVet| aVet[2] == "chaveCabecalho1" .and. aVet[5] == "ContasAReceberRequest#1.documentos#"+cDoc+".DocumentHeader#1" } )
-			xRet := oWsdl:SetValue( aSimple[nPos][1], IIf(!lDev,IIf(Empty(SC6->C6_CHASSI),Alltrim(SD2->D2_DOC)+IIf(!Empty(SD2->D2_SERIE),"/"+Alltrim(SD2->D2_SERIE),""),Alltrim(SC6->C6_CHASSI)),IIf(Empty(SD1->D1_CHASSI),Alltrim(SD1->D1_DOC)+IIf(!Empty(SD1->D1_SERIE),"/"+Alltrim(SD1->D1_SERIE),""),Alltrim(SD1->D1_CHASSI))))	//chaveCabecalho1
+			xRet := oWsdl:SetValue( aSimple[nPos][1], Alltrim(SE1->E1_NUM)+Alltrim(SE1->E1_PARCELA))	//chaveCabecalho1
 			If !xRet
 				U_ZF12GENSAP((cAliasNF)->Z7_FILIAL,(cAliasNF)->Z7_XTABELA,(cAliasNF)->Z7_XCHAVE,(cAliasNF)->Z7_XSEQUEN,"E","chaveCabecalho1 Erro: " + oWsdl:cError)
 				lContinua := .F.
@@ -867,9 +880,9 @@ while !(cAliasNF)->(Eof())
 			nNumAux := nNum
 			//nVlrTit := NoRound(nAtiv/nTit,2)
 			
-			cChaveTit := IIf(!lDev,xFilial("SZ7")+SZ7->Z7_PREFIXO+SZ7->Z7_NUM+SZ7->Z7_PARCELA+SZ7->Z7_TIPO,xFilial("SE1")+SE1->E1_PREFIXO+SE1->E1_NUM+SE1->E1_PARCELA+SE1->E1_TIPO)
+			cChaveTit := IIf(!lDev,xFilial("SZ7")+(cAliasNF)->Z7_XCHAVE,xFilial("SE1")+SE1->E1_PREFIXO+SE1->E1_NUM+SE1->E1_PARCELA+SE1->E1_TIPO)
 			
-			While SE1->(!Eof()) .and. cChaveTit == SE1->E1_FILIAL+SE1->E1_PREFIXO+SE1->E1_NUM+SE1->E1_PARCELA+SE1->E1_TIPO
+			While SE1->(!Eof()) .and. ALLTRIM(cChaveTit) == SE1->E1_FILIAL+SE1->E1_PREFIXO+SE1->E1_NUM+SE1->E1_PARCELA+SE1->E1_TIPO+SE1->E1_CLIENTE+SE1->E1_LOJA
 				If !lContinua
 					Exit
 				Endif
@@ -956,7 +969,7 @@ while !(cAliasNF)->(Eof())
 				EndIf
 				
 				nPos := aScan( aSimple, {|aVet| aVet[2] == "formaDePagamento".and. aVet[5] == "ContasAReceberRequest#1.documentos#1.AccountReceivable#" + Alltrim(Str(nz))} )//diasDesconto1
-				xRet := oWsdl:SetValue( aSimple[nPos][1], " ")
+				xRet := oWsdl:SetValue( aSimple[nPos][1], "A")
 				If !xRet
 					U_ZF12GENSAP((cAliasNF)->Z7_FILIAL,(cAliasNF)->Z7_XTABELA,(cAliasNF)->Z7_XCHAVE,(cAliasNF)->Z7_XSEQUEN,"E","formaDePagamento Erro: " + oWsdl:cError)
 					lContinua := .F.
@@ -967,7 +980,7 @@ while !(cAliasNF)->(Eof())
 				nPos := aScan( aSimple, {|aVet| aVet[2] == "numeroAtribuicao" .and. aVet[5] == "ContasAReceberRequest#1.documentos#1.AccountReceivable#" + Alltrim(Str(nz))} )
 				//xRet := oWsdl:SetValue( aSimple[nPos][1], IIf(!lDev,SD2->D2_PEDIDO,SD1->D1_PEDIDO)+IIf(!Empty(SE1->E1_PARCELA),"/"+Alltrim(SE1->E1_PARCELA),""))
 //				xRet := oWsdl:SetValue( aSimple[nPos][1],cNumAtrib+IIf(!Empty(SE1->E1_PARCELA),"/"+Alltrim(SE1->E1_PARCELA),""))
-				xRet := oWsdl:SetValue( aSimple[nPos][1],cNumAtrib+IIf(!Empty(SE1->E1_PARCELA),"/"+Alltrim(U_ZF03GENSAP(SE1->E1_PARCELA)),""))
+				xRet := oWsdl:SetValue( aSimple[nPos][1],Alltrim(cNumAtrib)+IIf(!Empty(SE1->E1_PARCELA),"/"+Alltrim(SE1->E1_PARCELA),""))
 				If !xRet
 					U_ZF12GENSAP((cAliasNF)->Z7_FILIAL,(cAliasNF)->Z7_XTABELA,(cAliasNF)->Z7_XCHAVE,(cAliasNF)->Z7_XSEQUEN,"E","NumeroAtribuicao Erro: " + oWsdl:cError)
 					lContinua := .F.
@@ -1038,7 +1051,7 @@ while !(cAliasNF)->(Eof())
 		
 
 				//cForma := IIf(!Empty(SE1->E1_XFORMA),SE1->E1_XFORMA,IIf(!Empty(GetAdvFVal("SE4","E4_XFORMA",xFilial("SE4")+IIf(!lDev,SF2->F2_COND,SF1->F1_COND),1," ")),Alltrim(GetAdvFVal("SE4","E4_XFORMA",xFilial("SE4")+IIf(!lDev,SF2->F2_COND,SF1->F1_COND),1," "))," ")) 
-				cForma := IIf(!Empty(SE1->E1_XFORMA),SE1->E1_XFORMA,IIf(!Empty(GetAdvFVal("SE4","E4_XFORMA",xFilial("SE4")+IIf(!lDev,cCondPag,SF1->F1_COND),1," ")),Alltrim(GetAdvFVal("SE4","E4_XFORMA",xFilial("SE4")+IIf(!lDev,cCondPag,SF1->F1_COND),1," "))," ")) 
+				cForma := SE1->E1_XFORMA
 				nPos := aScan( aSimple, {|aVet| aVet[2] == "codigoBancoCentral" .and. aVet[5] == "ContasAReceberRequest#1.documentos#1.AccountReceivable#" + Alltrim(Str(nz))} )
 				xRet := oWsdl:SetValue( aSimple[nPos][1], cForma)
 				If !xRet
