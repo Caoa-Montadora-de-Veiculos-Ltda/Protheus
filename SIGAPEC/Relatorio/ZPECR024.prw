@@ -29,7 +29,7 @@ User Function ZPECR024()
 	Local	cProduto	:= Space(TamSX3('W8_COD_I')[1]) //o que é [1] ?
 	Local	cContainer	:= Space(TamSX3('ZM_CONT')[1]) //o que é [1] ?
 	local   aCanal   	:= {"1 - Todos"	,"2 - Vermelho","3 - Amarelo","4 - Verde","5 - Cinza"}
-	local   aNfEmitida  := {"1 - Com NF","2 - Sem NF","3 - Todos"}
+	local   aNfEmitida  := {"1 - Com NF","2 - Sem NF"}
 	Private cTabela 	:= GetNextAlias()
 
  	aAdd(aPergs, {1,"Invoice"				,cInvoice	,/*Pict*/	,".T."		,"SW9"		,".T."	 ,80,.F.}) 	//MV_PAR01
@@ -43,11 +43,11 @@ User Function ZPECR024()
 	aAdd(aPergs, {1,"Container"				,cContainer	,/*Pict*/	,".T."		,"_SZM"		,".T."	 ,80,.F.}) 	//MV_PAR09
 	aAdd(aPergs ,{2,"Canal"					, 1, aCanal		,50,"",.T.})					//MV_PAR10 
 	aAdd(aPergs ,{2,"Invoice c/ NF emitida"	, 1, aNfEmitida ,50,"",.T.})					//MV_PAR11 
-	aAdd(aPergs ,{9,"Status invoice"		,200/*Larg*/,40 /*Alt */,.T./*Font Verdana*/}) 	//MV_PAR12
-	aAdd(aPergs ,{5,"Proximo embarque"		,.F./*Ini*/	,90 /*Size*/,/*Valid*/	,.F.}) 		//MV_PAR13
-	aAdd(aPergs ,{5,"Material em transito"	,.F./*Ini*/	,90 /*Size*/,/*Valid*/	,.F.}) 		//MV_PAR14
-	aAdd(aPergs ,{5,"Em rota de entrega"	,.F./*Ini*/	,90 /*Size*/,/*Valid*/	,.F.}) 		//MV_PAR15
-	aAdd(aPergs ,{5,"Entregue"	,.F./*Ini*/	,90 /*Size*/,/*Valid*/	,.F.}) 					//MV_PAR16
+	//aAdd(aPergs ,{9,"Status invoice"		,200/*Larg*/,40 /*Alt */,.T./*Font Verdana*/}) 	//MV_PAR12
+	//aAdd(aPergs ,{5,"Proximo embarque"		,.F./*Ini*/	,90 /*Size*/,/*Valid*/	,.F.}) 		//MV_PAR13
+	//aAdd(aPergs ,{5,"Material em transito"	,.F./*Ini*/	,90 /*Size*/,/*Valid*/	,.F.}) 		//MV_PAR14
+	//aAdd(aPergs ,{5,"Em rota de entrega"	,.F./*Ini*/	,90 /*Size*/,/*Valid*/	,.F.}) 		//MV_PAR15
+	//aAdd(aPergs ,{5,"Entregue"	,.F./*Ini*/	,90 /*Size*/,/*Valid*/	,.F.}) 					//MV_PAR16
 	
 	
 
@@ -76,7 +76,15 @@ Static Function fReportDef() //Definições do relatório
 
 	Local oReport
 	Local oSection	:= Nil
+	Local nMV_PAR11 
 
+	If ValType(MV_PAR11) == "N"	
+		nMV_PAR11 	:= MV_PAR11
+	else
+		nMV_PAR11 	:= Val(Substr(MV_PAR11,1,1)) //INVOICE COM NF
+	EndIf
+	
+	
 	oReport:= TReport():New("ZPECR024",;				// --Nome da impressão
                             "Status Invoice",;  // --Título da tela de parâmetros
                             ,;      		// --Grupo de perguntas na SX1
@@ -122,12 +130,16 @@ Static Function fReportDef() //Definições do relatório
 	TRCell():New( oSection  ,"W6_DI_NUM"       	,cTabela ,"Num DI"			,/*cPicture*/,TamSx3("W6_DI_NUM")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
     TRCell():New( oSection  ,"DT_DI"     		,cTabela ,"Dt DI"			,/*cPicture*/,TamSx3("W6_DTREG_D")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 	TRCell():New( oSection  ,"DOLAR_DIA"      	,cTabela ,"Dolar dia"		,/*cPicture*/,TamSx3("W9_TX_FOB")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-	TRCell():New( oSection  ,"TIPO_NF"      	,cTabela ,"Tipo de NF"		,/*cPicture*/,20						, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-	TRCell():New( oSection  ,"F1_DOC"      		,cTabela ,"Numero NF"		,/*cPicture*/,TamSx3("F1_DOC")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-	TRCell():New( oSection  ,"F1_SERIE"      	,cTabela ,"Serie NF"		,/*cPicture*/,TamSx3("F1_SERIE")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-	TRCell():New( oSection  ,"DT_EMIS_NF"      	,cTabela ,"Dt Emiss NF"		,/*cPicture*/,TamSx3("F1_EMISSAO")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-	TRCell():New( oSection  ,"DOC_MAE"      	,cTabela ,"Num NF Mae"		,/*cPicture*/,TamSx3("F1_DOC")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-	TRCell():New( oSection  ,"DT_DOC_MAE"      	,cTabela ,"Data NF Mae"		,/*cPicture*/,TamSx3("F1_EMISSAO")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+	
+	If (nMV_PAR11 = 1)
+		TRCell():New( oSection  ,"TIPO_NF"      	,cTabela ,"Tipo de NF"		,/*cPicture*/,20						, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+		TRCell():New( oSection  ,"F1_DOC"      		,cTabela ,"Numero NF"		,/*cPicture*/,TamSx3("F1_DOC")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+		TRCell():New( oSection  ,"F1_SERIE"      	,cTabela ,"Serie NF"		,/*cPicture*/,TamSx3("F1_SERIE")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+		TRCell():New( oSection  ,"DT_EMIS_NF"      	,cTabela ,"Dt Emiss NF"		,/*cPicture*/,TamSx3("F1_EMISSAO")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+		TRCell():New( oSection  ,"DOC_MAE"      	,cTabela ,"Num NF Mae"		,/*cPicture*/,TamSx3("F1_DOC")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+		TRCell():New( oSection  ,"DT_DOC_MAE"      	,cTabela ,"Data NF Mae"		,/*cPicture*/,TamSx3("F1_EMISSAO")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+	EndIf
+	
 	TRCell():New( oSection  ,"PRC_TOT_FOB"      ,cTabela ,"Prc Total FOB"	,/*cPicture*/,TamSx3("W8_PRECO")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 	TRCell():New( oSection  ,"W8_FRETEIN"      	,cTabela ,"Valor frete"	 	,/*cPicture*/,TamSx3("W8_FRETEIN")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 	TRCell():New( oSection  ,"W8_SEGURO"      	,cTabela ,"Valor seguro"	,/*cPicture*/,TamSx3("W8_SEGURO")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
@@ -159,7 +171,7 @@ Static Function ReportPrint(oReport)
 	//Pegando as secoes do relatório
 	oSectDad := oReport:Section(1) //Primeira seção disponível
 
-	If 	((nMV_PAR11 = 1) .OR. (nMV_PAR11 = 3)) // ------------ Query 1 com Nota Fiscal
+	If 	(nMV_PAR11 = 1) //.OR. (nMV_PAR11 = 3)) // ------------ Query 1 com Nota Fiscal
 		cQry += " 	SELECT " 		 								+ CRLF
 		cQry += "		SW9.W9_FILIAL" 								+ CRLF
 		cQry += "		, NVL(SZM.R_E_C_N_O_,0)  AS SZM_REC " 		+ CRLF
@@ -187,9 +199,9 @@ Static Function ReportPrint(oReport)
 		cQry += "		, SW6.W6_DT_EMB "							+ CRLF
 		cQry += "		, SW6.W6_DT_DESE "							+ CRLF
 		
-		If (MV_PAR15 .OR. MV_PAR16)
+		//If (MV_PAR15 .OR. MV_PAR16)
 			cQry += "	, CASE "								    + CRLF
-			If MV_PAR15 //EM ROTA DE ENTREGA
+			//If MV_PAR15 //EM ROTA DE ENTREGA
 				cQry += " WHEN " 									+ CRLF
 				cQry += " 	SW6.W6_DT_EMB 		!= ' ' " 			+ CRLF
 				cQry += " 	AND SW6.W6_CHEG 	!= ' ' " 			+ CRLF
@@ -197,8 +209,8 @@ Static Function ReportPrint(oReport)
 				cQry += " 	AND SD1.D1_TESACLA 	!= ' ' " 			+ CRLF
 				cQry += " 	AND SD1.D1_TES 		= ' ' " 			+ CRLF
 				cQry += " THEN 'EM ROTA DE ENTREGA' " 				+ CRLF
-			EndIf
-			If MV_PAR16 //ENTREGUE
+			//EndIf
+			//If MV_PAR16 //ENTREGUE
 				cQry += " WHEN " 									+ CRLF
 				cQry += " 	SW6.W6_DT_EMB 		!= ' ' " 			+ CRLF
 				cQry += " 	AND SW6.W6_CHEG 	!= ' ' " 			+ CRLF
@@ -206,11 +218,11 @@ Static Function ReportPrint(oReport)
 				cQry += " 	AND SD1.D1_TESACLA 	!= ' ' " 			+ CRLF
 				cQry += " 	AND SD1.D1_TES 		!= ' ' " 			+ CRLF
 				cQry += " THEN 'ENTREGUE' " 						+ CRLF
-			EndIf
+			//EndIf
 			cQry += " END AS STATUS "								+ CRLF	
-		else
-			cQry += " , NULL AS STATUS " 								+ CRLF 	 
-		EndIf
+		//else
+		//	cQry += " , NULL AS STATUS " 								+ CRLF 	 
+		//EndIf
 
 		cQry += "		, CASE	"										+ CRLF
 		cQry += "			WHEN SW6.W6_CANAL = '1' THEN 'VERMELHO' " 	+ CRLF
@@ -320,6 +332,7 @@ Static Function ReportPrint(oReport)
 		cQry += "		    SW9.W9_FILIAL 		= '" + FWxFilial("SW9") + "'"			+ CRLF
 		cQry += "		AND SF1.F1_DOC 		= D1_DOC "									+ CRLF
 		cQry += "		AND SF1.F1_SERIE	= SD1.D1_SERIE "							+ CRLF
+		cQry += "		AND SZM.R_E_C_N_O_ 	> 0 " 										+ CRLF
 		
 		If !Empty(DtoS(MV_PAR03)) //DT INVOICE ATE
 			cQry += " 	AND SW9.W9_DT_EMIS BETWEEN '" 	+ DtoS(MV_PAR02) + "' AND '" + DtoS(MV_PAR03) + "'" + CRLF
@@ -360,6 +373,7 @@ Static Function ReportPrint(oReport)
 			cQry += "	AND SW6.W6_CANAL 		= '4'" 			+ CRLF //Cinza
 		EndCase
 		
+		/*
 		If (MV_PAR15 .or. MV_PAR16)
 			If MV_PAR15 //EM ROTA DE ENTREGA
 				cQry += " 	AND SW6.W6_DT_EMB 	!= ' ' " 			+ CRLF
@@ -379,17 +393,23 @@ Static Function ReportPrint(oReport)
 		Else
 				cQry += "	AND SF4.F4_ESTOQUE 	= 'S' "				+ CRLF
 		EndIf
+		*/
 
 		cQry += "		AND SW9.D_E_L_E_T_ 	= ' '"					+ CRLF
+		cQry += "		ORDER BY "									+ CRLF
+		cQry += "		SW9.W9_INVOICE, DT_EMISSAO "				+ CRLF
+
 		//cQry += "		ORDER BY SW9.W9_DT_EMIS, SW9.W9_INVOICE "	+ CRLF
 	
 	EndIf
 	
+	/*
 	IF (nMV_PAR11 = 3) 						// ------------  UNION
 		cQry += "		UNION "			+ CRLF
 	EndIf
+	*/
 
-	If ((nMV_PAR11 = 3) .OR. (nMV_PAR11 = 2)) // ------------ Query 2 sem Nota Fiscal
+	If (nMV_PAR11 = 2) //.OR. (nMV_PAR11 = 3)) // ------------ Query 2 sem Nota Fiscal
 		cQry += " 	SELECT " 		 								+ CRLF
 		cQry += "		SW9.W9_FILIAL" 								+ CRLF
 		cQry += "		, NVL(SZM.R_E_C_N_O_,0)  AS SZM_REC " 		+ CRLF
@@ -417,26 +437,26 @@ Static Function ReportPrint(oReport)
 		cQry += "		, SW6.W6_DT_EMB "							+ CRLF
 		cQry += "		, SW6.W6_DT_DESE "							+ CRLF
 		
-		If (MV_PAR13 .OR. MV_PAR14) //STATUS INVOICE
+		//If (MV_PAR13 .OR. MV_PAR14) //STATUS INVOICE
 			cQry += "	, CASE "								    + CRLF
-			If MV_PAR13 //PROXIMO EMBARQUE
+		//	If MV_PAR13 //PROXIMO EMBARQUE
 				cQry += " WHEN " 									+ CRLF
 				cQry += " 	SW6.W6_DT_EMB 		= ' ' " 			+ CRLF
 				cQry += " 	AND SW6.W6_CHEG 	= ' ' " 			+ CRLF
 				cQry += " 	AND SW6.W6_DT_DESE 	= ' ' " 			+ CRLF
 				cQry += " THEN 'PROXIMO EMBARQUE' " 				+ CRLF
-			EndIf
-			If MV_PAR14 //MATERIAL EM TRANSITO
+		//	EndIf
+		//	If MV_PAR14 //MATERIAL EM TRANSITO
 				cQry += " WHEN " 									+ CRLF
 				cQry += " 	SW6.W6_DT_EMB 		!= ' ' " 			+ CRLF
 				cQry += " 	AND SW6.W6_CHEG 	= ' ' " 			+ CRLF
 				cQry += " 	AND SW6.W6_DT_DESE 	= ' ' " 			+ CRLF
 				cQry += " THEN 'MATERIAL EM TRANSITO' " 			+ CRLF
-			EndIf
+		//	EndIf
 			cQry += " END AS STATUS "								+ CRLF		
-		else
-			cQry += " , NULL AS STATUS "							+ CRLF
-		EndIf
+		//else
+		//	cQry += " , NULL AS STATUS "							+ CRLF
+		//EndIf
 		
 		cQry += "		, CASE	"										+ CRLF
 		cQry += "			WHEN SW6.W6_CANAL = '1' THEN 'VERMELHO' " 	+ CRLF
@@ -446,18 +466,18 @@ Static Function ReportPrint(oReport)
 		cQry += "		END 					AS CANAL "				+ CRLF		
 		cQry += "		, SW6.W6_DI_NUM " 								+ CRLF			
 		//cQry += "		, SUBSTR(SW6.W6_DTREG_D,7,2)||'/'||SUBSTR(SW6.W6_DTREG_D,5,2)||'/'||SUBSTR(SW6.W6_DTREG_D,1,4) AS DT_DI " + CRLF
-		cQry += "		, SW6.W6_DTREG_D AS DT_DI " + CRLF
+		cQry += "		, SW6.W6_DTREG_D AS DT_DI " 					+ CRLF
 		cQry += "		, NVL(SW9.W9_TX_FOB,0)	AS DOLAR_DIA "			+ CRLF
-		cQry += "		, NULL	"										+ CRLF //, CASE	" ... END AS TIPO_NF "			
-		cQry += "		, NULL	"										+ CRLF //, SF1.F1_DOC "	
-		cQry += "		, NULL	"										+ CRLF //, SF1.F1_SERIE "	
-		cQry += "		, NULL	"										+ CRLF //, , SUBSTR(SF1.F1_EMISSAO ..."DT_EMISSAO"
+		//cQry += "		, NULL	"										+ CRLF //, CASE	" ... END AS TIPO_NF "			
+		//cQry += "		, NULL	"										+ CRLF //, SF1.F1_DOC "	
+		//cQry += "		, NULL	"										+ CRLF //, SF1.F1_SERIE "	
+		//cQry += "		, NULL	"										+ CRLF //, , SUBSTR(SF1.F1_EMISSAO ..."DT_EMISSAO"
 		cQry += "		, NVL((SW8.W8_QTDE * SW8.W8_PRECO),0) AS PRC_TOT_FOB "  		+ CRLF
 		cQry += "		, SW8.W8_FRETEIN "  											+ CRLF		
 		cQry += "		, SW8.W8_SEGURO "  												+ CRLF
 		cQry += "		, SW6.W6_NF_ENT	 "  											+ CRLF
-		cQry += "		, NULL	AS DOC_MAE "											+ CRLF //, ( SELECT MAX(SD1TMP.D1_DOC) ...AS DOC_MAE 
-		cQry += "		, NULL	AS DT_DOC_MAE "											+ CRLF //, ( SELECT MAX(SD1TMP.D1_EMISSAO ...AS DT_DOC_MAE
+		//cQry += "		, NULL	AS DOC_MAE "											+ CRLF //, ( SELECT MAX(SD1TMP.D1_DOC) ...AS DOC_MAE 
+		//cQry += "		, NULL	AS DT_DOC_MAE "											+ CRLF //, ( SELECT MAX(SD1TMP.D1_EMISSAO ...AS DT_DOC_MAE
 		cQry += "	FROM "																+ CRLF
 		cQry +=	" 	" + RetSqlName("SW9") + " SW9"   									+ CRLF
 		cQry += "	LEFT JOIN "															+ CRLF
@@ -501,6 +521,8 @@ Static Function ReportPrint(oReport)
 		cQry += "		AND SZM.D_E_L_E_T_ 	= ' '"										+ CRLF
 		cQry += "	WHERE "																+ CRLF
 		cQry += "		    SW9.W9_FILIAL 		= '" + FWxFilial("SW9") + "'"			+ CRLF
+		cQry += "		AND SW6.W6_CHEG 		= ' ' "									+ CRLF
+		cQry += "		AND SZM.R_E_C_N_O_ 	> 0 " 										+ CRLF
 		
 		If !Empty(DtoS(MV_PAR03)) //DT INVOICE ATE
 			cQry += " 	AND SW9.W9_DT_EMIS BETWEEN '" 	+ DtoS(MV_PAR02) + "' AND '" + DtoS(MV_PAR03) + "'" + CRLF
@@ -529,6 +551,7 @@ Static Function ReportPrint(oReport)
 			cQry += "	AND SW6.W6_CANAL 		= '4'" 			+ CRLF //Cinza
 		EndCase
 
+		/*
 		If MV_PAR13 //PROXIMO EMBARQUE
 			cQry += " 	AND SW6.W6_DT_EMB 	= ' ' " 			+ CRLF
 			cQry += " 	AND SW6.W6_CHEG 	= ' ' " 			+ CRLF
@@ -540,8 +563,11 @@ Static Function ReportPrint(oReport)
 			cQry += " 	AND SW6.W6_CHEG 	= ' ' " 			+ CRLF
 			cQry += " 	AND SW6.W6_DT_DESE 	= ' ' " 			+ CRLF
 		EndIf
+		*/
 
 		cQry += "		AND SW9.D_E_L_E_T_ 	= ' '"				+ CRLF
+		cQry += "		ORDER BY "								+ CRLF
+		cQry += "		SW9.W9_INVOICE, DT_EMISSAO "			+ CRLF
 		//cQry += "		ORDER BY SW9.W9_DT_EMIS, SW9.W9_INVOICE "	+ CRLF
 
 	EndIf
@@ -568,9 +594,13 @@ Static Function ReportPrint(oReport)
 			oSectDad:Cell("DT_EMISSAO"      ):SetValue(StoD((cTabela)->DT_EMISSAO))
 			oSectDad:Cell("PREVISA_CHEGADA" ):SetValue(StoD((cTabela)->PREVISA_CHEGADA))
 			oSectDad:Cell("DT_REAL_CHEGADA" ):SetValue(StoD((cTabela)->DT_REAL_CHEGADA))
-			oSectDad:Cell("DT_DI" 			):SetValue(StoD((cTabela)->DT_DI))
-			oSectDad:Cell("DT_DOC_MAE" 		):SetValue(StoD((cTabela)->DT_DOC_MAE))
-			
+
+			If nMV_PAR11 = 1
+				oSectDad:Cell("DT_EMIS_NF" 		):SetValue(StoD((cTabela)->DT_EMIS_NF))
+				oSectDad:Cell("DT_DI" 			):SetValue(StoD((cTabela)->DT_DI))
+				oSectDad:Cell("DT_DOC_MAE" 		):SetValue(StoD((cTabela)->DT_DOC_MAE))
+			Endif
+		
 			//Imprimindo a linha atual
 			oSectDad:PrintLine()
 
