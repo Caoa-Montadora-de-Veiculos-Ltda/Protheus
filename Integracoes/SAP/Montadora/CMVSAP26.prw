@@ -793,7 +793,8 @@ while !(cAliasNF)->(Eof())
 
 				nPos := aScan( aSimple, {|aVet| aVet[2] == "numeroAtribuicao" .and. aVet[5] == "ContasAReceberRequest#1.documentos#"+cDoc+".AccountGL#" + Alltrim(Str(nz))} )//Nº atribuição
 				//xRet := oWsdl:SetValue( aSimple[nPos][1],IIf(!lDev,SD2->D2_PEDIDO,SD1->D1_PEDIDO))
-				xRet := oWsdl:SetValue( aSimple[nPos][1],cNumAtrib)
+				//xRet := oWsdl:SetValue( aSimple[nPos][1],cNumAtrib)
+				xRet := oWsdl:SetValue( aSimple[nPos][1],Alltrim(cNumAtrib)+IIf(!Empty(SE1->E1_PARCELA),"/"+Alltrim(SE1->E1_PARCELA),""))
 				If !xRet
 					U_ZF12GENSAP((cAliasNF)->Z7_FILIAL,(cAliasNF)->Z7_XTABELA,(cAliasNF)->Z7_XCHAVE,(cAliasNF)->Z7_XSEQUEN,"E","numeroAtribuicao Erro: " + oWsdl:cError)
 					lContinua := .F.
@@ -802,7 +803,7 @@ while !(cAliasNF)->(Eof())
 				EndIf
 				If (cAliasCtb)->CT2_DC == "1"//Debito
 					nPos := aScan( aSimple, {|aVet| aVet[2] == "centroCusto" .and. aVet[5] == "ContasAReceberRequest#1.documentos#"+cDoc+".AccountGL#" + Alltrim(Str(nz))} )//CentroCusto
-					xRet := oWsdl:SetValue( aSimple[nPos][1],IIf(!Empty((cAliasCtb)->CT2_CCD),Alltrim((cAliasCtb)->CT2_CCD)," "))
+					xRet := oWsdl:SetValue( aSimple[nPos][1],IIf(!Empty((cAliasCtb)->CT2_CCC),Alltrim((cAliasCtb)->CT2_CCC)," "))
 					If !xRet
 						U_ZF12GENSAP((cAliasNF)->Z7_FILIAL,(cAliasNF)->Z7_XTABELA,(cAliasNF)->Z7_XCHAVE,(cAliasNF)->Z7_XSEQUEN,"E","centroCusto Erro: " + oWsdl:cError)
 						lContinua := .F.
@@ -849,7 +850,7 @@ while !(cAliasNF)->(Eof())
 					EndIf
 					
 					nPos := aScan( aSimple, {|aVet| aVet[2] == "montanteMoedaPagamento" .and. aVet[5] == "ContasAReceberRequest#1.documentos#"+cDoc+".AccountGL#" + Alltrim(Str(nz))} )//montanteMoedaPagamento
-					xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR((cAliasCtb)->CT2_VALOR * -1)) )
+					xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR((cAliasCtb)->CT2_VALOR)) )
 					If !xRet
 						U_ZF12GENSAP((cAliasNF)->Z7_FILIAL,(cAliasNF)->Z7_XTABELA,(cAliasNF)->Z7_XCHAVE,(cAliasNF)->Z7_XSEQUEN,"E","montanteMoedaPagamento Erro: " + oWsdl:cError)
 						lContinua := .F.
@@ -893,7 +894,7 @@ while !(cAliasNF)->(Eof())
 				Endif	
 				
 				nNumAux++
-
+            
 				nPos := aScan( aSimple, {|aVet| aVet[2] == "numeroItemDocumentoContabilidade" .and. aVet[5] == "ContasAReceberRequest#1.documentos#1.AccountReceivable#" + Alltrim(Str(nz))} )//numeroItemDocumentoContabilidade
 				xRet := oWsdl:SetValue( aSimple[nPos][1],ALLTRIM(STR(nNumAux)))
 				If !xRet
@@ -989,8 +990,7 @@ while !(cAliasNF)->(Eof())
 				EndIf
 				
 				nPos := aScan( aSimple, {|aVet| aVet[2] == "textoDoItem" .and. aVet[5] == "ContasAReceberRequest#1.documentos#1.AccountReceivable#" + Alltrim(Str(nz))} )
-				//xRet := oWsdl:SetValue( aSimple[nPos][1], " ")
-				xRet := oWsdl:SetValue( aSimple[nPos][1], IIf(!lDev," ","DEVOLUÇÃO REF. NF NUM: "+Alltrim(SF2->F2_DOC)+IIF(!Empty(SF2->F2_SERIE),"-"+Alltrim(SF2->F2_SERIE),"")+" DE "+dToc(SF2->F2_EMISSAO)))
+				xRet := oWsdl:SetValue( aSimple[nPos][1], "Título Gerado Através do Pedido "+Alltrim(SZ7->Z7_DOCORI))
 				If !xRet
 					U_ZF12GENSAP((cAliasNF)->Z7_FILIAL,(cAliasNF)->Z7_XTABELA,(cAliasNF)->Z7_XCHAVE,(cAliasNF)->Z7_XSEQUEN,"E","textoDoItem Erro: " + oWsdl:cError)
 					lContinua := .F.
@@ -1002,8 +1002,9 @@ while !(cAliasNF)->(Eof())
 					//xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR(SE1->E1_VALOR)))
 					//xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR((SE1->E1_VALOR-SE1->E1_IRRF-SE1->E1_ISS-SE1->E1_INSS-SE1->E1_PIS-SE1->E1_COFINS-SE1->E1_CSLL))))
 					//xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR(IIf(lInvSinal,nVlrTit * -1,nVlrTit))))
-					xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR(IIf(lInvSinal,SE1->E1_VALOR * -1,SE1->E1_VALOR)))) //###LINHA ORIGINAL
+					//xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR(IIf(lInvSinal,SE1->E1_VALOR * -1,SE1->E1_VALOR)))) //###LINHA ORIGINAL
 //					xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR(IIf(lInvSinal,(SE1->E1_VALOR-SE1->E1_DECRESC) * -1,(SE1->E1_VALOR-SE1->E1_DECRESC))))) 
+					xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR(SE1->E1_VALOR)))
 					If !xRet
 						U_ZF12GENSAP((cAliasNF)->Z7_FILIAL,(cAliasNF)->Z7_XTABELA,(cAliasNF)->Z7_XCHAVE,(cAliasNF)->Z7_XSEQUEN,"E","montanteMoedaPagamento Erro: " + oWsdl:cError)
 						lContinua := .F.
@@ -1022,7 +1023,7 @@ while !(cAliasNF)->(Eof())
 				
 				//SE FOR PEDIDO?????
 				nPos := aScan( aSimple, {|aVet| aVet[2] == "codigoDoRazaoEspecial" .and. aVet[5] == "ContasAReceberRequest#1.documentos#1.AccountReceivable#" + Alltrim(Str(nz))} )
-				xRet := oWsdl:SetValue( aSimple[nPos][1], " ")
+				xRet := oWsdl:SetValue( aSimple[nPos][1],SA1->A1_TIPO)  //Tipo do Cliente  F-Físico   J-Jurídico
 				If !xRet
 					U_ZF12GENSAP((cAliasNF)->Z7_FILIAL,(cAliasNF)->Z7_XTABELA,(cAliasNF)->Z7_XCHAVE,(cAliasNF)->Z7_XSEQUEN,"E","chaveBreveUmBancoDaEmpresa Erro: " + oWsdl:cError)
 					lContinua := .F.
