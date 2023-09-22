@@ -12,12 +12,31 @@
 @history    Ponto de entrada após inclusão do produto 
 */
 User Function MT010INC()
-Local aArea := GetArea()
-    //Grava o usuário que alterou
+//Local aArea := GetArea()
+    //Grava o usuário que incluiu
+    IF FWCodEmp() <> "2010" 
+       RecLock('SB1', .F.)
+       SB1->B1_MSBLQL := "1"
+       SB1->(MsUnlock())
+    Endif
     RecLock('SB1', .F.)
         B1_XDTULT := DATE()
         B1_XHRULT := TIME()
     SB1->(MsUnlock())
-     
-    RestArea(aArea)
-Return
+    //Atualiza a tabela de log de alteração/inclusão de produtos
+    IF FWCodEmp() <> "2010"
+        RecLock('ZZN', .T.)
+        ZZN_FILIAL := xFILIAL("ZZN")
+        ZZN_COD    := SB1->B1_COD
+        ZZN_DESCR  := SB1->B1_DESC
+        ZZN_DATA   := DATE()
+        ZZN_HORA   := TIME()
+        ZZN_INIC   := "*"
+        ZZN_FINAL  := "*"
+        ZZN_USUR   := __cUserID + " - " + cUserName
+        ZZN_CAMPO  := "TODOS CAMPOS"
+        ZZN_MOVTO  := "INCLUSAO/COPIA MANUAL DE PRODUTO"
+        ZZN->(MsUnlock())
+    ENDIF
+  
+Return .t.

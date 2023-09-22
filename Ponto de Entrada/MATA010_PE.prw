@@ -1,5 +1,7 @@
 #include "protheus.ch"
 #include "parmtype.ch"
+#INCLUDE "FWMVCDEF.CH"
+#Include "Totvs.Ch"
 
 /*
 =====================================================================================
@@ -14,12 +16,12 @@ Obs.................:
 =====================================================================================
 */
 User Function ITEM()
-
+   Local aArea	  := GetArea()
    Local _cEmp    := FWCodEmp()
    Local _lRet	  := .T.
-   Local aArea	  := GetArea()
+   
 
-   If _cEmp == "2010" //Executa o p.e. Anapolis.
+    If _cEmp == "2010" //Executa o p.e. Anapolis.
       _lRet := zMontadora()
    Else
       _lRet := zCaoaSp() //Executa o p.e. CaoaSp
@@ -175,9 +177,8 @@ If aParam <> NIL
 
 	ElseIf cIdPonto == "BUTTONBAR"
 
-            //Criar um botão na barra de botões da rotina
-			xRet := {{"Caoa-Integrar RgLog", "Caoa-Integrar RgLog", {||U_ZWSR004(M->B1_COD,_lVisual)}}}
-	
+ 		xRet := {{"Caoa-Integrar RgLog", "Caoa-Integrar RgLog", {||U_ZWSR004(M->B1_COD,_lVisual)}}}
+		
 	ElseIf cIdPonto =="FORMPRE" 
 		if cTipo == 'SETVALUE'
 		
@@ -231,6 +232,21 @@ EndIf
 
 Return xRet 
 
+
+User Function MTA010MNU()
+//----------------------------------------------------------------------------------------------------------
+// [n][1] - Nome da Funcionalidade  (ZZN) - Log
+// [n][2] - Função de usuário
+// [n][3] - Operação (1-Pesquisa; 2-Visualização; 3-Inclusão; 4-Alteração; 5-Exclusão)
+// [n][4] - Acesso relacionado a rotina, se esta posição não for informada nenhum acesso será validado
+//----------------------------------------------------------------------------------------------------------
+If FWCodEmp() <> "2010"
+   AAdd( aRotina, { "Log de Inclusão/Alteração", "U_ZCOMF052()", 0, 9 } )
+Endif
+
+Return( aRotina )
+
+
 /*
 aParam[1] == Object
 aParam[2] == 'FORMPRE'
@@ -248,4 +264,6 @@ aParam[6] == '000001'
 
 
 */
+
+
 

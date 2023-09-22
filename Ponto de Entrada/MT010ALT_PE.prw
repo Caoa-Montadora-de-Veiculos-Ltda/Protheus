@@ -12,12 +12,17 @@
 @history    Ponto de entrada após alteração do produto 
 */
 User Function MT010ALT()
-Local aArea := GetArea()
-    //Grava o usuário que alterou
+
+    IF FWCodEmp() <> "2010" .AND. cBloqProd
+       RecLock('SB1', .F.)
+       SB1->B1_MSBLQL := "1"
+       SB1->(MsUnlock())
+    Endif
+   
     RecLock('SB1', .F.)
         B1_XDTULT := DATE()
         B1_XHRULT := TIME()
     SB1->(MsUnlock())
      
-    RestArea(aArea)
+
 Return
