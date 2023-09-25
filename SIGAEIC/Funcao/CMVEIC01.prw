@@ -22,6 +22,7 @@ User Function CMVEIC01()
 
 	aAdd(aRotina,{"Importar Invoice",	"U_CMVEI01A",	0, 3 })
 	aAdd(aRotina,{"Invoice x Caixas",	"U_CMVEI01B",	0, 5 })
+	aAdd(aRotina,{"Limpar SZM"		,	"U_CMVEI01E",	0, 5 })
 	//	aAdd(aRotina,{"Invoice x Caixas MVC",	"U_CMVEI01D",	0, 5 })
 
 	if (1=2)
@@ -3051,6 +3052,127 @@ Return
 
 //----------------------------------------------------------------------------------
 
+//----------------------------------------------------------------------------------
+
+
+/*/{Protheus.doc} CMVEI0E
+@author Nicolas Lima
+@since 25/09/2023
+Objetivo: Apagar itens da SZM que deveriam ter sido estornados porém não foram, são itens que já estão excluídos na EW4 e EW5
+Início dos Ajustes referente ao GAP082
+/*/
+
+//Processa({|| fExemplo5()}, "Filtrando...")
+
+User Function CMVEI01E()
+
+	Local aArea 	:= GetArea()
+	Local cTabela 	:= GetNextAlias()
+	Local nSzmRecno := 0
+	Local cUpdate  	:= " "
+	Local cQry      := " "
+	Local nTotal 	:= 0
+	//Local nAtual 	:= 0
+	Local nErro 
+
+	//Criar tabela temporária para query
+	
+	//Pesquisar itens que vem ser limpos através da query
+	cQry += " 	SELECT * FROM " 		 									+ CRLF
+	cQry += " 	( "															+ CRLF
+	cQry += "		SELECT DISTINCT " 										+ CRLF 
+	cQry += "		SZM.R_E_C_N_O_ AS SZM_RECNO " 							+ CRLF 
+	cQry += "		, SZM.ZM_INVOICE " 										+ CRLF 
+	cQry += "		FROM "													+ CRLF
+	cQry +=	" 		" + RetSqlName("SZM") + " SZM"   						+ CRLF //--TABELA INTEGRAÇÃO XML (CAPA)
+	cQry += "		WHERE "													+ CRLF
+	cQry += "		   		SZM.ZM_FILIAL 	= '" + FWxFilial("SZM") + "'" 	+ CRLF //--FILIAL CORRENTE 
+	cQry += "			AND SZM.ZM_INVOICE 	<> ' ' " 						+ CRLF
+	cQry +=	"			AND SZM.D_E_L_E_T_ 	= ' ' " 						+ CRLF
+	cQry +=	"	ORDER BY SZM.ZM_INVOICE " 									+ CRLF
+	cQry +=	" 	) TMP_SZM " 												+ CRLF
+	cQry +=	" 		LEFT JOIN (	SELECT	EW4.EW4_INVOIC " 					+ CRLF
+	cQry += "		FROM "													+ CRLF
+	cQry +=	" 		" + RetSqlName("EW4") + " EW4"   						+ CRLF //--TABELA INVOICE ANTECIPADA (CAPA)
+	cQry += "		WHERE "													+ CRLF
+	cQry +=	"				EW4.EW4_FILIAL = '" + FWxFilial("SZM") + "'"    + CRLF //--FILIAL CORRENTE
+	cQry +=	"			AND EW4.D_E_L_E_T_  = ' ' "							+ CRLF 
+	cQry +=	"	) TMP_EW4 " 												+ CRLF 
+	cQry +=	"			ON TMP_EW4.EW4_INVOIC = TMP_SZM.ZM_INVOICE "		+ CRLF 
+	cQry +=	" 		WHERE TMP_EW4.EW4_INVOIC IS NULL " 						+ CRLF //--SE EW4_INVOIC ESTIVER VAZIO ENTÃO ELE PODE SER DELETADO.
+
+
+	//Ativar a query
+	DbUseArea( .T., "TOPCONN", TcGenQry(,,cQry), cTabela, .T., .T. )
+	
+	//Levantar quantos itens tem para serem apagados.
+	Count to nTotal
+	//ProcRegua(nTotal)
+	
+	//Perguntar se o usuário deseja continuar.
+	If !MsgYesNo("Existem " + Alltrim(Str(nTotal)) + " itens para serem limpos da tabela SZM, deseja continuar?")
+		MsgStop("Operação cancelada pelo usuário")
+		Return
+	EndIf	
+	
+	DbSelectArea(cTabela)
+	//Criar loop para avaliar cada linha da query.
+	(cTabela)->(DbGotop())
+	While (cTabela)->(!EoF())
+		Begin Transaction	
+			
+			//Grava RECNO SZM da cTabela.
+			nSzmRecno := (cTabela)->SZM_RECNO
+				
+			//Abrir tabela SZM.
+			DbSelectArea("SZM")
+			SZM->(DbSetOrder(1))
+
+			//Posicion no RECNO da SZM.
+			SZM->(DbGoto(nSzmRecno))
+			//Trava o registro
+			SZM->(RecLock("SZM",.F.))
+		
+			//Excluir linha usando UPDATE.
+			cUpdate := " UPDATE " + RetSqlName("SZM") + " " 						+ CRLF 
+			cUpdate += " SET D_E_L_E_T_ 	= '*' " 								+ CRLF 
+			//cUpdate += " , SZM.R_E_C_D_E_L_ = SZM.R_E_C_N_O_ " 						+ CRLF
+			cUpdate += " WHERE ZM_FILIAL = '" + FWxfilial("SZM") + " '" 			+ CRLF
+			cUpdate += " AND SZM.R_E_C_N_O_ = '" + Alltrim(Str(nSzmRecno)) + "'" 	+ CRLF
+
+			//Tenta executar o update
+			nErro := TcSqlExec(cUpdate)
+			
+			//Se houve erro, mostra a mensagem e cancela a transação
+			If nErro != 0
+				MsgStop("Erro na execução da query: "+TcSqlError(), "Atenção")
+				DisarmTransaction()
+			EndIf	
+
+			cUpdate := " "
+
+			//Destrava o registro
+			SZM->(MSUnlock())
+			//Fechar SZM.
+			SZM->(DbCloseArea())
+		End Transaction
+
+			//Passar para próxima linha
+			(cTabela)->(DbSkip())
+
+	EndDo
+
+	
+	//Fechar cTabela
+	(cTabela)->(DbCloseArea())
+
+	//Retornar área origianl.
+	FwRestArea(aArea)
+
+Return
+
+//Fim dos Ajustes referente ao GAP082
+//----------------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------------
 
