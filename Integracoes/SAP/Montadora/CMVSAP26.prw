@@ -188,7 +188,7 @@ while !(cAliasNF)->(Eof())
 	
 	// verifica se trata-se de nota de devolucao de vendas por LP
 	If (cAliasNF)->Z7_XTABELA == "SE1" .and. (cAliasNF)->Z7_TIPONF == "N"
-		cOrigRet := GetMv("CAOAORESTR",,"501-001/501-002")
+		cOrigRet := GetMv("CAOAORESTR",,"501-002")   //501-001/  - Removido p/ não enviar como partida dobrada
 	Endif	
 
 	//Exclusão SAP
@@ -411,7 +411,7 @@ while !(cAliasNF)->(Eof())
 			cQ += " CV3.CV3_RECORI     =  '" + ALLTRIM(STR((cAliasNF)->Z7_RECORI)) + "'" + CRLF 
 			cQ += " AND CV3.CV3_TABORI = 'SE1' " + CRLF
 			cQ += " AND CT2.CT2_TPSALD = '1' "   + CRLF
-			cQ += " AND CT2_LP = '501' "         + CRLF
+			cQ += " AND CT2_LP = " + cOrigRet    + CRLF
 		Endif
 		cQ += " AND SUBSTR(CT2_ORIGEM,1,7) IN "+FormatIn(cOrigRet,"/")+" "	+ CRLF
 
@@ -453,7 +453,7 @@ while !(cAliasNF)->(Eof())
 			cQ += " CV3.CV3_RECORI     = '" + Alltrim(Str((cAliasNF)->Z7_RECORI)) + "' "  //missing
 			cQ += " AND CV3.CV3_TABORI = 'SE1' "
 			cQ += " AND CT2.CT2_TPSALD = '1' "
-			cQ += " AND CT2_LP = '501' "
+			cQ += " AND CT2_LP = " + cOrigRet
 		Endif	
 		cQ += " AND CT2_SEQUEN = '" + cSeq + "' "
 		cQ += " AND SUBSTR(CT2_ORIGEM,1,7) IN "+FormatIn(cOrigRet,"/")+" "
@@ -1048,9 +1048,7 @@ while !(cAliasNF)->(Eof())
 					SE1->(dbSkip())
 					Loop
 				EndIf
-				
-		
-
+	
 				//cForma := IIf(!Empty(SE1->E1_XFORMA),SE1->E1_XFORMA,IIf(!Empty(GetAdvFVal("SE4","E4_XFORMA",xFilial("SE4")+IIf(!lDev,SF2->F2_COND,SF1->F1_COND),1," ")),Alltrim(GetAdvFVal("SE4","E4_XFORMA",xFilial("SE4")+IIf(!lDev,SF2->F2_COND,SF1->F1_COND),1," "))," ")) 
 				cForma := SE1->E1_XFORMA
 				nPos := aScan( aSimple, {|aVet| aVet[2] == "codigoBancoCentral" .and. aVet[5] == "ContasAReceberRequest#1.documentos#1.AccountReceivable#" + Alltrim(Str(nz))} )
