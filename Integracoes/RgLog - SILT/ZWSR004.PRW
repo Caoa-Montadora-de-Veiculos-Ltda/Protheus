@@ -137,7 +137,7 @@ Conout("WSR004 - Integraçao de envio de produto para RGLOG - Inicio "+DtoC(date(
 	cQrySB1 += " WHERE SB1.B1_FILIAL = '" + xFilial("SB1") + "'" 		                + CRLF										
 	cQrySB1 += " 	AND	SB1.D_E_L_E_T_ = ' '"						                    + CRLF
     cQrySB1 += " 	AND	SB1.B1_XINTEG = 'S'"	       				                    + CRLF
-
+    cQrySB1 += " 	AND	SB1.B1_MSBLQL <> '1'"	       				                    + CRLF
     
     If Empty(cCodProd) 
         //--Chamada via schedule

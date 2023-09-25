@@ -35,7 +35,11 @@ User Function MT010INC()
         ZZN_FINAL  := "*"
         ZZN_USUR   := __cUserID + " - " + cUserName
         ZZN_CAMPO  := "TODOS CAMPOS"
-        ZZN_MOVTO  := "INCLUSAO/COPIA MANUAL DE PRODUTO"
+        IF FWIsInCallStack("FIMPEXCEL")
+           ZZN_MOVTO  := "CARGA EM MASSA DE PRODUTO"
+        ELSE
+           ZZN_MOVTO  := "INCLUSAO/COPIA MANUAL DE PRODUTO"
+        ENDIF
         ZZN->(MsUnlock())
     ENDIF
   

@@ -536,7 +536,7 @@ Local _nItem     := 0
         cCodprf   := AllTrim( aDados[52] )
         cFabr     := AllTrim( aDados[53] )
         cFaloja   := AllTrim( aDados[54] )
-        cMSBLQL   := "2"   //Não Bloqueado
+        cMSBLQL   := "1"   //Bloqueado
 
         IncProc("Montando dados de entrada...")
 
