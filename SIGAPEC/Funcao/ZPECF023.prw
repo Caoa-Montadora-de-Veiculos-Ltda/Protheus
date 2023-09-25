@@ -1002,7 +1002,15 @@ If !(_cQAlias)->(Eof())
         cCEME := (_cQAlias)->B5_CEME
     ENDIF
     IF Empty(cMARPEC)      
-        cMARPEC := (_cQAlias)->B5_MARPEC
+
+        VQS->(DbSetOrder(4))
+    
+        If VQS->(DbSeek(xFilial("VQS") + cFornece + cLojaFor ))
+            cMarPec  := VQS->VQS_MARPEC
+        else
+            cMARPEC  := (_cQAlias)->B5_MARPEC
+        EndIf
+
     ENDIF
     IF Empty(cPORTMS)      
         cPORTMS := (_cQAlias)->B5_PORTMS
