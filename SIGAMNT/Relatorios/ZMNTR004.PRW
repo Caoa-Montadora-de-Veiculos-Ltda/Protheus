@@ -80,17 +80,21 @@ Static Function  ReportPrint(oReport)
     While (cAliasTRB)->(!EoF()) .And. !oReport:Cancel()
 
 	// Tratamento para buscar a Localização - BEM/LOCALIZAÇÃO
-	
-	cLocaliz := NGLocComp((cAliasTRB)->T9_CODBEM,'1',"MNT") //Bem Localização
+	cLocaliz := ""
+	//cLocaliz := NGLocComp((cAliasTRB)->T9_CODBEM,'1',"MNT") //Bem Localização
 
+	cLocaliz := NGLocComp((cAliasTRB)->T9_CODBEM,'1') //Bem Localização
 
 	//If AllTrim( cLocaliz ) == AllTrim( (cAliasTRB)->T9_CODBEM ) // NÃO cadastrado na arvore
-		cCodBemPai := POSICIONE("STZ",1,xFilial("STZ")+((cAliasTRB)->T9_CODBEM),"TZ_BEMPAI")       //NGBEMPAI((cAliasTRB)->T9_CODBEM)
+		//cCodBemPai := POSICIONE("STZ",1,xFilial("STZ")+((cAliasTRB)->T9_CODBEM),"TZ_BEMPAI")       //NGBEMPAI((cAliasTRB)->T9_CODBEM)
+		cCodBemPai := NGBEMPAI((cAliasTRB)->T9_CODBEM )
 		if Empty(cCodBemPai) .AND. Empty(cLocaliz)
 			cLocaliz := "Localização não cadastrada"
 		Else
 			cLocaliz := "Bem Pai:" + NGLocComp(AllTrim(cCodBemPai),'1') //Estrutura de Bem pai
 		EndIf
+	//Else
+	//	cLocaliz := NGLocComp((cAliasTRB)->T9_CODBEM,'2') //Localização
 	//EndIf
 
 	    cNomeCC   := POSICIONE("SI3",1,xFilial("SI3")+(cAliasTRB)->T9_CCUSTO,"I3_DESC")
