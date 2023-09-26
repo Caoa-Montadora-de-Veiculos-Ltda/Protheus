@@ -22,7 +22,7 @@ User Function CMVEIC01()
 
 	aAdd(aRotina,{"Importar Invoice",	"U_CMVEI01A",	0, 3 })
 	aAdd(aRotina,{"Invoice x Caixas",	"U_CMVEI01B",	0, 5 })
-	aAdd(aRotina,{"Limpar SZM"		,	"U_CMVEI01E",	0, 5 })
+	aAdd(aRotina,{"Limpar SZM"		,	"U_ZEICF024",	0, 5 })
 	//	aAdd(aRotina,{"Invoice x Caixas MVC",	"U_CMVEI01D",	0, 5 })
 
 	if (1=2)
@@ -3063,7 +3063,7 @@ Início dos Ajustes referente ao GAP082
 /*/
 
 //Processa({|| fExemplo5()}, "Filtrando...")
-
+/*
 User Function CMVEI01E()
 
 	Local aArea 	:= GetArea()
@@ -3107,7 +3107,6 @@ User Function CMVEI01E()
 	
 	//Levantar quantos itens tem para serem apagados.
 	Count to nTotal
-	//ProcRegua(nTotal)
 	
 	//Perguntar se o usuário deseja continuar.
 	If !MsgYesNo("Existem " + Alltrim(Str(nTotal)) + " itens para serem limpos da tabela SZM, deseja continuar?")
@@ -3118,25 +3117,27 @@ User Function CMVEI01E()
 	DbSelectArea(cTabela)
 	//Criar loop para avaliar cada linha da query.
 	(cTabela)->(DbGotop())
+	
+	Begin Transaction	
+
 	While (cTabela)->(!EoF())
-		Begin Transaction	
-			
+		
 			//Grava RECNO SZM da cTabela.
 			nSzmRecno := (cTabela)->SZM_RECNO
 				
 			//Abrir tabela SZM.
-			DbSelectArea("SZM")
-			SZM->(DbSetOrder(1))
+			//DbSelectArea("SZM")
+			//SZM->(DbSetOrder(1))
 
 			//Posicion no RECNO da SZM.
 			SZM->(DbGoto(nSzmRecno))
 			//Trava o registro
-			SZM->(RecLock("SZM",.F.))
+			//SZM->(RecLock("SZM",.F.))
 		
 			//Excluir linha usando UPDATE.
 			cUpdate := " UPDATE " + RetSqlName("SZM") + " " 						+ CRLF 
 			cUpdate += " SET D_E_L_E_T_ 	= '*' " 								+ CRLF 
-			//cUpdate += " , SZM.R_E_C_D_E_L_ = SZM.R_E_C_N_O_ " 						+ CRLF
+			cUpdate += " , SZM.R_E_C_D_E_L_ = SZM.R_E_C_N_O_ " 						+ CRLF
 			cUpdate += " WHERE ZM_FILIAL = '" + FWxfilial("SZM") + " '" 			+ CRLF
 			cUpdate += " AND SZM.R_E_C_N_O_ = '" + Alltrim(Str(nSzmRecno)) + "'" 	+ CRLF
 
@@ -3145,14 +3146,14 @@ User Function CMVEI01E()
 			
 			//Se houve erro, mostra a mensagem e cancela a transação
 			If nErro != 0
-				MsgStop("Erro na execução da query: "+TcSqlError(), "Atenção")
+				MsgStop("Erro na execução da query: " + TcSqlError(), "Atenção")
 				DisarmTransaction()
 			EndIf	
 
 			cUpdate := " "
 
 			//Destrava o registro
-			SZM->(MSUnlock())
+			//SZM->(MSUnlock())
 			//Fechar SZM.
 			SZM->(DbCloseArea())
 		End Transaction
@@ -3173,6 +3174,7 @@ Return
 
 //Fim dos Ajustes referente ao GAP082
 //----------------------------------------------------------------------------------
+*/
 
 //----------------------------------------------------------------------------------
 
