@@ -1,6 +1,15 @@
-#Include 'Protheus.ch'
+#INCLUDE "PROTHEUS.CH"
+#INCLUDE "FWMBROWSE.CH"
+#INCLUDE "FWMVCDEF.CH"
+
+/*
+#include "totvs.ch"
+#include "protheus.ch"
+#include "topconn.ch"
+#include "fwbrowse.ch"
+#include 'fwmvcdef.ch'
 #Include 'FWMVCDef.ch'
-#INCLUDE "FWBROWSE.CH"
+*/
 
 /*/{Protheus.doc} ZPECF040
 Calculo Curva ABC 
@@ -18,12 +27,18 @@ Calculo Curva ABC
 User Function ZPECF040
 Local _oBrw
 Local _oSay
+	_lRet := .T. //U_ZGENUSER( RetCodUsr() ,"ZPECF040" ,.T.)	
+	If !_lRet
+		Return Nil
+	EndIf
     _oBrw := FWMBrowse():New()
     _oBrw:SetAlias("SZO")
 	_oBrw:SetMenuDef('ZPECF040')
     _oBrw:SetDescription("Curva ABC CAOA")
 	_oBrw:AddButton("Processar"  	, { || FwMsgRun(,{ | _oSay | ZPECF040PR(@_oBrw, @_oSay) }, "Processando Curva ABC", "Aguarde...")  },,,, .F., 2 )  
-
+	_oBrw:DisableDetails()
+	_oBrw:SetAmbiente(.F.)
+	_oBrw:SetWalkThru(.F.)	
     _oBrw:Activate()
 Return Nil 
 
@@ -38,10 +53,13 @@ Inclusão dados no menu
 @history    
 /*/
 Static Function MenuDef()
-    Local _aRet := {}
-    ADD OPTION _aRet TITLE 'Gerar Excel'    ACTION 'VIEWDEF.ZPECF040'   OPERATION 7                     ACCESS 0
-    ADD OPTION _aRet TITLE 'Visualizar'     ACTION 'VIEWDEF.ZPECF040'   OPERATION MODEL_OPERATION_VIEW  ACCESS 0
-Return _aRet
+Local _aRotina := {}
+Begin Sequence
+	ADD OPTION _aRotina TITLE "Pesquisar"  	ACTION 'AxPesqui' 		  		OPERATION 1 ACCESS 0
+	ADD OPTION _aRotina TITLE "Imprimir" 	ACTION "VIEWDEF.ZPECF040" 	OPERATION 8 ACCESS 0
+	//ADD OPTION _aRotina TITLE "Visualizar" 	ACTION "VIEWDEF.ZPECF040" 	OPERATION MODEL_OPERATION_VIEW ACCESS 0
+End Sequence	
+Return _aRotina
 
 
 /*/{Protheus.doc} MenuModelDefDef
@@ -55,17 +73,20 @@ Modelo de Dados
 @history    
 /*/
 Static Function ModelDef()
-    Local _oModel    := Nil
+    Local oModel    := Nil
     Local _oStruSZO  := FWFormStruct(1, "SZO")
+	// Cria o objeto do Modelo de Dados
+	oModel := MPFormModel():New('ZPECF040MDL',  /*bPreValidacao*/, /*bPosValidacao*/, /*bCommit*/, /*bCancel*/ )
+	// Adiciona ao modelo uma estrutura de formulário de edição por campo
+	oModel:AddFields( 'SZOMASTER', /*cOwner*/, _oStruSZO, /*bPreValidacao*/, /*bPosValidacao*/, /*bCarga*/ )
+	// Adiciona a descricao do Modelo de Dados
+    oModel:SetDescription("Curva ABC CAOA")
+	// Adiciona a descricao do Componente do Modelo de Dados
+    oModel:GetModel("SZOMASTER"):SetDescription("Curva ABC CAOA")
+	//oModel:SetPrimaryKey({'ZO_FILIAL', 'ZO_CODIGO' })
+    oModel:SetPrimaryKey({})
 
-    _oModel := MPFormModel():New("ZPECF040MDL",/*bPre*/, /*{|_oModel| zVldIncZZI(_oModel) }*/,/*bCommit*/,/*bCancel*/) 
-    _oModel:AddFields("SZOMASTER",/*cOwner*/,_oStruSZO)
-
-    _oModel:SetDescription("Curva ABC CAOA")
-    _oModel:GetModel("SZOMASTER"):SetDescription("Curva ABC CAOA")
-    _oModel:SetPrimaryKey({})
-
-Return _oModel
+Return oModel
 
 
 /*/{Protheus.doc} ViewDef
@@ -79,27 +100,25 @@ View
 @history    
 /*/
 Static Function ViewDef()
-    Local _oModel        := ModelDef()
-    Local _oStruSZO      := FWFormStruct(2, "SZO")
-    Local _oView         := Nil
+	// Cria um objeto de Modelo de Dados baseado no ModelDef do fonte informado
+    Local oModel        := ModelDef()
+	// Cria a estrutura a ser usada na View
+    Local _oStruSZO     := FWFormStruct(2, "SZO")
+    Local oView         := Nil
 
     //-- Cria View e seta o modelo de dados
-    _oView := FWFormView():New()
-    _oView:SetModel(_oModel)
-
-    //-- Add cabeçalho
-	_oView:AddField('VIEW_CAB',_oStruSZO,'SZOMASTER')
-
-    //-- Define os títulos do cabeçalho
-    _oView:EnableTitleView('VIEW_CAB', "Curva ABC CAOA") 
+    oView := FWFormView():New()
+    oView:SetModel(oModel)
+	//Adiciona no nosso View um controle do tipo FormFields(antiga enchoice)
+	oView:AddField('VIEW_SZO',_oStruSZO,'SZOMASTER')
 
     //-- Seta o dimensionamento de tamanho
-    _oView:CreateHorizontalBox('SZO_DADOS',100)
-
+    oView:CreateHorizontalBox('BOX_SZO',100)
     //--Amarra a view com as box
-    _oView:SetOwnerView('VIEW_CAB','SZO_DADOS')
-
-Return _oView
+    oView:SetOwnerView('VIEW_SZO','BOX_SZO')
+	//-- Define os títulos do cabeçalho
+    oView:EnableTitleView('VIEW_SZO', "Curva ABC CAOA") 
+Return oView
 
 
 
@@ -271,10 +290,10 @@ Begin Sequence
 		Endif	
 	Endif
 	While (_cAliasPesq)->(!Eof())
-		AAdd(_aPontos, { StrZero(Val((_cAliasPesq)->CHAVE),3),;  
-			  			 StrZero(Val((_cAliasPesq)->TIPO),3),;
-						 StrZero(Val((_cAliasPesq)->INICIAL),5),;
-						 StrZero(ValVal((_cAliasPesq)->FINAL),5);
+		AAdd(_aPontos, { AllTrim((_cAliasPesq)->CHAVE),;  
+			  			 AllTrim((_cAliasPesq)->TIPO),;
+						 AllTrim((_cAliasPesq)->INICIAL),;
+						 AllTrim((_cAliasPesq)->FINAL);
 						})
 		(_cAliasPesq)->(DbSkip())				
 	EndDo
@@ -303,10 +322,10 @@ Begin Sequence
 	Endif
 	While (_cAliasPesq)->(!Eof())
 		_nPontos ++
-		AAdd(_aPontoCurva, { StrZero(Val((_cAliasPesq)->CHAVE),3),;  
-			  				 StrZero(Val((_cAliasPesq)->TIPO),3),;
-							 StrZero(Val((_cAliasPesq)->INICIAL),5),;
-							 StrZero(ValVal((_cAliasPesq)->FINAL),5);
+		AAdd(_aPontoCurva, { AllTrim((_cAliasPesq)->CHAVE),;  
+			  				 AllTrim((_cAliasPesq)->TIPO),;
+							 AllTrim((_cAliasPesq)->INICIAL),;
+							 AllTrim((_cAliasPesq)->FINAL);
 							})
 		(_cAliasPesq)->(DbSkip())				
 	EndDo
@@ -318,13 +337,40 @@ Begin Sequence
 	Endif
 	aSort( _aPontoCurva , , , { |x,y| x[3] > y[3] } )  //para organiar de acordo com os meses
 	//caso liberado para processamento apagar os códigos existentes no parametro
-	If SZO->(!Eof())
+   	SZO->(DbGoTop())
+	If SZO->(!Eof()) 
 		_oSay:SetText("Aguarde apagando registros ..." )
-		ProcessMessage() 
-		TcSqlExec("DELETE FROM " + RetSqlName("SZO") + " WHERE  AND ZO_COD = BETWEEN '" + _cProdutoDe + "' AND '"+_cProdutoAte  )
-		//ChkFile( "SZO" , .T. )
-		//SZO->(__dbZap())
+		ProcessMessage()
+		//Caso seja todos utiliza DBZAP 
+		If Empty(_cProdutoDe) .And. Upper(SubsTr(_cProdutoAte,1,1)) == "Z"
+ 			If Select("SZO")    
+        		SZO->(dbCloseArea())
+    		Endif		
+			//Tenta bloquear para apagar com dbzap
+			If  ChkFile( "SZO" , .T. )
+				SZO->(__dbZap())
+			Endif 
+		Endif 
+		//Caso não consiga apagar com dbzap apago com delete
+		SZO->(DbSetOrder(1))
+   		SZO->(DbGoTop())
+		If SZO->(!Eof())
+			_cQuery := " DELETE FROM  "+RetSqlName("SZO")+" SZO " + CRLF
+			_cQuery += " WHERE 	SZO.ZO_FILIAL = '"+FwXFilial("SZO")+"' "	
+			_cQuery += " 	AND SZO.ZO_COD 	BETWEEN '" + _cProdutoDe + "' AND '"+_cProdutoAte+"' " 	+ CRLF				
+			_cQuery += " 	AND SZO.D_E_L_E_T_ = ' ' " + CRLF
+			_nStatus := TCSqlExec(_cQuery)
+    		If (_nStatus < 0)
+        		MsgStop("TCSQLError() " + TCSQLError(), "Registros Cabeçalho")
+				_lRet := .F.
+	        	Break    
+   			 Endif
+		Endif
 	Endif 
+
+	_oSay:SetText("Aguarde atualizando registros ..." )
+	ProcessMessage()
+
 	//Campos constantes na Query
 	Aadd(_aStruct, "ZO_FILIAL") 
 	Aadd(_aStruct, "ZO_COD")
@@ -440,14 +486,14 @@ Begin Sequence
 			If AllTrim(_aPontos[_nPos,2])  == "P"
      			_cQuery += " 	WHEN NVL(MIN(MES_PONTOS.MESES),0) <= "+StrZero(_nMesRef,3)+" AND NVL(SUM(MES_PONTOS.PONTOS),0) BETWEEN " +_aPontos[_nPos,3]+" AND "+_aPontos[_nPos,4]+" 	THEN '"+_aPontos[_nPos,1]+"' " + CRLF
 			ElseIf AllTrim(_aPontos[_nPos,2])  == "N"  //produto novo tem que avaliar se tem menos de um ano
-    			_cQuery += "	WHEN COALESCE(SB1.B1_XDTINC,' ') <> ' ' " + CRLF 
+    			_cQuery += "	WHEN COALESCE(SB1.B1_XDTINC,'        ') <> ' ' " + CRLF 
     			_cQuery += " 		AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SB1.B1_XDTINC, 'YYYYMMDD'))) <= "+StrZero(_nMesRef,3) + " "+ CRLF
     			_cQuery += " 		AND NVL(SUM(MES_PONTOS.PONTOS),0) = 0  														THEN '"+_aPontos[_nPos,1]+"' " + CRLF //--No periodo de 1 ano a partir da data de cadastro não possuir nenhuma venda
 			Else 
-				If _aPontos[_nPos,3] > 0  //caso o inicial esteja marcado maior que 0 significa que ainda esta em uma contagem de at´´e
-    				_cQuery += " 	WHEN NVL(MIN(MES_PONTOS.MESES),0) <= "+_aPontos[_nPos,4]+" AND NVL(SUM(MES_PONTOS.PONTOS),0) > "+_nPontosCurva+" THEN '"+_aPontos[_nPos,1]+"' " + CRLF
+				If Val(_aPontos[_nPos,3]) > 0  //caso o inicial esteja marcado maior que 0 significa que ainda esta em uma contagem de at´´e
+    				_cQuery += " 	WHEN NVL(MIN(MES_PONTOS.MESES),0) <= "+AllTrim((_aPontos[_nPos,4]))+" AND NVL(SUM(MES_PONTOS.PONTOS),0) > "+Str(_nPontosCurva)+" THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF
 				Else  //quando o inicial estiver igual a 0 (zero) significa que é o ultimo valor a ser considderado e sera maior que o mesmo
-   					_cQuery += " 	WHEN NVL(MIN(MES_PONTOS.MESES),0) >=  "+_aPontos[_nPos,4]+"																   THEN '"+_aPontos[_nPos,1]+"' " + CRLF
+   					_cQuery += " 	WHEN NVL(MIN(MES_PONTOS.MESES),0) >=  "+AllTrim(_aPontos[_nPos,4])+"   THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF
 					_cCurvaFim := _aPontos[_nPos,1]
 				EndIf 	
 			EndIf 
