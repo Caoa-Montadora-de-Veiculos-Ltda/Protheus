@@ -411,7 +411,7 @@ while !(cAliasNF)->(Eof())
 			cQ += " CV3.CV3_RECORI     =  '" + ALLTRIM(STR((cAliasNF)->Z7_RECORI)) + "'" + CRLF 
 			cQ += " AND CV3.CV3_TABORI = 'SE1' " + CRLF
 			cQ += " AND CT2.CT2_TPSALD = '1' "   + CRLF
-			cQ += " AND CT2_LP = " + cOrigRet    + CRLF
+			cQ += " AND CT2_LP = '" + SUBSTR(cOrigRet,1,3)  + "' "  + CRLF
 		Endif
 		cQ += " AND SUBSTR(CT2_ORIGEM,1,7) IN "+FormatIn(cOrigRet,"/")+" "	+ CRLF
 
@@ -444,7 +444,7 @@ while !(cAliasNF)->(Eof())
 		cQ += " FROM " + RetSqlName("CT2") + " CT2 " + CRLF
 		cQ += " INNER JOIN " + RetSqlName("CV3") + " CV3 " + CRLF
 		cQ += " ON TRIM(CV3.CV3_RECDES) = TRIM(CT2.R_E_C_N_O_) "
-		cQ += " AND CV3.D_E_L_E_T_ <> '*' "
+		cQ += " AND CV3.D_E_L_E_T_ <> '*' " + CRLF
 		cQ += " AND CT2.D_E_L_E_T_ <> '*' " + CRLF
 		cQ += " WHERE " + CRLF
 		//cQ += " CV3.CV3_RECORI='"+ALLTRIM(STR((cAliasTit)->SD2_RECNO))+"' AND CV3.CV3_TABORI='SD2' AND CT2.CT2_AT01DB=' ' AND CT2.CT2_TPSALD = '1' "
@@ -453,7 +453,7 @@ while !(cAliasNF)->(Eof())
 			cQ += " CV3.CV3_RECORI     = '" + Alltrim(Str((cAliasNF)->Z7_RECORI)) + "' "  //missing
 			cQ += " AND CV3.CV3_TABORI = 'SE1' "
 			cQ += " AND CT2.CT2_TPSALD = '1' "
-			cQ += " AND CT2_LP = " + cOrigRet
+			cQ += " AND CT2_LP = '" + Substr(cOrigRet,1,3) + "' "
 		Endif	
 		cQ += " AND CT2_SEQUEN = '" + cSeq + "' "
 		cQ += " AND SUBSTR(CT2_ORIGEM,1,7) IN "+FormatIn(cOrigRet,"/")+" "
