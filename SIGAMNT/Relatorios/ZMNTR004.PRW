@@ -92,7 +92,7 @@ Static Function  ReportPrint(oReport)
 	
 		//Empty(cCodBemPai)
 
-		If Empty(cCodBemPai) .AND. Empty(cLocaliz)
+		If Empty(cCodBemPai) .AND. Empty(cLocaliz)  //Incluído p/não limpar a Localiz
 			cLocaliz := "Localização não cadastrada"
 		Elseif !Empty(cCodBemPai)
 			cLocaliz := "Bem Pai:" + NGLocComp(AllTrim(cCodBemPai),'1') //Estrutura de Bem pai
