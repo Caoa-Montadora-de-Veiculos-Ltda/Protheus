@@ -226,7 +226,7 @@ Local _nItem     := 0
 
         aDados  := Separa(cLinha,cSeparador)
 
-        IF LEN(aDados) <> 3
+        IF LEN(aDados) <> 3  //
             lRet := .F.
             DisarmTransaction()            
             MSGINFO("Lay-out invalido para esta importação ! Verifique o Fleg p/ somente FOB. "+"[ZPECF037]")

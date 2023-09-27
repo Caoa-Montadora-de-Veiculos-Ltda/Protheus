@@ -6,7 +6,7 @@
 Programa.: ZPECF016
 Autor....: CAOA - Fagner Barreto
 Data.....: 07/03/2022
-Descricao / Objetivo: Atualiza preços de peça por UF
+Descricao / Objetivo: Atualiza preços de peça por UF (guardar parâmetros)
 ===========================================================================================
 */
 User Function ZPECF016()

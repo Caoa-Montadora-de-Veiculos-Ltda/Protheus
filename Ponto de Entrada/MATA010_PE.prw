@@ -186,7 +186,7 @@ If aParam <> NIL
 				cFornece := oObj:GetModel(cIdPonto):GetValue('SB1MASTER','B1_PROC'   )
 				//cLojaFor := oObj:GetModel(cIdPonto):GetValue('SB1MASTER','B1_LOJPROC')
 				cLojaFor := xConteudo	
-				if !empty(cFornece) .and. !Empty(cLojaFor) .AND. !IsInCallStack("U_ZPECF023")
+				if !empty(cFornece) .and. !Empty(cLojaFor) .AND. !IsInCallStack("U_ZPECF023")  //Não fazer p/planilha
 				
 					If ApMsgYesNo( "Deseja atualizar a marca do produto?","[ MATA010_PE ] - Confirma a operação?" )
 								

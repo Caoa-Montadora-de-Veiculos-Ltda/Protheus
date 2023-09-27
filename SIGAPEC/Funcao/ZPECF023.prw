@@ -102,7 +102,7 @@ User Function ZPECF023()
     If _cEmp == "2020" //Executa o p.e. Anapolis.
 
     aAdd( aPergs ,{6,"Diretorio do Arquivo ",cCaminho     ,"@!" ,     ,'.T.' ,80,.T.,"Arquivos .xls |*.xls " })
-    aAdd( aPergs ,{4,"Somente FOB ?",.F.,"Marque p/atualizar apenas o FOB.",90,"",.F.})
+    aAdd( aPergs ,{4,"Somente FOB ?",.F.,"Marque p/atualizar apenas FOB.",90,"",.F.})
     
     If ParamBox(aPergs, "Parametros ", aRetP, , , , , , , , ,.F.,.F.) //Não salvar os dados por usuário
 
