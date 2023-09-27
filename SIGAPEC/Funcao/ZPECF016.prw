@@ -29,8 +29,8 @@ User Function ZPECF016()
     aadd(aParamBox, {1, "Icms Importado:"      , nIcmsImpor                         , PesqPict("SF7","F7_ALIQINT")  , "Positivo()"  , ""    , ""    , 040, .T.})
     aadd(aParamBox, {1, "Icms Interestadual:"  , nIcmsInter                         , PesqPict("SF7","F7_ALIQINT")  , "Positivo()"  , ""    , ""    , 040, .T.})
     
-    If ParamBox(aParamBox,"Preencha os Parametros para Atualização...",@aRet)
-        
+    If ParamBox(aParamBox,"Preencha os Parametros para Atualização...",@aRet, , , , , , , , ,.T.,.T.)
+    
         cEstadoDe  := aRet[4]
         cEstadoAte := aRet[5]
         nIcmsNorte := aRet[6]
