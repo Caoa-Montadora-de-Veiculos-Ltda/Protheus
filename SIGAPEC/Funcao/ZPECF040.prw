@@ -27,18 +27,19 @@ Calculo Curva ABC
 User Function ZPECF040
 Local _oBrw
 Local _oSay
-	_lRet := .T. //U_ZGENUSER( RetCodUsr() ,"ZPECF040" ,.T.)	
-	If !_lRet
-		Return Nil
-	EndIf
     _oBrw := FWMBrowse():New()
     _oBrw:SetAlias("SZO")
 	_oBrw:SetMenuDef('ZPECF040')
+	//_oBrw:SetMenuDef('')
     _oBrw:SetDescription("Curva ABC CAOA")
-	_oBrw:AddButton("Processar"  	, { || FwMsgRun(,{ | _oSay | ZPECF040PR(@_oBrw, @_oSay) }, "Processando Curva ABC", "Aguarde...")  },,,, .F., 2 )  
 	_oBrw:DisableDetails()
 	_oBrw:SetAmbiente(.F.)
-	_oBrw:SetWalkThru(.F.)	
+	_oBrw:SetWalkThru(.F.)
+    _oBrw:ForceQuitButton()    
+    _oBrw:SetIgnoreARotina(.T.) // Indica que a mbrowse, ira ignorar a variavel private aRotina na construção das opções de menu.
+
+	_oBrw:AddButton("Processar"  	, { || FwMsgRun(,{ | _oSay | ZPECF040PR(@_oBrw, @_oSay) }, "Processando Curva ABC", "Aguarde...")  },,,, .F., 2 )  
+	_oBrw:AddButton("Gerar Excel"  	, { || FwMsgRun(,{ | _oSay | ZPECF40PL_PlanilhaCurvaABC(@_oBrw, @_oSay) }, "Gerar Excel Curva ABC", "Aguarde...")  },,,, .F., 2 )  
     _oBrw:Activate()
 Return Nil 
 
@@ -55,9 +56,9 @@ Inclusão dados no menu
 Static Function MenuDef()
 Local _aRotina := {}
 Begin Sequence
-	ADD OPTION _aRotina TITLE "Pesquisar"  	ACTION 'AxPesqui' 		  		OPERATION 1 ACCESS 0
-	ADD OPTION _aRotina TITLE "Imprimir" 	ACTION "VIEWDEF.ZPECF040" 	OPERATION 8 ACCESS 0
-	//ADD OPTION _aRotina TITLE "Visualizar" 	ACTION "VIEWDEF.ZPECF040" 	OPERATION MODEL_OPERATION_VIEW ACCESS 0
+	//ADD OPTION _aRotina TITLE "Pesquisar"  	ACTION 'AxPesqui' 		  		OPERATION 1 ACCESS 0
+	ADD OPTION _aRotina TITLE "Visualizar" 	ACTION "VIEWDEF.ZPECF040" 	OPERATION 2 ACCESS 0
+	//ADD OPTION _aRotina TITLE "Imprimir" 	ACTION "VIEWDEF.ZPECF040" 	OPERATION 8 ACCESS 0
 End Sequence	
 Return _aRotina
 
@@ -76,7 +77,7 @@ Static Function ModelDef()
     Local oModel    := Nil
     Local _oStruSZO  := FWFormStruct(1, "SZO")
 	// Cria o objeto do Modelo de Dados
-	oModel := MPFormModel():New('ZPECF040MDL',  /*bPreValidacao*/, /*bPosValidacao*/, /*bCommit*/, /*bCancel*/ )
+	oModel := MPFormModel():New('ZPECF40MDL',  /*bPreValidacao*/, /*bPosValidacao*/, /*bCommit*/, /*bCancel*/ )
 	// Adiciona ao modelo uma estrutura de formulário de edição por campo
 	oModel:AddFields( 'SZOMASTER', /*cOwner*/, _oStruSZO, /*bPreValidacao*/, /*bPosValidacao*/, /*bCarga*/ )
 	// Adiciona a descricao do Modelo de Dados
@@ -151,7 +152,7 @@ Local _lRet			:= .T.
 Local _nPos
 
 Begin Sequence
-	//_lRet := U_ZGENUSER( RetCodUsr() ,"ZPECF040" ,.T.)	
+	//_lRet := U_ZGENUSER( RetCodUsr() ,"ZPECF040PR" ,.T.)	
 	If !_lRet
 		Break
 	EndIf
@@ -613,6 +614,108 @@ If Select(_cAliasPesq) <> 0
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif  
 Return Nil
+
+
+
+
+/*
+---------------------------------------------------------------------
+Geração da Planilha com os dados da Consulta.
+---------------------------------------------------------------------
+*/
+Static Function ZPECF40PL_PlanilhaCurvaABC(_oBrw, _oSay)
+Local _lRet 		:= .T.
+Local _cSheet 		:= "Curva ABC"
+Local _cTable 		:= "CURVA ABC"
+Local _cDir   		:=  ""
+Local _cNomeArqXML	:= "ZPECF040 Curva ABC"
+Local _nColunas 	:= 0
+Local _lTotalizar 	:= .F.
+Local _cType 		:= OemToAnsi("Todos") + "(*.*) |*.*|"
+Local _aLinha		:= {}
+Local _oExcel
+Local _oFwExcel
+Local _nReg 
+Local _nUltimoReg
+Local _cTipo
+Local _nPos
+Local _nCount 
+Local _cArqXML
+
+Begin Sequence
+	If _oBrw:LogicLen() <= 0
+		Break
+	EndIf
+	//Selecionar pasta para geração
+	_cDir := cGetFile(_cType, OemToAnsi("Selecione a Pasta "), 0,, .T.,GETF_LOCALFLOPPY + GETF_LOCALHARD + GETF_NETWORKDRIVE + GETF_RETDIRECTORY)
+	//³ Parametro: GETF_LOCALFLOPPY - Inclui o floppy drive local.   ³
+	//³            GETF_LOCALHARD - Inclui o Harddisk local.         ³
+	_cArqXML := _cDir + If(SubsTr(_cDir,Len(_cDir),1) <> "\","\","")+_cNomeArqXML
+	If File(_cArqXML+".xml")
+		If !MsgYesNo("Arquivo ja existe deseja sobrepor "+_cArqXML+".xml ?") 
+			_lRet := .F.
+			Break 
+		Endif 
+		If Ferase(_cArqXML+".xml") == -1	
+			MSGInfo("Não foi possivel apagar arquivo "+_cArqXML+"  !","ATENCAO")
+			_lRet := .F.
+			Break
+		EndIf
+	Endif
+
+	_oFwExcel := FWMSEXCEL():New()
+	_oFwExcel:AddworkSheet(_cSheet)
+	_oFwExcel:AddTable(_cSheet,_cTable)
+	//montar o cabeçalho
+	_nColunas	:= Len(_oBrw:aColumns)
+	For _nPos := 1 to _nColunas
+		_lTotalizar := .F.
+		_cTipo      := _oBrw:GetColumn(_nPos):GetType()
+		_oFwExcel:AddColumn( ;
+						_cSheet, ;
+						_cTable , ;
+						_oBrw:GetColumn(_nPos):GetTitle() , ;
+												If( _cTipo == "N" , 3 , 1 ) , ; // Alinhamento da coluna ( 1-Left,2-Center,3-Right )
+												If( _cTipo == "N" , 2 , If(_cTipo == "D" ,4 ,1) ) , ; // Codigo de formatação ( 1-General,2-Number,3-Monetário,4-DateTime )
+												_lTotalizar )
+	Next _nPos
+
+	_oBrw:GoTop()
+	_nUltimoReg	:= _oBrw:LogicLen()
+	_nReg 		:= _oBrw:At()
+	
+	//ProcRegua(1000)
+	//nX := 0
+	//nY := 0
+	lExit := .F.
+	For _nPos := 1 To _nUltimoReg
+		_aLinha := Aclone(Array(_nColunas))
+		For _nCount := 1 To Len(_aLinha)
+			//cIdField := oBrwPEC23:GetColumn(nPosCol):GetID()
+			_aLinha[_nCount] := AllTrim(_oBrw:GetColumnData(_nCount))
+		Next _nCount
+		_oFwExcel:AddRow(_cSheet ,_cTable, _aLinha) 
+		_oSay:SetText( "Lendo Registo " +cValToChar(_nPos) + " de "+cValToChar(_nUltimoReg)+" aguarde..." ) 
+		ProcessMessage()
+		_oBrw:GoDown()
+		If lExit
+			Exit
+		Endif
+	Next _nPos
+
+	_oFwExcel:Activate()
+	_oFwExcel:GetXMLFile(AllTrim(_cArqXML)+".xml")
+	_oFwExcel:DeActivate()
+	_oBrw:GoTo( _nReg, .T. )
+	FreeObj(_oFwExcel)
+
+	// Abrindo o excel e abrindo o arquivo xml.
+	_oExcel := MsExcel():New()           // Abre uma nova conex„o com Excel.
+	_oExcel:WorkBooks:Open(_cArqXML)         // Abre uma planilha.
+	_oExcel:SetVisible(.T.)              // Visualiza a planilha.
+	_oExcel:Destroy()                    // Encerra o processo do gerenciador de tarefas.
+End Sequence 
+Return _lRet 
 
 
 /*
