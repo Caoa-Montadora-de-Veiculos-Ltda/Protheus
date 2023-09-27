@@ -81,7 +81,7 @@ Static Function  ReportPrint(oReport)
 
 	//If AllTrim( cLocaliz ) == AllTrim( (cAliasTRB)->T9_CODBEM ) // NÃO cadastrado na arvore
 		cCodBemPai := NGBEMPAI((cAliasTRB)->T9_CODBEM)
-		if Empty(cCodBemPai)
+		if Empty(cCodBemPai) .AND. Empty(cLocaliz)  
 			cLocaliz := "Localização não cadastrada"
 		Else
 			cLocaliz := "Bem Pai:" + POSICIONE("STZ",1,xFilial("STZ")+cCodBemPai,"TZ_BEMPAI")    //NGLocComp(AllTrim(cCodBemPai),'1') //Estrutura de Bem pai
