@@ -54,7 +54,7 @@ local nTimeOut		:= 120
 LOCAL nz			:= 0
 local nNum			:= 0
 local nTit			:= 0
-local cLucro		:=""
+local cLucro		:= "3100"  //
 Local cOrigEst      := ""//GetMv("CAOAORESTR",,"610-019/610-020/610-046/610-047")
 Local nOcorGL       := 0
 Local nOcorEstGL    := 0
@@ -497,6 +497,7 @@ while !(cAliasNF)->(Eof())
 			Else
 				nOcorEstGL++
 			Endif
+
 			(cAliasCtb)->(dbSkip())
 		EndDo
 
@@ -704,6 +705,7 @@ while !(cAliasNF)->(Eof())
 			EndIf
 		Next
 		//--------------------------------------------------------------------------------AccountGL
+/*
 		For nCnt:=1 To nCount
 			If !lContinua
 				Exit
@@ -868,17 +870,19 @@ while !(cAliasNF)->(Eof())
 					Loop
 				EndIf
 				nz++
-				
+			
 				(cAliasCtb)->(dbSkip())
 			enddo
 		Next
+*/	
+
 			//----------------------------------AccountReceivable
 			//(cAliasTit)->(dbgotop())
 			nz:=1
 			// reposiciona no 1 registro novamente
 			SE1->(dbSetOrder(2))
 			SE1->(dbGoto(nRegSE1))
-			nNumAux := nNum
+			//nNumAux := Num //removido
 			//nVlrTit := NoRound(nAtiv/nTit,2)
 			
 			cChaveTit := IIf(!lDev,xFilial("SZ7")+(cAliasNF)->Z7_XCHAVE,xFilial("SE1")+SE1->E1_PREFIXO+SE1->E1_NUM+SE1->E1_PARCELA+SE1->E1_TIPO)
