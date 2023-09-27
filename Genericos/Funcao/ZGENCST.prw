@@ -182,13 +182,19 @@ Local _aAreaSB2		:= SB2->(GetArea())
 Local _aAreaSB9		:= SB9->(GetArea())
 Local _dDataFech    := GetMv("MV_ULMES")
 Local _cLocal       := ""
+Local _cLocHist     := "80"
+
+/***************************************************************************************
+Busca o custo no local de recebimento, geralmente no local 90.
+Não encontrando no 90, faz a busca no primeiro local de recebimento Barueri (80)
+***************************************************************************************/
 
 SB1->(DBSetOrder(1))
 If SB1->(MsSeek( FwxFilial("SB1") + AvKey(_cCodProd , "B1_COD") ))
     
     _cLocal := SB1->B1_LOCREC //busca o local de recebimento
 
-    //1a Regra: Busca o custo do SB2 - Saldo Atual - Local de recebimento
+    //1a Regra: ETAPA01 - Busca o custo do SB2 - Saldo Atual - Local de recebimento
     SB2->(DBSetOrder(1))
     If SB2->(MsSeek( FwxFilial("SB2") + AvKey(_cCodProd , "B2_COD") + AvKey(_cLocal , "B2_LOCAL")))
         If SB2->B2_CM1 > 0
@@ -196,15 +202,37 @@ If SB1->(MsSeek( FwxFilial("SB1") + AvKey(_cCodProd , "B1_COD") ))
         EndIf
     EndIf
 
-    //2a Regra: Busca o custo do SB9 - Local de recebimento
-    SB9->(DBSetOrder(1))
-    If SB9->( MsSeek( FwxFilial("SB9") + AvKey(_cCodProd , "B9_COD") + AvKey(_cLocal , "B9_LOCAL") + DToS(_dDataFech) ) ) .And. _nCustoRet == 0
-        If SB9->B9_CM1  > 0
-            _nCustoRet := IIf( SB9->B9_CM1 <= 0, 0 , SB9->B9_CM1 ) 
+    //1a Regra: ETAPA02 - Busca o custo do SB2 - Saldo Atual - Local Historico de recebimento
+    If  _nCustoRet == 0 .And. ( AllTrim(_cLocHist) <> AllTrim(_cLocal) )
+        SB2->(DBSetOrder(1))
+        If SB2->(MsSeek( FwxFilial("SB2") + AvKey(_cCodProd , "B2_COD") + AvKey(_cLocHist , "B2_LOCAL")))
+            If SB2->B2_CM1 > 0
+                _nCustoRet := IIf( SB2->B2_CM1 <= 0, 0 , SB2->B2_CM1 ) 
+            EndIf
         EndIf
     EndIf
 
-    //3a Regra: Busca o custo do SD1 - Nota Fiscal
+    //2a Regra: ETAPA01 - Busca o custo do SB9 - Local de recebimento
+    If  _nCustoRet == 0 
+        SB9->(DBSetOrder(1))
+        If SB9->( MsSeek( FwxFilial("SB9") + AvKey(_cCodProd , "B9_COD") + AvKey(_cLocal , "B9_LOCAL") + DToS(_dDataFech) ) )
+            If SB9->B9_CM1  > 0
+                _nCustoRet := IIf( SB9->B9_CM1 <= 0, 0 , SB9->B9_CM1 ) 
+            EndIf
+        EndIf
+    EndIf
+
+     //2a Regra: ETAPA02 - Busca o custo do SB9 - Local Historico de recebimento
+    If  _nCustoRet == 0 .And. ( AllTrim(_cLocHist) <> AllTrim(_cLocal) )
+        SB9->(DBSetOrder(1))
+        If SB9->( MsSeek( FwxFilial("SB9") + AvKey(_cCodProd , "B9_COD") + AvKey(_cLocHist , "B9_LOCAL") + DToS(_dDataFech) ) )
+            If SB9->B9_CM1  > 0
+                _nCustoRet := IIf( SB9->B9_CM1 <= 0, 0 , SB9->B9_CM1 ) 
+            EndIf
+        EndIf
+    EndIf
+
+    //3a Regra: Busca o custo do SD1 - Nota Fiscal - Local de recebimento
     If  _nCustoRet == 0 
         If Select( (_cAls01) ) > 0
             (_cAls01)->(DbCloseArea())
@@ -250,6 +278,75 @@ If SB1->(MsSeek( FwxFilial("SB1") + AvKey(_cCodProd , "B1_COD") ))
             _cQry02 += " WHERE SD1.D1_FILIAL = '" + FWxFilial('SD1') + "' "                                                     + CRLF
             _cQry02 += " AND SD1.D1_COD = '" + _cCodProd + "' "                                                                 + CRLF
             _cQry02 += " AND SD1.D1_LOCAL = '" + _cLocal + "' "                                                                 + CRLF
+            _cQry02 += " AND SD1.D1_TIPO = 'C' "                                                                                + CRLF
+            _cQry02 += " AND SD1.D_E_L_E_T_ = ' '  "                                                                            + CRLF
+            _cQry02 += " ORDER BY SD1.D1_DTDIGIT, SD1.R_E_C_N_O_  DESC "                                                        + CRLF
+
+            // Executa a consulta.
+            DbUseArea( .T., "TOPCONN", TcGenQry(,,_cQry02), _cAls02, .T., .T. )
+
+            DbSelectArea((_cAls02))
+            (_cAls02)->(dbGoTop())
+
+            //3a - Etada - Encontrou nota de complemento de frete considera o custo dela, não encontrou considera a de compra.
+            If !(_cAls02)->(EoF())
+                _nCustoRet := ( ( (_cAls01)->D1_CUSTO + (_cAls02)->D1_CUSTO ) / ( (_cAls01)->D1_QUANT + (_cAls02)->D1_QUANT ) )
+            Else
+                _nCustoRet := ( (_cAls01)->D1_CUSTO / (_cAls01)->D1_QUANT )
+            EndIf
+            (_cAls02)->(DbCloseArea())
+        EndIf 
+
+        (_cAls01)->(DbCloseArea())
+    EndIf
+
+    //3a Regra: Busca o custo do SD1 - Nota Fiscal - Local de recebimento Historico
+    If  _nCustoRet == 0 .And. ( AllTrim(_cLocHist) <> AllTrim(_cLocal) )
+        
+        If Select( (_cAls01) ) > 0
+            (_cAls01)->(DbCloseArea())
+        EndIf
+
+        //1a - Etada - Busca nota fiscal de entrada (Compra)
+        _cQry01 := " "
+        _cQry01 += " SELECT SD1.D1_COD, SD1.D1_LOCAL, SD1.D1_CUSTO, SD1.D1_QUANT, SD1.D1_DTDIGIT, SD1.R_E_C_N_O_ "              + CRLF
+        _cQry01 += " FROM " +  RetSQLName("SD1") +" SD1 "                                                                       + CRLF
+        _cQry01 += "    LEFT JOIN " +  RetSQLName("SF4") +" SF4  "                                                              + CRLF
+        _cQry01 += " 	ON SF4.F4_FILIAL = '" + FWxFilial('SF4') + "' "                                                         + CRLF
+        _cQry01 += " 	AND SF4.F4_CODIGO = SD1.D1_TES "                                                                        + CRLF
+        _cQry01 += " 	AND SF4.F4_ESTOQUE = 'S' "                                                                              + CRLF
+        _cQry01 += " 	AND SF4.D_E_L_E_T_ = ' '  "                                                                             + CRLF
+        _cQry01 += " WHERE SD1.D1_FILIAL = '" + FWxFilial('SD1') + "' "                                                         + CRLF
+        _cQry01 += " AND SD1.D1_COD = '" + _cCodProd + "' "                                                                     + CRLF
+        _cQry01 += " AND SD1.D1_LOCAL = '" + _cLocHist + "' "                                                                   + CRLF
+        _cQry01 += " AND SD1.D1_TIPO = 'N' "                                                                                    + CRLF
+        _cQry01 += " AND SD1.D_E_L_E_T_ = ' '  "                                                                                + CRLF
+        _cQry01 += " ORDER BY SD1.D1_DTDIGIT, SD1.R_E_C_N_O_ DESC "                                                             + CRLF
+
+        // Executa a consulta.
+        DbUseArea( .T., "TOPCONN", TcGenQry(,,_cQry01), _cAls01, .T., .T. )
+
+        DbSelectArea((_cAls01))
+        (_cAls01)->(dbGoTop())
+
+        If !(_cAls01)->(EoF())
+
+            If Select( (_cAls02) ) > 0
+                (_cAls02)->(DbCloseArea())
+            EndIf
+
+            //2a - Etada - Busca nota fiscal de complemento de frete
+            _cQry02 := " "
+            _cQry02 += " SELECT SD1.D1_COD, SD1.D1_LOCAL, SD1.D1_CUSTO, SD1.D1_QUANT, SD1.D1_DTDIGIT, SD1.R_E_C_N_O_  "         + CRLF
+            _cQry02 += " FROM " +  RetSQLName("SD1") +" SD1 "                                                                   + CRLF
+            _cQry02 += "    LEFT JOIN " +  RetSQLName("SF4") +" SF4  "                                                          + CRLF
+            _cQry02 += " 	ON SF4.F4_FILIAL = '" + FWxFilial('SF4') + "' "                                                     + CRLF
+            _cQry02 += " 	AND SF4.F4_CODIGO = SD1.D1_TES "                                                                    + CRLF
+            _cQry02 += " 	AND SF4.F4_ESTOQUE = 'S' "                                                                          + CRLF
+            _cQry02 += " 	AND SF4.D_E_L_E_T_ = ' '  "                                                                         + CRLF
+            _cQry02 += " WHERE SD1.D1_FILIAL = '" + FWxFilial('SD1') + "' "                                                     + CRLF
+            _cQry02 += " AND SD1.D1_COD = '" + _cCodProd + "' "                                                                 + CRLF
+            _cQry02 += " AND SD1.D1_LOCAL = '" + _cLocHist + "' "                                                               + CRLF
             _cQry02 += " AND SD1.D1_TIPO = 'C' "                                                                                + CRLF
             _cQry02 += " AND SD1.D_E_L_E_T_ = ' '  "                                                                            + CRLF
             _cQry02 += " ORDER BY SD1.D1_DTDIGIT, SD1.R_E_C_N_O_  DESC "                                                        + CRLF
