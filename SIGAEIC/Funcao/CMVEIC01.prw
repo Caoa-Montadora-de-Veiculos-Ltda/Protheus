@@ -3263,12 +3263,15 @@ Static Function zGrvArq()
 
 			aLn[06] := StrTran(aLn[6], ".", "" )
 
+			lLimpaAnt = .F.
 			If lLimpaAnt = .F.
+				//Alterado conforme GAP 082 - SZM.R_E_C_D_E_L_ = SZM.R_E_C_N_O_ 
 				TcSqlExec("DELETE FROM " + RetSqlName("SZM") + " WHERE D_E_L_E_T_ = '*' AND ZM_INVOICE = '" + cZM_INVOIC + "' "   )
-				TcSqlExec("UPDATE " + RetSqlName("SZM") + " SET D_E_L_E_T_ = '*' WHERE ZM_FILIAL = '" + FwXfilial("SZM") + "' AND ZM_INVOICE = '" + cZM_INVOIC + "' ")
+				TcSqlExec("UPDATE " + RetSqlName("SZM") + " SZM SET SZM.D_E_L_E_T_ = '*', SZM.R_E_C_D_E_L_ = SZM.R_E_C_N_O_ WHERE ZM_FILIAL = '" + FwXfilial("SZM") + "' AND ZM_INVOICE = '" + cZM_INVOIC + "' ")
+				
 				lLimpaAnt = .T.
 			EndIf
-
+''
 			RecLock("SZM", .T.)
 				SZM->ZM_FILIAL 	:= FwXfilial("SZM")
 				SZM->ZM_INVOICE	:= Alltrim(cZM_INVOIC)
