@@ -22,7 +22,6 @@ User Function CMVEIC01()
 
 	aAdd(aRotina,{"Importar Invoice",	"U_CMVEI01A",	0, 3 })
 	aAdd(aRotina,{"Invoice x Caixas",	"U_CMVEI01B",	0, 5 })
-	aAdd(aRotina,{"Limpar SZM"		,	"U_ZEICF024",	0, 5 })
 	//	aAdd(aRotina,{"Invoice x Caixas MVC",	"U_CMVEI01D",	0, 5 })
 
 	if (1=2)
@@ -3263,15 +3262,14 @@ Static Function zGrvArq()
 
 			aLn[06] := StrTran(aLn[6], ".", "" )
 
-			lLimpaAnt = .F.
 			If lLimpaAnt = .F.
-				//Alterado conforme GAP 082 - SZM.R_E_C_D_E_L_ = SZM.R_E_C_N_O_ 
 				TcSqlExec("DELETE FROM " + RetSqlName("SZM") + " WHERE D_E_L_E_T_ = '*' AND ZM_INVOICE = '" + cZM_INVOIC + "' "   )
 				TcSqlExec("UPDATE " + RetSqlName("SZM") + " SZM SET SZM.D_E_L_E_T_ = '*', SZM.R_E_C_D_E_L_ = SZM.R_E_C_N_O_ WHERE ZM_FILIAL = '" + FwXfilial("SZM") + "' AND ZM_INVOICE = '" + cZM_INVOIC + "' ")
-				
-				lLimpaAnt = .T.
+				//TcSqlExec("UPDATE " + RetSqlName("SZM") + " SET D_E_L_E_T_ = '*' WHERE ZM_FILIAL = '" + FwXfilial("SZM") + "' AND ZM_INVOICE = '" + cZM_INVOIC + "' ")
+				//Ajuste conforme GAP082
+				LimpaAnt = .T.
 			EndIf
-''
+
 			RecLock("SZM", .T.)
 				SZM->ZM_FILIAL 	:= FwXfilial("SZM")
 				SZM->ZM_INVOICE	:= Alltrim(cZM_INVOIC)
