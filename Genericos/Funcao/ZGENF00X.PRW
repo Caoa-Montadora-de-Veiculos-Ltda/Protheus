@@ -16,7 +16,7 @@ Uso......:              Geral
 Obs......:
 =====================================================================================
 */
-
+/*
 
 User Function ZGENF00X()
 
@@ -27,22 +27,24 @@ User Function ZGENF00X()
 
         // Se nPos for maior que zero, significa que os caracteres foram encontrados
     //if nPos > 0
-        Conout("Não é permitido caracter espenicolcial: " + CRLF ;
+        Conout("Não é permitido caracter especial: " + CRLF ;
              + cCarEsp)
              
          M->B1_DESC := zCadProd(cCampo)
+
     //else
+      //lRet := .F.
       //  Conout("A string não contém os caracteres !@#")
     //endif
 
 
-Return
+Return cCampo
 
 
 Static Function zCadProd(cConteudo)
 	Local cCarEsp	:= "!@#$%¨&()+{}^~´`][;.>,<=/¢¬§ªº'?|"+'"'
 	Local nI		:= 0
-    Local cConteudo := ""
+    //Local cConteudo := ""
 
 	For nI := 1 To Len(cCarEsp)
 		
@@ -51,7 +53,7 @@ Static Function zCadProd(cConteudo)
 	Next nI
 
 Return cConteudo
-
+*/
 
 
 
@@ -84,3 +86,87 @@ Static Function zRetCarUni(cConteudo)
 
 Return cConteudo
 */
+
+
+
+
+ 
+/*/{Protheus.doc} zLimpaEsp
+Função que limpa os caracteres especiais dentro de um campo
+@type function
+@author Atilio / Achoa
+@since 25/04/2016
+@version 1.0
+@param lEndereco, Lógico, Define se o campo é endereço (caso sim, o traço e vírgula serão ignorados)
+    @example
+    u_zLimpaEsp()
+/*/
+ 
+User Function ZGENF00X()
+//zLimpaEsp(lEndereco)
+    Local aArea       := GetArea()
+    Local cCampo      := ReadVar()
+    Local cConteudo   := &(cCampo)
+    Local nTamOrig    := Len(cConteudo)
+   // Local _lRet         := .F.
+   // Default lEndereco := .F.
+     
+   //Local oStackInfo := GetStackInfo(1) // Obtém informações do quinto nível da pilha
+   //Local cStackMt := ("Procedimento no quinto nível: " + oStackInfo:Method)
+   //Local cStackSourc := ("Arquivo fonte no quinto nível: " + oStackInfo:Source)
+   //Local cStackLine := ("Linha no quinto nível: " + oStackInfo:Line)
+
+
+
+    //Retirando caracteres
+    cConteudo := StrTran(cConteudo, "'", "")
+    cConteudo := StrTran(cConteudo, "#", "")
+    cConteudo := StrTran(cConteudo, "%", "")
+    cConteudo := StrTran(cConteudo, "*", "")
+    cConteudo := StrTran(cConteudo, "&", "E")
+    cConteudo := StrTran(cConteudo, ">", "")
+    cConteudo := StrTran(cConteudo, "<", "")
+    cConteudo := StrTran(cConteudo, "!", "")
+    cConteudo := StrTran(cConteudo, "@", "")
+    cConteudo := StrTran(cConteudo, "$", "")
+    cConteudo := StrTran(cConteudo, "(", "")
+    cConteudo := StrTran(cConteudo, ")", "")
+    cConteudo := StrTran(cConteudo, "_", "")
+    cConteudo := StrTran(cConteudo, "=", "")
+    cConteudo := StrTran(cConteudo, "+", "")
+    cConteudo := StrTran(cConteudo, "{", "")
+    cConteudo := StrTran(cConteudo, "}", "")
+    cConteudo := StrTran(cConteudo, "[", "")
+    cConteudo := StrTran(cConteudo, "]", "")
+    cConteudo := StrTran(cConteudo, "/", "")
+    cConteudo := StrTran(cConteudo, "?", "")
+    cConteudo := StrTran(cConteudo, ".", "")
+    cConteudo := StrTran(cConteudo, "\", "")
+    cConteudo := StrTran(cConteudo, "|", "")
+    cConteudo := StrTran(cConteudo, ":", "")
+    cConteudo := StrTran(cConteudo, ";", "")
+    cConteudo := StrTran(cConteudo, '"', '')
+    cConteudo := StrTran(cConteudo, '°', '')
+    cConteudo := StrTran(cConteudo, 'ª', '')
+     
+    //Se não for endereço, retira também o - e a ,
+    //If !lEndereco
+        cConteudo := StrTran(cConteudo, ",", "")
+        cConteudo := StrTran(cConteudo, "-", "")
+   // EndIf
+     
+    //Adicionando os espaços a direita
+    cConteudo := Alltrim(cConteudo)
+    cConteudo += Space(nTamOrig - Len(cConteudo))
+     
+    //Definindo o conteúdo do campo
+    &(cCampo+" := '"+cConteudo+"' ")
+    //cCampo := "B1_DESC"
+    //cCampo := cConteudo
+    //M->B1_DESC := cConteudo
+    //M->B9_XLOG := cConteudo
+
+    //_lRet := FWFldPut(cCampo, cConteudo, , , , .T.)
+    RestArea(aArea)
+Return 
+ 
