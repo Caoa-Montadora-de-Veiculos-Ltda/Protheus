@@ -32,18 +32,34 @@ User Function MS520DEL()
 
 				SC6->(DbSetOrder(1))
 				If SC6->(DbSeek(xFilial("SC6")+SD2->D2_PEDIDO+SD2->D2_ITEMPV)) .And. !Empty(Alltrim(SC6->C6_PEDCLI))
-                	cQuery := ""
-                	cQuery += " UPDATE "+RetSqlName("VRJ")
-                	cQuery += " SET VRJ_STATUS = 'A' ,                          "
-                	cQuery += "     VRJ_XINTEG = 'A'                            "
-                	cQuery += " WHERE  VRJ_FILIAL = '"+xFilial("VRJ")        +"'" 
-                	cQuery += "    AND VRJ_PEDCOM = '"+SC6->C6_PEDCLI+"'"
-                	cQuery += "    AND D_E_L_E_T_ = ' '"
-                	nStatus := TCSqlExec(cQuery)
+                	
+					cQuery := "  UPDATE " + RetSqlName("VRK") + " VRK "
+					cQuery += " 	SET VRK.VRK_ITETRA = ' ', "
+					cQuery += "			VRK.VRK_NUMTRA = ' ' "
+                    cQuery += " WHERE   VRK.VRK_CHASSI = '" + SDB->DB_NUMSERI + "' "
+                    cQuery += "     AND VRK.VRK_ITETRA <> ' ' "
+                    cQuery += "     AND VRK.VRK_PEDIDO = (SELECT VRJ.VRJ_PEDIDO "
+                    cQuery += "                             FROM " + RetSqlName("VRJ") + " VRJ "
+                    cQuery += "                             WHERE  VRJ.VRJ_PEDCOM = '" + SC6->C6_PEDCLI + "')"
+                    nStatus := TCSqlExec(cQuery)
+ 					If (nStatus < 0)
+                        MsgStop("TCSQLError() " + TCSQLError(), "Erro atualizacao VRK")                                    
+                    EndIf
 
-                	If (nStatus < 0)
-                    	MsgStop("TCSQLError() " + TCSQLError(), "Erro atualizacao VRJ")                                    
-                	EndIf
+					if U_fPedZero(SC6->C6_PEDCLI)
+						cQuery := ""
+						cQuery += " UPDATE "+RetSqlName("VRJ")
+						cQuery += " SET VRJ_STATUS = 'A' ,"
+						cQuery += "     VRJ_XINTEG = ' ' "
+						cQuery += " WHERE  VRJ_FILIAL = '" + xFilial("VRJ") + "'" 
+						cQuery += "    AND VRJ_PEDCOM = '" + SC6->C6_PEDCLI + "'"
+						cQuery += "    AND D_E_L_E_T_ = ' '"
+						nStatus := TCSqlExec(cQuery)
+
+						If (nStatus < 0)
+							MsgStop("TCSQLError() " + TCSQLError(), "Erro atualizacao VRJ")                                    
+						EndIf
+					EndIf
 				EndIf
             EndIf
         EndIf
