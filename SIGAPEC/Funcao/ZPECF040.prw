@@ -1,15 +1,7 @@
 #INCLUDE "PROTHEUS.CH"
 #INCLUDE "FWMBROWSE.CH"
 #INCLUDE "FWMVCDEF.CH"
-
-/*
 #include "totvs.ch"
-#include "protheus.ch"
-#include "topconn.ch"
-#include "fwbrowse.ch"
-#include 'fwmvcdef.ch'
-#Include 'FWMVCDef.ch'
-*/
 
 /*/{Protheus.doc} ZPECF040
 Calculo Curva ABC 
@@ -19,14 +11,18 @@ Calculo Curva ABC
 @since  	15/07/2022
 @return  	NIL
 @obs
-@project	GAP014 | Cálculo da Curva ABC
-@history    Validar Inclusão campos obrigatório e Alteração o que tiver na planilha alterar no produto existente 
+@project    GAP014 | Cálculo da Curva ABC
+			PEC057 - Cálculo da Curva ABC
+@history    
 /*/
-
-
 User Function ZPECF040
 Local _oBrw
 Local _oSay
+
+//Private aRotina := {}
+
+Begin Sequence
+	DbSelectarea("SZO")
     _oBrw := FWMBrowse():New()
     _oBrw:SetAlias("SZO")
 	_oBrw:SetMenuDef('ZPECF040')
@@ -36,104 +32,30 @@ Local _oSay
 	_oBrw:SetAmbiente(.F.)
 	_oBrw:SetWalkThru(.F.)
     _oBrw:ForceQuitButton()    
-    _oBrw:SetIgnoreARotina(.T.) // Indica que a mbrowse, ira ignorar a variavel private aRotina na construção das opções de menu.
+    //_oBrw:SetIgnoreARotina(.T.) // Indica que a mbrowse, ira ignorar a variavel private aRotina na construção das opções de menu.
 
-	_oBrw:AddButton("Processar"  	, { || FwMsgRun(,{ | _oSay | ZPECF040PR(@_oBrw, @_oSay) }, "Processando Curva ABC", "Aguarde...")  },,,, .F., 2 )  
+	_oBrw:AddButton("Processar"  	, { || FwMsgRun(,{ | _oSay | ZPECF040PR_ProcessaCurvaABC(@_oBrw, @_oSay) }, "Processando Curva ABC", "Aguarde...")  },,,, .F., 2 )  
 	_oBrw:AddButton("Gerar Excel"  	, { || FwMsgRun(,{ | _oSay | ZPECF40PL_PlanilhaCurvaABC(@_oBrw, @_oSay) }, "Gerar Excel Curva ABC", "Aguarde...")  },,,, .F., 2 )  
+
     _oBrw:Activate()
+End Sequence
 Return Nil 
 
-/*/{Protheus.doc} MenuDef
-Inclusão dados no menu 		
-@author 	DAC
-@since 		15/07/2023
-@version 	undefined
-@param 		
-@type 		Static function
-@ Obs		
-@history    
-/*/
-Static Function MenuDef()
-Local _aRotina := {}
-Begin Sequence
-	//ADD OPTION _aRotina TITLE "Pesquisar"  	ACTION 'AxPesqui' 		  		OPERATION 1 ACCESS 0
-	ADD OPTION _aRotina TITLE "Visualizar" 	ACTION "VIEWDEF.ZPECF040" 	OPERATION 2 ACCESS 0
-	//ADD OPTION _aRotina TITLE "Imprimir" 	ACTION "VIEWDEF.ZPECF040" 	OPERATION 8 ACCESS 0
-End Sequence	
-Return _aRotina
 
 
-/*/{Protheus.doc} MenuModelDefDef
-Modelo de Dados 		
-@author 	DAC
-@since 		15/07/2023
-@version 	undefined
-@param 		
-@type 		Static function
-@ Obs		
-@history    
-/*/
-Static Function ModelDef()
-    Local oModel    := Nil
-    Local _oStruSZO  := FWFormStruct(1, "SZO")
-	// Cria o objeto do Modelo de Dados
-	oModel := MPFormModel():New('ZPECF40MDL',  /*bPreValidacao*/, /*bPosValidacao*/, /*bCommit*/, /*bCancel*/ )
-	// Adiciona ao modelo uma estrutura de formulário de edição por campo
-	oModel:AddFields( 'SZOMASTER', /*cOwner*/, _oStruSZO, /*bPreValidacao*/, /*bPosValidacao*/, /*bCarga*/ )
-	// Adiciona a descricao do Modelo de Dados
-    oModel:SetDescription("Curva ABC CAOA")
-	// Adiciona a descricao do Componente do Modelo de Dados
-    oModel:GetModel("SZOMASTER"):SetDescription("Curva ABC CAOA")
-	//oModel:SetPrimaryKey({'ZO_FILIAL', 'ZO_CODIGO' })
-    oModel:SetPrimaryKey({})
-
-Return oModel
-
-
-/*/{Protheus.doc} ViewDef
-View 		
-@author 	DAC
-@since 		15/07/2023
-@version 	undefined
-@param 		
-@type 		Static function
-@ Obs		
-@history    
-/*/
-Static Function ViewDef()
-	// Cria um objeto de Modelo de Dados baseado no ModelDef do fonte informado
-    Local oModel        := ModelDef()
-	// Cria a estrutura a ser usada na View
-    Local _oStruSZO     := FWFormStruct(2, "SZO")
-    Local oView         := Nil
-
-    //-- Cria View e seta o modelo de dados
-    oView := FWFormView():New()
-    oView:SetModel(oModel)
-	//Adiciona no nosso View um controle do tipo FormFields(antiga enchoice)
-	oView:AddField('VIEW_SZO',_oStruSZO,'SZOMASTER')
-
-    //-- Seta o dimensionamento de tamanho
-    oView:CreateHorizontalBox('BOX_SZO',100)
-    //--Amarra a view com as box
-    oView:SetOwnerView('VIEW_SZO','BOX_SZO')
-	//-- Define os títulos do cabeçalho
-    oView:EnableTitleView('VIEW_SZO', "Curva ABC CAOA") 
-Return oView
-
-
-
-/*/{Protheus.doc} ZPECF040PR
+/*/{Protheus.doc} ZPECF040PR_ProcessaCurvaABC
 Função para processar Curva
 @author 	DAC
 @since 		15/07/2023
 @version 	undefined
 @param 		
 @type 		Static function
+@project    GAP014 | Cálculo da Curva ABC
+			PEC057 - Cálculo da Curva ABC
 @ Obs		
 @history    
 /*/
-Static Function ZPECF040PR(_ObrW, _oSay)
+Static Function ZPECF040PR_ProcessaCurvaABC(_ObrW, _oSay)
 Local _aSays	    := {}
 Local _aButtons	    := {}
 Local _cCadastro    := OemToAnsi("Curva ABC CAOA")   
@@ -207,13 +129,15 @@ Return Nil
 
 
 
-/*/{Protheus.doc} ZPECF040PR
+/*/{Protheus.doc} ZPECF040QY
 Query de processamento Curva
 @author 	DAC
 @since 		15/07/2023
 @version 	undefined
 @param 		
 @type 		Static function
+@project    GAP014 | Cálculo da Curva ABC
+			PEC057 - Cálculo da Curva ABC
 @ Obs		
 @history    
 /*/
@@ -600,7 +524,7 @@ Begin Sequence
 		_lRet := .F.
         Break    
     Endif
-    
+	DbSelectArea("SZO")
     SZO->(DbGoTop())
 	If SZO->(Eof())
 		MSGINFO( "Não existe dados para a Geração da Curva ABC !", "Atenção" )
@@ -623,12 +547,24 @@ Return Nil
 Geração da Planilha com os dados da Consulta.
 ---------------------------------------------------------------------
 */
+/*/{Protheus.doc} User Function ZPECF40PL_PlanilhaCurvaABC
+Gera planilha do browse curva ABC
+@param  	
+@author 	DAC - Denilso
+@version  	P12.1.33
+@since  	28/09/2023
+@return  	NIL
+@obs        
+@project    GAP014 | Cálculo da Curva ABC
+			PEC057 - Cálculo da Curva ABC
+@history    
+/*/
 Static Function ZPECF40PL_PlanilhaCurvaABC(_oBrw, _oSay)
 Local _lRet 		:= .T.
 Local _cSheet 		:= "Curva ABC"
 Local _cTable 		:= "CURVA ABC"
 Local _cDir   		:=  ""
-Local _cNomeArqXML	:= "ZPECF040 Curva ABC"
+Local _cNomeArqXML	:= "ZPECF040 Curva ABC"+DtoS(Date())+SubsTr(Time,1,2)+SubsTr(Time,4,2)
 Local _nColunas 	:= 0
 Local _lTotalizar 	:= .F.
 Local _cType 		:= OemToAnsi("Todos") + "(*.*) |*.*|"
@@ -650,6 +586,10 @@ Begin Sequence
 	_cDir := cGetFile(_cType, OemToAnsi("Selecione a Pasta "), 0,, .T.,GETF_LOCALFLOPPY + GETF_LOCALHARD + GETF_NETWORKDRIVE + GETF_RETDIRECTORY)
 	//³ Parametro: GETF_LOCALFLOPPY - Inclui o floppy drive local.   ³
 	//³            GETF_LOCALHARD - Inclui o Harddisk local.         ³
+	If Empty(_cDir)
+		MSGInfo("Necessário informar uma pasta para a geração do arquivo  !","ATENCAO")
+		Break
+	Endif
 	_cArqXML := _cDir + If(SubsTr(_cDir,Len(_cDir),1) <> "\","\","")+_cNomeArqXML
 	If File(_cArqXML+".xml")
 		If !MsgYesNo("Arquivo ja existe deseja sobrepor "+_cArqXML+".xml ?") 
@@ -716,6 +656,84 @@ Begin Sequence
 	_oExcel:Destroy()                    // Encerra o processo do gerenciador de tarefas.
 End Sequence 
 Return _lRet 
+
+
+
+/*/{Protheus.doc} MenuDef
+Inclusão dados no menu 		
+@author 	DAC
+@since 		15/07/2023
+@version 	undefined
+@param 		
+@type 		Static function
+@ Obs		
+@history    
+/*/
+Static Function MenuDef()
+Local _aRotina := {}
+	ADD OPTION _aRotina TITLE 'Visualizar'     ACTION 'VIEWDEF.ZPECF040' OPERATION MODEL_OPERATION_VIEW   ACCESS 0 //OPERATION 2
+	//ADD OPTION _aRotina TITLE 'Visualizar' 		ACTION 'VIEWDEF.GenToCad' OPERATION MODEL_OPERATION_VIEW   ACCESS 0 //OPERATION 2
+Return _aRotina
+
+
+/*/{Protheus.doc} MenuModelDefDef
+Modelo de Dados 		
+@author 	DAC
+@since 		15/07/2023
+@version 	undefined
+@param 		
+@type 		Static function
+@ Obs		
+@history    
+/*/
+Static Function ModelDef()
+    Local oModel    := Nil
+    Local _oStruSZO  := FWFormStruct(1, "SZO")
+	// Cria o objeto do Modelo de Dados
+	oModel := MPFormModel():New('ZPF40MDL',  /*bPreValidacao*/, /*bPosValidacao*/, /*bCommit*/, /*bCancel*/ )
+	// Adiciona ao modelo uma estrutura de formulário de edição por campo
+	oModel:AddFields( 'SZOMASTER', /*cOwner*/, _oStruSZO, /*bPreValidacao*/, /*bPosValidacao*/, /*bCarga*/ )
+	// Adiciona a descricao do Modelo de Dados
+    oModel:SetDescription("Curva ABC CAOA")
+	// Adiciona a descricao do Componente do Modelo de Dados
+    oModel:GetModel("SZOMASTER"):SetDescription("Curva ABC CAOA")
+	//oModel:SetPrimaryKey({'ZO_FILIAL', 'ZO_CODIGO' })
+    oModel:SetPrimaryKey({})
+
+Return oModel
+
+
+/*/{Protheus.doc} ViewDef
+View 		
+@author 	DAC
+@since 		15/07/2023
+@version 	undefined
+@param 		
+@type 		Static function
+@ Obs		
+@history    
+/*/
+Static Function ViewDef()
+	// Cria um objeto de Modelo de Dados baseado no ModelDef do fonte informado
+    Local oModel        := ModelDef()
+	// Cria a estrutura a ser usada na View
+    Local _oStruSZO     := FWFormStruct(2, "SZO")
+    Local oView         := Nil
+
+    //-- Cria View e seta o modelo de dados
+    oView := FWFormView():New()
+    oView:SetModel(oModel)
+	//Adiciona no nosso View um controle do tipo FormFields(antiga enchoice)
+	oView:AddField('VIEW_SZO',_oStruSZO,'SZOMASTER')
+
+    //-- Seta o dimensionamento de tamanho
+    oView:CreateHorizontalBox('BOX_SZO',100)
+    //--Amarra a view com as box
+    oView:SetOwnerView('VIEW_SZO','BOX_SZO')
+	//-- Define os títulos do cabeçalho
+    oView:EnableTitleView('VIEW_SZO', "Curva ABC CAOA") 
+Return oView
+
 
 
 /*
