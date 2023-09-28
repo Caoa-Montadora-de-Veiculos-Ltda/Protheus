@@ -492,18 +492,20 @@ while !(cAliasNF)->(Eof())
 				Loop
 			Endif
 			
-			If !Subs((cAliasCtb)->CT2_ORIGEM,1,7) $ cOrigEst
+		/*	If !Subs((cAliasCtb)->CT2_ORIGEM,1,7) $ cOrigEst
 				nOcorGL++
 			Else
 				nOcorEstGL++
-			Endif
+			Endif*/
 
 			(cAliasCtb)->(dbSkip())
 		EndDo
 
 		(cAliasCtb)->(dbGoTop())
-			
+
+
 		aComplex := oWsdl:NextComplex()
+
 		while ValType( aComplex ) == "A"
 			//varinfo( "aComplex", aComplex )
 			
@@ -512,7 +514,8 @@ while !(cAliasNF)->(Eof())
 			ElseIf aComplex[2] == "DocumentHeader"
 				nOccurs := 1
 			ElseIf aComplex[2] == "AccountGL"
-				If !Empty(nOcorEstGL) .and. !Empty(nOcorGL)
+			    nOccurs := 0
+				/*If !Empty(nOcorEstGL) .and. !Empty(nOcorGL)
 					If aComplex[5] == "ContasAReceberRequest#1.documentos#1"
 						nOccurs := nOcorGL
 					Elseif aComplex[5] == "ContasAReceberRequest#1.documentos#2"
@@ -521,8 +524,9 @@ while !(cAliasNF)->(Eof())
 				Elseif !Empty(nOcorGL)
 					nOccurs := nOcorGL
 				Elseif !Empty(nOcorEstGL)
-					nOccurs := nOcorEstGL
-				Endif
+			  		nOccurs := nOcorEstGL
+				Endif*/
+			
 			elseIf aComplex[2] == "AccountReceivable"
 				If aComplex[5] == "ContasAReceberRequest#1.documentos#1"
 					nOccurs := nTit
@@ -556,7 +560,7 @@ while !(cAliasNF)->(Eof())
 			
 		aSimple := oWsdl:SimpleInput()
 		//varinfo( "", aSimple )
-		
+		//ADel( aComplex, 2 ) //--> aArray Remover AccountGL
 		nCount := IIf(!Empty(nOcorGL) .and. !Empty(nOcorEstGL),2,1)
 		
 		//--------------------------------------------------------Adicionar campos Necessarios
@@ -898,6 +902,7 @@ while !(cAliasNF)->(Eof())
 				Endif	
 				
 				nNumAux++
+				cNumAtrib := SZ7->Z7_DOCORI
             
 				nPos := aScan( aSimple, {|aVet| aVet[2] == "numeroItemDocumentoContabilidade" .and. aVet[5] == "ContasAReceberRequest#1.documentos#1.AccountReceivable#" + Alltrim(Str(nz))} )//numeroItemDocumentoContabilidade
 				xRet := oWsdl:SetValue( aSimple[nPos][1],ALLTRIM(STR(nNumAux)))
