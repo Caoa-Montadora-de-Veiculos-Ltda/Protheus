@@ -4,18 +4,17 @@
 #Include 'Colors.Ch'
 #Include "TopConn.Ch"
 #Include "TbiConn.CH"
+
 Static cMarca 	 := GetMark()
-
-/*/{Protheus.doc} ZFATF019
-Portal Comercial
-
-@author Leonardo Miranda
-@since 03/03/2022
-@version 1.0
-@return ${return}, ${return_description}
-
-@type function
-/*/
+Static CrLf      := (Chr(13)+Chr(10))
+/*
+=======================================================================================
+Programa.:              ZFATF019 
+Autor....:              Leonardo Miranda
+Data.....:              03/03/2022
+Descricao / Objetivo:   Portal Comercial   
+=======================================================================================
+*/
 
 ************************
 User Function ZFATF019()
@@ -32,16 +31,25 @@ Private aRotina As Array
 aRotina:= {}
 oDlg01 := MSDialog():New( 080,0-4,639,1274,"Portal Comercial",,,.F.,,,,,,.T.,,,.T. )
 oGrp01 := TGroup():New( 008,008,268,628,"",oDlg01,CLR_BLACK,CLR_WHITE,.T.,.F. )
-oBtn01 := TButton():New( 020,016,"Faturamento Atacado"   ,oGrp01,{|| FWMsgRun(, {|oSay| fLibPed(oSay) }, "Faturamento", "Processando pedidos")  },068,032,,,,.T.,,"",,,,.F. )
-oBtn03 := TButton():New( 020,094,"Cancelar Notas Fiscais",oGrp01,{|| fCanNotas()}                                                                ,068,032,,,,.T.,,"",,,,.F. )
-oBtn04 := TButton():New( 020,171,"Devolver Notas Fiscais",oGrp01,{|| fDevNotas()}                                                                ,068,032,,,,.T.,,"",,,,.F. )
-oBtn04 := TButton():New( 020,248,"Transmiss„o de Notas"  ,oGrp01,{|| SPEDNFe()}                                                                  ,068,032,,,,.T.,,"",,,,.F. )
-//oBtn04 := TButton():New( 020,325,"Incluir Pedido Venda"  ,oGrp01,{|| fVisuPed("SC5",aRotina,3,Nil,Nil,Nil)}                                      ,068,032,,,,.T.,,"",,,,.F. )
-oBtn04 := TButton():New( 020,325,"Pedidos Venda"         ,oGrp01,{|| MATA410()}                                                                  ,068,032,,,,.T.,,"",,,,.F. )
+oBtn01 := TButton():New( 020,016,"Faturamento Atacado"   ,oGrp01,{|| FWMsgRun(, {|oSay| fLibPed( oSay )  }, "Faturamento"  , "Processando pedidos"     )} ,068,032,,,,.T.,,"",,,,.F. )
+oBtn03 := TButton():New( 020,094,"Cancelar Notas Fiscais",oGrp01,{|| FWMsgRun(, {|oSay| fCanNotas( oSay )}, "Cancelando NF", "Processando Cancelamento")} ,068,032,,,,.T.,,"",,,,.F. )
+oBtn04 := TButton():New( 020,171,"Devolver Notas Fiscais",oGrp01,{|| fDevNotas()}                                                                         ,068,032,,,,.T.,,"",,,,.F. )
+oBtn04 := TButton():New( 020,248,"Transmiss„o de Notas"  ,oGrp01,{|| SPEDNFe()}                                                                           ,068,032,,,,.T.,,"",,,,.F. )
+//oBtn04 := TButton():New( 020,325,"Incluir Pedido Venda"  ,oGrp01,{|| fVisuPed("SC5",aRotina,3,Nil,Nil,Nil)}                                               ,068,032,,,,.T.,,"",,,,.F. )
+oBtn04 := TButton():New( 020,325,"Pedidos Venda"         ,oGrp01,{|| MATA410()}                                                                           ,068,032,,,,.T.,,"",,,,.F. )
 
 oDlg01:Activate(,,,.T.)
 
 Return(Nil)
+
+/*
+=======================================================================================
+Programa.:              
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
 
 *****************************
 Static Function fLibPed(oSay)
@@ -76,6 +84,8 @@ Private aParamBox   As Array
 Private aBrwCli     As Array
 Private aBrwPrd     As Array
 Private aBrwTot     As Array
+Private aHeaderAux  As Array
+Private aCols       As Array
 
 Private oNwFat001   As Object
 Private oPnlWnd1    As Object
@@ -85,10 +95,12 @@ Private oPnlWnd4    As Object
 Private oModel      As Object
 Private oBrwCab     As Object
 Private oCabTable   As Object
-Private aCabCampos  As Object
 Private oTBrwsCli   As Object
 Private oTBrwsPrd   As Object
 Private oTBrwsTot   As Object
+Private aCabCampos  As Array
+
+Private bRefresh := {||.t.} //Bloco de Codigo para previnir erro de Gatilho nas chamadas das rotina padr„o do sistema 
 
 bRet        := .F.
 aRet        := {}
@@ -135,7 +147,8 @@ aCabCampos  := {"C6_OK"     ,"CC_STATUS" ,"C6_FILIAL" ,"C6_NUM"    ,"C6_PEDCLI" 
                 "C6_CHASSI" ,"C6_NUMSERI","C6_LOCALIZ","C6_XCODMAR","C6_XDESMAR","C6_XGRPMOD","C6_XDGRMOD","C6_XMODVEI",;
                 "C6_XDESMOD","C6_XSEGMOD","C6_XDESSEG","C6_XFABMOD","C6_XCORINT","C6_XCOREXT","C6_QTDVEN" ,"C6_PRCVEN" ,;
                 "C6_VALOR"  ,"C6_OPER"   ,"C6_TES"    ,"C6_XVLRVDA","C6_PRUNIT" ,"C6_XPRCTAB","C6_XVLRPRD","C6_XVLRMVT",;
-                "C6_XBASST" ,"C9_SEQUEN" ,"C9_NFISCAL","C9_SERIENF","C5_XTIPVEN","VRJ_STATUS"}
+                "C6_XBASST" ,"C9_SEQUEN" ,"C9_NFISCAL","C9_SERIENF","C5_XTIPVEN","VRJ_PEDIDO","VRJ_STATUS"}
+
 aValidCmp   := {{"C5_CONDPAG","{ || fVldCampo(cCabAlias,oSay,cCabTable,oCabTable)}"},;
                 {"C5_NATUREZ","{ || fVldCampo(cCabAlias,oSay,cCabTable,oCabTable)}"},;
                 {"C5_XMENSER","{ || fVldCampo(cCabAlias,oSay,cCabTable,oCabTable)}"},;
@@ -143,18 +156,20 @@ aValidCmp   := {{"C5_CONDPAG","{ || fVldCampo(cCabAlias,oSay,cCabTable,oCabTable
                 {"C6_OPER"   ,"{ || fVldCampo(cCabAlias,oSay,cCabTable,oCabTable)}"},;
                 {"C6_TES"    ,"{ || fVldCampo(cCabAlias,oSay,cCabTable,oCabTable)}"},;
                 {"C6_LOCALIZ","{ || fVldCampo(cCabAlias,oSay,cCabTable,oCabTable)}"},;
-                {"C6_XVLRPRD","{ || fVldCampo(cCabAlias,oSay,cCabTable,oCabTable)}"}} 
-
+                {"C6_XVLRPRD","{ || fVldCampo(cCabAlias,oSay,cCabTable,oCabTable)}"},; 
+                {"C6_XVLRMVT","{ || fVldCampo(cCabAlias,oSay,cCabTable,oCabTable)}"}} 
 aCabStru    := {}
 For nY := 1 To Len(aCabCampos)
     aTamSx3 := TamSX3(aCabCampos[nY])
     Aadd(aCabStru, {aCabCampos[nY] ,aTamSx3[03] ,aTamSx3[01] ,aTamSx3[02] })
 Next
-
+Aadd(aCabStru, {"LUPD" ,"C" ,1 ,0 })
 aCabCol := {}
 For nY := 02 To Len(aCabStru)
+
     //Columas CabeÁalho
-    If !aCabStru[nY][1] $ "C6_FILIAL|CC_STATUS|C9_SEQUEN|C9_NFISCAL|C9_SERIENF|C6_PRUNIT|C6_XGRPMOD|C6_XDGRMOD|C6_XCORINT|C6_XCOREXT|C5_XTIPVEN|C6_NUMSERI|C5_XMENSER|VRJ_STATUS"
+    If !aCabStru[nY][1] $ "C6_FILIAL|CC_STATUS|C9_SEQUEN|C9_NFISCAL|C9_SERIENF|C6_PRUNIT|C6_XGRPMOD|C6_XDGRMOD|C6_XCORINT|C6_XCOREXT|C5_XTIPVEN|C6_NUMSERI|C5_XMENSER|VRJ_PEDIDO|VRJ_STATUS|LUPD"
+
         cTipCpo    := GetSx3Cache(aCabStru[nY][1], "X3_TIPO" )
         cPictAlias := "S"+Left(aCabStru[nY][1],2)
         Aadd(aCabCol,FWBrwColumn():New())
@@ -164,115 +179,137 @@ For nY := 02 To Len(aCabStru)
         aCabCol[Len(aCabCol)]:SetAlign( IIf( cTipCpo == "N", CONTROL_ALIGN_RIGHT, CONTROL_ALIGN_LEFT ) )
         aCabCol[Len(aCabCol)]:SetDecimal(aCabStru[nY][4])
         aCabCol[Len(aCabCol)]:SetPicture(PesqPict(cPictAlias,aCabStru[nY][1]))
+
         If "C6_NUM"   <> Substr(Alltrim(aCabStru[nY][1]),1,Len(Alltrim(aCabStru[nY][1]))) .And. ;
            "C6_LOCAL" <> Substr(Alltrim(aCabStru[nY][1]),1,Len(Alltrim(aCabStru[nY][1]))) .And. ;
-            aCabStru[nY][1] $ "C5_CONDPAG|C5_NATUREZ|C5_XMENSER|C6_NUMSERI|C6_LOCALIZ|C6_TES|C6_XVLRPRD|C6_OPER"
+            aCabStru[nY][1] $ "C5_CONDPAG|C5_NATUREZ|C5_XMENSER|C6_NUMSERI|C6_LOCALIZ|C6_TES|C6_XVLRPRD|C6_OPER"//|C6_XVLRMVT"
+
            If Substr(Alltrim(aCabStru[nY][1]),1,Len(Alltrim(aCabStru[nY][1]))) <> "C6_NUMSERI"
                 aCabCol[Len(aCabCol)]:SetEdit(.T.)
             Endif
+
             aCabCol[Len(aCabCol)]:SetReadVar(aCabStru[nY][1])
             aCabCol[Len(aCabCol)]:SetValid((&(aValidCmp[aScan(aValidCmp,{|x| Alltrim(x[1]) == aCabStru[nY][1] }),2])))
+
         EndIf
     EndIf
 Next nY
 
 oCabTable := FWTemporaryTable():New()
 oCabTable:SetFields(aCabStru)
-oCabTable:AddIndex("INDEX1", {"C6_FILIAL", "C5_CLIENTE", "C5_LOJACLI", "C6_PRODUTO"} )
+oCabTable:AddIndex("INDEX1", {"C6_FILIAL","C6_PEDCLI","C6_ITEM","C5_CLIENTE", "C5_LOJACLI", "C6_PRODUTO"} )
 oCabTable:Create()
+
+aHeaderAux := aClone(oCabTable:oStruct:aFields)
+
 cCabAlias := oCabTable:GetAlias()
 
 cCabTable := oCabTable:GetRealName()
 cQuery := ""
-cQuery += " INSERT INTO "+cCabTable+"                                                                                    "+(Chr(13)+Chr(10))
-cQuery += " ("
+cQuery += " INSERT INTO " + cCabTable + " "
+cQuery += CrLf + " ("
+
 For nY := 1 To Len(aCabCampos)
+
     If Upper(Alltrim(aCabCampos[nY])) <> "C9_SEQUEN"  .And.;
        Upper(Alltrim(aCabCampos[nY])) <> "C9_NFISCAL" .And.;
        Upper(Alltrim(aCabCampos[nY])) <> "C9_SERIENF" .And.;
        Upper(Alltrim(aCabCampos[nY])) <> "C5_XMENSER"
        cQuery += aCabCampos[nY]+","
     EndIf
+
 Next
-cQuery += " D_E_L_E_T_,R_E_C_N_O_)                                                                                       "+(Chr(13)+Chr(10))
-cQuery += " SELECT '  ' C6_OK    ,                                                                                       "+(Chr(13)+Chr(10))
-cQuery += " ' '         C6_STATUS,                                                                                       "+(Chr(13)+Chr(10))
+
+cQuery += CrLf + " LUPD,D_E_L_E_T_,R_E_C_N_O_) "
+cQuery += CrLf + " SELECT '  ' C6_OK    , "
+cQuery += CrLf + " ' '         C6_STATUS, "
+
 For nY := 1 To Len(aCabCampos)
+
     If  Upper(Alltrim(aCabCampos[nY])) <> "C6_OK"      .And.;
         Upper(Alltrim(aCabCampos[nY])) <> "CC_STATUS"  .And.;
         Upper(Alltrim(aCabCampos[nY])) <> "C9_SEQUEN"  .And.;
         Upper(Alltrim(aCabCampos[nY])) <> "C9_NFISCAL" .And.;
         Upper(Alltrim(aCabCampos[nY])) <> "C9_SERIENF" .And.;
         Upper(Alltrim(aCabCampos[nY])) <> "C5_XMENSER" .And.;
-        Upper(Alltrim(aCabCampos[nY])) <> "VRJ_STATUS" 
+        Upper(Alltrim(aCabCampos[nY])) <> "VRJ_STATUS" .And.;
+        Upper(Alltrim(aCabCampos[nY])) <> "LUPD"
+
         If Left(aCabCampos[nY],3) == "C6_" ; cQryAlias := "SC6." ; EndIf
         If Left(aCabCampos[nY],3) == "C5_" ; cQryAlias := "SC5." ; EndIf
         If Left(aCabCampos[nY],3) == "A1_" ; cQryAlias := "SA1." ; EndIf
         If Left(aCabCampos[nY],3) == "B1_" ; cQryAlias := "SB1." ; EndIf
         If Left(aCabCampos[nY],3) == "F4_" ; cQryAlias := "SF4." ; EndIf
-        cQuery += " "+(cQryAlias+aCabCampos[nY])+",                                                                       "+(Chr(13)+Chr(10))"
+        If Left(aCabCampos[nY],3) == "VRJ" ; cQryAlias := "VRJ." ; EndIf
+        cQuery += CrLf + " " + (cQryAlias+aCabCampos[nY]) + ", "
+
     EndIf
+
 Next
-cQuery += " 	    VRJ.VRJ_STATUS                                                                          VRJ_STATUS  , "+(Chr(13)+Chr(10)) 
-cQuery += "        ' '                                                                                      D_E_L_E_T_  , "+(Chr(13)+Chr(10))
-cQuery += "        ROW_NUMBER() OVER (ORDER BY SC6.C6_FILIAL,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO)  R_E_C_N_O_    "+(Chr(13)+Chr(10))
-cQuery += " FROM "+RetSqlName("SC6")+" SC6                                                                                "+(Chr(13)+Chr(10))
-cQuery += "            INNER JOIN                                                                                         "+(Chr(13)+Chr(10))
-cQuery += "      "+RetSqlName("VRJ")+" VRJ ON   SC6.C6_FILIAL            = VRJ.VRJ_FILIAL                                 "+(Chr(13)+Chr(10))
-cQuery += "                                 AND SC6.C6_PEDCLI            = VRJ.VRJ_PEDCOM                                 "+(Chr(13)+Chr(10))
-cQuery += "                                 AND SC6.D_E_L_E_T_           = VRJ.D_E_L_E_T_                                 "+(Chr(13)+Chr(10))
-cQuery += "      INNER JOIN                                                                                               "+(Chr(13)+Chr(10))
-cQuery += "      "+RetSqlName("VRK")+" VRK ON   SC6.C6_FILIAL            = VRK.VRK_FILIAL                                 "+(Chr(13)+Chr(10))
-cQuery += "                                 AND VRJ.VRJ_PEDIDO           = VRK.VRK_PEDIDO                                 "+(Chr(13)+Chr(10))
-cQuery += "                                 AND LPad(SC6.C6_ITEM,3,'0')  = VRK.VRK_ITEPED                                 "+(Chr(13)+Chr(10))
-cQuery += "                                 AND VRJ.D_E_L_E_T_           = VRK.D_E_L_E_T_                                 "+(Chr(13)+Chr(10))
-cQuery += "      INNER JOIN                                                                                               "+(Chr(13)+Chr(10))
-cQuery += "      "+RetSqlName("SC5")+" SC5 ON   SC6.C6_FILIAL   = SC5.C5_FILIAL                                           "+(Chr(13)+Chr(10))
-cQuery += "                                 AND SC6.C6_NUM      = SC5.C5_NUM                                              "+(Chr(13)+Chr(10))
-cQuery += "                                 AND SC6.D_E_L_E_T_  = SC5.D_E_L_E_T_                                          "+(Chr(13)+Chr(10))
-cQuery += "      INNER JOIN                                                                                               "+(Chr(13)+Chr(10))
-cQuery += "      "+RetSqlName("SA1")+" SA1 ON   SC5.C5_CLIENTE  = SA1.A1_COD                                              "+(Chr(13)+Chr(10))
-cQuery += "                                 AND SC5.C5_LOJACLI  = SA1.A1_LOJA                                             "+(Chr(13)+Chr(10))
-cQuery += "                                 AND SC5.D_E_L_E_T_  = SA1.D_E_L_E_T_                                          "+(Chr(13)+Chr(10))
-cQuery += "      INNER JOIN                                                                                               "+(Chr(13)+Chr(10))
-cQuery += "      "+RetSqlName("SB1")+" SB1 ON   SC6.C6_PRODUTO  = SB1.B1_COD                                              "+(Chr(13)+Chr(10))
-cQuery += "                                 AND SC6.D_E_L_E_T_  = SB1.D_E_L_E_T_                                          "+(Chr(13)+Chr(10))
-cQuery += "      INNER JOIN                                                                                               "+(Chr(13)+Chr(10))
-cQuery += "      "+RetSqlName("SF4")+" SF4 ON   SC6.C6_TES      = SF4.F4_CODIGO                                           "+(Chr(13)+Chr(10))
-cQuery += "                                 AND SC6.D_E_L_E_T_  = SF4.D_E_L_E_T_                                          "+(Chr(13)+Chr(10))
-cQuery += " WHERE   SC6.C6_FILIAL           = '"+xFilial("SC6")+"'                                                        "+(Chr(13)+Chr(10))
-cQuery += "     AND SC5.C5_TIPO             = 'N'                                                                         "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_QTDVEN           > SC6.C6_QTDENT                                                               "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_NOTA             = ' '                                                                         "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_BLQ              = ' '                                                                         "+(Chr(13)+Chr(10))
-cQuery += "     AND SC5.C5_CLIENTE          >= '"+aRet[01]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC5.C5_CLIENTE          <= '"+aRet[03]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC5.C5_LOJACLI          >= '"+aRet[02]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC5.C5_LOJACLI          <= '"+aRet[04]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_PRODUTO          >= '"+aRet[05]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_PRODUTO          <= '"+aRet[06]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_PEDCLI           >= '"+aRet[08]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_PEDCLI           <= '"+aRet[09]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_XCODMAR          >= '"+aRet[10]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_XCODMAR          <= '"+aRet[11]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_XGRPMOD          >= '"+aRet[12]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_XGRPMOD          <= '"+aRet[13]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_XMODVEI          >= '"+aRet[14]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_XMODVEI          <= '"+aRet[15]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_XSEGMOD          >= '"+aRet[16]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_XSEGMOD          <= '"+aRet[17]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_XFABMOD          >= '"+aRet[18]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_XFABMOD          <= '"+aRet[19]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_XCORINT          >= '"+aRet[20]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_XCORINT          <= '"+aRet[21]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_XCOREXT          >= '"+aRet[22]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_XCOREXT          <= '"+aRet[23]+"'                                                             "+(Chr(13)+Chr(10))
-cQuery += "     AND SC6.C6_PEDCLI           <> ' '                                                                        "+(Chr(13)+Chr(10))
-cQuery += "     AND SB1.B1_GRUPO            = 'VEIA'                                                                      "+(Chr(13)+Chr(10))
-cQuery += "     AND SF4.F4_DUPLIC           = 'S'                                                                         "+(Chr(13)+Chr(10))
-cQuery += "     AND VRJ.VRJ_STATUS          = 'A'                                                                         "+(Chr(13)+Chr(10))
-cQuery += " 	AND SC6.D_E_L_E_T_			= ' '                                                                         "+(Chr(13)+Chr(10))
-cQuery += " ORDER BY SC6.C6_FILIAL,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO                                           "+(Chr(13)+Chr(10))
+//cQuery += CrLf + "      VRJ.VRJ_PEDIDO, 
+cQuery += CrLf + " 	    VRJ.VRJ_STATUS                                                                             VRJ_STATUS  ,'F' as LUPD , "
+cQuery += CrLf + "        ' '                                                                                      D_E_L_E_T_  , "
+cQuery += CrLf + "        ROW_NUMBER() OVER (ORDER BY SC6.C6_FILIAL,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO)  R_E_C_N_O_  "
+cQuery += CrLf + " FROM " + RetSqlName("SC6") + " SC6 "
+
+cQuery += CrLf + "      INNER JOIN " + RetSqlName("SC5") + " SC5 
+cQuery += CrLf + "                                ON  SC5.C5_FILIAL  = '" + xFilial("SC5") + "' "
+cQuery += CrLf + "                                AND SC5.C5_NUM     = SC6.C6_NUM "
+cQuery += CrLf + "                                AND SC5.C5_CLIENTE = SC6.C6_CLI "
+cQuery += CrLf + "                                AND SC5.C5_LOJACLI = SC6.C6_LOJA "
+cQuery += CrLf + "                                AND SC5.D_E_L_E_T_ = ' ' "
+
+cQuery += CrLf + "       INNER JOIN " + RetSqlName("VRJ") + " VRJ "
+cQuery += CrLf + "                                ON  VRJ.VRJ_FILIAL = '" + xFilial("VRJ") + "' "
+cQuery += CrLf + "                                AND VRJ.VRJ_PEDCOM = SC6.C6_PEDCLI "
+cQuery += CrLf + "                                AND VRJ.VRJ_STATUS in ('A','F') "
+cQuery += CrLf + "                                AND VRJ.D_E_L_E_T_ = ' ' "
+
+cQuery += CrLf + "      INNER JOIN " + RetSqlName("VRK") + " VRK "
+cQuery += CrLf + "                                ON  VRK.VRK_FILIAL = '" + xFilial("VRK") + "' "
+cQuery += CrLf + "                                AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
+cQuery += CrLf + "                                AND VRK.VRK_ITEPED = LPad(SC6.C6_ITEM,3,'0') "
+cQuery += CrLf + "                                AND VRK.VRK_ITETRA = ' ' "
+cQuery += CrLf + "                                AND VRK.D_E_L_E_T_ = ' ' "
+
+cQuery += CrLf + "      INNER JOIN " + RetSqlName("SA1") + " SA1 "
+cQuery += CrLf + "                                ON  SA1.A1_FILIAL  = '" + xFilial("SA1") + "' "
+cQuery += CrLf + "                                AND SA1.A1_COD     = SC6.C6_CLI "
+cQuery += CrLf + "                                AND SA1.A1_LOJA    = SC6.C6_LOJA "
+cQuery += CrLf + "                                AND SA1.D_E_L_E_T_ = ' ' "
+
+cQuery += CrLf + "      INNER JOIN " + RetSqlName("SB1") + " SB1 "
+cQuery += CrLf + "                                 ON  SB1.B1_FILIAL  = '" + xFilial("SB1") + "' "
+cQuery += CrLf + "                                 AND SB1.B1_COD     = SC6.C6_PRODUTO "
+cQuery += CrLf + "                                 AND SB1.B1_GRUPO   = 'VEIA' "
+cQuery += CrLf + "                                 AND SB1.D_E_L_E_T_ = ' ' "
+
+cQuery += CrLf + "      INNER JOIN " + RetSqlName("SF4") + " SF4 "
+cQuery += CrLf + "                                ON  SF4.F4_FILIAL  =  '" + xFilial("SF4") + "' "
+cQuery += CrLf + "                                AND SF4.F4_CODIGO  = SC6.C6_TES "
+cQuery += CrLf + "                                AND SF4.F4_DUPLIC  = 'S' "
+cQuery += CrLf + "                                AND SF4.D_E_L_E_T_ = ' ' "
+
+cQuery += CrLf + " WHERE   SC6.C6_FILIAL    = '" + xFilial("SC6") + "' "
+cQuery += CrLf + "     AND SC6.C6_CLI       BETWEEN '" + aRet[01] + "' AND '" + aRet[03] + "' "
+cQuery += CrLf + "     AND SC6.C6_LOJA      BETWEEN '" + aRet[02] + "' AND '" + aRet[04] + "' "
+cQuery += CrLf + "     AND SC6.C6_PRODUTO   BETWEEN '" + aRet[05] + "' AND '" + aRet[06] + "' "
+cQuery += CrLf + "     AND SC6.C6_PEDCLI    BETWEEN '" + aRet[08] + "' AND '" + aRet[09] + "' "
+cQuery += CrLf + "     AND SC6.C6_XCODMAR   BETWEEN '" + aRet[10] + "' AND '" + aRet[11] + "' "
+cQuery += CrLf + "     AND SC6.C6_XGRPMOD   BETWEEN '" + aRet[12] + "' AND '" + aRet[13] + "' "
+cQuery += CrLf + "     AND SC6.C6_XMODVEI   BETWEEN '" + aRet[14] + "' AND '" + aRet[15] + "' "
+cQuery += CrLf + "     AND SC6.C6_XSEGMOD   BETWEEN '" + aRet[16] + "' AND '" + aRet[17] + "' "
+cQuery += CrLf + "     AND SC6.C6_XFABMOD   BETWEEN '" + aRet[18] + "' AND '" + aRet[19] + "' "
+cQuery += CrLf + "     AND SC6.C6_XCORINT   BETWEEN '" + aRet[20] + "' AND '" + aRet[21] + "' "
+cQuery += CrLf + "     AND SC6.C6_XCOREXT   BETWEEN '" + aRet[22] + "' AND '" + aRet[23] + "' "
+cQuery += CrLf + "     AND SC6.C6_QTDVEN    > SC6.C6_QTDENT "
+cQuery += CrLf + "     AND SC5.C5_TIPO      = 'N' "
+cQuery += CrLf + "     AND SC6.C6_PEDCLI    <> ' ' "
+cQuery += CrLf + "     AND SC6.C6_NOTA      = '" + Space(9) + "' "
+cQuery += CrLf + "     AND SC6.C6_BLQ       = ' ' "
+cQuery += CrLf + " 	   AND SC6.D_E_L_E_T_   = ' ' "
+cQuery += CrLf + " ORDER BY SC6.C6_FILIAL,SC6.C6_PEDCLI,SC6.C6_ITEM,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO "
+
 nStatus := TCSqlExec(cQuery)
  
 (cCabAlias)->(DbGoTop())
@@ -290,101 +327,101 @@ fAtuPeds(cCabAlias,oSay,cCabTable,oCabTable,"")
 
 /*********************************************************************************************************************************************/
 DEFINE DIALOG oNwFat001 TITLE "Faturamento Atacado" FROM aCords[ 1 ], aCords[ 2 ] TO (aCords[3]*nLinha), (aCords[ 4 ]*nColuna) PIXEL
-oNwFat001:lEscClose := .F.
+    oNwFat001:lEscClose := .F.
 
-// Instancia o layer
-oFWL := FWLayer():New()
-// Inicia o Layer
-oFWL:Init( oNwFat001, .F. )
-// Cria uma linha unica para o Layer
-oFWL:AddLine( 'TOTAL' , 70 , .F.)
-oFWL:AddLine( 'TOTAIS', 20 , .F.)
+    // Instancia o layer
+    oFWL := FWLayer():New()
+    // Inicia o Layer
+    oFWL:Init( oNwFat001, .F. )
+    // Cria uma linha unica para o Layer
+    oFWL:AddLine( 'TOTAL' , 70 , .F.)
+    oFWL:AddLine( 'TOTAIS', 20 , .F.)
 
-// Cria colunas
-oFWL:AddCollumn( 'DIR' , 100, .F., 'TOTAL'  )
-oFWL:AddCollumn( 'DIR2', 040, .F., 'TOTAIS' )
-oFWL:AddCollumn( 'DIR3', 040, .F., 'TOTAIS' )
-oFWL:AddCollumn( 'DIR4', 020, .F., 'TOTAIS' )
+    // Cria colunas
+    oFWL:AddCollumn( 'DIR' , 100, .F., 'TOTAL'  )
+    oFWL:AddCollumn( 'DIR2', 040, .F., 'TOTAIS' )
+    oFWL:AddCollumn( 'DIR3', 040, .F., 'TOTAIS' )
+    oFWL:AddCollumn( 'DIR4', 020, .F., 'TOTAIS' )
 
-oFWL:AddWindow( 'DIR' , 'Wnd1', "Pedidos de Venda"   ,  090, .F., .T.,, 'TOTAL' )
-oFWL:AddWindow( 'DIR2', 'Wnd2', "Totais Por Cliente" ,  190, .F., .T.,, 'TOTAIS' )
-oFWL:AddWindow( 'DIR3', 'Wnd3', "Totais Por Produto" ,  190, .F., .T.,, 'TOTAIS' )
-oFWL:AddWindow( 'DIR4', 'Wnd4', "Total Geral"        ,  190, .F., .T.,, 'TOTAIS' )
+    oFWL:AddWindow( 'DIR' , 'Wnd1', "Pedidos de Venda"   ,  090, .F., .T.,, 'TOTAL' )
+    oFWL:AddWindow( 'DIR2', 'Wnd2', "Totais Por Cliente" ,  190, .F., .T.,, 'TOTAIS' )
+    oFWL:AddWindow( 'DIR3', 'Wnd3', "Totais Por Produto" ,  190, .F., .T.,, 'TOTAIS' )
+    oFWL:AddWindow( 'DIR4', 'Wnd4', "Total Geral"        ,  190, .F., .T.,, 'TOTAIS' )
 
-oPnlWnd1:= oFWL:getWinPanel( 'DIR' , 'Wnd1', 'TOTAL'  )
-oPnlWnd2:= oFWL:getWinPanel( 'DIR2', 'Wnd2', 'TOTAIS' )
-oPnlWnd3:= oFWL:getWinPanel( 'DIR3', 'Wnd3', 'TOTAIS' )
-oPnlWnd4:= oFWL:getWinPanel( 'DIR4', 'Wnd4', 'TOTAIS' )
+    oPnlWnd1:= oFWL:getWinPanel( 'DIR' , 'Wnd1', 'TOTAL'  )
+    oPnlWnd2:= oFWL:getWinPanel( 'DIR2', 'Wnd2', 'TOTAIS' )
+    oPnlWnd3:= oFWL:getWinPanel( 'DIR3', 'Wnd3', 'TOTAIS' )
+    oPnlWnd4:= oFWL:getWinPanel( 'DIR4', 'Wnd4', 'TOTAIS' )
 
-aBrwCli   := {}
-oTBrwsCli := TSBrowse():New(01,01,275,050,oPnlWnd2,,16,,1)    
-oTBrwsCli:AddColumn( TCColumn():New('Cliente' ,,,{|| },{|| }) )    
-oTBrwsCli:AddColumn( TCColumn():New('Nome'    ,,,{|| },{|| }) )    
-oTBrwsCli:AddColumn( TCColumn():New('Valor'   ,,,{|| },{|| }) )    
-oTBrwsCli:SetArray(aBrwCli) 
+    aBrwCli   := {}
+    oTBrwsCli := TSBrowse():New(01,01,275,050,oPnlWnd2,,16,,1)    
+    oTBrwsCli:AddColumn( TCColumn():New('Cliente' ,,,{|| },{|| }) )    
+    oTBrwsCli:AddColumn( TCColumn():New('Nome'    ,,,{|| },{|| }) )    
+    oTBrwsCli:AddColumn( TCColumn():New('Valor'   ,,,{|| },{|| }) )    
+    oTBrwsCli:SetArray(aBrwCli) 
 
-aBrwPrd   := {}
-oTBrwsPrd := TSBrowse():New(01,01,275,050,oPnlWnd3,,16,,1)    
-oTBrwsPrd:AddColumn( TCColumn():New('Produto'  ,,,{|| },{|| }) )    
-oTBrwsPrd:AddColumn( TCColumn():New('DescriÁ„o',,,{|| },{|| }) )    
-oTBrwsPrd:AddColumn( TCColumn():New('Valor'    ,,,{|| },{|| }) )    
-oTBrwsPrd:SetArray(aBrwPrd) 
+    aBrwPrd   := {}
+    oTBrwsPrd := TSBrowse():New(01,01,275,050,oPnlWnd3,,16,,1)    
+    oTBrwsPrd:AddColumn( TCColumn():New('Produto'  ,,,{|| },{|| }) )    
+    oTBrwsPrd:AddColumn( TCColumn():New('DescriÁ„o',,,{|| },{|| }) )    
+    oTBrwsPrd:AddColumn( TCColumn():New('Valor'    ,,,{|| },{|| }) )    
+    oTBrwsPrd:SetArray(aBrwPrd) 
 
-aBrwTot   := {}
-oTBrwsTot := TSBrowse():New(01,01,275,050,oPnlWnd4,,16,,1)    
-oTBrwsTot:AddColumn( TCColumn():New('Valor'    ,,,{|| },{|| }) )    
-oTBrwsTot:SetArray(aBrwTot) 
+    aBrwTot   := {}
+    oTBrwsTot := TSBrowse():New(01,01,275,050,oPnlWnd4,,16,,1)    
+    oTBrwsTot:AddColumn( TCColumn():New('Valor'    ,,,{|| },{|| }) )    
+    oTBrwsTot:SetArray(aBrwTot) 
 
 
-//- Recupera coordenadas da area superior da linha e coluna a direita do container
-oSize1 := FWDefSize():New(.F.)
-oSize1:AddObject('SUPER',100,100,.T.,.T.)
-oSize1:SetWindowSize({0,0,oPnlWnd1:NHEIGHT,oPnlWnd1:NWIDTH})
-oSize1:lProp     := .T.
-oSize1:aMargins := {0,0,0,0}
-oSize1:Process()
+    //- Recupera coordenadas da area superior da linha e coluna a direita do container
+    oSize1 := FWDefSize():New(.F.)
+    oSize1:AddObject('SUPER',100,100,.T.,.T.)
+    oSize1:SetWindowSize({0,0,oPnlWnd1:NHEIGHT,oPnlWnd1:NWIDTH})
+    oSize1:lProp     := .T.
+    oSize1:aMargins := {0,0,0,0}
+    oSize1:Process()
 
-//- Recupera coordenadas da area superior da linha e coluna a direita do container
-oSize2 := FWDefSize():New(.F.)
-oSize2:AddObject('SUPER',100,100,.T.,.T.)
-oSize2:SetWindowSize({0,0,oPnlWnd2:NHEIGHT,oPnlWnd2:NWIDTH})
-oSize2:lProp     := .T.
-oSize2:aMargins := {0,0,0,0}
-oSize2:Process()
+    //- Recupera coordenadas da area superior da linha e coluna a direita do container
+    oSize2 := FWDefSize():New(.F.)
+    oSize2:AddObject('SUPER',100,100,.T.,.T.)
+    oSize2:SetWindowSize({0,0,oPnlWnd2:NHEIGHT,oPnlWnd2:NWIDTH})
+    oSize2:lProp     := .T.
+    oSize2:aMargins := {0,0,0,0}
+    oSize2:Process()
 
-/*
-@001, 005 Say STR0026	 SIZE 80, 07 	Of oPnlWnd2 Pixel   //"Pedidos Kg"
-@009, 05 MSGET oGetPedKg  VAR nPedKg    PICTURE "@E 999,999,999.99" When .F. SIZE 60, 10	Of oPnlWnd2 Pixel
-@001, 080 Say STR0027	 SIZE 80, 07 	Of oPnlWnd2 Pixel //"Pedidos Vol."
-@009, 080 MSGET oGetPedVol  VAR nPedVol PICTURE PesqPict("SB5", "B5_ALTURLC") When .F. SIZE 60, 10	Of oPnlWnd2 Pixel
+    /*
+    @001, 005 Say STR0026	 SIZE 80, 07 	Of oPnlWnd2 Pixel   //"Pedidos Kg"
+    @009, 05 MSGET oGetPedKg  VAR nPedKg    PICTURE "@E 999,999,999.99" When .F. SIZE 60, 10	Of oPnlWnd2 Pixel
+    @001, 080 Say STR0027	 SIZE 80, 07 	Of oPnlWnd2 Pixel //"Pedidos Vol."
+    @009, 080 MSGET oGetPedVol  VAR nPedVol PICTURE PesqPict("SB5", "B5_ALTURLC") When .F. SIZE 60, 10	Of oPnlWnd2 Pixel
 
-@001, 160 Say STR0028	 SIZE 80, 07 	Of oPnlWnd2 Pixel //"Qtd Veiculos"
-@009, 160 MSGET oGetQtdV  VAR nQtdVei   When .F. SIZE 60, 10	Of oPnlWnd2 Pixel
-@001, 240 Say STR0029	 SIZE 80, 07 	Of oPnlWnd2 Pixel    //"Capacid Kg"
-@009, 240 MSGET oGetTKg  VAR nTotalKg   PICTURE "@E 999,999,999.99" When .F. SIZE 60, 10	Of oPnlWnd2 Pixel
-@001, 320 Say STR0030	 SIZE 80, 07 	Of oPnlWnd2 Pixel    //"Capacid Vol"
-@009, 320 MSGET oGetTVol  VAR nTotalVol PICTURE PesqPict("DA3", "DA3_VOLMAX") When .F. SIZE 60, 10	Of oPnlWnd2 Pixel
-*/
+    @001, 160 Say STR0028	 SIZE 80, 07 	Of oPnlWnd2 Pixel //"Qtd Veiculos"
+    @009, 160 MSGET oGetQtdV  VAR nQtdVei   When .F. SIZE 60, 10	Of oPnlWnd2 Pixel
+    @001, 240 Say STR0029	 SIZE 80, 07 	Of oPnlWnd2 Pixel    //"Capacid Kg"
+    @009, 240 MSGET oGetTKg  VAR nTotalKg   PICTURE "@E 999,999,999.99" When .F. SIZE 60, 10	Of oPnlWnd2 Pixel
+    @001, 320 Say STR0030	 SIZE 80, 07 	Of oPnlWnd2 Pixel    //"Capacid Vol"
+    @009, 320 MSGET oGetTVol  VAR nTotalVol PICTURE PesqPict("DA3", "DA3_VOLMAX") When .F. SIZE 60, 10	Of oPnlWnd2 Pixel
+    */
 
-oBrwCab := fwBrowse():New()
-oBrwCab:SetOwner(oPnlWnd1)
-oBrwCab:SetDataTable(.T.)
-oBrwCab:DisableConfig()
-oBrwCab:DisableReport()
-oBrwCab:SetAlias(cCabAlias)
-oBrwCab:SetLocate() 
-oBrwCab:AddMarkColumns({|| IIF(!Empty((cCabAlias)->C6_OK), "LBOK", "LBNO")}, {|| FMark( oBrwCab )}, {|| FMarkAll( oBrwCab )}) //Code-Block Header Click
-oBrwCab:SetColumns(aCabCol)
-oBrwCab:SetEditCell( .T. , { || .T. } )
-oBrwCab:aColumns[07]:XF3 := 'SE4' //ok
-oBrwCab:aColumns[08]:XF3 := 'SED' //ok
-oBrwCab:aColumns[25]:XF3 := 'DJ'  //ok
-oBrwCab:aColumns[26]:XF3 := 'SF4' //ok
+    oBrwCab := fwBrowse():New()
+    oBrwCab:SetOwner(oPnlWnd1)
+    oBrwCab:SetDataTable(.T.)
+    oBrwCab:DisableConfig()
+    oBrwCab:DisableReport()
+    oBrwCab:SetAlias(cCabAlias)
+    oBrwCab:SetLocate() 
+    oBrwCab:AddMarkColumns({|| IIF(!Empty((cCabAlias)->C6_OK), "LBOK", "LBNO")}, {|| FMark( oBrwCab )}, {|| FMarkAll( oBrwCab )}) //Code-Block Header Click
+    oBrwCab:SetColumns(aCabCol)
+    oBrwCab:SetEditCell( .T. , { || .T. } )
+    oBrwCab:aColumns[07]:XF3 := 'SE4' //ok
+    oBrwCab:aColumns[08]:XF3 := 'SED' //ok
+    oBrwCab:aColumns[25]:XF3 := 'DJ'  //ok
+    oBrwCab:aColumns[26]:XF3 := 'SF4' //ok
 
-oBrwCab:Activate()
-oBrwCab:Refresh()
+    oBrwCab:Activate()
+    oBrwCab:Refresh()
 
-//oNwFat001:Activate()
+    //oNwFat001:Activate()
 ACTIVATE DIALOG oNwFat001 ON INIT EnchoiceBar(oNwFat001, { || FWMsgRun(, {|oSay| fGeraDocs(cCabAlias,cIteAlias,oSay,cIteTable) },;
                                                                        "Faturamento", "Processando geraÁ„o de notas"), oNwFat001:End() }, ;
 { || oNwFat001:End() },,{{"BMPINCLUIR",{|| MsgRun('Visualizando Pedido','Consulta' ,{|| fVisuPed(cCabAlias,aRotina,2,oSay,cCabTable,oCabTable) })},"Consulta" },;
@@ -403,6 +440,15 @@ oCabTable:Delete(oSay,cCabAlias,cIteAlias)
 
 Return Nil
 
+/*
+=======================================================================================
+Programa.:            fAtuEmp  
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
+
 *************************************************
 Static Function fAtuEmp(oSay,cCabAlias,cIteAlias)
 *************************************************
@@ -417,6 +463,9 @@ Local aLinha    As Array
 Local cQuery    As Character
 Local nStatus   As Numeric
 Local nOpc      As Numercic
+Local cCamPed   As Caracter
+
+cCamPed := "C5_NUM|C5_TIPO|C5_CLIENTE|C5_LOJACLI|C5_LOJAENT|C5_CONDPAG"
 
 nOPc  := 4
 (cCabAlias)->(DbGoTop())
@@ -435,16 +484,21 @@ While (cCabAlias)->(!Eof())
         SC5->(DbSetOrder(1))        
         SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
         aCabPed := {}
+    
         For nY := 1 To SC5->(FCount())
             cCampo   := SC5->(FieldName(nY))
             nPosicao := (cCabAlias)->(FieldPos(cCampo))
-            If nPosicao <> 0
-            cConteudo := (cCabAlias)->(FieldGet(nPosicao))
-            Else
-            cConteudo := &("SC5->"+cCampo)
-            EndIf
-            Aadd(aCabPed, {cCampo,cConteudo, Nil})
-        Next
+            
+            if cCampo $ cCamPed
+                If nPosicao <> 0
+                    cConteudo := (cCabAlias)->(FieldGet(nPosicao))
+                Else
+                    cConteudo := &("SC5->"+cCampo)
+                EndIf
+                Aadd(aCabPed, {cCampo,cConteudo, Nil})
+            EndIF
+            
+        Next nY
 
         SBF->(DbSetOrder(1))
         SBF->(DbSeek(xFilial("SBF")+(cCabAlias)->C6_LOCAL+(cCabAlias)->C6_LOCALIZ+(cCabAlias)->C6_PRODUTO+(cCabAlias)->C6_NUMSERI))
@@ -467,7 +521,9 @@ While (cCabAlias)->(!Eof())
 
         lMsHelpAuto := .T.
         lMsErroAuto := .F.
+        
         MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, aCabPed, aItePed, nOPc, .F.)
+        
         If lMsErroAuto
             MostraErro()
         Else
@@ -495,25 +551,30 @@ While (cCabAlias)->(!Eof())
                 MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Empenho SC6")
             EndIf
 
-            If (cCabAlias)->VRJ_STATUS == "A"
+            If (cCabAlias)->VRJ_STATUS $ "A|F"
+        
                 SDC->(DbSetOrder(3))
+        
                 If !SDC->(DbSeek(xFilial("SDC")+SC6->C6_PRODUTO+SC6->C6_LOCAL+SC6->C6_LOTECTL+SC6->C6_NUMLOTE+SC6->C6_LOCALIZ+SC6->C6_NUMSERI+"SC6"))
+        
                     cQuery := ""
-                    cQuery += " UPDATE "+RetSqlName("VRK")                                                                           +(Chr(13)+Chr(10))
-                    cQuery += " SET VRK_CHASSI = '"+CriaVar("C6_CHASSI" )+"'                                                        "+(Chr(13)+Chr(10))
-                    cQuery += " WHERE VRK_FILIAL = '"+xFilial("VRK")+"'                                                             "+(Chr(13)+Chr(10))
-                    cQuery += " AND VRK_PEDIDO||VRK_ITEPED = (SELECT VRK.VRK_PEDIDO||VRK.VRK_ITEPED                                 "+(Chr(13)+Chr(10))
-                    cQuery += "                               FROM "+RetSqlName("VRJ")+" VRJ                                        "+(Chr(13)+Chr(10))
-                    cQuery += "                               INNER JOIN                                                            "+(Chr(13)+Chr(10))
-                    cQuery += "                               "+RetSqlName("VRK")+" VRK ON VRK.VRK_FILIAL = '"+xFilial("VRK")+"'    "+(Chr(13)+Chr(10))
-                    cQuery += "                                                        AND VRJ.VRJ_PEDIDO = VRK.VRK_PEDIDO          "+(Chr(13)+Chr(10))
-                    cQuery += "                                                        AND VRJ.D_E_L_E_T_ = VRK.D_E_L_E_T_          "+(Chr(13)+Chr(10))
-                    cQuery += "                               WHERE VRJ.VRJ_FILIAL  = '"+xFilial("VRJ")                         +"' "+(Chr(13)+Chr(10))  
-                    cQuery += "                                 AND VRJ.VRJ_CODCLI  = '"+SC5->C5_CLIENTE                        +"' "+(Chr(13)+Chr(10))
-                    cQuery += "                                 AND VRJ.VRJ_LOJA    = '"+SC5->C5_LOJACLI                        +"' "+(Chr(13)+Chr(10))
-                    cQuery += "                                 AND VRJ.VRJ_PEDCOM  = '"+SC6->C6_PEDCLI                         +"' "+(Chr(13)+Chr(10))
-                    cQuery += "                                 AND VRK.VRK_ITEPED  = '"+StrZero(Val(Alltrim(SC6->C6_ITEM)),3)  +"' "+(Chr(13)+Chr(10))
-                    cQuery += "                                 AND VRJ.D_E_L_E_T_  = ' ')                                          "+(Chr(13)+Chr(10))
+                    cQuery += CrLf + " UPDATE " + RetSqlName("VRK") + " VRK "                                                                           
+                    cQuery += CrLf + " SET VRK.VRK_CHASSI = '" + CriaVar("C6_CHASSI" ) + "'  "
+                    cQuery += CrLf + "      WHERE   VRK.VRK_FILIAL = '" + xFilial("VRK") + "' "
+                    cQuery += CrLf + "          AND VRK.VRK_NUMTRA = '  ' 
+                    cQuery += CrLf + "          AND VRK.VRK_ITETRA = ' ' "
+                    cQuery += CrLf + "          AND VRK.VRK_PEDIDO||VRK.VRK_ITEPED = (SELECT VRK1.VRK_PEDIDO||VRK1.VRK_ITEPED "
+                    cQuery += CrLf + "                               FROM " + RetSqlName("VRJ") + " VRJ "
+                    cQuery += CrLf + "                               INNER JOIN "
+                    cQuery += CrLf + "                               "+RetSqlName("VRK")+" VRK1 ON VRK1.VRK_FILIAL = '" + xFilial("VRK") + "' "
+                    cQuery += CrLf + "                                                         AND VRK1.VRK_PEDIDO = VRJ.VRJ_PEDIDO   "
+                    cQuery += CrLf + "                                                         AND VRK1.D_E_L_E_T_ = ' ' "
+                    cQuery += CrLf + "                               WHERE VRJ.VRJ_FILIAL  = '" + xFilial("VRJ")                        + "' "
+                    cQuery += CrLf + "                                 AND VRJ.VRJ_CODCLI  = '" + SC5->C5_CLIENTE                       + "' "
+                    cQuery += CrLf + "                                 AND VRJ.VRJ_LOJA    = '" + SC5->C5_LOJACLI                       + "' "
+                    cQuery += CrLf + "                                 AND VRJ.VRJ_PEDCOM  = '" + SC6->C6_PEDCLI                        + "' "
+                    cQuery += CrLf + "                                 AND VRK1.VRK_ITEPED = '" + StrZero(Val(Alltrim(SC6->C6_ITEM)),3) + "' "
+                    cQuery += CrLf + "                                 AND VRJ.D_E_L_E_T_  = ' ')                                          "
                     nStatus := TCSqlExec(cQuery)
 
                     If (nStatus < 0)
@@ -524,9 +585,18 @@ While (cCabAlias)->(!Eof())
         EndIf
     EndIf
     (cCabAlias)->(DbSkip())
-End
+EndDo
 
 Return(.T.)
+
+/*
+=======================================================================================
+Programa.:             fConsNSeri 
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
 
 **************************************************************
 Static Function fConsNSeri(cCabAlias,cCabTable,oCabTable,oSay)
@@ -541,6 +611,15 @@ If Len(aCols) <> 0 .And. (cChassi <> (cCabAlias)->C6_NUMSERI .Or. cChassi<> (cCa
 EndIf
 
 Return(.T.)
+
+/*
+=======================================================================================
+Programa.:            fVldCampo  
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
 
 *************************************************************
 Static Function fVldCampo(cCabAlias,oSay,cCabTable,oCabTable)
@@ -566,6 +645,8 @@ Local cVar      As Character
 
 Local nValPre   As Numeric
 Local nValTab   As Numeric
+Local nValMov   As Numeric
+Local nX        As Numeric
 
 Local aArea     As Array
 Local aSC5Area  As Array
@@ -581,12 +662,34 @@ Private Inclui    As Logiscal
 cConteudo := &( ReadVar())
 cCampo    := ReadVar()
 
+if lRetorno 
+    RecLock( cCabAlias,.F. )
+     (cCabAlias)->LUPD := "T" 
+     (cCabAlias)->(MsUnLock())
+EndIf
+
 If Upper(Alltrim(cCampo)) == "C5_CONDPAG"
+
     SE4->(DbSetOrder(1)) ; lRetorno := SE4->(DbSeek(xFilial("SE4")+cConteudo                                                                      ))
+
 ElseIf Upper(Alltrim(cCampo)) == "C5_NATUREZ"
+
     SED->(DbSetOrder(1)) ; lRetorno := SED->(DbSeek(xFilial("SED")+cConteudo                                                                      ))
+
 ElseIf Upper(Alltrim(cCampo)) == "C6_OPER"
+
+    aHeader := {}
+    aHeader := aClone(aHeaderAux)
+    aCols   := {{}}
+
+    For nX := 1 to Len(aHeader)
+        aadd(aCols[1],(cCabAlias)->&(aHeader[nX,1]) )
+    Next nX
+
+    aadd(aCols[1],.T. )
+    N := 1
     lRetorno := ExistCpo("SX5","DJ"+cConteudo)
+
     If lRetorno
         cRetTES := ""
         cRetTES := MaTesInt(2,cConteudo, (cCabAlias)->C5_CLIENTE, (cCabAlias)->C5_LOJACLI,"C", (cCabAlias)->C6_PRODUTO)
@@ -600,23 +703,48 @@ ElseIf Upper(Alltrim(cCampo)) == "C6_OPER"
             (cCabAlias)->(MsUnLock())
         EndIf
     EndIf
+
 ElseIf Upper(Alltrim(cCampo)) == "C6_TES"
+
     SF4->(DbSetOrder(1)) ; lRetorno := SF4->(DbSeek(xFilial("SF4")+cConteudo                                                                      ))    
+
 ElseIf Upper(Alltrim(cCampo)) == "C6_NUMSERI"
+
     SBF->(DbSetOrder(1)) ; lRetorno := SBF->(DbSeek(xFilial("SBF")+(cCabAlias)->C6_LOCAL+(cCabAlias)->C6_LOCALIZ+(cCabAlias)->C6_PRODUTO+cConteudo))
+
     If lRetorno .And. SaldoSBF(.F.,"SBF",.F.,.F.,.F.) <= 0
         Help(" ",1,"SALDOLOCLZ")
         lRetorno := .F.
     EndIf
-ElseIf Upper(Alltrim(cCampo)) == "C6_XVLRPRD"
+
+ElseIf Upper(Alltrim(cCampo)) $ "C6_XVLRPRD|C6_TES|C6_XVLRMVT"
+//    SF4->(DbSetOrder(1)) ; lRetorno := SF4->(DbSeek(xFilial("SF4")+cConteudo))
+
+    aHeader := {}
+    aHeader := aClone(aHeaderAux)
+    aCols   := {{}}
+
+    For nX := 1 to Len(aHeader)
+        aadd(aCols[1],(cCabAlias)->&(aHeader[nX,1]) )
+    Next nX
+
+    aadd(aCols[1],.T. )
+    N := 1
+    
     cCodMar := (cCabAlias)->C6_XCODMAR
     cModVei := (cCabAlias)->C6_XMODVEI
     cSegMod := (cCabAlias)->C6_XSEGMOD
     nValTab := (cCabAlias)->C6_XPRCTAB
-    nValPre := &( ReadVar())
-
-    VlrPret(cCodMar, cModVei, cSegMod, nValTab, nValPre,cCabAlias)
+    nValPre := iif(ReadVar() == "C6_XVLRPRD" , &( ReadVar()), (cCabAlias)->C6_XVLRPRD )
+    nValMov := iif(ReadVar() == "C6_XVLRMVT" , &( ReadVar()), (cCabAlias)->C6_XVLRMVT )
+    lCalMov := ReadVar() == "C6_XVLRMVT"
+    if !lCalMov 
+        VlrPret(cCodMar, cModVei, cSegMod, nValTab, nValPre,nValMov,cCabAlias,lCalMov)
+    Else
+        AtuMOv(nValMov)
+    endif
     lRetorno := .T.
+
 ElseIf Upper(Alltrim(cCampo)) == "C6_LOCALIZ"
 
     SC5->(DbSetOrder(1)) ; SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM                     ))
@@ -638,6 +766,7 @@ ElseIf Upper(Alltrim(cCampo)) == "C6_LOCALIZ"
     Altera    := .T.
     Inclui    := .F.
     N         := 1
+
     oGrade	  := MsMatGrade():New('oGrade',,"C6_QTDVEN",,"a410GValid()",;
                         {{VK_F4,{|| A440Saldo(.T.,oGrade:aColsAux[oGrade:nPosLinO][aScan(oGrade:aHeadAux,{|x| AllTrim(x[2])=="C6_LOCAL"})])}} },;
                         {{"C6_QTDVEN",.T., {{"C6_UNSVEN",{|| ConvUm(AllTrim(oGrade:GetNameProd(,nLinha,nColuna)),aCols[nLinha][nColuna],0,2) } }} },;
@@ -656,6 +785,7 @@ ElseIf Upper(Alltrim(cCampo)) == "C6_LOCALIZ"
 
     DbSelectArea("SC6")
     DbSetOrder(1)
+
     cQuery := "SELECT * "
     cQuery += "FROM "+RetSqlName("SC6")+" SC6 "
     cQuery += "WHERE SC6.C6_FILIAL='"+xFilial("SC6")+"' AND "
@@ -669,17 +799,22 @@ ElseIf Upper(Alltrim(cCampo)) == "C6_LOCALIZ"
     FillGetDados(4,"SC6",1,cSeek,bWhile,{{bCond,bAction1,bAction2}},aNoFields,/*aYesFields*/,/*lOnlyYes*/,cQuery,/*bMontCols*/,.F.,/*aHeaderAux*/,/*aColsAux*/,{|| AfterCols(cArqQry) },/*bBeforeCols*/,/*bAfterHeader*/,"SC6")
 
     lRetorno := .t. //VldLocaliz( "A440" )  
+
     If !lRetorno
         Help(" ",1,"SALDOLOCLZ")
         lRetorno := .F.
     Else
         fConsNSeri(cCabAlias,cCabTable,oCabTable,oSay)
     EndIf
+
 ElseIf Upper(Alltrim(cCampo)) == "C5_XMENSER"
+
     lRetorno := .T.
+
 EndIf
 
 If lRetorno .And. Upper(Alltrim(cCampo)) != "C6_LOCALIZ"
+
     //Begin Transaction 
         SC5->(DbSetOrder(1))
         SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
@@ -692,10 +827,13 @@ If lRetorno .And. Upper(Alltrim(cCampo)) != "C6_LOCALIZ"
             fAtuPeds(cCabAlias,oSay,cCabTable,oCabTable,SC5->C5_NUM,(cCabAlias)->C6_NUMSERI)
         EndIf
     //End Transaction 
+
 ElseIf Upper(Alltrim(cCampo)) != "C6_LOCALIZ"
+
     If Upper(Alltrim(cCampo)) != "C6_OPER"
         Help("",1,"RECNOIS")
     EndIf
+
     SC5->(DbSetOrder(1)) ; SC5->(DbSeek(xFilial("SC6")+(cCabALias)->C6_NUM+(cCabAlias)->C6_ITEM))
     SC5->(DbSetOrder(1)) ; SC6->(DbSeek(xFilial("SC6")+(cCabALias)->C6_NUM                     ))
     cVar    := ReadVar()
@@ -704,9 +842,24 @@ ElseIf Upper(Alltrim(cCampo)) != "C6_LOCALIZ"
     &(cVar)
     cVar    := ("(cCabAlias)->"+cCampo+":= "+cAliPed+"->"+cCampo)
     &(cVar)
+
+EndIf
+if lRetorno 
+    RecLock( cCabAlias,.F. )
+     (cCabAlias)->LUPD := "F" 
+     (cCabAlias)->(MsUnLock())
 EndIf
 
 Return(lRetorno)
+
+/*
+=======================================================================================
+Programa.:              fVisuPed
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
 
 *************************************************************************
 Static Function fVisuPed(cCabAlias,aRotina,nOpc,oSay,cCabTable,oCabTable)
@@ -754,73 +907,94 @@ aRotina := {{OemToAnsi("Pesquisar"       ),"AxPesqui"		                         
 
 aArea := GetArea()
 SC5->(DbSetOrder(1))
+
 If cCabAlias == "SC5" .Or. SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
+
     If nOpc == 2
+
         Inclui := .F. ;Altera := .F.
         A410Visual("SC5",SC5->(Recno()),nOpc)
+
     ElseIf nOpc == 3
+
         lRetorno := A410Inclui("SC5",SC5->(Recno()),nOpc)
+
         If lRetorno .And. cCabAlias <> "SC5"
             cQuery := ""
             cQuery += " INSERT INTO "+cCabTable+"                                                                                    "+(Chr(13)+Chr(10))
             cQuery += " ("
+
             For nY := 1 To Len(aCabCampos)
-                If Upper(Alltrim(aCabCampos[nY])) <> "C9_SEQUEN"  .And.;
-                Upper(Alltrim(aCabCampos[nY])) <> "C9_NFISCAL" .And.;
-                Upper(Alltrim(aCabCampos[nY])) <> "C9_SERIENF" .And.;
-                Upper(Alltrim(aCabCampos[nY])) <> "C5_XMENSER"
-                cQuery += aCabCampos[nY]+","
+                If  Upper(Alltrim(aCabCampos[nY])) <> "C9_SEQUEN"  .And.;
+                    Upper(Alltrim(aCabCampos[nY])) <> "C9_NFISCAL" .And.;
+                    Upper(Alltrim(aCabCampos[nY])) <> "C9_SERIENF" .And.;
+                    Upper(Alltrim(aCabCampos[nY])) <> "C5_XMENSER"
+                    
+                    cQuery += aCabCampos[nY]+","
+                
                 EndIf
             Next
+
             cQuery += " D_E_L_E_T_,R_E_C_N_O_)                                                                                       "+(Chr(13)+Chr(10))
             cQuery += " SELECT '  ' C6_OK    ,                                                                                       "+(Chr(13)+Chr(10))
             cQuery += " ' '         C6_STATUS,                                                                                       "+(Chr(13)+Chr(10))
+            
             For nY := 1 To Len(aCabCampos)
+            
                 If  Upper(Alltrim(aCabCampos[nY])) <> "C6_OK"      .And.;
                     Upper(Alltrim(aCabCampos[nY])) <> "CC_STATUS"  .And.;
                     Upper(Alltrim(aCabCampos[nY])) <> "C9_SEQUEN"  .And.;
                     Upper(Alltrim(aCabCampos[nY])) <> "C9_NFISCAL" .And.;
                     Upper(Alltrim(aCabCampos[nY])) <> "C9_SERIENF" .And.;
                     Upper(Alltrim(aCabCampos[nY])) <> "C5_XMENSER"
+            
                     If Left(aCabCampos[nY],3) == "C6_" ; cQryAlias := "SC6." ; EndIf
                     If Left(aCabCampos[nY],3) == "C5_" ; cQryAlias := "SC5." ; EndIf
                     If Left(aCabCampos[nY],3) == "A1_" ; cQryAlias := "SA1." ; EndIf
                     If Left(aCabCampos[nY],3) == "B1_" ; cQryAlias := "SB1." ; EndIf
                     If Left(aCabCampos[nY],3) == "F4_" ; cQryAlias := "SF4." ; EndIf
+            
                     cQuery += " "+(cQryAlias+aCabCampos[nY])+",                                                                       "+(Chr(13)+Chr(10))"
+            
                 EndIf
+            
             Next
-            cQuery += "        ' '                                                                                      D_E_L_E_T_  , "+(Chr(13)+Chr(10))
-            cQuery += "        ROW_NUMBER() OVER (ORDER BY SC6.C6_FILIAL,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO)  R_E_C_N_O_    "+(Chr(13)+Chr(10))
-            cQuery += " FROM "+RetSqlName("SC6")+" SC6                                                                                "+(Chr(13)+Chr(10))
-            cQuery += "      INNER JOIN                                                                                               "+(Chr(13)+Chr(10))
-            cQuery += "      "+RetSqlName("SC5")+" SC5 ON   SC6.C6_FILIAL   = SC5.C5_FILIAL                                           "+(Chr(13)+Chr(10))
-            cQuery += "                                 AND SC6.C6_NUM      = SC5.C5_NUM                                              "+(Chr(13)+Chr(10))
-            cQuery += "                                 AND SC6.D_E_L_E_T_  = SC5.D_E_L_E_T_                                          "+(Chr(13)+Chr(10))
-            cQuery += "      INNER JOIN                                                                                               "+(Chr(13)+Chr(10))
-            cQuery += "      "+RetSqlName("SA1")+" SA1 ON   SC5.C5_CLIENTE  = SA1.A1_COD                                              "+(Chr(13)+Chr(10))
-            cQuery += "                                 AND SC5.C5_LOJACLI  = SA1.A1_LOJA                                             "+(Chr(13)+Chr(10))
-            cQuery += "                                 AND SC5.D_E_L_E_T_  = SA1.D_E_L_E_T_                                          "+(Chr(13)+Chr(10))
-            cQuery += "      INNER JOIN                                                                                               "+(Chr(13)+Chr(10))
-            cQuery += "      "+RetSqlName("SB1")+" SB1 ON   SC6.C6_PRODUTO  = SB1.B1_COD                                              "+(Chr(13)+Chr(10))
-            cQuery += "                                 AND SC6.D_E_L_E_T_  = SB1.D_E_L_E_T_                                          "+(Chr(13)+Chr(10))
-            cQuery += "      INNER JOIN                                                                                               "+(Chr(13)+Chr(10))
-            cQuery += "      "+RetSqlName("SF4")+" SF4 ON   SC6.C6_TES      = SF4.F4_CODIGO                                           "+(Chr(13)+Chr(10))
-            cQuery += "                                 AND SC6.D_E_L_E_T_  = SF4.D_E_L_E_T_                                          "+(Chr(13)+Chr(10))
-            cQuery += " WHERE   SC6.C6_FILIAL           = '"+xFilial("SC6")+"'                                                        "+(Chr(13)+Chr(10))
-            cQuery += "     AND SC5.C5_NUM              = '"+SC5->C5_NUM   +"'                                                        "+(Chr(13)+Chr(10))
-            cQuery += "     AND SC5.C5_TIPO             = 'N'                                                                         "+(Chr(13)+Chr(10))
-            cQuery += "     AND SC6.C6_QTDVEN           > SC6.C6_QTDENT                                                               "+(Chr(13)+Chr(10))
-            cQuery += "     AND SC6.C6_NOTA             = ' '                                                                         "+(Chr(13)+Chr(10))
-            cQuery += "     AND SC6.C6_BLQ              = ' '                                                                         "+(Chr(13)+Chr(10))
-            cQuery += "     AND SB1.B1_GRUPO            = 'VEIA'                                                                      "+(Chr(13)+Chr(10))
-            cQuery += "     AND SF4.F4_DUPLIC           = 'S'                                                                         "+(Chr(13)+Chr(10))
-            cQuery += " 	AND SC6.D_E_L_E_T_			= ' '                                                                         "+(Chr(13)+Chr(10))
-            cQuery += " ORDER BY SC6.C6_FILIAL,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO                                           "+(Chr(13)+Chr(10))
+            
+            cQuery += CrLf + "        ' '                                                                                      D_E_L_E_T_  , "
+            cQuery += CrLf + "        ROW_NUMBER() OVER (ORDER BY SC6.C6_FILIAL,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO)  R_E_C_N_O_    "
+            cQuery += CrLf + " FROM "+RetSqlName("SC6")+" SC6 "
+            cQuery += CrLf + "      INNER JOIN"
+            cQuery += CrLf + "      "+RetSqlName("SC5")+" SC5 ON   SC6.C6_FILIAL   = SC5.C5_FILIAL "
+            cQuery += CrLf + "                                 AND SC6.C6_NUM      = SC5.C5_NUM "
+            cQuery += CrLf + "                                 AND SC6.D_E_L_E_T_  = SC5.D_E_L_E_T_ "
+            cQuery += CrLf + "      INNER JOIN "
+            cQuery += CrLf + "      "+RetSqlName("SA1")+" SA1 ON   SC5.C5_CLIENTE  = SA1.A1_COD "
+            cQuery += CrLf + "                                 AND SC5.C5_LOJACLI  = SA1.A1_LOJA "
+            cQuery += CrLf + "                                 AND SC5.D_E_L_E_T_  = SA1.D_E_L_E_T_ "
+            cQuery += CrLf + "      INNER JOIN "
+            cQuery += CrLf + "      "+RetSqlName("SB1")+" SB1 ON   SC6.C6_PRODUTO  = SB1.B1_COD "
+            cQuery += CrLf + "                                 AND SC6.D_E_L_E_T_  = SB1.D_E_L_E_T_ "
+            cQuery += CrLf + "      INNER JOIN "
+            cQuery += CrLf + "      "+RetSqlName("SF4")+" SF4 ON   SC6.C6_TES      = SF4.F4_CODIGO "
+            cQuery += CrLf + "                                 AND SC6.D_E_L_E_T_  = SF4.D_E_L_E_T_ "
+            cQuery += CrLf + " WHERE   SC6.C6_FILIAL = '"+xFilial("SC6")+"' "
+            cQuery += CrLf + "     AND SC5.C5_NUM    = '"+SC5->C5_NUM   +"' "
+            cQuery += CrLf + "     AND SC5.C5_TIPO   = 'N' "
+            cQuery += CrLf + "     AND SC6.C6_QTDVEN > SC6.C6_QTDENT "
+            cQuery += CrLf + "     AND SC6.C6_NOTA   = ' ' "
+            cQuery += CrLf + "     AND SC6.C6_BLQ    = ' ' "
+            cQuery += CrLf + "     AND SB1.B1_GRUPO  = 'VEIA' "
+            cQuery += CrLf + "     AND SF4.F4_DUPLIC = 'S' "
+            cQuery += CrLf + " 	AND SC6.D_E_L_E_T_	 = ' ' "
+            cQuery += CrLf + " ORDER BY SC6.C6_FILIAL,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO "
+            
             nStatus := TCSqlExec(cQuery)
             fAtuPeds(cCabAlias,oSay,cCabTable,oCabTable,SC5->C5_NUM)
+
         EndIf
+
     ElseIf nOpc == 4
+        
         Inclui := .F. ;Altera := .T.
         SC6->(DbSetOrder(1))
         SC6->(DbSeek(xFilial("SC6")+SC5->C5_NUM))
@@ -828,11 +1002,13 @@ If cCabAlias == "SC5" .Or. SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
         If lRetorno 
             fAtuPeds(cCabAlias,oSay,cCabTable,oCabTable,SC5->C5_NUM,SC6->C6_NUMSERI)
         EndIf
+    
     ElseIf nOpc == 5
+    
         If FWAlertYesNo("O pedido est· liberado para faturamento. Deseja continuar?", "Exclus„o de Pedido")
             //Begin Transaction
-
                 aCabPed := {}
+
                 For nY := 1 To SC5->(FCount())
                     cCampo  := SC5->(FieldName(nY))
                     Aadd(aCabPed, {cCampo,&("SC5->"+cCampo), Nil})
@@ -844,6 +1020,7 @@ If cCabAlias == "SC5" .Or. SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
                 l410Auto := .T.
                 aItePed  := {}
                 aLinha   := {}
+
                 Aadd(aLinha,{"LINPOS"    ,"C6_ITEM"              ,SC6->C6_ITEM});Aadd(aLinha,{"AUTDELETA" ,"N"                    ,Nil         })
                 Aadd(aLinha,{"C6_PRODUTO",SC6->C6_PRODUTO        ,Nil         });Aadd(aLinha,{"C6_QTDVEN" ,SC6->C6_QTDVEN         ,Nil         })
                 Aadd(aLinha,{"C6_PRCVEN" ,SC6->C6_PRCVEN         ,Nil         });Aadd(aLinha,{"C6_VALOR"  ,SC6->C6_VALOR          ,Nil         })
@@ -851,7 +1028,9 @@ If cCabAlias == "SC5" .Or. SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
                 Aadd(aLinha,{"C6_QTDLIB" ,0                      ,Nil         });Aadd(aLinha,{"C6_CHASSI" ,CriaVar("C6_CHASSI" )  ,Nil         })
                 Aadd(aLinha,{"C6_LOCALIZ",CriaVar("C6_LOCALIZ")  ,Nil         });Aadd(aLinha,{"C6_NUMSERI",CriaVar("C6_NUMSERI")  ,Nil         })
                 Aadd(aItePed, aLinha)
+
                 MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, aCabPed, aItePed, 4 , .F.)
+
                 If lMsErroAuto
                     MostraErro()
                     //DisarmTransaction()
@@ -860,8 +1039,10 @@ If cCabAlias == "SC5" .Or. SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
 
                 l410Auto := .F.
                 A410Deleta("SC5",SC5->(Recno()),nOpc)
+
                 SC5->(DbSetOrder(1))
                 SC5->(DbGoTop())
+
                 If !SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
                     (cCabAlias)->(DbGoTo(nRecno))
                     (cCabAlias)->(RecLock(cCabAlias,.F.))
@@ -880,29 +1061,36 @@ EndIf
 RestArea(aArea)
 
 Return()
-
+/*
+=======================================================================================
+Programa.:            fAtuPeds  
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
 ****************************************************************************
 Static Function fAtuPeds(cCabAlias,oSay,cCabTable,oCabTable,cNumPed,cChassi)
 ****************************************************************************
 
-Local aArea         As Array
 Local cQuery        As Character
 Local cTmpAlias     As Character
+Local cConteudo     As Character
+Local cTrbAlias     As Character
+Local cNumSerie     As Character
 Local aCampos       As Array
-Local nY            As Numeric
 Local aCabPed       As Array
 Local aItePed       As Array
 Local aLinha        As Array
+Local aArea         As Array
+Local nY            As Numeric
 Local n_RecnoSc6    As Numeric
 Local nQtdLib       As Numeric
-Local lLibPed       As Logical
+Local nPosicao      As Numeric
 Local nStatus       As Numeric
 Local nRecno        As Numeric
-Local cTrbAlias     As Character
-Local cNumSerie     As Character
+Local lLibPed       As Logical
 Local lRetorno      As Logical
-Local cConteudo     As Character
-Local nPosicao      As Numeric
 
 Private lMsHelpAuto As Logical
 Private lMsErroAuto As Logical
@@ -919,6 +1107,7 @@ Public  nLinPos  As Numeric
 
 aCampos     := {"VV1.VV1_FILIAL,","SBF.BF_PRODUTO,","VV1.VV1_CHASSI,","VV1.VV1_CODMAR,","VV1.VV1_MODVEI,","VV1.VV1_SEGMOD,",;
                 "VV1.VV1_FABMOD,","VV1.VV1_CORVEI,","SBF.BF_LOCAL,"  ,"SBF.BF_LOCALIZ,","SBF.BF_QUANT,"}
+
 cTmpAlias   := GetNextAlias()
 cTrbAlias   := GetNextAlias()
 cQuery      := ""
@@ -932,6 +1121,7 @@ If !Empty(Alltrim(cNumPed))
 EndIf
 
 (cCabAlias)->(DbGoTop())
+
 While (cCabAlias)->(!Eof())
     
     oSay:SetText("Preparando pedido: " + (cCabAlias)->C6_NUM+" ...")
@@ -942,6 +1132,7 @@ While (cCabAlias)->(!Eof())
     
     SC6->(DbSetOrder(1))        
     SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
+
     If !Empty(Alltrim(cNumPed))
         //Begin Transaction
             cNumSerie := If(ValType(cChassi) <> "U" , cChassi, SC6->C6_CHASSI)
@@ -949,16 +1140,20 @@ While (cCabAlias)->(!Eof())
             SC5->(DbSetOrder(1))        
             SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
             aCabPed := {}
+
             For nY := 1 To SC5->(FCount())
                 cCampo   := SC5->(FieldName(nY))
                 nPosicao := (cCabAlias)->(FieldPos(cCampo))
+
                 If nPosicao <> 0
                     cConteudo := (cCabAlias)->(FieldGet(nPosicao))
                 Else
                     cConteudo := &("SC5->"+cCampo)
                 EndIf
+
                 Aadd(aCabPed, {cCampo,cConteudo, Nil})
-            Next
+
+            Next nY
 
             SC6->(DbSetOrder(1))        
             SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
@@ -978,7 +1173,9 @@ While (cCabAlias)->(!Eof())
             
             lMsHelpAuto := .T.
             lMsErroAuto := .F.
+            
             MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, aCabPed, aItePed, nOPc, .F.)
+            
             If lMsErroAuto
                 MostraErro()
                 lRetorno := .F.
@@ -988,15 +1185,19 @@ While (cCabAlias)->(!Eof())
             EndIf
         //End Transaction
     Else
+        
         (cCabAlias)->(RecLock(cCabAlias,.F.))
         (cCabAlias)->C5_XMENSER := If(!Empty(Alltrim(SC5->C5_XMENSER)),SC5->C5_XMENSER,Space(8000))
         (cCabAlias)->(MsUnLock())        
+    
     EndIf
 
     If !Empty(Alltrim(SC6->C6_NUMSERI)) .And.;
        !Empty(Alltrim(SC6->C6_CHASSI )) .And.;
        !Empty(Alltrim(SC6->C6_LOCALIZ))
+    
         SDC->(DbSetOrder(3))
+    
         If SDC->(DbSeek(xFilial("SDC")+SC6->C6_PRODUTO+SC6->C6_LOCAL+SC6->C6_LOTECTL+SC6->C6_NUMLOTE+SC6->C6_LOCALIZ+SC6->C6_NUMSERI+"SC6"))
             (cCabAlias)->(RecLock(cCabAlias,.F.))
             (cCabAlias)->C9_SEQUEN  := SDC->DC_SEQ
@@ -1027,15 +1228,18 @@ While (cCabAlias)->(!Eof())
 
         (cCabAlias)->(DbSkip())
         Loop
+    
     EndIf
  
     cQuery := ""
     cQuery += " SELECT A.*                                                                  "+(Chr(13)+Chr(10))
     cQuery += " FROM (                                                                      "+(Chr(13)+Chr(10))
     cQuery += " SELECT                                                                      "+(Chr(13)+Chr(10))
+    
     For nY := 1 To Len(aCampos)
         cQuery += aCampos[nY]+"                                                             "+(Chr(13)+Chr(10))  
     Next
+    
     cQuery += "         (SELECT MAX(SDB.DB_NUMSEQ)                                          "+(Chr(13)+Chr(10))
     cQuery += "          FROM "+RetSqlName("SDB")+" SDB                                     "+(Chr(13)+Chr(10))
     cQuery += "          WHERE  SDB.DB_FILIAL       = '"+xFilial("SDB")+"'                  "+(Chr(13)+Chr(10))
@@ -1058,13 +1262,16 @@ While (cCabAlias)->(!Eof())
     cQuery += "     AND SBF.BF_EMPENHO      = 0                                             "+(Chr(13)+Chr(10))
     cQuery += "     AND SBF.BF_PRODUTO      = '"+(cCabAlias)->C6_PRODUTO+"'                 "+(Chr(13)+Chr(10))
     cQuery += "     AND SBF.BF_LOCAL        = '"+(cCabAlias)->C6_LOCAL  +"'                 "+(Chr(13)+Chr(10))
+    
     If !Empty(Alltrim(cNumSerie))
         cQuery += " AND SBF.BF_NUMSERI      = '"+cNumSerie              +"'                 "+(Chr(13)+Chr(10))
     EndIf
+    
     cQuery += "     AND VV1.D_E_L_E_T_      = ' ') A                                        "+(Chr(13)+Chr(10))
     cQuery += " ORDER BY A.VV1_FILIAL,A.BF_PRODUTO,A.DB_NUMSEQ,A.VV1_CHASSI                 "+(Chr(13)+Chr(10))
     
     If Select(cTmpAlias) <> 0 ; (cTmpAlias)->(DbCloseArea()) ; EndIf
+    
     DbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cTmpAlias, .F., .T. )
 
     If (cTmpAlias)->(!Eof())
@@ -1124,6 +1331,7 @@ While (cCabAlias)->(!Eof())
                                           +CriaVar("DC_NUMLOTE")  ;
                                           +(cTmpAlias)->BF_LOCALIZ;
                                           +(cTmpAlias)->VV1_CHASSI))
+    
                 cQuery := ""
                 cQuery += " SELECT  VV1.VV1_FILIAL          AS FILIAL       ,                               "+(Chr(13)+Chr(10))
                 cQuery += "         VV1.VV1_CHASSI          AS CHASSI       ,                               "+(Chr(13)+Chr(10))
@@ -1173,10 +1381,13 @@ While (cCabAlias)->(!Eof())
 
                 lLibPed  := .T.
                 (cCabAlias)->(RecLock(cCabAlias,.F.))
+    
                 If Empty(Alltrim(SC9->C9_BLCRED)) .And.;
                    Empty(Alltrim(SC9->C9_BLEST )) .And.;
                    Empty(Alltrim(SC9->C9_BLWMS ))
+    
                    (cCabAlias)->CC_STATUS  := "1"
+    
                 ElseIf SC9->C9_BLCRED == "01" ; (cCabAlias)->CC_STATUS  := "2"
                 ElseIf SC9->C9_BLCRED == "04" ; (cCabAlias)->CC_STATUS  := "3"
                 ElseIf SC9->C9_BLCRED == "05" ; (cCabAlias)->CC_STATUS  := "4"
@@ -1235,7 +1446,7 @@ While (cCabAlias)->(!Eof())
                 nStatus := TCSqlExec(cQuery)
 
                 If (nStatus < 0)
-                    MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Chasi VRK")
+                    MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Chassi VRK")
                 EndIf
 
                 DBCommitAll()
@@ -1246,6 +1457,7 @@ While (cCabAlias)->(!Eof())
     EndIf
 
     If !lLibPed
+    
         SC6->(RecLock("SC6",.F.))
         SC6->C6_LOTECTL := CriaVar("C6_LOTECTL") ; SC6->C6_DTVALID  := CriaVar("C6_DTVALID") ; SC6->C6_NUMSERI  := CriaVar("C6_NUMSERI")
         SC6->C6_CHASSI  := CriaVar("C6_CHASSI" ) ; SC6->C6_LOCALIZ  := CriaVar("C6_LOCALIZ") ; SC6->C6_XCODMAR  := CriaVar("C6_XCODMAR")
@@ -1260,16 +1472,20 @@ While (cCabAlias)->(!Eof())
         (cCabAlias)->C6_NUMSERI := CriaVar("C6_NUMSERI")
         (cCabAlias)->C6_LOCALIZ := CriaVar("C6_LOCALIZ")
         (cCabAlias)->(MsUnLock())
-         DBCommitAll()
+    
+        DBCommitAll()
+    
     EndIf
 
     (cCabAlias)->(DbSkip())
-End
+EndDo
 
 SC6->(DbSetOrder(1))
 (cCabAlias)->(DbGoTop())
+
 While (cCabAlias)->(!Eof())
     nRecno := (cCabAlias)->(Recno())    
+
     If Empty(Alltrim((cCabAlias)->C6_CHASSI)) .Or. Empty(Alltrim((cCabAlias)->C6_NUMSERI))        
         SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
         SC6->(RecLock("SC6",.F.))
@@ -1288,7 +1504,7 @@ While (cCabAlias)->(!Eof())
 
     (cCabAlias)->(DbGoTo(nRecno))
     (cCabAlias)->(DbSkip())
-End
+EndDo
 
 If !Empty(Alltrim(cNumPed))
     (cCabAlias)->(DBClearFilter())
@@ -1311,12 +1527,23 @@ If ValType(oBrwCab) <> "U"
     oBrwCab:Refresh()
     oNwFat001:Refresh()
     */
+
 EndIf
+
 TcRefresh(oCabTable:GetTableNameForQuery())
 
 (cCabAlias)->(DbGoTop())
 
 Return()
+
+/*
+=======================================================================================
+Programa.:           fGeraDocs   
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
 
 *************************************************************
 Static Function fGeraDocs(cCabAlias,cIteAlias,oSay,cIteTable)
@@ -1348,13 +1575,14 @@ Dbselectarea("SB2") ; SB2->(DbSetOrder(1))
 lContinua := .F.
 (cCabAlias)->(DbGotop())
 While (cCabAlias)->(!Eof()) 
+    
     If !Empty(Alltrim((cCabAlias)->C6_OK))
         lContinua := .T.
         Exit
     EndIf
 
     (cCabAlias)->(DbSkip())
-End
+EndDo
 
 If !lContinua
     Return(.T.)
@@ -1387,9 +1615,9 @@ While (cCabAlias)->(!Eof()) .And. lContinua
                   //lContinua := Sx5NumNota(@cSerie,SuperGetMV("MV_TPNRNFS"),,,,@cSerieId,dDataBase ) // O parametro cSerieId deve ser passado para funcao Sx5NumNota afim de tratar a existencia ou nao do mesmo numero na funcao VldSx5Num do MATXFUNA.PRX
                     cNotaSer  := Criavar("F2_DOC"  )
 
-                    If !lContinua
+                    /*If !lContinua
                         Return()
-                    EndIf
+                    EndIf*/
 
             	    Aadd( aTmpPVl , SC9->C9_PEDIDO  ) ; Aadd( aTmpPVl , SC9->C9_ITEM    ) ; Aadd( aTmpPVl , SC9->C9_SEQUEN  )
 	                Aadd( aTmpPVl , SC9->C9_QTDLIB  ) ; Aadd( aTmpPVl , SC9->C9_PRCVEN  ) ; Aadd( aTmpPVl , SC9->C9_PRODUTO )
@@ -1399,9 +1627,11 @@ While (cCabAlias)->(!Eof()) .And. lContinua
 	                Aadd( aTmpPVl , 1               ) ; Aadd( aTmpPVl , SC9->C9_QTDLIB2 )
 		
 	                Aadd( aPVlNFs, aClone(aTmpPVl))
-	                ******************************
+	                /*
+                    *****************************
 	                *'Gera nota fiscal de saÌda.'*
-	                ******************************
+	                *****************************
+                    */
 	                cNotaSer  := MAPVLNFS(aPVlNFs,cSerie,.F.,.F.,.T.,.F.,.F.,1,0,.T.,.F.,,,)
                     
                     SF2->(DbSetOrder(1))
@@ -1430,34 +1660,60 @@ While (cCabAlias)->(!Eof()) .And. lContinua
                                         cQuery := ""
                                         cQuery += " UPDATE "+RetSqlName("VRJ")
                                         cQuery += " SET VRJ_STATUS = 'F' ,                          "
-                                        cQuery += "     VRJ_XINTEG = 'F'                            "
+                                        cQuery += "     VRJ_XINTEG = ' '                            "
                                         //cQuery += " FROM "+RetSqlName("VRJ")
-                                        cQuery += " WHERE  VRJ_FILIAL = '"+xFilial("VRJ")        +"'" 
-                                        cQuery += "    AND VRJ_PEDCOM = '"+(cCabAlias)->C6_PEDCLI+"'"
+                                        cQuery += " WHERE  VRJ_FILIAL = '" + xFilial("VRJ")         + "'" 
+                                        cQuery += "    AND VRJ_PEDCOM = '" + (cCabAlias)->C6_PEDCLI + "'"
                                         cQuery += "    AND D_E_L_E_T_ = ' '"
                                         nStatus := TCSqlExec(cQuery)
 
                                         If (nStatus < 0)
                                             MsgStop("TCSQLError() " + TCSQLError(), "Erro atualizacao VRJ")                                    
                                         EndIf
+                           
+                                        cQuery := "  UPDATE " + RetSqlName("VRK") + " VRK "
+                                        cQuery += "     SET VRK.VRK_ITETRA = '01', "
+                                        cQuery += "         VRK.VRK_NUMTRA = 'F" + SD2->D2_DOC + "' "
+                                        cQuery += " WHERE   VRK.VRK_CHASSI = '"  + SDB->DB_NUMSERI + "' "
+                                        cQuery += "     AND VRK.VRK_ITETRA = ' ' "
+                                        cQuery += "     AND VRK.VRK_PEDIDO = (SELECT VRJ.VRJ_PEDIDO "
+                                        cQuery += "                             FROM " + RetSqlName("VRJ") + " VRJ "
+                                        cQuery += "                             WHERE  VRJ.VRJ_PEDCOM = '" + (cCabAlias)->C6_PEDCLI + "')"
+                                        nStatus := TCSqlExec(cQuery)
+
+                                        If (nStatus < 0)
+                                            MsgStop("TCSQLError() " + TCSQLError(), "Erro atualizacao VRK")                                    
+                                        EndIf
+                                        //U_CMVAUT04((cCabAlias)->VRJ_PEDIDO)
                                     EndIf
                                 EndIf
                             EndIf
                             SD2->(DbSkip())
-                        End
+                        EndDo
                     EndIf
                 EndIf
             EndIf
         EndIf
     EndIf
     (cCabAlias)->(DbSkip())
-End
+EndDo
 
 If Len(aDadosDoc) <> 0
     NotaDados(aDadosDoc)
 EndIf
 
+StartJob("U_CMVAUT04", GetEnvServer(), .F.)//, cEmpAnt, cFilAnt)
+
 Return(Nil)
+
+/*
+=======================================================================================
+Programa.:             NotaDados 
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
 
 ************************************
 Static Function NotaDados(aDadosDoc)
@@ -1498,6 +1754,15 @@ InstObj(@oGerNota,aDadosDoc)
 
 Return
 
+/*
+=======================================================================================
+Programa.:              InstObj
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
+
 *******************************************
 Static Function InstObj(oGerNota,aDadosDoc)
 *******************************************
@@ -1531,13 +1796,32 @@ oGerNota:Activate() //Exibe a dialog ao usuario
 
 Return
 
+/*
+=======================================================================================
+Programa.:              fCanNotas
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
+
 ***************************
-Static Function fCanNotas()
+Static Function fCanNotas(oSay)
 ***************************
 
 Mata521A()
+Estor(oSay)
 
 Return(Nil)
+
+/*
+=======================================================================================
+Programa.:              fDevNotas
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
 
 ***************************
 Static Function fDevNotas()
@@ -1546,20 +1830,24 @@ Static Function fDevNotas()
 Private INCLUI := .T.
 Private ALTERA := .F.
 
-U_ZFATF020("SF1",1,3)
+Return U_ZFATF020("SF1",1,3)
 
-Return(Nil)
+//Return(Nil)
 
-//------------------------------------------------------------------------------------
-/*/{Protheus.doc} FMark
-Executa a gravaÁ„o do retorno da Consulta EspecÌfica.
-@Param		oBrowse	- Objeto da Browse
+/*
+=======================================================================================
+Programa.:             FMark 
+Autor....:              
+Data.....:              
+Descricao / Objetivo: Executa a gravaÁ„o do retorno da Consulta EspecÌfica.
+
+@Param...:	oBrowse     - Objeto da Browse
 			cReadVar	- Campo de retorno da Consulta EspecÌfica
 			cChave		- Campo(s) a serem gravados no retorno da Consulta EspecÌfica
 			lMult		- Indica se a tela permiÁ„o selec de m˙ltiplos registros
-@Version	1.0
-/*/
-//------------------------------------------------------------------------------------
+
+=======================================================================================
+*/
 ******************************
 Static function FMark(oBrowse)
 ******************************
@@ -1605,7 +1893,7 @@ While (cAlias)->(!Eof())
 
     EndIf
     (cAlias)->(DbSkip())
-End
+EndDo
 
 (cAlias)->(DbGoTo(nRecno))
 oTBrwsCli:SetArray(aBrwCli) 
@@ -1623,13 +1911,15 @@ oTBrwsTot:SetArray(aBrwTot)
 
 Return 
 
-//---------------------------------------------------------------------
-/*/{Protheus.doc} FMarkAll
-Inverte a indicaÁ„o de seleÁ„o de todos registros do Browse.
-@Param		oBrowse	->	Objeto contendo campo de seleÁ„o
-@Return	Nil
-/*/
-//---------------------------------------------------------------------
+/*
+=======================================================================================
+Programa.:              FMarkAll
+Autor....:              
+Data.....:              
+Descricao / Objetivo:  Inverte a indicaÁ„o de seleÁ„o de todos registros do Browse.
+@Param...:		       oBrowse	->	Objeto contendo campo de seleÁ„o
+=======================================================================================
+*/
 ***********************************
 Static Function FMarkAll( oBrowse )
 ***********************************
@@ -1695,6 +1985,15 @@ oTBrwsTot:SetArray(aBrwPrd)
 
 Return()
 
+/*
+=======================================================================================
+Programa.:             fResFat 
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
+
 *************************
 Static Function fResFat()
 *************************
@@ -1736,6 +2035,15 @@ oResFat:bLine := {||{aDadosDoc[oResFat:nAt,1],;
 */
 Return
 
+/*
+=======================================================================================
+Programa.:             Boleto 
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
+
 *********************************
 Static Function Boleto(cCabAlias)
 *********************************
@@ -1762,6 +2070,15 @@ RestArea(aAreaVRJ)
 RestArea(aArea)
 
 Return
+
+/*
+=======================================================================================
+Programa.:              ValidPerg
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
 
 ********************************
 Static Function ValidPerg(cPerg)
@@ -1796,6 +2113,15 @@ DbSelectArea(_sAlias)
 
 Return()
 
+/*
+=======================================================================================
+Programa.:              AtuTbPrc
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
+
 **************************
 Static Function AtuTbPrc()
 **************************
@@ -1813,6 +2139,15 @@ End
 MsAguarde({|| fBuscPed()}, "Aguarde...", "Selecionando os Pedidos em Abertos...")
 
 Return(.T.)
+
+/*
+=======================================================================================
+Programa.:              fBuscPed
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
 
 **************************
 Static Function fBuscPed()
@@ -1928,6 +2263,15 @@ EndIf
 
 Return lRet
 
+/*
+=======================================================================================
+Programa.:             AtualPed 
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
+
 *********************************
 Static Function AtualPed(aCampos)
 *********************************
@@ -1942,7 +2286,7 @@ ProcRegua(Len(aCampos))
 DbSelectArea("VRK")
 VRK->(DbSetOrder(1))
     
-oModel:SetOperation( 4 )  //Alteraùùo
+oModel:SetOperation( 4 )  //AlteraÁ„o
 For i:=1 to Len(aCampos)
     dbSelectArea( 'VRJ' )
     VRJ->( dbSetOrder(1) )
@@ -1976,20 +2320,20 @@ For i:=1 to Len(aCampos)
             EndIf
             If !lRet
                 aErro := oModel:GetErrorMessage()
-                cErro +=  "Id do formulùrio de origem:" + ' [' + AllToChar( aErro[1]  ) + ']'+CRLF 
+                cErro +=  "Id do formul·rio de origem:" + ' [' + AllToChar( aErro[1]  ) + ']'+CRLF 
                 cErro +=  "Id do campo de origem:     " + ' [' + AllToChar( aErro[2]  ) + ']'+CRLF
-                cErro +=  "Id do formulùrio de erro:  " + ' [' + AllToChar( aErro[3]  ) + ']'+CRLF
+                cErro +=  "Id do formul·rio de erro:  " + ' [' + AllToChar( aErro[3]  ) + ']'+CRLF
                 cErro +=  "Id do campo de erro:       " + ' [' + AllToChar( aErro[4]  ) + ']'+CRLF
                 cErro +=  "Id do erro:                " + ' [' + AllToChar( aErro[5]  ) + ']'+CRLF
                 cErro +=  "Mensagem do erro:          " + ' [' + AllToChar( aErro[6]  ) + ']'+CRLF
-                cErro +=  "Mensagem da soluùùo:       " + ' [' + AllToChar( aErro[7]  ) + ']'+CRLF
+                cErro +=  "Mensagem da soluÁ„o:       " + ' [' + AllToChar( aErro[7]  ) + ']'+CRLF
                 cErro +=  "Valor atribuido:           " + ' [' + AllToChar( aErro[8]  ) + ']'+CRLF
                 cErro +=  "Valor anterior:            " + ' [' + AllToChar( aErro[9]  ) + ']'+CRLF
                 cErro += "Filial: " + aCampos[i][1] + " PEDIDO: " + aCampos[i][2] + " ITEM " + aCampos[i][3]  + CRLF
             Endif
             oModel:DeActivate()
         Else
-            Conout( "Nùo encontrados as linhas do Pedido: " + "Filial: " + aCampos[i][1] + " Pedido: " + aCampos[i][2] + " Item " + aCampos[i][3] )
+            Conout( "n„o encontrados as linhas do Pedido: " + "Filial: " + aCampos[i][1] + " Pedido: " + aCampos[i][2] + " Item " + aCampos[i][3] )
             lRet := .F.
         EndIf
     EndIf
@@ -1997,12 +2341,15 @@ Next
 
 Return lRet
 
-/* =====================================================================================
-Funùùo...:              fBuscPed
+/*
+=====================================================================================
+Programa.:              AtuXBAS
 Autor....:              CAOA - Sandro Ferreira
 Data.....:              11/02/2022
-Descricao / Objetivo:   Atualiza os Pedidos Selecionados -  Automatica Preùo de Venda
-===================================================================================== */
+Descricao / Objetivo:   Atualiza os Pedidos Selecionados -  Automatica preÁo de Venda
+===================================================================================== 
+*/
+
 Static Function AtuXBAS( aCampos )
 
 Local i          := 1
@@ -2015,7 +2362,7 @@ ProcRegua(Len(aCampos))
 DbSelectArea("VRK")
 VRK->(DbSetOrder(1))
     
-oModel:SetOperation( 4 )  //Alteraùùo
+oModel:SetOperation( 4 )  //AlteraÁ„o
 For i:=1 to Len(aCampos)
     dbSelectArea( 'VRJ' )
     VRJ->( dbSetOrder(1) )
@@ -2033,20 +2380,20 @@ For i:=1 to Len(aCampos)
             EndIf
             If !lRet
                 aErro := oModel:GetErrorMessage()
-                cErro +=  "Id do formulùrio de origem:" + ' [' + AllToChar( aErro[1]  ) + ']'+CRLF 
+                cErro +=  "Id do formul·rio de origem:" + ' [' + AllToChar( aErro[1]  ) + ']'+CRLF 
                 cErro +=  "Id do campo de origem:     " + ' [' + AllToChar( aErro[2]  ) + ']'+CRLF
-                cErro +=  "Id do formulùrio de erro:  " + ' [' + AllToChar( aErro[3]  ) + ']'+CRLF
+                cErro +=  "Id do formul·rio de erro:  " + ' [' + AllToChar( aErro[3]  ) + ']'+CRLF
                 cErro +=  "Id do campo de erro:       " + ' [' + AllToChar( aErro[4]  ) + ']'+CRLF
                 cErro +=  "Id do erro:                " + ' [' + AllToChar( aErro[5]  ) + ']'+CRLF
                 cErro +=  "Mensagem do erro:          " + ' [' + AllToChar( aErro[6]  ) + ']'+CRLF
-                cErro +=  "Mensagem da soluùùo:       " + ' [' + AllToChar( aErro[7]  ) + ']'+CRLF
+                cErro +=  "Mensagem da soluÁ„o:       " + ' [' + AllToChar( aErro[7]  ) + ']'+CRLF
                 cErro +=  "Valor atribuido:           " + ' [' + AllToChar( aErro[8]  ) + ']'+CRLF
                 cErro +=  "Valor anterior:            " + ' [' + AllToChar( aErro[9]  ) + ']'+CRLF
                 cErro += "Filial: " + aCampos[i][1] + " PEDIDO: " + aCampos[i][2] + " ITEM " + aCampos[i][3]  + CRLF
             Endif
             oModel:DeActivate()
         Else
-            Conout( "Nùo encontrados as linhas do Pedido: " + "Filial: " + aCampos[i][1] + " Pedido: " + aCampos[i][2] + " Item " + aCampos[i][3] )
+            Conout( "n„o encontrados as linhas do Pedido: " + "Filial: " + aCampos[i][1] + " Pedido: " + aCampos[i][2] + " Item " + aCampos[i][3] )
             lRet := .F.
         EndIf
     EndIf
@@ -2054,12 +2401,15 @@ Next
 
 Return lRet
 
-/* =====================================================================================
-Funùùo...:              BuscaTab
+/* 
+=====================================================================================
+FunÁ„o...:              BuscaTab
 Autor....:              CAOA - Sandro Ferreira
 Data.....:              11/02/2022
-Descricao / Objetivo:   Busca os preùos da tabela de Preùo de Venda
-===================================================================================== */
+Descricao / Objetivo:   Busca os preÁos da tabela de preÁo de Venda
+===================================================================================== 
+*/
+
 Static Function BuscaTab( _cFilial, _cCodMar, _cModVei, _cSegMod, _cFabMod )
 
 Local _nPrecoab  := 0
@@ -2092,13 +2442,15 @@ EndIf
 
 Return _nPrecoab
 
-
-/* =====================================================================================
-Funùùo...:              BuscaSt
+/* 
+=====================================================================================
+FunÁ„o...:              BuscaSt
 Autor....:              CAOA - Sandro Ferreira
 Data.....:              11/02/2022
-Descricao / Objetivo:   Busca os preùos da tabela de Preùo de Venda
-===================================================================================== */
+Descricao / Objetivo:   Busca os preÁos da tabela de preÁo de Venda
+===================================================================================== 
+*/
+
 Static Function BuscaSt( _cFilial, _cCodMar, _cModVei, _cSegMod, _cFabMod )
 
 Local _nXBasst      := 0
@@ -2132,13 +2484,21 @@ Return _nXBasst
 
 
 /*/{Protheus.doc} CriaSx1
-//TODO Cria grupo de perguntas, caso nùo exista.
+//TODO Cria grupo de perguntas, caso n„o exista.
 
 @author 	Sandro Ferreira
 @since 		05/07/2021
 @version 	P12
 @type 		function
 /*/
+/*
+=======================================================================================
+Programa.:             Criaperg 
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
 Static Function Criaperg()
 
 	Local aAreaAnt 	:= GetArea()
@@ -2147,9 +2507,8 @@ Static Function Criaperg()
 	Local nJ 		:= 0
 	Local aReg 		:= {}
 	
-	aAdd(aReg,{cPerg,"01","Da Data de Digitaùùo      ","mv_ch1","D", 30,0,0,"G","","mv_par01","","","","","","","","","","","","","","","SW9_1"})
-	aAdd(aReg,{cPerg,"02","Atù Data de Digitaùùo     ","mv_ch2","D", 30,0,0,"G","(mv_par02>=mv_par01)","mv_par02","","","","","","","","","","","","","","","SW9_1"})
-
+	aAdd(aReg,{cPerg,"01","Da Data de DigitaÁ„o      ","mv_ch1","D", 30,0,0,"G","","mv_par01","","","","","","","","","","","","","","","SW9_1"})
+	aAdd(aReg,{cPerg,"02","AtÈ Data de DigitaÁ„o     ","mv_ch2","D", 30,0,0,"G","(mv_par02>=mv_par01)","mv_par02","","","","","","","","","","","","","","","SW9_1"})
 
 	aAdd(aReg,{"X1_GRUPO","X1_ORDEM","X1_PERGUNT","X1_VARIAVL","X1_TIPO","X1_TAMANHO","X1_DECIMAL","X1_PRESEL","X1_GSC","X1_VALID","X1_VAR01","X1_DEF01","X1_CNT01","X1_VAR02","X1_DEF02","X1_CNT02","X1_VAR03","X1_DEF03","X1_CNT03","X1_VAR04","X1_DEF04","X1_CNT04","X1_VAR05","X1_DEF05","X1_CNT05","X1_F3","X1_PYME","X1_GRPSXG","X1_HELP","X1_PICTURE"})
 	
@@ -2170,24 +2529,34 @@ Static Function Criaperg()
 
 Return
 
+/*
+=======================================================================================
+Programa.:            VlrPret  
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
+
 ******************************************************************************
-Static Function VlrPret(cCodMar, cModVei, cSegMod, nValTab, nValPre,cCabAlias)
+Static Function VlrPret(cCodMar, cModVei, cSegMod, nValTab, nValPre,nValMov,cCabAlias,lCalMov)
 ******************************************************************************
 
 Local cForm121 As Character
+Default lCalMNov := .F.
 
 cForm121 := GetNewPar("MV_MIL0121","") //U_CMVVEI01()
 
 // Se o usuario zerar o valore pretendido, volta o valor de tabela...
 If nValPre == 0
-	nValMovimento := nValTab
+	nValMovimento := iif( lCalMov,nValMov,nValTab)
 Else
 	If Empty(cForm121)
-		nValMovimento := nValPre
+		nValMovimento := iif( lCalMov,nValMov,nValTab)//nValPre
 	Else
-		nValMovimento := nValPre
+		nValMovimento := iif( lCalMov,nValMov,nValTab)//nValPre
 
-		nValorPre := nValPre // Valor utilizada na formula...
+		nValorPre := iif( lCalMov,nValMov,nValTab)//nValPre // Valor utilizada na formula...
 		nValorMov := CalcRev(nValorPre,cCabAlias)
 
 		If nValorMov <> nValPre
@@ -2199,11 +2568,20 @@ EndIf
 //Return(nValMovimento)
 Return(.T.)
 
+/*
+=======================================================================================
+Programa.:            CalcRev  
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
+
 ********************************************
 Static Function CalcRev(nValorPre,cCabAlias)
 ********************************************
 
-Local nVlrRet	:= nValorPre      //Valor Total vindo da tabela de preùo
+Local nVlrRet	:= nValorPre      //Valor Total vindo da tabela de preÁo
 Local nAlqIPI	:= 0
 Local nAlqIcmSt	:= 0
 Local nAlqOpIcm	:= 0
@@ -2219,7 +2597,7 @@ Local nAux1		:= 0
 Local nAux2		:= 0
 Local nAux3		:= 0
 Local lSuframa	:= .F.
-Local nPercZFre	:= 0.01 // Tratar Parùmetro
+Local nPercZFre	:= 0.01 // Tratar Par‚metro
 Local nVlrDesFr	:= 0
 Local nVlrUnit	:= 0
 Local aArea		:= {SA1->(GetArea()),GetArea()}	
@@ -2228,23 +2606,23 @@ Local nPerComs	:= 0
 Local nValComs	:= 0
 Local cTESTSD	:= SuperGetMV("CMV_TESTSD",.F.,"")
 Local aExcecao	:= {}
-Local cGrupo1	:= GetMv("MV_XVEI011",,"000003"	) // grupo que nao pode ter a variavel nAux3 calculada no calculo reverso. OBS: se precisar incluir mais grupos, criar outros parametros, nùo inserir o grupo neste mesmo parametro, para evitar cruzamento de logicas entre grupos X marcas, deixando o cruzamento exponencial e errado
-Local cMarca1	:= GetMv("MV_XVEI012",,"HYU"	) // marca que nao pode ter a variavel nAux3 calculada no calculo reverso. OBS: se precisar incluir mais marcas, criar outros parametros, nùo inserir a marca neste mesmo parametro, para evitar cruzamento de logicas entre grupos X marcas, deixando o cruzamento exponencial e errado
+Local cGrupo1	:= GetMv("MV_XVEI011",,"000003"	) // grupo que nao pode ter a variavel nAux3 calculada no calculo reverso. OBS: se precisar incluir mais grupos, criar outros parametros, n„o inserir o grupo neste mesmo parametro, para evitar cruzamento de logicas entre grupos X marcas, deixando o cruzamento exponencial e errado
+Local cMarca1	:= GetMv("MV_XVEI012",,"HYU"	) // marca que nao pode ter a variavel nAux3 calculada no calculo reverso. OBS: se precisar incluir mais marcas, criar outros parametros, n„o inserir a marca neste mesmo parametro, para evitar cruzamento de logicas entre grupos X marcas, deixando o cruzamento exponencial e errado
 Local cGrupo2	:= GetMv("MV_XVEI014",,"000003"	) // venda de caminhao HD80, base icms st deve estar zerada
 Local cMarca2	:= GetMv("MV_XVEI015",,"HYU"	) // venda de caminhao HD80, base icms st deve estar zerada
 Local lPassa	:= .T.
-Local oModel	:= FWModelActive()
+//Local oModel	:= FWModelActive()
 Local nY		:= 1
 
-//Variùveis para cùlculo do Zona Franca
-Local nVlrNormal	:= 0	//Preùo de venda normal
+//Vari·veis para c·lculo do Zona Franca
+Local nVlrNormal	:= 0	//preÁo de venda normal
 Local nBSICMSST		:= 0	//Base do ICMS ST - conferir com a tabela
 Local nAlqIcms		:= 0	//Aliquota de ICMS OP
 Local nAlqIcmsST	:= 0	//Aliquota de ICMS ST
 Local nVlrIcms		:= 0	//Valor ICMS
 Local nAlqPCC		:= 0	//Aliquota de Pis+Cofins ST
-Local nRedPCC		:= 0	//Reduùùo Pis / Cofins
-Local nRedIcms		:= 0	//Reduùùo base ICMS
+Local nRedPCC		:= 0	//ReduÁ„oPis / Cofins
+Local nRedIcms		:= 0	//ReduÁ„obase ICMS
 Local nAlqIpiZF		:= 0	//Aliquota de IPI Zona Franca
 Local nVlrDescFr	:= 0	//Desconto frete 1% ZF 	
 Local nVlrFator1	:= 0	//Calculo do Fator 1
@@ -2255,9 +2633,9 @@ Local nDIpiZF		:= 0 	//Desconto do IPI Zona Franca
 Local nDPccZF		:= 0	//Desconto do PIS / COFINS Zona Franca
 Local nVlrAbtTrb	:= 0	//Abatimentos tributos ZF
 Local nVlrPCCST		:= 0	//PIS/COFINS ST
-Local nPrecoZF		:= 0	//Preùo de venda Zona Franca
+Local nPrecoZF		:= 0	//preÁo de venda Zona Franca
 
-// venda para consumidor final dentro do mesmo estado, nùo tem ST
+// venda para consumidor final dentro do mesmo estado, n„o tem ST
 If (cCabAlias)->C5_XTIPVEN $ "04"
 	SA1->(dbSetOrder(1))
 	If SA1->(dbSeek(xFilial("SA1")+(cCabAlias)->C5_CLIENTE+(cCabAlias)->C5_LOJACLI))
@@ -2274,14 +2652,16 @@ Endif
 If (cCabAlias)->C5_XTIPVEN  $ "02/03/04/06"
 	If !(Alltrim((cCabAlias)->C6_XCODMAR) $ Alltrim(cMarca2) .And. Alltrim((cCabAlias)->C6_XGRPMOD) $ Alltrim(cGrupo2))
 		If lPassa
-			FWFldPut("VRK_XBASST", FWFldGet("VRK_VALPRE"))
-			ConOut("            Recalculando item fiscal - " + cValToChar(FWFldGet("ITEMFISCAL") ) )
-			MaFisRecal("",FWFldGet("ITEMFISCAL"))
+			RecLock(cCabAlias,.f.) //FWFldPut("VRK_XBASST", FWFldGet("VRK_VALPRE"))
+            (cCabAlias)->C6_XBASST := (cCabAlias)->C6_XVLRVDA
+            (cCabAlias)->(MsUnlock())
+			//ConOut("            Recalculando item fiscal - " + cValToChar(FWFldGet("ITEMFISCAL") ) )
+			//("",n)//FWFldGet("ITEMFISCAL"))
 		Endif	
 	Endif	
 EndIf
 
-//Venda PCD/Taxi nùo tem reverso.
+//Venda PCD/Taxi n„o tem reverso.
 If (cCabAlias)->C5_XTIPVEN  $ "02/03/05"
 	aEval(aArea,{|x| RestArea(x)})
 	Return nVlrRet
@@ -2305,7 +2685,7 @@ MaFisIniLoad(nY								,;
 	 		0 })        					   //IT_RECORI
 MaFisTes((cCabAlias)->C6_TES,SF4->(RecNo()),nY)
 
-//Venda Direta convùnio 51/00
+//Venda Direta convÍnio 51/00
 If (cCabAlias)->C5_XTIPVEN  $ "04"
 
 	Default cCoadMr := (cCabAlias)->C6_XCODMAR
@@ -2313,6 +2693,7 @@ If (cCabAlias)->C5_XTIPVEN  $ "04"
 	Default cSegMod := (cCabAlias)->C6_XSEGMOD
 	Default nValTab := (cCabAlias)->C6_XPRCTAB
 	Default nValPre := (cCabAlias)->C6_XVLRPRD
+    Default nValMov := (cCabAlias)->C6_XVLRMVT
 
 	MaFisLoad("IT_PRODUTO"  , SB1->B1_COD           , nY) ; MaFisLoad("IT_QUANT"    , 1           , nY)
 	MaFisLoad("IT_TES"      , (cCabAlias)->C6_TES	, nY) ; MaFisLoad("IT_PRCUNI"   , nValorPre   , nY)
@@ -2322,21 +2703,21 @@ If (cCabAlias)->C5_XTIPVEN  $ "04"
 
 	nAlqIPI   := MaFisRet(nY,"IT_ALIQIPI")/100  			//Aliquota de IPI ja em Percentual  
 	nAlqOpIcm := MaFisRet(nY,"IT_ALIQICM")/100  			//Aliquota de ICMS OP em Percentual
-	nPerComs  := FatComis(MaFisRet(nY,"IT_PRODUTO"))/100	//Percentual de comissao conforme modelo do veùculo
+	nPerComs  := FatComis(MaFisRet(nY,"IT_PRODUTO"))/100	//Percentual de comissao conforme modelo do veÌculo
     
-	If !(MaFisRet(nY,"IT_TES") $ cTESTSD)	//-- TES de faturamento p/ veùculo test drive (nùo tem comissùo)
+	If !(MaFisRet(nY,"IT_TES") $ cTESTSD)	//-- TES de faturamento p/ veÌculo test drive (n„o tem comiss„o)
 		nValComs := ROUND(nVlrRet * nPerComs,2)
-		//oModel:SetValue('MODEL_VRK','VRK_XVLCOM',nValComs)			//Forùa atualizaùùo da tela
-		//oModel:SetValue('MODEL_VRK','VRK_XPECOM',nPerComs*100)		//Forùa atualizaùùo da tela
+		//oModel:SetValue('MODEL_VRK','VRK_XVLCOM',nValComs)			//ForÁa atualizaÁ„o da tela
+		//oModel:SetValue('MODEL_VRK','VRK_XPECOM',nPerComs*100)		//ForÁa atualizaÁ„o da tela
 	EndIf
 	
-	//oModel:SetValue('MODEL_VRK','VRK_VALVDA',nVlrRet)		//Forùa atualizaùùo da tela
+	//oModel:SetValue('MODEL_VRK','VRK_VALVDA',nVlrRet)		//ForÁa atualizaÁ„o da tela
 	nVlrUnit  := ROUND((nVlrRet - nValComs)/(1+nAlqIPI),2) 
 	
-	//oModel:SetValue('MODEL_VRK','VRK_XBASIP',nVlrUnit)		//Forùa atualizaùùo da tela
+	//oModel:SetValue('MODEL_VRK','VRK_XBASIP',nVlrUnit)		//ForÁa atualizaÁ„o da tela
 	nVlrUnit  +=  nValComs
 	
-	//oModel:SetValue('MODEL_VRK','VRK_VALMOV',nVlrUnit) 		//Forùa atualizaùùo da tela
+	//oModel:SetValue('MODEL_VRK','VRK_VALMOV',nVlrUnit) 		//ForÁa atualizaÁ„o da tela
 	nVlrRet   := nVlrUnit 
 	
 	MaFisRecal("",nY)  //Recalcula tudo com a tela atualizada
@@ -2350,8 +2731,8 @@ lSuframa := MaFisRet(N,"NF_SUFRAMA")
 
 If !lSuframa 
 	/******************************************************************
-	**Venda Atacado nùo Suframa Planilha de Referencia para       *****
-	**chegar no calculo Unitùrio - Calculadora Concessionaria.xls *****
+	**Venda Atacado n„o Suframa Planilha de Referencia para       *****
+	**chegar no calculo Unit·rio- Calculadora Concessionaria.xls *****
 	*******************************************************************/
 
 	SB1->(DbSetOrder(1)) ; SB1->(DbSeek(xFilial("SB1")+(cCabAlias)->C6_PRODUTO  ))
@@ -2379,19 +2760,19 @@ If !lSuframa
 	nAlqIPI  := MaFisRet(nY,"IT_ALIQIPI")/100  		//Aliquota de IPI ja em Percentual  
 	nAlqIcmSt:= MaFisRet(nY,"IT_ALIQSOL")/100  		//Aliquota de ICMS ST ja em Percentual
 	nAlqOpIcm:= MaFisRet(nY,"IT_ALIQICM")/100  		//Aliquota de ICMS OP em Percentual 
-  //nBaseSt  := MaFisRet(nY,"IT_BASESOL")      		// Base de ST Fixa, que estù no produto. (Usado o Conceito de ICMS Pauta)
-    nBaseSt  := (cCabAlias)->C6_XBASST      		// Base de ST Fixa, que estù no produto. (Usado o Conceito de ICMS Pauta)
+  //nBaseSt  := MaFisRet(nY,"IT_BASESOL")      		// Base de ST Fixa, que est· no produto. (Usado o Conceito de ICMS Pauta)
+    nBaseSt  := (cCabAlias)->C6_XBASST      		// Base de ST Fixa, que est· no produto. (Usado o Conceito de ICMS Pauta)
 
-	cTes     := MaFisRet(nY,"IT_TES")          		// Tes para buscar a reduùùo de Base de ICMS Pois nùo encontrei na MaFisRet
+	cTes     := MaFisRet(nY,"IT_TES")          		// Tes para buscar a ReduÁ„ode Base de ICMS Pois n„o encontrei na MaFisRet
 	nAliqStPi:= MaFisRet(nY,"IT_ALIQPS3")/100  		// Aliquota de Pis    ST em Percentual
 	nAliqStCo:= MaFisRet(nY,"IT_ALIQCF3")/100  		// Aliquota de Cofins ST em Percentual
-    nAlqBIcms:= MaFisRet(nY,"IT_PREDIC")      		// Reduùùo de Base de ICMS
+    nAlqBIcms:= MaFisRet(nY,"IT_PREDIC")      		// ReduÁ„ode Base de ICMS
     
-	nVlIcmDev := nBaseSt*nAlqIcmSt					// Valor do ICMS devido (Necessùrio para o calculo Reverso)
-	nVlrDesFr := 0									// Valor de Desconto de Frete, somente ZF e fixo de 1% sobre preùo total de Venda
-	nAux1     := nVlrRet-nVlrDesfr - nVlIcmDev		// Variavel Auxiliar para calculo do Valor Unitùrio             
-	nAux2     := 1+nAlqIPI							// Variavel Auxiliar para calculo do Valor Unitùrio 
-	nAux3     := ((nAlqBIcms/100)*nAlqOpIcm)		// Variavel Auxiliar para calculo do Valor Unitùrio
+	nVlIcmDev := nBaseSt*nAlqIcmSt					// Valor do ICMS devido (Necess·rio para o calculo Reverso)
+	nVlrDesFr := 0									// Valor de Desconto de Frete, somente ZF e fixo de 1% sobre preÁo total de Venda
+	nAux1     := nVlrRet-nVlrDesfr - nVlIcmDev		// Variavel Auxiliar para calculo do Valor Unit·rio            
+	nAux2     := 1+nAlqIPI							// Variavel Auxiliar para calculo do Valor Unit·rio
+	nAux3     := ((nAlqBIcms/100)*nAlqOpIcm)		// Variavel Auxiliar para calculo do Valor Unit·rio
 	
 	// grupo e marca de produtos que nao devem ter esta variavel incrementada ao calculo
 	If FatNAux3(MaFisRet(nY,"IT_PRODUTO"),cGrupo1,cMarca1)
@@ -2410,7 +2791,7 @@ If !lSuframa
 Else
 	******************************************************************
 	** Programa de Calculo Reverso Baseado na Planilha de Calculo    *
-	** Preùos de Venda CAOA x Revenda  - Zona Franca  de Manaus      *
+	** preÁos de Venda CAOA x Revenda  - Zona Franca  de Manaus      *
 	******************************************************************
 
 	cTes := MaFisRet(nY,"IT_TES") 
@@ -2442,16 +2823,16 @@ Else
 	aAreaSF4 := GetArea()
 	SF4->(DbSetOrder(1))
 	If SF4->(DbSeek( xFilial("SF4")+cTes))		
-		nRedBPist := SF4->F4_BASEPIS						// Reduùùo da Base de Pis
-		nRedBCoSt := SF4->F4_BASECOF						// Reduùùo da Base de Cofins 
+		nRedBPist := SF4->F4_BASEPIS						// ReduÁ„oda Base de Pis
+		nRedBCoSt := SF4->F4_BASECOF						// ReduÁ„oda Base de Cofins 
 		// verifica se tem excecao fiscal e pega de lah quando tiver
 		If Len(MaFisRet(nY,"IT_EXCECAO")) > 0
 			aExcecao := MaFisRet(nY,"IT_EXCECAO")
 			If !Empty(aExcecao[18])
-				nRedBPist := aExcecao[18]					// Reduùùo da Base de Pis
+				nRedBPist := aExcecao[18]					// ReduÁ„oda Base de Pis
 			Endif	
 			If !Empty(aExcecao[19])
-				nRedBCoSt := aExcecao[19]					// Reduùùo da Base de Cofins 
+				nRedBCoSt := aExcecao[19]					// ReduÁ„oda Base de Cofins 
 			Endif	
 		Endif	
 	Endif
@@ -2463,13 +2844,15 @@ Else
 	nAlqIcms	:= MaFisRet(N,"IT_ALIQICM")											//Aliquota de ICMS OP
 	nAlqIcmsST	:= MaFisRet(N,"IT_ALIQSOL")											//Aliquota de ICMS ST
 	nVlrIcms	:= (VVP->VVP_BASEST * (nAlqIcmsST/100))								//Valor ICMS
-	If MaFisRet(nY,"IT_ALIQPS3") <> 0 .And. MaFisRet(nY,"IT_ALIQCF3") <> 0
+	
+    If MaFisRet(nY,"IT_ALIQPS3") <> 0 .And. MaFisRet(nY,"IT_ALIQCF3") <> 0
 		nAlqPCC	:= (MaFisRet(nY,"IT_ALIQPS3") + MaFisRet(nY,"IT_ALIQCF3"))			//Aliquota de Pis+Cofins ST
 	Else
 		nAlqPCC	:= (aExcecao[12]+aExcecao[13])										//Aliquota de Pis+Cofins ST
 	EndIf
-	nRedPCC		:= 0																//Reduùùo Pis / Cofins
-	nRedIcms	:= MaFisRet(nY,"IT_PREDIC")											//Reduùùo base ICMS
+	
+    nRedPCC		:= 0																//ReduÁ„oPis / Cofins
+	nRedIcms	:= MaFisRet(nY,"IT_PREDIC")											//ReduÁ„obase ICMS
 	nAlqIpi		:= MaFisRet(nY,"IT_ALIQIPI")											//Aliquota de IPI
 	nAlqIpiZF	:= 0																//Aliquota de IPI Zona Franca
 	nVlrDescFr	:= Round((nVlrNormal * nPercZFre),0)								//Desconto frete 1% ZF 
@@ -2478,7 +2861,7 @@ Else
 	nVlrFator2	:= (   (nRedIcms/100 )/100) /*((1-(nRedIcms/100))/100)*/			//Calculo do Fator 2
 	nvlrFator3  := (nVlrFator1 -nVlrFator2 * ((nAlqIcms /100)))/100					//Calculo do Fator 3 
 
-	nVlrUnit	:= ((((nVlrNormal - nVlrDescFr)-nVlrIcms) / nVlrFator3)/10000)		//Valor unitùrio normal
+	nVlrUnit	:= ((((nVlrNormal - nVlrDescFr)-nVlrIcms) / nVlrFator3)/10000)		//Valor Unit·rionormal
 	nDIcmsZF	:= 0																//Desconto do ICMS Normal Zona Franca
 	nDIpiZF		:= (nVlrUnit * nAlqIpiZF)											//Desconto do IPI Zona Franca
 
@@ -2489,9 +2872,9 @@ Else
 	nVlrAbtTrb	:= (nDIcmsZF + nDIpiZF + nDPccZF)									//Abatimentos tributos ZF
 
 	nVlrPCCST	:= 0																//PIS/COFINS ST
-	nPrecoZF	:= (nVlrNormal - nVlrDescFr - nVlrAbtTrb + nVlrPCCST)				//Preùo de venda Zona Franca
+	nPrecoZF	:= (nVlrNormal - nVlrDescFr - nVlrAbtTrb + nVlrPCCST)				//preÁo de venda Zona Franca
 	nVlrRet		:= Round((nPrecoZF- (nBSICMSST*(nAlqIcmsST/100))) / ;
-	                     (((100+nAlqIpi)-((nRedIcms/100)*nAlqIcms))/100),2)			//Valor unitùrio final Zona Franca
+	                     (((100+nAlqIpi)-((nRedIcms/100)*nAlqIcms))/100),2)			//Valor Unit·riofinal Zona Franca
 
     (cCabAlias)->(RecLock(cCabAlias),.F.)
     (cCabAlias)->C6_XVLRPRD := Round(nVlrRet,2)
@@ -2508,6 +2891,15 @@ aEval(aArea,{|x| RestArea(x)})
 Return Round(nVlrRet,2)
 //Return(.T.)
 
+/*
+=======================================================================================
+Programa.:              FatComis
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
+
 Static Function FatComis(cProd)
 
 Local aArea := {VV2->(GetArea()),GetArea()}	
@@ -2521,6 +2913,15 @@ Endif
 aEval(aArea,{|x| RestArea(x)})
 
 Return(nRet)
+
+/*
+=======================================================================================
+Programa.:            FatNAux3  
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
 
 Static Function FatNAux3(cProd,cGrupo1,cMarca1)
 
@@ -2538,6 +2939,14 @@ aEval(aArea,{|x| RestArea(x)})
 
 Return(lRet)
 
+/*
+=======================================================================================
+Programa.:            Vei01IcmZF  
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
 
 Static Function Vei01IcmZF(cProd,cGrupo,cMarca)
 
@@ -2555,16 +2964,24 @@ aEval(aArea,{|x| RestArea(x)})
 
 Return(lRet)
 
-//-------------------------------------------------------------------
+/*
+=======================================================================================
+Programa.:             VVPLastSeq 
+Autor....:              
+Data.....:              
+Descricao / Objetivo:   
+=======================================================================================
+*/
+
 static function VVPLastSeq(cCodMar,cModVei,cSegMod,cFabMod)
 local cQuery as char
-local cSeq as char
+local cSeq   as char
 local cAlias as char
 
 //Guarda a workarea corrente
 cAlias := Alias()
 
-//Gera um alias aleatùrio somente para abrir a query
+//Gera um alias aleatÛrio somente para abrir a query
 cQuery := GetNextAlias()
 
 //Cria a query
@@ -2605,13 +3022,342 @@ dbSelectArea("VVP")
 VVP->(dbSetOrder(1))
 VVP->(dbSeek(xFilial("VVP")+VV2->VV2_CODMAR+VV2->VV2_MODVEI+VV2->VV2_SEGMOD+(cQuery)->VVP_DATPRC))
 
-//Fecha a query, boa prùtica, tudo que vocù abriu, vocù fecha... E tambùm existem limites de workareas abertas no Protheus
+//Fecha a query, boa pr·tica, tudo que vocÍ abriu, vocÍ fecha... E tambÈm existem limites de workareas abertas no Protheus
 (cQuery)->(DBCloseArea())
 
-//Retorna a workarea corrente, protegido, pois um dbselectarea com valor vazio gera exceùùo
+//Retorna a workarea corrente, protegido, pois um dbselectarea com valor vazio gera exceÁ„o
 if !Empty(cAlias)
     DBSelectArea(cAlias)
 endif
 
 return cSeq
 
+/*
+=======================================================================================
+Programa.:             fPedZero 
+Autor....:             Reinaldo Rabelo 
+Data.....:              
+Descricao / Objetivo:  Verifico se tem itens pendentes no pedido 
+=======================================================================================
+*/
+
+User Function fPedZero(cPed)
+Local cQuery := ""
+Local lRet := .F.
+Local cTabela := GetNextAlias()
+
+cQuery += "  Select    SUM(TOTAL) as TOTAL, "
+cQuery += "            SUM(TFAT)  as TFAT, "
+cQuery += "            SUM(TPED)  as TPED "
+cQuery += "  From ( "
+cQuery += "          SELECT 1 as TOTAL , "
+cQuery += "             CASE WHEN VRK.VRK_ITETRA <> ' ' THEN 1 ELSE 0 END as TFAT, "
+cQuery += "             CASE WHEN VRK.VRK_ITETRA =  ' ' THEN 1 ELSE 0 END as TPED "
+cQuery += "           FROM " + RetSqlName("VRK") + " VRK  "
+cQuery += "           WHERE  "
+cQuery += "               VRK.VRK_PEDIDO = (SELECT VRJ.VRJ_PEDIDO FROM " + RetSqlName("VRJ") + " VRJ WHERE  VRJ.VRJ_PEDCOM = '" + cPed + "') "
+cQuery += " ) "
+
+cQuery := ChangeQuery(cQuery)
+DbUseArea(.T.,"TOPCONN",TCGENQRY(,,cQuery),cTabela,.T.,.T.)
+
+If (cTabela)->(!EOF())
+    lRet := (cTabela)->TFAT == 0
+endIf
+
+If Select(cTabela) > 0
+    (cTabela)->(DbCloseArea())
+endif
+
+Return lRet
+
+/*
+=======================================================================================
+Programa.:             Estor 
+Autor....:             Reinaldo Rabelo 
+Data.....:              
+Descricao / Objetivo:  Realiza o estorno do chassi apÛs a exclus„o da NF 
+=======================================================================================
+*/
+
+Static Function Estor(oSay)
+Local cQuery  :=  ""
+Local cTabela := GetNextAlias()
+Local lRet    := .F. 
+
+cQuery += CrLf + " SELECT  '  ' C6_OK    , "
+cQuery += CrLf + "        ' '   C6_STATUS,  "
+cQuery += CrLf + "        SC6.C6_FILIAL,  "
+cQuery += CrLf + "        SC6.C6_NUM,  "
+cQuery += CrLf + "        SC6.C6_PEDCLI,  "
+cQuery += CrLf + "        SC5.C5_EMISSAO,  "
+cQuery += CrLf + "        SC5.C5_CLIENTE,  "
+cQuery += CrLf + "        SC5.C5_LOJACLI,  "
+cQuery += CrLf + "        SA1.A1_NOME,  "
+cQuery += CrLf + "        SC5.C5_CONDPAG,  "
+cQuery += CrLf + "        SC5.C5_NATUREZ,  "
+cQuery += CrLf + "        SC6.C6_ITEM,  "
+cQuery += CrLf + "        SC6.C6_PRODUTO,  "
+cQuery += CrLf + "        SB1.B1_DESC,  "
+cQuery += CrLf + "        SC6.C6_LOCAL,  "
+cQuery += CrLf + "        SC6.C6_CHASSI, "
+cQuery += CrLf + "        VRK.VRK_CHASSI,  "
+cQuery += CrLf + "        SC6.C6_NUMSERI,  "
+cQuery += CrLf + "        SC6.C6_LOCALIZ,  "
+cQuery += CrLf + "        SC6.C6_XCODMAR,  "
+cQuery += CrLf + "        SC6.C6_XDESMAR,  "
+cQuery += CrLf + "        SC6.C6_XGRPMOD,  "
+cQuery += CrLf + "        SC6.C6_XDGRMOD,  "
+cQuery += CrLf + "        SC6.C6_XMODVEI,  "
+cQuery += CrLf + "        SC6.C6_XDESMOD,  "
+cQuery += CrLf + "        SC6.C6_XSEGMOD,  "
+cQuery += CrLf + "        SC6.C6_XDESSEG,  "
+cQuery += CrLf + "        SC6.C6_XFABMOD,  "
+cQuery += CrLf + "        SC6.C6_XCORINT,  "
+cQuery += CrLf + "        SC6.C6_XCOREXT,  "
+cQuery += CrLf + "        SC6.C6_QTDVEN,  "
+cQuery += CrLf + "        SC6.C6_PRCVEN,  "
+cQuery += CrLf + "        SC6.C6_VALOR,  "
+cQuery += CrLf + "        SC6.C6_OPER,  "
+cQuery += CrLf + "        SC6.C6_TES,  "
+cQuery += CrLf + "        SC6.C6_XVLRVDA,  "
+cQuery += CrLf + "        SC6.C6_PRUNIT,  "
+cQuery += CrLf + "        SC6.C6_XPRCTAB,  "
+cQuery += CrLf + "        SC6.C6_XVLRPRD,  "
+cQuery += CrLf + "        SC6.C6_XVLRMVT,  "
+cQuery += CrLf + "        SC6.C6_XBASST,  "
+cQuery += CrLf + "        SC5.C5_XTIPVEN,
+cQuery += CrLf +"         VRJ.VRJ_PEDIDO, "
+cQuery += CrLf +"         'F'  as lupd, "
+cQuery += CrLf + " 	      VRJ.VRJ_STATUS as VRJ_STATUS  ,  "
+cQuery += CrLf + "        ' ' as  D_E_L_E_T_  ,  "
+cQuery += CrLf + "        ROW_NUMBER() OVER (ORDER BY SC6.C6_FILIAL,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO)  R_E_C_N_O_  "
+cQuery += CrLf + " FROM " + RetSqlName("SC6") + " SC6  "
+cQuery += CrLf + "      INNER JOIN " + RetSqlName("SC5") + " SC5  "
+cQuery += CrLf + "                                ON  SC5.C5_FILIAL  = '" + xFilial("SC5") + "'  "
+cQuery += CrLf + "                                AND SC5.C5_NUM     = SC6.C6_NUM  "
+cQuery += CrLf + "                                AND SC5.C5_CLIENTE = SC6.C6_CLI  "
+cQuery += CrLf + "                                AND SC5.C5_LOJACLI = SC6.C6_LOJA  "
+cQuery += CrLf + "                                AND SC5.D_E_L_E_T_ = ' '  "
+cQuery += CrLf + "       INNER JOIN " + RetSqlName("VRJ") + " VRJ  "
+cQuery += CrLf + "                                ON  VRJ.VRJ_FILIAL = '" + xFilial("VRJ") + "'  "
+cQuery += CrLf + "                                AND VRJ.VRJ_PEDCOM = SC6.C6_PEDCLI  "
+cQuery += CrLf + "                                AND VRJ.VRJ_STATUS in ('A','F')  "
+cQuery += CrLf + "                                AND VRJ.D_E_L_E_T_ = ' '  "
+cQuery += CrLf + "      INNER JOIN " + RetSqlName("VRK") + " VRK  "
+cQuery += CrLf + "                                ON  VRK.VRK_FILIAL = '" + xFilial("VRK") + "'  "
+cQuery += CrLf + "                                AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO     "
+cQuery += CrLf + "                                AND VRK.VRK_ITEPED = LPad(SC6.C6_ITEM,3,'0') "
+cQuery += CrLf + "                                AND VRK.VRK_NUMTRA = ' ' "
+cQuery += CrLf + "                                AND VRK.D_E_L_E_T_ = ' '  "
+cQuery += CrLf + "      INNER JOIN " + RetSqlName("SA1") + " SA1  "
+cQuery += CrLf + "                                ON  SA1.A1_FILIAL  = '" + xFilial("SA1") + "'  "
+cQuery += CrLf + "                                AND SA1.A1_COD     = SC6.C6_CLI  "
+cQuery += CrLf + "                                AND SA1.A1_LOJA    = SC6.C6_LOJA  "
+cQuery += CrLf + "                                AND SA1.D_E_L_E_T_ = ' '  "
+cQuery += CrLf + "      INNER JOIN " + RetSqlName("SB1") + " SB1  "
+cQuery += CrLf + "                                 ON  SB1.B1_FILIAL  = '" + xFilial("SB1") + "'  "
+cQuery += CrLf + "                                 AND SB1.B1_COD     = SC6.C6_PRODUTO  "
+cQuery += CrLf + "                                 AND SB1.B1_GRUPO   = 'VEIA'  "
+cQuery += CrLf + "                                 AND SB1.D_E_L_E_T_ = ' '  "
+cQuery += CrLf + "      INNER JOIN " + RetSqlName("SF4") + " SF4  "
+cQuery += CrLf + "                                ON  SF4.F4_FILIAL  =  '" + xFilial("SF4") + "'  "
+cQuery += CrLf + "                                AND SF4.F4_CODIGO  = SC6.C6_TES  "
+cQuery += CrLf + "                                AND SF4.F4_DUPLIC  = 'S'  "
+cQuery += CrLf + "                                AND SF4.D_E_L_E_T_ = ' '  "
+cQuery += CrLf + " WHERE   SC6.C6_FILIAL    =  '" + xFilial("SC6") + "'  "
+cQuery += CrLf + "     AND SC5.C5_TIPO      =  'N' "
+cQuery += CrLf + "     AND SC6.C6_PEDCLI    <> ' ' "
+cQuery += CrLf + "     AND SC6.C6_NOTA      =  ' ' "
+cQuery += CrLf + "     AND SC6.C6_BLQ       =  ' ' "
+cQuery += CrLf + "     AND SC6.D_E_L_E_T_   =  ' ' "
+cQuery += CrLf + "     AND SC6.C6_CHASSI    <> ' ' "
+cQuery += CrLf + " ORDER BY SC6.C6_FILIAL,SC6.C6_PEDCLI,SC6.C6_ITEM,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO "
+
+cQuery := ChangeQuery(cQuery)
+DbUseArea(.T.,"TOPCONN",TCGENQRY(,,cQuery),cTabela,.T.,.T.)
+
+While (cTabela)->(!EOF())
+    
+    if Empty((cTabela)->VRK_CHASSI)
+
+        fLimpaChassi(cTabela) // Limpa campo de Chassi da Tabela SC6, pois a casos do chassi ser estornado e ficar n„o apagar o campo C6_CHASSI
+        lRet := .T.
+    EndIf
+
+    (cTabela)->(DbSkip())
+EndDo
+
+if lRet
+    lRet := Estor(oSay) 
+endif
+
+if !lRet
+    fAtuEmp(oSay,cTabela,nil)
+endif
+
+If Select(cTabela) > 0
+    (cTabela)->(DbCloseArea())
+endif
+
+
+Return lRet
+/*
+=======================================================================================
+Programa.:             fLimpaChassi 
+Autor....:             Reinaldo Rabelo 
+Data.....:              
+Descricao / Objetivo:  Limpa o campo de Chassi da SC6  
+=======================================================================================
+*/
+
+Static Function fLimpaChassi(cTabela)
+Local cQuery := ""
+
+cQuery := " UPDATE " + RetSqlName("SC6")
+cQuery += " SET C6_LOCALIZ = '" + Criavar("C6_LOCALIZ") + "' "
+cQuery += "    ,C6_CHASSI  = '" + Criavar("C6_CHASSI" ) + "' "
+cQuery += "    ,C6_NUMSERI = '" + Criavar("C6_NUMSERI") + "' "
+cQuery += " WHERE  C6_FILIAL   = '" + xFilial("SC6") + "' "
+cQuery += "    AND C6_NUM      = '" + (cTabela)->C6_NUM + "' "
+cQuery += "    AND C6_CHASSI   = '" + (cTabela)->C6_CHASSI + "' "
+cQuery += "    AND C6_ITEM     = '" + (cTabela)->C6_ITEM   + "' "
+cQuery += "    AND C6_CLI      = '" + (cTabela)->C5_CLIENTE + "' "
+cQuery += "    AND C6_LOJA     = '" + (cTabela)->C5_LOJACLI + "' "
+cQuery += "    AND D_E_L_E_T_  = ' ' "
+nStatus := TCSqlExec(cQuery)
+            
+If (nStatus < 0)
+    MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Empenho SC6")
+EndIf
+
+Return
+
+Static Function AtuMOv(nValorPre)
+
+Local nVlrRet	:= nValorPre      //Valor Total vindo da tabela de preÁo
+Local aArea		:= {SA1->(GetArea()),GetArea()}	
+Local aExcecao	:= {}
+Local cGrupo2	:= GetMv("MV_XVEI014",,"000003"	) // venda de caminhao HD80, base icms st deve estar zerada
+Local cMarca2	:= GetMv("MV_XVEI015",,"HYU"	) // venda de caminhao HD80, base icms st deve estar zerada
+Local lPassa	:= .T.
+//Local oModel	:= FWModelActive()
+Local nY		:= 1
+
+Default cCoadMr := (cCabAlias)->C6_XCODMAR
+Default cModVei := (cCabAlias)->C6_XMODVEI
+Default cSegMod := (cCabAlias)->C6_XSEGMOD
+Default nValTab := (cCabAlias)->C6_XPRCTAB
+Default nValPre := (cCabAlias)->C6_XVLRPRD
+Default nValMov := (cCabAlias)->C6_XVLRMVT
+
+// venda para consumidor final dentro do mesmo estado, n„o tem ST
+If (cCabAlias)->C5_XTIPVEN $ "04"
+	SA1->(dbSetOrder(1))
+	If SA1->(dbSeek(xFilial("SA1")+(cCabAlias)->C5_CLIENTE+(cCabAlias)->C5_LOJACLI))
+		If Alltrim(GetMv("MV_ESTADO"))  == Alltrim(SA1->A1_EST) .And. ;
+           Alltrim(GetMv("MV_ESTADO"))  == "GO"                 .And. ;
+           SA1->A1_TIPO                 == "F"                  .And. ;
+           Alltrim(SA1->A1_GRPTRIB)     == "VDD"
+			lPassa := .F.
+		Endif
+	Endif		
+Endif
+
+// Tratativa Venda Direta
+If (cCabAlias)->C5_XTIPVEN  $ "02/03/04/06"
+	If !(Alltrim((cCabAlias)->C6_XCODMAR) $ Alltrim(cMarca2) .And. Alltrim((cCabAlias)->C6_XGRPMOD) $ Alltrim(cGrupo2))
+		If lPassa
+			RecLock(cCabAlias,.f.) //FWFldPut("VRK_XBASST", FWFldGet("VRK_VALPRE"))
+            (cCabAlias)->C6_XBASST := (cCabAlias)->C6_XVLRVDA
+            (cCabAlias)->(MsUnlock())
+			//ConOut("            Recalculando item fiscal - " + cValToChar(FWFldGet("ITEMFISCAL") ) )
+			//("",n)//FWFldGet("ITEMFISCAL"))
+		Endif	
+	Endif	
+EndIf
+
+//Venda PCD/Taxi n„o tem reverso.
+If (cCabAlias)->C5_XTIPVEN  $ "02/03/05"
+	aEval(aArea,{|x| RestArea(x)})
+	Return nVlrRet
+Endif
+
+SA1->(DbSetOrder(1)) ; SA1->(DbSeek(xFilial("SA1")+(cCabAlias)->C5_CLIENTE+(cCabAlias)->C5_LOJACLI))
+SB1->(DbSetOrder(1)) ; SB1->(DbSeek(xFilial("SB1")+(cCabAlias)->C6_PRODUTO                        ))
+SF4->(DbSetOrder(1)) ; SF4->(DbSeek(xFilial("SF4")+(cCabAlias)->C6_TES                            ))
+MaFisIni((cCabAlias)->C5_CLIENTE, (cCabAlias)->C5_LOJACLI, 'C', 'N', SA1->A1_TIPO, MaFisRelImp("VA060", {"VRJ","VRK"}) )
+MaFisClear()
+
+MaFisIniLoad(nY								,;
+			{ SB1->B1_COD					,; // IT_PRODUTO
+ 	 		(cCabAlias)->C6_TES				,; // IT_TES
+	 		Space(TamSX3("D1_CODISS")[1])	,; // IT_VALISS - Valor do ISS do item sem aplicar o arredondamento
+	 		1								,; // IT_QUANT - Quantidade do Item
+	 		""								,; // IT_NFORI - Numero da NF Original
+	 		""								,; // IT_SERORI - Serie da NF Original
+	 		SB1->(RecNo()) 					,; // IT_RECNOSB1
+	 		SF4->(RecNo()) 					,; // IT_RECNOSF4
+	 		0 })        					   //IT_RECORI
+MaFisTes((cCabAlias)->C6_TES,SF4->(RecNo()),nY)
+
+
+
+	MaFisLoad("IT_PRODUTO"  , SB1->B1_COD         , nY) 
+    MaFisLoad("IT_QUANT"    , 1                   , nY)
+	MaFisLoad("IT_TES"      , (cCabAlias)->C6_TES , nY) 
+    MaFisLoad("IT_PRCUNI"   , nValorPre           , nY)
+	MaFisLoad("IT_VALMERC"  , nValorPre           , nY)
+    MaFisEndLoad(nY,1)
+	MaFisRecal("",nY)
+	aExcecao := MaExcecao(nY)
+/*
+	nAlqIPI   := MaFisRet(nY,"IT_ALIQIPI")/100  			//Aliquota de IPI ja em Percentual  
+	nAlqOpIcm := MaFisRet(nY,"IT_ALIQICM")/100  			//Aliquota de ICMS OP em Percentual
+	nPerComs  := FatComis(MaFisRet(nY,"IT_PRODUTO"))/100	//Percentual de comissao conforme modelo do veÌculo
+    
+	If !(MaFisRet(nY,"IT_TES") $ cTESTSD)	//-- TES de faturamento p/ veÌculo test drive (n„o tem comiss„o)
+		nValComs := ROUND(nVlrRet * nPerComs,2)
+	EndIf
+	
+	nVlrUnit  := ROUND((nVlrRet - nValComs)/(1+nAlqIPI),2) 
+	
+	nVlrUnit  +=  nValComs
+	
+	nVlrRet   := nVlrUnit 
+*/	
+	MaFisRecal("",nY)  //Recalcula tudo com a tela atualizada
+		
+	
+    (cCabAlias)->(RecLock(cCabAlias),.F.)
+    (cCabAlias)->C6_XVLRPRD := MaFisRet(nY,"IT_VALMERC")
+    (cCabAlias)->C6_XVLRMVT := MaFisRet(nY,"IT_VALMERC")
+    (cCabAlias)->C6_XVLRVDA := MaFisRet(nY,"IT_TOTAL")
+    (cCabAlias)->C6_PRCVEN  := MaFisRet(nY,"IT_VALMERC")
+    (cCabAlias)->C6_VALOR   := MaFisRet(nY,"IT_VALMERC") //MaFisRet(nY,"IT_TOTAL")
+    (cCabAlias)->(MsUnLock())
+
+aEval(aArea,{|x| RestArea(x)})
+
+Return //Round(nVlrRet,2)
+
+
+
+	if oModelVRK:GetValue("VRK_VALMOV") <> 0
+		AtuLinhaAtual()
+	EndIf
+	
+	
+Return
+
+Static Function AtuLinhaAtual()
+	Local nItemFiscal
+	Local nPosAtu
+	
+	nItemFiscal := oModelVRK:GetValue("ITEMFISCAL")
+
+	For nPosAtu := 1 to Len(aVRK_RelImp)
+		oModelVRK:LoadValue(aVRK_RelImp[nPosAtu][2] , MaFisRet(nItemFiscal,aVRK_RelImp[nPosAtu][3]), .t.)
+	Next nPosAtu
+
+Return
