@@ -309,7 +309,7 @@ Static Function ReportPrint(oReport)
 		cQry += "		AND SZM.D_E_L_E_T_ 	= ' '"										+ CRLF
 		cQry += "	WHERE "																+ CRLF
 		cQry += "		    SW9.W9_FILIAL 	= '" + FWxFilial("SW9") + "'"				+ CRLF
-		cQry += "		AND SF1.F1_DOC 		= D1_DOC "									+ CRLF
+		cQry += "		AND SF1.F1_DOC 		= SD1.D1_DOC "								+ CRLF
 		cQry += "		AND SF1.F1_SERIE	= SD1.D1_SERIE "							+ CRLF
 		cQry += "		AND SZM.R_E_C_N_O_ 	> 0 " 										+ CRLF
 		cQry += "		AND SD1.D1_TESACLA != ' ' " 									+ CRLF
