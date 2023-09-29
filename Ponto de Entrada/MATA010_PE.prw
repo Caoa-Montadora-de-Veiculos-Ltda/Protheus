@@ -1,7 +1,5 @@
 #include "protheus.ch"
 #include "parmtype.ch"
-#INCLUDE "FWMVCDEF.CH"
-#Include "Totvs.Ch"
 
 /*
 =====================================================================================
@@ -15,13 +13,14 @@ Uso.................: CAOA
 Obs.................: 
 =====================================================================================
 */
+
 User Function ITEM()
-   Local aArea	  := GetArea()
+
    Local _cEmp    := FWCodEmp()
    Local _lRet	  := .T.
-   
+   Local aArea	  := GetArea()
 
-    If _cEmp == "2010" //Executa o p.e. Anapolis.
+   If _cEmp == "2010" //Executa o p.e. Anapolis.
       _lRet := zMontadora()
    Else
       _lRet := zCaoaSp() //Executa o p.e. CaoaSp
@@ -177,8 +176,9 @@ If aParam <> NIL
 
 	ElseIf cIdPonto == "BUTTONBAR"
 
- 		xRet := {{"Caoa-Integrar RgLog", "Caoa-Integrar RgLog", {||U_ZWSR004(M->B1_COD,_lVisual)}}}
-		
+            //Criar um botão na barra de botões da rotina
+			xRet := {{"Caoa-Integrar RgLog", "Caoa-Integrar RgLog", {||U_ZWSR004(M->B1_COD,_lVisual)}}}
+	
 	ElseIf cIdPonto =="FORMPRE" 
 		if cTipo == 'SETVALUE'
 		
@@ -187,7 +187,7 @@ If aParam <> NIL
 				cFornece := oObj:GetModel(cIdPonto):GetValue('SB1MASTER','B1_PROC'   )
 				//cLojaFor := oObj:GetModel(cIdPonto):GetValue('SB1MASTER','B1_LOJPROC')
 				cLojaFor := xConteudo	
-				if !empty(cFornece) .and. !Empty(cLojaFor)
+				if !empty(cFornece) .and. !Empty(cLojaFor) .AND. !IsInCallStack("U_ZPECF023")  //Não fazer p/planilha
 				
 					If ApMsgYesNo( "Deseja atualizar a marca do produto?","[ MATA010_PE ] - Confirma a operação?" )
 								
@@ -241,6 +241,7 @@ User Function MTA010MNU()
 // [n][4] - Acesso relacionado a rotina, se esta posição não for informada nenhum acesso será validado
 //----------------------------------------------------------------------------------------------------------
 If FWCodEmp() <> "2010"
+   AAdd( aRotina, { "Força Desbloqueio de Produtos", "U_ZCOMF054()", 0, 9 } )
    AAdd( aRotina, { "Log de Inclusão/Alteração", "U_ZCOMF052()", 0, 9 } )
 Endif
 
