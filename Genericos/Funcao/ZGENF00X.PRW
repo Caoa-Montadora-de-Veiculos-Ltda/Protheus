@@ -13,97 +13,80 @@ Descricao / Objetivo:   Bloquear o uso de caracter especial e alterar para outro
 Doc. Origem:
 Solicitante:            Valmir Firmino
 Uso......:              Geral
-Obs......:
+Obs......:              lMVC := .T. //Função do campo em MVC
+Obs......:              lMVC := .F. //Função do campo em ADVPL padrão
 =====================================================================================
 */
-/*
 
-User Function ZGENF00X()
+User Function FunPrinc(nRegra, lMVC) //Colocar a função principal no X3_VLDUSR do campo desejado.
+    //Local nRegra        := 0
+    Local lMVC
+    Local aArea         := GetArea()
+    Local cCampo        := ReadVar()
+    Local _lRet         := .F.
+    
+    Private cConteudo   := &(cCampo)
+    Private cConteudoRet:= ""
 
-    Local cCampo    := M->B1_DESC
+    Begin SEQUENCE
+        cConteudoRet := FunSecund(cConteudo)
+        //FunTerc(lMVC, cCampo,cConteudoRet)
+    End Begin
+
+    If lMVC
+        cCampo := Substr(cCampo, 4)
+        _lRet := FWFldPut(cCampo, cConteudoRet, , , , .T.)
+    Else
+        &(cCampo+" := '"+cConteudo+"' ")
+        _lRet = "string" //Para função ADVPL o retorno não pode ser lógico.
+    EndIf
+
+    RestArea(aArea)
+Return _lRet
+
+
+Static Function FunSecund(cConteudo)
+
     Local cCarEsp	:= "!@#$%¨&()+{}^~´`][;.>,<=/¢¬§ªº'?|"+'"'
-    //local nPos := StrScan(cCampo, "!@#$%¨&()+{}^~´`][;.>,<=/¢¬§ªº'?|") // Verifica se a string cTexto contém os caracteres "!@#"
-
-
-        // Se nPos for maior que zero, significa que os caracteres foram encontrados
-    //if nPos > 0
-        Conout("Não é permitido caracter especial: " + CRLF ;
-             + cCarEsp)
-             
-         M->B1_DESC := zCadProd(cCampo)
-
-    //else
-      //lRet := .F.
-      //  Conout("A string não contém os caracteres !@#")
-    //endif
-
-
-Return cCampo
-
-
-Static Function zCadProd(cConteudo)
-	Local cCarEsp	:= "!@#$%¨&()+{}^~´`][;.>,<=/¢¬§ªº'?|"+'"'
-	Local nI		:= 0
-    //Local cConteudo := ""
-
-	For nI := 1 To Len(cCarEsp)
-		
-        cConteudo := StrTran(cConteudo, SubStr(cCarEsp, nI, 1), "")
-
-	Next nI
-
-Return cConteudo
-*/
-
-
-
-
-
-
-
-
-/*
-local cTexto := B1_DESC  // Supondo que B1_DESC seja a sua variável
-
-// Se nPos for maior que zero, significa que os caracteres foram encontrados
-if nPos > 0
-    // Faça algo se os caracteres forem encontrados
-    // Por exemplo, exiba uma mensagem ou execute ações específicas
-    Conout("A string contém os caracteres !@#")
-else
-    // Faça algo se os caracteres não forem encontrados
-    // Por exemplo, exiba outra mensagem ou execute ações alternativas
-    Conout("A string não contém os caracteres !@#")
-endif
-
-Static Function zRetCarUni(cConteudo)
-	Local cCarEsp	:= "!@#$%¨&()+{}^~´`][;.>,<=/¢¬§ªº'?|"+'"'
 	Local nI		:= 0
 
 	For nI := 1 To Len(cCarEsp)
 		cConteudo := StrTran(cConteudo, SubStr(cCarEsp, nI, 1), "")
 	Next nI
-
-Return cConteudo
-*/
-
-
+    cConteudoRet := Upper(AllTrim(cConteudo))
+Return cConteudoRet
+    
 
 
- 
-/*/{Protheus.doc} zLimpaEsp
-Função que limpa os caracteres especiais dentro de um campo
-@type function
-@author Atilio / Achoa
-@since 25/04/2016
-@version 1.0
-@param lEndereco, Lógico, Define se o campo é endereço (caso sim, o traço e vírgula serão ignorados)
-    @example
-    u_zLimpaEsp()
-/*/
- 
+
+
+
+
+    
+Static Function FunTerc(lMVC, cCampo,cConteudoRet)
+    Local _lRet := .F.
+    //Local cConteudo   := &(cCampo)
+
+    If lMVC
+
+        _lRet := FWFldPut(cCampo, cConteudoRet, , , , .T.)
+
+        Return _lRet
+    Else
+
+        &(cCampo+" := '"+cConteudo+"' ")
+        Return 
+    
+    EndIf
+
+    //3 Devolve a info para tela
+    //Verifica se a função é MVC ou ADVPL
+    //Retorna de acordo com o tipo de função
+    //FunTerc(lMVC, cCampoRet)
+Return
+
 User Function ZGENF00X()
-//zLimpaEsp(lEndereco)
+ //zLimpaEsp(lEndereco)
     Local aArea       := GetArea()
     Local cCampo      := ReadVar()
     Local cConteudo   := &(cCampo)
@@ -111,13 +94,6 @@ User Function ZGENF00X()
    // Local _lRet         := .F.
    // Default lEndereco := .F.
      
-   //Local oStackInfo := GetStackInfo(1) // Obtém informações do quinto nível da pilha
-   //Local cStackMt := ("Procedimento no quinto nível: " + oStackInfo:Method)
-   //Local cStackSourc := ("Arquivo fonte no quinto nível: " + oStackInfo:Source)
-   //Local cStackLine := ("Linha no quinto nível: " + oStackInfo:Line)
-
-
-
     //Retirando caracteres
     cConteudo := StrTran(cConteudo, "'", "")
     cConteudo := StrTran(cConteudo, "#", "")
@@ -147,26 +123,22 @@ User Function ZGENF00X()
     cConteudo := StrTran(cConteudo, ";", "")
     cConteudo := StrTran(cConteudo, '"', '')
     cConteudo := StrTran(cConteudo, '°', '')
-    cConteudo := StrTran(cConteudo, 'ª', '')
-     
-    //Se não for endereço, retira também o - e a ,
-    //If !lEndereco
-        cConteudo := StrTran(cConteudo, ",", "")
-        cConteudo := StrTran(cConteudo, "-", "")
-   // EndIf
-     
+    cConteudo := StrTran(cConteudo, 'ª', '')    
+    cConteudo := StrTran(cConteudo, ",", "")
+    cConteudo := StrTran(cConteudo, "-", "")
+
     //Adicionando os espaços a direita
     cConteudo := Alltrim(cConteudo)
     cConteudo += Space(nTamOrig - Len(cConteudo))
      
     //Definindo o conteúdo do campo
-    &(cCampo+" := '"+cConteudo+"' ")
+    //&(cCampo+" := '"+cConteudo+"' ")
     //cCampo := "B1_DESC"
     //cCampo := cConteudo
     //M->B1_DESC := cConteudo
     //M->B9_XLOG := cConteudo
 
-    //_lRet := FWFldPut(cCampo, cConteudo, , , , .T.)
+    _lRet := FWFldPut(cCampo, cConteudo, , , , .T.)
     RestArea(aArea)
-Return 
+Return .T.
  
