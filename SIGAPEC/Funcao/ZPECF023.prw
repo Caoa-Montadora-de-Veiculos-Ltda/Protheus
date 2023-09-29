@@ -1,6 +1,8 @@
-#INCLUDE "Protheus.ch"
+#include "Protheus.ch"
+#include 'parmtype.ch'
 #include "TOTVS.ch"
-#INCLUDE "FWMVCDEF.CH"
+#include "TOPCONN.CH"
+#include "FWMVCDEF.CH"
 
 #define CMD_OPENWORKBOOK			1
 #define CMD_CLOSEWORKBOOK			2
@@ -18,6 +20,7 @@ Importacao de planilha de Produtos
 @project
 @history    Validar Inclusão campos obrigatório e Alteração o que tiver na planilha alterar no produto existente 
 /*/
+
 User Function ZPECF023()
 
     LOCAL oDlg
@@ -25,6 +28,8 @@ User Function ZPECF023()
     LOCAL nOpcao      := 0
     Local aPergs 	  := {}
     Local cCaminho    := Space(60)
+    Local _cEmp  	  := FWCodEmp()
+    
     Private _cUser    := Substr(cUserName,1,20)
     Private _cCdUser  := RetCodUsr()
     Private _dData    := Dtoc(DATE())
@@ -95,39 +100,54 @@ User Function ZPECF023()
 
     Private aRetP 	  := {}
 
+    If _cEmp == "2020" //Executa o p.e. Anapolis.
+
     aAdd( aPergs ,{6,"Diretorio do Arquivo ",cCaminho     ,"@!" ,     ,'.T.' ,80,.T.,"Arquivos .xls |*.xls " })
+    aAdd( aPergs ,{4,"Somente FOB ?",.F.,"Marque p/atualizar apenas FOB.",90,"",.F.})
     
-    If ParamBox(aPergs, "Parametros ", aRetP, , , , , , , , ,.T.) 
+    If ParamBox(aPergs, "Parametros ", aRetP, , , , , , , , ,.F.,.F.) //Não salvar os dados por usuário
 
         DEFINE MSDIALOG oDlg FROM  96,9 TO 310,592 TITLE OemToAnsi("Importação Cadastro de Produtos") PIXEL
         @ 18, 6 TO 66, 287 LABEL "" OF oDlg  PIXEL
         @ 29, 15 SAY OemToAnsi("Esta rotina realiza a importação de Planilha Excel para Geração de Cadastro de Produtos") SIZE 268, 8 OF oDlg PIXEL
-        @ 38, 15 SAY OemToAnsi("Da Caoa Montadora conforme Lay-Out pré definido.") SIZE 268, 8 OF oDlg PIXEL
+        IF MV_PAR02 = .F.
+            @ 38, 15 SAY OemToAnsi("Da Caoa Montadora conforme Lay-Out pré definido.") SIZE 268, 8 OF oDlg PIXEL
+        ELSE
+            @ 38, 15 SAY OemToAnsi("Da Caoa Montadora conforme Lay-Out: Código, Val_FOB, MoedaFOB") SIZE 268, 8 OF oDlg PIXEL
+        ENDIF
         @ 48, 15 SAY OemToAnsi("Confirma Geração da Documento?") SIZE 268, 8 OF oDlg PIXEL
         DEFINE SBUTTON FROM 80, 223 TYPE 1 ACTION (oDlg:End(),nOpcao:=1) ENABLE OF oDlg
         DEFINE SBUTTON FROM 80, 250 TYPE 2 ACTION oDlg:End() ENABLE OF oDlg
         ACTIVATE MSDIALOG oDlg CENTER
 
-        If nOpcao == 1
+        If nOpcao == 1 .AND. MV_PAR02 = .F.
             Processa ({|| FImpExcel()},"Aguarde! Efetuando Importação da Planilha "+"[ZPECF023]")
+        ElseIf nOpcao == 1 .AND. MV_PAR02 = .T.
+            Processa ({|| u_ZPECF037(oDlg,_nX,nOpcao,aPergs,cCaminho)},"Aguarde! Efetuando Importação da Planilha Custo FOB "+"[ZPECF037]")    //Chamar a função que importa apenas o FOB
+        ElseIf nOpcao == 0
+            lRet := .F.
         Endif
 
     Endif
 
-    For _nX := 1 to Len(aPrdInt)
-        SB1->(dbSetOrder(1))
-        SB1->(dbGotop())
-        SB1->(DBSeek(xFilial("SB1")+aPrdInt[_nX][1]))
-        RecLock('SB1', .F.)
-            SB1->B1_XINTEG := "S"
-        SB1->(MsUnlock())
-    NEXT
+    IF  !MV_PAR02 .AND. lRet
+        For _nX := 1 to Len(aPrdInt)
+            SB1->(dbSetOrder(1))
+            SB1->(dbGotop())
+            SB1->(DBSeek(xFilial("SB1")+aPrdInt[_nX][1]))
+            RecLock('SB1', .F.)
+                SB1->B1_XINTEG := "S"
+            SB1->(MsUnlock())
+        NEXT
 
-    U_ZWSR004(,.T.)
+        U_ZWSR004(,.T.)
+    ENDIF
 
-Ferase(cINTCSV)
+    Ferase(cINTCSV)
 
-//LogExec()
+    //LogExec()
+
+    ENDIF
 
 Return()
 
@@ -391,6 +411,12 @@ Local _nItem     := 0
 
         aDados  := Separa(cLinha,cSeparador)
 
+        IF LEN(aDados) < 4
+            MSGINFO("Lay-Out do arquivo invalido! Verifique o Fleg p/ somente FOB. "+"[ZPECF023]")
+            lRet := .F.
+            Exit 
+        ENDIF
+
         cItens    :=    '0000'
 
         FOR _nY := 1 TO LEN(aDados)
@@ -590,9 +616,9 @@ Local _nItem     := 0
             IF Empty(aDados[15])        
                 aDados[15] := (_cQAlias)->B1_UM
             ENDIF
-            IF Empty(aDados[21])        
+            /*IF Empty(aDados[21])        
                 aDados[21]  := (_cQAlias)->B1_LOCPAD
-            ENDIF
+            ENDIF*/                                  //a pedido do Andre
             IF Empty(aDados[06])        
                 aDados[06] := (_cQAlias)->B1_GRUPO
             ENDIF
@@ -606,7 +632,7 @@ Local _nItem     := 0
                 aDados[34] := (_cQAlias)->B1_RASTRO
             ENDIF
             /*IF Empty(aDados[29])        
-                aDados[29] := (_cQAlias)->B1_LOCREC
+                aDados[29] := (_cQAlias)->B1_LOCREC  //a pedido do Andre
             ENDIF*/
             IF Empty(aDados[23])        
                 aDados[23] := (_cQAlias)->B1_POSIPI
@@ -764,14 +790,14 @@ Local _nItem     := 0
                 aAdd(aCab,{"B1_TIPO"	,aDados[05]     ,Nil})
                 aAdd(aCab,{"B1_CODITE"	,aDados[03]     ,Nil})
                 aAdd(aCab,{"B1_UM"	    ,aDados[15]     ,Nil})
-                aAdd(aCab,{"B1_LOCPAD"	,aDados[21]     ,Nil})
+                //aAdd(aCab,{"B1_LOCPAD"	,aDados[21]     ,Nil})  //a pedido do Andre
                 aAdd(aCab,{"B1_GRUPO"	,aDados[06]		,Nil})
                 aAdd(aCab,{"B1_SEGUM"	,aDados[30]     ,Nil})
                 aAdd(aCab,{"B1_XINTEG"	,aDados[39]     ,Nil})
                 aAdd(aCab,{"B1_CONV"	,aDados[31]     ,NIL})
                 aAdd(aCab,{"B1_TIPCONV"	,aDados[32]     ,Nil})
                 aAdd(aCab,{"B1_RASTRO"  ,aDados[34]     ,NIL})
-                //aAdd(aCab,{"B1_LOCREC"	,aDados[29]     ,NIL})
+                //aAdd(aCab,{"B1_LOCREC"	,aDados[29]     ,NIL})  //a pedido do Andre
                 aAdd(aCab,{"B1_POSIPI"  ,aDados[23]     ,NIL})
                 aAdd(aCab,{"B1_GARANT"  ,aDados[33]     ,NIL})    
                 aAdd(aCab,{"B1_ORIGEM"  ,aDados[12]     ,NIL}) 
@@ -859,14 +885,14 @@ Local _nItem     := 0
             oModel:SetValue("SB1MASTER","B1_XVLDINM"    ,STOD(AllTrim( aDados[18] ) ) )
             oModel:SetValue("SB1MASTER","B1_XPRCFOB"    ,Val(AllTrim( aDados[19] ) )   )
             oModel:SetValue("SB1MASTER","B1_XMOEFOB"    ,AllTrim( aDados[20] ) )
-            oModel:SetValue("SB1MASTER","B1_LOCPAD"     ,AllTrim( aDados[21] ))
+            //oModel:SetValue("SB1MASTER","B1_LOCPAD"     ,AllTrim( aDados[21] ))  //a pedido do Andre
             oModel:SetValue("SB1MASTER","B1_PICM"       ,Val(AllTrim( aDados[22] ) ))
             oModel:SetValue("SB1MASTER","B1_POSIPI"     ,AllTrim( aDados[23] ))
             oModel:SetValue("SB1MASTER","B1_EX_NCM"     ,AllTrim( aDados[24] ) )
             oModel:SetValue("SB1MASTER","B1_IMPORT"     ,AllTrim( aDados[25] ) )
             oModel:SetValue("SB1MASTER","B1_GRTRIB"     ,AllTrim( aDados[26] ) )
             oModel:SetValue("SB1MASTER","B1_IMPZFRC"    ,AllTrim( aDados[27] ))
-            oModel:SetValue("SB1MASTER","B1_CEST"       ,StrTran((AllTrim( aDados[28] ) ), '.'))
+            oModel:SetValue("SB1MASTER","B1_CEST"       ,StrTran((AllTrim( aDados[28] ) ), '.'))  //a pedido do Andre
             //oModel:SetValue("SB1MASTER","B1_LOCREC"     ,AllTrim( aDados[29] ))
             oModel:SetValue("SB1MASTER","B1_SEGUM"      ,AllTrim( aDados[30] ))
             oModel:SetValue("SB1MASTER","B1_GARANT"     ,AllTrim( aDados[33] ) )
@@ -977,7 +1003,15 @@ If !(_cQAlias)->(Eof())
         cCEME := (_cQAlias)->B5_CEME
     ENDIF
     IF Empty(cMARPEC)      
-        cMARPEC := (_cQAlias)->B5_MARPEC
+
+        VQS->(DbSetOrder(4))
+    
+        If VQS->(DbSeek(xFilial("VQS") + cFornece + cLojaFor ))
+            cMarPec  := VQS->VQS_MARPEC
+        else
+            cMARPEC  := (_cQAlias)->B5_MARPEC
+        EndIf
+
     ENDIF
     IF Empty(cPORTMS)      
         cPORTMS := (_cQAlias)->B5_PORTMS
@@ -1289,15 +1323,15 @@ oModel:SetValue("SB1MASTER","B1_XNUMINM"    ,AllTrim( aDados[17] )  )
 oModel:SetValue("SB1MASTER","B1_XVLDINM"    ,STOD(AllTrim( aDados[18] ) ) )
 oModel:SetValue("SB1MASTER","B1_XPRCFOB"    ,Val(AllTrim( aDados[19] ) )   )
 oModel:SetValue("SB1MASTER","B1_XMOEFOB"    ,AllTrim( aDados[20] ) )
-oModel:SetValue("SB1MASTER","B1_LOCPAD"     ,AllTrim( aDados[21] ))
+//oModel:SetValue("SB1MASTER","B1_LOCPAD"     ,AllTrim( aDados[21] ))  //a pedido do Andre
 oModel:SetValue("SB1MASTER","B1_PICM"       ,Val(AllTrim( aDados[22] ) ))
 oModel:SetValue("SB1MASTER","B1_POSIPI"     ,AllTrim( aDados[23] ))
 oModel:SetValue("SB1MASTER","B1_EX_NCM"     ,AllTrim( aDados[24] ) )
 oModel:SetValue("SB1MASTER","B1_IMPORT"     ,AllTrim( aDados[25] ) )
 oModel:SetValue("SB1MASTER","B1_GRTRIB"     ,AllTrim( aDados[26] ) )
 oModel:SetValue("SB1MASTER","B1_IMPZFRC"    ,AllTrim( aDados[27] ))
-oModel:SetValue("SB1MASTER","B1_CEST"       ,StrTran((AllTrim( aDados[28] ) ), '.'))
-//oModel:SetValue("SB1MASTER","B1_LOCREC"     ,AllTrim( aDados[29] ))
+oModel:SetValue("SB1MASTER","B1_CEST"       ,StrTran((AllTrim( aDados[28] ) ), '.'))  
+//oModel:SetValue("SB1MASTER","B1_LOCREC"     ,AllTrim( aDados[29] ))  //a pedido do Andre
 oModel:SetValue("SB1MASTER","B1_SEGUM"      ,AllTrim( aDados[30] ))
 oModel:SetValue("SB1MASTER","B1_GARANT"     ,AllTrim( aDados[33] ) )
 oModel:SetValue("SB1MASTER","B1_RASTRO"     ,AllTrim( aDados[34] ))

@@ -6,9 +6,10 @@
 Programa.: ZPECF016
 Autor....: CAOA - Fagner Barreto
 Data.....: 07/03/2022
-Descricao / Objetivo: Atualiza preços de peça por UF
+Descricao / Objetivo: Atualiza preços de peça por UF (guardar parâmetros)
 ===========================================================================================
 */
+
 User Function ZPECF016()
     Local aParamBox     := {}
     Local aRet          := {}
@@ -29,8 +30,8 @@ User Function ZPECF016()
     aadd(aParamBox, {1, "Icms Importado:"      , nIcmsImpor                         , PesqPict("SF7","F7_ALIQINT")  , "Positivo()"  , ""    , ""    , 040, .T.})
     aadd(aParamBox, {1, "Icms Interestadual:"  , nIcmsInter                         , PesqPict("SF7","F7_ALIQINT")  , "Positivo()"  , ""    , ""    , 040, .T.})
     
-    If ParamBox(aParamBox,"Preencha os Parametros para Atualização...",@aRet)
-        
+    If ParamBox(aParamBox,"Preencha os Parametros para Atualização...",@aRet, , , , , , , , ,.T.,.T.)
+    
         cEstadoDe  := aRet[4]
         cEstadoAte := aRet[5]
         nIcmsNorte := aRet[6]
