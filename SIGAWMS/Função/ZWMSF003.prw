@@ -43,7 +43,6 @@ Doc. Origem:
 Solicitante:            
 =====================================================================================
 */
-
 User Function ZWMSF003() 
 	Local aPergs   	:= {}
     Local aCombo    := {"Todas O.S.","O.S. com Erro", "O.S. Não Executada", "O.S. Finalizada", "O.S. em processamento"}
@@ -77,11 +76,11 @@ User Function ZWMSF003()
 				oBrowse:AddButton("Deletar O.S. com Erro"				, { || ZWMSDelete()                    } , , , , .F. , 3 )
 				oBrowse:AddButton("Visualizar"							, { || AxVisual("SZJ",SZJ->(Recno()),2)} , , , , .F. , 4 )
 				oBrowse:AddButton("Limpar Fila"							, { || zLimpFila()                     } , , , , .F. , 5 )
-				oBrowse:AddButton("Importa Arquivo CSV"             	, { || u_ZWMSF019()                    } , , , , .F. , 6 )
+				//oBrowse:AddButton("Erros Transferencia de Container"	, { || u_ZWMSF011()                    } , , , , .F. , 5 )
 
 				If alltrim( aRet[ 1 ] ) == alltrim( aCombo[ 2 ] ) //--Com erro
     				oBrowse:SetFilterDefault( "AllTrim(SZJ->ZJ_STATUS) == 'E'" )
-				ElseIf Alltrim( aRet[ 1 ] ) == Alltrim( aCombo[ 3 ] ) //--Não executadaGAP054
+				ElseIf Alltrim( aRet[ 1 ] ) == Alltrim( aCombo[ 3 ] ) //--Não executada
 					oBrowse:SetFilterDefault( "Empty(ZJ_STATUS)" )	
 				ElseIf Alltrim( aRet[ 1 ] ) == Alltrim( aCombo[ 4 ] ) //--Finalizada
 					oBrowse:SetFilterDefault( "AllTrim(SZJ->ZJ_STATUS) == 'F'" )
@@ -95,7 +94,7 @@ User Function ZWMSF003()
 	EndIf
 
 	Conout("ZWMSF003 | Fim | " + Time() )
- 
+
 Return
 
 /*
@@ -194,6 +193,8 @@ Static Function ZWMSProces( lJob )
 	Local cAliasQry		:= GetNextAlias()
 	Local cQuery 		:= ""
 	Local cIDLock		:= ""
+	Local _cWhere 		:= ""
+	Local _cTime		:= SubsTr(Time(),1,5)
 
 	Private __nRecno 	:= 0
 	Private __cCodUser	:= ""
@@ -223,6 +224,13 @@ Static Function ZWMSProces( lJob )
 	D14->( DbSetOrder(5) )
 	D0Y->( DbSetOrder(1) ) //-- D0Y_FILIAL+D0Y_IDUNIT
 
+	//DAC-Denilso GAP092
+	If lJob  //somente se for job
+		If ( _cTime > "20:00" .And. _cTime <= "23:59" ) .Or. ( _cTime >= "00:00" .And. _cTime < "05:00" ) 
+			_cWhere := " AND SZJ.ZJ_LOCORI  <> 'PRD' " + CRLF
+			_cWhere += " AND SZJ.ZJ_LOCDEST <> 'PRD' " 
+		Endif 	
+	Endif
 	cQuery := CRLF + " SELECT "
 	cQuery += CRLF + "	SZJ.ZJ_STATUS, "
 	cQuery += CRLF + "	SZJ.ZJ_PRODUTO, "
@@ -238,6 +246,9 @@ Static Function ZWMSProces( lJob )
 	cQuery += CRLF + " FROM " + RetSQLName("SZJ") + " SZJ "
 	cQuery += CRLF + " WHERE ZJ_FILIAL = '" + FWxFilial("SZJ") + "' "
 	cQuery += CRLF + "	AND SZJ.ZJ_STATUS = '"+Space(1)+"' "
+	If !Empty(_cWhere)
+		cQuery += CRLF + _cWhere
+	Endif
 	cQuery += CRLF + "	AND SZJ.D_E_L_E_T_ = ' ' "
 	cQuery += CRLF + " ORDER BY SZJ.ZJ_PRODUTO,SZJ.R_E_C_N_O_ " 
 
