@@ -28,7 +28,6 @@ Rdmake 	responsavel Integração SAP Contas a Receber RA
 @table 		SE1 - Contas a Receber           
 @history  	
 --------------------------------------------------------------------------------------*/
-
 User Function CMVSAP26( aParam )
 
 local oWsdl
