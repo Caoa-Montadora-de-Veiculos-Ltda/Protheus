@@ -22,6 +22,7 @@ User Function CMVEIC01()
 
 	aAdd(aRotina,{"Importar Invoice",	"U_CMVEI01A",	0, 3 })
 	aAdd(aRotina,{"Invoice x Caixas",	"U_CMVEI01B",	0, 5 })
+	aAdd(aRotina,{"Limpar SZM"      ,   "U_ZEICF024",   0, 5 })
 	//	aAdd(aRotina,{"Invoice x Caixas MVC",	"U_CMVEI01D",	0, 5 })
 
 	if (1=2)
