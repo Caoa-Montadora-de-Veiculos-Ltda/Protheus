@@ -15,54 +15,86 @@ Solicitante:            Valmir Firmino
 Uso......:              Geral
 Obs......:              lMVC := .T. //Função do campo em MVC
 Obs......:              lMVC := .F. //Função do campo em ADVPL padrão
+Obs......:              Permite apenas: letra Maiúscula, sem espaço a esquerda, sem acento.
 =====================================================================================
 */
 
-User Function FunPrinc(nRegra, lMVC) //Colocar a função principal no X3_VLDUSR do campo desejado.
-    //Local nRegra        := 0
+User Function ZGENF00X(nRegra) //Colocar a função principal no X3_VLDUSR do campo desejado.
     Local lMVC
     Local aArea         := GetArea()
     Local cCampo        := ReadVar()
-    Local _lRet         := .F.
-    
+   
+    Private _Ret        := .F.
+    Private nRegra       
     Private cConteudo   := &(cCampo)
     Private cConteudoRet:= ""
 
-    Begin SEQUENCE
-        cConteudoRet := FunSecund(cConteudo)
-        //FunTerc(lMVC, cCampo,cConteudoRet)
-    End Begin
-
-    If lMVC
-        cCampo := Substr(cCampo, 4)
-        _lRet := FWFldPut(cCampo, cConteudoRet, , , , .T.)
-    Else
-        &(cCampo+" := '"+cConteudo+"' ")
-        _lRet = "string" //Para função ADVPL o retorno não pode ser lógico.
-    EndIf
-
+    Begin Sequence
+        If !vazio(cConteudo)  //vazio(var) == .T. Se estiver vazio
+            
+            cConteudoRet := SubstCarac(cConteudo, nRegra)
+            
+            _Ret := RetornaCarac(cCampo, cConteudoRet)
+    
+        EndIf
+    End Sequence
+    
     RestArea(aArea)
-Return _lRet
+Return _Ret
 
 
-Static Function FunSecund(cConteudo)
+Static Function SubstCarac(cConteudo, nRegra)
 
-    Local cCarEsp	:= "!@#$%¨&()+{}^~´`][;.>,<=/¢¬§ªº'?|"+'"'
+    Local cCarEsp	:= "" //"!@#$%¨&*()-_+=§{}^~´`][:;.>,</°¢¬ªº'?\|¹²³£¬ƒ†©"+'"' - Todos os caracteres.
 	Local nI		:= 0
+
+    Do Case //Criar novas opções de acordo com as regras
+        Case nRegra == 1
+            cCarEsp	:= "!@#$%¨&*()_+=§{}^~´`][:;.>,</°¢¬ªº'?\|¹²³£¬ƒ†©"+'"' //Permitido: '0~9' + 'A~Z' + '-' GAP010
+        Case nRegra == 2
+            cCarEsp	:= "!@#$%¨&*-_+=§{}^~´`][:;></°¢¬ªº'?\|¹²³£¬ƒ†©"+'"' //Permitido: '0~9' + 'A~Z' + '.,()' GAP010
+    EndCase
 
 	For nI := 1 To Len(cCarEsp)
 		cConteudo := StrTran(cConteudo, SubStr(cCarEsp, nI, 1), "")
 	Next nI
-    cConteudoRet := Upper(AllTrim(cConteudo))
+    cConteudoRet := Upper(FWNoAccent(AllTrim(cConteudo)))   
+
 Return cConteudoRet
     
+Static Function RetornaCarac(cCampo, cConteudoRet)
+       //Verificar se a rotina é MVC (.T.) ou ADVPL padrão (.F.)
+        lMVC := (FWModelActive() != Nil)
+
+        If lMVC //.T. == MVC
+            cCampo := Substr(cCampo, (At(">",cCampo)+1))
+            _Ret := FWFldPut(cCampo, cConteudoRet, , , , .T.)
+        Else    //.F. == ADVPL padrão
+            &(cCampo+" := '"+cConteudoRet+"' ")
+            _Ret = "string" //Para função ADVPL o retorno não pode ser lógico.
+        EndIf
+
+Return _Ret
 
 
 
 
 
 
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+ /*   
 Static Function FunTerc(lMVC, cCampo,cConteudoRet)
     Local _lRet := .F.
     //Local cConteudo   := &(cCampo)
@@ -141,4 +173,4 @@ User Function ZGENF00X()
     _lRet := FWFldPut(cCampo, cConteudo, , , , .T.)
     RestArea(aArea)
 Return .T.
- 
+ */
