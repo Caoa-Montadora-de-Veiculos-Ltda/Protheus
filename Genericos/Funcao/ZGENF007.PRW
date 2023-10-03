@@ -9,7 +9,7 @@
 Programa.:              ZGENF00X
 Autor....:              CAOA - Nicolas C Lima Santos
 Data.....:              22/09/23
-Descricao / Objetivo:   Bloquear o uso de caracter especial e alterar para outros caracteres
+Descricao / Objetivo:   Bloquear o uso de caracter especial.
 Doc. Origem:
 Solicitante:            Valmir Firmino
 Uso......:              Geral
