@@ -543,23 +543,23 @@ Local _nItem     := 0
         cLOCREC   := AllTrim( aDados[29] )          //32
      */   cXNUMINM  := AllTrim( aDados[15] )          //33
         cXVLDINM  := STOD(AllTrim( aDados[16] ) )   //34
-        cXDTULT   := STOD(AllTrim( aDados[34] ) )   //35
+        cXDTULT   := STOD(AllTrim( aDados[33] ) )   //35
         //cXINTEG   := AllTrim( aDados[39] )          //36
-        cCEME     := AllTrim( aDados[37] )          //39
-        cMARPEC   := AllTrim( aDados[38] )          //40
+        cCEME     := AllTrim( aDados[36] )          //39
+        cMARPEC   := AllTrim( aDados[37] )          //40
         //cPORTMS   := AllTrim( aDados[40] )          //41
-        cCOMPR    := Val(AllTrim( aDados[39] ) )    //42
-        cLARG     := Val(AllTrim( aDados[40] ) )    //43
-        cALTURA   := Val(AllTrim( aDados[41] ) )    //44
-        cCODLIN   := AllTrim( aDados[42] )          //45
-        cCODFAM   := AllTrim( aDados[43] )          //46
+        cCOMPR    := Val(AllTrim( aDados[38] ) )    //42
+        cLARG     := Val(AllTrim( aDados[39] ) )    //43
+        cALTURA   := Val(AllTrim( aDados[40] ) )    //44
+        cCODLIN   := AllTrim( aDados[41] )          //45
+        cCODFAM   := AllTrim( aDados[42] )          //46
         //cXPRCFOB  := Val(AllTrim( aDados[19] ) )    //39 
         //cXMOEFOB  := AllTrim( aDados[20] )          //40
-        cFornece  := AllTrim( aDados[44] )
-        cLolja    := AllTrim( aDados[45] )
-        cCodprf   := AllTrim( aDados[46] )
-        cFabr     := AllTrim( aDados[47] )
-        cFaloja   := AllTrim( aDados[48] )
+        cFornece  := AllTrim( aDados[43] )
+        cLolja    := AllTrim( aDados[44] )
+        cCodprf   := AllTrim( aDados[45] )
+        cFabr     := AllTrim( aDados[46] )
+        cFaloja   := AllTrim( aDados[47] )
         cMSBLQL   := "2"   //Não Bloqueado
 
         IncProc("Montando dados de entrada...")
@@ -623,8 +623,8 @@ Local _nItem     := 0
             IF Empty(aDados[26])        
                 aDados[26] := (_cQAlias)->B1_SEGUM
             ENDIF
-            IF Empty(aDados[35])        
-                aDados[35] := (_cQAlias)->B1_XINTEG
+            IF Empty(aDados[34])        
+                aDados[34] := (_cQAlias)->B1_XINTEG
             ENDIF
             IF Empty(aDados[30])        
                 aDados[30] := (_cQAlias)->B1_RASTRO
@@ -647,9 +647,9 @@ Local _nItem     := 0
             IF Empty(aDados[32])        
                 aDados[32] := (_cQAlias)->B1_ITEMCC
             ENDIF
-            IF Empty(aDados[33])        
-                aDados[33] := (_cQAlias)->B1_CLVL
-            ENDIF
+         //   IF Empty(aDados[33])        
+         //       aDados[33] := (_cQAlias)->B1_CLVL
+         //   ENDIF
             IF Empty(aDados[02])        
                 aDados[02] := (_cQAlias)->B1_CODITE
             ENDIF
@@ -750,14 +750,14 @@ Local _nItem     := 0
                 SA5->( dbGoto( (_cQSA5)->RECORD ))     // posiciona o registro
                 _lExist := .T.
 
+                IF !EMPTY(aDados[45])           
+                    cCodprf := AllTrim(aDados[45])
+                ENDIF
                 IF !EMPTY(aDados[46])           
-                    cCodprf := AllTrim(aDados[46])
+                    cFabr := AllTrim(aDados[46])
                 ENDIF
                 IF !EMPTY(aDados[47])           
-                    cFabr := AllTrim(aDados[47])
-                ENDIF
-                IF !EMPTY(aDados[48])           
-                    cFaloja := AllTrim(aDados[48])
+                    cFaloja := AllTrim(aDados[47])
                 ENDIF
             ENDIF
 
@@ -897,15 +897,15 @@ Local _nItem     := 0
             oModel:SetValue("SB1MASTER","B1_RASTRO"     ,AllTrim( aDados[30] ))
             oModel:SetValue("SB1MASTER","B1_CONTA"      ,AllTrim( aDados[31] ))
             oModel:SetValue("SB1MASTER","B1_ITEMCC"     ,AllTrim( aDados[32] ))
-            oModel:SetValue("SB1MASTER","B1_CLVL"       ,AllTrim( aDados[33] ))
+           //oModel:SetValue("SB1MASTER","B1_CLVL"       ,AllTrim( aDados[33] ))
             oModel:SetValue("SB1MASTER","B1_XDTULT"     ,STOD(AllTrim( aDados[34] ) ))
             //oModel:SetValue("SB1MASTER","B1_XINTEG"     ,AllTrim( aDados[35] ))
             oModel:SetValue("SB1MASTER","B1_CONV"       ,AllTrim( aDados[27] ))
             oModel:SetValue("SB1MASTER","B1_TIPCONV"    ,AllTrim( aDados[28] ))
             oModel:SetValue("SB1MASTER","B1_XAUDIT"     ,cXAUDIT)
             oModel:SetValue("SB1MASTER","B1_MSBLQL"     ,cMSBLQL)
-            oModel:SetValue("SB1MASTER","B1_VM_I"       ,AllTrim( aDados[35] ))   
-            oModel:SetValue("SB1MASTER","B1_VM_P"       ,AllTrim( aDados[36] ))    
+            oModel:SetValue("SB1MASTER","B1_VM_I"       ,AllTrim( aDados[34] ))   
+            oModel:SetValue("SB1MASTER","B1_VM_P"       ,AllTrim( aDados[35] ))    
 
             If oModel:VldData()
                 oModel:CommitData()
@@ -1290,11 +1290,11 @@ Private lMsErroAuto := .F.
         ELSE
             cTIPCONV := 'M'
         ENDIF
-        IF !EMPTY(aDados[35])           
-            cVM_I := AllTrim(aDados[35])
+        IF !EMPTY(aDados[34])           
+            cVM_I := AllTrim(aDados[34])
         ENDIF
-        IF !EMPTY(aDados[36])           
-            cVM_P := AllTrim(aDados[36])
+        IF !EMPTY(aDados[35])           
+            cVM_P := AllTrim(aDados[35])
         ENDIF
 
 oModel := FwLoadModel ("MATA010")
@@ -1335,8 +1335,8 @@ oModel:SetValue("SB1MASTER","B1_GARANT"     ,AllTrim( aDados[29] ) )
 oModel:SetValue("SB1MASTER","B1_RASTRO"     ,AllTrim( aDados[30] ))
 oModel:SetValue("SB1MASTER","B1_CONTA"      ,AllTrim( aDados[31] ))
 oModel:SetValue("SB1MASTER","B1_ITEMCC"     ,AllTrim( aDados[32] ))
-oModel:SetValue("SB1MASTER","B1_CLVL"       ,AllTrim( aDados[33] ))
-oModel:SetValue("SB1MASTER","B1_XDTULT"     ,STOD(AllTrim( aDados[34] ) ))
+//oModel:SetValue("SB1MASTER","B1_CLVL"       ,AllTrim( aDados[33] ))
+oModel:SetValue("SB1MASTER","B1_XDTULT"     ,STOD(AllTrim( aDados[33] ) ))
 //oModel:SetValue("SB1MASTER","B1_XINTEG"     ,AllTrim( aDados[35] ))
 oModel:SetValue("SB1MASTER","B1_CONV"       ,cCONV)
 oModel:SetValue("SB1MASTER","B1_TIPCONV"    ,cTIPCONV)
