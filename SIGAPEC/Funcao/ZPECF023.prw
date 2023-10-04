@@ -28,8 +28,7 @@ User Function ZPECF023()
     LOCAL nOpcao      := 0
     Local aPergs 	  := {}
     Local cCaminho    := Space(60)
-    Local _cEmp  	  := FWCodEmp()
-    
+    Local _cEmp  	  := FWCodEmp()  
     Private _cUser    := Substr(cUserName,1,20)
     Private _cCdUser  := RetCodUsr()
     Private _dData    := Dtoc(DATE())
@@ -39,43 +38,6 @@ User Function ZPECF023()
     Private lRet      := .T.
     Private cCOD      := (TamSX3( "B1_COD"     )[1])
     Private cDESC     := (TamSX3( "B1_DESC"    )[1])
-    /*Private cFILIAL   := (TamSX3( "B1_FILIAL"  )[1])
-    Private cTIPO     := (TamSX3( "B1_TIPO"    )[1])
-    Private cCODITE   := (TamSX3( "B1_CODITE"  )[1])
-    Private cUM       := (TamSX3( "B1_UM"      )[1])
-    Private cLOCPAD   := (TamSX3( "B1_LOCPAD"  )[1])
-    Private cGRUPO    := (TamSX3( "B1_GRUPO"   )[1])
-    Private cSEGUM    := (TamSX3( "B1_SEGUM"   )[1])
-    Private cXINTEG   := (TamSX3( "B1_XINTEG"  )[1])
-    Private cCONV     := (TamSX3( "B1_CONV"    )[1])
-    Private cTIPCONV  := (TamSX3( "B1_TIPCONV" )[1])
-    Private cRASTRO   := (TamSX3( "B1_RASTRO"  )[1])
-    Private cLOCREC   := (TamSX3( "B1_LOCREC"  )[1])
-    Private cPOSIPI   := (TamSX3( "B1_POSIPI"  )[1])
-    Private cGARANT   := (TamSX3( "B1_GARANT"  )[1])
-    Private cORIGEM   := (TamSX3( "B1_ORIGEM"  )[1])
-    Private cCONTA    := (TamSX3( "B1_CONTA"   )[1])
-    Private cITEMCC   := (TamSX3( "B1_ITEMCC"  )[1]) 
-    Private cCLVL     := (TamSX3( "B1_CLVL"    )[1])
-    Private cCUSTD    := (TamSX3( "B1_CUSTD"   )[1])
-    Private cPICM     := (TamSX3( "B1_PICM"    )[1])
-    Private cEX_NCM   := (TamSX3( "B1_EX_NCM"  )[1])
-    Private cIMPORT   := (TamSX3( "B1_IMPORT"  )[1])
-    Private cGRTRIB   := (TamSX3( "B1_GRTRIB"  )[1])
-    Private cIMPZFRC  := (TamSX3( "B1_IMPZFRC" )[1])
-    Private cCEST     := (TamSX3( "B1_CEST"    )[1]) 
-    Private cMCUSTD   := (TamSX3( "B1_MCUSTD " )[1])
-    Private cQE       := (TamSX3( "B1_QE"      )[1])
-    Private cPROC     := (TamSX3( "B1_PROC"    )[1])
-    Private cLOJPROC  := (TamSX3( "B1_LOJPROC" )[1])
-    Private cPESBRU   := (TamSX3( "B1_PESBRU"  )[1]) 
-    Private cPESO     := (TamSX3( "B1_PESO"    )[1]) 
-    Private cLOTVEN   := (TamSX3( "B1_LOTVEN"  )[1])
-    Private cXNUMINM  := (TamSX3( "B1_XNUMINM" )[1])*/
-   // Private cVM_I     := (TamSX3( "B1_VM_I"    )[1])
-   // Private cVM_P     := (TamSX3( "B1_VM_P"    )[1])
-    /*Private cXPRCFOB  := (TamSX3( "B1_XPRCFOB"  )[1])
-    Private cXMOEFOB  := (TamSX3( "B1_XMOEFOB"  )[1])*/
     Private cMSBLQL   := (TamSX3( "B1_MSBLQL"   )[1])
     Private cXVLDINM  := Date()
     Private cXDTULT   := Date()
@@ -95,9 +57,7 @@ User Function ZPECF023()
     Private cCodprf   := (TamSX3( "A5_CODPRF"  )[1])
     Private cFabr     := (TamSX3( "A5_FABR"    )[1])
     Private cFaloja   := (TamSX3( "A5_FALOJA"  )[1])
-
     Private aPrdInt   := {}
-
     Private aRetP 	  := {}
 
     If _cEmp == "2020" //Executa o p.e. Anapolis.
@@ -162,13 +122,7 @@ Importacao de planilha de cadastro de Produtos
 @history
 /*/
 Static Function FImpExcel()
-    /*local _cTipo	   := "EX"
-    Local _aArea       := GetArea()
-    Local cTitulo1     := "Selecione o arquivo para Carga "
-    Local cExtens      := "Arquivo CSV | *.CSV"
-    Local cMainPath    := Alltrim(MV_PAR01)   //"C:\"
-    */
-    Local nHdl 		   := 0       //ExecInDLLOpen ('readexcel.dll')//('C:\TEMP\readexcel.dll')//('readexcel.dll')   //Esse arquivo precisa estar dentro da smartclient do usuario
+    Local nHdl 		   := 0       
     Local nBytes       := 0
     Local cBuffer	   := ''
     Local cFileOpen    := ""
@@ -221,7 +175,6 @@ Static Function FImpExcel()
     AADD(_aCelulas,{'CUSTD'     ,"W",02,'N',15,5})  //21
     AADD(_aCelulas,{'IMPORT'    ,"X",02,'N',01,0})  //22
     AADD(_aCelulas,{'EX_NCM'    ,"Y",02,'C',03,0})  //23
-    //AADD(_aCelulas,{'IPI'       ,"Z",02,'N',05,2})  //24
     AADD(_aCelulas,{'GRTRIB'    ,"AA",02,'C',06,0})  //25
     AADD(_aCelulas,{'IMPZFRC'   ,"AB",2,'C',01,0})  //26
     AADD(_aCelulas,{'MCUSTD'    ,"AC",2,'C',01,0})  //27
@@ -239,7 +192,6 @@ Static Function FImpExcel()
     AADD(_aCelulas,{'VM_P'      ,"AO",2,'M',36,0})  //39     
     AADD(_aCelulas,{'XPRCFOB'   ,"AP",2,'N',15,5})  //40
     AADD(_aCelulas,{'XMOEFOB'   ,"AQ",2,'C',01,0})  //41
-    //AADD(_aCelulas,{'IMPORT'    ,"AR",2,'C',01,0})  //42
     AADD(_aCelulas,{'CEME'      ,"AR",2,'C',200,0})  //43
     AADD(_aCelulas,{'MARPEC'    ,"AS",2,'C',006,0})  //44
     AADD(_aCelulas,{'PORTMS'    ,"AT",2,'C',001,0})  //45
@@ -286,12 +238,10 @@ Static Function FImpExcel()
 
     //Nova integração ler o arquivo no formato XLSX nativo do Excel
     If UPPER(AllTrim(cExtAux)) == ".XLSX"
-	   //cINTCSV := u_SV_XLS2CSV(AllTrim(cDiretorio), cExt)
 	   cINTCSV := GeraVBS( cFileOpen )
 	    While !File(cINTCSV)
 		    MsgInfo("Falha na conversão do Arquivo .xlsx"+ Chr(13) + Chr(10) + "Verifique se há janelas abertas do MSExcel com mensagens. "+"[ZPECF023]")
 		    If MsgYesNo("Deseja Tentar novamente ? "+"[ZPECF023]")
-			   //cINTCSV := u_SV_XLS2CSV(AllTrim(cDiretorio), cExt)
 			   cINTCSV := GeraVBS( cFileOpen )			
 		    Else
 			   MsgStop("Conversão do arquivo mal sucedida! Abortando... "+"[ZPECF023]")
@@ -307,7 +257,6 @@ Static Function FImpExcel()
         // Carrega o Excel e Abre o arquivo
         cBuffer := cINTCSV + Space(512)
         nBytes  := FSeek(nHdl, 0, 2)
-        //nBytes  := ExeDLLRun2(nHdl, CMD_OPENWORKBOOK, @cBuffer)
 
         If ( nBytes < 0 )
             // Erro critico na abertura do arquivo sem msg de erro
@@ -367,8 +316,6 @@ Local aDados 	 := {}						// Array dos dados da linha do laco
 Local aLog   	 := {}	
 Local _nY        := 0
 Local _nI        := 0
-//Local _nX        := 0
-//Local _nElem     := 0
 Local _nPos01    := 1
 Local _nPos02    := 1
 Local _nPos03    := 1
@@ -387,9 +334,7 @@ Local _nItem     := 0
     nLinTot := FT_FLastRec()-1      //total de linhas do arquivo
     FT_FGOTOP()
     FT_FSKIP(1)  //Linhas a saltar
-
-    //Begin Transaction
-    
+  
     While !FT_FEOF() .AND. lRet = .T.
         _nItem  ++
 
@@ -419,7 +364,7 @@ Local _nItem     := 0
 
         FOR _nY := 1 TO LEN(aDados)
             // Realiza tratamento do campo usado de acordo com o Tipo
-            IF ((_nY < 5 .OR. _nY = 13) .OR. (_nY > 21 .and. _nY < 27) ) //R. _nY = 18 )   / alterado a coluna 24
+            IF ((_nY < 5 .OR. _nY = 13) .OR. (_nY > 21 .and. _nY < 27) ) 
                 _cRetorno := aDados[_nY]
                 DO CASE
                    CASE _nY = 13
@@ -434,8 +379,6 @@ Local _nItem     := 0
                       _nX = 9
                    CASE _nY = 25
                       _nX = 10
-                   //CASE _nY = 18
-                   //  _nX = 35  
                    Otherwise
                    _nX = _nY
                 ENDCASE
@@ -476,15 +419,7 @@ Local _nItem     := 0
                 If _cTipo == 'C'   // .AND. _lExtrai // Caracter e extração de caracteres
  
                     _cString := ' '
-                    _cNewRet := ' '
- 
-                    //For _nElem	 := 1 To Len(_cRetorno)
-                    //    _cString := SubStr(_cRetorno,_nElem,1)
-                    //    If _cString $ '#/#,#.#-'
-                    //        Loop
-                    //    Endif
-                    //Next _nElem
-                    
+                    _cNewRet := ' '                 
                     _cNewRet  := Alltrim(_cRetorno)+_cString
                     _cRetorno := FwNoAccent(_cNewRet) 
 
@@ -501,61 +436,16 @@ Local _nItem     := 0
         
         cCOD      := AllTrim( aDados[01] )
         cDESC     := AllTrim( aDados[03] )   //3
-     /*   cFILIAL   := AllTrim( aDados[01] ) 
-        cTIPO     := AllTrim( aDados[05] )   //4
-        cCODITE   := AllTrim( aDados[03] )   //5
-        cUM       := AllTrim( aDados[15] )   //6
-        cLOCPAD   := AllTrim( aDados[21] )   //7
-        cGRUPO    := AllTrim( aDados[06] )   //8
-        cPICM     := Val(AllTrim( aDados[22] ) )  //9
-        cPOSIPI   := AllTrim( aDados[23] )   //10
-        cEX_NCM   := AllTrim( aDados[24] )   //11
-        cIMPORT   := AllTrim( aDados[25] )   //11
-        cGRTRIB   := AllTrim( aDados[26] )   //12
-        cSEGUM    := AllTrim( aDados[30] )   //13
-        cIMPZFRC  := AllTrim( aDados[27] )   //14
-               
-        IF !Empty(aDados[31])                //15
-            cCONV := Val(AllTrim( aDados[31] ) )
-        ELSE
-            cCONV := 1
-        ENDIF
-        IF !Empty(aDados[32])                //16
-            cTIPCONV := Val(AllTrim( aDados[32] ) )
-        ELSE
-            cTIPCONV := 'M'
-        ENDIF
-        cQE       := Val(AllTrim( aDados[07] ) )    //17
-        cCUSTD    := Val(AllTrim( aDados[08] ) )    //18
-        cMCUSTD   := AllTrim( aDados[09] )          //19
-        cPESO     := Val(AllTrim( aDados[14] ) )    //20
-        cCONTA    := AllTrim( aDados[35] )          //21
-        cITEMCC   := AllTrim( aDados[36] )          //22
-        cLOJPROC  := AllTrim( aDados[11] )          //23
-        cPROC     := AllTrim( aDados[10] )          //24
-        cGARANT   := AllTrim( aDados[32] )          //25
-        cORIGEM   := AllTrim( aDados[12] )          //26
-        cRASTRO   := AllTrim( aDados[34] )          //27
-        cCLVL     := AllTrim( aDados[37] )          //28
-        cPESBRU   := Val(AllTrim( aDados[13] ) )    //29
-        cLOTVEN   := Val(AllTrim( aDados[16] ) )    //30
-        cCEST     := AllTrim( aDados[28] )          //31
-        cLOCREC   := AllTrim( aDados[29] )          //32
-     */  
         cXNUMINM  := AllTrim( aDados[15] )          //33
         cXVLDINM  := STOD(AllTrim( aDados[16] ) )   //34
         cXDTULT   := STOD(AllTrim( aDados[27] ) )   //35
-        //cXINTEG   := AllTrim( aDados[39] )          //36
         cCEME     := AllTrim( aDados[30] )          //39
         cMARPEC   := AllTrim( aDados[31] )          //40
-        //cPORTMS   := AllTrim( aDados[40] )          //41
         cCOMPR    := Val(AllTrim( aDados[32] ) )    //42
         cLARG     := Val(AllTrim( aDados[33] ) )    //43
         cALTURA   := Val(AllTrim( aDados[34] ) )    //44
         cCODLIN   := AllTrim( aDados[35] )          //45
         cCODFAM   := AllTrim( aDados[36] )          //46
-        //cXPRCFOB  := Val(AllTrim( aDados[19] ) )    //39 
-        //cXMOEFOB  := AllTrim( aDados[20] )          //40
         cFornece  := AllTrim( aDados[37] )
         cLolja    := AllTrim( aDados[38] )
         cCodprf   := AllTrim( aDados[39] )
@@ -612,33 +502,12 @@ Local _nItem     := 0
             IF Empty(aDados[04])                    
                 aDados[04] := (_cQAlias)->B1_TIPO
             ENDIF
-            //IF Empty(aDados[14])        
-            //    aDados[14] := (_cQAlias)->B1_UM
-            //ENDIF
-            /*IF Empty(aDados[21])        
-                aDados[21]  := (_cQAlias)->B1_LOCPAD
-            ENDIF*/                                  //a pedido do Andre
             IF Empty(aDados[05])        
                 aDados[05] := (_cQAlias)->B1_GRUPO
             ENDIF
-            //IF Empty(aDados[26])        
-            //    aDados[26] := (_cQAlias)->B1_SEGUM
-            //ENDIF
-            //IF Empty(aDados[28])        
-            //    aDados[34] := (_cQAlias)->B1_XINTEG
-            //ENDIF
-            //IF Empty(aDados[30])        
-            //    aDados[30] := (_cQAlias)->B1_RASTRO
-            //ENDIF
-            /*IF Empty(aDados[29])        
-                aDados[29] := (_cQAlias)->B1_LOCREC  //a pedido do Andre
-            ENDIF*/
             IF Empty(aDados[20])        
                 aDados[20] := (_cQAlias)->B1_POSIPI
             ENDIF
-            //IF Empty(aDados[29])        
-            //    aDados[29] := (_cQAlias)->B1_GARANT
-            //ENDIF
             IF Empty(aDados[11])        
                 aDados[11] := (_cQAlias)->B1_ORIGEM
             ENDIF
@@ -648,9 +517,6 @@ Local _nItem     := 0
             IF Empty(aDados[26])        
                 aDados[26] := (_cQAlias)->B1_ITEMCC
             ENDIF
-         //   IF Empty(aDados[33])        
-         //       aDados[33] := (_cQAlias)->B1_CLVL
-         //   ENDIF
             IF Empty(aDados[02])        
                 aDados[02] := (_cQAlias)->B1_CODITE
             ENDIF
@@ -669,12 +535,6 @@ Local _nItem     := 0
             IF Empty( aDados[12]) 
                  aDados[12] := (_cQAlias)->B1_PESBRU
             ENDIF
-            //IF Empty(aDados[27]) 
-            //    aDados[27] := (_cQAlias)->B1_CONV
-            //ENDIF
-            //IF Empty(aDados[28])      
-            //    aDados[28] := (_cQAlias)->B1_TIPCONV
-            //ENDIF
             IF Empty(aDados[21])      
                 aDados[21] := (_cQAlias)->B1_EX_NCM
             ENDIF
@@ -684,9 +544,6 @@ Local _nItem     := 0
             IF Empty(aDados[23] )      
                  aDados[23] := (_cQAlias)->B1_GRTRIB
             ENDIF
-            //IF Empty(aDados[24])      
-            //     aDados[24] := (_cQAlias)->B1_IMPZFRC
-            //ENDIF
             IF Empty(aDados[24])      
                 aDados[24] := (_cQAlias)->B1_CEST
             ENDIF
@@ -788,27 +645,16 @@ Local _nItem     := 0
                 aAdd(aCab,{"B1_DESC"	,aDados[03]     ,Nil})
                 aAdd(aCab,{"B1_TIPO"	,aDados[04]     ,Nil})
                 aAdd(aCab,{"B1_CODITE"	,aDados[02]     ,Nil})
-                //aAdd(aCab,{"B1_UM"	    ,aDados[14]     ,Nil})
-                //aAdd(aCab,{"B1_LOCPAD"	,aDados[21]     ,Nil})  //a pedido do Andre
                 aAdd(aCab,{"B1_GRUPO"	,aDados[05]		,Nil})
-                //aAdd(aCab,{"B1_SEGUM"	,aDados[26]     ,Nil})
-              //  aAdd(aCab,{"B1_XINTEG"	,aDados[35]     ,Nil})
-                //aAdd(aCab,{"B1_CONV"	,aDados[27]     ,NIL})
-                //aAdd(aCab,{"B1_TIPCONV"	,aDados[28]     ,Nil})
-                //aAdd(aCab,{"B1_RASTRO"  ,aDados[30]     ,NIL})
-                //aAdd(aCab,{"B1_LOCREC"	,aDados[29]     ,NIL})  //a pedido do Andre
                 aAdd(aCab,{"B1_POSIPI"  ,aDados[20]     ,NIL})
-                //aAdd(aCab,{"B1_GARANT"  ,aDados[29]     ,NIL})    
                 aAdd(aCab,{"B1_ORIGEM"  ,aDados[11]     ,NIL}) 
                 aAdd(aCab,{"B1_CONTA"   ,aDados[25]     ,NIL})
                 aAdd(aCab,{"B1_ITEMCC"  ,aDados[26]     ,NIL})
-                //aAdd(aCab,{"B1_CLVL"    ,aDados[27]     ,NIL})
                 aAdd(aCab,{"B1_CUSTD"   ,aDados[07]     ,NIL})
                 aAdd(aCab,{"B1_PICM"    ,aDados[19]     ,NIL})
                 aAdd(aCab,{"B1_EX_NCM"  ,aDados[21]     ,NIL})
                 aAdd(aCab,{"B1_IMPORT"  ,aDados[22]     ,NIL})
                 aAdd(aCab,{"B1_GRTRIB"  ,aDados[23]     ,NIL})
-                //aAdd(aCab,{"B1_IMPZFRC" ,aDados[24]     ,NIL})
                 aAdd(aCab,{"B1_CEST"    ,aDados[24]     ,NIL})
                 aAdd(aCab,{"B1_MCUSTD"  ,aDados[08]     ,NIL})
                 aAdd(aCab,{"B1_QE"      ,aDados[06]     ,NIL})
@@ -825,14 +671,6 @@ Local _nItem     := 0
                 aAdd(aCab,{"B1_MSBLQL"  ,cMSBLQL        ,NIL})
                 aAdd(aCab,{"B1_XAUDIT"  ,cXAUDIT        ,NIL})
             
-        //        IF !EMPTY(aDados[40])      
-        //            aAdd(aCab,{"B1_VM_I",cVM_I               ,NIL})
-        //        ENDIF
-
-        //        IF !EMPTY(aDados[41])
-        //            aAdd(aCab,{"B1_VM_P",cVM_P               ,NIL})
-        //        ENDIF
-
                 aItens := { {"B5_FILIAL",xFilial("SB5")      ,Nil},;
                             {"B5_COD"   ,cCod                ,Nil},;
                             {"B5_CEME"  ,cCEME               ,NIL},; 
@@ -864,7 +702,6 @@ Local _nItem     := 0
             oModel  := FwLoadModel ("MATA010")
             oModel:SetOperation(MODEL_OPERATION_INSERT)
             oModel:Activate()
-            //oModel:SetValue("SB1MASTER","B1_FILIAL"     ,cFilial)
             oModel:SetValue("SB1MASTER","B1_COD"        ,AllTrim( aDados[01] ))
             oModel:SetValue("SB1MASTER","B1_CODITE"     ,AllTrim( aDados[02] ))
             oModel:SetValue("SB1MASTER","B1_DESC"       ,AllTrim( aDados[03] ))
@@ -878,31 +715,20 @@ Local _nItem     := 0
             oModel:SetValue("SB1MASTER","B1_ORIGEM"     ,AllTrim( aDados[11] ))
             oModel:SetValue("SB1MASTER","B1_PESBRU"     ,Val(AllTrim( aDados[12] ) ) )
             oModel:SetValue("SB1MASTER","B1_PESO"       ,Val(AllTrim( aDados[13] ) ))
-            //oModel:SetValue("SB1MASTER","B1_UM"         ,AllTrim( aDados[14] ))
             oModel:SetValue("SB1MASTER","B1_LOTVEN"     ,Val(AllTrim( aDados[14] ) ))
             oModel:SetValue("SB1MASTER","B1_XNUMINM"    ,AllTrim( aDados[15] )  )
             oModel:SetValue("SB1MASTER","B1_XVLDINM"    ,STOD(AllTrim( aDados[16] ) ) )
             oModel:SetValue("SB1MASTER","B1_XPRCFOB"    ,Val(AllTrim( aDados[17] ) )   )
             oModel:SetValue("SB1MASTER","B1_XMOEFOB"    ,AllTrim( aDados[18] ) )
-            //oModel:SetValue("SB1MASTER","B1_LOCPAD"     ,AllTrim( aDados[21] ))  //a pedido do Andre
             oModel:SetValue("SB1MASTER","B1_PICM"       ,Val(AllTrim( aDados[19] ) ))
             oModel:SetValue("SB1MASTER","B1_POSIPI"     ,AllTrim( aDados[20] ))
             oModel:SetValue("SB1MASTER","B1_EX_NCM"     ,AllTrim( aDados[21] ) )
             oModel:SetValue("SB1MASTER","B1_IMPORT"     ,AllTrim( aDados[22] ) )
             oModel:SetValue("SB1MASTER","B1_GRTRIB"     ,AllTrim( aDados[23] ) )
-            //oModel:SetValue("SB1MASTER","B1_IMPZFRC"    ,AllTrim( aDados[24] ))
             oModel:SetValue("SB1MASTER","B1_CEST"       ,StrTran((AllTrim( aDados[24] ) ), '.'))  //a pedido do Andre
-            //oModel:SetValue("SB1MASTER","B1_LOCREC"     ,AllTrim( aDados[29] ))
-            //oModel:SetValue("SB1MASTER","B1_SEGUM"      ,AllTrim( aDados[26] ))
-            //oModel:SetValue("SB1MASTER","B1_GARANT"     ,AllTrim( aDados[29] ) )
-            //oModel:SetValue("SB1MASTER","B1_RASTRO"     ,AllTrim( aDados[30] ))
             oModel:SetValue("SB1MASTER","B1_CONTA"      ,AllTrim( aDados[25] ))
             oModel:SetValue("SB1MASTER","B1_ITEMCC"     ,AllTrim( aDados[26] ))
-           //oModel:SetValue("SB1MASTER","B1_CLVL"       ,AllTrim( aDados[33] ))
             oModel:SetValue("SB1MASTER","B1_XDTULT"     ,STOD(AllTrim( aDados[27] ) ))
-            //oModel:SetValue("SB1MASTER","B1_XINTEG"     ,AllTrim( aDados[35] ))
-            //oModel:SetValue("SB1MASTER","B1_CONV"       ,AllTrim( aDados[27] ))
-            //oModel:SetValue("SB1MASTER","B1_TIPCONV"    ,AllTrim( aDados[28] ))
             oModel:SetValue("SB1MASTER","B1_XAUDIT"     ,cXAUDIT)
             oModel:SetValue("SB1MASTER","B1_MSBLQL"     ,cMSBLQL)
             oModel:SetValue("SB1MASTER","B1_VM_I"       ,AllTrim( aDados[28] ))   
@@ -913,11 +739,6 @@ Local _nItem     := 0
                 U_Z023Compl(cCod,nOpca,aItens)
                 U_z023GeraB2(cCod, nQuant)
                 Z023Amar(nOpca,aAmar)
-                //Inibido a pedido do Andre para não bloquear o Produto
-                //RecLock('SB1', .F.)
-                //    SB1->B1_MSBLQL := "1"
-                //SB1->(MsUnlock())
-
                 _cLog := "[ZPECF023] - Registro INCLUIDO! " + Alltrim(cCod) + "  Opcao: " + cOperacao
                 GERLOG()
             
@@ -1120,19 +941,6 @@ Local _cQ      := " "
 
     Else
 
-    /*    RecLock("SA5",.T.)
-        SA5->A5_FILIAL := AllTrim(aAmar[1][2])   
-        SA5->A5_PRODUTO:= AllTrim(aAmar[2][2])
-        SA5->A5_NOMPROD:= AllTrim(aAmar[3][2])
-        SA5->A5_FORNECE:= AllTrim(aAmar[4][2])
-        SA5->A5_LOJA   := AllTrim(aAmar[5][2])        
-        SA5->A5_CODPRF := AllTrim(aAmar[6][2])
-        SA5->A5_FABR   := AllTrim(aAmar[7][2])
-        SA5->A5_FALOJA := AllTrim(aAmar[8][2])
-        SA5->(MsUnlock())
-        _cLog += " Amarração Produto x Fornecedor OK! " + aAmar[2][2]
-        GERLOG()*/
-
     oModel := FWLoadModel('MATA061')  
     
     oModel:SetOperation(nOpca)
@@ -1141,7 +949,6 @@ Local _cQ      := " "
     
     //Cabeçalho
     oModel:SetValue('MdFieldSA5','A5_PRODUTO',aAmar[2][2])
-    //oModel:SetValue('MdFieldSA5','A5_NOMPROD',aAmar[3][2])
     
     //Grid
     oModel:SetValue('MdGridSA5','A5_FORNECE',aAmar[4][2])
@@ -1280,17 +1087,6 @@ Local cVM_I  := ""
 Local cVM_P  := ""
 Private lMsErroAuto := .F.
 
-
-        //IF !Empty(aDados[27])                
-        //    cCONV := Val(AllTrim( aDados[27] ) )
-        //ELSE
-        //    cCONV := 1
-        //ENDIF
-        //IF !Empty(aDados[28])                
-        //    cTIPCONV := Val(AllTrim( aDados[28] ) )
-        //ELSE
-        //    cTIPCONV := 'M'
-        //ENDIF
         IF !EMPTY(aDados[28])           
             cVM_I := AllTrim(aDados[28])
         ENDIF
@@ -1301,7 +1097,6 @@ Private lMsErroAuto := .F.
 oModel := FwLoadModel ("MATA010")
 oModel:SetOperation(MODEL_OPERATION_UPDATE)
 oModel:Activate()
-//oModel:SetValue("SB1MASTER","B1_FILIAL"     ,cFilial)
  
 oModel:SetValue("SB1MASTER","B1_COD"        ,AllTrim( aDados[01] ))
 oModel:SetValue("SB1MASTER","B1_CODITE"     ,AllTrim( aDados[02] ))
@@ -1316,29 +1111,20 @@ oModel:SetValue("SB1MASTER","B1_LOJPROC"    ,AllTrim( aDados[10] ))
 oModel:SetValue("SB1MASTER","B1_ORIGEM"     ,AllTrim( aDados[11] ))
 oModel:SetValue("SB1MASTER","B1_PESBRU"     ,Val(AllTrim( aDados[12] ) ) )
 oModel:SetValue("SB1MASTER","B1_PESO"       ,Val(AllTrim( aDados[13] ) ))
-//oModel:SetValue("SB1MASTER","B1_UM"         ,AllTrim( aDados[14] ))
 oModel:SetValue("SB1MASTER","B1_LOTVEN"     ,Val(AllTrim( aDados[14] ) ))
 oModel:SetValue("SB1MASTER","B1_XNUMINM"    ,AllTrim( aDados[15] )  )
 oModel:SetValue("SB1MASTER","B1_XVLDINM"    ,STOD(AllTrim( aDados[16] ) ) )
 oModel:SetValue("SB1MASTER","B1_XPRCFOB"    ,Val(AllTrim( aDados[17] ) )   )
 oModel:SetValue("SB1MASTER","B1_XMOEFOB"    ,AllTrim( aDados[18] ) )
-//oModel:SetValue("SB1MASTER","B1_LOCPAD"     ,AllTrim( aDados[21] ))  //a pedido do Andre
 oModel:SetValue("SB1MASTER","B1_PICM"       ,Val(AllTrim( aDados[19] ) ))
 oModel:SetValue("SB1MASTER","B1_POSIPI"     ,AllTrim( aDados[20] ))
 oModel:SetValue("SB1MASTER","B1_EX_NCM"     ,AllTrim( aDados[21] ) )
 oModel:SetValue("SB1MASTER","B1_IMPORT"     ,AllTrim( aDados[22] ) )
 oModel:SetValue("SB1MASTER","B1_GRTRIB"     ,AllTrim( aDados[23] ) )
-//oModel:SetValue("SB1MASTER","B1_IMPZFRC"    ,AllTrim( aDados[24] ))
 oModel:SetValue("SB1MASTER","B1_CEST"       ,StrTran((AllTrim( aDados[24] ) ), '.'))  
-//oModel:SetValue("SB1MASTER","B1_LOCREC"     ,AllTrim( aDados[29] ))  //a pedido do Andre
-//oModel:SetValue("SB1MASTER","B1_SEGUM"      ,AllTrim( aDados[26] ))
-//oModel:SetValue("SB1MASTER","B1_GARANT"     ,AllTrim( aDados[29] ) )
-//oModel:SetValue("SB1MASTER","B1_RASTRO"     ,AllTrim( aDados[30] ))
 oModel:SetValue("SB1MASTER","B1_CONTA"      ,AllTrim( aDados[25] ))
 oModel:SetValue("SB1MASTER","B1_ITEMCC"     ,AllTrim( aDados[26] ))
-//oModel:SetValue("SB1MASTER","B1_CLVL"       ,AllTrim( aDados[33] ))
 oModel:SetValue("SB1MASTER","B1_XDTULT"     ,STOD(AllTrim( aDados[27] ) ))
-//oModel:SetValue("SB1MASTER","B1_XINTEG"     ,AllTrim( aDados[35] ))
 oModel:SetValue("SB1MASTER","B1_CONV"       ,cCONV)
 oModel:SetValue("SB1MASTER","B1_TIPCONV"    ,cTIPCONV)
 oModel:SetValue("SB1MASTER","B1_XAUDIT"     ,cXAUDIT)
@@ -1457,16 +1243,6 @@ Static Function GERLOG()
         RecLock("TRB1",.T.)
         TRB1->COD          := cCod
         TRB1->LOG          := _cLog
-        /*TRB1->SERIE        := _cSerie
-        TRB1->EMISSAO      := _dData   
-        TRB1->CONTEINER    := _cCont
-        TRB1->VLR.FRETE    := _nValTot
-        TRB1->CHAVE        := _cChave
-        TRB1->UF_ORIGEM    := _cUfOri
-        TRB1->MUN_ORIGEM   := _cMunOri
-        TRB1->UF_DESTINO   := _cUfDes
-        TRB1->MUN_DESTINO  := _cMunDes
-        TRB1->LOG          := _cLog*/
         TRB1->( msUnlock() )
     Endif
 
@@ -1517,10 +1293,8 @@ Static Function ReportDef()
     oSection1 := TRSection():New(oReport,OemToAnsi("Log"),{"TRB"})
 
     TRCell():New(oSection1,"LOG","TRB1","LOG","@!",280)
-    //TRCell():New(oSection1,"NOTA","TRB1","NOTA",PesqPict("LOG","NOTA"),TamSX3("F1_DOC")[1],/*lPixel,{|| (TRB1)->NOTA }*/)
 
     oSection1:Cell("LOG")  :SetHeaderAlign("RIGHT")
-    //oSection1:Cell("NOTA") :SetHeaderAlign("RIGHT")
 
 Return oReport
 
