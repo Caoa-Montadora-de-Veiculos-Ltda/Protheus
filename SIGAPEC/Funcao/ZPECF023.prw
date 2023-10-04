@@ -419,7 +419,7 @@ Local _nItem     := 0
 
         FOR _nY := 1 TO LEN(aDados)
             // Realiza tratamento do campo usado de acordo com o Tipo
-            IF ((_nY < 5 .OR. _nY = 13) .OR. (_nY > 21 .and. _nY < 27) ) //R. _nY = 18 )
+            IF ((_nY < 5 .OR. _nY = 13) .OR. (_nY > 21 .and. _nY < 27) ) //R. _nY = 18 )   / alterado a coluna 24
                 _cRetorno := aDados[_nY]
                 DO CASE
                    CASE _nY = 13
@@ -547,19 +547,19 @@ Local _nItem     := 0
         //cXINTEG   := AllTrim( aDados[39] )          //36
         cCEME     := AllTrim( aDados[38] )          //39
         cMARPEC   := AllTrim( aDados[39] )          //40
-        cPORTMS   := AllTrim( aDados[40] )          //41
-        cCOMPR    := Val(AllTrim( aDados[41] ) )    //42
-        cLARG     := Val(AllTrim( aDados[42] ) )    //43
-        cALTURA   := Val(AllTrim( aDados[43] ) )    //44
-        cCODLIN   := AllTrim( aDados[44] )          //45
-        cCODFAM   := AllTrim( aDados[45] )          //46
+        //cPORTMS   := AllTrim( aDados[40] )          //41
+        cCOMPR    := Val(AllTrim( aDados[40] ) )    //42
+        cLARG     := Val(AllTrim( aDados[41] ) )    //43
+        cALTURA   := Val(AllTrim( aDados[42] ) )    //44
+        cCODLIN   := AllTrim( aDados[43] )          //45
+        cCODFAM   := AllTrim( aDados[44] )          //46
         //cXPRCFOB  := Val(AllTrim( aDados[19] ) )    //39 
         //cXMOEFOB  := AllTrim( aDados[20] )          //40
-        cFornece  := AllTrim( aDados[46] )
-        cLolja    := AllTrim( aDados[47] )
-        cCodprf   := AllTrim( aDados[48] )
-        cFabr     := AllTrim( aDados[49] )
-        cFaloja   := AllTrim( aDados[50] )
+        cFornece  := AllTrim( aDados[45] )
+        cLolja    := AllTrim( aDados[46] )
+        cCodprf   := AllTrim( aDados[47] )
+        cFabr     := AllTrim( aDados[48] )
+        cFaloja   := AllTrim( aDados[49] )
         cMSBLQL   := "2"   //Não Bloqueado
 
         IncProc("Montando dados de entrada...")
@@ -750,14 +750,14 @@ Local _nItem     := 0
                 SA5->( dbGoto( (_cQSA5)->RECORD ))     // posiciona o registro
                 _lExist := .T.
 
+                IF !EMPTY(aDados[47])           
+                    cCodprf := AllTrim(aDados[47])
+                ENDIF
                 IF !EMPTY(aDados[48])           
-                    cCodprf := AllTrim(aDados[48])
+                    cFabr := AllTrim(aDados[48])
                 ENDIF
                 IF !EMPTY(aDados[49])           
-                    cFabr := AllTrim(aDados[49])
-                ENDIF
-                IF !EMPTY(aDados[50])           
-                    cFaloja := AllTrim(aDados[50])
+                    cFaloja := AllTrim(aDados[49])
                 ENDIF
             ENDIF
 
