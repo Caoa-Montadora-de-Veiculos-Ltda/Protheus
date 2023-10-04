@@ -1453,16 +1453,20 @@ Return
 Static Function zGrvArq()
 	Local lLimpaAnt:= .F.
 	Local cErr	:= ""
+	Local _nStatus := 0
 	
 	DbSelectArea('WKSZM') 
 	WKSZM->(DBGOTOP())
-
-	while WKSZM->(!Eof())
-		If lLimpaAnt = .F.
-			TcSqlExec("DELETE FROM " + RetSqlName("SZM") + " WHERE D_E_L_E_T_ = '*' AND ZM_INVOICE = '" + WKSZM->ZM_INVOICE + "' "   )
-			TcSqlExec("UPDATE " + RetSqlName("SZM") + " SET D_E_L_E_T_ = '*' WHERE ZM_FILIAL = '" + FwXfilial("SZM") + "' AND ZM_INVOICE = '" + WKSZM->ZM_INVOICE+ "' ")
-			lLimpaAnt = .T.
-		EndIF
+	//lLimpaAnt = .F. //Isso deve ser retirado.
+	
+	While WKSZM->(!Eof())
+	
+		If lLimpaAnt = .F. //Alterado conforme GAP 082 - SZM.R_E_C_D_E_L_ = SZM.R_E_C_N_O_ 
+			//TcSqlExec("DELETE FROM " + RetSqlName("SZM") + " WHERE D_E_L_E_T_ = '*' AND ZM_INVOICE = '" + WKSZM->ZM_INVOICE + "' "   )
+			TcSqlExec("UPDATE " + RetSqlName("SZM") + " SZM SET SZM.D_E_L_E_T_ = '*', SZM.R_E_C_D_E_L_ = SZM.R_E_C_N_O_  WHERE ZM_FILIAL = '" + FwXfilial("SZM") + "' AND ZM_INVOICE = '" + WKSZM->ZM_INVOICE+ "' ")
+		
+		lLimpaAnt = .T.
+		EndIf
 
 		RecLock("SZM", .T.)
 			SZM->ZM_FILIAL := WKSZM->ZM_FILIAL 

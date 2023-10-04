@@ -53,9 +53,82 @@ user function EICPO400 ()
 			//SetKey (VK_F4,{||})
 
 		Case Paramixb == "ANTES_ELIMINA" 
- 			 SetKey (VK_F4,{||U_ZEICF020()})
-		
+ 			 
+			 SetKey (VK_F4,{||U_ZEICF020()})
+
+		Case Paramixb == "VAL_GRAVA_PO"
+			
+			If EMPTY(SW0->W0_XCLAIMP) .OR. EMPTY(SW0->W0_TIPIMP)
+				lGravaPO := fTela()
+				//lGravaPO := .F.
+			Else
+				lGravaPO := .T.
+				M->W2_XTIPIMP:= SW0->W0_TIPIMP
+				M->W2_XCLAIMP := SW0->W0_XCLAIMP
+			
+			EndIf
+			
+			
 	EndCase
 	
 	
 return nil
+
+
+
+Static Function fTela()
+
+Local aArea := GetArea()
+Local aParamBox := {}
+Local aMvPar	:= {}
+Local cZZ8   := Space(15)
+Local cTipo  := ""
+Local cTexto := "Tipo de Importação não foi salvo corretamente, selecione o Tipo de Importação:"
+Local lRet   := .T.
+Local lOk    := .T.
+Local nMv    := 0
+DbSelectArea('ZZ8')
+ZZ8->(DbSetOrder(1))
+
+aAdd(aParamBox,{9,cTexto,200,14,.T.})
+//aAdd(aParamBox,{9,Space(10),200,14,.T.})
+aAdd(aParamBox,{1,"Tipo de Importação",cZZ8,"","","ZZ8","",0,.T.}) 
+
+For nMv := 1 To 40
+    aAdd( aMvPar, &( "MV_PAR" + StrZero( nMv, 2, 0 ) ) )
+Next nMv
+
+While lOk
+	
+	If ParamBox(aParamBox, "Atenção")
+		lOk := !(ZZ8->(DbSeek(xFilial('ZZ8') + MV_PAR02 )))
+		cZZ8  := MV_PAR02
+		cTipo := ZZ8->ZZ8_TIPO
+		lRet := .T.
+		If lOk 
+			MSGALERT( "Tipo de Importação não encontrado, verifique!", "Atenção" )
+		EndIf 
+	Else
+		lRet := .F.
+		lOk := .F.
+	EndIf
+
+EndDo
+
+If lRet 
+	M->W2_XTIPIMP:= cZZ8
+	M->W2_XCLAIMP := cTipo
+	
+	RECLOCK( 'SW0', .F. )
+		SW0->W0_TIPIMP  := M->W2_XTIPIMP
+	 	SW0->W0_XCLAIMP := M->W2_XCLAIMP
+	SW0->(MsUnlock())
+EndIf
+
+For nMv := 1 To Len( aMvPar )
+    &( "MV_PAR" + StrZero( nMv, 2, 0 ) ) := aMvPar[ nMv ]
+Next nMv
+
+RestArea(aArea)
+
+Return lRet
