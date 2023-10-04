@@ -32,6 +32,12 @@ User Function ZPECR024()
 	local   aNfEmitida  := {"1 - Com NF","2 - Sem NF"}
 	Private cTabela 	:= GetNextAlias()
 
+	//Relatório disponível apenas para Franco da Rocha
+	IF FWCodEmp() <> '2020' //Verificar Empresa Peças, somente rodar em Peças
+		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Este relatório não é valido para esta empresa."),4,1)   
+	    Break
+	EndIf
+
  	aAdd(aPergs, {1,"Invoice"				,cInvoice	,/*Pict*/	,".T."		,"SW9"		,".T."	 ,80,.F.}) 	//MV_PAR01
 	aAdd(aPergs, {1,"Dt invoice de"			,dDtInvDe	,/*Pict*/	,/*Valid*/	,/*F3*/		,/*When*/,50,.F.})  //MV_PAR02
 	aAdd(aPergs, {1,"Dt invoice ate"		,dDtInvAte	,/*Pict*/	,/*Valid*/	,/*F3*/		,/*When*/,50,.F.})  //MV_PAR03
@@ -172,7 +178,7 @@ Static Function ReportPrint(oReport)
 	oSectDad := oReport:Section(1) //Primeira seção disponível
 
 	If 	(nMV_PAR11 = 1) // ------------ Query 1 com Nota Fiscal
-		cQry += " 	SELECT " 		 								+ CRLF
+		cQry += " 	SELECT DISTINCT" 		 						+ CRLF
 		cQry += "		SW9.W9_FILIAL" 								+ CRLF
 		cQry += "		, SW9.W9_INVOICE" 							+ CRLF
 		cQry += "		, SW9.W9_DT_EMIS AS DT_EMISSAO " 			+ CRLF 
@@ -361,7 +367,7 @@ Static Function ReportPrint(oReport)
 	
 
 	If (nMV_PAR11 = 2) //.OR. (nMV_PAR11 = 3)) // ------------ Query 2 sem Nota Fiscal
-		cQry += " 	SELECT " 		 								+ CRLF
+		cQry += " 	SELECT DISTINCT" 		 								+ CRLF
 		cQry += "		SW9.W9_FILIAL" 								+ CRLF	
 		cQry += "		, SW9.W9_INVOICE" 							+ CRLF
 		cQry += "		, SW9.W9_DT_EMIS AS DT_EMISSAO " 			+ CRLF 
