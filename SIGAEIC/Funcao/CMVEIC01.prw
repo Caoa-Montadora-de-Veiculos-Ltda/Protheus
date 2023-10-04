@@ -642,7 +642,9 @@ Static Function ValidTela() //Validação de todas as informações do CSV
 			
 		EndDo
 
-		_cPoLock := cPo //GAP081
+		If (nLayout == 1 .or. nLayout == 5).and. lRet
+			_cPoLock := cPo //GAP081
+		EndIf
 		FT_FUse()
 
 		//Fim dos ajustes do GAP024
