@@ -3,6 +3,8 @@
 #INCLUDE "FWMVCDEF.CH"
 #include "totvs.ch"
 
+Static _oBrw := Nil
+
 /*/{Protheus.doc} ZPECF040
 Calculo Curva ABC 
 @param  	
@@ -16,31 +18,43 @@ Calculo Curva ABC
 @history    
 /*/
 User Function ZPECF040
-Local _oBrw
 Local _oSay
 
 //Private aRotina := {}
 
 Begin Sequence
 	DbSelectarea("SZO")
+	SZO->(DbSetOrder(1))
     _oBrw := FWMBrowse():New()
     _oBrw:SetAlias("SZO")
-	_oBrw:SetMenuDef('ZPECF040')
-	//_oBrw:SetMenuDef('')
+	//_oBrw:SetMenuDef('ZPECF040')
+    //_oBrw:SetIgnoreARotina(.T.) // Indica que a mbrowse, ira ignorar a variavel private aRotina na construção das opções de menu.
     _oBrw:SetDescription("Curva ABC CAOA")
 	_oBrw:DisableDetails()
 	_oBrw:SetAmbiente(.F.)
 	_oBrw:SetWalkThru(.F.)
     _oBrw:ForceQuitButton()    
-    //_oBrw:SetIgnoreARotina(.T.) // Indica que a mbrowse, ira ignorar a variavel private aRotina na construção das opções de menu.
+ 
+	_oBrw:AddButton("Processar"  	, { || FwMsgRun(,{ | _oSay | ZPECF040PR_ProcessaCurvaABC( @_oSay) }, "Processando Curva ABC", "Aguarde...")  },,,, .F., 2 )  
+	_oBrw:AddButton("Gerar Excel"  	, { || FwMsgRun(,{ | _oSay | ZPECF40PL_PlanilhaCurvaABC( @_oSay) }, "Gerar Excel Curva ABC", "Aguarde...")  },,,, .F., 2 )  
+	_oBrw:AddButton("Visualizar"  	, { || FwMsgRun(,{ | _oSay | ZPECF40VI_RegistroCurvaABC( ) }, "Gerar Excel Curva ABC", "Aguarde...")  },,,, .F., 2 )  
 
-	_oBrw:AddButton("Processar"  	, { || FwMsgRun(,{ | _oSay | ZPECF040PR_ProcessaCurvaABC(@_oBrw, @_oSay) }, "Processando Curva ABC", "Aguarde...")  },,,, .F., 2 )  
-	_oBrw:AddButton("Gerar Excel"  	, { || FwMsgRun(,{ | _oSay | ZPECF40PL_PlanilhaCurvaABC(@_oBrw, @_oSay) }, "Gerar Excel Curva ABC", "Aguarde...")  },,,, .F., 2 )  
+	_oBrw:Refresh(.T.)
 
     _oBrw:Activate()
+	//_oTimer := TTimer():New(30000, {|| _oBrw:ForceRefresh() }, _oBrw )
+	//_oTimer:Activate()
+
 End Sequence
 Return Nil 
 
+
+//Visualizar Curva ABC
+Static Function ZPECF40VI_RegistroCurvaABC()
+Private  cCadastro := "Dados referente Curva ABC"
+DbSelectArea("SZO")
+AxVisual("SZO",SZO->( RecNo() ),2)
+Return Nil
 
 
 /*/{Protheus.doc} ZPECF040PR_ProcessaCurvaABC
@@ -55,7 +69,7 @@ Função para processar Curva
 @ Obs		
 @history    
 /*/
-Static Function ZPECF040PR_ProcessaCurvaABC(_ObrW, _oSay)
+Static Function ZPECF040PR_ProcessaCurvaABC( _oSay )
 Local _aSays	    := {}
 Local _aButtons	    := {}
 Local _cCadastro    := OemToAnsi("Curva ABC CAOA")   
@@ -153,10 +167,10 @@ Local _cFilDe		:= Space(TamSx3("B1_FILIAL")[1])
 Local _cFilAte		:= Repl("Z",TamSx3("B1_FILIAL")[1])  
 //Local _cCFVenda     := AllTrim(SuperGetMV( "CMV_PEC047" , ,"5102;5152;5403;6102;6110;6403" ))   //Parâmetro para indicação CF de Venda, para controlar select da curva ABC para notas de saida
 //Local _cCFCompra    := AllTrim(SuperGetMV( "CMV_PEC048" , ,"1102;2102;3102" ))   ///Parâmetro para indicação CF de Compras, para controlar select da curva ABC para notas de Compras
-//Local _nMesRef      := (SuperGetMV( "CMV_PEC049" , ,12 ))   //meses referencias para calculo cruva ABC
+//Local _nMesRef      := (SuperGetMV( "CMV_PEC049" , ,12 ))   		//meses referencias para calculo cruva ABC
 Local _cCFVenda     := AllTrim(SuperGetMV( "CMV_PEC047" , ,"" ))   //Parâmetro para indicação CF de Venda, para controlar select da curva ABC para notas de saida
 Local _cCFCompra    := AllTrim(SuperGetMV( "CMV_PEC048" , ,"" ))   ///Parâmetro para indicação CF de Compras, para controlar select da curva ABC para notas de Compras
-Local _nMesRef      := (SuperGetMV( "CMV_PEC049" , ,0 ))   //meses referencias para calculo cruva ABC
+Local _nMesRef      := (SuperGetMV( "CMV_PEC049" , ,0 ))   			//meses referencias para calculo cruva ABC
 Local _aPontos		:= {}
 Local _aStruct 		:= {}	//SZO->(DbStruct())
 Local _aPontoCurva	:= {}
@@ -169,7 +183,8 @@ Local _nPos
 Local _nStatus
 Local _cMens
 Local _nPontos
-
+Local _cHoraIni
+Local _cHoraFim
 
 Begin Sequence
 	_cMens 			:= '<h1>Confirma?</h1><br>Tem certeza que deseja processar Curva ABC ? Os dados atuais serão Apagador ! <font color="#FF0000"><b>  Processar Curva ABC  </b></font>. '
@@ -263,9 +278,11 @@ Begin Sequence
 	aSort( _aPontoCurva , , , { |x,y| x[3] > y[3] } )  //para organiar de acordo com os meses
 	//caso liberado para processamento apagar os códigos existentes no parametro
    	SZO->(DbGoTop())
+	_cHoraIni := Time()
 	If SZO->(!Eof()) 
-		_oSay:SetText("Aguarde apagando registros ..." )
+		_oSay:SetText("Aguarde apagando registros ... Hora inicial : "+ _cHoraIni)
 		ProcessMessage()
+		/*
 		//Caso seja todos utiliza DBZAP 
 		If Empty(_cProdutoDe) .And. Upper(SubsTr(_cProdutoAte,1,1)) == "Z"
  			If Select("SZO")    
@@ -277,23 +294,30 @@ Begin Sequence
 			Endif 
 		Endif 
 		//Caso não consiga apagar com dbzap apago com delete
+		*/
 		SZO->(DbSetOrder(1))
    		SZO->(DbGoTop())
+		
+		TcLink()
 		If SZO->(!Eof())
 			_cQuery := " DELETE FROM  "+RetSqlName("SZO")+" SZO " + CRLF
 			_cQuery += " WHERE 	SZO.ZO_FILIAL = '"+FwXFilial("SZO")+"' "	
 			_cQuery += " 	AND SZO.ZO_COD 	BETWEEN '" + _cProdutoDe + "' AND '"+_cProdutoAte+"' " 	+ CRLF				
-			_cQuery += " 	AND SZO.D_E_L_E_T_ = ' ' " + CRLF
+			//_cQuery += " 	AND SZO.D_E_L_E_T_ = ' ' " + CRLF
+			If !Empty(_cMarca)
+				_cQuery += "  AND SZO.ZO_MARCA = '"+_cMarca+"' "+ CRLF
+			Endif
 			_nStatus := TCSqlExec(_cQuery)
     		If (_nStatus < 0)
         		MsgStop("TCSQLError() " + TCSQLError(), "Registros Cabeçalho")
 				_lRet := .F.
 	        	Break    
    			 Endif
+			 TCRefresh("SZO")
 		Endif
 	Endif 
 
-	_oSay:SetText("Aguarde atualizando registros ..." )
+	_oSay:SetText("Aguarde atualizando registros ... Hora Inicial "+Time() )
 	ProcessMessage()
 
 	//Campos constantes na Query
@@ -333,7 +357,7 @@ Begin Sequence
     _cQuery += " 	MES_PONTOS AS( "+ CRLF   
     _cQuery += "    		 SELECT SD2.D2_COD "+ CRLF
     _cQuery += "     		, CASE "+ CRLF
-    _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 <=  12 AND SUM(NVL(SD2.D2_QUANT,0)) > 0 "+ CRLF	
+    _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 <=  "+AllTrim(Str(_nMesRef))+" AND SUM(NVL(SD2.D2_QUANT,0)) > 0 "+ CRLF	
     _cQuery += "     			THEN NVL(SUM(SD2.D2_QUANT),0) "+ CRLF    
     _cQuery += "     			ELSE 0 "+ CRLF
     _cQuery += " 			  END AS TOT_QTDECURVA "+ CRLF
@@ -361,12 +385,12 @@ Begin Sequence
     _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 =  10 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 09 "+ CRLF   	
     _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 =  11 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 08 "+ CRLF   	
     _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 =  12 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 07 "+ CRLF   	
-    _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 <= 24 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 24 "+ CRLF    	
-    _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 <= 36 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 36 "+ CRLF    	
-    _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 <= 48 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 48 "+ CRLF    	
-    _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 <= 60 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 60 "+ CRLF    	
-    _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 <= 72 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 72 "+ CRLF    	
-    _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 >  72 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 99 "+ CRLF    	
+    _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 <= 24 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 00 "+ CRLF    	
+    _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 <= 36 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 00 "+ CRLF    	
+    _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 <= 48 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 00 "+ CRLF    	
+    _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 <= 60 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 00 "+ CRLF    	
+    _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 <= 72 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 00 "+ CRLF    	
+    _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 >  72 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 00 "+ CRLF    	
     _cQuery += "    			ELSE 0 "+ CRLF
     _cQuery += "     		END PONTOS "+ CRLF
     _cQuery += "     	FROM "+RetSqlName("SD2")+" SD2 "+ CRLF 
@@ -394,7 +418,7 @@ Begin Sequence
     _cQuery += "  				GROUP BY B2_COD " + CRLF
     _cQuery += "  			) SB2JOIN " + CRLF
     _cQuery += "  			ON SB2JOIN.B2_COD = MES_PONTOS.D2_COD " + CRLF
-    _cQuery += " 		WHERE MES_PONTOS.MESES <= 12 " + CRLF
+    _cQuery += " 		WHERE MES_PONTOS.MESES <= "+AllTrim(Str(_nMesRef)) + CRLF
     _cQuery += " 			AND NVL(MES_PONTOS.TOT_QTDECURVA,0) > 0 " + CRLF
     _cQuery += " 		GROUP BY MES_PONTOS.D2_COD " + CRLF
     _cQuery += " 		) " + CRLF
@@ -450,26 +474,38 @@ Begin Sequence
     _cQuery += " 	    		WHEN COALESCE(SB1.B1_XUVLEG,' ') 			<> ' '	THEN SB1.B1_XUVLEG	" + CRLF		//--Ultima Venda Legado
     _cQuery += " 	    	ELSE ' ' " + CRLF
     _cQuery += " 	    	END AS DT_ULT_CMP " + CRLF												//--ZO_DTULVND
-    _cQuery += " 	    , NVL(SD2SQLPRD.TOT_FATURAMENTO,0) AS TOT_FATURAMENTO " + CRLF				//--ZO_TOTVEND	
+    _cQuery += " 	    , NVL(SD2SQLPRD.TOT_PECAS,0) AS TOT_PECAS " + CRLF				//--ZO_TOTVEND	
     _cQuery += " 		, NVL( (SELECT MEDIAS.DEMANDA_MEDIA " + CRLF
     _cQuery += " 				FROM MEDIAS " + CRLF
     _cQuery += " 				WHERE MEDIAS.D2_COD = SB1.B1_COD),0) 	AS DEMANDA_MEDIA " + CRLF	//--ZO_MEDIADE
     _cQuery += " 		, NVL( (SELECT NVL(MEDIAS.SALDO_ESTOQUE / MEDIAS.DEMANDA_MEDIA,0) " + CRLF
     _cQuery += " 				FROM MEDIAS " + CRLF
-    _cQuery += " 				WHERE MEDIAS.D2_COD = SB1.B1_COD),0) AS MOS " + CRLF				//--ZO_MOS
+    _cQuery += " 				WHERE MEDIAS.D2_COD = SB1.B1_COD ),0) AS MOS " + CRLF				//--ZO_MOS
+ 
     _cQuery += " 		, NVL( (SELECT NVL(SB2SQL.SALDO_ESTOQUE / MEDIAS.DEMANDA_MEDIA,0 ) - "+StrZero(_nMesExcesso,3)+" *	MEDIAS.DEMANDA_MEDIA " + CRLF
     _cQuery += " 				FROM MEDIAS " + CRLF
-    _cQuery += " 				WHERE MEDIAS.D2_COD = SB1.B1_COD),0)  AS EXCESSO_QTDE " + CRLF		//--ZO_EXQTDE
+    _cQuery += " 				WHERE MEDIAS.D2_COD = SB1.B1_COD
+    _cQuery += " 					AND MEDIAS.SALDO_ESTOQUE / MEDIAS.DEMANDA_MEDIA >= "+AllTrim(Str(_nMesExcesso))
+    _cQuery += " 				) ,0)  AS EXCESSO_QTDE " + CRLF		//--ZO_EXQTDE
     _cQuery += " 		, NVL( (SELECT (NVL(SB2SQL.SALDO_ESTOQUE / MEDIAS.DEMANDA_MEDIA,0 ) - "+StrZero(_nMesExcesso,3)+" *	MEDIAS.DEMANDA_MEDIA) * MEDIAS.CUSTO_UNITARIO " + CRLF
     _cQuery += " 				FROM MEDIAS " + CRLF
-    _cQuery += " 				WHERE MEDIAS.D2_COD = SB1.B1_COD),0)  AS CUSTO_EXCESSO " + CRLF		//--ZO_EXCUSTO 
+    _cQuery += " 				WHERE MEDIAS.D2_COD = SB1.B1_COD
+    _cQuery += " 					AND MEDIAS.SALDO_ESTOQUE / MEDIAS.DEMANDA_MEDIA >= "+AllTrim(Str(_nMesExcesso))
+    _cQuery += " 				),0)  AS CUSTO_EXCESSO " + CRLF		//--ZO_EXCUSTO 
     _cQuery += "     	,'"+DtOs(_dDataCurva)+"' AS ZO_DTBASEC " + CRLF								//--ZO_DTBASEC
     _cQuery += "     	,'"+RetCodUsr()+"' 	AS ZO_CODUSU " + CRLF									//--ZO_CODUSU 
    	_cQuery += "     	,'"+Upper(UsrRetName(RetCodUsr()))+"' 	AS ZO_CODUSU " + CRLF						//--ZO_NOMEUSU
     _cQuery += "     	,'"+DtOs(Date())+"' AS ZO_DTCALC " + CRLF									//--ZO_DTCALC 
     _cQuery += "     	,'"+SubsTr(Time(),1,5)+"' 	AS ZO_HSCALC " + CRLF 							//--ZO_HSCALC 
     _cQuery += "   		,' '        AS  D_E_L_E_T_ " + CRLF
-    _cQuery += "  		,ROW_NUMBER() OVER (ORDER BY B1_COD)     AS  R_E_C_N_O_ " + CRLF
+//    _cQuery += "  		,ROW_NUMBER() OVER (ORDER BY B1_COD)     AS  R_E_C_N_O_ " + CRLF
+//		Estava dando erro no update constraint
+//    _cQuery += "  		,	(	SELECT NVL(MAX(SZO.R_E_C_N_O_),0)+1  NRECSZO " + CRLF
+//    _cQuery += "  				FROM "+RetSqlName("SZO")+" SZO "+ CRLF 
+//	_cQuery += " 				WHERE 	SZO.ZO_FILIAL = '"+FwXFilial("SZO")+"' "+ CRLF	
+//	_cQuery += " 			) AS  R_E_C_N_O_ "+ CRLF
+    _cQuery += "  		,SB1.R_E_C_N_O_  " + CRLF
+
     _cQuery += " FROM "+RetSqlName("SB1")+" SB1 " + CRLF 
     _cQuery += " LEFT JOIN "+RetSqlName("SBM")+" SBM " + CRLF 	
     _cQuery += "  	ON  SBM.BM_FILIAL 	= '"+FwXFilial("SBM")+"' " + CRLF
@@ -502,10 +538,13 @@ Begin Sequence
     _cQuery += "  LEFT JOIN (	SELECT SD2.D2_COD " + CRLF
     _cQuery += "  					,MAX(SD2.D2_EMISSAO) AS DT_NF_SAIDA " + CRLF
     _cQuery += "  					,SUM(NVL(SD2.D2_VALBRUT,0))  AS TOT_FATURAMENTO " + CRLF
+    _cQuery += "  					,SUM(NVL(SD2.D2_QUANT,0))  AS TOT_PECAS " + CRLF
     _cQuery += "  				FROM "+RetSqlName("SD2")+" SD2 " + CRLF 
     _cQuery += "  				WHERE SD2.D_E_L_E_T_ = ' ' "     + CRLF
     _cQuery += "  					AND SD2.D2_FILIAL BETWEEN  '"+_cFilDe+"' AND '"+_cFilAte+"'  "+ CRLF 
     _cQuery += "  					AND SD2.D2_CF IN "+ FormatIn(_cCFVenda,";") + " "+ CRLF"
+    _cQuery += "  					AND D2_EMISSAO BETWEEN '"+DtOs(_dDataCurva - 365)+"' AND '"+DtOs(_dDataCurva)+ "' " 
+
     _cQuery += "  				GROUP BY SD2.D2_COD " + CRLF
     _cQuery += "  			) SD2SQLPRD " + CRLF
     _cQuery += "  			ON SD2SQLPRD.D2_COD = SB1.B1_COD " + CRLF 
@@ -516,7 +555,7 @@ Begin Sequence
 		_cQuery += "    AND SBM.BM_CODMAR = '"+_cMarca+"' "							+ CRLF
 	Endif 
 	_cQuery += "    AND SB1.D_E_L_E_T_ 	= ' ' "										+ CRLF
-	_cQuery += " ORDER BY SB1.B1_COD "												+ CRLF
+	//_cQuery += " ORDER BY SB1.B1_COD "												+ CRLF
 
 	_nStatus := TCSqlExec(_cQuery)
     If (_nStatus < 0)
@@ -524,19 +563,30 @@ Begin Sequence
 		_lRet := .F.
         Break    
     Endif
+	//necessario fechar e reabrir 
+	If Select("SZO")
+		SZO->(DbCloseArea())
+		DbSelectArea("SZO")
+	Endif
 	DbSelectArea("SZO")
+	TCRefresh("SZO")
     SZO->(DbGoTop())
 	If SZO->(Eof())
 		MSGINFO( "Não existe dados para a Geração da Curva ABC !", "Atenção" )
 		_lRet := .F.
 		Break
 	Endif
-
+	_cHoraFim := Time()
+	MSGINFO( "Termino do processamento iniciado as : "+_cHoraIni+" finalizado as "+_cHoraFim+" !", "Atenção" )
 End Sequence
 If Select(_cAliasPesq) <> 0
 	(_cAliasPesq)->(DbCloseArea())
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif  
+TCRefresh("SZO")
+TcUnlink()
+_ObrW:Refresh(.T.)
+_ObrW:Refresh()
 Return Nil
 
 
@@ -559,12 +609,12 @@ Gera planilha do browse curva ABC
 			PEC057 - Cálculo da Curva ABC
 @history    
 /*/
-Static Function ZPECF40PL_PlanilhaCurvaABC(_oBrw, _oSay)
+Static Function ZPECF40PL_PlanilhaCurvaABC( _oSay )
 Local _lRet 		:= .T.
 Local _cSheet 		:= "Curva ABC"
 Local _cTable 		:= "CURVA ABC"
 Local _cDir   		:=  ""
-Local _cNomeArqXML	:= "ZPECF040 Curva ABC"+DtoS(Date())+SubsTr(Time,1,2)+SubsTr(Time,4,2)
+Local _cNomeArqXML	:= "ZPECF040 Curva ABC"+DtoS(Date())+SubsTr(Time(),1,2)+SubsTr(Time(),4,2)
 Local _nColunas 	:= 0
 Local _lTotalizar 	:= .F.
 Local _cType 		:= OemToAnsi("Todos") + "(*.*) |*.*|"
@@ -582,6 +632,11 @@ Begin Sequence
 	If _oBrw:LogicLen() <= 0
 		Break
 	EndIf
+
+	If !MsgYesNo("Deseja gerar arquivo em Excel para Curva ABC ?") 
+		Break 
+	Endif 
+
 	//Selecionar pasta para geração
 	_cDir := cGetFile(_cType, OemToAnsi("Selecione a Pasta "), 0,, .T.,GETF_LOCALFLOPPY + GETF_LOCALHARD + GETF_NETWORKDRIVE + GETF_RETDIRECTORY)
 	//³ Parametro: GETF_LOCALFLOPPY - Inclui o floppy drive local.   ³
@@ -689,6 +744,7 @@ Modelo de Dados
 Static Function ModelDef()
     Local oModel    := Nil
     Local _oStruSZO  := FWFormStruct(1, "SZO")
+	oModel := FWModelActive()
 	// Cria o objeto do Modelo de Dados
 	oModel := MPFormModel():New('ZPF40MDL',  /*bPreValidacao*/, /*bPosValidacao*/, /*bCommit*/, /*bCancel*/ )
 	// Adiciona ao modelo uma estrutura de formulário de edição por campo
@@ -699,7 +755,12 @@ Static Function ModelDef()
     oModel:GetModel("SZOMASTER"):SetDescription("Curva ABC CAOA")
 	//oModel:SetPrimaryKey({'ZO_FILIAL', 'ZO_CODIGO' })
     oModel:SetPrimaryKey({})
-
+	/*
+	If oModel:IsActive() 
+		oModel:DeActivate() 
+	EndIf
+	oModel:Activate()
+	*/
 Return oModel
 
 
