@@ -370,7 +370,9 @@ while !(cAliasNF)->(Eof())
 			Endif
 				
 			// posiciona cliente
-			SA1->(dbSetOrder(1))
+
+
+
 			SA1->(dbSeek(xFilial("SA1")+SE1->E1_CLIENTE+SE1->E1_LOJA))
 		
 			// verifica se cliente jah foi enviado ao sap
