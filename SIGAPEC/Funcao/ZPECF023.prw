@@ -59,7 +59,7 @@ User Function ZPECF023()
     Private cFaloja   := (TamSX3( "A5_FALOJA"  )[1])
     Private aPrdInt   := {}
     Private aRetP 	  := {}
-
+ 
     If _cEmp == "2020" //Executa o p.e. Anapolis.
 
         aAdd( aPergs ,{6,"Diretorio do Arquivo ",cCaminho     ,"@!" ,     ,'.T.' ,80,.T.,"Arquivos .xls |*.xls " })
@@ -152,6 +152,7 @@ Static Function FImpExcel()
 
 // Montagem das Celulas do Cabeçalho
 
+
     AADD(_aCelulas,{'FILIAL'    ,"A",02,'C',10,0})  //1
     AADD(_aCelulas,{'COD'       ,"B",02,'C',23,0})  //2
     AADD(_aCelulas,{'DESC'      ,"C",02,'C',60,0})  //3
@@ -175,7 +176,7 @@ Static Function FImpExcel()
     AADD(_aCelulas,{'CUSTD'     ,"W",02,'N',15,5})  //21
     AADD(_aCelulas,{'IMPORT'    ,"X",02,'N',01,0})  //22
     AADD(_aCelulas,{'EX_NCM'    ,"Y",02,'C',03,0})  //23
-    AADD(_aCelulas,{'GRTRIB'    ,"AA",02,'C',06,0})  //25
+    AADD(_aCelulas,{'GRTRIB'    ,"AA",2,'C',06,0})  //25
     AADD(_aCelulas,{'IMPZFRC'   ,"AB",2,'C',01,0})  //26
     AADD(_aCelulas,{'MCUSTD'    ,"AC",2,'C',01,0})  //27
     AADD(_aCelulas,{'CEST'      ,"AD",2,'C',09,0})  //28
@@ -335,7 +336,7 @@ Local _nItem     := 0
     FT_FGOTOP()
     FT_FSKIP(1)  //Linhas a saltar
   
-    While !FT_FEOF() .AND. lRet = .T.
+    While (!FT_FEOF() .AND. lRet = .T. ) .OR. (!FT_FEOF() .AND. nOpca = 4 )
         _nItem  ++
 
         IncProc("Processando registro " + cValToChar(_nItem) + " de " + cValToChar(nLinTot) + ", aguarde.")
@@ -451,7 +452,7 @@ Local _nItem     := 0
         cCodprf   := AllTrim( aDados[39] )
         cFabr     := AllTrim( aDados[40] )
         cFaloja   := AllTrim( aDados[41] )
-        cMSBLQL   := "2"   //Não Bloqueado
+        cMSBLQL   := "1"   //Não Bloqueado
 
         IncProc("Montando dados de entrada...")
 
@@ -682,15 +683,16 @@ Local _nItem     := 0
                             {"B5_CODLIN",cCODLIN             ,NIL},; 
                             {"B5_CODFAM",cCODFAM             ,NIL}} 
 
-                aAmar := { {"A5_FILIAL" ,xFilial("SA5")      ,Nil},;
-                        {"A5_PRODUTO", cCod               ,NIL},;
-                        {"A5_NOMPROD", cDesc              ,NIL},;                        
-                        {"A5_FORNECE", cFornece           ,NIL},; 
-                        {"A5_LOJA"   , cLolja             ,NIL},; 
-                        {"A5_CODPRF" , cCodprf            ,NIL},; 
-                        {"A5_FABR"   , cFabr              ,NIL},; 
-                        {"A5_FALOJA" , cFaloja            ,NIL}} 
+                aAmar := { {"A5_FILIAL" , xFilial("SA5")     ,Nil},;
+                           {"A5_PRODUTO", cCod               ,NIL},;
+                           {"A5_NOMPROD", cDesc              ,NIL},;                        
+                           {"A5_FORNECE", cFornece           ,NIL},; 
+                           {"A5_LOJA"   , cLolja             ,NIL},; 
+                           {"A5_CODPRF" , cCod               ,NIL},; //cCodprf
+                           {"A5_FABR"   , cFabr              ,NIL},; 
+                           {"A5_FALOJA" , cFaloja            ,NIL} } 
 
+ 
             Endif
 
             cItens := Soma1(cItens,4)
@@ -738,7 +740,17 @@ Local _nItem     := 0
                 oModel:CommitData()
                 U_Z023Compl(cCod,nOpca,aItens)
                 U_z023GeraB2(cCod, nQuant)
+    
+                RecLock('SB1', .F.)
+                    SB1->B1_MSBLQL := "2"  //Desbloqueado
+                SB1->(MsUnlock())
+    
                 Z023Amar(nOpca,aAmar)
+    
+                RecLock('SB1', .F.)
+                    SB1->B1_MSBLQL := "1"   //Bloqueado
+                SB1->(MsUnlock())
+
                 _cLog := "[ZPECF023] - Registro INCLUIDO! " + Alltrim(cCod) + "  Opcao: " + cOperacao
                 GERLOG()
             

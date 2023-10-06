@@ -173,7 +173,7 @@ If aParam <> NIL
         	Endif
 
 		EndIf
-
+ 
 	ElseIf cIdPonto == "BUTTONBAR"
 
             //Criar um botão na barra de botões da rotina

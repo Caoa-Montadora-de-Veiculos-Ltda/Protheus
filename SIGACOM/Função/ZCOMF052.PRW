@@ -27,7 +27,7 @@ Rdmake 	Visualização do Log de Alteração do Cadastro de Produto
 
 User Function ZCOMF052()
 //Local _cFunNameBkp 	:= SetFunName()
-Local _aArea 	    := GetArea()
+Local _aArea2 	    := GetArea()
 Local _cTitulo		:= "Log de Alteração de Produtos"
 Local _lRet			:= .T.
 //Local _aRotAnt		:= aRotina
@@ -56,10 +56,10 @@ Begin Sequence
 		//_oBrw:SetFilterDefault( "ZZN_COD == '" +_cProduto+"'" ) 
 		_oBrw:Activate()
 
-End Sequence
+End Sequence 
 //aRotina := _aRotAnt		 
 //SetFunName(_cFunNameBkp)
-RestArea(_aArea)
+RestArea(_aArea2)
 Return Nil
 
 

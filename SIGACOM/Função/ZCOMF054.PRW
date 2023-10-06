@@ -9,7 +9,7 @@
 @obs        Desbloqueia produto do SB1
 @project
 @history    
-/*/
+/*/ 
 User Function ZCOMF054()
 Local _aArea  := GetArea()
 IF FWCodEmp() <> "2010"

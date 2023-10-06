@@ -36,7 +36,7 @@ IF M->B1_IMPORT <> SB1->B1_IMPORT .and. cEmp <> "2010"
     ZZN->(MsUnlock())
     cBloqProd   := .T.
 ENDIF
-
+ 
 IF M->B1_ORIGEM <> SB1->B1_ORIGEM .and. cEmp <> "2010" 
     RecLock('ZZN', .T.)
     ZZN_FILIAL := xFILIAL("ZZN")

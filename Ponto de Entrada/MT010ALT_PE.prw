@@ -24,5 +24,5 @@ User Function MT010ALT()
         B1_XHRULT := TIME()
     SB1->(MsUnlock())
      
-
+ 
 Return

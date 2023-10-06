@@ -11,7 +11,7 @@ Solicitante:
 Uso......:              CAOA Montadora de Veiculos.
 Obs......:
 =====================================================================================
-*/
+*/ 
 User Function ZCOMF053( cParam01, cParam02 )
 
 Local cUser     := cParam01

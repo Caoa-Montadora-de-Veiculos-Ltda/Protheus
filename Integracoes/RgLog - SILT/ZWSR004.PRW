@@ -127,7 +127,7 @@ Conout("WSR004 - Integraçao de envio de produto para RGLOG - Inicio "+DtoC(date(
         EndIf
  
     EndIf
-
+ 
     //	cQrySB1 += " 	AND	SB1.B1_XINTEG = 'S'"	       				                    + CRLF
 
 	cQrySB1 := "SELECT"													                + CRLF

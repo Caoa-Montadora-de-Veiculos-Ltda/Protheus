@@ -10,7 +10,7 @@
 @obs        Ponto de entrada do MATA110
 @project
 @history    Ponto de entrada após inclusão do produto 
-*/
+*/ 
 User Function MT010INC()
 //Local aArea := GetArea()
     //Grava o usuário que incluiu
