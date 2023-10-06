@@ -8,6 +8,8 @@ Local xRet       := .T.
 Local oObj 
 Local cIdPonto   := "" 
 Local cIdModel   := "" 
+Local _nP235     := superGetMv( "CMV_PEC040", ,6 )	
+Local _nP4       := superGetMv( "CMV_PEC041", ,8 )
 
 Local cTpVdNaoPe := "" 
 Local _cPgNF     := AllTrim( GetMV('CMV_FAT011') )
@@ -126,6 +128,7 @@ If aParam <> Nil
 			EndIf 
 		EndIf 
 
+
 // --> Incluso  CRISTIANO  14/12/2021   (*INICIO*) ----------------------- //
 /*
    Mensagem alerta impeditivo ao tentar gravar um pedido de vendas que não possua o "Chassi" (VRK_CHASSI) preenchido  .E.  possua dados 
@@ -164,6 +167,27 @@ If aParam <> Nil
 					SE1->(MsUnlock())
 				ENDIF
 			//EndIf
+		EndIf
+
+		VRK->(dbSetOrder(1))
+		If VRK->(dbSeek(xFilial("VRK") + VRJ->VRJ_PEDIDO ))
+
+			If VRJ->VRJ_TIPVEN $ ("01/02/03/05") 
+				WHILE VRK->VRK_FILIAL = VRJ->VRJ_FILIAL .AND. VRK->VRK_PEDIDO = VRJ->VRJ_PEDIDO
+					RecLock("VRK",.F.) 
+						VRK->VRK_XPECOM := _nP235
+					VRK->(MsUnlock())
+					VRK->(DbSkip())
+				End
+			ELSEIF VRJ->VRJ_TIPVEN = "04" .AND. VRK->VRK_CODMAR $ ("HYU/CHE")
+				WHILE VRK->VRK_FILIAL = VRJ->VRJ_FILIAL .AND. VRK->VRK_PEDIDO = VRJ->VRJ_PEDIDO
+					RecLock("VRK",.F.) 
+						VRK->VRK_XPECOM := _nP4
+					VRK->(MsUnlock())
+					VRK->(DbSkip())
+				End
+			EndIf 
+
 		EndIf
 
 	EndCase
