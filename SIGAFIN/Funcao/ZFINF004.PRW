@@ -10,43 +10,48 @@
     @version 	1.0
     /*/
 User Function ZFINF004()
-Local _lRet     := .T.
+Local  lRet     := .T.
 Local _aArea    := GetArea()
 Private _cEmp   := FWCodEmp()
 Private _cBanco := ''
 Private _cAge   := ''
 Private _cConta := ''
 
-IF _cEmp == "2010" .AND. SE1->E1_TIPO = 'RA ' .AND. SE1->E1_PARCELA = '1 ' 
+IF _cEmp == "2010" .AND. SC5->C5_XPREFIX == 'PVF' .AND. SE1->E1_PARCELA == '1 ' 
 	
     Begin Transaction
-	IF FWIsInCallStack("U_MT410TOK") .AND. ALTERA = .T.  .AND.  SC5->C5_CONDPAG <> M->C5_CONDPAG 
+
         _cBanco := SE1->E1_PORTADO 
         _cAge   := SE1->E1_AGEDEP
         _cConta := SE1->E1_CONTA
-	    GeraTitulo('Abat. RA','NF ','1 ','NF ')
-    ENDIF
-    If !_lRet
+	    lRet    := GeraTitulo('Abat. RA','NF ','1 ','NF ')
+
+    If !lRet
         Disarmtransaction()
     EndIf	
+
     End Transaction
 
+    IF !lRET
+        Return(lRet)
+    Endif
+
     SE4->(DbSetOrder(1))
-	If SE4->(DbSeek(xFilial("SE4")+M->C5_CONDPAG)) .AND. FWIsInCallStack("MATA410")
+	If SE4->(DbSeek(xFilial("SE4")+SC5->C5_CONDPAG)) .AND. FWIsInCallStack("MATA410")
         GrvDBSe1()
 	Endif
 
-ELSEIF _cEmp == "2010" .AND. SE1->E1_TIPO = 'RA ' .AND. SE1->E1_PARCELA = '2 ' .AND. !Empty(M->C5_XNPG)
+ELSEIF _cEmp == "2010" .AND. SC5->C5_XPREFIX == 'PVF' .AND. SE1->E1_PARCELA = '2 ' .AND. !Empty(SC5->C5_XNPG)
 
 	SE4->(DbSetOrder(1))
-	If SE4->(DbSeek(xFilial("SE4")+M->C5_XNPG)) .AND. FWIsInCallStack("U_M460FIM_PE")
+	If SE4->(DbSeek(xFilial("SE4")+SC5->C5_XNPG)) .AND. FWIsInCallStack("U_M460FIM_PE")
         GrvDBSe1()
 	Endif
 
-ELSEIF _cEmp == "2010" .AND. SE1->E1_TIPO = 'RA ' .AND. SE1->E1_PARCELA = '3 ' .AND. !Empty(M->C5_XNPG1)
+ELSEIF _cEmp == "2010" .AND. SC5->C5_XPREFIX == 'PVF' .AND. SE1->E1_PARCELA = '3 ' .AND. !Empty(SC5->C5_XNPG1)
 
 	SE4->(DbSetOrder(1))
-	If SE4->(DbSeek(xFilial("SE4")+M->C5_XNPG1)) .AND. FWIsInCallStack("U_M460FIM_PE")
+	If SE4->(DbSeek(xFilial("SE4")+SC5->C5_XNPG1)) .AND. FWIsInCallStack("U_M460FIM_PE")
         GrvDBSe1()
 	Endif
 
@@ -54,7 +59,7 @@ ENDIF
 
 RestArea(_aArea)
 
-return(_lRet) 
+return(lRet) 
 
 
 /*/{Protheus.doc} ZFINF004
@@ -65,12 +70,12 @@ return(_lRet)
     @version 	1.0
 /*/
 Static Function GrvDBSe1()
-	RecLock("SE1",.F.)
+	//RecLock("SE1",.F.)
 	SE1->E1_XFORMA  := SE4->E4_XFORMA
 	SE1->E1_PORTADO := SA6->A6_COD 
 	SE1->E1_AGEDEP  := SA6->A6_AGENCIA
 	SE1->E1_CONTA   := SA6->A6_NUMCON
-	MsUnlock()
+	//MsUnlock()
 Return()
 
 
@@ -99,6 +104,7 @@ Local cxFil       := xFilial("SZ7")
 Local cTab        := "SE1"
 Local cChave      := ""   //E1_PREFIXO+E1_NUM+E1_PARCELA+E1_TIPO 
 Local cIndice     := "1"
+Local lRet        := .T.
 //Local cLote       := ""
 //Local cSequen     := ""
 Local cStatusSZ7  := "P"
@@ -110,13 +116,13 @@ Local nOperSAP    := 1
 
     //Prepara o array para o execauto
     aAdd(_aVSE1, {"E1_FILIAL",  FWxFilial("SE1"),  Nil})
-    aAdd(_aVSE1, {"E1_NUM",     M->C5_NUM,         Nil})
+    aAdd(_aVSE1, {"E1_NUM",     M->C5_NUM,       Nil})
     aAdd(_aVSE1, {"E1_PREFIXO", _cPrefixo,         Nil})
     aAdd(_aVSE1, {"E1_PARCELA", _cParcela,         Nil})
     aAdd(_aVSE1, {"E1_TIPO",    _cTipo,            Nil})
-    aAdd(_aVSE1, {"E1_NATUREZ", M->C5_NATUREZ,     Nil})
-    aAdd(_aVSE1, {"E1_CLIENTE", M->C5_CLIENTE,     Nil})
-    aAdd(_aVSE1, {"E1_LOJA",    M->C5_LOJACLI,     Nil})
+    aAdd(_aVSE1, {"E1_NATUREZ", M->C5_NATUREZ,   Nil})
+    aAdd(_aVSE1, {"E1_CLIENTE", M->C5_CLIENTE,   Nil})
+    aAdd(_aVSE1, {"E1_LOJA",    M->C5_LOJACLI,   Nil})
     aAdd(_aVSE1, {"E1_NOMCLI",  _cNomCli,          Nil})
     aAdd(_aVSE1, {"E1_EMISSAO", _dEmissao,         Nil})   //DTOC(_dEmissao)
     aAdd(_aVSE1, {"E1_VENCTO",  _dVenc,            Nil})   //DTOC(_dVenc)
@@ -134,15 +140,14 @@ Local nOperSAP    := 1
     //aAdd(_aVetSE1, aClone(_aVSE1))
 
     IF !Empty(_aVSE1)
-        Begin Transaction
-        dbSelectArea("SE1")
-        dbSetOrder(1)
-        If !dbSeek(xFilial("SE1") + _cPrefixo + M->C5_NUM + '   ' + _cParcela + _cTipo)//E1_FILIAL+                                                                                                                 
+        SE1->(dbSetOrder(1))
+        If SE1->(!dbSeek(xFilial("SE1") + _cPrefixo + M->C5_NUM + '   ' + _cParcela + _cTipo))//E1_FILIAL+                                                                                                                 
                 lMsErroAuto := .F.
                 MSExecAuto({|x,y| FINA040(x,y)}, _aVSE1, nOpc)
                 If lMsErroAuto
                     lRet := .F.
                     MostraErro()
+                    Return(lRet)
                 else
 
                     lRet := .T.
@@ -202,16 +207,11 @@ Local nOperSAP    := 1
 
                 EndIf
 
-            IF !lRet
-                DisarmTransaction()
-                Return()
-            ENDIF
         Else
             MsgInfo("Parcela já existente para esse PV.", "ZFINF004")
-            DisarmTransaction()
-            Return()
+            Return(lRet)
         Endif
-        End Transaction
+
     Endif
 
-Return()
+Return(lRet)

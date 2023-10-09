@@ -9,6 +9,10 @@ User Function PVADTINC()
 
 	If _cEmp == "2010" //Executa o p.e. Anapolis.
 
+        IF SE4->E4_CTRADT == '1'    //Adiantamento
+		    M->C5_XPREFIX := 'PVF'
+		ENDIF
+
 		DbSelectArea("ZZM")
 	    DbSetOrder(1)  //Filial + Documento
 
