@@ -172,7 +172,7 @@ If aParam <> Nil
 		VRK->(dbSetOrder(1))
 		If VRK->(dbSeek(xFilial("VRK") + VRJ->VRJ_PEDIDO ))
 
-			If VRJ->VRJ_TIPVEN $ ("01/02/03/05") 
+			If VRJ->VRJ_TIPVEN $ ("02/03/05") 
 				WHILE VRK->VRK_FILIAL = VRJ->VRJ_FILIAL .AND. VRK->VRK_PEDIDO = VRJ->VRJ_PEDIDO
 					RecLock("VRK",.F.) 
 						VRK->VRK_XPECOM := _nP235
