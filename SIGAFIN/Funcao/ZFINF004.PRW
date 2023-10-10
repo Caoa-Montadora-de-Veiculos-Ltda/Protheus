@@ -18,15 +18,24 @@ Private _cAge   := ''
 Private _cConta := ''
 
 IF _cEmp == "2010" .AND. SC5->C5_XPREFIX == 'PVF' .AND. SE1->E1_PARCELA == '1 ' 
-	
-    Begin Transaction
 
     _cBanco := SA6->A6_COD 
     _cAge   := SA6->A6_AGENCIA
     _cConta := SA6->A6_NUMCON
 
+    SE1->(dbSetOrder(1))
+    If SE1->(dbSeek(xFilial("SE1") + SC5->C5_XPREFIX + M->C5_NUM + '   ' + '1 ' + 'RA '))                                                                                                                
+        RecLock("SE1",.F.)
+        SE1->E1_PORTADO := _cBanco 
+        SE1->E1_AGEDEP  := _cAge
+        SE1->E1_CONTA   := _cConta
+        MsUnlock()
+	ENDIF
+
+    Begin Transaction
+
     IF lRet == .F.
-        lRet := GeraTitulo('Abat. RA','NF ','1 ','NF ')
+        lRet := GTitulo('Abat. RA','NF ','1 ','NF ')
     ENDIF
 
     If !lRet
@@ -82,7 +91,7 @@ Static Function GrvDBSe1()
 Return()
 
 
-/*/{Protheus.doc}  GeraTitulo
+/*/{Protheus.doc}  GTitulo
 @param  	 
 @author 	A. Oliveira
 @version  	P12.1.25
@@ -92,7 +101,7 @@ Return()
 @project
 @history
 /*/
-Static Function GeraTitulo(_cHist,_cPrefixo,_cParcela,_cTipo)
+Static Function GTitulo(_cHist,_cPrefixo,_cParcela,_cTipo)
 Local _aVSE1      := {}
 Local _cForma     := ""
 Local _cNomCli    := ""
@@ -118,13 +127,13 @@ Local nOperSAP    := 1
 
     //Prepara o array para o execauto
     aAdd(_aVSE1, {"E1_FILIAL",  FWxFilial("SE1"),  Nil})
-    aAdd(_aVSE1, {"E1_NUM",     M->C5_NUM,       Nil})
+    aAdd(_aVSE1, {"E1_NUM",     M->C5_NUM,         Nil})
     aAdd(_aVSE1, {"E1_PREFIXO", _cPrefixo,         Nil})
     aAdd(_aVSE1, {"E1_PARCELA", _cParcela,         Nil})
     aAdd(_aVSE1, {"E1_TIPO",    _cTipo,            Nil})
-    aAdd(_aVSE1, {"E1_NATUREZ", M->C5_NATUREZ,   Nil})
-    aAdd(_aVSE1, {"E1_CLIENTE", M->C5_CLIENTE,   Nil})
-    aAdd(_aVSE1, {"E1_LOJA",    M->C5_LOJACLI,   Nil})
+    aAdd(_aVSE1, {"E1_NATUREZ", M->C5_NATUREZ,     Nil})
+    aAdd(_aVSE1, {"E1_CLIENTE", M->C5_CLIENTE,     Nil})
+    aAdd(_aVSE1, {"E1_LOJA",    M->C5_LOJACLI,     Nil})
     aAdd(_aVSE1, {"E1_NOMCLI",  _cNomCli,          Nil})
     aAdd(_aVSE1, {"E1_EMISSAO", _dEmissao,         Nil})   //DTOC(_dEmissao)
     aAdd(_aVSE1, {"E1_VENCTO",  _dVenc,            Nil})   //DTOC(_dVenc)
