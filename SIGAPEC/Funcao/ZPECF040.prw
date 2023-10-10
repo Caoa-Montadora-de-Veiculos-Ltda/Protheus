@@ -174,7 +174,7 @@ Local _nMesRef      := (SuperGetMV( "CMV_PEC049" , ,0 ))   			//meses referencia
 Local _aPontos		:= {}
 Local _aStruct 		:= {}	//SZO->(DbStruct())
 Local _aPontoCurva	:= {}
-Local _nPontosCurva := 150 //pontuação maxima na curva ABC
+//Local _nPontosCurva := 150 //pontuação maxima na curva ABC
 Local _cCurvaFim    := " "  //indica a ultima informação para definir curva a que não foi detectada e ou maior tempo de todas
 Local _cQuery 		:= ""
 Local _cTititulo  	:= '<font color="#FF0000"><b>IMPORTANTE</b></font>' 
@@ -185,6 +185,9 @@ Local _cMens
 Local _nPontos
 Local _cHoraIni
 Local _cHoraFim
+Local _oTable
+Local _aCpoCab
+
 
 Begin Sequence
 	_cMens 			:= '<h1>Confirma?</h1><br>Tem certeza que deseja processar Curva ABC ? Os dados atuais serão Apagador ! <font color="#FF0000"><b>  Processar Curva ABC  </b></font>. '
@@ -321,28 +324,95 @@ Begin Sequence
 	ProcessMessage()
 
 	//Campos constantes na Query
-	Aadd(_aStruct, "ZO_FILIAL") 
-	Aadd(_aStruct, "ZO_COD")
-	Aadd(_aStruct, "ZO_DESCPRD")
-	Aadd(_aStruct, "ZO_MARCA")  
-	Aadd(_aStruct, "ZO_CURVQTD") 
-	Aadd(_aStruct, "ZO_CURVCUS") 
-	Aadd(_aStruct, "ZO_SALDOES") 
-	Aadd(_aStruct, "ZO_CUSTUNI") 
-	Aadd(_aStruct, "ZO_CUSTTOT") 
-	Aadd(_aStruct, "ZO_DTPRDCA") 
-	Aadd(_aStruct, "ZO_DTULCMP") 
-	Aadd(_aStruct, "ZO_DTULVND") 
-	Aadd(_aStruct, "ZO_TOTVEND")
-	Aadd(_aStruct, "ZO_MEDIADE")  //media de venda
-	Aadd(_aStruct, "ZO_MOS")
-	Aadd(_aStruct, "ZO_EXQTDE")
-	Aadd(_aStruct, "ZO_EXCUSTO")
-	Aadd(_aStruct, "ZO_DTBASEC")
-	Aadd(_aStruct, "ZO_CODUSU")
-	Aadd(_aStruct, "ZO_NOMEUSU")
-	Aadd(_aStruct, "ZO_DTCALC")
-	Aadd(_aStruct, "ZO_HSCALC")      
+	Aadd(_aStruct,{ "ZO_FILIAL"		,		,		,		,			  		,		, "SB1"	, "B1_FILIAL" } )
+	Aadd(_aStruct,{ "ZO_COD"		,		,		,		,			  		,		, "SB1"	, "B1_COD" } )
+	Aadd(_aStruct,{ "ZO_DESCPRD"	,		,		,		,			  		,		, "SB1"	, "B1_DESC" } )
+	Aadd(_aStruct,{ "ZO_MARCA"		,		,		,		,			  		,		, "SBM"	, "BM_CODMAR"} ) 
+	Aadd(_aStruct,{ "ZO_CURVQTD"	,"C"	,	3	, 00	,"Curva Qtde."		, "@!"	,		, } )  
+	Aadd(_aStruct,{ "ZO_CURVCUS"	,"C"	,	3	, 00	,"Curva Qtde."		, "@!"	,		, } )
+	Aadd(_aStruct,{ "ZO_SALDOES"	,"N"	,	13	, 03 	,"Saldo Estoque"		, "@E 9,999,999.999"	,		, }) 
+	Aadd(_aStruct,{ "ZO_CUSTUNI" 	,"N"	,	14	, 02 	,"Custo Unitário"	, "@E 999,999,999.99"	,		, })
+	Aadd(_aStruct,{ "ZO_CUSTTOT"	,"N"	,	14	, 02 	,"Custo Total"		, "@E 999,999,999.99"	,		, })
+	Aadd(_aStruct,{ "ZO_DTPRDCA"	,"D"	,	08	, 00 	,"Dt Cad Prd"		, "@E 999,999,999.99"	,		, })
+	Aadd(_aStruct,{ "ZO_DT1CMP"		,"D"	,	08	, 00 	,"Dt 1. Comptra"	, "@D"					,		, })
+	Aadd(_aStruct,{ "ZO_DTULCMP"	,"D"	,	08	, 00 	,"Dt U Compra"		, "@D"					,		, })
+	Aadd(_aStruct,{ "ZO_DT1VND"		,"D"	,	08	, 00 	,"Dt 1. Venda"		, "@D"					,		, })
+	Aadd(_aStruct,{ "ZO_DTULVND"	,"D"	,	08	, 00 	,"Dt U Venda"		, "@D"					,		, })
+	Aadd(_aStruct,{ "ZO_TOTVEND"	,"N"	,	13	, 03 	,"Total Venda"		, "@E 9,999,999.999"	,		, })
+	Aadd(_aStruct,{ "ZO_MEDIAVD"	,"N"	,	13	, 03 	,"Media Venda"		, "@E 9,999,999.999"	,		, }) 							//media de venda
+	Aadd(_aStruct,{ "ZO_MOS"		,"N"	,	13	, 03 	,"MOS"				, "@E 9,999,999.999"	,		, })
+	Aadd(_aStruct,{ "ZO_EXQTDE"     ,"N"	,	13	, 03 	,"Excesso Qtde"		, "@E 9,999,999.999"	,		, })
+	Aadd(_aStruct,{ "ZO_EXCUSTO"	,"N"	,	14	, 02 	,"Excesso Custo"	, "@E 999,999,999.99"	,		, })
+	Aadd(_aStruct,{ "ZO_DTBASEC"	,"D"	,	08	, 00 	,"Base de Calculo"	, "@D"					,		, })
+	Aadd(_aStruct,{ "ZO_CODUSU"		,"C"	,	10	, 00	,"Cod Usuario"		, "@!"	,		, } )
+	Aadd(_aStruct,{ "ZO_NOMEUSU"	,"C"	,	40	, 00	,"Nome Usuario"		, "@!"	,		, } )
+	Aadd(_aStruct,{ "ZO_DTCALC"		,"D"	,	08	, 00 	,"Data Calculo"		, "@D"					,		, })
+	Aadd(_aStruct,{ "ZO_HSCALC"		,"C"	,	05	, 00	,"Hora Calculo"		, "@!"	,		, } )   
+
+
+    _aCpoCab := {}
+    Aadd( _aCpoCab, {"SB1", "ZO_FILIAL"  	,.T.})		//Filial
+    Aadd( _aCpoCab, {"SB1", "ZO_COD"  		,.T.})		//CODIGO
+    Aadd( _aCpoCab, {"SB1", "ZO_DESCPRD"  	,.T.})		//Descrição
+    Aadd( _aCpoCab, {"SB1", "ZO_MARCA"   	,.T.})		//Marca
+    Aadd( _aCpoCab, {"SC7", "ZO_CURVQTD" 	, TamSX3("C7_QUANT")[03],"Qtde Pendente"  , TamSX3("C7_QUANT")[01]   , TamSX3("C7_QUANT")[02], PesqPict("SC7","C7_QUANT"),.T.})	//Quantidade Entregue
+    Aadd( _aCpoCab, {"SC7", "ZO_CURVCUS"  	,.T.}) 		//Fornecedor
+    Aadd( _aCpoCab, {"SC7", "ZO_SALDOES"  		,.T.}) 		//Fornecedor
+    Aadd( _aCpoCab, {"SA2", "ZO_CUSTUNI"  		,.T.}) 		//Fornecedor
+   	aAdd( _aCpoCab, {"SC7", "ZO_CUSTTOT"       , "C","Nacional/Importado"   , 003        , 0, "@!",.T.})  //Nacional ou importado
+    Aadd( _aCpoCab, {"SC7", "ZO_DTPRDCA"   		,.T.})		//Pedido
+    Aadd( _aCpoCab, {"SC7", "ZO_DTULCMP"   	,.T.})		//Item Pedido
+    Aadd( _aCpoCab, {"SC7", "ZO_DTULVND"   	,.T.})		//PO
+    Aadd( _aCpoCab, {"SC7", "ZO_TOTVEND"  ,.T.})  //Previsão de Entrega
+ 	aAdd( _aCpoCab, {"SC7","ZO_MEDIADE"     , "N","Recno Pedido"            , 10, 0, "@!",.F. /*não ncluir no browse*/})
+
+ 	aAdd( _aCpoCab, {"SC7","ZO_MOS"     , "N","Recno Pedido"            , 10, 0, "@!",.F. /*não ncluir no browse*/})
+
+ 	aAdd( _aCpoCab, {"SC7","ZO_EXQTDE"     , "N","Recno Pedido"            , 10, 0, "@!",.F. /*não ncluir no browse*/})
+	aAdd( _aCpoCab, {"SC7","ZO_DTBASEC"     , "N","Recno Pedido"            , 10, 0, "@!",.F. /*não ncluir no browse*/})
+	aAdd( _aCpoCab, {"SC7","NRECNO"     , "N","Recno Pedido"            , 10, 0, "@!",.F. /*não ncluir no browse*/})
+
+ 	aAdd( _aCpoCab, {"SC7","NRECNO"     , "N","Recno Pedido"            , 10, 0, "@!",.F. /*não ncluir no browse*/})
+
+    _aBrwCab    := {}
+    _aStru      := {}  //Estrutura do Banco
+    For _nPos := 1 To Len(_aCpoCab)
+        If Len(_aCpoCab[_nPos]) == 3
+            _aTamSx3 := TamSX3(_aCpoCab[_nPos,2])
+            If _aCpoCab[_nPos,Len(_aCpoCab[_nPos])]  //Valida se a coluna irá para o Browse
+                Aadd(_aBrwCab,{ RetTitle(_aCpoCab[_nPos,2]),;    //titulo
+                                _aCpoCab[_nPos,2],;             //campo
+                                _aTamSx3[03],;                  //tipo
+                                _aTamSx3[01],;                  //tamanho
+                                _aTamSx3[02],;                  //decimal
+                             PesqPict(_aCpoCab[_nPos,1],_aCpoCab[_nPos,2]);  //pict
+                          })
+            Endif
+            Aadd(_aStru, {_aCpoCab[_nPos,02], _aTamSx3[03], _aTamSx3[01], _aTamSx3[02] })
+        Else  
+            If _aCpoCab[_nPos,Len(_aCpoCab[_nPos])]  //Valida se a coluna irá para o Browse
+                Aadd(_aBrwCab,{ _aCpoCab[_nPos,4],;             //titulo
+                                _aCpoCab[_nPos,2],;             //campo
+                                _aCpoCab[_nPos,3],;             //tipo
+                                _aCpoCab[_nPos,5],;             //tamanho    
+                                _aCpoCab[_nPos,6],;             //decimal
+                                _aCpoCab[_nPos,7];              //pict
+                                })
+            Endif
+            Aadd(_aStru, { _aCpoCab[_nPos,02], _aCpoCab[_nPos,03], _aCpoCab[_nPos,05], _aCpoCab[_nPos,06] })
+        Endif
+    Next
+
+    _oTable := FWTemporaryTable():New()
+    _oTable:SetFields(_aStru)
+    _oTable:AddIndex("INDEX1", {"C7_DATPRF", "C7_PRODUTO"} )
+    _oTable:Create()
+    _cAliasPesq := _oTable:GetAlias()
+
+    _cTable := _oTable:GetRealName()
+
+
+
 
     _cQuery := " INSERT INTO "+_cTable+CRLF
     _cQuery += " ( "
@@ -385,12 +455,14 @@ Begin Sequence
     _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 =  10 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 09 "+ CRLF   	
     _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 =  11 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 08 "+ CRLF   	
     _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 =  12 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 07 "+ CRLF   	
+	/*
     _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 <= 24 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 00 "+ CRLF    	
     _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 <= 36 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 00 "+ CRLF    	
     _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 <= 48 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 00 "+ CRLF    	
     _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 <= 60 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 00 "+ CRLF    	
     _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 <= 72 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 00 "+ CRLF    	
     _cQuery += "     			WHEN TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD')))+1 >  72 AND SUM(NVL(SD2.D2_QUANT,0)) >0 	THEN 00 "+ CRLF    	
+	*/
     _cQuery += "    			ELSE 0 "+ CRLF
     _cQuery += "     		END PONTOS "+ CRLF
     _cQuery += "     	FROM "+RetSqlName("SD2")+" SD2 "+ CRLF 
@@ -432,19 +504,31 @@ Begin Sequence
 	Else
     	_cQuery += " 		, (	SELECT CASE " + CRLF
 		For _nPos := 1 To Len(_aPontos)
-			If AllTrim(_aPontos[_nPos,2])  == "P"
-     			_cQuery += " 	WHEN NVL(MIN(MES_PONTOS.MESES),0) <= "+StrZero(_nMesRef,3)+" AND NVL(SUM(MES_PONTOS.PONTOS),0) BETWEEN " +_aPontos[_nPos,3]+" AND "+_aPontos[_nPos,4]+" 	THEN '"+_aPontos[_nPos,1]+"' " + CRLF
-			ElseIf AllTrim(_aPontos[_nPos,2])  == "N"  //produto novo tem que avaliar se tem menos de um ano
+			If AllTrim(_aPontos[_nPos,2])  == "P"  	//PONTOS
+     			_cQuery += " 	WHEN NVL(SUM(MES_PONTOS.PONTOS),0) BETWEEN " +_aPontos[_nPos,3]+" AND "+_aPontos[_nPos,4]+" 	THEN '"+_aPontos[_nPos,1]+"' " + CRLF
+			ElseIf AllTrim(_aPontos[_nPos,2])  == "N"  //NOVO tem que avaliar se tem menos de um ano
     			_cQuery += "	WHEN COALESCE(SB1.B1_XDTINC,'        ') <> ' ' " + CRLF 
-    			_cQuery += " 		AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SB1.B1_XDTINC, 'YYYYMMDD'))) <= "+StrZero(_nMesRef,3) + " "+ CRLF
-    			_cQuery += " 		AND NVL(SUM(MES_PONTOS.PONTOS),0) = 0  														THEN '"+_aPontos[_nPos,1]+"' " + CRLF //--No periodo de 1 ano a partir da data de cadastro não possuir nenhuma venda
-			Else 
-				If Val(_aPontos[_nPos,3]) > 0  //caso o inicial esteja marcado maior que 0 significa que ainda esta em uma contagem de at´´e
-    				_cQuery += " 	WHEN NVL(MIN(MES_PONTOS.MESES),0) <= "+AllTrim((_aPontos[_nPos,4]))+" AND NVL(SUM(MES_PONTOS.PONTOS),0) > "+Str(_nPontosCurva)+" THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF
-				Else  //quando o inicial estiver igual a 0 (zero) significa que é o ultimo valor a ser considderado e sera maior que o mesmo
-   					_cQuery += " 	WHEN NVL(MIN(MES_PONTOS.MESES),0) >=  "+AllTrim(_aPontos[_nPos,4])+"   THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF
+    			_cQuery += " 		AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SB1.B1_XDTINC, 'YYYYMMDD'))) <= "+StrZero(_nMesRef,3) + " "
+    			_cQuery += " 		AND NVL(SUM(MES_PONTOS.PONTOS),0) = 0 THEN '"+_aPontos[_nPos,1]+"' " + CRLF //--No periodo de 1 ano a partir da data de cadastro não possuir nenhuma venda
+			ElseIf AllTrim(_aPontos[_nPos,2])  == "Q"   //QUANTIDADE
+				//MONTAR AS PRIMEIRAS LINHAS OBEDECER ORDEM
+				//If _aPontos[_nPos,3] = "0"  //ATIVO significa que ainda esta em uma contagem de até com meses fora da curva
+    				//_cQuery += " 	WHEN NVL(MIN(MES_PONTOS.MESES),0) <= "+AllTrim((_aPontos[_nPos,4]))+" AND NVL(SUM(MES_PONTOS.PONTOS),0) > "+Str(_nPontosCurva)+" THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF
+				_cQuery += " 	WHEN NVL(MIN(MES_PONTOS.MESES),0) > 0 AND NVL(MIN(MES_PONTOS.MESES),0)  "+AllTrim((_aPontos[_nPos,3]))+ "  " +AllTrim((_aPontos[_nPos,4]))+" THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF
+				_cQuery += " 	WHEN COALESCE(SB1.B1_XUVLEG,'        ') > ' ' AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SB1.B1_XUVLEG, 'YYYYMMDD')))+1 "+AllTrim((_aPontos[_nPos,3]))+ "  "+AllTrim((_aPontos[_nPos,4]))+" THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF 
+				_cQuery += " 	WHEN COALESCE(SB1.B1_XUCLEG,'        ') > ' ' AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SB1.B1_XUCLEG, 'YYYYMMDD')))+1 "+AllTrim((_aPontos[_nPos,3]))+ "  "+AllTrim((_aPontos[_nPos,4]))+" THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF 
+					//_cQuery += " 	WHEN COALESCE(SB1.B1_XDTINC,'        ') = ' ' AND COALESCE(SB1.B1_XUVLEG,'        ') > ' ' AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SB1.B1_XUVLEG, 'YYYYMMDD')))+1  <= "+AllTrim((_aPontos[_nPos,4]))+" THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF 
+					//_cQuery += " 	WHEN COALESCE(SB1.B1_XDTINC,'        ') = ' ' AND COALESCE(SB1.B1_XUCLEG,'        ') > ' ' AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SB1.B1_XUCLEG, 'YYYYMMDD')))+1  <= "+AllTrim((_aPontos[_nPos,4]))+" THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF 
+				//ElseIf _aPontos[_nPos,3] = "I"  //INATIVO significa que ainda esta em uma contagem de até com meses fora da curva
+				//	_cQuery += " 	WHEN COALESCE(SB1.B1_XDTINC,'        ') = ' ' AND NVL(MIN(MES_PONTOS.MESES),0) > 0 AND NVL(MIN(MES_PONTOS.MESES),0) <= "+AllTrim((_aPontos[_nPos,4]))+" THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF
+				//	_cQuery += " 	WHEN COALESCE(SB1.B1_XDTINC,'        ') = ' ' AND COALESCE(SB1.B1_XUVLEG,'        ') > ' ' AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SB1.B1_XUVLEG, 'YYYYMMDD')))+1  <= "+AllTrim((_aPontos[_nPos,4]))+" THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF 
+				//	_cQuery += " 	WHEN COALESCE(SB1.B1_XDTINC,'        ') = ' ' AND COALESCE(SB1.B1_XUCLEG,'        ') > ' ' AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SB1.B1_XUCLEG, 'YYYYMMDD')))+1  <= "+AllTrim((_aPontos[_nPos,4]))+" THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF 
+
+				//Else  //quando o inicial estiver igual a 0 (zero) significa que é o ultimo valor a ser considderado e sera maior que o mesmo
+   				//	_cQuery += " 	WHEN NVL(MIN(MES_PONTOS.MESES),0) >=  "+AllTrim(_aPontos[_nPos,4])+"   THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF
+				//EndIf 	
+			ElseIf AllTrim(_aPontos[_nPos,2])  == "F"   //ULTIMA POSIÇÃO DA CURVA
 					_cCurvaFim := _aPontos[_nPos,1]
-				EndIf 	
 			EndIf 
 		Next _nPos 
 	EndIf 		
@@ -458,7 +542,8 @@ Begin Sequence
     _cQuery += " 						WHERE SX5.D_E_L_E_T_ 	= ' ' " + CRLF
     _cQuery += " 							AND SX5.X5_FILIAL 	= '"+FwXFilial("SX5")+"' " + CRLF
     _cQuery += "   							AND SX5.X5_TABELA   = '2C' " + CRLF
-    _cQuery += "   							AND (SB2SQL.SALDO_ESTOQUE * SB2SQL.CUSTO_UNITARIO) BETWEEN TO_NUMBER(SX5.X5_DESCSPA) AND TO_NUMBER(SX5.X5_DESCENG) " + CRLF
+//    _cQuery += "   							AND (SB2SQL.SALDO_ESTOQUE * SB2SQL.CUSTO_UNITARIO) BETWEEN TO_NUMBER(SX5.X5_DESCSPA) AND TO_NUMBER(SX5.X5_DESCENG) " + CRLF
+    _cQuery += "   							AND ( SB2SQL.CUSTO_UNITARIO ) BETWEEN TO_NUMBER(SX5.X5_DESCSPA) AND TO_NUMBER(SX5.X5_DESCENG) " + CRLF
     _cQuery += "         	  		) ,' ') AS CURVA_VALORES " + CRLF								//--ZO_CURVCUS
     _cQuery += "   		, TRUNC(NVL(SB2SQL.SALDO_ESTOQUE,0)) AS SALDO_ESTOQUE " + CRLF				//--ZO_SALDOES 
     _cQuery += "  		, NVL(SB2SQL.CUSTO_UNITARIO,0)      AS CUSTO_UNITARIO 	" + CRLF			//--ZO_CUSTUNI
@@ -473,7 +558,7 @@ Begin Sequence
     _cQuery += " 	    		WHEN COALESCE(SD2SQLPRD.DT_NF_SAIDA,' ') 	<> ' ' 	THEN SD2SQLPRD.DT_NF_SAIDA " + CRLF
     _cQuery += " 	    		WHEN COALESCE(SB1.B1_XUVLEG,' ') 			<> ' '	THEN SB1.B1_XUVLEG	" + CRLF		//--Ultima Venda Legado
     _cQuery += " 	    	ELSE ' ' " + CRLF
-    _cQuery += " 	    	END AS DT_ULT_CMP " + CRLF												//--ZO_DTULVND
+    _cQuery += " 	    	END AS DT_ULT_FAT " + CRLF												//--ZO_DTULVND
     _cQuery += " 	    , NVL(SD2SQLPRD.TOT_PECAS,0) AS TOT_PECAS " + CRLF				//--ZO_TOTVEND	
     _cQuery += " 		, NVL( (SELECT MEDIAS.DEMANDA_MEDIA " + CRLF
     _cQuery += " 				FROM MEDIAS " + CRLF
