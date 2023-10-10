@@ -8,9 +8,9 @@
     @author     CAOA - A.Carlos
     @since 		04/07/2023
     @version 	1.0
-    /*/
+/*/
 User Function ZFINF004()
-Local  lRet     := .T.
+Local  lRet     := .F.
 Local _aArea    := GetArea()
 Private _cEmp   := FWCodEmp()
 Private _cBanco := ''
@@ -21,10 +21,13 @@ IF _cEmp == "2010" .AND. SC5->C5_XPREFIX == 'PVF' .AND. SE1->E1_PARCELA == '1 '
 	
     Begin Transaction
 
-        _cBanco := SE1->E1_PORTADO 
-        _cAge   := SE1->E1_AGEDEP
-        _cConta := SE1->E1_CONTA
-	    lRet    := GeraTitulo('Abat. RA','NF ','1 ','NF ')
+    _cBanco := SA6->A6_COD 
+    _cAge   := SA6->A6_AGENCIA
+    _cConta := SA6->A6_NUMCON
+
+    IF lRet == .F.
+        lRet := GeraTitulo('Abat. RA','NF ','1 ','NF ')
+    ENDIF
 
     If !lRet
         Disarmtransaction()
@@ -36,10 +39,10 @@ IF _cEmp == "2010" .AND. SC5->C5_XPREFIX == 'PVF' .AND. SE1->E1_PARCELA == '1 '
         Return(lRet)
     Endif
 
-    SE4->(DbSetOrder(1))
-	If SE4->(DbSeek(xFilial("SE4")+SC5->C5_CONDPAG)) .AND. FWIsInCallStack("MATA410")
-        GrvDBSe1()
-	Endif
+    //SE4->(DbSetOrder(1))
+	//If SE4->(DbSeek(xFilial("SE4")+SC5->C5_CONDPAG)) .AND. FWIsInCallStack("MATA410")
+    //    GrvDBSe1()
+	//Endif
 
 ELSEIF _cEmp == "2010" .AND. SC5->C5_XPREFIX == 'PVF' .AND. SE1->E1_PARCELA = '2 ' .AND. !Empty(SC5->C5_XNPG)
 
@@ -70,12 +73,12 @@ return(lRet)
     @version 	1.0
 /*/
 Static Function GrvDBSe1()
-	//RecLock("SE1",.F.)
+	RecLock("SE1",.F.)
 	SE1->E1_XFORMA  := SE4->E4_XFORMA
 	SE1->E1_PORTADO := SA6->A6_COD 
 	SE1->E1_AGEDEP  := SA6->A6_AGENCIA
 	SE1->E1_CONTA   := SA6->A6_NUMCON
-	//MsUnlock()
+	MsUnlock()
 Return()
 
 
@@ -91,7 +94,6 @@ Return()
 /*/
 Static Function GeraTitulo(_cHist,_cPrefixo,_cParcela,_cTipo)
 Local _aVSE1      := {}
-//Local _aVetSE1    := {}
 Local _cForma     := ""
 Local _cNomCli    := ""
 Local _dEmissao   := DDataBase
@@ -136,8 +138,6 @@ Local nOperSAP    := 1
     aAdd(_aVSE1, {"E1_PORTADO", _cBanco,           Nil})
     aAdd(_aVSE1, {"E1_AGEDEP",  _cAge,             Nil})
     aAdd(_aVSE1, {"E1_CONTA",   _cConta,           Nil})
-
-    //aAdd(_aVetSE1, aClone(_aVSE1))
 
     IF !Empty(_aVSE1)
         SE1->(dbSetOrder(1))
@@ -204,6 +204,8 @@ Local nOperSAP    := 1
                         SZ7->(MsUnLock())
                         ConfirmSX8()
                     EndIf*/    
+
+                    _aVSE1 := {}   //Limpar o vetor
 
                 EndIf
 
