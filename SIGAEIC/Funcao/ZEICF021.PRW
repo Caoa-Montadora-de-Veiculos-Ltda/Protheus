@@ -20,7 +20,7 @@ Historico:
 
 ===============================================================================================
 */
-User Function ZEICF021(cINTCSV,cPoNum,nLayout)
+User Function ZEICF021(cINTCSV,cPoNum,nLayout) //	
 
 Local aLinha		:= {}
 Local aItem 		:= {}
@@ -62,11 +62,11 @@ Private lOk_Anu		:= "2-Não"
 Default cPoNum     := ""
 Default nLayOut   := 5
 aInvoice := {}
-nLay := nLayOut
+nLay := nLayOut //Tipo do Layout
  
 cLoteHyudai := Alltrim(cLoteHyudai) + alltrim(cLote2Hyudai) + alltrim(cLote3Hyudai)
 
-If Empty(cINTCSV)
+If Empty(cINTCSV) //Verifica o caminho do arquivo
 	U_FCMVEIC0101("Caminho do arquivo em Branco!",,,,"R",,,)
 	MsgInfo("Caminho do arquivo em Branco!" + CRLF +  "Para ver um log do resultado clique no botão 'Log' ")
 	Return(.F.)
@@ -77,7 +77,7 @@ EndIF
 	//Return(.F.)
 //EndIf
 
-DbSelectArea('SW2')
+DbSelectArea('SW2') //Capa de Purchase Order
 SW2->(DbSetOrder(1))
  
 If !Empty(cPoNum) .and. !SW2->(DbSeek(FwXFilial('SW2')+cPoNum))
@@ -89,34 +89,34 @@ EndIf
 
 
 /*
-Lay-out do arquivo de importação
-[01] SEQUENCIA DO ITEM
-[02] NUMERO DA INVOICE
-[03] NCM
-[04] EX
-[05] CODIGO PRODUTO
-[06] QUANTIDADE
-[07] VALOR UNITÁRIO
-[08] CONTAINER
-[09] CAIXA
-[10] PESO LIQUIDO
-[11] NUMERO DA PURCHASE ORDER
-[12] CONHECIMENTO EMBARQUE
-[13] NAVIO
+	Lay-out do arquivo de importação
+	[01] SEQUENCIA DO ITEM
+	[02] NUMERO DA INVOICE
+	[03] NCM
+	[04] EX
+	[05] CODIGO PRODUTO
+	[06] QUANTIDADE
+	[07] VALOR UNITÁRIO
+	[08] CONTAINER
+	[09] CAIXA
+	[10] PESO LIQUIDO
+	[11] NUMERO DA PURCHASE ORDER
+	[12] CONHECIMENTO EMBARQUE
+	[13] NAVIO
 */
 
-FT_FUse(cINTCSV)	
+FT_FUse(cINTCSV) //Abre o arquivo .csv
 FT_FGotop()
 
-MontaSZM()
+MontaSZM() //Monta tabela SZM
 
-While !FT_FEof()
+While !FT_FEof() //Grava linha a linha as info na WKSZM
 	
-	cLinhaIT := FT_FReadLn()
+	cLinhaIT := FT_FReadLn() //Traz todas as informações da linha do arquivo
 	lErro    := .F.
 	nLinha++
 
-	If  Empty(cLinhaIT)                                      .Or. ;
+	If  Empty(cLinhaIT)                                      .Or. ; //Se a linha estiver vazia ou conter as info abaixo, pular linha
         cLinhaIT                == ";"                       .Or. ;
         SubStr(cLinhaIT,1,10)   == "Engine No."              .Or. ;
         cLinhaIT                == "CASE;MODEL;VIN-CODE;ENGINE;COLOR;SPECOP;KEYNO;T/MNO;"
@@ -124,30 +124,30 @@ While !FT_FEof()
 		Loop
 	EndIF
 
-    aLinha := {}
+    aLinha 	 := {}
 	cLinhaIT := StrTran(cLinhaIT,';;','; ;')
 	cLinhaIT := StrTran(cLinhaIT,';;','; ;')
-    aLinha   := StrTokArr(cLinhaIT, ";")
+    aLinha   := StrTokArr(cLinhaIT, ";") //Distribui todas as informaçõs da linha para cada posição do array
     
-	cInvoice := aLinha[02]
+	cInvoice := aLinha[02] //Num do invoice
 	
-	if !Empty(cPoNum) .and. alltrim(cPoNum) <> alltrim(aLinha[11]) 
+	if !Empty(cPoNum) .and. alltrim(cPoNum) <> alltrim(aLinha[11]) //VALIDAÇÃO DE PO NUM
 		FT_FSkip()
 		loop
 	Endif
 	
-	If (Len(aLinha) <> 13 .and. nLay == 5) .or. (Len(aLinha) <> 12 .and. nLay == 1)
+	If (Len(aLinha) <> 13 .and. nLay == 5) .or. (Len(aLinha) <> 12 .and. nLay == 1) //Valida o comprimento do array aLinha com o tipo de layout
  		U_FCMVEIC0101("Layout da linha inválido!",nLinha,,cFornecedor,cForloj,"R",,,cInvoice)
 		lRetorno := .F.
 	EndIF
 	
-	If Empty(AllTrim(aLinha[5]))
+	If Empty(AllTrim(aLinha[5])) //Valida cod de produto preenchido
 		U_FCMVEIC0101("Código de produto em branco!",nLinha,,cFornecedor,cForloj,"R",AllTrim(cPoNum),,cInvoice)
 		lRetorno := .F.
 	EndIf
 
 	if nLay <> 5
-		aLinha := aClone( fAjuArr(aLinha,nLay) )
+		aLinha := aClone( fAjuArr(aLinha,nLay) ) //Reposiciona array aLinha e obtém valores de: cod prod + NCM + ExNCM
 	EndIf
 
 	aLinha[11] := Padr(aLinha[11],TamSx3("W2_PO_NUM")[1], " ")
@@ -165,10 +165,10 @@ While !FT_FEof()
 		
 	EndIf
 
-	nRec := SetSZM(aLinha,cFornecedor,cForloj,cPedido)
+	nRec := SetSZM(aLinha,cFornecedor,cForloj,cPedido) //Grava info na tab temp WKSZM
 	nPos := aScan(aDados, {|x| AllTrim(Upper(x[4])) == UPPER(ALLTRIM(aLinha[5])) .and. AllTrim(Upper(x[8])) == UPPER(ALLTRIM(aLinha[11]))})
 	//aItem := {}
-	aItem := {	StrZero( Val( aLinha[01] ), 4 ),;										//Linha
+	aItem := {	StrZero( Val( aLinha[01] ), 4 ),;					//Linha
 				VAL(aLinha[06]),;									//Quantidade
 				VAL(StrTran(aLinha[07], ",", ".")),;				//Valor
 				aLinha[08],;										//Container
@@ -243,7 +243,7 @@ Else
 	lErro := .T.
 endif
 	
-If lCapaOK .and. !lErro
+If lCapaOK .and. !lErro //.T. and !.F.
 	FWMsgRun(, {|| CMV01GravaInv() }, "", "Gravando Tabelas EW4 e EW5...")
 		
 	FWMsgRun(, {|| zGrvArq() }, "", "Gravando SZM...")
@@ -1337,7 +1337,7 @@ Return lRet
 
 //----------------------------------------------------------------------------------
 
-Static Function MontaSZM()
+Static Function MontaSZM() //Verificar se a tabela SZM existe e cria ela caso necessário.
 	Local aStrut1 := {}
 	Local nArea	  := Select()
 	Local cArqSZM_1 := soma1(cWKSZM)
@@ -1385,7 +1385,7 @@ Return
 
 //----------------------------------------------------------------------------------
 
-Static Function SetSZM(aLinha,cFornecedor,cForloj,cPedido)
+Static Function SetSZM(aLinha,cFornecedor,cForloj,cPedido) //Grava informações na SZM
 Local nRec := 0
 
 Default cFornecedor := ""
@@ -1428,21 +1428,21 @@ Return nRec
 //----------------------------------------------------------------------------------
 
 Static Function fUpdSZM(nReg,cPos,cForn,cLoja)
-Local aArea := GetArea()
+	Local aArea := GetArea()
 
-If nReg > 0
+	If nReg > 0
 
-	DbSelectArea('WKSZM')
-	WKSZM->(DbGoto(nReg))
-	RecLock('WKSZM', .F.)
-		WKSZM->ZM_POSICAO 	:= cPos
-		WKSZM->ZM_FORNEC	:= cForn
-		WKSZM->ZM_LOJA		:= cLoja	
-	WKSZM->(MsUnlock())
+		DbSelectArea('WKSZM')
+		WKSZM->(DbGoto(nReg))
+		RecLock('WKSZM', .F.)
+			WKSZM->ZM_POSICAO 	:= cPos
+			WKSZM->ZM_FORNEC	:= cForn
+			WKSZM->ZM_LOJA		:= cLoja	
+		WKSZM->(MsUnlock())
 
-EndIf
+	EndIf
 
-RestArea(aArea)
+	RestArea(aArea)
 
 Return
 
@@ -1455,7 +1455,7 @@ Static Function zGrvArq()
 	Local cErr	:= ""
 	Local _nStatus := 0
 	
-	DbSelectArea('WKSZM')
+	DbSelectArea('WKSZM') 
 	WKSZM->(DBGOTOP())
 	//lLimpaAnt = .F. //Isso deve ser retirado.
 	
