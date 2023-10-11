@@ -38,50 +38,49 @@ Static oModelSel  	:= Nil
 Programa.:              ZWMSF003
 Autor....:              CAOA - Fagner Ferraz Barreto
 Data.....:              18/03/20
-Descricao / Objetivo:   Realiza transferencias entre endereços Wms
+Descricao / Objetivo:   Realiza transferencias entre endereÃ§os Wms
 Doc. Origem:            
 Solicitante:            
 =====================================================================================
 */
-
 User Function ZWMSF003() 
 	Local aPergs   	:= {}
-    Local aCombo    := {"Todas O.S.","O.S. com Erro", "O.S. Não Executada", "O.S. Finalizada", "O.S. em processamento"}
+    Local aCombo    := {"Todas O.S.","O.S. com Erro", "O.S. NÃ£o Executada", "O.S. Finalizada", "O.S. em processamento"}
 	Local aRet      := {}
 
 	Private oBrowse
-	Private cCadastro := "Visualização" // título da tela 
+	Private cCadastro := "VisualizaÃ§Ã£o" // tÃ­tulo da tela 
 
 	Conout("ZWMSF003 | Inicio | " + Time() )
 
 	If IsBlind()
-		//--Chamada da execução das transferencais via job
+		//--Chamada da execuÃ§Ã£o das transferencais via job
 		ZWMSProces( .T. )
 	Else
 		If U_ZGENUSER( RetCodUsr() ,"ZWMSF003" ,.T.)
-			aAdd(aPergs, {2 ,"Seleção do tipo da O.S." ,1,aCombo ,70 ,"" ,.F. })
+			aAdd(aPergs, {2 ,"SeleÃ§Ã£o do tipo da O.S." ,1,aCombo ,70 ,"" ,.F. })
 
 			If ParamBox( aPergs ,"Parametros" ,@aRet )
 				oBrowse := FWMBrowse():New()
 				oBrowse:SetAlias("SZJ")
 				oBrowse:SetMenuDef("")
-				oBrowse:SetDescription("Monitor de tranferências WMS CAOA")
+				oBrowse:SetDescription("Monitor de tranferÃªncias WMS CAOA")
 				oBrowse:AddLegend("AllTrim(SZJ->ZJ_STATUS) == 'E' "	,"BLACK"   ,"O.S. com Erro"        ) // O.S. com Erro
-				oBrowse:AddLegend("Empty(ZJ_STATUS)"				,"GREEN"   ,"O.S. Não Executada"   ) // O.S. Não Executada
+				oBrowse:AddLegend("Empty(ZJ_STATUS)"				,"GREEN"   ,"O.S. NÃ£o Executada"   ) // O.S. NÃ£o Executada
 				oBrowse:AddLegend("AllTrim(SZJ->ZJ_STATUS) == 'F' "	,"RED"     ,"O.S. Finalizada"      ) // O.S. Finalizada
 				oBrowse:AddLegend("AllTrim(SZJ->ZJ_STATUS) == 'X' "	,"YELLOW"  ,"O.S. em processamento") // O.S. em processamento
 				oBrowse:SetSeek()
-				oBrowse:DisableReport() //Desabilita a impressão das informações disponíveis no Browse
+				oBrowse:DisableReport() //Desabilita a impressÃ£o das informaÃ§Ãµes disponÃ­veis no Browse
 				oBrowse:AddButton("Processar"							, { || ZWMSProc()                      } , , , , .F. , 1 )
 				oBrowse:AddButton("Voltar a fila Todas O.S. com Erro"	, { || ZWMSReproc()                    } , , , , .F. , 2 )
 				oBrowse:AddButton("Deletar O.S. com Erro"				, { || ZWMSDelete()                    } , , , , .F. , 3 )
 				oBrowse:AddButton("Visualizar"							, { || AxVisual("SZJ",SZJ->(Recno()),2)} , , , , .F. , 4 )
 				oBrowse:AddButton("Limpar Fila"							, { || zLimpFila()                     } , , , , .F. , 5 )
-				oBrowse:AddButton("Importa Arquivo CSV"             	, { || u_ZWMSF019()                    } , , , , .F. , 6 )
+				oBrowse:AddButton("Importa Arquivo CSV" , { || u_ZWMSF019() } , , , , .F. , 6 )
 
 				If alltrim( aRet[ 1 ] ) == alltrim( aCombo[ 2 ] ) //--Com erro
     				oBrowse:SetFilterDefault( "AllTrim(SZJ->ZJ_STATUS) == 'E'" )
-				ElseIf Alltrim( aRet[ 1 ] ) == Alltrim( aCombo[ 3 ] ) //--Não executadaGAP054
+				ElseIf Alltrim( aRet[ 1 ] ) == Alltrim( aCombo[ 3 ] ) //--NÃ£o executada
 					oBrowse:SetFilterDefault( "Empty(ZJ_STATUS)" )	
 				ElseIf Alltrim( aRet[ 1 ] ) == Alltrim( aCombo[ 4 ] ) //--Finalizada
 					oBrowse:SetFilterDefault( "AllTrim(SZJ->ZJ_STATUS) == 'F'" )
@@ -95,7 +94,7 @@ User Function ZWMSF003()
 	EndIf
 
 	Conout("ZWMSF003 | Fim | " + Time() )
- 
+
 Return
 
 /*
@@ -169,8 +168,8 @@ Static Function ZWMSDelete()
 		EndDo
 
 	Else
-		MsgAlert( "Só é permitida a exclusão de registros com erro!",;
-				   "Monitor de tranferências WMS CAOA")
+		MsgAlert( "SÃ³ Ã© permitida a exclusÃ£o de registros com erro!",;
+				   "Monitor de tranferÃªncias WMS CAOA")
 	EndIf
 
 	oBrowse:Refresh()
@@ -183,7 +182,7 @@ Return
 Programa.:              ZWMSProces
 Autor....:              CAOA - Fagner Ferraz Barreto
 Data.....:              18/03/20
-Descricao / Objetivo:   Consulta tabela do coletor e carrega os dados para gravação
+Descricao / Objetivo:   Consulta tabela do coletor e carrega os dados para gravaÃ§Ã£o
 Doc. Origem:            
 Solicitante:            
 =====================================================================================
@@ -194,6 +193,8 @@ Static Function ZWMSProces( lJob )
 	Local cAliasQry		:= GetNextAlias()
 	Local cQuery 		:= ""
 	Local cIDLock		:= ""
+	Local _cWhere 		:= ""
+	Local _cTime		:= SubsTr(Time(),1,5)
 
 	Private __nRecno 	:= 0
 	Private __cCodUser	:= ""
@@ -213,7 +214,7 @@ Static Function ZWMSProces( lJob )
 		//Return
 	EndIf
 
-	Conout("ZWMSProces | SMO após abertura | " + Time() )
+	Conout("ZWMSProces | SMO apÃ³s abertura | " + Time() )
 
 	Conout("ZWMSProces | Antes da query | " + Time() )
 
@@ -223,6 +224,13 @@ Static Function ZWMSProces( lJob )
 	D14->( DbSetOrder(5) )
 	D0Y->( DbSetOrder(1) ) //-- D0Y_FILIAL+D0Y_IDUNIT
 
+	//DAC-Denilso GAP092
+	If lJob  //somente se for job
+		If ( _cTime > "20:00" .And. _cTime <= "23:59" ) .Or. ( _cTime >= "00:00" .And. _cTime < "05:00" ) 
+			_cWhere := " AND SZJ.ZJ_LOCORI  <> 'PRD' " + CRLF
+			_cWhere += " AND SZJ.ZJ_LOCDEST <> 'PRD' " 
+		Endif 	
+	Endif
 	cQuery := CRLF + " SELECT "
 	cQuery += CRLF + "	SZJ.ZJ_STATUS, "
 	cQuery += CRLF + "	SZJ.ZJ_PRODUTO, "
@@ -238,6 +246,9 @@ Static Function ZWMSProces( lJob )
 	cQuery += CRLF + " FROM " + RetSQLName("SZJ") + " SZJ "
 	cQuery += CRLF + " WHERE ZJ_FILIAL = '" + FWxFilial("SZJ") + "' "
 	cQuery += CRLF + "	AND SZJ.ZJ_STATUS = '"+Space(1)+"' "
+	If !Empty(_cWhere)
+		cQuery += CRLF + _cWhere
+	Endif
 	cQuery += CRLF + "	AND SZJ.D_E_L_E_T_ = ' ' "
 	cQuery += CRLF + " ORDER BY SZJ.ZJ_PRODUTO,SZJ.R_E_C_N_O_ " 
 
@@ -245,7 +256,7 @@ Static Function ZWMSProces( lJob )
 
 	DbUseArea( .T., "TOPCONN", TcGenQry(,,cQuery), cAliasQry, .T., .T. )
 
-	Conout("ZWMSProces | Após query | " + Time() )
+	Conout("ZWMSProces | ApÃ³s query | " + Time() )
 
 	DbSelectArea( cAliasQry )
 	(cAliasQry)->( DbGoTop() )
@@ -256,11 +267,11 @@ Static Function ZWMSProces( lJob )
 
 	If (cAliasQry)->(!Eof())
 		
-		Conout("ZWMSProces | Query não é fim de arquivo | " + Time() )
+		Conout("ZWMSProces | Query nÃ£o Ã© fim de arquivo | " + Time() )
 
 		Do While (cAliasQry)->(!Eof())
 
-			Conout("ZWMSProces | Inicio While de gravação | " + Time() )
+			Conout("ZWMSProces | Inicio While de gravaÃ§Ã£o | " + Time() )
 
 			__nRecno 	:= (cAliasQry)->RECNO
 			__cCodUser	:= (cAliasQry)->ZJ_USR
@@ -274,10 +285,10 @@ Static Function ZWMSProces( lJob )
 			cIDLock := "SZJ" + cValToChar(__nRecno)
 			If LockByName(cIDLock, .T., .T.) .And. Empty(SZJ->ZJ_STATUS)
 
-				Conout("ZWMSProces | Após lockbyname | " + Time() )
-				Conout("ZWMSProces | Após lockbyname | " + "Unitizador: " + (cAliasQry)->ZJ_IDUNIT + " | " + Time() )
+				Conout("ZWMSProces | ApÃ³s lockbyname | " + Time() )
+				Conout("ZWMSProces | ApÃ³s lockbyname | " + "Unitizador: " + (cAliasQry)->ZJ_IDUNIT + " | " + Time() )
 
-				/*Se houver execução em andamento para os produtos contidos no unitizador atual
+				/*Se houver execuÃ§Ã£o em andamento para os produtos contidos no unitizador atual
 				pula para o proximo unitizador para evitar lock de tabela*/
 				If VldExec() 
 					UnLockByName(cIDLock, .T., .T.)
@@ -297,7 +308,7 @@ Static Function ZWMSProces( lJob )
 
 				Conout("ZWMSProces | Gravou status SZJ | " + Time() )
 
-				/*Se houver execução em andamento com a mesma hora inicial pula o registro para evitar lock*/
+				/*Se houver execuÃ§Ã£o em andamento com a mesma hora inicial pula o registro para evitar lock*/
 				If VldHrIni()
 					UnLockByName(cIDLock, .T., .T.)
 					RecLock('SZJ', .F. )
@@ -311,7 +322,7 @@ Static Function ZWMSProces( lJob )
 				EndIf
 
 				If !lJob
-					// Incrementa a mensagem na régua.
+					// Incrementa a mensagem na rÃ©gua.
 					IncProc("Gerando as transferencias. Unitizador: " + (cAliasQry)->ZJ_IDUNIT )
 				EndIf
 
@@ -321,7 +332,7 @@ Static Function ZWMSProces( lJob )
 
 				aAdd( aExAutSel	, { 'IDUNIT'	, PadR((cAliasQry)->ZJ_IDUNIT	, TamSX3("D14_IDUNIT")[1]) 	,Nil } )
 				aAdd( aExAutSel	, { 'QUANT' 	, (cAliasQry)->ZJ_QTDE 	 									,Nil } )
-				aAdd( aExAutSel	, { 'SERVIC' 	, '203' /*Código de transferencia*/							,Nil } )
+				aAdd( aExAutSel	, { 'SERVIC' 	, '203' /*CÃ³digo de transferencia*/							,Nil } )
 				aAdd( aExAutSel	, { 'LOCAL' 	, PadR((cAliasQry)->ZJ_LOCORI	, TamSX3("D14_LOCAL")[1])  	,Nil } )
 				aAdd( aExAutSel	, { 'ENDER' 	, PadR((cAliasQry)->ZJ_ENDORI	, TamSX3("D14_ENDER")[1])  	,Nil } )
 				aAdd( aExAutSel	, { 'LOCDES' 	, PadR((cAliasQry)->ZJ_LOCDEST	, TamSX3("DCF_LOCDES")[1]) 	,Nil } )
@@ -331,11 +342,11 @@ Static Function ZWMSProces( lJob )
 				//--Verifica se o tipo de unitizador esta preenchido
 				If D0Y->( DbSeek( FWxFilial("D0Y") + PadR( (cAliasQry)->ZJ_IDUNIT, TamSX3("D0Y_IDUNIT")[1] ) ) )
 					If Empty(D0Y->D0Y_TIPUNI)
-						__cMsgErro := "Unitizador " + AllTrim( (cAliasQry)->ZJ_IDUNIT ) + " não possui tipo definido na tabela D0Y."
+						__cMsgErro := "Unitizador " + AllTrim( (cAliasQry)->ZJ_IDUNIT ) + " nÃ£o possui tipo definido na tabela D0Y."
 
 						SZJ->( DbGoTo( __nRecno ) )
 						RecLock('SZJ', .F. )
-							SZJ->ZJ_MSGERRO := IIF( Empty( __cMsgErro ), "Não gravou erro linha 307", __cMsgErro )
+							SZJ->ZJ_MSGERRO := IIF( Empty( __cMsgErro ), "NÃ£o gravou erro linha 307", __cMsgErro )
 							SZJ->ZJ_STATUS := 'E'
 						SZJ->( MsUnlock() )
 					Else
@@ -356,11 +367,11 @@ Static Function ZWMSProces( lJob )
 					
 				Else
 
-					__cMsgErro := "Unitizador " + AllTrim( (cAliasQry)->ZJ_IDUNIT ) + " não cadastrado na tabela D0Y."
+					__cMsgErro := "Unitizador " + AllTrim( (cAliasQry)->ZJ_IDUNIT ) + " nÃ£o cadastrado na tabela D0Y."
 
 					SZJ->( DbGoTo( __nRecno ) )
 					RecLock('SZJ', .F. )
-						SZJ->ZJ_MSGERRO := IIF( Empty( __cMsgErro ), "Não gravou erro linha 352", __cMsgErro )
+						SZJ->ZJ_MSGERRO := IIF( Empty( __cMsgErro ), "NÃ£o gravou erro linha 352", __cMsgErro )
 						SZJ->ZJ_STATUS := 'E'
 					SZJ->( MsUnlock() )
 
@@ -370,7 +381,7 @@ Static Function ZWMSProces( lJob )
 					oOrdServ:Destroy()
 				EndIf
 
-				//--Se for job faço a saida do while para que a proxima thread consuma o proximo registro da fila
+				//--Se for job faÃ§o a saida do while para que a proxima thread consuma o proximo registro da fila
 				/*If lJob
 					UnLockByName(cIDLock, .T., .T.)
 					Exit
@@ -384,11 +395,11 @@ Static Function ZWMSProces( lJob )
 
 		EndDo
 
-		Conout("ZWMSProces | Fim do While de gravação | " + Time() )
+		Conout("ZWMSProces | Fim do While de gravaÃ§Ã£o | " + Time() )
 	Else
 		If !lJob
-			MsgAlert("Não foram encontradas O.S. pendentes de execução!",;
-					 "Monitor de tranferências WMS CAOA")
+			MsgAlert("NÃ£o foram encontradas O.S. pendentes de execuÃ§Ã£o!",;
+					 "Monitor de tranferÃªncias WMS CAOA")
 		EndIf	
 	EndIf
 
@@ -426,8 +437,8 @@ Static Function ModelDef()
 
 		oModel := MPFormModel():New('CAOAWMS',,{|oModel| ZWMSValid(oModel) },{|oModel| ZWMSCommit(oModel) })
 		oModel:AddFields('DCFMASTER',,oStrDCF)
-		oModel:SetDescription(STR0001) // Tranferência WMS
-		oModel:GetModel('DCFMASTER'):SetDescription(STR0001) // Tranferência WMS
+		oModel:SetDescription(STR0001) // TranferÃªncia WMS
+		oModel:GetModel('DCFMASTER'):SetDescription(STR0001) // TranferÃªncia WMS
 
 		oStrDCF:SetProperty('*' ,MODEL_FIELD_OBRIGAT,.F.)
 		oStrDCF:SetProperty('DCF_DOCTO',MODEL_FIELD_INIT,{|| cDocto := GetSX8Num("DCF","DCF_DOCTO"),Iif(__lSX8,ConfirmSX8(),Nil),cDocto })
@@ -436,18 +447,18 @@ Static Function ModelDef()
 		oStructTab:AddTable('SELECAO', {'CODPRO'},'Selecao')
 		oStructTab:AddIndex(1,'1','CODPRO',STR0023,'','',.T.) // Produto
 
-		buscarSX3("B1_COD"      ,,aColsSX ) ; oStructTab:AddField(aColsSX3[1],STR0012,'CODPRO' ,'C',aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // cTitulo ,cTooltip,cIdField,cTipo,nTamanho,nDecimal,bValid,bWhen,aValues,lObrigat,bInit,lKey,lNoUpd,lVirtual,cValid // Código do Produto
+		buscarSX3("B1_COD"      ,,aColsSX ) ; oStructTab:AddField(aColsSX3[1],STR0012,'CODPRO' ,'C',aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // cTitulo ,cTooltip,cIdField,cTipo,nTamanho,nDecimal,bValid,bWhen,aValues,lObrigat,bInit,lKey,lNoUpd,lVirtual,cValid // CÃ³digo do Produto
 		buscarSX3("DCF_QUANT"   ,,aColsSX3) ; oStructTab:AddField(aColsSX3[1],STR0013,'QUANT'  ,'N',aColsSX3[3],aColsSX3[4],Nil,{||.T.},Nil,.F.,,.F.,.T.,.F.) // Quantidade
-		buscarSX3("B5_SERVINT"  ,,aColsSX3) ; oStructTab:AddField(aColsSX3[1],STR0014,'SERVIC' ,'C',aColsSX3[3],aColsSX3[4],Nil,{||.T.},Nil,.F.,,.F.,.T.,.F.) // Serviço de Transferência
-		buscarSX3("DCF_LOCDES"  ,,aColsSX3) ; oStructTab:AddField(aColsSX3[1],STR0015,'LOCDES' ,'C',aColsSX3[3],aColsSX3[4],{|A,B,C,D,E| ValidField(A,B,C,D,E,.F.) },{||.T.},Nil,.F.,,.F.,.T.,.F.) // Armazém Destino
-		buscarSX3("DCF_ENDDES"  ,,aColsSX3) ; oStructTab:AddField(aColsSX3[1],STR0016,'ENDDES' ,'C',aColsSX3[3],aColsSX3[4],{|A,B,C,D,E| ValidField(A,B,C,D,E,.F.) },{||.T.},Nil,.F.,,.F.,.T.,.F.) // Endereço Destino
-		buscarSX3("D14_LOCAL"   ,,aColsSX3) ; oStructTab:AddField(aColsSX3[1],STR0017,'LOCAL'  ,'C',aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.T.,.F.) // Armazém Origem
-		buscarSX3("D14_ENDER"   ,,aColsSX3) ; oStructTab:AddField(aColsSX3[1],STR0016,'ENDER'  ,'C',aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.T.,.F.) // Endereço Origem
+		buscarSX3("B5_SERVINT"  ,,aColsSX3) ; oStructTab:AddField(aColsSX3[1],STR0014,'SERVIC' ,'C',aColsSX3[3],aColsSX3[4],Nil,{||.T.},Nil,.F.,,.F.,.T.,.F.) // ServiÃ§o de TransferÃªncia
+		buscarSX3("DCF_LOCDES"  ,,aColsSX3) ; oStructTab:AddField(aColsSX3[1],STR0015,'LOCDES' ,'C',aColsSX3[3],aColsSX3[4],{|A,B,C,D,E| ValidField(A,B,C,D,E,.F.) },{||.T.},Nil,.F.,,.F.,.T.,.F.) // ArmazÃ©m Destino
+		buscarSX3("DCF_ENDDES"  ,,aColsSX3) ; oStructTab:AddField(aColsSX3[1],STR0016,'ENDDES' ,'C',aColsSX3[3],aColsSX3[4],{|A,B,C,D,E| ValidField(A,B,C,D,E,.F.) },{||.T.},Nil,.F.,,.F.,.T.,.F.) // EndereÃ§o Destino
+		buscarSX3("D14_LOCAL"   ,,aColsSX3) ; oStructTab:AddField(aColsSX3[1],STR0017,'LOCAL'  ,'C',aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.T.,.F.) // ArmazÃ©m Origem
+		buscarSX3("D14_ENDER"   ,,aColsSX3) ; oStructTab:AddField(aColsSX3[1],STR0016,'ENDER'  ,'C',aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.T.,.F.) // EndereÃ§o Origem
 		buscarSX3("D14_LOTECTL" ,,aColsSX3) ; oStructTab:AddField(aColsSX3[1],STR0019,'LOTECTL','C',aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.T.,.F.) // Lote
 		buscarSX3("D14_NUMLOTE" ,,aColsSX3) ; oStructTab:AddField(aColsSX3[1],STR0020,'NUMLOTE','C',aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.T.,.F.) // Sub-Lote
 		buscarSX3("D14_DTVALD"  ,,aColsSX3) ; oStructTab:AddField(aColsSX3[1],STR0052,'DTVALD' ,'D',aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.T.,.F.) // Data Validade
 		buscarSX3("D14_PRDORI"  ,,aColsSX3) ; oStructTab:AddField(aColsSX3[1],STR0021,'PRDORI' ,'C',aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.T.,.F.) // Produto Origem
-		buscarSX3("D14_NUMSER"  ,,aColsSX3) ; oStructTab:AddField(aColsSX3[1],STR0022,'NUMSER' ,'C',aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.T.,.F.) // Número de Serie
+		buscarSX3("D14_NUMSER"  ,,aColsSX3) ; oStructTab:AddField(aColsSX3[1],STR0022,'NUMSER' ,'C',aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.T.,.F.) // NÃºmero de Serie
 		
 		If WmsX212118("D0Y")
 			buscarSX3("D14_IDUNIT",,aColsSX3) ;  oStructTab:AddField(aColsSX3[1],STR0039,"IDUNIT" ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Unitizador
@@ -463,8 +474,8 @@ Static Function ModelDef()
 	Else
 		oModel := MPFormModel():New("CAOA225A",,{|oModel| ZWMSValid(oModel) },{|oModel| ZWMSCommit(oModel) })
 		oModel:AddFields("DCFMASTER",,oStrDCF)
-		oModel:SetDescription(STR0001) // Tranferência WMS
-		oModel:GetModel("DCFMASTER"):SetDescription(STR0001) // Tranferência WMS
+		oModel:SetDescription(STR0001) // TranferÃªncia WMS
+		oModel:GetModel("DCFMASTER"):SetDescription(STR0001) // TranferÃªncia WMS
 
 		oStrDCF:SetProperty("*" ,MODEL_FIELD_OBRIGAT,.F.)
 		oStrUnit:SetProperty("*" ,MODEL_FIELD_OBRIGAT,.F.)
@@ -478,9 +489,9 @@ Static Function ModelDef()
 		buscarSX3("D14_OK"    ,,aColsSX3) ; oStrUnit:AddField(aColsSX3[1],""     ,"OK"     ,"L",aColsSX3[3],aColsSX3[4],{|A,B,C,D| SetAfter(A,B,C,D,oModel)},{||.T.},Nil,.F.,,.F.,.F.,.F.) // cTitulo ,cTooltip,cIdField,cTipo,nTamanho,nDecimal,bValid,bWhen,aValues,lObrigat,bInit,lKey,lNoUpd,lVirtual,cValid // Unitizador
 		buscarSX3("D14_IDUNIT",,aColsSX3) ; oStrUnit:AddField(aColsSX3[1],STR0002,"IDUNIT" ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Unitizador
 		buscarSX3("D14_CODUNI",,aColsSX3) ; oStrUnit:AddField(aColsSX3[1],STR0003,"CODUNI" ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Tipo Unitizador
-		buscarSX3("D14_LOCAL" ,,aColsSX3) ; oStrUnit:AddField(aColsSX3[1],STR0004,"LOCAL"  ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Armazém
-		buscarSX3("D14_ENDER" ,,aColsSX3) ; oStrUnit:AddField(aColsSX3[1],STR0005,"ENDER"  ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Endereço
-		buscarSX3("D14_ESTFIS",,aColsSX3) ; oStrUnit:AddField(aColsSX3[1],STR0006,"ESTFIS" ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Estrutura Física
+		buscarSX3("D14_LOCAL" ,,aColsSX3) ; oStrUnit:AddField(aColsSX3[1],STR0004,"LOCAL"  ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // ArmazÃ©m
+		buscarSX3("D14_ENDER" ,,aColsSX3) ; oStrUnit:AddField(aColsSX3[1],STR0005,"ENDER"  ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // EndereÃ§o
+		buscarSX3("D14_ESTFIS",,aColsSX3) ; oStrUnit:AddField(aColsSX3[1],STR0006,"ESTFIS" ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Estrutura FÃ­sica
 		buscarSX3("D14_PRIOR" ,,aColsSX3) ; oStrUnit:AddField(aColsSX3[1],STR0007,"PRIOR"  ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Prioridade
 
 		oModel:AddGrid("UNITIZ","DCFMASTER",oStrUnit)
@@ -499,13 +510,13 @@ Static Function ModelDef()
 		buscarSX3("D14_LOTECT",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0010,"LOTECT" ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Lote
 		buscarSX3("D14_NUMLOT",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0011,"NUMLOT" ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Sub-Lote
 		buscarSX3("D14_DTVALD",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0012,"DTVALD" ,"D",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Data de Validade
-		buscarSX3("D14_DTFABR",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0013,"DTFABR" ,"D",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Data de Fabricação
+		buscarSX3("D14_DTFABR",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0013,"DTFABR" ,"D",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Data de FabricaÃ§Ã£o
 		buscarSX3("D14_QTDEST",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0014,"QTDEST" ,"N",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Quantidade em Estoque
 		buscarSX3("D14_QTDES2",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0015,"QTDES2" ,"N",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Qt Estoque 2 UM
 		buscarSX3("D14_QTDEPR",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0016,"QTDEPR" ,"N",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Quantidade Entrada Prevista
 		buscarSX3("D14_QTDEP2",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0017,"QTDEP2" ,"N",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Quantidade Ent. Prev. 2UM
-		buscarSX3("D14_QTDSPR",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0018,"QTDSPR" ,"N",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Quantidade Saída Prevista
-		buscarSX3("D14_QTDSP2",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0019,"QTDSP2" ,"N",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Quantidade Saída Prev 2UM
+		buscarSX3("D14_QTDSPR",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0018,"QTDSPR" ,"N",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Quantidade SaÃ­da Prevista
+		buscarSX3("D14_QTDSP2",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0019,"QTDSP2" ,"N",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Quantidade SaÃ­da Prev 2UM
 		buscarSX3("D14_QTDEMP",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0020,"QTDEMP" ,"N",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Quantidade Empenho
 		buscarSX3("D14_QTDEM2",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0021,"QTDEM2" ,"N",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Quantidade Empenho 2UM
 		buscarSX3("D14_QTDBLQ",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0022,"QTDBLQ" ,"N",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Quantidade Bloqueada
@@ -513,7 +524,7 @@ Static Function ModelDef()
 		buscarSX3("D14_QTDPEM",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0024,"QTDPEM" ,"N",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Quantidade Empenho Prevista
 		buscarSX3("D14_QTDPE2",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0025,"QTDPE2" ,"N",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Qtd Empenho Previsto 2UM
 		buscarSX3("D14_PRDORI",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0026,"PRDORI" ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Produto Origem
-		buscarSX3("D14_CODVOL",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0027,"CODVOL" ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Código do Volume
+		buscarSX3("D14_CODVOL",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0027,"CODVOL" ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // CÃ³digo do Volume
 		buscarSX3("D14_IDVOLU",,aColsSX3); oStrPrdUni:AddField(aColsSX3[1],STR0028,"IDVOLU" ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Identificador Volume
 
 		oModel:AddGrid("PRDUNI","UNITIZ",oStrPrdUni)
@@ -530,11 +541,11 @@ Static Function ModelDef()
 
 		buscarSX3("D14_IDUNIT",,aColsSX3) ; oStrSel:AddField(aColsSX3[1],STR0002,"IDUNIT" ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // cTitulo ,cTooltip,cIdField,cTipo,nTamanho,nDecimal,bValid,bWhen,aValues,lObrigat,bInit,lKey,lNoUpd,lVirtual,cValid // Unitizador
 		buscarSX3("DCF_QUANT" ,,aColsSX3) ; oStrSel:AddField(aColsSX3[1],STR0029,"QUANT"  ,"N",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.T.,.F.) // Quantidade
-		buscarSX3("B5_SERVINT",,aColsSX3) ; oStrSel:AddField(aColsSX3[1],STR0030,"SERVIC" ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.T.},Nil,.F.,,.F.,.T.,.F.) // Serviço de Transferência
-		buscarSX3("D14_LOCAL" ,,aColsSX3) ; oStrSel:AddField(aColsSX3[1],STR0031,"LOCAL"  ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.T.},Nil,.F.,,.F.,.T.,.F.) // Armazém Origem
-		buscarSX3("D14_ENDER" ,,aColsSX3) ; oStrSel:AddField(aColsSX3[1],STR0032,"ENDER"  ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.T.},Nil,.F.,,.F.,.T.,.F.) // Endereço Destino
-		buscarSX3("DCF_LOCDES",,aColsSX3) ; oStrSel:AddField(aColsSX3[1],STR0033,"LOCDES" ,"C",aColsSX3[3],aColsSX3[4],{|A,B,C,D,E| ValidField(A,B,C,D,E) },{||.T.},Nil,.F.,,.F.,.T.,.F.) // Armazém Destino
-		buscarSX3("DCF_ENDDES",,aColsSX3) ; oStrSel:AddField(aColsSX3[1],STR0034,"ENDDES" ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.T.},Nil,.F.,,.F.,.T.,.F.) // Endereço Destino
+		buscarSX3("B5_SERVINT",,aColsSX3) ; oStrSel:AddField(aColsSX3[1],STR0030,"SERVIC" ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.T.},Nil,.F.,,.F.,.T.,.F.) // ServiÃ§o de TransferÃªncia
+		buscarSX3("D14_LOCAL" ,,aColsSX3) ; oStrSel:AddField(aColsSX3[1],STR0031,"LOCAL"  ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.T.},Nil,.F.,,.F.,.T.,.F.) // ArmazÃ©m Origem
+		buscarSX3("D14_ENDER" ,,aColsSX3) ; oStrSel:AddField(aColsSX3[1],STR0032,"ENDER"  ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.T.},Nil,.F.,,.F.,.T.,.F.) // EndereÃ§o Destino
+		buscarSX3("DCF_LOCDES",,aColsSX3) ; oStrSel:AddField(aColsSX3[1],STR0033,"LOCDES" ,"C",aColsSX3[3],aColsSX3[4],{|A,B,C,D,E| ValidField(A,B,C,D,E) },{||.T.},Nil,.F.,,.F.,.T.,.F.) // ArmazÃ©m Destino
+		buscarSX3("DCF_ENDDES",,aColsSX3) ; oStrSel:AddField(aColsSX3[1],STR0034,"ENDDES" ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.T.},Nil,.F.,,.F.,.T.,.F.) // EndereÃ§o Destino
 		buscarSX3("DCF_UNIDES",,aColsSX3) ; oStrSel:AddField(aColsSX3[1],STR0039,"UNIDES" ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Unitizador
 		buscarSX3("D14_CODUNI",,aColsSX3) ; oStrSel:AddField(aColsSX3[1],STR0041,"CODUNI" ,"C",aColsSX3[3],aColsSX3[4],Nil,{||.F.},Nil,.F.,,.F.,.F.,.F.) // Tipo Unitizador
 
@@ -583,7 +594,7 @@ Static Function GrvMdlUnit(aExAutUni, aExAutSel)
 
 	Conout("GrvMdlUnit | Inicio | " + Time() )
 
-	// Cria as temporárias - FORA DA TRANSAÇÃO
+	// Cria as temporÃ¡rias - FORA DA TRANSAÃ‡ÃƒO
 	WMSCTPENDU() 
 	WMSCTPRGCV()
 
@@ -744,7 +755,7 @@ Static Function GrvMdlUnit(aExAutUni, aExAutSel)
 		//-- Pega recno da D14 para avaliar lock de registro no destino
 		AAdd( aD14Des, RetD14Des( (cAliasQry)->(D14_PRODUT), aExAutSel[6][2], aExAutSel[7][2] ) )
 
-		//--Pego o recno somente do primeiro registro, porque os demais são iguais
+		//--Pego o recno somente do primeiro registro, porque os demais sÃ£o iguais
 		If lFirst
 
 			lFirst := .F.
@@ -799,20 +810,20 @@ Static Function GrvMdlUnit(aExAutUni, aExAutSel)
 
 					aError	:= oModel:GetErrorMessage()
 
-					/*Se identificado lock de registro, não gravo erro e apenas
-					retorno False e faço a limpeza da flag de processamento
+					/*Se identificado lock de registro, nÃ£o gravo erro e apenas
+					retorno False e faÃ§o a limpeza da flag de processamento
 					para devolver o unitizador a fila.
-					Desvio necessario pois o lock no commit estava causando lentidão*/
+					Desvio necessario pois o lock no commit estava causando lentidÃ£o*/
 					If SubStr( aError[6], 1, 4) != "Lock"
 						SZJ->( DbGoTo( __nRecno ) )
 						RecLock('SZJ', .F. )
-							SZJ->ZJ_MSGERRO := IIF( Empty( aError[6] ), "Não gravou erro linha 715", aError[6] )
+							SZJ->ZJ_MSGERRO := IIF( Empty( aError[6] ), "NÃ£o gravou erro linha 715", aError[6] )
 							SZJ->ZJ_STATUS := 'E'
 						SZJ->( MsUnlock() )
 					Else
 						SZJ->( DbGoTo( __nRecno ) )
 						RecLock('SZJ', .F. )
-							SZJ->ZJ_MSGERRO := IIF( Empty( aError[6] ), "Não gravou erro linha 721", aError[6] )
+							SZJ->ZJ_MSGERRO := IIF( Empty( aError[6] ), "NÃ£o gravou erro linha 721", aError[6] )
 							SZJ->ZJ_STATUS := ' '
 						SZJ->( MsUnlock() )
 					EndIf
@@ -825,7 +836,7 @@ Static Function GrvMdlUnit(aExAutUni, aExAutSel)
 					
 					SZJ->( DbGoTo( __nRecno ) )
 					RecLock('SZJ', .F. )
-						SZJ->ZJ_MSGERRO := IIF( Empty( __cMsgErro ), "Não gravou erro linha 734", __cMsgErro )
+						SZJ->ZJ_MSGERRO := IIF( Empty( __cMsgErro ), "NÃ£o gravou erro linha 734", __cMsgErro )
 						SZJ->ZJ_STATUS := 'E'
 					SZJ->( MsUnlock() )
 
@@ -834,7 +845,7 @@ Static Function GrvMdlUnit(aExAutUni, aExAutSel)
 					aError	:= oModel:GetErrorMessage()
 					SZJ->( DbGoTo( __nRecno ) )
 					RecLock('SZJ', .F. )
-						SZJ->ZJ_MSGERRO := IIF( Empty( aError[6] ), "Não gravou erro linha 743", aError[6] )
+						SZJ->ZJ_MSGERRO := IIF( Empty( aError[6] ), "NÃ£o gravou erro linha 743", aError[6] )
 						SZJ->ZJ_STATUS := 'E'
 					SZJ->( MsUnlock() )
 
@@ -843,13 +854,13 @@ Static Function GrvMdlUnit(aExAutUni, aExAutSel)
 
 		Recover
 
-			//Realiza a gravação do erro
+			//Realiza a gravaÃ§Ã£o do erro
 			If !Empty(__cErro)
 				lRet := .F.
 
 				SZJ->( DbGoTo( __nRecno ) )
 				RecLock('SZJ', .F. )
-					SZJ->ZJ_MSGERRO := IIF( Empty( __cErro ), "Não gravou erro linha 757", __cErro )
+					SZJ->ZJ_MSGERRO := IIF( Empty( __cErro ), "NÃ£o gravou erro linha 757", __cErro )
 					SZJ->ZJ_STATUS := 'E'
 				SZJ->( MsUnlock() )
 			EndIf
@@ -863,7 +874,7 @@ Static Function GrvMdlUnit(aExAutUni, aExAutSel)
 
 		SZJ->( DbGoTo( __nRecno ) )
 		RecLock('SZJ', .F. )
-			SZJ->ZJ_MSGERRO := IIF( Empty( __cMsgErro ), "Não gravou erro linha 770", __cMsgErro )
+			SZJ->ZJ_MSGERRO := IIF( Empty( __cMsgErro ), "NÃ£o gravou erro linha 770", __cMsgErro )
 			SZJ->ZJ_STATUS := 'E'
 		SZJ->( MsUnlock() )
 
@@ -872,7 +883,7 @@ Static Function GrvMdlUnit(aExAutUni, aExAutSel)
 	// Desativamos o Model
 	oModel:DeActivate()
 
-	// Destroi as temporárias - FORA DA TRANSAÇÃO
+	// Destroi as temporÃ¡rias - FORA DA TRANSAÃ‡ÃƒO
 	WMSDTPRGCV()
 	WMSDTPENDU()
 
@@ -885,7 +896,7 @@ Return lRet
 Programa.:              ZWMSValid
 Autor....:              CAOA - Fagner Ferraz Barreto
 Data.....:              18/03/20
-Descricao / Objetivo:   Validações do modelo de dados
+Descricao / Objetivo:   ValidaÃ§Ãµes do modelo de dados
 Doc. Origem:            
 Solicitante:            
 =====================================================================================
@@ -923,11 +934,11 @@ Static Function ZWMSValid(oModel)
 	EndIf
 
 	If lRet .And. oModel:GetOperation() == MODEL_OPERATION_INSERT
-		// Instancia os objetos para utilizá-los na validação
+		// Instancia os objetos para utilizÃ¡-los na validaÃ§Ã£o
 		oMntUniItem := WMSDTCMontagemUnitizadorItens():New()
 		oTipUnit    := WMSDTCUnitizadorArmazenagem():New()
 		oTransf     := WMSBCCTransferencia():New()
-		// O modelo principal precisa sofrer alguma alteração.
+		// O modelo principal precisa sofrer alguma alteraÃ§Ã£o.
 		oModelDCF:LoadValue("DCF_SERVIC",oModelSel:GetValue("SERVIC",1))
 
 		For nI := 1 To oModelSel:Length()
@@ -945,24 +956,24 @@ Static Function ZWMSValid(oModel)
 			oTransf:oMovEndDes:ClearData()
 			oTransf:oMovPrdLot:ClearData()
 
-			// Seta o serviço
+			// Seta o serviÃ§o
 			oTransf:oMovServic:SetServico(oModelSel:GetValue("SERVIC",nI))
-			// Informações do endereço origem
+			// InformaÃ§Ãµes do endereÃ§o origem
 			oTransf:oMovEndOri:SetArmazem(oModelSel:GetValue("LOCAL",nI))
 			oTransf:oMovEndOri:SetEnder(oModelSel:GetValue("ENDER",nI))
 			oTransf:oMovEndOri:LoadData()
-			// Informações do unitizador origem
+			// InformaÃ§Ãµes do unitizador origem
 			If lUnitOri
 				oTransf:SetIdUnit(oModelSel:GetValue("IDUNIT",nI))
 			Else
 				oTransf:SetIdUnit("")
 			EndIf
 
-			// Informações do endereço destino
+			// InformaÃ§Ãµes do endereÃ§o destino
 			oTransf:oMovEndDes:SetArmazem(oModelSel:GetValue("LOCDES",nI))
 			oTransf:oMovEndDes:SetEnder(oModelSel:GetValue("ENDDES",nI))
 			oTransf:oMovEndDes:LoadData()
-			// Informações do unitizador destino
+			// InformaÃ§Ãµes do unitizador destino
 			If lUnitDes
 				oTransf:SetUniDes(oModelSel:GetValue("UNIDES",nI))
 				oTransf:SetTipUni(oModelSel:GetValue("CODUNI",nI))
@@ -991,7 +1002,7 @@ Static Function ZWMSValid(oModel)
 					ORDER BY D14.D14_PRODUT,D14.D14_LOCAL
 				EndSql
 				Do While lRet .And. (cAliasQry)->(!Eof())
-					// Seta a informação do produto do unitizador
+					// Seta a informaÃ§Ã£o do produto do unitizador
 					oTransf:oMovPrdLot:SetArmazem((cAliasQry)->D14_LOCAL)
 					oTransf:oMovPrdLot:SetProduto((cAliasQry)->D14_PRODUT)
 					oTransf:oMovPrdLot:SetPrdOri((cAliasQry)->D14_PRDORI)
@@ -1001,7 +1012,7 @@ Static Function ZWMSValid(oModel)
 					oTransf:oMovPrdLot:SetNumSer((cAliasQry)->D14_NUMSER)
 					oTransf:oMovPrdLot:LoadData()
 					oTransf:SetQuant((cAliasQry)->D14_QTDEST)
-					// Validação do produto
+					// ValidaÃ§Ã£o do produto
 					lRet := VldMdlData(oModelSel,@aUniDes,nI,cCabAviso,lUnitOri,lUnitDes,.T./*lProduto*/)
 
 					(cAliasQry)->(dbSkip())
@@ -1009,7 +1020,7 @@ Static Function ZWMSValid(oModel)
 				(cAliasQry)->(dbCloseArea())
 			Else
 				If lTransfPrd
-					// Seta a informação do produto que está no modelo
+					// Seta a informaÃ§Ã£o do produto que estÃ¡ no modelo
 					oTransf:oMovPrdLot:SetArmazem(oModelSel:GetValue("LOCAL"))
 					oTransf:oMovPrdLot:SetProduto(oModelSel:GetValue("CODPRO"))
 					oTransf:oMovPrdLot:SetPrdOri(oModelSel:GetValue("PRDORI"))
@@ -1019,13 +1030,13 @@ Static Function ZWMSValid(oModel)
 					oTransf:oMovPrdLot:LoadData()
 				EndIf
 				oTransf:SetQuant(oModelSel:GetValue('QUANT'))
-				// Validação do produto
+				// ValidaÃ§Ã£o do produto
 				lRet := VldMdlData(oModelSel,@aUniDes,nI,cCabAviso,lUnitOri,lUnitDes,lTransfPrd)
 			EndIf
 		Next nI
 
-		// Array com os unitizadores destinos para validação da grid para não deixar informar
-		// o mesmo unitizador em várias linhas com endereços diferentes ou em branco
+		// Array com os unitizadores destinos para validaÃ§Ã£o da grid para nÃ£o deixar informar
+		// o mesmo unitizador em vÃ¡rias linhas com endereÃ§os diferentes ou em branco
 		If Len(aUniDes) > 1
 			lRet := .T.
 			While lRet .And. Len(aUniDes) > 0
@@ -1042,9 +1053,9 @@ Static Function ZWMSValid(oModel)
 					EndIf
 					// Analisa se existe o mesmo unitizador no array
 					If (nPos := aScan(aUniDes,{|x| x[1] == cIdUnit})) > 0
-						// Caso exista o mesmo unitizador em endereços diferentes ou com endereços em branco
+						// Caso exista o mesmo unitizador em endereÃ§os diferentes ou com endereÃ§os em branco
 						If !(cEndDes == aUniDes[nPos][2]) .Or. (Empty(cEndDes) .And. Empty(aUniDes[nPos][2]))
-							aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22519 + " - " + WmsFmtMsg(STR0044,{{"[VAR01]",oModelSel:GetValue("UNIDES",nLinha)},{"[VAR02]",oModelSel:GetValue("CODPRO",nLinha)}}) + " - " + STR0045) // "Unitizador [VAR01] em endereços diferentes informado para o produto [VAR02]."##"Informe outro unitizador ou transfira o unitizador completo."
+							aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22519 + " - " + WmsFmtMsg(STR0044,{{"[VAR01]",oModelSel:GetValue("UNIDES",nLinha)},{"[VAR02]",oModelSel:GetValue("CODPRO",nLinha)}}) + " - " + STR0045) // "Unitizador [VAR01] em endereÃ§os diferentes informado para o produto [VAR02]."##"Informe outro unitizador ou transfira o unitizador completo."
 							lRet := .F.
 							Exit
 						EndIf
@@ -1054,12 +1065,12 @@ Static Function ZWMSValid(oModel)
 			EndDo
 		EndIf
 
-		// Mensagem de aviso dos erros do formulário
+		// Mensagem de aviso dos erros do formulÃ¡rio
 		If Len(oTransf:oOrdServ:aWmsAviso) > 0
 
 			__cMsgErro := oTransf:oOrdServ:aWmsAviso[1]
 
-			oModel:SetErrorMessage(oModelSel:GetId(),oModelSel:GetId(),,,"SIGAWMS",STR0051,"") // "Existem informações inválidos no formulário!"
+			oModel:SetErrorMessage(oModelSel:GetId(),oModelSel:GetId(),,,"SIGAWMS",STR0051,"") // "Existem informaÃ§Ãµes invÃ¡lidos no formulÃ¡rio!"
 			lRet := .F.
 		EndIf
 
@@ -1078,7 +1089,7 @@ Return lRet
 Programa.:              VldMdlData
 Autor....:              CAOA - Fagner Ferraz Barreto
 Data.....:              18/03/20
-Descricao / Objetivo:   Complemento de validações do modelo de dados
+Descricao / Objetivo:   Complemento de validaÃ§Ãµes do modelo de dados
 Doc. Origem:            
 Solicitante:            
 =====================================================================================
@@ -1090,7 +1101,7 @@ Static Function VldMdlData(oModelSel,aUniDes,nLinha,cCabAviso,lUnitOri,lUnitDes,
 
 	If oTransf:GetIdUnit() == oTransf:GetUniDes()
 		If oTransf:oMovEndOri:GetArmazem()+oTransf:oMovEndOri:GetEnder() == oTransf:oMovEndDes:GetArmazem()+oTransf:oMovEndDes:GetEnder()
-			aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22518 + " - " + WmsFmtMsg(STR0043,{{"[VAR01]",Iif(lProduto,Lower(STR0023),Lower(STR0039))},{"[VAR02]",Iif(lProduto,oTransf:oMovPrdLot:GetProduto(),oTransf:GetIdUnit())}})) // "Endereço origem igual ao destino para o [VAR01] [VAR02]."
+			aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22518 + " - " + WmsFmtMsg(STR0043,{{"[VAR01]",Iif(lProduto,Lower(STR0023),Lower(STR0039))},{"[VAR02]",Iif(lProduto,oTransf:oMovPrdLot:GetProduto(),oTransf:GetIdUnit())}})) // "EndereÃ§o origem igual ao destino para o [VAR01] [VAR02]."
 			Return .F.
 		EndIf
 	EndIf
@@ -1103,13 +1114,13 @@ Static Function VldMdlData(oModelSel,aUniDes,nLinha,cCabAviso,lUnitOri,lUnitDes,
 
 		If !(oTransf:oMovPrdLot:GetProduto() == oTransf:oMovPrdLot:GetPrdOri())
 			If !(oTransf:oMovEndOri:GetArmazem() == oTransf:oMovEndDes:GetArmazem())
-				aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22514 + " - " + WmsFmtMsg(STR0037,{{"[VAR01]",oTransf:oMovPrdLot:GetProduto()}}) + " - " + STR0038) // "Não é permitido tranferir o produto [VAR01] entre armazéns diferentes, pois possui estrutura."###"Realize a desmontagem do produto com estrutura (WMSA510)."
+				aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22514 + " - " + WmsFmtMsg(STR0037,{{"[VAR01]",oTransf:oMovPrdLot:GetProduto()}}) + " - " + STR0038) // "NÃ£o Ã© permitido tranferir o produto [VAR01] entre armazÃ©ns diferentes, pois possui estrutura."###"Realize a desmontagem do produto com estrutura (WMSA510)."
 				Return .F.
 			EndIf
 		EndIf
 
 		If lUnitDes
-			// Valida se deve ou não informar o unitizador destino
+			// Valida se deve ou nÃ£o informar o unitizador destino
 			If Empty(oTransf:oMovEndDes:GetEnder())
 				If Empty(oTransf:GetUniDes())
 					lRet := .F.
@@ -1121,108 +1132,108 @@ Static Function VldMdlData(oModelSel,aUniDes,nLinha,cCabAviso,lUnitOri,lUnitDes,
 			EndIf
 
 			If !lRet
-				aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22504 + " - " + WmsFmtMsg(STR0041,{{"[VAR01]",oTransf:oMovPrdLot:GetProduto()}})) // "Unitizador destino não informado para o produto [VAR01]."
+				aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22504 + " - " + WmsFmtMsg(STR0041,{{"[VAR01]",oTransf:oMovPrdLot:GetProduto()}})) // "Unitizador destino nÃ£o informado para o produto [VAR01]."
 				Return .F.
 			EndIf
 
 			If !Empty(oTransf:GetUniDes())
 				// Valida se o unitizador possui caractere especial
 				If !WmsVlStr(oTransf:GetUniDes())
-					aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22520 + " - " + WmsFmtMsg(STR0049,{{"[VAR01]",Iif(lProduto,Lower(STR0023),Lower(STR0039))},{"[VAR02]",Iif(lProduto,oTransf:oMovPrdLot:GetProduto(),oTransf:GetIdUnit())}})) // "Unitizador destino contém caracteres inválidos para o [VAR01] [VAR02]"
+					aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22520 + " - " + WmsFmtMsg(STR0049,{{"[VAR01]",Iif(lProduto,Lower(STR0023),Lower(STR0039))},{"[VAR02]",Iif(lProduto,oTransf:oMovPrdLot:GetProduto(),oTransf:GetIdUnit())}})) // "Unitizador destino contÃ©m caracteres invÃ¡lidos para o [VAR01] [VAR02]"
 					Return .F.
 				EndIf
 
 				// Valida se existe etiqueta do unitizador
 				oMntUniItem:oUnitiz:SetIdUnit(oTransf:GetUniDes())
 				If !oMntUniItem:VldIdUnit(4)
-					// Valida a existencia do código do unitizador
+					// Valida a existencia do cÃ³digo do unitizador
 					aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22522 + " - " + oMntUniItem:GetErro())
 					Return .F.
 				EndIf
-				// Validações apenas se o unitizador destino estiver preenchido
+				// ValidaÃ§Ãµes apenas se o unitizador destino estiver preenchido
 				If lUnitOri
 
 					//-- O trecho abaixo foi comentado pois apresentou o erro
 /*GAP*/				//-- InterFunctionCall: cannot find function VLDENDUNI in AppMap on VLDMDLDATA(ZWMSF003.PRW) 19/05/2020 14:01:07 line : 1006
 					/*
-					// Valida se está movimentando um unitizador parcial e deixando em outro endereço com o mesmo unitizador,
-					// pois não é permitido o mesmo unitizador em dois endereços ou armazéns diferentes.
+					// Valida se estÃ¡ movimentando um unitizador parcial e deixando em outro endereÃ§o com o mesmo unitizador,
+					// pois nÃ£o Ã© permitido o mesmo unitizador em dois endereÃ§os ou armazÃ©ns diferentes.
 					If !VldEndUni()
-						aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22517 + " - " + WmsFmtMsg(STR0044,{{"[VAR01]",oTransf:GetUniDes()},{"[VAR02]",oTransf:oMovPrdLot:GetProduto()}}) + " - " + STR0045) // "Unitizador [VAR01] em endereços diferentes informado para o produto [VAR02]."##"Informe outro unitizador ou transfira o unitizador completo."
+						aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22517 + " - " + WmsFmtMsg(STR0044,{{"[VAR01]",oTransf:GetUniDes()},{"[VAR02]",oTransf:oMovPrdLot:GetProduto()}}) + " - " + STR0045) // "Unitizador [VAR01] em endereÃ§os diferentes informado para o produto [VAR02]."##"Informe outro unitizador ou transfira o unitizador completo."
 						Return .F.
 					EndIf*/
 				EndIf
 
 				If lRet
 					If Empty(oTransf:GetTipUni())
-						aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22512 + " - " + WmsFmtMsg(STR0046,{{"[VAR01]",oTransf:oMovPrdLot:GetProduto()}})) // "Não foi informado o tipo do unitizador para o produto [VAR01]."
+						aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22512 + " - " + WmsFmtMsg(STR0046,{{"[VAR01]",oTransf:oMovPrdLot:GetProduto()}})) // "NÃ£o foi informado o tipo do unitizador para o produto [VAR01]."
 						Return .F.
 					Else
 						oTipUnit:SetTipUni(oTransf:GetTipUni())
 						If oTipUnit:LoadData() //Verifica unitizadores mistos
 							If !oTipUnit:CanUniMis() .And. oMntUniItem:oUnitiz:IsMultPrd(oTransf:oMovPrdLot:GetProduto(),,.T.)
-								aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22523 + " - " + WmsFmtMsg(STR0053,{{"[VAR01]",oTipUnit:GetTipUni()}})) // "Tipo de unitizador [VAR01] não permite montagem de unitizador misto."
+								aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22523 + " - " + WmsFmtMsg(STR0053,{{"[VAR01]",oTipUnit:GetTipUni()}})) // "Tipo de unitizador [VAR01] nÃ£o permite montagem de unitizador misto."
 								Return .F.
 							EndIf
 						Else
-							aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22516 + " - " + WmsFmtMsg(STR0047,{{"[VAR01]",oTransf:oMovPrdLot:GetProduto()}})) // "Tipo do unitizador não cadastrado para o produto [VAR01]."
+							aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22516 + " - " + WmsFmtMsg(STR0047,{{"[VAR01]",oTransf:oMovPrdLot:GetProduto()}})) // "Tipo do unitizador nÃ£o cadastrado para o produto [VAR01]."
 							Return .F.
 						EndIf
 					EndIf
 				EndIf
-				// Adiciona os endereços destinos informados para validar se foi informado endereços diferetes para o mesmo unitizador destino
+				// Adiciona os endereÃ§os destinos informados para validar se foi informado endereÃ§os diferetes para o mesmo unitizador destino
 				aAdd(aUniDes,{oTransf:GetUniDes(),oTransf:oMovEndDes:GetEnder(),nLinha})
 			Else
-				// Limpa o Tipo do Unitizador para não gravar indevidamente quando o campo unitizador destino estiver vazio
+				// Limpa o Tipo do Unitizador para nÃ£o gravar indevidamente quando o campo unitizador destino estiver vazio
 				oModelSel:LoadValue("CODUNI","",nLinha)
 			EndIf
 		EndIf
 	EndIf
 
 	If Empty(oTransf:oMovServic:GetServico())
-		aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22502 + " - " + WmsFmtMsg(STR0027,{{"[VAR01]",Iif(lProduto,Lower(STR0023),Lower(STR0039))},{"[VAR02]",Iif(lProduto,oTransf:oMovPrdLot:GetProduto(),oTransf:GetIdUnit())}})) // "É obrigatório informar um serviço de transferência para o [VAR01] [VAR02]."
+		aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22502 + " - " + WmsFmtMsg(STR0027,{{"[VAR01]",Iif(lProduto,Lower(STR0023),Lower(STR0039))},{"[VAR02]",Iif(lProduto,oTransf:oMovPrdLot:GetProduto(),oTransf:GetIdUnit())}})) // "Ã‰ obrigatÃ³rio informar um serviÃ§o de transferÃªncia para o [VAR01] [VAR02]."
 		Return .F.
 	EndIf
 
 	If oTransf:oMovServic:LoadData()
 		If !oTransf:oMovServic:ChkTransf()
-			aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22503 + " - " + WmsFmtMsg(STR0028,{{"[VAR01]",Iif(lProduto,Lower(STR0023),Lower(STR0039))},{"[VAR02]",Iif(lProduto,oTransf:oMovPrdLot:GetProduto(),oTransf:GetIdUnit())}})) // "Serviço informado deve ser de transferência para o [VAR01] [VAR02]."
+			aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22503 + " - " + WmsFmtMsg(STR0028,{{"[VAR01]",Iif(lProduto,Lower(STR0023),Lower(STR0039))},{"[VAR02]",Iif(lProduto,oTransf:oMovPrdLot:GetProduto(),oTransf:GetIdUnit())}})) // "ServiÃ§o informado deve ser de transferÃªncia para o [VAR01] [VAR02]."
 			Return .F.
 		EndIf
 	Else
-		aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22505 + " - " + WmsFmtMsg(STR0029,{{"[VAR01]",Iif(lProduto,Lower(STR0023),Lower(STR0039))},{"[VAR02]",Iif(lProduto,oTransf:oMovPrdLot:GetProduto(),oTransf:GetIdUnit())}})) // "Serviço informado para o [VAR01] [VAR02] não existe no cadastro DC5 (Serviço x Tarefa)."
+		aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22505 + " - " + WmsFmtMsg(STR0029,{{"[VAR01]",Iif(lProduto,Lower(STR0023),Lower(STR0039))},{"[VAR02]",Iif(lProduto,oTransf:oMovPrdLot:GetProduto(),oTransf:GetIdUnit())}})) // "ServiÃ§o informado para o [VAR01] [VAR02] nÃ£o existe no cadastro DC5 (ServiÃ§o x Tarefa)."
 		Return .F.
 	EndIf
 
 	If Empty(oTransf:oMovEndDes:GetArmazem())
-		aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22507 + " - " + WmsFmtMsg(STR0030,{{"[VAR01]",Iif(lProduto,Lower(STR0023),Lower(STR0039))},{"[VAR02]",Iif(lProduto,oTransf:oMovPrdLot:GetProduto(),oTransf:GetIdUnit())}})) // "É obrigatório informar o armazém destino para o [VAR01] [VAR02]."
+		aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22507 + " - " + WmsFmtMsg(STR0030,{{"[VAR01]",Iif(lProduto,Lower(STR0023),Lower(STR0039))},{"[VAR02]",Iif(lProduto,oTransf:oMovPrdLot:GetProduto(),oTransf:GetIdUnit())}})) // "Ã‰ obrigatÃ³rio informar o armazÃ©m destino para o [VAR01] [VAR02]."
 		Return .F.
 	Else
 		If Empty( Posicione("NNR",1,xFilial("NNR")+oTransf:oMovEndDes:GetArmazem(),"NNR_CODIGO") )
-			aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22508 + " - " + WmsFmtMsg(STR0031,{{"[VAR01]",Iif(lProduto,Lower(STR0023),Lower(STR0039))},{"[VAR02]",Iif(lProduto,oTransf:oMovPrdLot:GetProduto(),oTransf:GetIdUnit())}})) // "Armazém destino informado para o [VAR01] [VAR02] não existe no cadastro NNR (Locais de Estoque)."
+			aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22508 + " - " + WmsFmtMsg(STR0031,{{"[VAR01]",Iif(lProduto,Lower(STR0023),Lower(STR0039))},{"[VAR02]",Iif(lProduto,oTransf:oMovPrdLot:GetProduto(),oTransf:GetIdUnit())}})) // "ArmazÃ©m destino informado para o [VAR01] [VAR02] nÃ£o existe no cadastro NNR (Locais de Estoque)."
 			Return .F.
 		EndIf
 	EndIf
 
 	If oTransf:oMovEndOri:GetArmazem() != oTransf:oMovEndDes:GetArmazem()
 		If Empty(oTransf:oMovEndDes:GetEnder())
-			aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22509 + " - " + WmsFmtMsg(STR0032,{{"[VAR01]",Iif(lProduto,Lower(STR0023),Lower(STR0039))},{"[VAR02]",Iif(lProduto,oTransf:oMovPrdLot:GetProduto(),oTransf:GetIdUnit())}})) // "É obrigatório informar o endereço destino para o [VAR01] [VAR02]."
+			aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22509 + " - " + WmsFmtMsg(STR0032,{{"[VAR01]",Iif(lProduto,Lower(STR0023),Lower(STR0039))},{"[VAR02]",Iif(lProduto,oTransf:oMovPrdLot:GetProduto(),oTransf:GetIdUnit())}})) // "Ã‰ obrigatÃ³rio informar o endereÃ§o destino para o [VAR01] [VAR02]."
 			Return .F.
 		Else
 			If Empty( Posicione("SBE",1,xFilial("SBE")+oTransf:oMovEndDes:GetArmazem()+oTransf:oMovEndDes:GetEnder(),"BE_LOCALIZ") )
-				aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22510 + " - " + WmsFmtMsg(STR0033,{{"[VAR01]",Iif(lProduto,Lower(STR0023),Lower(STR0039))},{"[VAR02]",Iif(lProduto,oTransf:oMovPrdLot:GetProduto(),oTransf:GetIdUnit())}})) // "Endereço destino informado para o [VAR01] [VAR02] não existe no cadastro SBE (Endereços)."
+				aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22510 + " - " + WmsFmtMsg(STR0033,{{"[VAR01]",Iif(lProduto,Lower(STR0023),Lower(STR0039))},{"[VAR02]",Iif(lProduto,oTransf:oMovPrdLot:GetProduto(),oTransf:GetIdUnit())}})) // "EndereÃ§o destino informado para o [VAR01] [VAR02] nÃ£o existe no cadastro SBE (EndereÃ§os)."
 				Return .F.
 			EndIf
 		EndIf
 	EndIf
 
-	// Verificação do endereço origem
+	// VerificaÃ§Ã£o do endereÃ§o origem
 	If !oTransf:ChkEndOri(,,,lPermTrfBlq)
 		aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22511 + " - " + oTransf:GetErro()) // Erro ChkEndOri
 		Return .F.
 	EndIf
 
-	// Verificação do endereço destino
+	// VerificaÃ§Ã£o do endereÃ§o destino
 	If !Empty(oTransf:oMovEndDes:GetEnder())
 		If !oTransf:ChkEndDes()
 			aAdd(oTransf:oOrdServ:aWmsAviso, cCabAviso + CRLF + WMSA22513 + " - " + oTransf:GetErro()) // Erro ChkEndDes
@@ -1239,7 +1250,7 @@ Return lRet
 Programa.:              ZWMSCommit
 Autor....:              CAOA - Fagner Ferraz Barreto
 Data.....:              18/03/20
-Descricao / Objetivo:   Gravação do modelo de dados
+Descricao / Objetivo:   GravaÃ§Ã£o do modelo de dados
 Doc. Origem:            
 Solicitante:            
 =====================================================================================
@@ -1277,7 +1288,7 @@ Static Function ZWMSCommit(oModel)
 		oEtiqUnit  := WMSDTCEtiquetaUnitizador():New()
 		oModelDCF  := oModel:GetModel("DCFMASTER")
 		oModelSel  := oModel:GetModel("SELECAO")
-		//--Função para alimentar a variavel static __oOrdServ usada no fonte WMSXFUNA
+		//--FunÃ§Ã£o para alimentar a variavel static __oOrdServ usada no fonte WMSXFUNA
 		WmsOrdSer(oOrdServ)
 		Begin Transaction
 			For nI := 1 To oModelSel:Length()
@@ -1285,7 +1296,7 @@ Static Function ZWMSCommit(oModel)
 					Loop
 				EndIf
 				oModelSel:GoLine(nI)
-				// Criação do serviço com origem DCF quando o armazém destino é o mesmo
+				// CriaÃ§Ã£o do serviÃ§o com origem DCF quando o armazÃ©m destino Ã© o mesmo
 				If lTransfPrd
 					// Atribui produto/Lote/Sublote
 					oOrdServ:oProdLote:SetArmazem(oModelSel:GetValue("LOCAL"))
@@ -1310,15 +1321,15 @@ Static Function ZWMSCommit(oModel)
 				// Atribui servico
 				oOrdServ:oServico:SetServico(oModelSel:GetValue("SERVIC"))
 				oOrdServ:oServico:LoadData()
-				// Criação do serviço com origem DH1 quando o armazém é diferente
+				// CriaÃ§Ã£o do serviÃ§o com origem DH1 quando o armazÃ©m Ã© diferente
 				If !(oModelSel:GetValue("LOCAL") == oModelSel:GetValue("LOCDES"))
-					// Muda a origem do serviço para DH1
+					// Muda a origem do serviÃ§o para DH1
 					oOrdServ:SetOrigem("DH1")
 					If lTransfPrd
-						// Gera a DH1 com base nas informações do objeto e incrementa B2_RESERVA
+						// Gera a DH1 com base nas informaÃ§Ãµes do objeto e incrementa B2_RESERVA
 						lRet := WmsGeraDH1("WMSA225")
 					Else
-						// Criação do serviço com origem DH1 quando o armazém é diferente para cada produto do unitizador
+						// CriaÃ§Ã£o do serviÃ§o com origem DH1 quando o armazÃ©m Ã© diferente para cada produto do unitizador
 						cAliasQry := GetNextAlias()
 						BeginSql Alias cAliasQry
 							SELECT D14.D14_LOCAL,
@@ -1340,9 +1351,9 @@ Static Function ZWMSCommit(oModel)
 						Do While lRet .And. (cAliasQry)->(!Eof())
 							// Atribui id dcf
 							oOrdServ:SetIdDCF(WMSProxSeq('MV_DOCSEQ','DCF_ID'))
-							//Informa que a classe não deve gerar um novo Id DCF
+							//Informa que a classe nÃ£o deve gerar um novo Id DCF
 							oOrdServ:GeraNovoId(.F.)
-							// Seta as informações do produto do unitizador
+							// Seta as informaÃ§Ãµes do produto do unitizador
 							oOrdServ:oProdLote:SetArmazem((cAliasQry)->D14_LOCAL)
 							oOrdServ:oProdLote:SetProduto((cAliasQry)->D14_PRODUT)
 							oOrdServ:oProdLote:SetPrdOri((cAliasQry)->D14_PRDORI)
@@ -1353,10 +1364,10 @@ Static Function ZWMSCommit(oModel)
 							oOrdServ:oProdLote:LoadData()
 							oOrdServ:SetQuant((cAliasQry)->D14_QTDEST)
 
-							// Gera a DH1 com base nas informações do objeto e incrementa B2_RESERVA
+							// Gera a DH1 com base nas informaÃ§Ãµes do objeto e incrementa B2_RESERVA
 							If (lRet := WmsGeraDH1("WMSA225"))
 
-								// Atribui os valores e cria a ordem de serviço por produto
+								// Atribui os valores e cria a ordem de serviÃ§o por produto
 								lRet := GeraOrdSer(oModel,.T./*lProduto*/)
 
 							EndIf
@@ -1387,9 +1398,9 @@ Static Function ZWMSCommit(oModel)
 				If lRet .And. (oModelSel:GetValue("LOCAL") == oModelSel:GetValue("LOCDES") .Or. lTransfPrd) 
 					// Atribui id dcf
 					oOrdServ:SetIdDCF(WMSProxSeq('MV_DOCSEQ','DCF_ID'))
-					//Informa que a classe não deve gerar um novo Id DCF
+					//Informa que a classe nÃ£o deve gerar um novo Id DCF
 					oOrdServ:GeraNovoId(.F.)
-					// Atribui os valores e cria a ordem de serviço
+					// Atribui os valores e cria a ordem de serviÃ§o
 					lRet := GeraOrdSer(oModel,lTransfPrd)
 				EndIf		
 				If !lRet
@@ -1450,14 +1461,14 @@ Return lRet
 Programa.:              GeraOrdSer
 Autor....:              CAOA - Fagner Ferraz Barreto
 Data.....:              18/03/20
-Descricao / Objetivo:   Gera ordem de serviço
+Descricao / Objetivo:   Gera ordem de serviÃ§o
 Doc. Origem:            
 Solicitante:            
 =====================================================================================
 */
 Static Function GeraOrdSer(oModel,lProduto)
     Local lRet := .T.
-	// Atribui informações do unitizador
+	// Atribui informaÃ§Ãµes do unitizador
 	oOrdServ:SetIdUnit(oModelSel:GetValue("IDUNIT"))
 	If WmsArmUnit(oOrdServ:oOrdEndDes:GetArmazem())
 		oOrdServ:oOrdEndDes:LoadData()
@@ -1476,7 +1487,7 @@ Static Function GeraOrdSer(oModel,lProduto)
 			EndIf
 		EndIf
 	Else
-		Conout("Não setou o coduni na etiqueta linha 1352")
+		Conout("NÃ£o setou o coduni na etiqueta linha 1352")
 		oOrdServ:SetUniDes("")
 		oOrdServ:SetTipUni("")
 	EndIf
@@ -1520,7 +1531,7 @@ Static Function GeraOrdSer(oModel,lProduto)
 	EndIf
 
 	If lRet
-		//--Finaliza ordem de serviço automaticamente
+		//--Finaliza ordem de serviÃ§o automaticamente
 		If !FinOrdSer(oModel)
 			lRet := .F.
 		EndIf
@@ -1533,7 +1544,7 @@ Return lRet
 Programa.:              FinOrdSer
 Autor....:              CAOA - Fagner Ferraz Barreto
 Data.....:              19/03/20
-Descricao / Objetivo:   Finaliza ordem de serviço
+Descricao / Objetivo:   Finaliza ordem de serviÃ§o
 Doc. Origem:            
 Solicitante:            
 =====================================================================================
@@ -1543,8 +1554,8 @@ Static Function FinOrdSer(oModel)
 	Local cAliasD12 := Nil
 	Local oMoviServ	:= WMSBCCMovimentoServico():New()
 	
-	// Efetua a execução automática quando serviço configurado 
-	//lRet := WmsExeServ(.F.,.T.) //Função wms padrão
+	// Efetua a execuÃ§Ã£o automÃ¡tica quando serviÃ§o configurado 
+	//lRet := WmsExeServ(.F.,.T.) //FunÃ§Ã£o wms padrÃ£o
 	lRet := ExeAutServ( oModel, oOrdServ:GetIdDCF() )
 
 	If lRet
@@ -1595,7 +1606,7 @@ Return lRet
 Programa.:              ExeAutServ
 Autor....:              CAOA - Fagner Ferraz Barreto
 Data.....:              14/07/2020
-Descricao / Objetivo:   Executa automaticamente a ordem de serviço
+Descricao / Objetivo:   Executa automaticamente a ordem de serviÃ§o
 Doc. Origem:            
 Solicitante:            
 =====================================================================================
@@ -1610,8 +1621,8 @@ Static Function ExeAutServ( oModel, cIDdcf )
 	//Local nX         := 0
 	Local lExAuSpCp  := SuperGetMV("MV_WMSEASC",.F.,.F.)
 
-	// Integração com o WMS
-	// Verifica as Ordens de servico geradas para execução automatica
+	// IntegraÃ§Ã£o com o WMS
+	// Verifica as Ordens de servico geradas para execuÃ§Ã£o automatica
 	oOrdSerExe := ZWMSF009():New() 	//WMSDTCOrdemServicoExecute():New()
 	oRegraConv := ZWMSF010():New()	//WMSBCCRegraConvocacao():New()
 	oOrdSerExe:SetArrLib(oRegraConv:GetArrLib())
@@ -1620,7 +1631,7 @@ Static Function ExeAutServ( oModel, cIDdcf )
 	oOrdSerExe:SetIdDCF(cIDdcf) //aLibDCF[nX]
 	If oOrdSerExe:LoadData()
 		If (lContinua := oOrdSerExe:zExecDCF()) .And. oOrdSerExe:oServico:ChkSepara() .And. oOrdSerExe:GetOrigem() == "SC9"
-			// Monta lista de ordem de serviço executada
+			// Monta lista de ordem de serviÃ§o executada
 			cListIdDcf += "'" + cIDdcf + "'," //aLibDCF[nX]
 		EndIf
 	EndIf
@@ -1636,9 +1647,9 @@ Static Function ExeAutServ( oModel, cIDdcf )
 		EndIf
 	EndIf
 
-	// Verifica se há mensagem de inconsistência e o parâmetro de execução automática de separação completa
+	// Verifica se hÃ¡ mensagem de inconsistÃªncia e o parÃ¢metro de execuÃ§Ã£o automÃ¡tica de separaÃ§Ã£o completa
 	If !Empty(oOrdSerExe:aWmsAviso) .And. lExAuSpCp .And. !Empty(cListIdDcf)
-		// Ajusta lista de ordem de serviço executada
+		// Ajusta lista de ordem de serviÃ§o executada
 		cListIdDcf := SubsTr(cListIdDcf,1,Len(cListIdDcf)-1)
 		oOrdSerRev := WMSDTCOrdemServicoReverse():New()
 		oOrdSerRev:RevPedAut(cListIdDcf)
@@ -1710,7 +1721,7 @@ Static Function ZWMSReproc()
 
 			__nRecno 	:= (cAliasQry)->RECNO
 
-			// Incrementa a mensagem na régua.
+			// Incrementa a mensagem na rÃ©gua.
 			IncProc("Voltando registro para fila de processamento. Unitizador: " + (cAliasQry)->ZJ_IDUNIT )
 
 			SZJ->( DbGoTo( __nRecno ) )
@@ -1723,8 +1734,8 @@ Static Function ZWMSReproc()
 
 		EndDo
 	Else
-		MsgAlert("O.S. com erro não encontrada, certifique-se da existencia de O.S. com erro para reprocessamento!",;
-					"Monitor de tranferências WMS CAOA")
+		MsgAlert("O.S. com erro nÃ£o encontrada, certifique-se da existencia de O.S. com erro para reprocessamento!",;
+					"Monitor de tranferÃªncias WMS CAOA")
 	EndIf
 
 	(cAliasQry)->(dbCloseArea())
@@ -1761,7 +1772,7 @@ Return __nRecno
 Programa.:              RetD14Des
 Autor....:              CAOA - Fagner Ferraz Barreto
 Data.....:              28/04/20
-Descricao / Objetivo:   Retorna RECNO do produto na tabela D14 endereço de destino
+Descricao / Objetivo:   Retorna RECNO do produto na tabela D14 endereÃ§o de destino
 Doc. Origem:            
 Solicitante:            
 =====================================================================================
@@ -1784,7 +1795,7 @@ Return __nRecno
 Programa.:              RetSBE
 Autor....:              CAOA - Fagner Ferraz Barreto
 Data.....:              28/04/20
-Descricao / Objetivo:   Retorna RECNO do endereço de origem
+Descricao / Objetivo:   Retorna RECNO do endereÃ§o de origem
 Doc. Origem:            
 Solicitante:            
 =====================================================================================
@@ -1807,7 +1818,7 @@ Return __nRecno
 Programa.:              RetSBEDes
 Autor....:              CAOA - Fagner Ferraz Barreto
 Data.....:              28/04/20
-Descricao / Objetivo:   Retorna RECNO do endereço de destino
+Descricao / Objetivo:   Retorna RECNO do endereÃ§o de destino
 Doc. Origem:            
 Solicitante:            
 
@@ -1830,7 +1841,7 @@ Return __nRecno
 Programa.:              VldExec
 Autor....:              CAOA - Fagner Ferraz Barreto
 Data.....:              27/07/20
-Descricao / Objetivo:   Valida execuções em andamento para o mesmo armazem e produto
+Descricao / Objetivo:   Valida execuÃ§Ãµes em andamento para o mesmo armazem e produto
 Doc. Origem:            
 Solicitante:            
 ===========================================================================================
@@ -1843,7 +1854,7 @@ Static Function VldExec()
 
 	Conout("VldExec | antes da query | " + Time() )
 
-	//-- Localiza execuções em andamento para o produto
+	//-- Localiza execuÃ§Ãµes em andamento para o produto
 	cQuery := " SELECT D14.D14_PRODUT " + CRLF
 	cQuery += " FROM " + RetSQLName('SZJ') + " SZJ " + CRLF
 	cQuery += " INNER JOIN " + RetSQLName('D14') + " D14 " + CRLF
@@ -1925,7 +1936,7 @@ Return lRet
 Programa.:              GrvErro
 Autor....:              CAOA - Fagner Ferraz Barreto
 Data.....:              29/04/20
-Descricao / Objetivo:   Grava erro gerado por controle de exceção
+Descricao / Objetivo:   Grava erro gerado por controle de exceÃ§Ã£o
 Doc. Origem:            
 Solicitante:            
 =====================================================================================
@@ -1934,10 +1945,10 @@ Static Function GrvErro( oError )
 	__cErro := oError:ERRORSTACK
 	
 	If !Empty(__cErro)
-		//--Seta variavel de erro para execução do break
-		//--Não foi possivel executar o break neste ponto
+		//--Seta variavel de erro para execuÃ§Ã£o do break
+		//--NÃ£o foi possivel executar o break neste ponto
 		//--Porque se executar o break dentro de um begin transaction
-		//--a rotina sai da transação sem realizar o disarm
+		//--a rotina sai da transaÃ§Ã£o sem realizar o disarm
 		lErro := .T.
 	EndIf
 
@@ -1965,19 +1976,19 @@ User Function ZWMS3Job()
 	RpcSetType(3)
 	RpcSetEnv( '01', '2010022001' )
 
-	Conout("ZWMS3Job | SMO após abertura | " + Time() )
+	Conout("ZWMS3Job | SMO apÃ³s abertura | " + Time() )
 
 	nThreads	:= GetNewPar( "CMV_WMS005", 3 )
 	nSeg		:= GetNewPar( "CMV_WMS006", 5000 )
 
-	/*Atrasa a criação de threads em 5 segundos para evitar que sejam executadas
-	ao mesmo tempo, o que interfere na validação de lock de tabela*/
+	/*Atrasa a criaÃ§Ã£o de threads em 5 segundos para evitar que sejam executadas
+	ao mesmo tempo, o que interfere na validaÃ§Ã£o de lock de tabela*/
 	For nI := 1 To nThreads
 		Conout("ZWMS3Job | Dentro do For, antes do sleep | " + Time() )
 		Sleep(nSeg) //-- Espera 5 Segundos para iniciar a transferencia
-		Conout("ZWMS3Job | Dentro do For, após o sleep e antes da transferencia | " + Time() )
+		Conout("ZWMS3Job | Dentro do For, apÃ³s o sleep e antes da transferencia | " + Time() )
 		StartJob( "u_ZWMSF003", GetEnvServer(), .F.)
-		Conout("ZWMS3Job | Dentro do For, após a transferencia | " + Time() )
+		Conout("ZWMS3Job | Dentro do For, apÃ³s a transferencia | " + Time() )
 	Next
 
 	Conout("ZWMS3Job | Fim | " + Time() )
@@ -1991,7 +2002,7 @@ Return
 Programa.:              zLimpFila
 Autor....:              CAOA - Fagner Ferraz Barreto
 Data.....:              23/07/21
-Descricao / Objetivo:   Efetua validações antes da chamada do update de limpeza da fila
+Descricao / Objetivo:   Efetua validaÃ§Ãµes antes da chamada do update de limpeza da fila
 Doc. Origem:            
 Solicitante:            
 =====================================================================================
@@ -1999,12 +2010,12 @@ Solicitante:
 Static Function zLimpFila()
 
 	If RetCodUsr() $ GetNewPar( "CMV_WMS018", ' ' )
-		If MsgYesNo("Para o correto funcionamento desta rotina é obrigatorio a paralisação do job ";
-					+ "de execução das transferencias, confirma a execução?", "WmsCaoa")
+		If MsgYesNo("Para o correto funcionamento desta rotina Ã© obrigatorio a paralisaÃ§Ã£o do job ";
+					+ "de execuÃ§Ã£o das transferencias, confirma a execuÃ§Ã£o?", "WmsCaoa")
 			FWMsgRun( ,{|| zUpdTransf() } ,"Efetuando a limpeza da fila de transferencias..." ,"Por favor aguarde...")
 		EndIf
 	Else
-		MsgAlert("É necessario permissão para execução desta rotina, por favor, contate o administrador do sistema!", "WmsCaoa")
+		MsgAlert("Ã‰ necessario permissÃ£o para execuÃ§Ã£o desta rotina, por favor, contate o administrador do sistema!", "WmsCaoa")
 	EndIf
 
 Return
@@ -2014,7 +2025,7 @@ Return
 Programa.:              zUpdTransf
 Autor....:              CAOA - Fagner Ferraz Barreto
 Data.....:              23/07/21
-Descricao / Objetivo:   Efetua update para limpeza dos registro em execução no WmsCaoa
+Descricao / Objetivo:   Efetua update para limpeza dos registro em execuÃ§Ã£o no WmsCaoa
 Doc. Origem:            
 Solicitante:            
 =====================================================================================
@@ -2050,7 +2061,7 @@ Do Case
 		oView := FWViewActive()
 		If Empty(xValor)
 			xValor := oModel:GetValue("LOCAL",nLinha)
-			// Se o armazém destino foi limpado, atribui o mesmo que o origem
+			// Se o armazÃ©m destino foi limpado, atribui o mesmo que o origem
 			oModel:LoadValue("LOCDES",xValor,nLinha)
 		EndIf	
 			
@@ -2085,7 +2096,7 @@ Do Case
 				oEndereco := WMSDTCEndereco():New()
 				oEndereco:SetArmazem(oModel:GetValue("LOCDES",nLinha))
 				oEndereco:SetEnder(oModel:GetValue("ENDDES",nLinha))
-				// Desabilita o campo unitizador destino se o endereço informado for um picking
+				// Desabilita o campo unitizador destino se o endereÃ§o informado for um picking
 				If oEndereco:LoadData()
 					If !(oEndereco:GetTipoEst() == 2 .Or. oEndereco:GetTipoEst() == 7) .And. Empty(oModel:GetValue("CODUNI",nLinha))
 						oModel:LoadValue("CODUNI",LoadPadrao(),nLinha)
