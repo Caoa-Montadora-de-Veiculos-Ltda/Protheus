@@ -159,8 +159,8 @@ User Function ZPECF027(_cProduto)
 
             oBrowse:AddButton("Visualiza P.O."		, { || FWMsgRun(, {|oSay| ZPCF027LPO(_cProduto) }, "Visualizar P.O."	, "Visualizar P.O.") },,,, .F., 2 )
             SB1->(DbSetOrder(1))
-            SB1->(DbSeek(FwXFilial("SB1")+_cProduto))
-            cTitulo := "Invoice - Produto "+AllTrim(_cProduto)+AllTrim(SB1->B1_DESC)
+            SB1->(DbSeek(FwXFilial("SB1") + _cProduto))
+            cTitulo := "Invoice - Produto " + AllTrim(_cProduto) + AllTrim(SB1->B1_DESC)
             oBrowse:SetDescription(cTitulo)
 
         Endif                
@@ -257,8 +257,8 @@ Static Function zTmpInv(lJob)
 	_cQuery += CRLF + "     , SW8.W8_INVOICE    AS INVOICE "
 	_cQuery += CRLF + "     , SW9.W9_DT_EMIS    AS DATA_INV "
 	_cQuery += CRLF + "     , SW8.W8_DESC_DI    AS DESC_DI "    
-	_cQuery += CRLF + "     , SW8.W8_QTDE       AS QTD "
-//    _cQuery += CRLF + " SZM.ZM_QTDE AS QTQ, "
+	//_cQuery += CRLF + "     , SW8.W8_QTDE       AS QTD "
+    _cQuery += CRLF + "     , SZM.ZM_QTDE AS QTD "
 	_cQuery += CRLF + "     , SW8.W8_PRECO      AS VL_UNIT "
 	_cQuery += CRLF + "     , (SW8.W8_QTDE * SW8.W8_PRECO) AS VL_TOTAL " 
     _cQuery += CRLF + "     , SF1.F1_DOC        AS NOTA "
@@ -298,7 +298,7 @@ Static Function zTmpInv(lJob)
 	_cQuery += CRLF + "	 	   AND SZM.R_E_C_N_O_   > 0 
 	_cQuery += CRLF + "        AND SZM.D_E_L_E_T_   = ' ' " 
 
-    _cQuery += CRLF + "   LEFT JOIN " + RetSqlName("SWP") + " SWP "		
+    _cQuery += CRLF + "   LEFT JOIN " + RetSqlName("SWP") + " SWP "		//CAPA DE LICENÇA DE IMPORTAÇÃO
 	_cQuery += CRLF + "	 	     ON SWP.WP_FILIAL 	= '" + xFilial('SWP') + "'"
 	_cQuery += CRLF + "	        AND SWP.WP_PGI_NUM 	= SW8.W8_PGI_NUM " 
 	_cQuery += CRLF + "	        AND SWP.WP_SEQ_LI  	= SW8.W8_SEQ_LI "  
