@@ -154,7 +154,8 @@ Static Function fPopula()
     cQuery += "                FROM  "                          + CRLF
     cQuery += " " 		       + RetSqlName("SY1") + " SY1TMP "	+ CRLF //--TABELA DE COMPRADORES
     cQuery += "                WHERE  "                         + CRLF
-    cQuery += "                SY1TMP.D_E_L_E_T_ = ' '  "       + CRLF
+    cQuery += "                SY1TMP.Y1_FILIAL = '" + FWxFilial("SY1") + "' "  + CRLF
+    cQuery += "                AND SY1TMP.D_E_L_E_T_ = ' '  "   + CRLF
     cQuery += "                ORDER BY SY1TMP.Y1_USER  "       + CRLF
     cQuery += "            ) TMP_SY1  "                         + CRLF
     cQuery += "        ON TMP_USR.USR_ID = TMP_SY1.Y1_USER  "   + CRLF
