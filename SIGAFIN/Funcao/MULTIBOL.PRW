@@ -245,7 +245,7 @@ User Function RF01B062(xBanco,xAgencia,xConta,xSubCt,lSetup,cNotIni,cNotFim,cSer
 
 	While !EOF()
 
-		If IsInCallStack("U_xGBolVei")
+		If (IsInCallStack("U_xGBolVei") .OR. IsInCallStack("U_M460FIM"))
 			If !(SE1->(E1_FILIAL + E1_PREFIXO + E1_NUM) == cChvTit)
 				Exit
 			EndIf
@@ -260,7 +260,7 @@ User Function RF01B062(xBanco,xAgencia,xConta,xSubCt,lSetup,cNotIni,cNotFim,cSer
 		dbSetOrder(1)
 		dbSeek(xFilial("SA1")+SE1->E1_CLIENTE+SE1->E1_LOJA)
 
-		If !IsInCallStack("U_xGBolVei")
+		If (!IsInCallStack("U_xGBolVei") .AND. !IsInCallStack("U_M460FIM"))
 
 			xBanco   := SA1->A1_BCO1
 			aBco	 := VerBco(Alltrim(SA1->A1_BCO1))

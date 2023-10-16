@@ -18,6 +18,7 @@ User Function M460FIM()
 
     Local _cEmp		    := FWCodEmp()
     Local _cQuery       := ""
+    Local _cChave       := xFilial("SE1") + "5  " + SC5->C5_NOTA
     Local _cTmpAlias    := GetNextAlias()
     Local aArea         := GetArea()
     Local aAreaSF2      := SF2->(GetArea())
@@ -61,6 +62,19 @@ User Function M460FIM()
             If Findfunction("U_ZFINF004")  //gravar a forma de pagamento no título de RA
                 U_ZFINF004()
             EndIf
+
+            //chamda da função para emissão de Boleto qdo RA 
+            DbSelectArea("SE1")
+            SE1->(DbSetOrder(1))       //E1_FILIAL+E1_PREFIXO+E1_NUM+E1_PARCELA+E1_TIPO
+            If SE1->(DbSeek(_cChave))
+                WHILE SE1->( !EOF() .AND. (xFilial("SE1")+SE1->E1_PREFIXO+SE1->E1_NUM) = _cChave ) 
+                    IF SE1->E1_XFORMA == 'BOL'
+                        U_RF01B062(E1_PORTADO,E1_AGEDEP,E1_CONTA,'001',/*lSetup*/,/*cNotIni*/,/*cNotFim*/,/*cSerie*/,_cChave)
+                    ENDIF
+                    SE1->(DbSkip())
+                END
+            EndIf
+
         ENDIF
 
     else
