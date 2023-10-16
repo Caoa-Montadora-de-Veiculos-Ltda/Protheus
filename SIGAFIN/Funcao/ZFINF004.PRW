@@ -10,14 +10,15 @@
     @version 	1.0
 /*/
 User Function ZFINF004()
-Local  lRet     := .F.
+Local  lRet     := .T.
 Local _aArea    := GetArea()
+Local _cChave   := xFilial("SE1") + "5  " + SC5->C5_NOTA
 Private _cEmp   := FWCodEmp()
 Private _cBanco := ''
 Private _cAge   := ''
 Private _cConta := ''
 
-IF _cEmp == "2010" .AND. SC5->C5_XPREFIX == 'PVF' .AND. SE1->E1_PARCELA == '1 ' 
+IF _cEmp == "2010" .AND. SC5->C5_XPREFIX == 'PVF' .AND. SE1->E1_PARCELA == '1 ' .AND. FWIsInCallStack("MATA461")
 
     _cBanco := SA6->A6_COD 
     _cAge   := SA6->A6_AGENCIA
@@ -32,26 +33,21 @@ IF _cEmp == "2010" .AND. SC5->C5_XPREFIX == 'PVF' .AND. SE1->E1_PARCELA == '1 '
         MsUnlock()
 	ENDIF
 
-    Begin Transaction
-
-    IF lRet == .F.
-        lRet := GTitulo('Abat. RA','NF ','1 ','NF ')
-    ENDIF
-
-    If !lRet
-        Disarmtransaction()
-    EndIf	
-
-    End Transaction
+    //chamda da função para emissão de Boleto qdo RA 
+    DbSelectArea("SE1")
+    SE1->(DbSetOrder(1))       //E1_FILIAL+E1_PREFIXO+E1_NUM+E1_PARCELA+E1_TIPO
+    If SE1->(DbSeek(_cChave))
+        WHILE SE1->( !EOF() .AND. (xFilial("SE1")+SE1->E1_PREFIXO+SE1->E1_NUM) = _cChave ) 
+            IF SE1->E1_XFORMA == 'BOL'
+                U_RF01B062(E1_PORTADO,E1_AGEDEP,E1_CONTA,'001',/*lSetup*/,/*cNotIni*/,/*cNotFim*/,/*cSerie*/)
+            ENDIF
+            SE1->(DbSkip())
+        END
+    EndIf
 
     IF !lRET
         Return(lRet)
     Endif
-
-    //SE4->(DbSetOrder(1))
-	//If SE4->(DbSeek(xFilial("SE4")+SC5->C5_CONDPAG)) .AND. FWIsInCallStack("MATA410")
-    //    GrvDBSe1()
-	//Endif
 
 ELSEIF _cEmp == "2010" .AND. SC5->C5_XPREFIX == 'PVF' .AND. SE1->E1_PARCELA = '2 ' .AND. !Empty(SC5->C5_XNPG)
 
@@ -118,7 +114,7 @@ Local cIndice     := "1"
 Local lRet        := .T.
 //Local cLote       := ""
 //Local cSequen     := ""
-Local cStatusSZ7  := "P"
+////Local cStatusSZ7  := "P"
 Local nOperPro    := 1    
 Local nOperSAP    := 1  
 

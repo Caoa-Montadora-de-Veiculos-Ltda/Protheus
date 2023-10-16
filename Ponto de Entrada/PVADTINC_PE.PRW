@@ -5,6 +5,7 @@ User Function PVADTINC()
 	Local _cEmp := FWCodEmp()
 
 	Public aClieLoj := {}
+	Public _nPVF    := ''
 
 
 	If _cEmp == "2010" //Executa o p.e. Anapolis.
@@ -30,9 +31,14 @@ User Function PVADTINC()
 			ZZM->ZZM_LOJA   := M->C5_LOJACLI
 			ZZM->ZZM_NATURE := M->C5_NATUREZ
 			ZZM->(MsUnLock())			
-		EndIf	
-	
-    	MSGINFO( "Anote o número do Pedido: " + M->C5_NUM  , "[PVADTINC] " + M->C5_NUM )
+		EndIf
+
+		IF M->C5_XPREFIX == 'PVF' .AND. INCLUI
+		
+	        _nPVF := M->C5_NUM
+    	    MSGINFO( "Anote o número do Pedido: " + M->C5_NUM  , "[PVADTINC] " + M->C5_NUM )
+
+		ENDIF
 
 	EndIf
 

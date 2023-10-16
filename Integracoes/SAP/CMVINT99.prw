@@ -670,7 +670,7 @@ User Function xCMVREP()
             ElseIf ((cAlias)->Z7_XTABELA == "SF1" .and. ((cAlias)->Z7_TIPONF <> 'B' .and. (cAlias)->Z7_TIPONF <> 'D' ));
                     .or. ((cAlias)->Z7_XTABELA == "SF2" .and. (cAlias)->Z7_TIPONF == 'D' )
                 //U_CMVSAP03( nil , nil , nRec )
-                U_CMVSAP03( { { cEmpAnt , cFilAnt , nRec } } )
+                U_CMVSAP03( { { cEmpAnt , cFilAnt , nRec } } )  //Quando emitida a NF
             ElseIf (cAlias)->Z7_XTABELA == "SE2"
                 //U_CMVSAP13( nil ,nil , nRec )
                 U_CMVSAP13( { { cEmpAnt , cFilAnt , nRec } } )
