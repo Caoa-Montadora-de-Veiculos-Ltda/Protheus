@@ -16,8 +16,8 @@ Static Function ModelDef()
     oModel := MPFormModel():New("ZESTF014",/*bPre*/, {|oModel| zVldIncZZI(oModel) },/*bCommit*/,/*bCancel*/) 
     oModel:AddFields("ZZIMASTER",/*cOwner*/,oStruZZI)
 
-    oModel:SetDescription("Mestre de inventario Caoa Peças")
-    oModel:GetModel("ZZIMASTER"):SetDescription("Mestre de inventario Caoa Peças")
+    oModel:SetDescription("Mestre de inventario Peças")
+    oModel:GetModel("ZZIMASTER"):SetDescription("Mestre de inventario Peças")
     oModel:SetPrimaryKey({})
 
 Return oModel

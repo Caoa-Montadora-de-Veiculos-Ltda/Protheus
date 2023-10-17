@@ -26,12 +26,12 @@ User Function ZESTF013() //--U_ZESTF013()
     oBrowse:AddButton("Incluir Mestre"	    , { || FWExecView("Incluir" ,"ZESTF014",3,,{|| .T.}) ,oBrowse:Refresh(.F.) } )
     oBrowse:AddButton("Iniciar Mestre"	    , { || zBloqArm(), oBrowse:Refresh(.F.) } ) 
     oBrowse:AddButton("Gerenciar Mestre"	, { || ZESTF013A() ,ZF13AtuZZI(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL) ,oBrowse:Refresh(.F.) } )
-    oBrowse:AddButton("Transf. SB7"	            , { || IIF( zTelaMsg() == 1,;
+    oBrowse:AddButton("Preparar Acerto"	    , { || IIF( zTelaMsg() == 1,;
                                                             Processa( { || zGeraInv(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL) },;
-                                                            "Lançamentos de inventario", "Aguarde .... Realizando a carga dos registros...." ),;
+                                                            "Preparando inventario", "Aguarde .... Realizando a carga dos registros...." ),;
                                                             Nil ),;
                                                             ZF13AtuZZI(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL), oBrowse:Refresh(.F.) } )
-    oBrowse:AddButton("Transf. SB7"	            , { || IIF( zTelaInv() == 1,;
+    oBrowse:AddButton("Gerar Acerto."	    , { || IIF( zTelaInv() == 1,;
                                                             Processa( { || zGeraAcerto(ZZI->ZZI_MESTRE) },;
                                                             "Acerto de inventario", "Aguarde .... Realizando o acerto de inventário...." ),;
                                                             Nil ),;
@@ -940,7 +940,7 @@ Static Function zGeraInv(cMestre, cLocal)
             While !(cAliasQry)->( EOF() )
                 
                 // Incrementa a mensagem na régua.
-                IncProc("Efetuando a gravação dos registros!")
+                IncProc("Efetuando a preparação do inventario!")
 
                 aInvent := 	{;
                             {"B7_FILIAL",	(cAliasQry)->ZZJ_FILIAL,		Nil},;
@@ -1012,7 +1012,7 @@ Static Function zGeraInv(cMestre, cLocal)
                                     "Qtd de registros com erro: " + cValToChar(nFalhou) + CRLF +;
                                     "Por favor, consulte arquivo de log!", 1, 0 )
             Else
-                MsgInfo("Lancamentos do inventario gerados com sucesso!","Inventario Pecas")
+                MsgInfo("Inventario preparado com sucesso!","Inventario Pecas")
             EndIf
 
         Else
