@@ -43,7 +43,7 @@ Static Function ViewDef()
 	oView:AddField('VIEW_CAB',oStruZZI,'ZZIMASTER')
 
     //-- Define os títulos do cabeçalho
-    oView:EnableTitleView('VIEW_CAB', "Mestre de inventario Caoa Peças") 
+    oView:EnableTitleView('VIEW_CAB', "Mestre de inventario Peças") 
 
     //-- Seta o dimensionamento de tamanho
     oView:CreateHorizontalBox('ZZI_DADOS',100)
