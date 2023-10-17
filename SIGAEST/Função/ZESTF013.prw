@@ -77,7 +77,7 @@ Static Function ZESTF013A()
             { || nOperation := 4, FWExecView("Gerenciar"  ,"ZESTF013",nOperation,,{|| .T.}),oBrwCabec:Refresh(.F.) })
                                                             
         oBrwCabec:AddButton("Excluir Contagem" ,;
-            { || zDelCont(ZZJ->ZZJ_MESTRE, ZZJ->ZZJ_LOCAL, ZZJ->ZZJ_LOTE, ZZJ->ZZJ_ENDER, ZZJ->ZZJ_NUMSER, ZZJ->ZZJ_IDUNIT, ZZJ->ZZJ_PRODUT),;
+            { || zDelCont(ZZJ->ZZJ_MESTRE, ZZJ->ZZJ_LOCAL, ZZJ->ZZJ_PRODUT),;
             oBrwCabec:Refresh(.T.) } )
 
         oBrwCabec:DisableReport()
@@ -127,20 +127,12 @@ Static Function zUltCont( cMestre, cLocal, cLote, cEndereco, cNumSer, cIDUnit, c
         WHERE ZZK.ZZK_FILIAL    = %xFilial:ZZK%
             AND ZZK.ZZK_MESTRE  = %Exp:cMestre%
             AND ZZK.ZZK_LOCAL   = %Exp:cLocal%
-            AND ZZK.ZZK_LOTE    = %Exp:cLote%
-            AND ZZK.ZZK_ENDER   = %Exp:cEndereco%
-            AND ZZK.ZZK_NUMSER  = %Exp:cNumSer%
-            AND ZZK.ZZK_IDUNIT  = %Exp:cIDUnit%
             AND ZZK.ZZK_PRODUT  = %Exp:cProduto%
             AND ZZK_CONTAG = (  SELECT MAX(ZZK_CONTAG)
                                 FROM %Table:ZZK% ZZKB 
                                 WHERE ZZKB.ZZK_FILIAL   = %xFilial:ZZK%
                                     AND ZZKB.ZZK_MESTRE = %Exp:cMestre%
                                     AND ZZKB.ZZK_LOCAL  = %Exp:cLocal%
-                                    AND ZZKB.ZZK_LOTE   = %Exp:cLote%
-                                    AND ZZKB.ZZK_ENDER  = %Exp:cEndereco%
-                                    AND ZZKB.ZZK_NUMSER = %Exp:cNumSer%
-                                    AND ZZKB.ZZK_IDUNIT = %Exp:cIDUnit%
                                     AND ZZKB.ZZK_PRODUT = %Exp:cProduto%
                                     AND ZZKB.%NotDel%    )
             AND ZZK.%NotDel%
@@ -174,7 +166,7 @@ Data.....:              08/12/2020
 Descricao / Objetivo:   Retorna sequencia da contagem     
 =====================================================================================
 */
-Static Function ZF13Cont()
+User Function ZF13Cont()
     Local oModel        := FWModelActive()
     Local oModelGrid    := oModel:GetModel("ZZKDETAIL")
     Local cAliasQry     := GetNextAlias()
@@ -186,10 +178,6 @@ Static Function ZF13Cont()
 	cQuery += 	" WHERE ZZK_FILIAL = '" + FWxFilial("ZZK") + "' " + CRLF
     cQuery += 		" AND ZZK_MESTRE = '" + oModelGrid:GetValue("ZZK_MESTRE") + "' " + CRLF
     cQuery += 		" AND ZZK_LOCAL = '" + oModelGrid:GetValue("ZZK_LOCAL") + "' " + CRLF
-    cQuery += 		" AND ZZK_LOTE = '" + oModelGrid:GetValue("ZZK_LOTE") + "' " + CRLF
-    cQuery += 		" AND ZZK_ENDER = '" + oModelGrid:GetValue("ZZK_ENDER") + "' " + CRLF
-    cQuery += 		" AND ZZK_NUMSER = '" + oModelGrid:GetValue("ZZK_NUMSER") + "' " + CRLF
-    cQuery += 		" AND ZZK_IDUNIT = '" + oModelGrid:GetValue("ZZK_IDUNIT") + "' " + CRLF
     cQuery += 		" AND ZZK_PRODUT = '" + oModelGrid:GetValue("ZZK_PRODUT") + "' " + CRLF
     cQuery += 		" AND ZZK.D_E_L_E_T_ = ' ' " + CRLF
 
@@ -214,7 +202,7 @@ Data.....:              08/12/2020
 Descricao / Objetivo:   Valida se atingiu a quantidade eleita e retorna o valor         
 =====================================================================================
 */
-Static Function ZF13QtdEle()
+User Function ZF13QtdEle()
     Local oModel        := FWModelActive()
     Local oModelGrid    := oModel:GetModel("ZZKDETAIL")
     Local nQtdEle       := 0
@@ -226,10 +214,6 @@ Static Function ZF13QtdEle()
         WHERE ZZK.ZZK_FILIAL = %xFilial:ZZK%
             AND ZZK.ZZK_MESTRE = %Exp:oModelGrid:GetValue("ZZK_MESTRE")%
             AND ZZK.ZZK_LOCAL = %Exp:oModelGrid:GetValue("ZZK_LOCAL")%
-            AND ZZK.ZZK_LOTE = %Exp:oModelGrid:GetValue("ZZK_LOTE")%
-            AND ZZK.ZZK_ENDER = %Exp:oModelGrid:GetValue("ZZK_ENDER")%
-            AND ZZK.ZZK_NUMSER = %Exp:oModelGrid:GetValue("ZZK_NUMSER")%
-            AND ZZK.ZZK_IDUNIT = %Exp:oModelGrid:GetValue("ZZK_IDUNIT")%
             AND ZZK.ZZK_PRODUT = %Exp:oModelGrid:GetValue("ZZK_PRODUT")%
             AND ZZK.%NotDel%
     EndSql
@@ -293,7 +277,7 @@ Static Function ModelDef()
 
     oModel:AddFields("ZZJMASTER",/*cOwner*/,oStrFake,/*bPre*/,/*bPost*/,{ || {""} })
     oModel:AddGrid('ZZKDETAIL','ZZJMASTER',oGridZZK,/*bLinePre*/,{|oModel|zPoslinVal(oModel)},/*bPre*/,/*bPost*/,;
-        {|oModel| LoadGrid(oModel, ZZJ->ZZJ_MESTRE, ZZJ->ZZJ_LOCAL, ZZJ->ZZJ_LOTE, ZZJ->ZZJ_ENDER, ZZJ->ZZJ_NUMSER, ZZJ->ZZJ_IDUNIT, ZZJ->ZZJ_PRODUT  )})
+        {|oModel| LoadGrid(oModel, ZZJ->ZZJ_MESTRE, ZZJ->ZZJ_LOCAL, ZZJ->ZZJ_PRODUT  )})
 
     oModel:SetPrimaryKey({})
     
@@ -329,17 +313,10 @@ Static Function ViewDef()
     oView:AddGrid('VIEW_GRID',oGridZZK,'ZZKDETAIL')
 
     //--Remove campos do grid para inclusão
-    //--Campos ZZK_TPESTR/ZZK_CODUNI serão gravados no commit
-    /*--Campo ZZK_IDUNIT somente sera usado nas inclusões via arquivo CSV,
-    isso porque é necessario adicionar os itens do unitizador de forma automatica.*/ 
     If nOperation == MODEL_OPERATION_INSERT
         For nI := 1 To Len(oGridZZK:aFields)
             If nI > Len(oGridZZK:aFields)
 				Exit
-			EndIf
-			// Campos que não podem aparecer em tela
-			If oGridZZK:aFields[nI][1] $ "ZZK_TPESTR/ZZK_CODUNI/ZZK_IDUNIT"
-				oGridZZK:RemoveField(oGridZZK:aFields[nI][1])
 			EndIf
 		Next nI
     EndIf
@@ -396,10 +373,6 @@ Static Function zValidMdl(oModel)
         WHERE ZZK.ZZK_FILIAL = %xFilial:ZZK%
             AND ZZK.ZZK_MESTRE = %Exp:oModelGrid:GetValue("ZZK_MESTRE")%
             AND ZZK.ZZK_LOCAL = %Exp:oModelGrid:GetValue("ZZK_LOCAL")%
-            AND ZZK.ZZK_LOTE = %Exp:oModelGrid:GetValue("ZZK_LOTE")%
-            AND ZZK.ZZK_ENDER = %Exp:oModelGrid:GetValue("ZZK_ENDER")%
-            AND ZZK.ZZK_NUMSER = %Exp:oModelGrid:GetValue("ZZK_NUMSER")%
-            AND ZZK.ZZK_IDUNIT = %Exp:oModelGrid:GetValue("ZZK_IDUNIT")%
             AND ZZK.ZZK_PRODUT = %Exp:oModelGrid:GetValue("ZZK_PRODUT")%
             AND ZZK.ZZK_STATUS = %Exp:'3'%
             AND ZZK.%NotDel%
@@ -450,25 +423,6 @@ Static Function CommitMdl( oModel )
     //--Ativa Workarea
     ZZJ->( DbSetOrder(1) )
 
-    //--Gravações complementares antes do commit, se não houver unitizador informado
-    //--O campo gravado abaixo não passa por validações, portanto não invalida o modelo
-    /*Removido, não é necessario para geração do acerto
-    If Empty( oModelGrid:GetValue("ZZK_IDUNIT") ) .And. Empty( oModelGrid:GetValue("ZZK_TPESTR") )
-        For nI := 1 To oModelGrid:Length()
-
-            If oModelGrid:IsDeleted(nI)
-                Loop
-            EndIf
-
-            If !Empty( oModelGrid:GetValue("ZZK_ENDER") )
-                cCodEstFis  := POSICIONE("SBE",1,FWxFilial("SBE")+oModelGrid:GetValue("ZZK_LOCAL")+oModelGrid:GetValue("ZZK_ENDER"), "BE_ESTFIS")
-                oModelGrid:SetValue("ZZK_TPESTR",cCodEstFis)
-            EndIf
-
-        Next
-    EndIf
-    */
-
     //--Faz o commit do modelo 
     lRet := FWFormCommit( oModel )
 
@@ -489,10 +443,6 @@ Static Function CommitMdl( oModel )
                     WHERE ZZK.ZZK_FILIAL = %xFilial:ZZK%
                         AND ZZK.ZZK_MESTRE = %Exp:oModelGrid:GetValue("ZZK_MESTRE")%
                         AND ZZK.ZZK_LOCAL = %Exp:oModelGrid:GetValue("ZZK_LOCAL")%
-                        AND ZZK.ZZK_LOTE = %Exp:oModelGrid:GetValue("ZZK_LOTE")%
-                        AND ZZK.ZZK_ENDER = %Exp:oModelGrid:GetValue("ZZK_ENDER")%
-                        AND ZZK.ZZK_NUMSER = %Exp:oModelGrid:GetValue("ZZK_NUMSER")%
-                        AND ZZK.ZZK_IDUNIT = %Exp:oModelGrid:GetValue("ZZK_IDUNIT")%
                         AND ZZK.ZZK_PRODUT = %Exp:oModelGrid:GetValue("ZZK_PRODUT")%
                         AND ZZK.ZZK_QTDELE <> %Exp:0%
                         AND ZZK.%NotDel%
@@ -509,10 +459,6 @@ Static Function CommitMdl( oModel )
                         WHERE ZZK.ZZK_FILIAL = %xFilial:ZZK%
                             AND ZZK.ZZK_MESTRE = %Exp:oModelGrid:GetValue("ZZK_MESTRE")%
                             AND ZZK.ZZK_LOCAL = %Exp:oModelGrid:GetValue("ZZK_LOCAL")%
-                            AND ZZK.ZZK_LOTE = %Exp:oModelGrid:GetValue("ZZK_LOTE")%
-                            AND ZZK.ZZK_ENDER = %Exp:oModelGrid:GetValue("ZZK_ENDER")%
-                            AND ZZK.ZZK_NUMSER = %Exp:oModelGrid:GetValue("ZZK_NUMSER")%
-                            AND ZZK.ZZK_IDUNIT = %Exp:oModelGrid:GetValue("ZZK_IDUNIT")%
                             AND ZZK.ZZK_PRODUT = %Exp:oModelGrid:GetValue("ZZK_PRODUT")%
                             AND ZZK.%NotDel%
                     EndSql
@@ -551,10 +497,6 @@ Static Function CommitMdl( oModel )
 
             cMestre     := oModelGrid:GetValue("ZZK_MESTRE")
             cLocal      := oModelGrid:GetValue("ZZK_LOCAL")
-            cLote       := oModelGrid:GetValue("ZZK_LOTE")
-            cEndereco   := oModelGrid:GetValue("ZZK_ENDER")
-            cNumSer     := oModelGrid:GetValue("ZZK_NUMSER")
-            cIDUnit     := oModelGrid:GetValue("ZZK_IDUNIT")
             cProduto    := oModelGrid:GetValue("ZZK_PRODUT")
 
             cAliasQry   := GetNextAlias()
@@ -564,10 +506,6 @@ Static Function CommitMdl( oModel )
                 WHERE ZZJ.ZZJ_FILIAL = %xFilial:ZZJ%
                     AND ZZJ.ZZJ_MESTRE = %Exp:cMestre%
                     AND ZZJ.ZZJ_LOCAL = %Exp:cLocal%
-                    AND ZZJ.ZZJ_LOTE = %Exp:cLote%
-                    AND ZZJ.ZZJ_ENDER = %Exp:cEndereco%
-                    AND ZZJ.ZZJ_NUMSER = %Exp:cNumSer%
-                    AND ZZJ.ZZJ_IDUNIT = %Exp:cIDUnit%
                     AND ZZJ.ZZJ_PRODUT = %Exp:cProduto%
                     AND ZZJ.%NotDel%
             EndSql
@@ -602,10 +540,6 @@ Static Function CommitMdl( oModel )
                 ZZJ->ZZJ_FILIAL := FWxFilial("ZZJ")
                 ZZJ->ZZJ_MESTRE := cMestre
                 ZZJ->ZZJ_LOCAL  := cLocal
-                ZZJ->ZZJ_LOTE   := cLote
-                ZZJ->ZZJ_ENDER  := cEndereco
-                ZZJ->ZZJ_NUMSER := cNumSer
-                ZZJ->ZZJ_IDUNIT := cIDUnit
                 ZZJ->ZZJ_PRODUT := cProduto
                 ZZJ->ZZJ_STATUS := IIF( nQtdEle <> 0 .Or. lContZero, '2', '1')
                 ZZJ->( MsUnlock() )
@@ -642,22 +576,17 @@ Static Function ValidProd(oModelGrid)
         //--Verifica se possui controle de lote
         If SB1->B1_RASTRO == 'L'
             
-            //--Obriga o preenchimento do campo lote
-            If Empty( oModelGrid:GetValue("ZZK_LOTE") )
-                lRet := .F.
-                Help( ,, "Caoa",, "Produto " + AllTrim(oModelGrid:GetValue("ZZK_PRODUT") ) +;
-                                    " possui controle de lote, por favor preencher o campo Lote!" , 1, 0 ) 
-            EndIf
+            lRet := .F.
+             Help( ,, "Caoa",, "Produto " + AllTrim(oModelGrid:GetValue("ZZK_PRODUT") ) +;
+                               " possui controle de lote, por favor preencher o campo Lote!" , 1, 0 ) 
 
         EndIf
 
         //--Obriga o preenchimento do campo lote
         If SB1->B1_LOCALIZ == 'S'
-            If Empty( oModelGrid:GetValue("ZZK_ENDER") )
-                lRet := .F.
-                Help( ,, "Caoa",, "Produto " + AllTrim(oModelGrid:GetValue("ZZK_PRODUT") ) +;
+           lRet := .F.
+           Help( ,, "Caoa",, "Produto " + AllTrim(oModelGrid:GetValue("ZZK_PRODUT") ) +;
                                     " possui controle de endereço, por favor preencher o campo Endereço!" , 1, 0 ) 
-            EndIf
         EndIf
 
     Else
@@ -779,7 +708,7 @@ Static Function zImpCSV(cFileOpen, cLocal, cProdDe, cProdAte)
                 Loop
 			EndIf
 				
-			_nQtde := NoRound(Val(_aDados[_nX][02]), TamSx3("C6_QTDVEN")[02])
+			_nQtde := NoRound(Val(_aDado[03]), TamSx3("ZZK_QTCONT")[02])
             If _nQtde <> NoRound(VAL(_aDados[03]), 0)
 
                 cLog := "Não é permitido quantidade fracionada na contagem."
@@ -932,12 +861,11 @@ Static Function zGeraInv(cMestre, cLocal)
     Private lMsErroAuto     := .F.
     Private cAliasSB7       := GetNextAlias()
 
-    cQuery := " SELECT TMPZZJ.ZZJ_FILIAL, TMPZZJ.ZZJ_MESTRE, TMPZZJ.ZZJ_LOCAL, TMPZZJ.ZZJ_LOTE, " + CRLF 
-    cQuery += "  TMPZZJ.ZZJ_ENDER, TMPZZJ.ZZJ_NUMSER, TMPZZJ.ZZJ_IDUNIT, TMPZZJ.ZZJ_PRODUT,   " + CRLF 
-    cQuery += " TMPZZJ.ZZJ_STATUS, TMPZZJ.RECZZJ, ZZK.ZZK_QTCONT, ZZK.ZZK_SEGUM, ZZK.ZZK_SUBLOT, " + CRLF 
-    cQuery += " ZZK.ZZK_DTVAL, ZZK.ZZK_CONTAG, ZZK.ZZK_CODUNI, ZZK.R_E_C_N_O_ AS RECZZK, ZZK.ZZK_DATA " + CRLF 
+    cQuery := " SELECT TMPZZJ.ZZJ_FILIAL, TMPZZJ.ZZJ_MESTRE, TMPZZJ.ZZJ_LOCAL, TMPZZJ.ZZJ_PRODUT " + CRLF 
+    cQuery += " TMPZZJ.ZZJ_STATUS, TMPZZJ.RECZZJ, ZZK.ZZK_QTCONT, ZZK.ZZK_SEGUM, " + CRLF 
+    cQuery += " ZZK.ZZK_CONTAG, ZZK.R_E_C_N_O_ AS RECZZK, ZZK.ZZK_DATA " + CRLF 
     cQuery += " FROM ( " + CRLF 
-    cQuery += " SELECT ZZJ_FILIAL, ZZJ_MESTRE, ZZJ_LOCAL, ZZJ_LOTE, ZZJ_ENDER, ZZJ_NUMSER, ZZJ_IDUNIT, " + CRLF 
+    cQuery += " SELECT ZZJ_FILIAL, ZZJ_MESTRE, ZZJ_LOCAL, " + CRLF 
     cQuery += "  ZZJ_PRODUT, ZZJ_STATUS, ZZJ.R_E_C_N_O_ AS RECZZJ " + CRLF 
     cQuery += "  FROM " + RetSQLName("ZZI") + " ZZI " + CRLF
     cQuery += "  JOIN " + RetSQLName("ZZJ") + " ZZJ " + CRLF
@@ -951,18 +879,14 @@ Static Function zGeraInv(cMestre, cLocal)
     cQuery += "  AND ZZI.ZZI_MESTRE = '" + cMestre + "' " + CRLF
     cQuery += "  AND ZZI.ZZI_LOCAL = '" + cLocal + "' " + CRLF
     cQuery += "   AND ZZI.D_E_L_E_T_ = ' ' " + CRLF
-    cQuery += "  GROUP BY ZZJ_FILIAL, ZZJ_MESTRE, ZZJ_LOCAL, ZZJ_LOTE, ZZJ_ENDER, ZZJ_NUMSER, ZZJ_IDUNIT, " + CRLF
+    cQuery += "  GROUP BY ZZJ_FILIAL, ZZJ_MESTRE, ZZJ_LOCAL, " + CRLF
     cQuery += "   ZZJ_PRODUT, ZZJ_STATUS, ZZJ.R_E_C_N_O_ " + CRLF
-    cQuery += "  ORDER BY ZZJ_FILIAL, ZZJ_MESTRE, ZZJ_LOCAL, ZZJ_LOTE, ZZJ_ENDER, ZZJ_NUMSER, ZZJ_IDUNIT, " + CRLF
+    cQuery += "  ORDER BY ZZJ_FILIAL, ZZJ_MESTRE, ZZJ_LOCAL, " + CRLF
     cQuery += "  ZZJ_PRODUT ) TMPZZJ " + CRLF
     cQuery += " JOIN " + RetSQLName("ZZK") + " ZZK " + CRLF
     cQuery += "   ON ZZK.ZZK_FILIAL = TMPZZJ.ZZJ_FILIAL " + CRLF
     cQuery += "   AND ZZK.ZZK_MESTRE = TMPZZJ.ZZJ_MESTRE " + CRLF
     cQuery += "   AND ZZK.ZZK_LOCAL = TMPZZJ.ZZJ_LOCAL " + CRLF
-    cQuery += "   AND ZZK.ZZK_LOTE = TMPZZJ.ZZJ_LOTE " + CRLF
-    cQuery += "   AND ZZK.ZZK_ENDER = TMPZZJ.ZZJ_ENDER " + CRLF
-    cQuery += "   AND ZZK.ZZK_NUMSER = TMPZZJ.ZZJ_NUMSER " + CRLF
-    cQuery += "   AND ZZK.ZZK_IDUNIT = TMPZZJ.ZZJ_IDUNIT " + CRLF
     cQuery += "   AND ZZK.ZZK_PRODUT = TMPZZJ.ZZJ_PRODUT " + CRLF
     cQuery += "   AND ZZK.ZZK_STATUS = '2' " + CRLF
     cQuery += "   AND ZZK.ZZK_CONTAG = ( SELECT MAX(ZZK_CONTAG) " + CRLF 
@@ -970,10 +894,6 @@ Static Function zGeraInv(cMestre, cLocal)
     cQuery += "                          WHERE ZZKB.ZZK_FILIAL   = TMPZZJ.ZZJ_FILIAL " + CRLF
     cQuery += "                              AND ZZKB.ZZK_MESTRE = TMPZZJ.ZZJ_MESTRE " + CRLF
     cQuery += "                              AND ZZKB.ZZK_LOCAL  = TMPZZJ.ZZJ_LOCAL " + CRLF
-    cQuery += "                              AND ZZKB.ZZK_LOTE   = TMPZZJ.ZZJ_LOTE " + CRLF
-    cQuery += "                              AND ZZKB.ZZK_ENDER  = TMPZZJ.ZZJ_ENDER " + CRLF
-    cQuery += "                              AND ZZKB.ZZK_NUMSER = TMPZZJ.ZZJ_NUMSER " + CRLF
-    cQuery += "                              AND ZZKB.ZZK_IDUNIT = TMPZZJ.ZZJ_IDUNIT " + CRLF
     cQuery += "                              AND ZZKB.ZZK_PRODUT = TMPZZJ.ZZJ_PRODUT " + CRLF
     cQuery += "                              AND ZZKB.D_E_L_E_T_ = ' '  ) " + CRLF
 
@@ -1004,22 +924,11 @@ Static Function zGeraInv(cMestre, cLocal)
                             {"B7_DATA",		SToD((cAliasQry)->ZZK_DATA),	Nil},;
                             {"B7_QUANT",	(cAliasQry)->ZZK_QTCONT,		Nil},;
                             {"B7_QTSEGUM",	(cAliasQry)->ZZK_SEGUM,		    Nil},;
-                            {"B7_LOTECTL",	(cAliasQry)->ZZJ_LOTE,		    Nil},;
-                            {"B7_NUMLOTE",	(cAliasQry)->ZZK_SUBLOT,		Nil},;
-                            {"B7_DTVALID",	SToD((cAliasQry)->ZZK_DTVAL),	Nil},;
-                            {"B7_LOCALIZ",	(cAliasQry)->ZZJ_ENDER,		    Nil},;
-                            {"B7_NUMSERI",	(cAliasQry)->ZZJ_NUMSER,		Nil},;
                             {"B7_CONTAGE",	(cAliasQry)->ZZK_CONTAG,		Nil},;
-                            {"B7_CODUNI",	(cAliasQry)->ZZK_CODUNI,		Nil},;
-                            {"B7_IDUNIT",	(cAliasQry)->ZZJ_IDUNIT,		Nil},;
                             {"B7_ORIGEM",	"ZESTF013",					    Nil} }
 
                 zQrySB7( (cAliasQry)->ZZJ_MESTRE,;
                         (cAliasQry)->ZZJ_LOCAL,;
-                        (cAliasQry)->ZZJ_LOTE,;
-                        (cAliasQry)->ZZJ_NUMSER,;
-                        (cAliasQry)->ZZJ_ENDER,;
-                        (cAliasQry)->ZZJ_IDUNIT,;
                         (cAliasQry)->ZZJ_PRODUT )
 
                 
@@ -1039,10 +948,6 @@ Static Function zGeraInv(cMestre, cLocal)
                             aAutoErro := GETAUTOGRLOG()
                             cError := "Mestre: " + (cAliasQry)->ZZJ_MESTRE +;
                                     " Armazem: " + (cAliasQry)->ZZJ_LOCAL +;
-                                    " Lote: " + AllTrim( (cAliasQry)->ZZJ_LOTE ) +;
-                                    " Endereço: " + AllTrim( (cAliasQry)->ZZJ_ENDER ) +;
-                                    " NumSerie: " + AllTrim( (cAliasQry)->ZZJ_NUMSER ) +;
-                                    " Unitizador: " + AllTrim( (cAliasQry)->ZZJ_IDUNIT ) +;
                                     " Produto: " + AllTrim( (cAliasQry)->ZZJ_PRODUT ) + CRLF + CRLF
                                     
                             For nI := 1 To Len(aAutoErro)
@@ -1114,14 +1019,14 @@ Static Function zBloqArm()
         
         If ZZI->ZZI_STATUS == '0' 
 
-            AADD(aSays,"Esta rotina tem o objetivo de bloquear as movimentações e incluir as contagens zeradas de estoque")
-            AADD(aSays,"conforme cenario abaixo")
+            AADD(aSays,"Esta rotina tem o objetivo de bloquear as movimentações e")
+            AADD(aSays,"incluir as contagens zeradas de estoque conforme cenario abaixo")
             AADD(aSays,"MESTRE: " + ZZI->ZZI_MESTRE )
             AADD(aSays,"LOCAL: " + ZZI->ZZI_LOCAL )
             If !Empty(ZZI->ZZI_CODDE)
-                AADD(aSays,"PRODUTO DE: " + ZZI->ZZI_CODDE + " PRODUTO ATE: " + ZZI->ZZI_CODATE )
+                AADD(aSays,"PRODUTO DE: " + AllTrim(ZZI->ZZI_CODDE) + " - PRODUTO ATE: " + Alltrim(ZZI->ZZI_CODATE) )
             EndIf
-            AADD(aSays,"Tem como objetivo tambem realizar a inclusão de contagens zeradas dos produtos.")
+            AADD(aSays," ")
             AADD(aSays,"Clique em OK para prosseguir.")
 
             AADD(aButtons, { 1,.T.,{|o| nOpca := 1, o:oWnd:End() }} )
@@ -1131,7 +1036,7 @@ Static Function zBloqArm()
 
             If nOpca == 1
                     
-                If MsgYesNo("Confirma o processamento ?", "Caoa Peças" )
+                If MsgYesNo("Confirma o processamento ?", "Inventario Peças" )
 
                     Processa({|| zProcBloq() }, "Carga de Dados.", "Aguarde .... Realizando o bloqueio e a carga dos registros zerados..." )
 
@@ -1160,8 +1065,6 @@ Static Function zProcBloq()
     Local oModel        := ModelDef()
     Local oModelGrid    := oModel:GetModel("ZZKDETAIL")
     Local cUpdate       := ""
-    //Local cCodEstFis    := ""
-    Local cCodUni       := ""
     Local lRet          := .T.
 
     Private cAliasD14   := GetNextAlias()
@@ -1195,44 +1098,6 @@ Static Function zProcBloq()
             lRet := .F.
             Help( ,, "Caoa Peças",, TcSqlError() , 1, 0)
             Disarmtransaction()
-        EndIf
-
-        If lRet
-            cUpdate :=  " UPDATE " + RetSqlName("SBF")                      + CRLF
-            cUpdate	+=  " SET BF_EMPENHO = 0 "                              + CRLF
-            cUpdate +=  "   , BF_QEMPPRE = 0 "                              + CRLF
-            cUpdate +=  "   , BF_EMPEN2 = 0 "                               + CRLF
-            cUpdate +=  "   , BF_QEPRE2 = 0 "                               + CRLF
-            cUpdate +=  " WHERE BF_FILIAL = '" + FWxFilial("SBF") + "'"     + CRLF
-            cUpdate +=  " AND BF_PRODUTO BETWEEN '" + ZZI->ZZI_CODDE + "' AND '" + ZZI->ZZI_CODATE + "'" + CRLF    
-            cUpdate +=  " AND BF_LOCAL = '" + ZZI->ZZI_LOCAL + "'"          + CRLF
-            cUpdate +=  " AND D_E_L_E_T_ = ' ' "                            + CRLF
-
-            If TcSqlExec(cUpdate) < 0
-                lRet := .F.
-                Help( ,, "Caoa Peças",, TcSqlError() , 1, 0)
-                Disarmtransaction()
-            EndIf
-        EndIf
-
-        If lRet
-            cUpdate :=  " UPDATE " + RetSqlName("SB8")                      + CRLF
-            cUpdate	+=  " SET B8_EMPENHO = 0 "                              + CRLF
-            cUpdate +=  "   , B8_QEMPPRE = 0 "                              + CRLF
-            cUpdate +=  "   , B8_QACLASS = 0 "                              + CRLF
-            cUpdate +=  "   , B8_EMPENH2 = 0 "                              + CRLF
-            cUpdate +=  "   , B8_QEPRE2 = 0 "                               + CRLF
-            cUpdate +=  "   , B8_QACLAS2 = 0 "                              + CRLF
-            cUpdate +=  " WHERE B8_FILIAL = '" + FWxFilial("SB8") + "'"     + CRLF
-            cUpdate +=  " AND B8_PRODUTO BETWEEN '" + ZZI->ZZI_CODDE + "' AND '" + ZZI->ZZI_CODATE + "'" + CRLF    
-            cUpdate +=  " AND B8_LOCAL = '" + ZZI->ZZI_LOCAL + "'"          + CRLF            
-            cUpdate +=  " AND D_E_L_E_T_ = ' ' "                            + CRLF
-
-            If TcSqlExec(cUpdate) < 0
-                lRet := .F.
-                Help( ,, "Caoa Peças",, TcSqlError() , 1, 0)
-                Disarmtransaction()
-            EndIf
         EndIf
        
         If lRet
@@ -1277,162 +1142,9 @@ Static Function zProcBloq()
             EndDo
             ( cAliasSB2 )->( DbCloseArea() )
 
-             //--Monta consulta SBF para gerar itens com quantidade zerada
-            zQrySBF( ZZI->ZZI_LOCAL, ZZI->ZZI_CODDE, ZZI->ZZI_CODATE )
-
-            ProcRegua( Contar(cAliasSBF,"!Eof()") )
-            ( cAliasSBF )->( DbGoTop() )
-            While ( cAliasSBF )->( !EOF() )
-
-                // Incrementa a mensagem na régua.
-                IncProc("Efetuando a inclusão das contagens zeradas, tabela origem saldos por endereço!")
-
-                //Ativando o modelo
-                oModel:SetOperation(3)
-                oModel:Activate()
-
-                // Carga dos dados
-                oModelGrid:SetValue('ZZK_FILIAL'    ,FWxFilial("ZZK"))              
-                oModelGrid:SetValue('ZZK_LOTE'      ,PadR( ( cAliasSBF )->BF_LOTECTL, TamSX3("ZZK_LOTE")[1]) )
-                oModelGrid:SetValue('ZZK_DTVAL'     ,POSICIONE('SB8', 3, FWxFilial('SB8')+(cAliasSBF)->BF_PRODUTO+(cAliasSBF)->BF_LOCAL+(cAliasSBF)->BF_LOTECTL, "B8_DTVALID" ) )
-                oModelGrid:SetValue('ZZK_ENDER'     ,PadR( ( cAliasSBF )->BF_LOCALIZ, TamSX3("ZZK_ENDER")[1]) )
-                oModelGrid:SetValue('ZZK_NUMSER'    ,PadR( ( cAliasSBF )->BF_NUMSERI, TamSX3("ZZK_NUMSER")[1]) )
-                //oModelGrid:SetValue('ZZK_IDUNIT'    ,PadR( aDados[6], TamSX3("ZZK_IDUNIT")[1]) )
-                oModelGrid:SetValue('ZZK_PRODUT'    ,PadR( ( cAliasSBF )->BF_PRODUTO, TamSX3("ZZK_PRODUT")[1]) ) 
-                oModelGrid:SetValue('ZZK_QTCONT'    ,0 )
-                oModelGrid:SetValue('ZZK_SEGUM'     ,0 )
-                oModelGrid:SetValue('ZZK_USER'      ,RetCodUsr() )
-
-
-                If !Empty( oModelGrid:GetValue("ZZK_IDUNIT") )
-                    cCodUni := POSICIONE("D0Y",1,FWxFilial("D0Y")+oModelGrid:GetValue("ZZK_IDUNIT"),"D0Y_TIPUNI")
-                    oModelGrid:SetValue("ZZK_CODUNI",cCodUni)
-                EndIf
-
-                //Valid só é instanciado para atender o padrão do MVC, se não instanciar o commit não é realizado.
-                //O retorno sempre sera verdadeiro, porque nenhuma validação é executada neste cenario
-                If oModel:VldData()
-
-                    oModel:CommitData()
-                        
-                EndIf
-
-                // Desativando o modelo para o proximo registro
-                oModel:DeActivate()
-
-                ( cAliasSBF )->( DbSkip() )
-
-            EndDo
-            ( cAliasSBF )->( DbCloseArea() )
-
-            //--Monta consulta SBF para gerar itens com quantidade zerada
-            zQrySB8( ZZI->ZZI_LOCAL, ZZI->ZZI_CODDE, ZZI->ZZI_CODATE )
-
-            ProcRegua( Contar(cAliasSB8,"!Eof()") )
-            ( cAliasSB8 )->( DbGoTop() )
-            While ( cAliasSB8 )->( !EOF() )
-
-                // Incrementa a mensagem na régua.
-                IncProc("Efetuando a inclusão das contagens zeradas, tabela origem saldos por lote!")
-
-                //Ativando o modelo
-                oModel:SetOperation(3)
-                oModel:Activate()
-
-                // Carga dos dados
-                oModelGrid:SetValue('ZZK_FILIAL'    ,FWxFilial("ZZK"))              
-                oModelGrid:SetValue('ZZK_LOTE'      ,PadR( ( cAliasSB8 )->B8_LOTECTL, TamSX3("ZZK_LOTE")[1]) )
-                oModelGrid:SetValue('ZZK_DTVAL'     ,POSICIONE('SB8', 3, FWxFilial('SB8')+(cAliasSB8)->B8_PRODUTO+(cAliasSB8)->B8_LOCAL+(cAliasSB8)->B8_LOTECTL, "B8_DTVALID" ) )
-                oModelGrid:SetValue('ZZK_PRODUT'    ,PadR( ( cAliasSB8 )->B8_PRODUTO, TamSX3("ZZK_PRODUT")[1]) ) 
-                oModelGrid:SetValue('ZZK_QTCONT'    ,0 )
-                oModelGrid:SetValue('ZZK_SEGUM'     ,0 )
-                oModelGrid:SetValue('ZZK_USER'      ,RetCodUsr() )
-
-                //Valid só é instanciado para atender o padrão do MVC, se não instanciar o commit não é realizado.
-                //O retorno sempre sera verdadeiro, porque nenhuma validação é executada neste cenario
-                If oModel:VldData()
-
-                    oModel:CommitData()
-                        
-                EndIf
-
-                // Desativando o modelo para o proximo registro
-                oModel:DeActivate()
-
-                ( cAliasSB8 )->( DbSkip() )
-
-            EndDo
-            ( cAliasSB8 )->( DbCloseArea() )
-
         EndIf
 
     End Transaction
-
-Return
-
-/*
-=====================================================================================
-Programa.:              zQrySBF
-Autor....:              CAOA - Fagner Ferraz Barreto
-Data.....:              08/12/2020
-Descricao / Objetivo:   Consulta tabela SBF para inclusão de contagens zeradas          
-=====================================================================================
-*/
-Static Function zQrySBF(cLocal, cProdDe, cProdAte)
-
-    BeginSql Alias cAliasSBF
-        SELECT BF_LOCAL, BF_LOTECTL, BF_LOCALIZ, BF_NUMSERI, BF_PRODUTO
-        FROM %Table:SBF% SBF
-        WHERE SBF.BF_FILIAL = %xFilial:SBF%
-        AND SBF.BF_PRODUTO BETWEEN %exp:cProdDe% AND %exp:cProdAte%
-        AND SBF.BF_LOCAL = %exp:cLocal%
-        AND SBF.BF_QUANT <> %exp:0%
-        AND SBF.BF_PRODUTO <> %exp:' '%
-        AND SBF.BF_LOCALIZ <> %exp:' '%
-        AND NOT EXISTS ( SELECT 1 FROM %Table:ZZK% ZZK
-                         WHERE ZZK_FILIAL = %xFilial:ZZK%
-                         AND ZZK_LOCAL = BF_LOCAL
-                         AND ZZK_LOTE = BF_LOTECTL
-                         AND ZZK_ENDER = BF_LOCALIZ
-                         AND ZZK_NUMSER = BF_NUMSERI
-                         AND ZZK_PRODUT = BF_PRODUTO
-                         AND ZZK.%NotDel% )
-        AND SBF.%NotDel%
-        GROUP BY BF_LOCAL, BF_LOTECTL, BF_LOCALIZ, BF_NUMSERI, BF_PRODUTO
-        ORDER BY BF_LOCAL, BF_LOTECTL, BF_LOCALIZ, BF_NUMSERI, BF_PRODUTO
-    EndSql
-
-Return
-
-/*
-=====================================================================================
-Programa.:              zQrySB8
-Autor....:              CAOA - Fagner Ferraz Barreto
-Data.....:              28/12/2020
-Descricao / Objetivo:   Consulta tabela SB8 para inclusão de contagens zeradas          
-=====================================================================================
-*/
-Static Function zQrySB8(cLocal, cProdDe, cProdAte)
-
-    BeginSql Alias cAliasSB8
-        SELECT B8_LOCAL, B8_LOTECTL, B8_PRODUTO 
-        FROM %Table:SB8% SB8
-        WHERE SB8.B8_FILIAL = %xFilial:SB8%
-        AND SB8.B8_PRODUTO BETWEEN %exp:cProdDe% AND %exp:cProdAte%
-        AND SB8.B8_LOCAL = %exp:cLocal%
-        AND SB8.B8_SALDO <> %exp:0%
-        AND SB8.B8_PRODUTO <> %exp:' '%
-        AND SB8.B8_LOTECTL <> %exp:' '%
-        AND SB8.%NotDel%
-        AND NOT EXISTS ( SELECT 1 FROM %Table:ZZK% ZZK
-                        WHERE ZZK_FILIAL = %xFilial:ZZK%
-                        AND ZZK_LOCAL = B8_LOCAL
-                        AND ZZK_LOTE = B8_LOTECTL
-                        AND ZZK_PRODUT = B8_PRODUTO
-                        AND ZZK.%NotDel% )
-        GROUP BY B8_LOCAL, B8_LOTECTL, B8_PRODUTO 
-        ORDER BY B8_LOCAL, B8_LOTECTL, B8_PRODUTO 
-    EndSql
 
 Return
 
@@ -1579,10 +1291,6 @@ Static function LoadGrid(oModel, cMestre, cLocal, cLote, cEndereco, cNumSer, cID
         WHERE ZZK.ZZK_FILIAL = %xFilial:ZZK%
         AND ZZK.ZZK_MESTRE = %exp:cMestre%
         AND ZZK.ZZK_LOCAL = %exp:cLocal%
-        AND ZZK.ZZK_LOTE = %exp:cLote%
-        AND ZZK.ZZK_ENDER = %exp:cEndereco%
-        AND ZZK.ZZK_NUMSER = %exp:cNumSer%
-        AND ZZK.ZZK_IDUNIT = %exp:cIDUnit%
         AND ZZK.ZZK_PRODUT = %exp:cProd%
         AND ZZK.%NotDel%
     EndSql
@@ -1658,11 +1366,6 @@ Static Function zPosLinVal(oModelGrid)
     Local cMestre   := oModelGrid:GetValue("ZZK_MESTRE")
     Local cLocal    := oModelGrid:GetValue("ZZK_LOCAL")
     Local cProduto  := oModelGrid:GetValue("ZZK_PRODUT")
-    Local cEndereco := oModelGrid:GetValue("ZZK_ENDER")
-    Local cLote     := oModelGrid:GetValue("ZZK_LOTE")
-    Local cNumSer   := oModelGrid:GetValue("ZZK_NUMSER")
-    Local cIDUnit   := oModelGrid:GetValue("ZZK_IDUNIT")
-    Local dDtValid  := oModelGrid:GetValue("ZZK_DTVAL")
     Local lUnitz    := .F.
     Local cError    := ""
     Local nI        := 0
@@ -1760,10 +1463,6 @@ Static Function zPosLinVal(oModelGrid)
             WHERE ZZK.ZZK_FILIAL    = %xFilial:ZZK%
                 AND ZZK.ZZK_MESTRE  = %Exp:cMestre%
                 AND ZZK.ZZK_LOCAL   = %Exp:cLocal%
-                AND ZZK.ZZK_LOTE    = %Exp:cLote%
-                AND ZZK.ZZK_ENDER   = %Exp:cEndereco%
-                AND ZZK.ZZK_NUMSER  = %Exp:cNumSer%
-                AND ZZK.ZZK_IDUNIT  = %Exp:cIDUnit%
                 AND ZZK.ZZK_PRODUT  = %Exp:cProduto%
                 AND ZZK.ZZK_QTDELE  <> %Exp:0%
                 AND ZZK.%NotDel%
@@ -1828,7 +1527,6 @@ Descricao / Objetivo:   Validações complementares do grid
 */
 Static Function ValidCompl(cMestre, cLocal, cLote, cEndereco, cNumSer, cIDUnit, cProduto, dDtValid)
     Local lRet      := .T.
-    //Local dDtValid  := CToD( " / / ")
 
     SB1->( DbSetOrder(1) )
     If SB1->( DbSeek( FWxFilial("SB1") + cProduto ) )
@@ -1840,15 +1538,6 @@ Static Function ValidCompl(cMestre, cLocal, cLote, cEndereco, cNumSer, cIDUnit, 
                 Aadd( aErro, "Mestre: " + cMestre + " Armazem: " + cLocal + " Lote: " + cLote + " Endereço: " + cEndereco +;
                              " Numser: " + cNumSer + " Unitizador: " + cIDUnit + " Produto: " + AllTrim( cProduto ) +; 
                              " | Item possui controle de lote, por favor preencher o campo Lote!" )
-            /*Else Especificação DEV03 criação de lotes zerados, os lotes que não existirem serão criados zerados ao gerar a SB7
-                //--Verifica se o lote informado existe
-                SB8->( DbSetOrder(3) )
-                If !( SB8->( DbSeek( xFilial("SB8")+ cProduto + cLocal + cLote ) ) )
-                    lRet := .F.
-                    Aadd( aErro, "Mestre: " + cMestre + " Armazem: " + cLocal + " Lote: " + cLote + " Endereço: " + cEndereco +;
-                                 " Numser: " + cNumSer + " Unitizador: " + cIDUnit + " Produto: " + AllTrim( cProduto ) +; 
-                                 " | Saldo não encontrado para o lote informado!" )
-                EndIf*/    
             EndIf
 
             If Empty( dDtValid )
@@ -1856,15 +1545,6 @@ Static Function ValidCompl(cMestre, cLocal, cLote, cEndereco, cNumSer, cIDUnit, 
                 Aadd( aErro, "Mestre: " + cMestre + " Armazem: " + cLocal + " Lote: " + cLote + " Endereço: " + cEndereco +;
                              " Numser: " + cNumSer + " Unitizador: " + cIDUnit + " Produto: " + AllTrim( cProduto ) +; 
                              " | Item possui controle de lote, por favor preencher o campo Data de validade!" )
-            /*Else --->Validação removida em acordo com o time de custos, os ajustes de data serão feitos em outro momento
-                If ValType(SB8->B8_DTVALID) == 'D'
-                    dDtValid := IIF( ValType( oModelGrid:GetValue("ZZK_DTVAL") ) == 'D' ,oModelGrid:GetValue("ZZK_DTVAL") ,SToD( oModelGrid:GetValue("ZZK_DTVAL") ) )
-                    If dDtValid != SB8->B8_DTVALID
-                        lRet := .F.
-                        Aadd( aErro, "Data de validade informada  " + DToC( oModelGrid:GetValue("ZZK_DTVAL") ) +;
-                                    " não condiz com a data " + DToC( SB8->B8_DTVALID ) + " localizada no cadastro de saldos por lote."  )
-                    EndIf
-                EndIf*/    
             EndIf
         EndIf
 
@@ -1959,14 +1639,14 @@ Data.....:              08/12/2020
 Descricao / Objetivo:   Exclui contagens do itens posicionado            
 =====================================================================================
 */
-Static Function zDelCont(cMestre, cLocal, cLote, cEndereco, cNumSer, cIDUnit, cProd )
+Static Function zDelCont(cMestre, cLocal, cProd )
     Local cAliasRec := ""
 
     //--WorkAreas Ativas
     ZZJ->( DbSetOrder(2) )
     ZZK->( DbSetOrder(2) )
 
-    If ZZJ->( DbSeek( FWxFilial("ZZJ") + cMestre + cLocal + cLote + cEndereco + cNumSer + cIDUnit + cProd ) )
+    If ZZJ->( DbSeek( FWxFilial("ZZJ") + cMestre + cLocal + cProd ) )
         
         //Se não estiver Transferido SB7 permite a deleção
         If !(ZZJ->ZZJ_STATUS == "3")
@@ -1985,10 +1665,6 @@ Static Function zDelCont(cMestre, cLocal, cLote, cEndereco, cNumSer, cIDUnit, cP
                         WHERE ZZK.ZZK_FILIAL = %xFilial:ZZK%
                             AND ZZK.ZZK_MESTRE = %Exp:cMestre%
                             AND ZZK.ZZK_LOCAL = %Exp:cLocal%
-                            AND ZZK.ZZK_LOTE = %Exp:cLote%
-                            AND ZZK.ZZK_ENDER = %Exp:cEndereco%
-                            AND ZZK.ZZK_NUMSER = %Exp:cNumSer%
-                            AND ZZK.ZZK_IDUNIT = %Exp:cIDUnit%
                             AND ZZK.ZZK_PRODUT = %Exp:cProd%
                             AND ZZK.%NotDel%
                     EndSql
@@ -2054,7 +1730,7 @@ Data.....:              19/01/2021
 Descricao / Objetivo:   Verifica se registro ja existe na tabela SB7 
 =====================================================================================
 */
-Static Function zQrySB7( cMestre, cLocal, cLote, cNumSer, cEndereco, cIdUnit, cProduto )
+Static Function zQrySB7( cMestre, cLocal, cProduto )
 
     BeginSql Alias cAliasSB7
         SELECT B7_DOC
@@ -2062,10 +1738,6 @@ Static Function zQrySB7( cMestre, cLocal, cLote, cNumSer, cEndereco, cIdUnit, cP
         WHERE SB7.B7_FILIAL = %xFilial:SB7%
         AND SB7.B7_DOC = %exp:cMestre%
         AND SB7.B7_LOCAL = %exp:cLocal%
-        AND SB7.B7_LOTECTL = %exp:cLote%
-        AND SB7.B7_NUMSERI = %exp:cNumSer%
-        AND SB7.B7_LOCALIZ = %exp:cEndereco%
-        AND SB7.B7_IDUNIT = %exp:cIdUnit%
         AND SB7.B7_COD = %exp:cProduto%
         AND SB7.%NotDel%
     EndSql				
