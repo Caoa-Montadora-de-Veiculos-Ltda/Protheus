@@ -16,18 +16,24 @@ User Function ZESTF013() //--U_ZESTF013()
 
     oBrowse := FWMBrowse():New()
     oBrowse:SetAlias("ZZI")
-    oBrowse:SetDescription("Inventario Caoa Peças")
+    oBrowse:SetDescription("Inventario Peças Caoa")
     oBrowse:AddLegend("ZZI->ZZI_STATUS == '0' " ,"ORANGE"   ,"Não iniciado")
     oBrowse:AddLegend("ZZI->ZZI_STATUS == '1' " ,"YELLOW"   ,"Em contagem")
     oBrowse:AddLegend("ZZI->ZZI_STATUS == '2' " ,"BLUE"     ,"Aguardando Transf. SB7")
-    oBrowse:AddLegend("ZZI->ZZI_STATUS == '3' " ,"GREEN"    ,"Transferido SB7")
+    oBrowse:AddLegend("ZZI->ZZI_STATUS == '3' " ,"BLACK"    ,"Transferido SB7")
     oBrowse:AddLegend("ZZI->ZZI_STATUS == '4' " ,"WHITE"    ,"Parcialmente Transferido SB7")
-    oBrowse:AddButton("Incluir Inventario"	    , { || FWExecView("Incluir" ,"ZESTF014",3,,{|| .T.}) ,oBrowse:Refresh(.F.) } )
-    oBrowse:AddButton("Iniciar Inventario"	    , { || zBloqArm(), oBrowse:Refresh(.F.) } ) 
-    oBrowse:AddButton("Gerenciar Inventario"	, { || ZESTF013A() ,ZF13AtuZZI(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL) ,oBrowse:Refresh(.F.) } )
+    oBrowse:AddLegend("ZZI->ZZI_STATUS == '5' " ,"GREEN"    ,"Acerto de Estoque Finalizado")
+    oBrowse:AddButton("Incluir Mestre"	    , { || FWExecView("Incluir" ,"ZESTF014",3,,{|| .T.}) ,oBrowse:Refresh(.F.) } )
+    oBrowse:AddButton("Iniciar Mestre"	    , { || zBloqArm(), oBrowse:Refresh(.F.) } ) 
+    oBrowse:AddButton("Gerenciar Mestre"	, { || ZESTF013A() ,ZF13AtuZZI(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL) ,oBrowse:Refresh(.F.) } )
     oBrowse:AddButton("Transf. SB7"	            , { || IIF( zTelaMsg() == 1,;
                                                             Processa( { || zGeraInv(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL) },;
                                                             "Lançamentos de inventario", "Aguarde .... Realizando a carga dos registros...." ),;
+                                                            Nil ),;
+                                                            ZF13AtuZZI(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL), oBrowse:Refresh(.F.) } )
+    oBrowse:AddButton("Transf. SB7"	            , { || IIF( zTelaInv() == 1,;
+                                                            Processa( { || zGeraAcerto(ZZI->ZZI_MESTRE) },;
+                                                            "Acerto de inventario", "Aguarde .... Realizando o acerto de inventário...." ),;
                                                             Nil ),;
                                                             ZF13AtuZZI(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL), oBrowse:Refresh(.F.) } )
     oBrowse:AddButton("Relatorio de Conferencia", { || u_ZWMSR002()	})                                                            
@@ -52,7 +58,7 @@ Static Function ZESTF013A()
 
         oBrwCabec := FWMBrowse():New()
         oBrwCabec:SetAlias("ZZJ")
-        oBrwCabec:SetDescription( "Contagens Mestre: " + ZZI->ZZI_MESTRE + " Armazem: " + ZZI->ZZI_LOCAL  )
+        oBrwCabec:SetDescription( "Gerenciamento das Contagens: " + ZZI->ZZI_MESTRE + " Armazem: " + ZZI->ZZI_LOCAL  )
         oBrwCabec:AddLegend("ZZJ->ZZJ_STATUS == '1' " ,"YELLOW" ,"Em contagem")
         oBrwCabec:AddLegend("ZZJ->ZZJ_STATUS == '2' " ,"BLUE"   ,"Aguardando Transf. SB7")
         oBrwCabec:AddLegend("ZZJ->ZZJ_STATUS == '3' " ,"GREEN"  ,"Transferido SB7")    
@@ -63,14 +69,14 @@ Static Function ZESTF013A()
         oBrwCabec:SetFilterDefault("@"+FilCabec(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL))
         oBrwCabec:AddButton(    "Importar Contagem" ,;
                             {   || nOperation := 3,; 
-                                IIF( ZZI->ZZI_STATUS != '3', zSelCSV(ZZI->ZZI_LOCAL, ZZI->ZZI_CODDE, ZZI->ZZI_CODATE) ,;
-                                MsgAlert("Este mestre esta com o status 'Transferido SB7' e não pode receber novas contagens!", "Caoa") ),;
+                                IIF( ZZI->ZZI_STATUS != '3', zSelCSV(ZZI->ZZI_LOCAL, ZZI->ZZI_PRODUT) ,;
+                                MsgAlert("Este mestre esta com o status 'Transferido SB7' e não pode receber novas contagens!", "Inventario Pecas") ),;
                                 oBrwCabec:Refresh(.T.)	})
                                                             
         oBrwCabec:AddButton("Incluir Cont. Manual"  ,;
             { || nOperation := 3,;
             IIF( ZZI->ZZI_STATUS != '3', FWExecView("Incluir"    ,"ZESTF013",nOperation,,{|| .T.}),;
-            MsgAlert("Este mestre esta com o status 'Transferido SB7' e não pode receber novas contagens!", "Caoa") ),;
+            MsgAlert("Este mestre esta com o status 'Transferido SB7' e não pode receber novas contagens!", "Inventario Pecas") ),;
             oBrwCabec:Refresh(.F.) })
                                                             
         oBrwCabec:AddButton("Gerenciar Contagem" ,;
@@ -84,7 +90,7 @@ Static Function ZESTF013A()
         oBrwCabec:Activate()
     
     Else
-        Help( ,, "Caoa",, 'Enquanto o status estiver "Não iniciado" não é possivel a inclusão de contagens.', 1, 0,,,,,,;
+        Help( ,, "Inventario Pecas",, 'Enquanto o status estiver "Não iniciado" não é possivel a inclusão de contagens.', 1, 0,,,,,,;
                         {'Por favor, utilize o botão "Iniciar inventario" para liberação da inclusão de contagens.'} )
     EndIf
 
@@ -116,7 +122,7 @@ Data.....:              08/12/2020
 Descricao / Objetivo:   Retorna o valor da quantidade eleita da ultima contagem   
 =====================================================================================
 */
-Static Function zUltCont( cMestre, cLocal, cLote, cEndereco, cNumSer, cIDUnit, cProduto, lContZero, nRecnoZZK )
+Static Function zUltCont( cMestre, cLocal, cProduto, lContZero, nRecnoZZK )
     Local nUltimaQtd := 0
 
     //--Busca pela ultima contagem
@@ -382,7 +388,7 @@ Static Function zValidMdl(oModel)
 
         For nI := 1 To oModelGrid:Length()
             If oModelGrid:IsDeleted(nI)
-                Help( ,, "Caoa",, 'Não é possivel a exclusão de registros com status "Transferido SB7"!', 1, 0 )
+                Help( ,, "Inventario Pecas",, 'Não é possivel a exclusão de registros com status "Transferido SB7"!', 1, 0 )
                 lRet := .F.
                 Exit                
             EndIf
@@ -408,12 +414,8 @@ Static Function CommitMdl( oModel )
     Local nI            := 0
     Local cMestre       := ""
     Local cLocal        := ""
-    Local cLote         := ""
-    Local cNumSer       := ""
-    Local cIDUnit       := ""
     Local cProduto      := ""
     Local lRet          := .T.
-    Local cEndereco     := ""
     Local cAliasQry     := ""
     Local nCont         := 0
     Local nRecZZK       := 0
@@ -514,7 +516,7 @@ Static Function CommitMdl( oModel )
             If (cAliasQry)->( !Eof() )
                 
                 //--Busca ultima contagem para verificar se é eleita
-                nQtdEle := zUltCont( cMestre, cLocal, cLote, cEndereco, cNumSer, cIDUnit, cProduto, @lContZero, @nRecnoZZK )
+                nQtdEle := zUltCont( cMestre, cLocal, cProduto, @lContZero, @nRecnoZZK )
 
                 ZZJ->( DbGoTo( (cAliasQry)->RECZZJ ) )
                 If !( ZZJ->ZZJ_STATUS == '3')
@@ -534,7 +536,7 @@ Static Function CommitMdl( oModel )
             Else
 
                 //--Busca ultima contagem para verificar se é eleita
-                nQtdEle := zUltCont( cMestre, cLocal, cLote, cEndereco, cNumSer, cIDUnit, cProduto, @lContZero, @nRecnoZZK )
+                nQtdEle := zUltCont( cMestre, cLocal, cProduto, @lContZero, @nRecnoZZK )
 
                 RecLock("ZZJ",.T.)
                 ZZJ->ZZJ_FILIAL := FWxFilial("ZZJ")
@@ -577,7 +579,7 @@ Static Function ValidProd(oModelGrid)
         If SB1->B1_RASTRO == 'L'
             
             lRet := .F.
-             Help( ,, "Caoa",, "Produto " + AllTrim(oModelGrid:GetValue("ZZK_PRODUT") ) +;
+             Help( ,, "Inventario Pecas",, "Produto " + AllTrim(oModelGrid:GetValue("ZZK_PRODUT") ) +;
                                " possui controle de lote, por favor preencher o campo Lote!" , 1, 0 ) 
 
         EndIf
@@ -585,13 +587,13 @@ Static Function ValidProd(oModelGrid)
         //--Obriga o preenchimento do campo lote
         If SB1->B1_LOCALIZ == 'S'
            lRet := .F.
-           Help( ,, "Caoa",, "Produto " + AllTrim(oModelGrid:GetValue("ZZK_PRODUT") ) +;
+           Help( ,, "Inventario Pecas",, "Produto " + AllTrim(oModelGrid:GetValue("ZZK_PRODUT") ) +;
                                     " possui controle de endereço, por favor preencher o campo Endereço!" , 1, 0 ) 
         EndIf
 
     Else
         lRet := .F.
-        Help( ,, "Caoa",, "Produto " + AllTrim(oModelGrid:GetValue("ZZK_PRODUT") ) +;
+        Help( ,, "Inventario Pecas",, "Produto " + AllTrim(oModelGrid:GetValue("ZZK_PRODUT") ) +;
                             ", não foi localizado no cadastro de produtos!" , 1, 0 ) 
     EndIf
 
@@ -605,7 +607,7 @@ Data.....:              08/12/2020
 Descricao / Objetivo:   Seleciona arquivo CSV para importação das contagens       
 =====================================================================================
 */
-Static Function zSelCSV(cLocal, cProdDe, cProdAte)
+Static Function zSelCSV(cLocal, cProduto)
     Local cTitulo1  := "Selecione o arquivo para Carga "
     Local cExtens   := "Arquivo CSV | *.CSV"
     Local cMainPath := "C:\"
@@ -615,7 +617,7 @@ Static Function zSelCSV(cLocal, cProdDe, cProdAte)
     
         cFileOpen := cGetFile(cExtens,cTitulo1,,cMainPath,.T.,)
         If File(cFileOpen)
-            Processa({|| zImpCSV(cFileOpen, cLocal, cProdDe, cProdAte) }, "[ZESTF013] - Carga de Dados.", "Aguarde .... Realizando a carga dos registros...." ) 
+            Processa({|| zImpCSV(cFileOpen, cLocal, cProduto ) }, "[ZESTF013] - Carga de Dados.", "Aguarde .... Realizando a carga dos registros...." ) 
         Endif
 
     EndIf
@@ -630,7 +632,7 @@ Data.....:              08/12/2020
 Descricao / Objetivo:   Processamento do arquivo CSV   
 =====================================================================================
 */
-Static Function zImpCSV(cFileOpen, cLocal, cProdDe, cProdAte)
+Static Function zImpCSV(cFileOpen, cLocal, cProduto )
     Local oModel        := ModelDef()
     Local oModelGrid    := oModel:GetModel("ZZKDETAIL")
     Local cLinha        := ""
@@ -663,7 +665,7 @@ Static Function zImpCSV(cFileOpen, cLocal, cProdDe, cProdAte)
             // Incrementa a mensagem na régua.
             IncProc("Efetuando a gravação dos registros!")
 
-            If AllTrim( aDados[1] ) != AllTrim(cLocal)
+            If AllTrim( aDados[1] ) <> AllTrim(cLocal)
                 cLog := "Local informado na planilha não corresponde ao mestre selecionado!"
                 
                 lErro := .T.
@@ -678,7 +680,7 @@ Static Function zImpCSV(cFileOpen, cLocal, cProdDe, cProdAte)
                 Loop
             EndIf
 
-            If AllTrim( aDados[2] ) >= AllTrim(cProdDe) .And. AllTrim( aDados[2] ) <= AllTrim(cProdAte)
+            If ( AllTrim( aDados[2] ) <> AllTrim(cProduto) )
                 cLog := "Produto informado na planilha não corresponde ao mestre selecionado!"
                 
                 lErro := .T.
@@ -708,8 +710,8 @@ Static Function zImpCSV(cFileOpen, cLocal, cProdDe, cProdAte)
                 Loop
 			EndIf
 				
-			_nQtde := NoRound(Val(_aDado[03]), TamSx3("ZZK_QTCONT")[02])
-            If _nQtde <> NoRound(VAL(_aDados[03]), 0)
+			_nQtde := NoRound(Val(aDados[03]), TamSx3("ZZK_QTCONT")[02])
+            If _nQtde <> NoRound(VAL(aDados[03]), 0)
 
                 cLog := "Não é permitido quantidade fracionada na contagem."
                 
@@ -737,7 +739,7 @@ Static Function zImpCSV(cFileOpen, cLocal, cProdDe, cProdAte)
             // Carga dos dados
             oModelGrid:SetValue('ZZK_FILIAL'    ,FWxFilial("ZZK"))              
             oModelGrid:SetValue('ZZK_PRODUT'    ,PadR( aDados[2], TamSX3("ZZK_PRODUT")[1]) ) 
-            oModelGrid:SetValue('ZZK_QTCONT'    ,Val( _nQtde) )
+            oModelGrid:SetValue('ZZK_QTCONT'    ,_nQtde )
             oModelGrid:SetValue('ZZK_SEGUM'     ,0 )
             oModelGrid:SetValue('ZZK_USER'      ,RetCodUsr() )
 
@@ -799,7 +801,7 @@ Static Function zImpCSV(cFileOpen, cLocal, cProdDe, cProdAte)
         If lErro
 
             If lGrvLog
-                MsgAlert("Falha na importação dos registros, por favor, consulte arquivo de log!", "Caoa")
+                MsgAlert("Falha na importação dos registros, por favor, consulte arquivo de log!", "Inventario Pecas")
             EndIf
 
             Disarmtransaction()
@@ -838,6 +840,30 @@ Return nOpcA
 
 /*
 =====================================================================================
+Programa.:              zTelaInv
+Autor....:              CAOA - Fagner Ferraz Barreto
+Data.....:              08/12/2020
+Descricao / Objetivo:   Tela de apresentação da rotina de geração de inventario SB7
+=====================================================================================
+*/
+Static Function zTelaInv()
+    Local aSays     := {}
+    Local aButtons  := {} 
+    Local cCadastro := "Realiza o Acerto de Inventário"
+    Local nOpcA     := 0
+
+    AADD(aSays,"Este programa tem o objetivo de realizar o acerto de estoque.")
+    AADD(aSays,"Clique em OK para confirmar o acerto.")
+
+    AADD(aButtons, { 1,.T.,{|o| nOpca := 1, o:oWnd:End() }} )
+    AADD(aButtons, { 2,.T.,{|o| nOpca := 2, o:oWnd:End() }} )
+                
+    FormBatch( cCadastro, aSays, aButtons )
+
+Return nOpcA
+
+/*
+=====================================================================================
 Programa.:              zGeraInv
 Autor....:              CAOA - Fagner Ferraz Barreto
 Data.....:              08/12/2020
@@ -861,7 +887,7 @@ Static Function zGeraInv(cMestre, cLocal)
     Private lMsErroAuto     := .F.
     Private cAliasSB7       := GetNextAlias()
 
-    cQuery := " SELECT TMPZZJ.ZZJ_FILIAL, TMPZZJ.ZZJ_MESTRE, TMPZZJ.ZZJ_LOCAL, TMPZZJ.ZZJ_PRODUT " + CRLF 
+    cQuery := " SELECT TMPZZJ.ZZJ_FILIAL, TMPZZJ.ZZJ_MESTRE, TMPZZJ.ZZJ_LOCAL, TMPZZJ.ZZJ_PRODUT, " + CRLF 
     cQuery += " TMPZZJ.ZZJ_STATUS, TMPZZJ.RECZZJ, ZZK.ZZK_QTCONT, ZZK.ZZK_SEGUM, " + CRLF 
     cQuery += " ZZK.ZZK_CONTAG, ZZK.R_E_C_N_O_ AS RECZZK, ZZK.ZZK_DATA " + CRLF 
     cQuery += " FROM ( " + CRLF 
@@ -981,23 +1007,137 @@ Static Function zGeraInv(cMestre, cLocal)
             EndDo
 
             If!Empty(cError)
-                Help( ,, "Caoa",,   "Falha na geração dos lancamentos do inventario: " + CRLF +;
+                Help( ,, "Inventario Pecas",,   "Falha na geração dos lancamentos do inventario: " + CRLF +;
                                     "Qtd de registros processados: " + cValToChar(nGerou) + CRLF +;
                                     "Qtd de registros com erro: " + cValToChar(nFalhou) + CRLF +;
                                     "Por favor, consulte arquivo de log!", 1, 0 )
             Else
-                MsgInfo("Lancamentos do inventario gerados com sucesso!","Caoa")
+                MsgInfo("Lancamentos do inventario gerados com sucesso!","Inventario Pecas")
             EndIf
 
         Else
-            Help( ,, "Caoa",, 'É necessario informar o local para gravação do log de erro para prosseguir com o processamento!', 1, 0 )
+            Help( ,, "Inventario Pecas",, 'É necessario informar o local para gravação do log de erro para prosseguir com o processamento!', 1, 0 )
         EndIf
 
     Else
-        Help( ,, "Caoa",, 'Só é possivel a transferencia para SB7 quando o status estiver "Aguardando Transf. SB7" ou "Parcialmente Transferido SB7"!', 1, 0 )
+        Help( ,, "Inventario Pecas",, 'Só é possivel a transferencia para SB7 quando o status estiver "Aguardando Transf. SB7" ou "Parcialmente Transferido SB7"!', 1, 0 )
     EndIf
 
     (cAliasQry)->(DbCloseArea())
+
+Return
+
+/*
+=====================================================================================
+Programa.:              zGeraAcerto
+Autor....:              CAOA - Fagner Ferraz Barreto
+Data.....:              08/12/2020
+Descricao / Objetivo:   Geração de lançamentos de inventario 
+=====================================================================================
+*/
+Static Function zGeraAcerto(cMestre)
+    
+    Local cQuery	:= ""
+	Local cAliasSB7       := GetNextAlias()
+    Local cError	:= ""
+	Local nI		:= 0
+	Local aInvent	:= {}
+	Local aAutoErro	:= {}
+    Local nGerou    := 0
+    Local nFalhou   := 0
+    Local nOpcFile	:= GETF_LOCALHARD+GETF_RETDIRECTORY+GETF_NETWORKDRIVE
+
+	Private nHdl			:= 0
+    Private cPath           := ""
+    Private lAutoErrNoFile  := .T. //-- Necessario inicializar para utilização da função GetAutoGRLog()
+    Private lMsErroAuto     := .F.
+    
+
+    cQuery := " SELECT * FROM " + RetSQLName("SB7") + " SB7 "       + CRLF
+    cQuery += " WHERE SB7.B7_FILIAL = '" + FWxFilial("SB7") + "' "  + CRLF
+    cQuery += " AND SB7.B7_DOC = '" + cMestre + "' " + CRLF
+    cQuery += " AND SB7.B7_STATUS = '1' " + CRLF
+    cQuery += " AND SB7.D_E_L_E_T_ = ' ' " + CRLF
+    cQuery += " ORDER BY SB7.B7_COD " + CRLF
+
+    DbUseArea( .T., "TOPCONN", TcGenQry(,,cQuery), cAliasSB7, .T., .T. )
+
+    DbSelectArea( cAliasSB7 )
+    ProcRegua( Contar(cAliasSB7,"!Eof()") )
+    (cAliasSB7)->( DbGoTop() )
+    If !(cAliasSB7)->(EOF())
+
+        //--Solicita pasta para gravação de log em caso de erro
+        cPath := AllTrim(cGetFile("*.*","Local para salvar log de erro",,,.F.,nOpcFile,.F.,))
+        If !Empty(cPath)
+            cPath := cPath + "LOG_geracao_de_Inventario_" + StrTran(DTOC(Date()),'/','-') + "_" + StrTran(TIME(),':','_') + ".txt"
+
+            While !(cAliasSB7)->( EOF() )
+                
+                // Incrementa a mensagem na régua.
+                IncProc("Gerando o acerto de estoque. Produto: " + (cAliasSB7)->B7_COD )             
+                    
+                //Efetua a Gravação
+                Begin Transaction
+
+                    lMsErroAuto := .F.
+
+                    MsExecAuto({|x,y,z| Mata270(x,y,z)}, aInvent , .F. , 3)
+
+                    If lMsErroAuto
+                        nFalhou++ 
+                        
+                        //Captura o LOG para gerar um arquivo Texto.
+                        aAutoErro := GETAUTOGRLOG()
+                        cError := "Mestre: " + (cAliasQry)->ZZJ_MESTRE +;
+                                " Armazem: " + (cAliasQry)->ZZJ_LOCAL +;
+                                " Produto: " + AllTrim( (cAliasQry)->ZZJ_PRODUT ) + CRLF + CRLF
+                                        
+                        For nI := 1 To Len(aAutoErro)
+                            cError += AllTrim(aAutoErro[nI]) + CRLF
+                        Next
+                        cError += "-----------------------------------------------" + CRLF + CRLF
+
+                        //Função para Gravar o LOG
+                        nHdl := zLogInv(cError)
+                            
+                    Else
+                        nGerou++
+
+                        ZZK->( DbGoTo( (cAliasQry)->RECZZK ) )
+                            RecLock("ZZK", .F.)
+                            ZZK->ZZK_STATUS := '5' //--Acerto de inventario concluido
+                        ZZK->( MsUnlock() )
+
+                        ZZJ->( DbGoTo( (cAliasQry)->RECZZJ ) )
+                            RecLock("ZZJ", .F.)
+                            ZZJ->ZZJ_STATUS := '5' //--Acerto de inventario concluido
+                        ZZJ->( MsUnlock() )
+
+                    EndIf
+
+                End Transaction
+                
+                (cAliasSB7)->( DbSkip() )
+            EndDo
+            (cAliasSB7)->( DbCloseArea() )
+
+            If!Empty(cError)
+                Help( ,, "Inventario Pecas",,   "Falha na geração dos aceretos de inventario: " + CRLF +;
+                                    "Qtd de registros processados: " + cValToChar(nGerou) + CRLF +;
+                                    "Qtd de registros com erro: " + cValToChar(nFalhou) + CRLF +;
+                                    "Por favor, consulte arquivo de log!", 1, 0 )
+            Else
+                MsgInfo("Acerto de inventario finalizado com sucesso!","Inventario Pecas")
+            EndIf
+
+        Else
+            Help( ,, "Inventario Pecas",, 'É necessario informar o local para gravação do log de erro para prosseguir com o processamento!', 1, 0 )
+        EndIf
+
+    Else
+        Help( ,, "Inventario Pecas",, 'Só é possivel gerar o status quando o status estiver Transferido SB7', 1, 0 )
+    EndIf
 
 Return
 
@@ -1023,8 +1163,8 @@ Static Function zBloqArm()
             AADD(aSays,"incluir as contagens zeradas de estoque conforme cenario abaixo")
             AADD(aSays,"MESTRE: " + ZZI->ZZI_MESTRE )
             AADD(aSays,"LOCAL: " + ZZI->ZZI_LOCAL )
-            If !Empty(ZZI->ZZI_CODDE)
-                AADD(aSays,"PRODUTO DE: " + AllTrim(ZZI->ZZI_CODDE) + " - PRODUTO ATE: " + Alltrim(ZZI->ZZI_CODATE) )
+            If !Empty(ZZI->ZZI_PRODUT)
+                AADD(aSays,"PRODUTO: " + AllTrim(ZZI->ZZI_PRODUT)  )
             EndIf
             AADD(aSays," ")
             AADD(aSays,"Clique em OK para prosseguir.")
@@ -1045,7 +1185,7 @@ Static Function zBloqArm()
             EndIf
 
         Else
-            Help( ,, "Caoa Peças",, 'É necessario o status "Não iniciado" para realização do bloqueio de movimentações estoque!', 1, 0 )
+            Help( ,, "Inventario Pecas",, 'É necessario o status "Não iniciado" para realização do bloqueio de movimentações estoque!', 1, 0 )
         EndIf
 
     EndIf
@@ -1067,9 +1207,6 @@ Static Function zProcBloq()
     Local cUpdate       := ""
     Local lRet          := .T.
 
-    Private cAliasD14   := GetNextAlias()
-    Private cAliasSBF   := GetNextAlias()
-    Private cAliasSB8   := GetNextAlias()
     Private cAliasSB2   := GetNextAlias()
 
     Begin Transaction
@@ -1090,13 +1227,13 @@ Static Function zProcBloq()
         cUpdate +=  "   , B2_QEMPPRE = 0 "                              + CRLF
         cUpdate +=  "   , B2_SALPPRE = 0 "                              + CRLF
         cUpdate +=  " WHERE B2_FILIAL = '" + FWxFilial("SB2") + "'"     + CRLF    
-        cUpdate +=  " AND B2_COD BETWEEN '" + ZZI->ZZI_CODDE + "' AND '" + ZZI->ZZI_CODATE + "'" + CRLF
+        cUpdate +=  " AND B2_COD = '" + ZZI->ZZI_PRODUT + "' "          + CRLF
         cUpdate +=  " AND B2_LOCAL = '" + ZZI->ZZI_LOCAL + "'"          + CRLF
         cUpdate +=  " AND D_E_L_E_T_ = ' ' "                            + CRLF
 
         If TcSqlExec(cUpdate) < 0
             lRet := .F.
-            Help( ,, "Caoa Peças",, TcSqlError() , 1, 0)
+            Help( ,, "Inventario Pecas",, TcSqlError() , 1, 0)
             Disarmtransaction()
         EndIf
        
@@ -1106,7 +1243,7 @@ Static Function zProcBloq()
             ZZI->( MsUnLock() )
 
             //--Monta consulta SBF para gerar itens com quantidade zerada
-            zQrySB2( ZZI->ZZI_LOCAL, ZZI->ZZI_CODDE, ZZI->ZZI_CODATE )
+            zQrySB2( ZZI->ZZI_LOCAL, ZZI->ZZI_PRODUT )
 
             ProcRegua( Contar(cAliasSB2,"!Eof()") )
             ( cAliasSB2 )->( DbGoTop() )
@@ -1156,13 +1293,13 @@ Data.....:              28/12/2020
 Descricao / Objetivo:   Consulta tabela SB2 para inclusão de contagens zeradas          
 =====================================================================================
 */
-Static Function zQrySB2(cLocal, cProdDe, cProdAte)
+Static Function zQrySB2(cLocal, cProduto )
     
     BeginSql Alias cAliasSB2
         SELECT B2_LOCAL, B2_COD
         FROM %Table:SB2% SB2
         WHERE SB2.B2_FILIAL = %xFilial:SB2%
-        AND SB2.B2_COD BETWEEN %exp:cProdDe% AND %exp:cProdAte%
+        AND SB2.B2_COD = %exp:cProduto%
         AND SB2.B2_LOCAL = %exp:cLocal%
         AND SB2.B2_QATU <> %exp:0%
         AND SB2.B2_COD <> %exp:' '%
@@ -1277,7 +1414,7 @@ Data.....:              08/12/2020
 Descricao / Objetivo:   Função estática para efetuar o load dos dados do grid      
 =====================================================================================
 */
-Static function LoadGrid(oModel, cMestre, cLocal, cLote, cEndereco, cNumSer, cIDUnit, cProd )
+Static function LoadGrid(oModel, cMestre, cLocal, cProd )
     local aData as array
     local cAlias as char
     local cWorkArea as char
@@ -1366,7 +1503,6 @@ Static Function zPosLinVal(oModelGrid)
     Local cMestre   := oModelGrid:GetValue("ZZK_MESTRE")
     Local cLocal    := oModelGrid:GetValue("ZZK_LOCAL")
     Local cProduto  := oModelGrid:GetValue("ZZK_PRODUT")
-    Local lUnitz    := .F.
     Local cError    := ""
     Local nI        := 0
     Local cAliasQtd := ""
@@ -1375,85 +1511,6 @@ Static Function zPosLinVal(oModelGrid)
 
     //Não passa pelo valid se a chamada for da rotina de bloqueio de movimentos e geração de contagens zeradas
     If !( IsInCallStack("zProcBloq") )
-
-        //--Controla WMS
-        SB5->( DbSetOrder(1) )
-        If SB5->( DbSeek( FWxFilial("SB5") + cProduto ) )
-            
-            //--Controla WMS
-            If SB5->B5_CTRWMS == '1'
-                
-                If Empty( cEndereco )
-                    lRet := .F.
-                    Aadd( aErro, "Mestre: " + cMestre + " Armazem: " + cLocal + " Lote: " + cLote + " Endereço: " + cEndereco +;
-                                 " Numser: " + cNumSer + " Unitizador: " + cIDUnit + " Produto: " + AllTrim( cProduto ) +;  
-                                 " | Item possui controle de wms, por favor preencher o campo Endereço!" )
-                EndIf
-
-            EndIf
-
-        EndIf
-
-        //--Verifica se é veiculo
-        If cLocal == 'VN'
-            If Empty( cNumSer )
-                lRet := .F.
-                Aadd( aErro, "Mestre: " + cMestre + " Armazem: " + cLocal + " Lote: " + cLote + " Endereço: " + cEndereco +;
-                             " Numser: " + cNumSer + " Unitizador: " + cIDUnit + " Produto: " + AllTrim( cProduto ) +;   
-                             " | Item identificado como veiculo, por favor preencher o campo Numserie!" )
-            EndIf
-        EndIf
-
-        //--Verifica se armazem é unitizado
-        NNR->( DbSetOrder(1) )
-        If NNR->( DbSeek( FWxFilial("NNR") + cLocal ) )
-
-            lUnitz := NNR->NNR_AMZUNI == '1' //--Armazem unitizado
-
-        EndIf
-
-        If lUnitz
-
-            //--Se a estrutura não for unitizada, não exige o preenchimento do unitizador
-            If WmsTipEst(cLocal,cEndereco) == '2' //--Não unitizada
-
-                lRet := ValidCompl(cMestre, cLocal, cLote, cEndereco, cNumSer, cIDUnit, cProduto, dDtValid)
-
-            Else
-
-                lRet := ValidCompl(cMestre, cLocal, cLote, cEndereco, cNumSer, cIDUnit, cProduto, dDtValid)
-
-                //Armazem unitizado, exige o preenchimento do unitizador
-                If Empty( cIDUnit )
-                    lRet := .F.
-                    Aadd( aErro, "Mestre: " + cMestre + " Armazem: " + cLocal + " Lote: " + cLote + " Endereço: " + cEndereco +;
-                                 " Numser: " + cNumSer + " Unitizador: " + cIDUnit + " Produto: " + AllTrim( cProduto ) +;  
-                                 " | Item unitizado, por favor preencher o campo unitizador!")
-                Else
-                    D0Y->( DbSetOrder(1) )
-                    If !( D0Y->( DbSeek( FWxFilial("D0Y") + cIDUnit ) ) )
-                        lRet := .F.
-                        Aadd( aErro, "Mestre: " + cMestre + " Armazem: " + cLocal + " Lote: " + cLote + " Endereço: " + cEndereco +;
-                                     " Numser: " + cNumSer + " Unitizador: " + cIDUnit + " Produto: " + AllTrim( cProduto ) +;  
-                                     " | Item não localizado no cadastro de unitizadores!")
-                    EndIf
-                EndIf
-
-            EndIf
-
-        Else
-
-            //Armazem não unitizado, unitizador não pode estar preenchido
-            If Empty( cIDUnit )
-                lRet := ValidCompl(cMestre, cLocal, cLote, cEndereco, cNumSer, cIDUnit, cProduto, dDtValid)
-            Else
-                lRet := .F.
-                Aadd( aErro, "Mestre: " + cMestre + " Armazem: " + cLocal + " Lote: " + cLote + " Endereço: " + cEndereco +;
-                                " Numser: " + cNumSer + " Unitizador: " + cIDUnit + " Produto: " + AllTrim( cProduto ) +;  
-                                " | Unitizador informado para armazem não unitizado!")
-            EndIf
-
-        EndIf
 
         //--Valida se o produto selecionado ja possui quantidade eleita
         cAliasQtd := GetNextAlias()
@@ -1472,8 +1529,7 @@ Static Function zPosLinVal(oModelGrid)
 
             If nOperation == 3
                 lRet := .F.
-                Aadd( aErro, "Mestre: " + cMestre + " Armazem: " + cLocal + " Lote: " + cLote + " Endereço: " + cEndereco +;
-                             " Numser: " + cNumSer + " Unitizador: " + cIDUnit + " Produto: " + AllTrim( cProduto ) +; 
+                Aadd( aErro, "Mestre: " + cMestre + " Armazem: " + cLocal + " Produto: " + AllTrim( cProduto ) +; 
                              " | Produto informado possui quantidade eleita!. Por favor, delete umas das contagens deste produto" +;
                              " ou informe outro produto." )
             EndIf
@@ -1485,8 +1541,7 @@ Static Function zPosLinVal(oModelGrid)
         ZZJ->( DbSeek( FWxFilial('ZZJ') + cMestre + cLocal ) )
         If ZZJ->ZZJ_STATUS == '3'
             lRet := .F.
-            Aadd( aErro, "Mestre: " + cMestre + " Armazem: " + cLocal + " Lote: " + cLote + " Endereço: " + cEndereco +;
-                         " Numser: " + cNumSer + " Unitizador: " + cIDUnit + " Produto: " + AllTrim( cProduto ) +; 
+            Aadd( aErro, "Mestre: " + cMestre + " Armazem: " + cLocal + " Produto: " + AllTrim( cProduto ) +; 
                          ' | Item esta com status "Transferido SB7" e não permite alterações!' )
         EndIf
 
@@ -1499,8 +1554,7 @@ Static Function zPosLinVal(oModelGrid)
 
             If !( SB2->( DbSeek( FWxFilial("SB2") + cProduto + cLocal ) ) )
                 lRet := .F.
-                Aadd( aErro, "Mestre: " + cMestre + " Armazem: " + cLocal + " Lote: " + cLote + " Endereço: " + cEndereco +;
-                            " Numser: " + cNumSer + " Unitizador: " + cIDUnit + " Produto: " + AllTrim( cProduto ) +; 
+                Aadd( aErro, "Mestre: " + cMestre + " Armazem: " + cLocal + " Produto: " + AllTrim( cProduto ) +; 
                             " | Produto informado não foi localizado no armazem " + AllTrim(cLocal) + " !" )
             EndIf
         EndIf
@@ -1511,125 +1565,11 @@ Static Function zPosLinVal(oModelGrid)
             Next
             cError += "-----------------------------------------------" + CRLF
 
-            Help( ,, "Caoa",, cError, 1, 0 )
+            Help( ,, "Inventario Pecas",, cError, 1, 0 )
         EndIf
     EndIf
 
 Return lRet
-
-/*
-=====================================================================================
-Programa.:              ValidCompl
-Autor....:              CAOA - Fagner Ferraz Barreto
-Data.....:              08/12/2020
-Descricao / Objetivo:   Validações complementares do grid       
-=====================================================================================
-*/
-Static Function ValidCompl(cMestre, cLocal, cLote, cEndereco, cNumSer, cIDUnit, cProduto, dDtValid)
-    Local lRet      := .T.
-
-    SB1->( DbSetOrder(1) )
-    If SB1->( DbSeek( FWxFilial("SB1") + cProduto ) )
-
-        //--Verifica se possui controle de lote
-        If SB1->B1_RASTRO == 'L'
-            If Empty( cLote )
-                lRet := .F.
-                Aadd( aErro, "Mestre: " + cMestre + " Armazem: " + cLocal + " Lote: " + cLote + " Endereço: " + cEndereco +;
-                             " Numser: " + cNumSer + " Unitizador: " + cIDUnit + " Produto: " + AllTrim( cProduto ) +; 
-                             " | Item possui controle de lote, por favor preencher o campo Lote!" )
-            EndIf
-
-            If Empty( dDtValid )
-                lRet := .F.
-                Aadd( aErro, "Mestre: " + cMestre + " Armazem: " + cLocal + " Lote: " + cLote + " Endereço: " + cEndereco +;
-                             " Numser: " + cNumSer + " Unitizador: " + cIDUnit + " Produto: " + AllTrim( cProduto ) +; 
-                             " | Item possui controle de lote, por favor preencher o campo Data de validade!" )
-            EndIf
-        EndIf
-
-        //--Verifica se possui controle de endereço
-        If SB1->B1_LOCALIZ == 'S'
-            If Empty( cEndereco)
-                lRet := .F.
-                Aadd( aErro, "Mestre: " + cMestre + " Armazem: " + cLocal + " Lote: " + cLote + " Endereço: " + cEndereco +;
-                             " Numser: " + cNumSer + " Unitizador: " + cIDUnit + " Produto: " + AllTrim( cProduto ) +;
-                             " | Item informado possui controle de endereço, por favor preencher o campo Endereço!" )
-            Else
-                SBE->( DbSetOrder(1) )
-                If !( SBE->( DbSeek( FWxFilial("SBE") + cLocal + cEndereco ) ) )
-                    lRet := .F.
-                    Aadd( aErro, "Mestre: " + cMestre + " Armazem: " + cLocal + " Lote: " + cLote + " Endereço: " + cEndereco +;
-                                 " Numser: " + cNumSer + " Unitizador: " + cIDUnit + " Produto: " + AllTrim( cProduto ) +; 
-                                 " | Endereço informado, não foi localizado no cadastro de endereços!" )
-                EndIf
-            EndIf
-        EndIf
-
-        //--Verifica se é veiculo
-        If AllTrim( SB1->B1_LOCPAD ) == 'VN' .And. AllTrim( SB1->B1_GRUPO ) == 'VEIA' //GAP - Usar MV_LOCVEIN e MV_GRUVEI? 
-            If Empty( cNumSer )
-                lRet := .F.
-                Aadd( aErro, "Mestre: " + cMestre + " Armazem: " + cLocal + " Lote: " + cLote + " Endereço: " + cEndereco +;
-                             " Numser: " + cNumSer + " Unitizador: " + cIDUnit + " Produto: " + AllTrim( cProduto ) +; 
-                             " | Produto identificado como veiculo, por favor preencher o campo Numserie!" )
-            Else
-                VV1->( DbSetOrder(2) )
-                If !( VV1->( DbSeek( FWxFilial("VV1") + PadR( cNumSer, TamSX3("VV1_CHASSI")[1] ) ) ) )
-                    lRet := .F.
-                    Aadd( aErro, "Mestre: " + cMestre + " Armazem: " + cLocal + " Lote: " + cLote + " Endereço: " + cEndereco +;
-                                 " Numser: " + cNumSer + " Unitizador: " + cIDUnit + " Produto: " + AllTrim( cProduto ) +; 
-                                 " | Item não localizado no cadastro de veiculos!" )                                     
-                EndIf
-            EndIf
-        EndIf
-
-    Else
-        lRet := .F.
-        Aadd( aErro, "Mestre: " + cMestre + " Armazem: " + cLocal + " Lote: " + cLote + " Endereço: " + cEndereco +;
-                     " Numser: " + cNumSer + " Unitizador: " + cIDUnit + " Produto: " + AllTrim( cProduto ) +; 
-                     " | Produto informado não foi localizado no cadastro de produtos!" )
-    EndIf
-
-Return lRet
-
-/*
-=====================================================================================
-Programa.:              WmsTipEst
-Autor....:              CAOA - Fagner Ferraz Barreto
-Data.....:              08/12/2020
-Descricao / Objetivo:   Retorna se a estrutura é unitizada sim ou não  
-=====================================================================================
-*/
-Static Function WmsTipEst(cArmazem,cEndereco)
-    Local cUnitizado   := '1'
-    Local cAliasQry := GetNextAlias()
-
-    BeginSql Alias cAliasQry
-        SELECT DC8.DC8_STATUS, DC8.DC8_TPESTR 
-        FROM %Table:SBE% SBE
-        INNER JOIN %Table:DC8% DC8
-        ON DC8.DC8_FILIAL = %xFilial:DC8%
-        AND DC8.DC8_CODEST = SBE.BE_ESTFIS
-        AND DC8.%NotDel%
-        WHERE SBE.BE_FILIAL = %xFilial:SBE%
-        AND SBE.BE_LOCAL = %Exp:cArmazem%
-        AND SBE.BE_LOCALIZ = %Exp:cEndereco%
-        AND SBE.%NotDel%
-    EndSql
-    If (cAliasQry)->(!Eof())
-
-        //--Se a estrutura for picking sera não unitizada independente do status
-        If (cAliasQry)->DC8_TPESTR == '2' //--Picking
-            cUnitizado := '2' 
-        Else
-            cUnitizado := (cAliasQry)->DC8_STATUS
-        EndIf
-
-    EndIf
-    (cAliasQry)->(DbCloseArea())
-
-Return cUnitizado
 
 /*
 =====================================================================================
@@ -1651,7 +1591,7 @@ Static Function zDelCont(cMestre, cLocal, cProd )
         //Se não estiver Transferido SB7 permite a deleção
         If !(ZZJ->ZZJ_STATUS == "3")
 
-            If MsgYesNo("Tem certeza que deseja excluir as contagens do Mestre: " + cMestre + " Armazem: " + cLocal + " Produto: " + cProd, "Caoa" )
+            If MsgYesNo("Tem certeza que deseja excluir as contagens do Mestre: " + cMestre + " Armazem: " + cLocal + " Produto: " + cProd, "Inventario Pecas" )
 
                 Begin Transaction
                     RecLock("ZZJ", .F.)
@@ -1680,9 +1620,9 @@ Static Function zDelCont(cMestre, cLocal, cProd )
                             (cAliasRec)->( DbSkip() )
                         EndDo
 
-                        MsgInfo("Exclusão realizada com sucesso!", "Caoa")
+                        MsgInfo("Exclusão realizada com sucesso!", "Inventario Pecas")
                     Else
-                        MsgAlert("Falha na exclusão das contagens, consulte o administrador do sistema!", "Caoa")
+                        MsgAlert("Falha na exclusão das contagens, consulte o administrador do sistema!", "Inventario Pecas")
                         Disarmtransaction()
                     EndIf
 
@@ -1691,7 +1631,7 @@ Static Function zDelCont(cMestre, cLocal, cProd )
             EndIf
 
         Else
-            MsgAlert( "Não é possivel a exclusão das contagens, quando o status é 'Transferido SB7'", "Caoa" )
+            MsgAlert( "Não é possivel a exclusão das contagens, quando o status é 'Transferido SB7'", "Inventario Pecas" )
         EndIf    
 
     EndIf
