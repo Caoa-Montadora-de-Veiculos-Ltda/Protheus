@@ -59,15 +59,31 @@ User Function M460FIM()
         EndIf
 
         IF SC5->C5_XPREFIX == 'PVF'
-            If Findfunction("U_ZFINF004")  //gravar a forma de pagamento no título de RA
-                U_ZFINF004()
-            EndIf
+            //If Findfunction("U_ZFINF004")  //gravar a forma de pagamento no título de RA
+            //    U_ZFINF004()
+            //EndIf
+
+            SE1->(dbSetOrder(1))
+            SE1->(dbGoTop())
+            If SE1->(dbSeek(xFilial("SE1")+SC5->C5_XPREFIX+SC5->C5_NUM+'   '+'1 '+'RA '))   //+ '   '+ '1 ' + 'RA '   //Parcela+Tipo 
+                _cBanco := SE1->E1_PORTADO
+                _cAge   := SE1->E1_AGEDEP
+                _cConta := SE1->E1_CONTA 
+            ENDIF
 
             //chamda da função para emissão de Boleto qdo RA 
             DbSelectArea("SE1")
+            SE1->(dbGoTop())
             SE1->(DbSetOrder(1))       //E1_FILIAL+E1_PREFIXO+E1_NUM+E1_PARCELA+E1_TIPO
             If SE1->(DbSeek(_cChave))
                 WHILE SE1->( !EOF() .AND. (xFilial("SE1")+SE1->E1_PREFIXO+SE1->E1_NUM) = _cChave ) 
+                    RecLock("SE1",.F.)
+                    SE1->E1_PEDIDO  := SC5->C5_NUM
+                    SE1->E1_PORTADO := _cBanco 
+                    SE1->E1_AGEDEP  := _cAge
+                    SE1->E1_CONTA   := _cConta
+                    MsUnlock()
+                    //emissão de Boleto
                     IF SE1->E1_XFORMA == 'BOL'
                         U_RF01B062(E1_PORTADO,E1_AGEDEP,E1_CONTA,'001',/*lSetup*/,/*cNotIni*/,/*cNotFim*/,/*cSerie*/,_cChave)
                     ENDIF

@@ -21,20 +21,10 @@ User Function MT410TOK()
         dentro da tela PEDIDO DE VENDA MATA410
 	*/
 	If lRet
-	
-		//If FindFunction("U_ZCOMF012")
-		//	lRet := U_ZCOMF012()
-		//Endif
-
-        IF SE1->E1_PREFIXO == 'PVF'
-			If FindFunction("U_ZFINF004")
-				lRet := U_ZFINF004()
-			Endif
-		ELSE		
-			If FindFunction("U_ZFATF003") .AND. SE1->E1_PREFIXO <> 'PVF'
-				lRet := U_ZFATF003()
-			Endif
-		ENDIF
+		
+		If FindFunction("U_ZFATF003") .AND. SE1->E1_PREFIXO <> 'PVF'
+			lRet := U_ZFATF003()
+		Endif
 
 	Endif	
 

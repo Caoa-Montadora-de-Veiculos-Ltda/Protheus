@@ -12,24 +12,42 @@
 User Function ZFINF004()
 Local  lRet     := .T.
 Local _aArea    := GetArea()
+Local _nPedido  := ''
 Private _cEmp   := FWCodEmp()
 Private _cBanco := ''
 Private _cAge   := ''
 Private _cConta := ''
 
-IF _cEmp == "2010" .AND. SC5->C5_XPREFIX == 'PVF' .AND. SE1->E1_PARCELA == '1 ' .AND. FWIsInCallStack("MATA461")
+IF _cEmp == "2010" .AND. SC5->C5_XPREFIX == 'PVF' //.AND. SE1->E1_PARCELA == '1 ' //.AND. FWIsInCallStack("MATA461")
 
-    _cBanco := SA6->A6_COD 
-    _cAge   := SA6->A6_AGENCIA
-    _cConta := SA6->A6_NUMCON
+    IF Type("M->C5_NUM") <> 'U' .AND. !Empty(M->C5_NUM)  
+        _nPedido := M->C5_NUM
+    ELSE
+        _nPedido := SC5->C5_NUM
+    ENDIF
 
     SE1->(dbSetOrder(1))
-    If SE1->(dbSeek(xFilial("SE1") + SC5->C5_XPREFIX + M->C5_NUM + '   ' + '1 ' + 'RA '))                                                                                                                
-        RecLock("SE1",.F.)
-        SE1->E1_PORTADO := _cBanco 
-        SE1->E1_AGEDEP  := _cAge
-        SE1->E1_CONTA   := _cConta
-        MsUnlock()
+    SE1->(dbGoTop())
+    If SE1->(dbSeek(xFilial("SE1")+SC5->C5_XPREFIX+_nPedido))   //+ '   '+ '1 ' + 'RA '   //Parcela+Tipo                                                                                                             
+        While SE1->E1_NUM = _nPedido .AND. SE1->E1_PREFIXO = SC5->C5_XPREFIX
+            IF SE1->E1_TIPO = 'RA ' 
+               IF Empty(SE1->E1_PORTADO) .AND. Empty(SE1->E1_AGEDEP) .AND. Empty(SE1->E1_CONTA)
+                    _cBanco := SA6->A6_COD 
+                    _cAge   := SA6->A6_AGENCIA
+                    _cConta := SA6->A6_NUMCON
+                ELSE 
+                    _cBanco := SE1->E1_PORTADO
+                    _cAge   := SE1->E1_AGEDEP
+                    _cConta := SE1->E1_CONTA 
+                ENDIF
+            ENDIF
+            RecLock("SE1",.F.)
+            SE1->E1_PORTADO := _cBanco 
+            SE1->E1_AGEDEP  := _cAge
+            SE1->E1_CONTA   := _cConta
+            MsUnlock()
+            SE1->(DbSkip())
+        END
 	ENDIF
 
     IF !lRET
