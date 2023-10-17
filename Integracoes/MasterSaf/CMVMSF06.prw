@@ -1092,7 +1092,7 @@ Static Function ExecQuery(cTab,aCab,aItens)
 	Private bCmpZerado  := {|x| IIf(Empty(&(x)),"@",IIf(X3Tipo(Subs(x,At("->",x)+2))=="N",&(x)*(10**TamSZR(cTab)[2]),IIf(X3Tipo(Subs(x,At("->",x)+2))=="D",dTos(&(x)),Subs(&(x),1,TamSZR(cTab)[1]))))}
 	Private bCalZerado  := {|x| IIf(Empty(x),"@",x*100)} 
 	Private bCal2Zerado := {|x| IIf(Empty(x),0,(x)*(10**TamSZR(cTab)[2]))} 
-	Private bCal3Zerado := {|x| IIf(Empty(x),0,(Round(x,TamSZR(cTab)[2]))*(10**TamSZR(cTab)[2]))} 
+	Private bCal3Zerado := {|x| IIf(Empty(x),0,(NoRound(x,TamSZR(cTab)[2]))*(10**TamSZR(cTab)[2]))} 
 	Private bCmpZeroEsq := {|x| IIf(Empty(x),"@",Padl(Alltrim(Subs(&(x),1,TamSZR(cTab)[1])),TamSZR(cTab)[1],"0"))}
 	
 	Private lSA1 := .F.
@@ -2937,7 +2937,9 @@ Descricao / Objetivo:   Itens Notas Fiscais Mercadorias e Produtos
 */
 
 Static Function fSAFX08()
-	
+	Local cLP := '610-002'
+	Local cConta := ""
+
 	cQ := CRLF + " SELECT R_E_C_N_O_ SFT_RECNO "
 	cQ += CRLF + " 	FROM " + RetSqlName("SFT") + " SFT "
 	cQ += CRLF + " 	WHERE   SFT.D_E_L_E_T_ = ' ' "
@@ -3007,7 +3009,9 @@ Static Function fSAFX08()
 				If lContinua	
 
 					MontaItens(aCab,@aItens,SF3->F3_FILIAL)
-
+					
+					cConta := fGetCCC(xFilial("SF1"),SFT->FT_NFISCAL, SFT->FT_SERIE, SFT->FT_CLIEFOR, SFT->FT_LOJA, SFT->FT_PRODUTO, SFT->FT_ITEM, cLP, SF3->F3_ENTRADA )
+					
 					SF1->(dbSetOrder(1))
 					SF1->(DbSeek(xFilial("SF1") + SFT->FT_NFISCAL + SFT->FT_SERIE + SFT->FT_CLIEFOR + SFT->FT_LOJA ))
 
@@ -3047,7 +3051,7 @@ Static Function fSAFX08()
 					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ITEM")
 					nPosCmpCab:=PosCabArray(aItens,"COD_CFO")
 	
-					if alltrim(SF3->F3_ESPECIE) == 'CTE' .and. IIf(lSA1,SA1->A1_EST == cEStFil, SA2->A2_EST == cEStFil)
+					if alltrim(SF3->F3_ESPECIE) == 'CTE' .and. IIf(lSA1,SA1->A1_EST == cEStFil, SA2->A2_EST == cEStFil) .and. cEmpAnt <> '01'
 						aItens[Len(aItens)][nPosCmpCab][2] := "1353 "
 					else
 						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CFOP")
@@ -3124,7 +3128,7 @@ Static Function fSAFX08()
 					nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_COFINS")
 					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CSTCOF")
 	
-					If !Empty(SFT->FT_VALCF3) .and. SFT->FT_CSTCOF == "06"
+					If !Empty(SFT->FT_VALCF3) .and. SFT->FT_CSTCOF $ "01|02|06"
 						nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_COFINS_ST")
 						aItens[Len(aItens)][nPosCmpCab][2] := "05"
 					Endif	
@@ -3144,7 +3148,7 @@ Static Function fSAFX08()
 					nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_PIS")
 					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CSTPIS")
 	
-					If !Empty(SFT->FT_VALPS3) .and. SFT->FT_CSTPIS == "06"
+					If !Empty(SFT->FT_VALPS3) .and. SFT->FT_CSTPIS $ "01|02|06"
 						nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_PIS_ST")
 						aItens[Len(aItens)][nPosCmpCab][2] := "05"
 					Endif
@@ -3162,7 +3166,8 @@ Static Function fSAFX08()
 					nPosCmpCab:=PosCabArray(aItens,"COD_TRIB_IPI")
 					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CTIPI")
 					nPosCmpCab:=PosCabArray(aItens,"COD_CONTA")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CONTA")
+					
+					aItens[Len(aItens)][nPosCmpCab][2] := iif( !Empty(cConta) , cConta , Eval(bCmpZerado,"SFT->FT_CONTA"))
 					nPosCmpCab:=PosCabArray(aItens,"DAT_DI")
 					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SW6->W6_DTREG_D")
 					nPosCmpCab:=PosCabArray(aItens,"NUM_DEC_IMP_REF")
@@ -4208,6 +4213,14 @@ Static Function fSAFX52()
 					nPosCmpCab:=PosCabArray(aItens,"VLR_IR")
 					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCal2Zerado,SB9->B9_VINI1)
 				Endif	
+				if len(aItens) >= _nLimite  //a cada 1000 linhas é gravado no arquivo para liberar a memória
+					SalvaTXT(aCab,aItens)
+					aItens := {}
+					IF LDebug
+						(cAliasTrb)->(dbCloseArea())
+						RETURN
+					ENDIF
+				ENDIF
 			Endif
 			(cAliasTrb)->(dbSkip())
 		Enddo
@@ -4373,6 +4386,7 @@ Static Function fSAFX108()
 	cQ += CRLF + "         	AND SD3.D3_ESTORNO  <> 'S' "
 	cQ += CRLF + "         	AND SD3.D3_OP       <> ' '  "
 	cQ += CRLF + "  		AND SD3.D3_CF NOT IN  ('PR0','PR1' ) "
+	cQ += CRLF + "         	AND SD3.D3_TIPO     = 'PA'  "
 	
 	cQ += CRLF + "		WHERE   SC2.D_E_L_E_T_ = ' '  "
 	cQ += CRLF + "			AND SC2.C2_FILIAL BETWEEN '" + cFilDe + "' AND '" + cFilAte + "' "
@@ -4486,6 +4500,7 @@ Static Function fSAFX109()
 	cQ += CRLF + "         	AND SD3.D3_ESTORNO <> 'S' "
 	cQ += CRLF + "         	AND SD3.D3_OP      <> ' '  "
 	cQ += CRLF + "  		AND SD3.D3_CF NOT IN  ('PR0','PR1' ) "
+	cQ += CRLF + "         	AND SD3.D3_OP       <> 'PA'  "
 	
 	cQ += CRLF + "  	WHERE SC2.D_E_L_E_T_ = ' '  "
 	cQ += CRLF + "  		AND SC2.C2_FILIAL  BETWEEN '" + cFilDe    + "' AND '" + cFilAte  + "' "
@@ -6334,6 +6349,14 @@ Static Function fSAFX2018()
 
 Return
 
+/*
+=======================================================================================
+Programa.:              aJustSXe()
+Autor....:              CAOA -- Reinaldo Rabelo da Silva
+Data.....:              04/01/2023
+Descricao / Objetivo:                                   
+=======================================================================================
+*/
 
 Static Function aJustSXe()
 Local cAlias := "TRBSXE"
@@ -6355,9 +6378,57 @@ EndDo
 Return
 
 /*
-user Function ZGENQTDQBR()
-
-	
-Return .t.
-
+=======================================================================================
+Programa.:              fGetCCC()
+Autor....:              CAOA -- Reinaldo Rabelo da Silva
+Data.....:              17/10/2023
+Descricao / Objetivo:   Pega a Conta Contabil da CT2                                
+=======================================================================================
 */
+
+Static Function fGetCCC(cFil,cDoc,cSerie,cCliente,cLoja,cProduto,cItem, cLP, dData )
+Local cQuery     := ""
+Local cContaCred := ""
+Local cAliasCC   := GetNextAlias()
+
+Default cFil     := ""
+Default cDoc     := ""
+Default cSerie   := ""
+Default cCliente := ""
+Default cLoja    := ""
+Default cProduto := ""
+Default cItem    := ""
+Default cLP      := ""
+Default dData    := Date()
+
+	if Len(Alltrim(cItem)) > 2
+		cItem := SubStr(cItem,Len(Alltrim(cItem))-1 , 2)
+	EndIf
+
+	cQuery := CRLF + " SELECT  CT2.CT2_CREDIT FROM " + RetSqlName("CT2") + " CT2
+	cQuery += CRLF + " WHERE   CT2.D_E_L_E_T_ = ' ' "
+	cQuery += CRLF + " 		AND CT2.CT2_FILIAL = '" + cFil        + "' "
+	cQuery += CRLF + " 		AND CT2.CT2_DATA   = '" + Dtos(dData) + "' "
+	cQuery += CRLF + " 		AND CT2.CT2_KEY    = '" + cFil + cDoc + cSerie + cCliente + cLoja + cProduto + cItem + "' "
+	cQuery += CRLF + " 		AND CT2.CT2_LP 	   = '" + SUBSTR( cLP, 1, 3) + "' "
+	cQuery += CRLF + " 		AND CT2.CT2_ORIGEM LIKE  '" + cLP + "%' "
+
+	If lDebug
+		MemoWrite(cLocDest+cTab+".txt",cQ)
+	EndIf
+		
+	If Select(cAliasCC)  <> 0
+		DbSelectArea(cAliasCC)
+		(cAliasCC)->(DbClosearea())
+	endIf
+	dbUseArea(.T.,"TOPCONN",TCGenQry(,,cQuery),cAliasCC,.T.,.F.)	
+
+	if((cAliasCC)->(!EOF()))
+		cContaCred := (cAliasCC)->CT2_CREDIT
+	endif
+
+	(cAliasCC)->(DBCLOSEAREA())
+
+Return cContaCred
+
+
