@@ -26,12 +26,12 @@ User Function ZESTF013() //--U_ZESTF013()
     oBrowse:AddLegend("ZZI->ZZI_STATUS == '6' " ,"GREEN"    ,"Acerto de Estoque Finalizado")
     oBrowse:AddButton("1 - Incluir Inventario"	    , { || FWExecView("Incluir" ,"ZESTF014",3,,{|| .T.}) ,oBrowse:Refresh(.F.) } )
     oBrowse:AddButton("2 - Iniciar Inventario"	    , { || zBloqArm(), oBrowse:Refresh(.F.) } ) 
-    oBrowse:AddButton("3 - Preparar Inventario"	    , { || IIF( zTelaMsg() == 1,;
+    oBrowse:AddButton("3 - Preparar Acerto"	        , { || IIF( zTelaMsg() == 1,;
                                                             Processa( { || zGeraInv(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL) },;
                                                             "Preparando inventario", "Aguarde .... Realizando a carga dos registros...." ),;
                                                             Nil ),;
                                                             ZF13AtuZZI(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL), oBrowse:Refresh(.F.) } )
-    oBrowse:AddButton("4 - Acerto de Estoque"	    , { || IIF( zTelaInv() == 1,;
+    oBrowse:AddButton("4 - Processar Acerto"	    , { || IIF( zTelaInv() == 1,;
                                                             Processa( { || zExec340(ZZI->ZZI_MESTRE) },;
                                                             "Acerto de inventario", "Aguarde .... Realizando o acerto de inventário...." ),;
                                                             Nil ),;
