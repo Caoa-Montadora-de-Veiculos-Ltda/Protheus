@@ -695,6 +695,22 @@ Static Function zImpCSV(cFileOpen, cLocal, cProduto )
                 Loop
             EndIf
 
+            SB1->(DbSetOrder(1))
+			If !(SB1->(DbSeek(FwxFilial('SB1') + AllTrim( aDados[2] ))))
+                cLog := "Produto não cadastrado!"
+                
+                lErro := .T.
+
+                //--Se não conseguir gerar arquivo de log, encerra a leitura do CSV
+                If !GrvLog(cArqLog, cLog)
+                    lGrvLog := .F.
+                    Exit
+                EndIf
+
+                FT_FSKIP(1)
+                Loop
+            EndIf
+
             If At(".", AllTrim(aDados[3])) > 0 .Or. At(",", AllTrim(aDados[3])) > 0
 				cLog := "Não é permitido inserir ponto ou ponto e virgula na quantidade contada."
                 
