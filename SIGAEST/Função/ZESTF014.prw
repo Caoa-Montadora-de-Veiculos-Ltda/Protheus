@@ -16,8 +16,8 @@ Static Function ModelDef()
     oModel := MPFormModel():New("ZESTF014",/*bPre*/, {|oModel| zVldIncZZI(oModel) },/*bCommit*/,/*bCancel*/) 
     oModel:AddFields("ZZIMASTER",/*cOwner*/,oStruZZI)
 
-    oModel:SetDescription("Mestre de inventario Peças")
-    oModel:GetModel("ZZIMASTER"):SetDescription("Mestre de inventario Peças")
+    oModel:SetDescription("Inventario Peças")
+    oModel:GetModel("ZZIMASTER"):SetDescription("Inventario Peças")
     oModel:SetPrimaryKey({})
 
 Return oModel
@@ -43,7 +43,7 @@ Static Function ViewDef()
 	oView:AddField('VIEW_CAB',oStruZZI,'ZZIMASTER')
 
     //-- Define os títulos do cabeçalho
-    oView:EnableTitleView('VIEW_CAB', "Mestre de inventario Peças") 
+    oView:EnableTitleView('VIEW_CAB', "Inventario Peças") 
 
     //-- Seta o dimensionamento de tamanho
     oView:CreateHorizontalBox('ZZI_DADOS',100)
@@ -73,13 +73,13 @@ Static Function zVldIncZZI(oModel)
             FROM %Table:ZZI% ZZI
             WHERE ZZI.ZZI_FILIAL = %xFilial:ZZI%
                 AND ZZI.ZZI_LOCAL = %Exp:oModelZZI:GetValue("ZZI_LOCAL")%
-                AND ZZI.ZZI_STATUS != %Exp:'3'%
+                AND ZZI.ZZI_STATUS != %Exp:'6'%
                 AND ZZI.%NotDel%
         EndSql
 
         If (cAliasQry)->(!Eof())
             lRet := .F.
-            Help( ,, "Caoa",, "Existe mestre de inventario em contagem para o armazem " +;
+            Help( ,, "Caoa",, "Existe inventario em contagem para o armazem " +;
                             AllTrim( oModelZZI:GetValue("ZZI_LOCAL") ) + ". Por favor, informe outro armazem!", 1, 0 )                
         EndIf
 
@@ -89,7 +89,7 @@ Static Function zVldIncZZI(oModel)
     If oModel:GetOperation() == MODEL_OPERATION_DELETE
         
         //Permite a deleção somente se o status for Não iniciado
-        If oModelZZI:GetValue("ZZI_STATUS") != "0" //(ZZI->ZZI_STATUS == "0")
+        If !( oModelZZI:GetValue("ZZI_STATUS") $ "0|1") //'0'- Não iniciado | '1' - Em contagem
 
             lRet := .F.
             Help( ,, "Caoa",, 'Só é possivel a exclusão do inventario quando o status for "Não iniciado"!', 1, 0 )
