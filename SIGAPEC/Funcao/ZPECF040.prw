@@ -10,7 +10,7 @@ Calculo Curva ABC
 @param  	
 @author 	DAC - Denilso
 @version  	P12.1.25
-@since  	15/07/2022
+@since  	15/07/2023
 @return  	NIL
 @obs
 @project    GAP014 | Cálculo da Curva ABC
@@ -83,7 +83,7 @@ Local _cMarca	    := Space(TamSx3("BM_CODMAR")[1])
 Local _dDataCurva   := Date()
 Local _nMesExcesso  := 0
 
-Local _cChave		:= AllTrim(FWCodEmp())+"ZPECF040"
+Local _cChave		:= ""
 Local _lRet			:= .T.
 Local _nPos
 
@@ -92,7 +92,8 @@ Begin Sequence
 	If !_lRet
 		Break
 	EndIf
-	//Garantir que o processamento seja unico
+		//Garantir que o processamento seja unico
+	_cChave		:= AllTrim(FWCodEmp())+"ZPECF040"
 	If !LockByName(_cChave,.T.,.T.)  
 		//tentar locar por 10 segundos caso não consiga não prosseguir
 		_lRet := .F.
@@ -108,6 +109,7 @@ Begin Sequence
 		EndIf
 	EndIf
 
+	DbSelectArea("SZO")
 	aAdd(_aPar,{1,OemToAnsi("Produto de     : ") ,_cCodProdDe			,"@!"		,".T."	,"SB1" 	,".T."	,100,.F.}) 
 	aAdd(_aPar,{1,OemToAnsi("Produto ate    : ") ,_cCodProdAte		    ,"@!"		,".T."	,"SB1"	,".T."	,100,.T.}) 
 	aAdd(_aPar,{1,OemToAnsi("Marca          : ") ,_cMarca		        ,"@!"		,".T."	,"VE1"	,".T."	,100,.F.}) 
@@ -133,14 +135,36 @@ Begin Sequence
 		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Necessário informar os parâmetros"),4,1)   
 		Break 
 	Endif
+
+	_cCodProdDe		:= _aRet[1]
+	_cCodProdAte	:= _aRet[2]
+	_cMarca			:= _aRet[3]
+
+	SB1->(DbSetOrder(1))
+	If !Empty(_cCodProdDe) .And. !SB1->(DbSeek(FwXFilial("SB1")+_cCodProdDe))
+		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Código Produto "+AllTrim(_cCodProdDe)+" não cadastrado"),4,1)   
+		Break 
+	Endif
+	If !Empty(_cCodProdAte) .And. AllTrim(_cCodProdAte) <> Replicate("Z",Len(AllTrim(_cCodProdAte))) 
+		If !SB1->(DbSeek(FwXFilial("SB1")+_cCodProdAte))
+			Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Código Produto "+AllTrim(_cCodProdAte)+" não cadastrado"),4,1)   
+			Break 
+		Endif
+	Endif
+	VE1->(DbSetOrder(1))
+	If !Empty(_cMarca) .And. !VE1->(DbSeek(FwXFilial("VE1")+_cMarca))
+		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Código Veículo "+AllTrim(_cMarca)+" não cadastrado"),4,1)   
+		Break 
+	Endif 
 	FwMsgRun(,{ |_oSay| ZPECF040QY(_aRet, @_oSay ) }, "Selecionando dados para a Montagem Curva ABC", "Aguarde...")  
 	//Libera para utilização de outros usuarios
-	UnLockByName(_cChave,.T.,.T.)
 	_oBrw:Refresh(.T.)
 End Sequence
+//Desbloquear processamento
+If !Empty(_cChave)
+	UnLockByName(_cChave,.T.,.T.)
+Endif
 Return Nil
-
-
 
 
 /*/{Protheus.doc} ZPECF040QY
@@ -180,15 +204,16 @@ Local _cQuery 		:= ""
 Local _cTititulo  	:= '<font color="#FF0000"><b>IMPORTANTE</b></font>' 
 
 Local _nPos
+Local _nCount
 Local _nStatus
 Local _cMens
 Local _nPontos
 Local _cHoraIni
 Local _cHoraFim
-Local _oTable
-Local _aCpoCab
-
-
+Local _xValor
+//Local _nRegProcess
+Local _lExclusive
+Local _cTimeCalc
 Begin Sequence
 	_cMens 			:= '<h1>Confirma?</h1><br>Tem certeza que deseja processar Curva ABC ? Os dados atuais serão Apagador ! <font color="#FF0000"><b>  Processar Curva ABC  </b></font>. '
 	If !MsgYesNo( _cMens, _cTititulo )
@@ -213,6 +238,10 @@ Begin Sequence
 		Break
 	Endif 
 
+	_cHoraIni := Time()
+	_oSay:SetText("Aguarde preparando informações "+Time())
+	ProcessMessage()
+
 	//montar regra procura de pontos
 	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
 		SELECT 	SX5.X5_CHAVE 			CHAVE,
@@ -228,9 +257,8 @@ Begin Sequence
 	(_cAliasPesq)->(DbGoTop())
 	If (_cAliasPesq)->(Eof())
 		_cMens := "Não existe tabela informada para Curva Quantidade, deseja continuar ?"  
-		If !MsgYesNo( _cMens, _cTititulo )
-			Break
-		Endif	
+		MSGINFO(_cMens , "Atenção" )
+		Break
 	Endif
 	While (_cAliasPesq)->(!Eof())
 		AAdd(_aPontos, { AllTrim((_cAliasPesq)->CHAVE),;  
@@ -241,7 +269,9 @@ Begin Sequence
 		(_cAliasPesq)->(DbSkip())				
 	EndDo
 	//Criar select para pegar as pontuações por movimentação vendas tabela SX5 2B
-	(_cAliasPesq)->(DbCloseArea())
+	If Select(_cAliasPesq) <> 0
+		(_cAliasPesq)->(DbCloseArea())
+	Endif  
 	_aPontoCurva := {}
 	_nPontos     := 0
 	//montar regra procura de pontos
@@ -259,9 +289,7 @@ Begin Sequence
 	(_cAliasPesq)->(DbGoTop())
 	If (_cAliasPesq)->(Eof())
 		_cMens := "Não existe tabela informada para Curva Quantidade, deseja continuar ?"  
-		If !MsgYesNo( _cMens, _cTititulo )
-			Break
-		Endif	
+		MSGINFO(_cMens , "Atenção" )
 	Endif
 	While (_cAliasPesq)->(!Eof())
 		_nPontos ++
@@ -279,142 +307,61 @@ Begin Sequence
 		Break
 	Endif
 	aSort( _aPontoCurva , , , { |x,y| x[3] > y[3] } )  //para organiar de acordo com os meses
-	//caso liberado para processamento apagar os códigos existentes no parametro
-   	SZO->(DbGoTop())
-	_cHoraIni := Time()
-	If SZO->(!Eof()) 
-		_oSay:SetText("Aguarde apagando registros ... Hora inicial : "+ _cHoraIni)
-		ProcessMessage()
-		/*
-		//Caso seja todos utiliza DBZAP 
-		If Empty(_cProdutoDe) .And. Upper(SubsTr(_cProdutoAte,1,1)) == "Z"
- 			If Select("SZO")    
-        		SZO->(dbCloseArea())
-    		Endif		
-			//Tenta bloquear para apagar com dbzap
-			If  ChkFile( "SZO" , .T. )
-				SZO->(__dbZap())
-			Endif 
-		Endif 
-		//Caso não consiga apagar com dbzap apago com delete
-		*/
-		SZO->(DbSetOrder(1))
-   		SZO->(DbGoTop())
-		
-		TcLink()
-		If SZO->(!Eof())
-			_cQuery := " DELETE FROM  "+RetSqlName("SZO")+" SZO " + CRLF
-			_cQuery += " WHERE 	SZO.ZO_FILIAL = '"+FwXFilial("SZO")+"' "	
-			_cQuery += " 	AND SZO.ZO_COD 	BETWEEN '" + _cProdutoDe + "' AND '"+_cProdutoAte+"' " 	+ CRLF				
-			//_cQuery += " 	AND SZO.D_E_L_E_T_ = ' ' " + CRLF
-			If !Empty(_cMarca)
-				_cQuery += "  AND SZO.ZO_MARCA = '"+_cMarca+"' "+ CRLF
-			Endif
-			_nStatus := TCSqlExec(_cQuery)
-    		If (_nStatus < 0)
-        		MsgStop("TCSQLError() " + TCSQLError(), "Registros Cabeçalho")
-				_lRet := .F.
-	        	Break    
-   			 Endif
-			 TCRefresh("SZO")
-		Endif
-	Endif 
+	//Apaga arquivo temporario
+	If Select(_cAliasPesq) <> 0
+		(_cAliasPesq)->(DbCloseArea())
+		Ferase(_cAliasPesq+GetDBExtension())
+	Endif  
 
-	_oSay:SetText("Aguarde atualizando registros ... Hora Inicial "+Time() )
+	_oSay:SetText("Aguarde Calculando CURVA ... Hora Inicial "+Time() )
 	ProcessMessage()
 
+	SZO->(DbSetOrder(1))
+	SZO->(DbGoTop())
+
+
 	//Campos constantes na Query
-	Aadd(_aStruct,{ "ZO_FILIAL"		,		,		,		,			  		,		, "SB1"	, "B1_FILIAL" } )
-	Aadd(_aStruct,{ "ZO_COD"		,		,		,		,			  		,		, "SB1"	, "B1_COD" } )
-	Aadd(_aStruct,{ "ZO_DESCPRD"	,		,		,		,			  		,		, "SB1"	, "B1_DESC" } )
-	Aadd(_aStruct,{ "ZO_MARCA"		,		,		,		,			  		,		, "SBM"	, "BM_CODMAR"} ) 
-	Aadd(_aStruct,{ "ZO_CURVQTD"	,"C"	,	3	, 00	,"Curva Qtde."		, "@!"	,		, } )  
-	Aadd(_aStruct,{ "ZO_CURVCUS"	,"C"	,	3	, 00	,"Curva Qtde."		, "@!"	,		, } )
-	Aadd(_aStruct,{ "ZO_SALDOES"	,"N"	,	13	, 03 	,"Saldo Estoque"		, "@E 9,999,999.999"	,		, }) 
-	Aadd(_aStruct,{ "ZO_CUSTUNI" 	,"N"	,	14	, 02 	,"Custo Unitário"	, "@E 999,999,999.99"	,		, })
-	Aadd(_aStruct,{ "ZO_CUSTTOT"	,"N"	,	14	, 02 	,"Custo Total"		, "@E 999,999,999.99"	,		, })
-	Aadd(_aStruct,{ "ZO_DTPRDCA"	,"D"	,	08	, 00 	,"Dt Cad Prd"		, "@E 999,999,999.99"	,		, })
-	Aadd(_aStruct,{ "ZO_DT1CMP"		,"D"	,	08	, 00 	,"Dt 1. Comptra"	, "@D"					,		, })
-	Aadd(_aStruct,{ "ZO_DTULCMP"	,"D"	,	08	, 00 	,"Dt U Compra"		, "@D"					,		, })
-	Aadd(_aStruct,{ "ZO_DT1VND"		,"D"	,	08	, 00 	,"Dt 1. Venda"		, "@D"					,		, })
-	Aadd(_aStruct,{ "ZO_DTULVND"	,"D"	,	08	, 00 	,"Dt U Venda"		, "@D"					,		, })
-	Aadd(_aStruct,{ "ZO_TOTVEND"	,"N"	,	13	, 03 	,"Total Venda"		, "@E 9,999,999.999"	,		, })
-	Aadd(_aStruct,{ "ZO_MEDIAVD"	,"N"	,	13	, 03 	,"Media Venda"		, "@E 9,999,999.999"	,		, }) 							//media de venda
-	Aadd(_aStruct,{ "ZO_MOS"		,"N"	,	13	, 03 	,"MOS"				, "@E 9,999,999.999"	,		, })
-	Aadd(_aStruct,{ "ZO_EXQTDE"     ,"N"	,	13	, 03 	,"Excesso Qtde"		, "@E 9,999,999.999"	,		, })
-	Aadd(_aStruct,{ "ZO_EXCUSTO"	,"N"	,	14	, 02 	,"Excesso Custo"	, "@E 999,999,999.99"	,		, })
-	Aadd(_aStruct,{ "ZO_DTBASEC"	,"D"	,	08	, 00 	,"Base de Calculo"	, "@D"					,		, })
-	Aadd(_aStruct,{ "ZO_CODUSU"		,"C"	,	10	, 00	,"Cod Usuario"		, "@!"	,		, } )
-	Aadd(_aStruct,{ "ZO_NOMEUSU"	,"C"	,	40	, 00	,"Nome Usuario"		, "@!"	,		, } )
-	Aadd(_aStruct,{ "ZO_DTCALC"		,"D"	,	08	, 00 	,"Data Calculo"		, "@D"					,		, })
-	Aadd(_aStruct,{ "ZO_HSCALC"		,"C"	,	05	, 00	,"Hora Calculo"		, "@!"	,		, } )   
+	Aadd(_aStruct, "ZO_FILIAL") 
+	Aadd(_aStruct, "ZO_COD")
+	Aadd(_aStruct, "ZO_DESCPRD")
+	Aadd(_aStruct, "ZO_MARCA")  
+	Aadd(_aStruct, "ZO_CURVQTD") 
+	Aadd(_aStruct, "ZO_CURVCUS") 
+	Aadd(_aStruct, "ZO_SALDOES") 
+	Aadd(_aStruct, "ZO_CUSTUNI") 
+	Aadd(_aStruct, "ZO_CUSTTOT") 
+	Aadd(_aStruct, "ZO_DTPRDCA") 
+	Aadd(_aStruct, "ZO_DTPRCMP") 
+	Aadd(_aStruct, "ZO_DTULCMP") 
+	Aadd(_aStruct, "ZO_DTPRVND") 
+	Aadd(_aStruct, "ZO_DTULVND") 
+	Aadd(_aStruct, "ZO_TOTVEND")
+	Aadd(_aStruct, "ZO_MEDIADE")  //media de venda
+	Aadd(_aStruct, "ZO_MOS")
+	Aadd(_aStruct, "ZO_EXQTDE")
+	Aadd(_aStruct, "ZO_EXCUSTO")
+	Aadd(_aStruct, "ZO_DTBASEC")
+	Aadd(_aStruct, "ZO_CODUSU")
+	Aadd(_aStruct, "ZO_NOMEUSU")
+	Aadd(_aStruct, "ZO_DTCALC")
+	Aadd(_aStruct, "ZO_HSCALC")      
 
-
-    _aCpoCab := {}
-    Aadd( _aCpoCab, {"SB1", "ZO_FILIAL"  	,.T.})		//Filial
-    Aadd( _aCpoCab, {"SB1", "ZO_COD"  		,.T.})		//CODIGO
-    Aadd( _aCpoCab, {"SB1", "ZO_DESCPRD"  	,.T.})		//Descrição
-    Aadd( _aCpoCab, {"SB1", "ZO_MARCA"   	,.T.})		//Marca
-    Aadd( _aCpoCab, {"SC7", "ZO_CURVQTD" 	, TamSX3("C7_QUANT")[03],"Qtde Pendente"  , TamSX3("C7_QUANT")[01]   , TamSX3("C7_QUANT")[02], PesqPict("SC7","C7_QUANT"),.T.})	//Quantidade Entregue
-    Aadd( _aCpoCab, {"SC7", "ZO_CURVCUS"  	,.T.}) 		//Fornecedor
-    Aadd( _aCpoCab, {"SC7", "ZO_SALDOES"  		,.T.}) 		//Fornecedor
-    Aadd( _aCpoCab, {"SA2", "ZO_CUSTUNI"  		,.T.}) 		//Fornecedor
-   	aAdd( _aCpoCab, {"SC7", "ZO_CUSTTOT"       , "C","Nacional/Importado"   , 003        , 0, "@!",.T.})  //Nacional ou importado
-    Aadd( _aCpoCab, {"SC7", "ZO_DTPRDCA"   		,.T.})		//Pedido
-    Aadd( _aCpoCab, {"SC7", "ZO_DTULCMP"   	,.T.})		//Item Pedido
-    Aadd( _aCpoCab, {"SC7", "ZO_DTULVND"   	,.T.})		//PO
-    Aadd( _aCpoCab, {"SC7", "ZO_TOTVEND"  ,.T.})  //Previsão de Entrega
- 	aAdd( _aCpoCab, {"SC7","ZO_MEDIADE"     , "N","Recno Pedido"            , 10, 0, "@!",.F. /*não ncluir no browse*/})
-
- 	aAdd( _aCpoCab, {"SC7","ZO_MOS"     , "N","Recno Pedido"            , 10, 0, "@!",.F. /*não ncluir no browse*/})
-
- 	aAdd( _aCpoCab, {"SC7","ZO_EXQTDE"     , "N","Recno Pedido"            , 10, 0, "@!",.F. /*não ncluir no browse*/})
-	aAdd( _aCpoCab, {"SC7","ZO_DTBASEC"     , "N","Recno Pedido"            , 10, 0, "@!",.F. /*não ncluir no browse*/})
-	aAdd( _aCpoCab, {"SC7","NRECNO"     , "N","Recno Pedido"            , 10, 0, "@!",.F. /*não ncluir no browse*/})
-
- 	aAdd( _aCpoCab, {"SC7","NRECNO"     , "N","Recno Pedido"            , 10, 0, "@!",.F. /*não ncluir no browse*/})
-
-    _aBrwCab    := {}
-    _aStru      := {}  //Estrutura do Banco
-    For _nPos := 1 To Len(_aCpoCab)
-        If Len(_aCpoCab[_nPos]) == 3
-            _aTamSx3 := TamSX3(_aCpoCab[_nPos,2])
-            If _aCpoCab[_nPos,Len(_aCpoCab[_nPos])]  //Valida se a coluna irá para o Browse
-                Aadd(_aBrwCab,{ RetTitle(_aCpoCab[_nPos,2]),;    //titulo
-                                _aCpoCab[_nPos,2],;             //campo
-                                _aTamSx3[03],;                  //tipo
-                                _aTamSx3[01],;                  //tamanho
-                                _aTamSx3[02],;                  //decimal
-                             PesqPict(_aCpoCab[_nPos,1],_aCpoCab[_nPos,2]);  //pict
-                          })
-            Endif
-            Aadd(_aStru, {_aCpoCab[_nPos,02], _aTamSx3[03], _aTamSx3[01], _aTamSx3[02] })
-        Else  
-            If _aCpoCab[_nPos,Len(_aCpoCab[_nPos])]  //Valida se a coluna irá para o Browse
-                Aadd(_aBrwCab,{ _aCpoCab[_nPos,4],;             //titulo
-                                _aCpoCab[_nPos,2],;             //campo
-                                _aCpoCab[_nPos,3],;             //tipo
-                                _aCpoCab[_nPos,5],;             //tamanho    
-                                _aCpoCab[_nPos,6],;             //decimal
-                                _aCpoCab[_nPos,7];              //pict
-                                })
-            Endif
-            Aadd(_aStru, { _aCpoCab[_nPos,02], _aCpoCab[_nPos,03], _aCpoCab[_nPos,05], _aCpoCab[_nPos,06] })
-        Endif
+	_aStru := {}
+    For _nPos := 1 To Len(_aStruct)
+        _aTamSx3 := TamSX3(_aStruct[_nPos])
+        Aadd(_aStru, {_aStruct[_nPos], _aTamSx3[03], _aTamSx3[01], _aTamSx3[02] })
     Next
 
+    _cTable := GetNextAlias()
     _oTable := FWTemporaryTable():New()
     _oTable:SetFields(_aStru)
-    _oTable:AddIndex("INDEX1", {"C7_DATPRF", "C7_PRODUTO"} )
+    _oTable:AddIndex("INDEX1", {"ZO_COD"} )
     _oTable:Create()
     _cAliasPesq := _oTable:GetAlias()
 
     _cTable := _oTable:GetRealName()
-
-
-
-
-    _cQuery := " INSERT INTO "+_cTable+CRLF
+	
+	_cQuery := " INSERT INTO "+_cTable+CRLF
     _cQuery += " ( "
     For _nPos := 01 To Len(_aStruct)
         _cQuery += _aStruct[_nPos]
@@ -494,8 +441,8 @@ Begin Sequence
     _cQuery += " 			AND NVL(MES_PONTOS.TOT_QTDECURVA,0) > 0 " + CRLF
     _cQuery += " 		GROUP BY MES_PONTOS.D2_COD " + CRLF
     _cQuery += " 		) " + CRLF
-    _cQuery += " SELECT  '"+FwXFilial("SZO")+"' " + CRLF													//--ZO_FILIAL
-    _cQuery += " 		,SB1.B1_COD	 " + CRLF   											//--ZO_COD
+   	_cQuery += " SELECT  '"+FwXFilial("SZO")+"' AS ZO_FILIAL" + CRLF						//--ZO_FILIAL							//--TMPFILIAL
+    _cQuery += " 		,SB1.B1_COD	 AS ZO_COD" + CRLF   									//--ZO_COD
     _cQuery += " 		,SB1.B1_DESC    AS DESCRICAO " + CRLF								//--ZO_DESCPRD
     _cQuery += " 		,COALESCE(SBM.BM_CODMAR,' ')	AS MARCA " + CRLF					//--ZO_MARCA
 	//montar informações curva ABC pontos	
@@ -549,13 +496,26 @@ Begin Sequence
     _cQuery += "  		, NVL(SB2SQL.CUSTO_UNITARIO,0)      AS CUSTO_UNITARIO 	" + CRLF			//--ZO_CUSTUNI
     _cQuery += "  		, NVL(SB2SQL.SALDO_ESTOQUE * SB2SQL.CUSTO_UNITARIO, 0)	AS CUSTO_TOTAL" + CRLF //--ZO_CUSTTOT
     _cQuery += "  		, COALESCE(B1_XDTINC,' ')  AS DT_CAD_PRD " + CRLF							//--ZO_DTPRDCA  DATA da inclusão cadastro SB1
+
+    _cQuery += " 	    , 	CASE " + CRLF
+	//Caso esteja preenchida a do legado a prioridade é dela
+    _cQuery += " 	    		WHEN COALESCE(SB1.B1_X1CLEG,' ') 	 <> ' '	THEN SB1.B1_X1CLEG " 		+ CRLF		//--Ultima Compra Legado
+    _cQuery += " 	    		WHEN COALESCE(SD1SQL.DT_PRIMCMP,' ') <> ' ' THEN SD1SQL.DT_PRIMCMP " 	+ CRLF
+    _cQuery += " 	    	ELSE ' ' " + CRLF
+    _cQuery += " 	    	END AS DT_PRI_CMP " + CRLF												//--ZO_DTULCMP
     _cQuery += " 	    , 	CASE " + CRLF
     _cQuery += " 	    		WHEN COALESCE(SD1SQL.DT_ULTCMP,' ') <> ' ' 	THEN SD1SQL.DT_ULTCMP " + CRLF
     _cQuery += " 	    		WHEN COALESCE(SB1.B1_XUCLEG,' ') 	<> ' '	THEN SB1.B1_XUCLEG " + CRLF		//--Ultima Compra Legado
     _cQuery += " 	    	ELSE ' ' " + CRLF
     _cQuery += " 	    	END AS DT_ULT_CMP " + CRLF												//--ZO_DTULCMP
+	//Caso esteja preenchida a do legado a prioridade é dela
     _cQuery += " 	    , 	CASE " + CRLF
-    _cQuery += " 	    		WHEN COALESCE(SD2SQLPRD.DT_NF_SAIDA,' ') 	<> ' ' 	THEN SD2SQLPRD.DT_NF_SAIDA " + CRLF
+    _cQuery += " 	    		WHEN COALESCE(SB1.B1_X1VLEG,' ') 		<> ' '	THEN SB1.B1_X1VLEG	" 		+ CRLF		//--Ultima Venda Legado
+    _cQuery += " 	    		WHEN COALESCE(SD2SQLPRD.NF_PRIVND,' ') 	<> ' ' 	THEN SD2SQLPRD.NF_PRIVND " 	+ CRLF
+    _cQuery += " 	    	ELSE ' ' " + CRLF
+    _cQuery += " 	    	END AS DT_PRI_FAT " + CRLF												//--TMPDTULVND
+    _cQuery += " 	    , 	CASE " + CRLF
+    _cQuery += " 	    		WHEN COALESCE(SD2SQLPRD.NF_ULTVND,' ') 	<> ' ' 	THEN SD2SQLPRD.NF_ULTVND " + CRLF
     _cQuery += " 	    		WHEN COALESCE(SB1.B1_XUVLEG,' ') 			<> ' '	THEN SB1.B1_XUVLEG	" + CRLF		//--Ultima Venda Legado
     _cQuery += " 	    	ELSE ' ' " + CRLF
     _cQuery += " 	    	END AS DT_ULT_FAT " + CRLF												//--ZO_DTULVND
@@ -565,7 +525,7 @@ Begin Sequence
     _cQuery += " 				WHERE MEDIAS.D2_COD = SB1.B1_COD),0) 	AS DEMANDA_MEDIA " + CRLF	//--ZO_MEDIADE
     _cQuery += " 		, NVL( (SELECT NVL(MEDIAS.SALDO_ESTOQUE / MEDIAS.DEMANDA_MEDIA,0) " + CRLF
     _cQuery += " 				FROM MEDIAS " + CRLF
-    _cQuery += " 				WHERE MEDIAS.D2_COD = SB1.B1_COD ),0) AS MOS " + CRLF				//--ZO_MOS
+    _cQuery += " 				WHERE MEDIAS.D2_COD = SB1.B1_COD ),0) AS MOS " + CRLF				//--TMPMOS
  
     _cQuery += " 		, NVL( (SELECT NVL(SB2SQL.SALDO_ESTOQUE / MEDIAS.DEMANDA_MEDIA,0 ) - "+StrZero(_nMesExcesso,3)+" *	MEDIAS.DEMANDA_MEDIA " + CRLF
     _cQuery += " 				FROM MEDIAS " + CRLF
@@ -577,21 +537,24 @@ Begin Sequence
     _cQuery += " 				WHERE MEDIAS.D2_COD = SB1.B1_COD
     _cQuery += " 					AND MEDIAS.SALDO_ESTOQUE / MEDIAS.DEMANDA_MEDIA >= "+AllTrim(Str(_nMesExcesso))
     _cQuery += " 				),0)  AS CUSTO_EXCESSO " + CRLF		//--ZO_EXCUSTO 
-    _cQuery += "     	,'"+DtOs(_dDataCurva)+"' AS ZO_DTBASEC " + CRLF								//--ZO_DTBASEC
-    _cQuery += "     	,'"+RetCodUsr()+"' 	AS ZO_CODUSU " + CRLF									//--ZO_CODUSU 
-   	_cQuery += "     	,'"+Upper(UsrRetName(RetCodUsr()))+"' 	AS ZO_CODUSU " + CRLF						//--ZO_NOMEUSU
-    _cQuery += "     	,'"+DtOs(Date())+"' AS ZO_DTCALC " + CRLF									//--ZO_DTCALC 
-    _cQuery += "     	,'"+SubsTr(Time(),1,5)+"' 	AS ZO_HSCALC " + CRLF 							//--ZO_HSCALC 
+    _cQuery += "     	,'"+DtOs(_dDataCurva)+"' AS TMPDTBASEC " + CRLF								//--ZO_DTBASEC
+    _cQuery += "     	,'"+RetCodUsr()+"' 	AS TMPCODUSU " + CRLF									//--ZO_CODUSU 
+   	_cQuery += "     	,'"+Upper(UsrRetName(RetCodUsr()))+"' 	AS TMPNOMUSU " + CRLF				//--ZO_NOMUSU
+    _cQuery += "     	,'"+DtOs(Date())+"' AS TMPDTCALC " + CRLF									//--ZO_DTCALC 
+    _cQuery += "     	,'"+SubsTr(Time(),1,5)+"' 	AS TMPHSCALC " + CRLF 							//--ZO_HSCALC 
     _cQuery += "   		,' '        AS  D_E_L_E_T_ " + CRLF
-//    _cQuery += "  		,ROW_NUMBER() OVER (ORDER BY B1_COD)     AS  R_E_C_N_O_ " + CRLF
+//    _cQuery += "  		,ROW_NUMBER() OVER (ORDER BY SZO.ZO_COD)     AS  R_E_C_N_O_ " + CRLF
 //		Estava dando erro no update constraint
-//    _cQuery += "  		,	(	SELECT NVL(MAX(SZO.R_E_C_N_O_),0)+1  NRECSZO " + CRLF
+//    _cQuery += "  		,	(	SELECT NVL(MAX(SZO.R_E_C_N_O_),0)+1   " + CRLF
 //    _cQuery += "  				FROM "+RetSqlName("SZO")+" SZO "+ CRLF 
-//	_cQuery += " 				WHERE 	SZO.ZO_FILIAL = '"+FwXFilial("SZO")+"' "+ CRLF	
 //	_cQuery += " 			) AS  R_E_C_N_O_ "+ CRLF
     _cQuery += "  		,SB1.R_E_C_N_O_  " + CRLF
 
     _cQuery += " FROM "+RetSqlName("SB1")+" SB1 " + CRLF 
+ //   _cQuery += " LEFT JOIN "+RetSqlName("SZO")+" SZO " + CRLF 	
+//    _cQuery += "  	ON  SZO.ZO_FILIAL 	= '"+FwXFilial("SZO")+"' " + CRLF
+//    _cQuery += "     AND SZO.ZO_COD 	= SB1.B1_COD " + CRLF
+//    _cQuery += "     AND SZO.D_E_L_E_T_ = ' ' " + CRLF
     _cQuery += " LEFT JOIN "+RetSqlName("SBM")+" SBM " + CRLF 	
     _cQuery += "  	ON  SBM.BM_FILIAL 	= '"+FwXFilial("SBM")+"' " + CRLF
     _cQuery += "     AND SBM.BM_GRUPO 	= SB1.B1_GRUPO " + CRLF
@@ -607,6 +570,7 @@ Begin Sequence
     _cQuery += "  			) SB2SQL " + CRLF
     _cQuery += "  			ON SB2SQL.B2_COD = SB1.B1_COD " + CRLF 
     _cQuery += "  LEFT JOIN (	SELECT 	SD1.D1_COD " + CRLF
+    _cQuery += "  						,COALESCE( MIN(  SD1.D1_DTDIGIT),'        ' ) AS DT_PRIMCMP " + CRLF
     _cQuery += "  						,COALESCE( MAX(  SD1.D1_DTDIGIT),'        ' ) AS DT_ULTCMP " + CRLF
     _cQuery += "  				FROM "+RetSqlName("SD1")+" SD1 " + CRLF 
     _cQuery += "  				LEFT JOIN "+RetSqlName("SF4")+" SF4 " + CRLF 
@@ -621,7 +585,8 @@ Begin Sequence
     _cQuery += "  			) SD1SQL " + CRLF												//--ZO_DTULCMP
     _cQuery += "  			ON SD1SQL.D1_COD = SB1.B1_COD " + CRLF
     _cQuery += "  LEFT JOIN (	SELECT SD2.D2_COD " + CRLF
-    _cQuery += "  					,MAX(SD2.D2_EMISSAO) AS DT_NF_SAIDA " + CRLF
+    _cQuery += "  					,MIN(SD2.D2_EMISSAO) AS NF_PRIVND " + CRLF
+    _cQuery += "  					,MAX(SD2.D2_EMISSAO) AS NF_ULTVND " + CRLF
     _cQuery += "  					,SUM(NVL(SD2.D2_VALBRUT,0))  AS TOT_FATURAMENTO " + CRLF
     _cQuery += "  					,SUM(NVL(SD2.D2_QUANT,0))  AS TOT_PECAS " + CRLF
     _cQuery += "  				FROM "+RetSqlName("SD2")+" SD2 " + CRLF 
@@ -640,7 +605,7 @@ Begin Sequence
 		_cQuery += "    AND SBM.BM_CODMAR = '"+_cMarca+"' "							+ CRLF
 	Endif 
 	_cQuery += "    AND SB1.D_E_L_E_T_ 	= ' ' "										+ CRLF
-	//_cQuery += " ORDER BY SB1.B1_COD "												+ CRLF
+	_cQuery += " ORDER BY SB1.B1_COD "												+ CRLF
 
 	_nStatus := TCSqlExec(_cQuery)
     If (_nStatus < 0)
@@ -648,13 +613,51 @@ Begin Sequence
 		_lRet := .F.
         Break    
     Endif
-	//necessario fechar e reabrir 
-	If Select("SZO")
-		SZO->(DbCloseArea())
-		DbSelectArea("SZO")
+
+	_cTimeCalc := Time()
+	
+	_oSay:SetText("Aguarde atualizando registros ... Hora Inicial "+Time() )
+	ProcessMessage()
+	
+	DbSelectArea(_cAliasPesq)
+	(_cAliasPesq)->(DbGotop())
+	//Count To _nRegProcess	
+	//(_cAliasPesq)->(DbGotop())
+	
+	If (_cAliasPesq)->(Eof())
+		_cMens := "Não foi Calculado Curva para nenhum item !"  
+		MSGINFO(_cMens , "Atenção" )
+		Break
 	Endif
+	_nCount := 0
+	While (_cAliasPesq)->(!Eof())
+		//_nCount ++
+		//_oSay:SetText("Aguarde atualizando registros "+STRZero(_nCount,7)+" de "+STRZero(_nRegProcess,7)+" ... Hora Inicial "+Time() )
+
+		//ProcessMessage()
+
+		_lExclusive := !SZO->(DbSeek(FWxFilial("SZO")+(_cAliasPesq)->ZO_COD))
+		If ! RecLock("SZO",_lExclusive)
+			_cMens := "Não foi possivel INCLUIR item !"  
+			MSGINFO(_cMens , "Atenção" )
+			Break
+		Endif
+		For _nPos := 1 To Len(_aStruct)
+			_xValor	:= (_cAliasPesq)->(FieldGet(FieldPos(_aStruct[_nPos])))
+			SZO->(FieldPut(FieldPos(_aStruct[_nPos]), _xValor))
+		Next
+		SZO->(MSUnlock())
+		//_ObrW:Refresh()
+		(_cAliasPesq)->(DbSkip())
+	EndDo	
+	If Select((_cAliasPesq)) <> 0
+		(_cAliasPesq)->(DbCloseArea())
+		//Ferase(_cTable+GetDBExtension())
+   		 _oTable:Delete()
+	Endif      
+
 	DbSelectArea("SZO")
-	TCRefresh("SZO")
+	//TCRefresh("SZO")
     SZO->(DbGoTop())
 	If SZO->(Eof())
 		MSGINFO( "Não existe dados para a Geração da Curva ABC !", "Atenção" )
@@ -662,16 +665,16 @@ Begin Sequence
 		Break
 	Endif
 	_cHoraFim := Time()
-	MSGINFO( "Termino do processamento iniciado as : "+_cHoraIni+" finalizado as "+_cHoraFim+" !", "Atenção" )
+	MSGINFO( "Termino do processamento iniciado as : "+_cHoraIni+" Calculado em "+_cTimeCalc+" finalizado as "+_cHoraFim+" !", "Atenção" )
 End Sequence
+/*
 If Select(_cAliasPesq) <> 0
 	(_cAliasPesq)->(DbCloseArea())
 	Ferase(_cAliasPesq+GetDBExtension())
-Endif  
-TCRefresh("SZO")
-TcUnlink()
+Endif
+*/  
+DbSelectArea("SZO")
 _ObrW:Refresh(.T.)
-_ObrW:Refresh()
 Return Nil
 
 
@@ -704,10 +707,13 @@ Local _nColunas 	:= 0
 Local _lTotalizar 	:= .F.
 Local _cType 		:= OemToAnsi("Todos") + "(*.*) |*.*|"
 Local _aLinha		:= {}
+Local _nRegProcess	:= 0
+Local _nReg 		:= SZO->(Recno())
+Local _cAliasPesq   := GetNextAlias()
+
 Local _oExcel
 Local _oFwExcel
-Local _nReg 
-Local _nUltimoReg
+//Local _nUltimoReg
 Local _cTipo
 Local _nPos
 Local _nCount 
@@ -743,13 +749,35 @@ Begin Sequence
 		EndIf
 	Endif
 
+	_oSay:SetText( "Verificando registros aguarde..." ) 
+	ProcessMessage()
 	_oFwExcel := FWMSEXCEL():New()
 	_oFwExcel:AddworkSheet(_cSheet)
 	_oFwExcel:AddTable(_cSheet,_cTable)
+
+
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT 	NVL(SZO.R_E_C_N_O_,0) NREGSZO
+		FROM  	%Table:SZO% SZO
+		WHERE 	SZO.ZO_FILIAL 	= %xFilial:SZO%
+		ORDER BY SZO.ZO_COD	
+	EndSql
+	If (_cAliasPesq)->(Eof()) .or. (_cAliasPesq)->NREGSZO == 0
+		MSGInfo("Não Existem Registros para gerar Planilha  !","ATENCAO")
+		Break
+	Endif
+
+
+	DbSelectArea(_cAliasPesq)
+	(_cAliasPesq)->(DbGotop())
+	Count To _nRegProcess	
+	(_cAliasPesq)->(DbGotop())
+
 	//montar o cabeçalho
 	_nColunas	:= Len(_oBrw:aColumns)
+	_lTotalizar := .F.
+	lExit := .F.
 	For _nPos := 1 to _nColunas
-		_lTotalizar := .F.
 		_cTipo      := _oBrw:GetColumn(_nPos):GetType()
 		_oFwExcel:AddColumn( ;
 						_cSheet, ;
@@ -759,29 +787,25 @@ Begin Sequence
 												If( _cTipo == "N" , 2 , If(_cTipo == "D" ,4 ,1) ) , ; // Codigo de formatação ( 1-General,2-Number,3-Monetário,4-DateTime )
 												_lTotalizar )
 	Next _nPos
-
-	_oBrw:GoTop()
-	_nUltimoReg	:= _oBrw:LogicLen()
-	_nReg 		:= _oBrw:At()
-	
-	//ProcRegua(1000)
-	//nX := 0
-	//nY := 0
-	lExit := .F.
-	For _nPos := 1 To _nUltimoReg
+	_nCount := 0 	
+	While (_cAliasPesq)->(!Eof()) .And. LastKey() <> 27
+		(_cAliasPesq)->(DbGoto((_cAliasPesq)->NREGSZO))
+		_nCount ++ 	
 		_aLinha := Aclone(Array(_nColunas))
-		For _nCount := 1 To Len(_aLinha)
-			//cIdField := oBrwPEC23:GetColumn(nPosCol):GetID()
-			_aLinha[_nCount] := AllTrim(_oBrw:GetColumnData(_nCount))
+		_oSay:SetText( "Lendo Registo " +cValToChar(_nCount) + " de "+cValToChar(_nRegProcess)+" aguarde..." ) 
+		ProcessMessage()
+		For _nPos := 1 To Len(_aLinha)
+			_nIdField := SZO->(FieldPos(_oBrw:GetColumn(_nPos):GetID()))
+			_xValor := SZO->(FieldGet(_nIdField)) 
+			_aLinha[_nPos] := If(ValType(_xValor) == "C", AllTrim(_xValor), _xValor)
 		Next _nCount
 		_oFwExcel:AddRow(_cSheet ,_cTable, _aLinha) 
-		_oSay:SetText( "Lendo Registo " +cValToChar(_nPos) + " de "+cValToChar(_nUltimoReg)+" aguarde..." ) 
-		ProcessMessage()
 		_oBrw:GoDown()
-		If lExit
+		If lExit .Or. LastKey() == 27
 			Exit
 		Endif
-	Next _nPos
+		(_cAliasPesq)->(DbSkip())
+	EndDo
 
 	_oFwExcel:Activate()
 	_oFwExcel:GetXMLFile(AllTrim(_cArqXML)+".xml")
@@ -791,10 +815,12 @@ Begin Sequence
 
 	// Abrindo o excel e abrindo o arquivo xml.
 	_oExcel := MsExcel():New()           // Abre uma nova conex„o com Excel.
-	_oExcel:WorkBooks:Open(_cArqXML)         // Abre uma planilha.
+	_oExcel:WorkBooks:Open(_cArqXML)      // Abre uma planilha.
 	_oExcel:SetVisible(.T.)              // Visualiza a planilha.
 	_oExcel:Destroy()                    // Encerra o processo do gerenciador de tarefas.
 End Sequence 
+SZO->(DbGoto(_nReg))
+_oBrw:Refresh()
 Return _lRet 
 
 
