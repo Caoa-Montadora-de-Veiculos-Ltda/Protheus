@@ -26,6 +26,10 @@ User Function MT410TOK()
 			lRet := U_ZFATF003()
 		Endif
 
+		If Findfunction("U_ZFINF004") .AND. SE1->E1_PREFIXO == 'PVF' //gravar a forma de pagamento no título de RA
+            U_ZFINF004()
+        EndIf
+
 	Endif	
 
 	Return lRet   // agg_perc  abkpagg

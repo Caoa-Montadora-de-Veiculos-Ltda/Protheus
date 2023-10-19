@@ -45,6 +45,7 @@ IF _cEmp == "2010" .AND. SC5->C5_XPREFIX == 'PVF' //.AND. SE1->E1_PARCELA == '1 
             SE1->E1_PORTADO := _cBanco 
             SE1->E1_AGEDEP  := _cAge
             SE1->E1_CONTA   := _cConta
+            
             MsUnlock()
             SE1->(DbSkip())
         END

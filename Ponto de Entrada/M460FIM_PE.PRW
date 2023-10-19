@@ -59,9 +59,6 @@ User Function M460FIM()
         EndIf
 
         IF SC5->C5_XPREFIX == 'PVF'
-            //If Findfunction("U_ZFINF004")  //gravar a forma de pagamento no título de RA
-            //    U_ZFINF004()
-            //EndIf
 
             SE1->(dbSetOrder(1))
             SE1->(dbGoTop())
