@@ -399,7 +399,8 @@ Begin Sequence
 	//necessário selecionar novamente o VVP devido o mesmo ter que gerar os dois ultimos registros
   	BeginSql Alias _cAliasTab
    		SELECT 	VVP.VVP_VALTAB,
-				VVP.VVP_DATPRC
+				VVP.VVP_DATPRC,
+				VVP.VVP_BASEST
    		FROM %Table:VVP% VVP
    		WHERE 	VVP.VVP_FILIAL = %xFilial:VVP%
 			AND VVP.VVP_CODMAR = %Exp:(_cAliasPesq)->VVP_CODMAR%
@@ -417,7 +418,8 @@ Begin Sequence
 	Endif
 
 	While (_cAliasTab)->(!Eof())
-		AAdd(_aTab,{(_cAliasTab)->VVP_VALTAB, StoD((_cAliasTab)->VVP_DATPRC)})
+		//AAdd(_aTab,{(_cAliasTab)->VVP_VALTAB, StoD((_cAliasTab)->VVP_DATPRC)})
+		AAdd(_aTab,{(_cAliasTab)->VVP_BASEST, StoD((_cAliasTab)->VVP_DATPRC)})
 		(_cAliasTab)->(DbSkip())
 		//somente gravar as duas ultimas posições
 		If Len(_aTab) >= 2
