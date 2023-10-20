@@ -19,13 +19,11 @@
 /*/
 User Function ZFATF004()
 Local _aArea      := GetArea()
-Local cAliasQry   := GetNextAlias()
 Local _cPC        := Space(6)
 Local _cTipo      := Space(2)
 Local _cGrupo     := Space(4)
-Local _nPunit     := 0
+Local _nPrcUnit     := 0
 Local _nK         := 0
-Local _cQry       := " "
 Local _cColPR     := " "
 Local _nPosPr     := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_PRODUTO' })
 Local _nPosPU     := Ascan(aHeader,{|x| Alltrim(x[2]) == 'C6_PRCVEN' })
@@ -50,7 +48,7 @@ dbSelectArea( "SX1" )
 SX1->(dbSetOrder( 1 ))
 If !( DbSeek( _cPerg + '01'))
     RestArea(_aArea)
-    Return(_nPunit)   
+    Return(_nPrcUnit)   
 Else
     While !EOF() .AND. SX1->X1_GRUPO = _cPerg
         IF !Empty(SX1->X1_CNT01) .AND. SX1->X1_ORDEM = '01'
@@ -90,108 +88,97 @@ IF _cTipo <> 'SV' .AND. _cGrupo <> 'VEIA'
 
     If !Empty( _cPC ) //Se não encontrar CM1 fica zero
 
-        If Select( (cAliasQry) ) > 0
-		    (cAliasQry)->(DbCloseArea())
-	    EndIf
-
-        _cQry  := " SELECT * FROM ( SELECT B9_CM1 " + CRLF
-        _cQry  += "                 FROM " + RetSqlName("SB9") + " SB9 " + CRLF
-        _cQry  += "                 WHERE B9_FILIAL = '" + FWxFilial("SB9") + "' " + CRLF
-        _cQry  += "                 AND B9_COD = '" + _cColPr + "' " + CRLF
-        _cQry  += "                 AND SB9.D_E_L_E_T_ = ' ' " + CRLF
-        _cQry  += "                 ORDER BY B9_DATA DESC ) TMP " + CRLF
-        _cQry  += " WHERE ROWNUM = 1 "
-        
-        //_cQry  := ChangeQuery( _cQry )
-        
-        dbUseArea( .T., "TOPCONN", TcGenQry( ,, _cQry ), cAliasQry, .F., .T. )
-
+       	_nPrcUnit := NoRound(U_ZGENCST(_cColPr),TamSx3("C6_PRCVEN")[02])
+		
     Else
         _cPC := "      "
     EndIf
 
-    //Inclusão do .and. !IsInCallStack("U_PRCDOCIN"), por conta do programa
-    // ZESTF004 que utiliza a qtde e custo da planilha de inventario
-    If  !(cAliasQry)->(Eof()) .and. !IsInCallStack("U_PRCDOCIN") 
-
-        /*If ((cAliasQry)->VAL/(cAliasQry)->QTDE) < 0
-           _cResval := Str((cAliasQry)->VAL/(cAliasQry)->QTDE)
-           _cMSG := "Item: " + Alltrim(Str(n)) + "   Código: " + Alltrim(_cColPR) + "    Valor Negativo!! " + _cResval
-           MsgInfo(_cMSG, "[ ZFATF004 ] - Aviso" )
-           _nPunit := 0
-        Else*/
-           _nPunit := (cAliasQry)->B9_CM1
-        //EndIF
-
-    EndIf
-
-    IF !EMPTY(_cLocal)
-        aCols[n][_nPosLoc] := _cLocal	
-        __READVAR := "C6_LOCAL"
-        &("M->"+__READVAR)	:= _cLocal
-        &(GetSx3Cache(__READVAR,"X3_VALID"))
-        RunTrigger(2,n,nil,,__READVAR)
+    IF !Empty(_cLocal)
+        aCols[n][_nPosLoc] := _cLocal
+        zUpdCampo("C6_LOCAL"	,_cLocal		,n )		
     EndIF
   
     //Inclusão do If !IsInCallStack("U_PRCDOCIN"), por conta do programa
     // ZESTF004 que utiliza a qtde e custo da planilha de inventario
     If !IsInCallStack("U_PRCDOCIN")  
-        aColS[n][_nPosPU] := _nPunit	
-        __READVAR := "C6_PRCVEN"
-        &("M->"+__READVAR) := _nPunit
-        &(GetSx3Cache(__READVAR,"X3_VALID"))
-        RunTrigger(2,n,nil,,__READVAR)
+        aColS[n][_nPosPU] := _nPrcUnit
+        zUpdCampo("C6_PRCVEN"	,_nPrcUnit		,n )		
     Endif
 
-    IF !EMPTY(_cLocliz) 
-        aCols[n][_nPosLiz] := _cLocliz	
-        __READVAR	:= "C6_LOCALIZ"
-		&("M->"+__READVAR)	:= _cLocliz
-		//&(GetSx3Cache(__READVAR,"X3_VALID"))
-		RunTrigger(2,n,nil,,__READVAR)
+    IF !Empty(_cLocliz) 
+        aCols[n][_nPosLiz] := _cLocliz
+        zUpdCampo("C6_LOCALIZ"	,_cLocliz		,n )		
     EndIf  
 
-    IF !EMPTY(_cOperac)    
-        aCols[n][_nPosOper] := _cOperac	
-        __READVAR	:= "C6_OPER"
-        &("M->"+__READVAR)	:= _cOperac
-        &(GetSx3Cache(__READVAR,"X3_VALID"))
-        RunTrigger(2,n,nil,,__READVAR)
+    IF !Empty(_cOperac)    
+        aCols[n][_nPosOper] := _cOperac
+        zUpdCampo("C6_OPER"	,_cOperac		    ,n )		
     EndIF
 
-    IF !EMPTY(_cTes) 
+    IF !Empty(_cTes) 
         aCols[n][_nPosTes] := _cTes	
-        __READVAR	:= "C6_TES"
-        &("M->"+__READVAR)	:= _cTes
-        &(GetSx3Cache(__READVAR,"X3_VALID"))
-        RunTrigger(2,n,nil,,__READVAR)
+        zUpdCampo("C6_TES"	,_cTes		        ,n )		
     EndIF	
 
-    IF !EMPTY(_cCusto) 
+    IF !Empty(_cCusto) 
         aCols[n][_nPosCC] := _cCusto
-        __READVAR	:= "C6_CC"
-        &("M->"+__READVAR)	:= _cCusto
-        &(GetSx3Cache(__READVAR,"X3_VALID"))
-        RunTrigger(2,n,nil,,__READVAR)
+        zUpdCampo("C6_CC"	,_cCusto		    ,n )		
     EndIf 
 
-    IF !EMPTY(_cCLVL) 
-        aCols[n][_nPosCLVL] := _cCLVL	
-		__READVAR	:= "C6_CLVL"
-		&("M->"+__READVAR)	:= _cCLVL
-		&(GetSx3Cache(__READVAR,"X3_VALID"))
-		RunTrigger(2,n,nil,,__READVAR)
+    IF !Empty(_cCLVL) 
+        aCols[n][_nPosCLVL] := _cCLVL
+        zUpdCampo("C6_CLVL"	,_cCLVL		        ,n )		
     EndIf 
 
-    IF !EMPTY(_cItemcta) 
-        aCols[n][_nPosItCt] := _cItemcta	
-		__READVAR	:= "C6_ITEMCTA"
-		&("M->"+__READVAR)	:= _cItemcta
-		&(GetSx3Cache(__READVAR,"X3_VALID"))
-		RunTrigger(2,n,nil,,__READVAR)
+    IF !Empty(_cItemcta) 
+        aCols[n][_nPosItCt] := _cItemcta
+        zUpdCampo("C6_ITEMCTA"	,_cItemcta		,n )		
     EndIf
 
 ENDIF
 
 RestArea(_aArea)
-Return(_nPunit)
+
+Return(_nPrcUnit)
+
+/*
+==============================================================================================
+Funcao.........: zRunTrigger
+Descricao......: Roda as Trigger do Gatilho
+Autor..........: Evandro Mariano
+Criação........: 28/07/2023
+Alterações.....:
+===============================================================================================
+*/
+Static Function zUpdCampo(_cCampo, _xConteudo, _nPos)
+
+Local _aArea			:= FWGetArea()
+Local _lValid			:= .F.
+Default _nPos			:= 0
+Default _cCampo			:= ""
+Default _xConteudo		:= " "
+
+//Altera o ReadVar da Memória
+&("M->"+_cCampo) := _xConteudo
+__ReadVar := _cCampo
+
+//Chama as validações do sistema
+_lValid := CheckSX3(_cCampo, _xConteudo)
+
+//Se deu tudo certo nas validações
+If _lValid
+	If ExistTrigger(_cCampo)
+	
+		RunTrigger( 2		,;  //nTipo (1=Enchoice; 2=GetDados; 3=F3)
+					_nPos	,;  //Linha atual da Grid quando for tipo 2
+					Nil		,;  //Não utilizado
+							,;  //Objeto quando for tipo 1
+					_cCampo	)   //Campo que dispara o gatilho
+	EndIf
+EndIf
+
+RestArea(_aArea)
+
+Return()
+

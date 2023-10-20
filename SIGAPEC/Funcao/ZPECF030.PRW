@@ -40,7 +40,7 @@
 #define WND_FILIAIS 		"wnd_filiais"
 #define WND_RESUMO 			"wnd_resumo"
 
-// botıes
+// bot√µes
 #define IMG_CREATE 	"BMPINCLUIR"
 #define IMG_READ   	""
 #define IMG_UPDATE 	"NOTE"
@@ -116,17 +116,17 @@ Class FreAcWindow
 	// objetos auxiliares de interface
 	Data oLayout 		As Object
 	Data oSidebar 		As Object
-	// painÈis esquerdos
+	// pain√©is esquerdos
 	Data oPanelSearch 	As Object
 	Data oPanelChart 	As Object
 	Data oPanelDados 	As Object // exclusivo para SE5
-	// painÈis centrais
+	// pain√©is centrais
 	Data oPanelBrowse 	As Object
 	Data oPanelVis 		As Object
-	// painÈis direitos	
+	// pain√©is direitos	
 	Data oPanelEVenda 	As Object
 	Data oPanelDetalhe 	As Object
-	// objetos necess·rios para a interface	
+	// objetos necess√°rios para a interface	
 	Data oGetData 		As Object
 	Data oPrn 			As Object
 	Data _oBrPlan 		As Object
@@ -152,16 +152,16 @@ Class FreAcWindow
 	Data cAliasFile 	As String
 	// construtor
 	Method New() Constructor
-	// construÁ„o de tela	
+	// constru√ß√£o de tela	
 	Method CreateLeftColumn()
 	Method CreateRightColumn()
 	Method CreateCenterColumn()
 	//Method FilterFile()
-	// atualizaÁ„o
+	// atualiza√ß√£o
 	Method Refresh()	
 	Method RefreshSearch()
 	Method RefreshPrd()
-	// mÈtodos accessors (get-set)
+	// m√©todos accessors (get-set)
 	Method GetPergSize()
 	Method GetPerg()
 
@@ -190,10 +190,10 @@ EndClass
 
 FreAcWindow:New()
 
-Cria uma nova inst‚ncia da classe FreAcWindow. 
+Cria uma nova inst√¢ncia da classe FreAcWindow. 
 
-RestriÁ„o: New() apenas inicializa os atributos. Para a construÁ„o de
-interfaces È necess·rio a chamada do mÈtodo Init().
+Restri√ß√£o: New() apenas inicializa os atributos. Para a constru√ß√£o de
+interfaces √© necess√°rio a chamada do m√©todo Init().
 
 ---------------------------------------------------------------------------- */
 Method New(cAliasFile) Class FreAcWindow
@@ -214,15 +214,15 @@ Begin Sequence
 	Self:oPanelChart 	:= Nil
 	Self:oPanelDados 	:= Nil // Ferramentas
 
-	// painÈis centrais
+	// pain√©is centrais
 	Self:oPanelBrowse	:= Nil
 	Self:oPanelVis 		:= Nil
 
-	// painÈis direitos	
+	// pain√©is direitos	
 	Self:oPanelEVenda 	:= Nil
 	Self:oPanelDetalhe 	:= Nil
 
-	// objetos necess·rios para a interface	
+	// objetos necess√°rios para a interface	
 	Self:oGetData 		:= Nil
 	Self:oPrn 	    	:= Nil
 	Self:_oBrPlan   	:= Nil 
@@ -251,7 +251,7 @@ Return
 
 /* ----------------------------------------------------------------------------
 FreAcWindow:CreateLeftColumn()
-Cria os painÈis do lado esquerdo, de acordo com o gestor utilizado:
+Cria os pain√©is do lado esquerdo, de acordo com o gestor utilizado:
 Contas a Receber, Contas a Pagar ou Tesouraria:
 ---------------------------------------------------------------------------- */
 Method CreateLeftColumn() Class FreAcWindow
@@ -287,13 +287,13 @@ Begin Sequence
 	//@ _nLin1, _nCol1 Say "Ultima Venda" Size 71, 10 PIXEL OF Self:oPanelSearch 
 	//@ _nLin1, _nCol2 Say Self:oSayUltVND Var Self:cSayUltVND Size 200, 012 PIXEL OF Self:oPanelSearch
 
-	// Outras AÁıes
+	// Outras A√ß√µes
 	Self:oArea:AddWindow(COL_LEFT, WND_TOOLS, "Ferramentas", 50, .T., .T.) 
 	Self:oPanelDados := Self:oArea:GetWinPanel(COL_LEFT, WND_TOOLS)
 	FaMyBar(Self:oPanelDados, , , {{1, "Pedido de Compras"		, {||ZPECF30CMP()},"PEDIDO"}}	, 	, .F., .F.)	 
 	FaMyBar(Self:oPanelDados, , , {{2, "Listagem Entrada/Saida"	, {||ZPECF30KAR()},"FATIMG32"}}	, 	, .F., .F.)	 
 	FaMyBar(Self:oPanelDados, , , {{3, "Invoice"				, {||ZPECF30INV()},"AVIAO"}}	,  	, .F., .F.)	 				  
-  	FaMyBar(Self:oPanelDados, , , {{4, "OrÁamento"				, {||ZPECF30ORC()},"PRECO"}} ,  	, .F., .F.)	 
+  	FaMyBar(Self:oPanelDados, , , {{4, "Or√ßamento"				, {||ZPECF30ORC()},"PRECO"}} ,  	, .F., .F.)	 
 	FaMyBar(Self:oPanelDados, , , {{5, "Picking"				, {||ZPECF30PIK()},"TMSIMG32"}}	,   , .F., .F.)	 
   	FaMyBar(Self:oPanelDados, , , {{6, "Saldo WIS"				, {||ZPECF30WIS()},"CONTAINR"}} ,  	, .F., .F.)	 
 
@@ -303,7 +303,7 @@ Return
 
 /* ----------------------------------------------------------------------------
 FreAcWindow:CreateCenterColumn()
-Cria os painÈis centrais, de acordo com o gestor utilizado: Contas a Receber,
+Cria os pain√©is centrais, de acordo com o gestor utilizado: Contas a Receber,
 Contas a Pagar ou Tesouraria:
 ---------------------------------------------------------------------------- */
 Method CreateCenterColumn() Class FreAcWindow
@@ -318,8 +318,8 @@ Begin Sequence
 	Self:oArea:AddCollumn(COL_CENTER, 65, .F.)
 	Self:oArea:SetColSplit(COL_CENTER, CONTROL_ALIGN_LEFT)
 
-	// visualizaÁ„o do planejamento
-	Self:oArea:Addwindow(COL_CENTER, WND_VIS, "Consulta de PeÁas ", 70, .T., .F.) 
+	// visualiza√ß√£o do planejamento
+	Self:oArea:Addwindow(COL_CENTER, WND_VIS, "Consulta de Pe√ßas ", 70, .T., .F.) 
 	Self:oPanelBrowse := Self:oArea:GetWinPanel(COL_CENTER, WND_VIS)
 
 //	Self:oArea:AddWindow(COL_CENTER, WND_BROWSE, "Relacionamento", 25, .T., .F.)
@@ -333,17 +333,17 @@ Begin Sequence
 
     //Campos tabela temporaria              
 	_aColuna := {}
-	//Campos que ser„o editados 
+	//Campos que ser√£o editados 
 	Aadd(_aEdit,"TRB_QTDE") 
 	 
-    //funcionalidade para carga da tabela tempor·ria
+    //funcionalidade para carga da tabela tempor√°ria
 	LoadPlan()
     //aRotina := MenuDef2()
     //(_cAliasPlan)->(DbGotop()) 
     //tabela temporaria
     Self:_OBrPlan:=FWMBrowse():New(Self:oPanelBrowse)
-    Self:_OBrPlan:SetTemporary(.T.) //Indica que o Browse utiliza tabela tempor·ria
-    //descriÁ„o do browse
+    Self:_OBrPlan:SetTemporary(.T.) //Indica que o Browse utiliza tabela tempor√°ria
+    //descri√ß√£o do browse
    // Self:_OBrPlan:SetDescription('Consulta Produto Saldos')
     //tabela temporaria
     Self:_OBrPlan:SetAlias(_cAliasPlan)
@@ -357,7 +357,7 @@ Begin Sequence
 	Self:_OBrPlan:SetPreEditCell({|| DbSelectArea(_cAliasPlan), .T.})
 	//Self:_OBrPlan:SetEditCell(.T.)
 	//Self:_OBrPlan:SetEditCell (.T., {|| .T. })
-    Self:_OBrPlan:SetMenuDef('ZPECF30P') //funcionalidade corrente                        // Nome do fonte onde esta a funÁ„o MenuDef
+    Self:_OBrPlan:SetMenuDef('ZPECF30P') //funcionalidade corrente                        // Nome do fonte onde esta a fun√ß√£o MenuDef
 	//Self:_OBrPlan:lMaximized := .T.
 	Self:_OBrPlan:AddButton("Itens Relacionados"  	, { || FWMsgRun(, {|| ZPECF30ITR() }, "Itens Relacionados"	, "Localizando") },,,, .F., 2 )  
 	Self:_OBrPlan:AddButton("Itens Similar"  		, { || FWMsgRun(, {|| ZPECF30ITS() }, "Itens Similar"		, "Localizando") },,,, .F., 2 )  
@@ -376,7 +376,7 @@ Begin Sequence
         oColumn:SetDecimal(_aColuna[_nPos,5])
         oColumn:SetPicture(_aColuna[_nPos,6])
         oColumn:SetEdit(.T.)
-        //Habilita a ediÁ„o dos campos definidos no array aEditaveis
+        //Habilita a edi√ß√£o dos campos definidos no array aEditaveis
        // If aScan(_aEdit, _aColuna[_nPos,2]) > 0  
        //     oColumn:SetReadVar("M->"+_aColuna[_nPos,2])
        //     //oColumn:SetValid({|| ValidCampo(Str(_nPos)),Self:_OBrPlan:Refresh() })
@@ -412,7 +412,7 @@ Begin Sequence
 	
 	oColumn := FWBrwColumn():New()
 	oColumn:SetData({||_aPrdREL[_oBrRelac:nAt,DATA_CODPRD]})
-	oColumn:SetTitle("CÛdigo Produto") 
+	oColumn:SetTitle("C√≥digo Produto") 
 	oColumn:SetSize(15)
 	oColumn:SetDecimal(2)
 	//oColumn:SetPicture("@!")
@@ -420,7 +420,7 @@ Begin Sequence
 
 	oColumn := FWBrwColumn():New()
 	oColumn:SetData({||_aPrdREL[_oBrRelac:nAt,DATA_DESPRD]})
-	oColumn:SetTitle("DescriÁ„o Produto") 
+	oColumn:SetTitle("Descri√ß√£o Produto") 
 	oColumn:SetSize(15)
 	oColumn:SetDecimal(2)
 	//oColumn:SetPicture("@!")
@@ -445,7 +445,7 @@ Return Nil
 
 /* ----------------------------------------------------------------------------
 FreAcWindow:CreateRightColumn()
-Cria os painÈis do lado direito, de acordo com o gestor utilizado:
+Cria os pain√©is do lado direito, de acordo com o gestor utilizado:
 Contas a Receber, Contas a Pagar ou Tesouraria:
 ---------------------------------------------------------------------------- */
 Method CreateRightColumn() Class FreAcWindow
@@ -492,7 +492,7 @@ Begin Sequence
 	oColumn:SetTitle("Quantidade") 
 	oColumn:SetSize(TamSx3("D2_QUANT")[1])
 	oColumn:SetDecimal(TamSx3("D2_QUANT")[2])
-	oColumn:SetPicture("@E 99,999,999,999")  //PesqPict("SD2","D2_QUANT") conforme solicitaÁ„o Vandre 07/07/2023
+	oColumn:SetPicture("@E 99,999,999,999")  //PesqPict("SD2","D2_QUANT") conforme solicita√ß√£o Vandre 07/07/2023
 	_oBrEstVenda:SetColumns({oColumn})
 
 	oColumn := FWBrwColumn():New()
@@ -520,14 +520,14 @@ Begin Sequence
 
 	oColumn := FWBrwColumn():New()
 	oColumn:SetData({||_aDetalhe[_oBrDetalhe:nAt,DATA_DETDESC]})
-	oColumn:SetTitle("DescriÁ„o" ) 
+	oColumn:SetTitle("Descri√ß√£o" ) 
 	oColumn:SetSize(15)
 	oColumn:SetPicture("@!")
 	_oBrDetalhe:SetColumns({oColumn})
 
 	oColumn := FWBrwColumn():New()
 	oColumn:SetData({||_aDetalhe[_oBrDetalhe:nAt,DATA_DETREF]})
-	oColumn:SetTitle("Conte˙do" ) 
+	oColumn:SetTitle("Conte√∫do" ) 
 	oColumn:SetSize(30)
 	oColumn:SetPicture("@!")
 	_oBrDetalhe:SetColumns({oColumn})
@@ -541,7 +541,7 @@ End Sequence
 Return Nil
 
 /*/{Protheus.doc} ZPEC30MCOR
-//Mudar a cor do registro de totalizaÁ„o na Estatistica de Vendas
+//Mudar a cor do registro de totaliza√ß√£o na Estatistica de Vendas
 @author DAC denilso
 @since 04/07/2023
 @version 1.0
@@ -550,7 +550,7 @@ Return Nil
 /*/
 Static Function ZPEC30MCOR(_nLinha)
 Local _lRet := .F. 
-//Tratar para ler como ultimo registro e registro onde esta a totalizaÁ„o
+//Tratar para ler como ultimo registro e registro onde esta a totaliza√ß√£o
 If Len(_aPrdEstVenda) > 0 .and. Len(_aPrdEstVenda) <= _nLinha .And. _aPrdEstVenda[_nLinha,2] > 0 .and. _aPrdEstVenda[_nLinha,4] == 0
 	_lRet := .T.
 Endif
@@ -558,7 +558,7 @@ Return _lRet
 
 /* ----------------------------------------------------------------------------
 FreAcWindow:SetBrowseTitle()
-Altera o tÌtulo do painel de navegaÁ„o para o texto especificado cWindowTitle.
+Altera o t√≠tulo do painel de navega√ß√£o para o texto especificado cWindowTitle.
 ---------------------------------------------------------------------------- */
 Method SetBrowseTitle(cWindowTitle) Class FreAcWindow
 Return Self:oArea:SetWinTitle(COL_CENTER, WND_BROWSE, cWindowTitle)
@@ -566,7 +566,7 @@ Return Self:oArea:SetWinTitle(COL_CENTER, WND_BROWSE, cWindowTitle)
 
 /* ----------------------------------------------------------------------------
 FreAcWindow:SetDadosTitle()
-Altera o tÌtulo do painel de visualizaÁ„o para o texto especificado
+Altera o t√≠tulo do painel de visualiza√ß√£o para o texto especificado
 cWindowTitle.
 ---------------------------------------------------------------------------- */
 Method SetDadosTitle(cWindowTitle) Class FreAcWindow
@@ -574,14 +574,14 @@ Return Self:oArea:SetWinTitle(COL_CENTER, WND_VIS, cWindowTitle)
 
 /* ----------------------------------------------------------------------------
 FreAcWindow:GetDadosTitle()
-MÈtodo n„o implementado ainda.
+M√©todo n√£o implementado ainda.
 ---------------------------------------------------------------------------- */
 Method GetDadosTitle() Class FreAcWindow
 Return ""
 
 
 /* ----------------------------------------------------------------------------
-FunÁıes auxiliares
+Fun√ß√µes auxiliares
 ---------------------------------------------------------------------------- */
 
 
@@ -606,8 +606,8 @@ Return aDim
 
 /* ----------------------------------------------------------------------------
 DlgWidthPanelPanel()
-Devolve a largura do painel oParent, utilizando o mÈtodo ReadClientCorrs() para
-ler as dimensıes reais do painel.
+Devolve a largura do painel oParent, utilizando o m√©todo ReadClientCorrs() para
+ler as dimens√µes reais do painel.
 ---------------------------------------------------------------------------- */
 Static Function DlgWidthPanel(oParent)
 	Local nLargura := 0	
@@ -620,7 +620,7 @@ Return nLargura
 
 FaMyBar()
 
-Barra de botıes padr„o
+Barra de bot√µes padr√£o
 
 ---------------------------------------------------------------------------- */
 Static Function FaMyBar(oDlg , bOk, bCancel, aButtons, aButText, lIsEnchoice, lSplitBar,lLegenda)
@@ -669,7 +669,7 @@ If Len(aButtons) > 0
 		Endif
 		
 		_cVar := aButtons[_nPos,2]
-		//TBtnBmp2():New( 02,02,26,26		,'copyuser'			,,,,{||Alert("Bot„o 01")},oDlg,,,.T. )
+		//TBtnBmp2():New( 02,02,26,26		,'copyuser'			,,,,{||Alert("Bot√£o 01")},oDlg,,,.T. )
  		TBtnBmp2():New( _nLin,_nCol,26,26,aButtons[_nPos,4]	,,,,aButtons[_nPos,3],oDlg,_cVar,,.T. )
 		//oSay := TSay():New( _nLin2, _nCol+18,      { || _cVar        },  oDlg,,,,,,.T.)		
 		//@ _nLin, _nCol+20 SAY _cVar  SIZE 025, 012 OF oDlg //COLORS 0, 16777215 PIXEL
@@ -679,7 +679,7 @@ If Len(aButtons) > 0
 EndIf
 	//oView := FWFormView()
    //bBlocoMagic := {|oView| Myfunction(oView)}
-   //oView:AddUserButton("Texto abaixo do bot„o","MAGIC_BMP",bBlocoMagic,"Coment·rio do bot„o")
+   //oView:AddUserButton("Texto abaixo do bot√£o","MAGIC_BMP",bBlocoMagic,"Coment√°rio do bot√£o")
 If lIsEnchoice
 	oButtonBar:addCalc()    
 	oButtonBar:addSpool()  
@@ -694,7 +694,7 @@ Return Nil
 
 /* ----------------------------------------------------------------------------
 FreAcWindow:DimObj()
-Devolve as dimensıes do painel de visualizaÁ„o.
+Devolve as dimens√µes do painel de visualiza√ß√£o.
 ---------------------------------------------------------------------------- */
 Method DimObj(cPanel) Class FreAcWindow
 	Local oParent := NIL
@@ -721,7 +721,7 @@ Return _cPerg
 /* ----------------------------------------------------------------------------
 FreAcWindow:RefreshSearch()
 Atualiza o painel de pesquisa caso o alias cAlias seja diferente do alias do
-painel ou caso cAlias n„o seja passado.
+painel ou caso cAlias n√£o seja passado.
 ---------------------------------------------------------------------------- */
 Method RefreshSearch(cAlias) Class FreAcWindow
 Local _cPerg := "ZPECF030"
@@ -745,7 +745,7 @@ Return Nil
 
 /* ----------------------------------------------------------------------------
 FreAcWindow:GetPergSize()
-Devolve um array de duas dimensıes no qual cada elemento do mesmo contÈm o
+Devolve um array de duas dimens√µes no qual cada elemento do mesmo cont√©m o
 nome e tamanho de cada pergunta pertencente ao grupo de perguntas
 associado ao alias do gestor.
 ---------------------------------------------------------------------------- */
@@ -756,7 +756,7 @@ Return aSize
 
 /* ----------------------------------------------------------------------------
 FinReadSx1()
-Devolve um array de duas dimensıes no qual cada elemento do mesmo contÈm o
+Devolve um array de duas dimens√µes no qual cada elemento do mesmo cont√©m o
 nome e tamanho de cada pergunta pertencente ao grupo de perguntas cPerg
 ---------------------------------------------------------------------------- */
 Static Function FinReadSx1(cPerg)
@@ -779,7 +779,7 @@ Return aSize
 
 /* ----------------------------------------------------------------------------
 FreAcWindow:Refresh()
-Atualiza os painÈis de pesquisa e de gr·ficos (caso o mesmo exista).
+Atualiza os pain√©is de pesquisa e de gr√°ficos (caso o mesmo exista).
 ---------------------------------------------------------------------------- */
 Method Refresh() Class FreAcWindow
 	Self:RefreshSearch()
@@ -803,7 +803,7 @@ Return Self:cAliasFile
 
 /* ----------------------------------------------------------------------------
 FreAcWindow:SetChartTitle()
-Altera o tÌtulo do painel de de gr·ficos para o texto especificado
+Altera o t√≠tulo do painel de de gr√°ficos para o texto especificado
 cWindowTitle.
 ---------------------------------------------------------------------------- */
 Method SetChartTitle(cWindowTitle) Class FreAcWindow
@@ -813,21 +813,21 @@ Return Self:oArea:SetWinTitle(COL_LEFT, WND_CHART, cWindowTitle)
 
 /* ----------------------------------------------------------------------------
 FreAcWindow:Init()
-Inicializa o objeto FREWINDOW criando a interface gr·fica para o gestor.
+Inicializa o objeto FREWINDOW criando a interface gr√°fica para o gestor.
 ---------------------------------------------------------------------------- */
 Method Init() Class FreAcWindow
 Local aCoors := {}
 Local lCloseButt := !(oAPP:lMdi)
 
 Begin Sequence
-	// a funÁ„o CursorWait() altera o cursor apenas quando a rotina È chamada
-	// pela primeira vez. Nas chamadas seguintes da funÁ„o, o cursor n„o È
-	// alterado. Chamando CursorArrow() forÁa a CursorWait() mostrar o cursor
+	// a fun√ß√£o CursorWait() altera o cursor apenas quando a rotina √© chamada
+	// pela primeira vez. Nas chamadas seguintes da fun√ß√£o, o cursor n√£o √©
+	// alterado. Chamando CursorArrow() for√ßa a CursorWait() mostrar o cursor
 	// de ampulheta sempre.
 	CursorArrow()
 	CursorWait()
 	aCoors := FWGetDialogSize(oMainWnd)
-	DEFINE MSDIALOG Self:oDlg TITLE "PE«AS" ; 
+	DEFINE MSDIALOG Self:oDlg TITLE "PE√áAS" ; 
 		    FROM aCoors[1],aCoors[2] TO aCoors[3],aCoors[4] ;
           OF oMainWnd COLOR "W+/W" STYLE nOR(WS_VISIBLE,WS_POPUP) PIXEL
 
@@ -855,7 +855,7 @@ Return Nil
 
 /* ----------------------------------------------------------------------------
 FreAcWindow:GetVisPanel()
-Devolve o painel no qual ser· mostra a visualizaÁ„o dos registros.
+Devolve o painel no qual ser√° mostra a visualiza√ß√£o dos registros.
 ---------------------------------------------------------------------------- */
 Method GetVisPanel() Class FreAcWindow
 Return Self:oArea:GetWinPanel(COL_CENTER, WND_VIS)
@@ -864,7 +864,7 @@ Return Self:oArea:GetWinPanel(COL_CENTER, WND_VIS)
 
 /* ----------------------------------------------------------------------------
 FreAcWindow:RefreshPrd()
-Atualiza o painel de saldos. N„o efetua nenhum rec·lculo de valores.
+Atualiza o painel de saldos. N√£o efetua nenhum rec√°lculo de valores.
 ---------------------------------------------------------------------------- */
 Method RefreshPrd() Class FreAcWindow
 	Self:cSayDescPrd := cSayDescPrd
@@ -883,10 +883,10 @@ ShowViewPanel()
 ---------------------------------------------------------------------------- */
 Method ShowViewPanel() Class FreAcWindow
 Begin Sequence
-	// verifica se o painel de visualizaÁ„o
-	// est· sendo mostrado
+	// verifica se o painel de visualiza√ß√£o
+	// est√° sendo mostrado
 	If !Self:oArea:WinOpen(COL_CENTER, WND_VIS)
-		// se n„o, mostra a janela
+		// se n√£o, mostra a janela
 		Self:oArea:WinChgState(COL_CENTER, WND_VIS)
 	EndIf
 End Sequence	
@@ -894,7 +894,7 @@ Return Nil
 
 
 /*/{Protheus.doc} PesqSKU
-//TODO FunÁ„o para localizar o SKU
+//TODO Fun√ß√£o para localizar o SKU
 @author denilso.almeida
 @since 25/04/2024/2019
 @version 1.0
@@ -907,12 +907,12 @@ Local _lRet    := .T.
 Begin Sequence
 	If Type("MV_PAR01") <> "C" .Or. Empty(MV_PAR01)
 		_lRet := .F.
-		Help( ,,"AtenÁ„o", , "Parametro referente a Produto n„o informado !",1,0)
+		Help( ,,"Aten√ß√£o", , "Parametro referente a Produto n√£o informado !",1,0)
 		Break
 	Endif 
 	SB1->(DbSetOrder(1))
 	If !SB1->(DbSeek(XFilial("SB1")+AllTrim(AllTrim(MV_PAR01))))
-		Help( ,,"AtenÁ„o", , "Produto "+MV_PAR01+" n„o Locallizado !",1,0)
+		Help( ,,"Aten√ß√£o", , "Produto "+MV_PAR01+" n√£o Locallizado !",1,0)
 		_lRet := .F.
 		Break
 	Endif 
@@ -930,7 +930,7 @@ Begin Sequence
   	ZPECF30ITR(.F.) //carrega browse de itens telacionados 
 	ZPECF30EVM()  	//CARREGA ESTATISTICA DE VENDAS
 	ZPECF30DET()  	//CARREGA DETALHES
-	LocFCP()  		//carregar ultimo faturamento e compras, descriÁ„o produto
+	LocFCP()  		//carregar ultimo faturamento e compras, descri√ß√£o produto
 	
 	//_oBrRelac:setArray(_aPrdREL)	
   	//_oBrRelac:refresh()
@@ -947,7 +947,7 @@ Return _lRet
 
 
 
-//Popular Tabrla Tempor·ria
+//Popular Tabrla Tempor√°ria
 //============================================================================
 Static Function LoadPlan()
 //============================================================================
@@ -980,7 +980,7 @@ Begin Sequence
  	Endif
 
  	//If Type("MV_PAR02") == "N"
-	//	If MV_PAR02 == 2 //Todas as Filiais 1=Sim 2=N„o
+	//	If MV_PAR02 == 2 //Todas as Filiais 1=Sim 2=N√£o
  	//		_cFilDe	 := FwXFilial("SB2")
  	//		_cFilAte := _cFilDe
 	//	Endif
@@ -990,21 +990,21 @@ Begin Sequence
   	If ValType(_aColuna) <> "A" .or. Len(_aColuna) == 0
   		_aColuna := {}
   		Aadd(_aColuna, {"Filial"		,"TRB_FILIAL"	,"C",Len(SB1->B1_FILIAL)	,00	,"@!" })
-  		Aadd(_aColuna, {"ArmazÈm"		,"TRB_LOCAL"	,"C",Len(SB1->B1_LOCPAD)	,00	,"@!" })
-  		Aadd(_aColuna, {"Nome ArmazÈm"	,"TRB_NOMELO"	,"C",Len(NNR->NNR_DESCRI)	,00	,"@!" })
+  		Aadd(_aColuna, {"Armaz√©m"		,"TRB_LOCAL"	,"C",Len(SB1->B1_LOCPAD)	,00	,"@!" })
+  		Aadd(_aColuna, {"Nome Armaz√©m"	,"TRB_NOMELO"	,"C",Len(NNR->NNR_DESCRI)	,00	,"@!" })
   		Aadd(_aColuna, {"Qtde"			,"TRB_QTDE" 	,"N",TamSx3("B2_QATU")[1]	,02	,"@E 9999,999,999.99" })
-  		Aadd(_aColuna, {"OrÁamento"		,"TRB_ORC" 		,"N",TamSx3("B2_QATU")[1]	,02	,"@E 9999,999,999.99" })
+  		Aadd(_aColuna, {"Or√ßamento"		,"TRB_ORC" 		,"N",TamSx3("B2_QATU")[1]	,02	,"@E 9999,999,999.99" })
   		Aadd(_aColuna, {"Picking"		,"TRB_PICKIN" 	,"N",TamSx3("B2_QATU")[1]	,02	,"@E 9999,999,999.99" })
-  		Aadd(_aColuna, {"DisponÌvel"	,"TRB_SALDOE"	,"N",TamSx3("B2_QATU")[1]	,02	,"@E 9999,999,999.99" })
+  		Aadd(_aColuna, {"Dispon√≠vel"	,"TRB_SALDOE"	,"N",TamSx3("B2_QATU")[1]	,02	,"@E 9999,999,999.99" })
   	Endif	
-	//dados para tabela tempor·ria
+	//dados para tabela tempor√°ria
 	//reorganizar posis rsta colocado como acols de browse
 	For _nPos := 1 To Len(_aColuna)
 		Aadd(_aCampos, {_aColuna[_nPos,2],;  //nome do campo
 						_aColuna[_nPos,3],;	//tipo de compo
 						_aColuna[_nPos,4],;	//tamanho do campo						
 						_aColuna[_nPos,5],;	//decimal
-						_aColuna[_nPos,1],;	//DescriÁ„o
+						_aColuna[_nPos,1],;	//Descri√ß√£o
 						_aColuna[_nPos,6];	//pict
 						})												  
 	Next
@@ -1023,39 +1023,39 @@ Begin Sequence
 		If File(_cIndice1+OrdBagExt())
 			FErase(_cIndice1+OrdBagExt())
 			EndIf
-		//A funÁ„o dbUseArea abre uma tabela de dados na ·rea de trabalho atual ou na primeira ·rea de trabalho disponÌvel
+		//A fun√ß√£o dbUseArea abre uma tabela de dados na √°rea de trabalho atual ou na primeira √°rea de trabalho dispon√≠vel
 		DbUseArea(.T.,,_cAliasPlan,_cAliasPlan,.F.,.F.)
-		//A funÁ„o IndRegua cria um Ìndice tempor·rio para o alias especificado, podendo ou n„o ter um filtro
-		IndRegua(_cAliasPlan, _cIndice1, "TRB_LOCAL+TRB_FILIAL"	,,, "ArmazÈm...")
-		//Fecha todos os Ìndices da ·rea de trabalho corrente.
+		//A fun√ß√£o IndRegua cria um √≠ndice tempor√°rio para o alias especificado, podendo ou n√£o ter um filtro
+		IndRegua(_cAliasPlan, _cIndice1, "TRB_LOCAL+TRB_FILIAL"	,,, "Armaz√©m...")
+		//Fecha todos os √≠ndices da √°rea de trabalho corrente.
 		DbClearIndex()
-		//Acrescenta uma ou mais ordens de determinado Ìndice de ordens ativas da ·rea de trabalho.
+		//Acrescenta uma ou mais ordens de determinado √≠ndice de ordens ativas da √°rea de trabalho.
 		DbSetIndex(_cIndice1+OrdBagExt())
 	Endif	
-    //Popular tabela tempor·ria, irei colocar apenas um unico registro
-	//verificar as fases atÈ o processamento da fase de conferencia
+    //Popular tabela tempor√°ria, irei colocar apenas um unico registro
+	//verificar as fases at√© o processamento da fase de conferencia
 	_cStatus := ""
 	//_cFaseOrc := "023RTZ"  //tratar somente as fase 0, 2, R no momento
 	For _nPos := 1 to Len(_cFaseOrc)
 		If SubsTr(_cFaseOrc,_nPos,1) == _cFaseConf
 			Exit
 		Endif
-		//N„o colocar item ja reservado
+		//N√£o colocar item ja reservado
 		If SubsTr(_cFaseOrc,_nPos,1) <> "R"
 			_cStatus += "'" +SubsTr(_cFaseOrc,_nPos,1)+ "',"
 		Endif
 	Next
 	_cStatus := SubsTr(_cStatus,1,Len(_cStatus)-1)
 	If Empty(_cStatus)
-		MSGINFO( "N„o existe fase de orÁamento no par‚metro Fase", "[ZPECF030] - AtenÁ„o" )
+		MSGINFO( "N√£o existe fase de or√ßamento no par√¢metro Fase", "[ZPECF030] - Aten√ß√£o" )
 		_lRet := .F.
 		Break
 	EndIf
 	_cWhereVS1 += 	" AND VS1.VS1_STATUS IN  (" +_cStatus+ ") " 
 	_cWhereVS1 := "%"+_cWhereVS1+"%"
-	//GAP005 CORRE«√O ERRO NO CALCULO SALDO AJUSTADO SELECT DE SUBQUERY PARA VERIFICAR B2_LOCAL
+	//GAP005 CORRE√á√ÉO ERRO NO CALCULO SALDO AJUSTADO SELECT DE SUBQUERY PARA VERIFICAR B2_LOCAL
 
-	BeginSql Alias _cAliasTRB //Define o nome do alias tempor·rio 
+	BeginSql Alias _cAliasTRB //Define o nome do alias tempor√°rio 
 		SELECT 	  NVL(SB1.R_E_C_N_O_,0) NREGSB1
 				, NVL(SB2.R_E_C_N_O_,0) NREGSB2
 				, NNR.NNR_DESCRI DESCRI_LOCAL
@@ -1122,8 +1122,8 @@ Begin Sequence
 		SB1->(DbGoto((_cAliasTRB)->NREGSB1))
 		SB2->(DbGoto((_cAliasTRB)->NREGSB2))
 		cFilAnt 	:= SB2->B2_FILIAL
-		_nSaldoSB2 	:= SB2->(SaldoSB2()) //FUN«√O PARA CALCULO EM ESTOQUE
-		//GAP005 CORRE«√O ERRO NO CALCULO SALDO
+		_nSaldoSB2 	:= SB2->(SaldoSB2()) //FUN√á√ÉO PARA CALCULO EM ESTOQUE
+		//GAP005 CORRE√á√ÉO ERRO NO CALCULO SALDO
 
 		If SB2->B2_LOCAL <> _cArmazemPad  .And. _nSaldoSB2 == 0 .And. (_cAliasTRB)->ITENSORC == 0 .And. (_cAliasTRB)->ITENSPIC == 0
     		(_cAliasTRB)->(DbSkip())
@@ -1139,7 +1139,7 @@ Begin Sequence
    	   		(_cAliasPlan)->TRB_PICKIN	:= (_cAliasTRB)->ITENSPIC  	//If(AllTrim(SB2->B2_LOCAL) == _cArmazemPad,(_cAliasTRB)->ITENSPIC,0)
    	   		(_cAliasPlan)->TRB_SALDOE  	:= _nSaldo 					//If(AllTrim(SB2->B2_LOCAL) == _cArmazemPad,_nSaldo, _nSaldoSB2)
    	   		(_cAliasPlan)->(MsUnLock())
-			//caso possa n„o existir o armazem padr„o a ser verificado devo preencher os valores de orÁamento e picking no primeiro armazem 
+			//caso possa n√£o existir o armazem padr√£o a ser verificado devo preencher os valores de or√ßamento e picking no primeiro armazem 
 			If SB2->B2_LOCAL == _cArmazemPad
 				_lArmazemPad  := .T.
 			Endif	
@@ -1186,7 +1186,7 @@ Return _lRet
 
 
 //==========================================================================
-//funcionalidade para retornar as Pedido de Compras de acordo com o perÌodo
+//funcionalidade para retornar as Pedido de Compras de acordo com o per√≠odo
 //==========================================================================
 Static Function CalcEmpen()
 Local _cAliasPesq 	:= GetNextAlias()
@@ -1261,7 +1261,7 @@ Return _nTotEmp
 
 
 /*/{Protheus.doc} ValidCampo
-//TODO EdiÁ„o da tela de planejamento para gravar quando alterar.
+//TODO Edi√ß√£o da tela de planejamento para gravar quando alterar.
 @author denilso.almeida
 @since 14/10/2019
 @version 1.0
@@ -1272,7 +1272,7 @@ Return _nTotEmp
 /*/
 Static Function ValidCampo(_cCol,_oBr)
 Local _nPos := (_cAliasPlan)->(Recno())
- //Guarda o posicionamento do tempor·rio
+ //Guarda o posicionamento do tempor√°rio
 Local _aOrd 	:= SaveOrd(_cAliasPlan)
 //Local _nPosLin 	:= Self:_oBrPlan:nAt
 Local _nCol     := Val(_cCol)
@@ -1302,15 +1302,17 @@ _oBr:Refresh()
 Return .T.
 
 
-//Solicita a seleÁ„o do arquivo           
+//Solicita a sele√ß√£o do arquivo           
 Static Function PesqAXLS(oPanelVis)
 Local _cTipoArq	 := "Arquivos Texto (*.XLS)     | *.XLS |"
 Local _cDirXls    := AllTrim(SuperGetMV( "IQA_XLSIORI"  ,,"Planejamento\xls" ))       //processamento
-//Local _cArqXLS	:= 	cGetFile(_cTipoArq,"Selecione o arquivo que ser· analisado.",0,"SERVIDOR\"+_cDirXls,.T.,GETF_LOCALFLOPPY + GETF_LOCALHARD + GETF_NETWORKDRIVE )
+//Local _cArqXLS	:= 	cGetFile(_cTipoArq,"Selecione o arquivo que ser√° analisado.",0,"SERVIDOR\"+_cDirXls,.T.,GETF_LOCALFLOPPY + GETF_LOCALHARD + GETF_NETWORKDRIVE )
 Local _cArqXLS	:= 	""
 
 Begin Sequence
-		_cArqXLS := cGetFile(_cTipoArq,"Selecione o arquivo que ser· analisado.",0,_cDirXls,.T.,GETF_LOCALFLOPPY + GETF_LOCALHARD,  )
+
+		_cArqXLS := cGetFile(_cTipoArq,"Selecione o arquivo que ser√° analisado.",0,_cDirXls,.T.,GETF_LOCALFLOPPY + GETF_LOCALHARD , )
+
 		If !Empty(_cArqXLs)
 			oOle:= TOleContainer():New( 2, 2,560 ,284 ,oPanelVis,.T.,_cArqXLS )
 			If !oOle:OpenFromFile(Alltrim(_cArqXLS),.F.)
@@ -1350,27 +1352,27 @@ Begin Sequence
   	SX1->(DbSetOrder(1))
 //  SX1->(DbSeek(_cPerg))   
 //                0123456789012345678901234567890123456780   
-	_cChave := PadR(_cPerg,Len(SX1->X1_GRUPO)) + "09"   //ajustar campo para n„o solicitar sem ser selecionado
+	_cChave := PadR(_cPerg,Len(SX1->X1_GRUPO)) + "09"   //ajustar campo para n√£o solicitar sem ser selecionado
 	If SX1->(DbSeek(_cChave))
 	    SX1->( RecLock( "SX1", .F. ) )
     	SX1->X1_PRESEL := 1
 	Endif
 
-  	Aadd(_aHelpPor,{ "Informar cÛdigo do Produto     ",;
+  	Aadd(_aHelpPor,{ "Informar c√≥digo do Produto     ",;
     	             ""})
   	//Aadd(_aHelpPor,{ "Mostrar todas as Filiais       ",;
-    //	             "1=Sim 2=N„o"})
+    //	             "1=Sim 2=N√£o"})
   	_aHelpSpa := _aHelpPor
   	_aHelpEng := _aHelpPor
  
 	//      X1_GRUPO         ,X1_ORDEM,X1_PERGUNT                ,X1_PERSPA,X1_PERENG,X1_VARIAVL,X1_TIPO ,X1_TAMANHO                    ,X1_DECIMAL                        ,X1_PRESEL ,X1_GSC,X1_VALID          ,X1_F3     ,X1_GRPSXG,X1_PYME,X1_VAR01   ,X1_DEF01     ,X1_DEFSPA1,X1_DEFENG1  ,X1_CNT01  ,X1_VAR02,X1_DEF02           ,X1_DEFSPA2   ,X1_DEFENG2   ,X1_CNT02 ,X1_VAR03, X1_DEF03         ,X1_DEFSPA3,X1_DEFENG3 ,X1_CNT03 ,X1_VAR04,X1_DEF04       ,X1_DEFSPA4,X1_DEFENG4,X1_CNT04,X1_VAR05 ,X1_DEF05             ,X1_DEFSPA5,X1_DEFENG5,X1_CNT05,HELP PORT     ,HELP SPANH          ,HELP INGLES        
   	Aadd(_aPerg, { _cPerg    ,"01"    ,"Informe o Produto ?"  ,""       ,""       ,"mv_ch1"  ,"C"     ,Round(TamSX3("B1_COD")[1],0)  ,Round(TamSX3("B1_COD")[2],0)      ,0         ,"G"   ,                  ,"SB1"     ,""       ,"S"    ,"mv_par01",""           ,""        ,""          ,""        ,""      ,""                 ,""           ,""           ,""       ,""      ,""                ,""        ,""         ,""       ,""      ,""             ,""        ,""        ,""      ,""       ,""                   ,""        ,""        ,""      ,_aHelpPor[_nPosHelp],_aHelpSpa[_nPosHelp],_aHelpEng[_nPosHelp]})
   	_nPosHelp ++
- //	Aadd(_aPerg, { _cPerg    ,"02"    ,"Todas as  Filiais ?"  ,""       ,""       ,"mv_ch2"  ,"N"     ,1  							,0      							,0         ,"C"   ,                  ,          ,""       ,"S"    ,"mv_par02","1=Sim"      ,""        ,""          ,""        ,""      ,"2=N„o"                 ,""           ,""           ,""       ,""      ,""                ,""        ,""         ,""       ,""      ,""             ,""        ,""        ,""      ,""       ,""                   ,""        ,""        ,""      ,_aHelpPor[_nPosHelp],_aHelpSpa[_nPosHelp],_aHelpEng[_nPosHelp]})
+ //	Aadd(_aPerg, { _cPerg    ,"02"    ,"Todas as  Filiais ?"  ,""       ,""       ,"mv_ch2"  ,"N"     ,1  							,0      							,0         ,"C"   ,                  ,          ,""       ,"S"    ,"mv_par02","1=Sim"      ,""        ,""          ,""        ,""      ,"2=N√£o"                 ,""           ,""           ,""       ,""      ,""                ,""        ,""         ,""       ,""      ,""             ,""        ,""        ,""      ,""       ,""                   ,""        ,""        ,""      ,_aHelpPor[_nPosHelp],_aHelpSpa[_nPosHelp],_aHelpEng[_nPosHelp]})
   //	_nPosHelp ++
 
-  	//Aadd(_aPerg, { _cPerg    ,"02"    ,"PerÌodo Planejamento ?"  ,""       ,""       ,"mv_ch2"  ,"N"     ,06  							,0                                 ,0         ,"G"   ,  				,          ,""       ,"S"    ,"mv_par02",""           ,""        ,""          ,""        ,""      ,""                 ,""           ,""           ,""       ,""      ,""                ,""        ,""         ,""       ,""      ,""             ,""        ,""        ,""      ,""       ,""                   ,""        ,""        ,""      ,_aHelpPor[_nPosHelp],_aHelpSpa[_nPosHelp],_aHelpEng[_nPosHelp]})
-    //Verificar se existe grupo de perguntas caso n„o cadastrar
+  	//Aadd(_aPerg, { _cPerg    ,"02"    ,"Per√≠odo Planejamento ?"  ,""       ,""       ,"mv_ch2"  ,"N"     ,06  							,0                                 ,0         ,"G"   ,  				,          ,""       ,"S"    ,"mv_par02",""           ,""        ,""          ,""        ,""      ,""                 ,""           ,""           ,""       ,""      ,""                ,""        ,""         ,""       ,""      ,""             ,""        ,""        ,""      ,""       ,""                   ,""        ,""        ,""      ,_aHelpPor[_nPosHelp],_aHelpSpa[_nPosHelp],_aHelpEng[_nPosHelp]})
+    //Verificar se existe grupo de perguntas caso n√£o cadastrar
 	ReplSx1(_cPerg,_aPerg)
 End Begin  	
 Return Nil
@@ -1378,7 +1380,7 @@ Return Nil
 
 /*---------------------------------------------------------------------------------------
 {Protheus.doc} ReplSx1
-Rdmake Respons·vel pela GravaÁ„o das perguntas referente a tabela SX1
+Rdmake Respons√°vel pela Grava√ß√£o das perguntas referente a tabela SX1
 @class    	Nao Informado
 @from       Nao Informado
 @param      Nao Informado
@@ -1389,10 +1391,10 @@ Rdmake Respons·vel pela GravaÁ„o das perguntas referente a tabela SX1
 @since      Nao Informado  
 @return    	Nil
 @sample     Nao Informado
-@obs        A Array _aPergs deve vir com duas posiÁıes a primeira com o nome do campo e a segunda com o conte˙do
+@obs        A Array _aPergs deve vir com duas posi√ß√µes a primeira com o nome do campo e a segunda com o conte√∫do
 @project    
 @menu       Nao Informado
-@history    PASSAR FUNCIONALIDADE PARA APLICA«’ES GERAIS 
+@history    PASSAR FUNCIONALIDADE PARA APLICA√á√ïES GERAIS 
 ---------------------------------------------------------------------------------------*/
 Static Function ReplSx1(_cPerg,_aPergs)		
 Local _lNovo
@@ -1424,7 +1426,7 @@ Begin Sequence
 	For _nPos := 1 To Len(_aPergs)
         _aGrava  := _aPergs[_nPos]
 		_nPosOrd := Ascan( _aEstru,  "X1_ORDEM"   ) 
-		If _nPosOrd == 0  //Se n„o indicou a ordem n„o grava
+		If _nPosOrd == 0  //Se n√£o indicou a ordem n√£o grava
 		 	Loop		
 		Endif 
 		If SX1->(DbSeek( Padr(_cPerg,Len(SX1->X1_GRUPO))+ _aGrava[_nPosOrd])) 
@@ -1438,8 +1440,8 @@ Begin Sequence
 		_aHelpP := {}
 		_aHelpI := {}
 		_aHelpS := {}
-    	For _nCol := 1 To Len(_aGrava) //A gravaÁ„o È pelo tamanho informado mas segue a posiÁ„o dos dados da estrutura
-			//N„o gravar quando n„o informado o dado
+    	For _nCol := 1 To Len(_aGrava) //A grava√ß√£o √© pelo tamanho informado mas segue a posi√ß√£o dos dados da estrutura
+			//N√£o gravar quando n√£o informado o dado
 			If Valtype(_aGrava[_nCol]) == "U"
 				Loop			
 			Endif
@@ -1486,14 +1488,14 @@ Return Nil
 @author DAC denilso
 @since 05/05/2023
 @version 1.0
-@parametro 				_lCarrega - indica se esta realizando o carregamento de variaveis neste momento n„o mostra kits utilizado para fazer atualizaÁ„o no browse
+@parametro 				_lCarrega - indica se esta realizando o carregamento de variaveis neste momento n√£o mostra kits utilizado para fazer atualiza√ß√£o no browse
 @return _lRet, Logico
 @type Static function
 /*/
 Static Function ZPECF30KIT(_lCarrega)
 Local _cCodItem		:= MV_PAR01
-Local _cCodKit 		:= ""  	//verificar se o codigo do kit ser· o mesmo cÛdigo com final KIT - CONFORME ALINHADO COM Z… SERA INCLUÕDO NO CADASTRO COM MESMO C”DIGO DE PRODUTO ACRESCENTANDO NO FINAL KIT
-Local _cGrupoKit	:= ""	//verificar se o grupo do kit sera o mesmo do grupo do produto normal - CONFORME ALINHADO COM Z… SIM DEVER¡ SER O MESMO GRUPO DO PRODUTO ORIGINAL	
+Local _cCodKit 		:= ""  	//verificar se o codigo do kit ser√° o mesmo c√≥digo com final KIT - CONFORME ALINHADO COM Z√â SERA INCLU√çDO NO CADASTRO COM MESMO C√ìDIGO DE PRODUTO ACRESCENTANDO NO FINAL KIT
+Local _cGrupoKit	:= ""	//verificar se o grupo do kit sera o mesmo do grupo do produto normal - CONFORME ALINHADO COM Z√â SIM DEVER√Å SER O MESMO GRUPO DO PRODUTO ORIGINAL	
 Local _cTipo		:= "" 	//"1"  //tipo VEH = ITEM
 Local _cWhere		:= ""
 Local _cAliasPesq	:= GetNextAlias()
@@ -1509,8 +1511,8 @@ Begin Sequence
 	Endif		
 	SB1->(DbSetOrder(1))
 	SB1->(DbSeek(XFilial("SB1")+AllTrim(_cCodItem)))
-	_cCodKit 	:= AllTrim(_cCodItem) //+"KIT"  	//verificar se o codigo do kit ser· o mesmo cÛdigo com final KIT - CONFORME ALINHADO COM Z… SERA INCLUÕDO NO CADASTRO COM MESMO C”DIGO DE PRODUTO ACRESCENTANDO NO FINAL KIT
- 	_cGrupoKit	:= SB1->B1_GRUPO								//verificar se o grupo do kit sera o mesmo do grupo do produto normal - CONFORME ALINHADO COM Z… SIM DEVER¡ SER O MESMO GRUPO DO PRODUTO ORIGINAL	
+	_cCodKit 	:= AllTrim(_cCodItem) //+"KIT"  	//verificar se o codigo do kit ser√° o mesmo c√≥digo com final KIT - CONFORME ALINHADO COM Z√â SERA INCLU√çDO NO CADASTRO COM MESMO C√ìDIGO DE PRODUTO ACRESCENTANDO NO FINAL KIT
+ 	_cGrupoKit	:= SB1->B1_GRUPO								//verificar se o grupo do kit sera o mesmo do grupo do produto normal - CONFORME ALINHADO COM Z√â SIM DEVER√Å SER O MESMO GRUPO DO PRODUTO ORIGINAL	
 
 	//_aPrdREL	:= {{Space(Len(SB1->B1_FILIAL)),Space(Len(SB1->B1_COD)),Space(Len(SB1->B1_DESC)),Space(Len(SB1->B1_GRUPO))}}
 	_cWhere 	:= ""
@@ -1522,7 +1524,7 @@ Begin Sequence
 	Endif
 	_cWhere := "%"+_cWhere+"%"
 
-	BeginSql Alias _cAliasPesq //Define o nome do alias tempor·rio 
+	BeginSql Alias _cAliasPesq //Define o nome do alias tempor√°rio 
 		SELECT 	ISNULL(VE8.R_E_C_N_O_,0)  NREGVE8
 				,ISNULL(SB1.R_E_C_N_O_,0) NREGSB1
 		FROM %Table:VE8% VE8	
@@ -1539,12 +1541,12 @@ Begin Sequence
 	EndSql
 	//			AND (VEH.VEH_TIPO	= '1' OR VEH.VEH_TIPO	= '2')
 	If (_cAliasPesq)->(Eof()) .or. (_cAliasPesq)->NREGVE8 == 0
-		//MsgInfo("N„o existe kit para o produto " +AllTrim(_cCodItem))	
+		//MsgInfo("N√£o existe kit para o produto " +AllTrim(_cCodItem))	
 		_lRet := .F.
 		Break	
 	EndIf	   
 	_aPrdREL := {}
-	//Verificar os itens dos KITs para saber se tem algun zerado caso tenha n„o ira utilizar o kit
+	//Verificar os itens dos KITs para saber se tem algun zerado caso tenha n√£o ira utilizar o kit
 	While (_cAliasPesq)->(!Eof())
 		VE8->(DbGoto((_cAliasPesq)->NREGVE8))
 		If (_cAliasPesq)->NREGSB1 > 0
@@ -1590,7 +1592,7 @@ Return _lRet
 @author DAC denilso
 @since 05/05/2023
 @version 1.0
-@parametro 				_lCarrega - indica se esta realizando o carregamento de variaveis neste momento n„o mostra kits utilizado para fazer atualizaÁ„o no browse
+@parametro 				_lCarrega - indica se esta realizando o carregamento de variaveis neste momento n√£o mostra kits utilizado para fazer atualiza√ß√£o no browse
 @return _lRet, Logico
 @type Static function
 /*/
@@ -1618,7 +1620,7 @@ Begin Sequence
 	_aItemRelac := oZPEC08Peca:ItensSubstituidos()
 
 	If Len(_aItemRelac) == 0 .or. Empty(AllTrim(_aItemRelac[1,2]))
-		//	"N„o existe item Substitutos para o produto " +AllTrim(_cCodItem)
+		//	"N√£o existe item Substitutos para o produto " +AllTrim(_cCodItem)
 		_lRet := .F.
 		Break	
 	Endif
@@ -1666,7 +1668,7 @@ Return _lRet
 @since 07/07/2023
 @project    GAP005 | Ajuste itens similar
 @version 1.0
-@parametro 				_lCarrega - indica se esta realizando o carregamento de variaveis neste momento n„o mostra kits utilizado para fazer atualizaÁ„o no browse
+@parametro 				_lCarrega - indica se esta realizando o carregamento de variaveis neste momento n√£o mostra kits utilizado para fazer atualiza√ß√£o no browse
 @return _lRet, Logico
 @history    
 @type Static function
@@ -1697,7 +1699,7 @@ Begin Sequence
 	//aAuxAtu := oZPEC08Peca:EstqSaldo(,.t.,.t.)
 
 	If Len(_aItemSim) == 0 .or. Empty(AllTrim(_aItemSim[1,2]))
-		//	"N„o existe item Substitutos para o produto " +AllTrim(_cCodItem)
+		//	"N√£o existe item Substitutos para o produto " +AllTrim(_cCodItem)
 		_lRet := .F.
 		Break	
 	Endif
@@ -1778,7 +1780,7 @@ Local _nRegistros 	:= 0
 Begin Sequence
 	_aPrdEstVenda 	:= {}
 
-	//retiro o periodo de avaliaÁ„o da data inicial
+	//retiro o periodo de avalia√ß√£o da data inicial
 	_dDataIni -= _nPeriodo
     //pegar a data de acordo com a quantidade de dias  
 	//Montar o tipo de taturamento
@@ -1869,7 +1871,7 @@ Local _nDiasFat     := 0
 Local _nQtdeFat 	:= 0 
 Local _nValFat  	:= 0
 Local _nValTab 		:= 0
-//Local _lProcUF 		:= .T.  ////indica que deve procurar a UF para verificaÁ„o valores customizados
+//Local _lProcUF 		:= .T.  ////indica que deve procurar a UF para verifica√ß√£o valores customizados
 Local _cAtivo		:= "1"
 Local _cCurvaABC	:= ""
 Local _aArmazen		:= {"01","11"}
@@ -1910,7 +1912,7 @@ Begin Sequence
 		_dDataCMP := StoD((_cAliasPesq)->DATA_CMP)
 	Endif		
 	(_cAliasPesq)->(DbCloseArea())
-	//Procurar PreÁo de Venda
+	//Procurar Pre√ßo de Venda
 	_cData := DtoS(Date())
     BeginSql Alias _cAliasPesq
         SELECT 	DA1_PRCVEN 
@@ -1947,7 +1949,6 @@ Begin Sequence
 	//Localizar a curva ABC
 	BeginSql Alias _cAliasPesq
  		SELECT  NVL(SZO.R_E_C_N_O_,0) AS NREGSZO
-				,NVL(SB2SQL.CUSTO,0)   AS CUSTO_MEDIO 
 				,COALESCE(SBM.BM_CODMAR,' ') AS MARCA
     	FROM %Table:SB1% SB1
 		LEFT JOIN %Table:SZO% SZO
@@ -1958,17 +1959,6 @@ Begin Sequence
     		ON  SBM.%notDel%
 			AND SBM.BM_FILIAL 	= %xFilial:SBM%
     		AND SBM.BM_GRUPO 	= SB1.B1_GRUPO 
-		LEFT JOIN ( 
-    				SELECT B2_COD
-						,  CAST(SUM(NVL(B2_QATU,0)) AS NUMBER (8, 2)) AS SALDO
-						, ( SUM(NVL(B2_VATU1,0)) / SUM(NVL(B2_QATU,0)) ) AS CUSTO 
-					FROM  %Table:SB2% SB2
-					WHERE SB2.B2_FILIAL = %xFilial:SB2%
-					AND SB2.%NotDel%
-					AND SB2.B2_QATU <> 0 
-					GROUP BY B2_COD 
-					) SB2SQL
-					ON SB2SQL.B2_COD = SB1.B1_COD  
      	WHERE   SB1.%notDel% 
             AND SB1.B1_FILIAL 	= %xFilial:SB1%
      		AND SB1.B1_COD      = %Exp:_cCodProd%
@@ -1979,14 +1969,17 @@ Begin Sequence
 			_cCurvaABC 	:= AllTrim(SZO->ZO_CURVQTD) + AllTrim(SZO->ZO_CURVCUS)
 			_cMarca   	:= SZO->ZO_MARCA 
 		Endif 
-		If (_cAliasPesq)->CUSTO_MEDIO > 0
+		/*If (_cAliasPesq)->CUSTO_MEDIO > 0
 			_nCustoMedio := (_cAliasPesq)->CUSTO_MEDIO
-		Endif	
+		Endif	*/
 	EndIf
 	//prioridade marca encontrada no select SBM
 	If !Empty((_cAliasPesq)->MARCA)
 		_cMarca := (_cAliasPesq)->MARCA
-	Endif 
+	Endif
+
+	_nCustoMedio := NoRound(U_ZGENCST(_cCodProd),TamSx3("B2_CM1")[02])
+
 	_nSaldoWis01 := 0
 	_nSaldoWis11 := 0
 
@@ -2001,7 +1994,7 @@ Begin Sequence
 	_aDetalhe 	:= {}
 	Aadd(_aDetalhe,{"Cod.  Produto"		, _cCodProd})
 	Aadd(_aDetalhe,{"Desc. Produto"		, SB1->B1_DESC})
-	Aadd(_aDetalhe,{"Data Inclus„o"		, DtoC(SB1->B1_XDTINC)})
+	Aadd(_aDetalhe,{"Data Inclus√£o"		, DtoC(SB1->B1_XDTINC)})
 	Aadd(_aDetalhe,{"Ultima Compra"		, DtoC(_dDataCMP) })
 	Aadd(_aDetalhe,{"Ultima Venda"		, DtoC(_dDataFAT) })
 	Aadd(_aDetalhe,{"Dias sem movto"	, Transform(_nDiasFat		, "@E 999,999,999,999" )})
@@ -2009,11 +2002,11 @@ Begin Sequence
 	Aadd(_aDetalhe,{"Minimo Venda"		, Transform(SB1->B1_LOTVEN	,PesqPict("SB1","B1_LOTVEN") )})
 	Aadd(_aDetalhe,{"Saldo Wis BAR"		, Transform(_nSaldoWis01	,PesqPict("SB2","B2_QATU") )})
 	Aadd(_aDetalhe,{"Saldo Wis FDR"		, Transform(_nSaldoWis11	,PesqPict("SB2","B2_QATU") )})
-	Aadd(_aDetalhe,{"PreÁo de Venda"	, Transform(_nValTab		, "@E 999,999,999.99")})
+	Aadd(_aDetalhe,{"Pre√ßo de Venda"	, Transform(_nValTab		, "@E 999,999,999.99")})
 	_lRetUsu :=  U_ZGENUSER( RetCodUsr() ,"ZPECF30DET" ,.F.)
-	//somente se possuir alteraÁ„o
+	//somente se possuir altera√ß√£o
 	If _lRetUsu
-		Aadd(_aDetalhe,{"Custo MÈdio"	, Transform(_nCustoMedio				, "@E 9999,999,999.99")})
+		Aadd(_aDetalhe,{"Custo M√©dio"	, Transform(_nCustoMedio				, "@E 9999,999,999.99")})
 	EndIf
 
 End Sequence
@@ -2113,7 +2106,7 @@ Return Nil
 
 
 /*/{Protheus.doc} ZPECF30RE
-//Modificar cÛdigo de pesquisa com duplo click
+//Modificar c√≥digo de pesquisa com duplo click
 @author DAC denilso
 @since 01/06/2023
 @version 1.0
