@@ -26,20 +26,13 @@ User Function ZESTF013() //--U_ZESTF013()
     oBrowse:AddLegend("ZZI->ZZI_STATUS == '6' " ,"GREEN"    ,"Acerto de Estoque Finalizado")
     oBrowse:AddButton("1 - Incluir Inventario"	    , { || FWExecView("Incluir" ,"ZESTF014",3,,{|| .T.}) ,oBrowse:Refresh(.F.) } )
     oBrowse:AddButton("2 - Iniciar Inventario"	    , { || zBloqArm(), oBrowse:Refresh(.F.) } ) 
-    oBrowse:AddButton("3 - Preparar Acerto"	        , { || IIF( zTelaMsg() == 1,;
-                                                            Processa( { || zGeraInv(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL) },;
-                                                            "Preparando inventario", "Aguarde .... Realizando a carga dos registros...." ),;
-                                                            Nil ),;
-                                                            ZF13AtuZZI(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL), oBrowse:Refresh(.F.) } )
-    oBrowse:AddButton("4 - Processar Acerto"	    , { || IIF( zTelaInv() == 1,;
-                                                            Processa( { || zExec340(ZZI->ZZI_MESTRE) },;
-                                                            "Acerto de inventario", "Aguarde .... Realizando o acerto de inventário...." ),;
-                                                            Nil ),;
-                                                            ZF13AtuZZI(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL), oBrowse:Refresh(.F.) } )
-    oBrowse:AddButton("5 - Libera Estoque"	    , { || zBloqEst(.T., ZZI->ZZI_PRODUT, ZZI->ZZI_LOCAL, ZZI->ZZI_DATA), oBrowse:Refresh(.F.) } ) 
-    oBrowse:AddButton("Gerenciar Inventario"	, { || ZESTF013A() ,ZF13AtuZZI(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL) ,oBrowse:Refresh(.F.) } )
-    oBrowse:AddButton("Relatorio de Conferencia", { || u_ZWMSR002()	})                                                            
-    oBrowse:AddButton("Excluir Inventario"      , { || FWExecView("Excluir" ,"ZESTF014",5,,{|| .T.}),oBrowse:Refresh(.T.) } )
+    oBrowse:AddButton("3 - Preparar Acerto"	        , { || IIF( zTelaMsg() == 1, Processa( { || zGeraInv(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL) }, "Preparando inventario", "Aguarde .... Realizando a carga dos registros...." ),Nil ), ZF13AtuZZI(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL), oBrowse:Refresh(.F.) } )
+    //oBrowse:AddButton("4 - Processar Acerto"	    , { || IIF( zTelaInv() == 1, Processa( { || zExec340(ZZI->ZZI_MESTRE) }, "Acerto de inventario", "Aguarde .... Realizando o acerto de inventário...." ),Nil ), ZF13AtuZZI(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL), oBrowse:Refresh(.F.) } )
+    //oBrowse:AddButton("4 - Processar Acerto"	    , { || IIF( zTelaInv() == 1, Processa( { || zGeraAcerto(ZZI->ZZI_MESTRE) }, "Acerto de inventario", "Aguarde .... Realizando o acerto de inventário...." ),Nil ), ZF13AtuZZI(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL), oBrowse:Refresh(.F.) } )
+    oBrowse:AddButton("5 - Liberar Estoque"	        , { || IIF( zTelaLib() == 1, Processa( { || zBloqEst(.T., ZZI->ZZI_PRODUT, ZZI->ZZI_LOCAL, ZZI->ZZI_DATA) }, "Liberando Estoque", "Aguarde .... Realizando a liberação do estoque...." ),Nil ), oBrowse:Refresh(.F.) } ) 
+    oBrowse:AddButton("Gerenciar Inventario"	    , { || ZESTF013A() ,ZF13AtuZZI(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL) ,oBrowse:Refresh(.F.) } )
+    oBrowse:AddButton("Relatorio de Conferencia"    , { || u_ZWMSR002()	})                                                            
+    oBrowse:AddButton("Excluir Inventario"          , { || FWExecView("Excluir" ,"ZESTF014",5,,{|| .T.}),oBrowse:Refresh(.T.) } )
     oBrowse:DisableReport()
     oBrowse:Activate()
 
@@ -73,7 +66,7 @@ Static Function ZESTF013A()
         oBrwCabec:SetFilterDefault("@"+FilCabec(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL))
         oBrwCabec:AddButton(    "Importar Contagem" ,;
                             {   || nOperation := 3,; 
-                                IIF( ZZI->ZZI_STATUS != '3', zSelCSV(ZZI->ZZI_LOCAL, ZZI->ZZI_PRODUT) ,;
+                                IIF( ZZI->ZZI_STATUS != '3', zSelCSV(ZZI->ZZI_LOCAL, ZZI->ZZI_PRODUT,ZZI->ZZI_MESTRE) ,;
                                 MsgAlert("Este inventario esta com o status 'Transferido SB7' e não pode receber novas contagens!", "Inventario Pecas") ),;
                                 oBrwCabec:Refresh(.T.)	})
                                                             
@@ -611,7 +604,7 @@ Data.....:              08/12/2020
 Descricao / Objetivo:   Seleciona arquivo CSV para importação das contagens       
 =====================================================================================
 */
-Static Function zSelCSV(cLocal, cProduto)
+Static Function zSelCSV(cLocal, cProduto, cMestre)
     Local cTitulo1  := "Selecione o arquivo para Carga "
     Local cExtens   := "Arquivo CSV | *.CSV"
     Local cMainPath := "C:\"
@@ -621,7 +614,7 @@ Static Function zSelCSV(cLocal, cProduto)
     
         cFileOpen := cGetFile(cExtens,cTitulo1,,cMainPath,.T.,)
         If File(cFileOpen)
-            Processa({|| zImpCSV(cFileOpen, cLocal, cProduto ) }, "[ZESTF013] - Carga de Dados.", "Aguarde .... Realizando a carga dos registros...." ) 
+            Processa({|| zImpCSV(cFileOpen, cLocal, cProduto, cMestre ) }, "[ZESTF013] - Carga de Dados.", "Aguarde .... Realizando a importação das contagens...." ) 
         Endif
 
     EndIf
@@ -636,7 +629,7 @@ Data.....:              08/12/2020
 Descricao / Objetivo:   Processamento do arquivo CSV   
 =====================================================================================
 */
-Static Function zImpCSV(cFileOpen, cLocal, cProduto )
+Static Function zImpCSV(cFileOpen, cLocal, cProduto, cMestre )
     Local oModel        := ModelDef()
     Local oModelGrid    := oModel:GetModel("ZZKDETAIL")
     Local cLinha        := ""
@@ -657,7 +650,7 @@ Static Function zImpCSV(cFileOpen, cLocal, cProduto )
 
     ProcRegua( FT_FLASTREC() )
 
-    Begin Transaction        
+    //Begin Transaction        
         While !FT_FEOF()
             
             nCont++
@@ -668,6 +661,21 @@ Static Function zImpCSV(cFileOpen, cLocal, cProduto )
 
             // Incrementa a mensagem na régua.
             IncProc("Efetuando a gravação dos registros!")
+
+            If zBuscaZZK(cMestre, cLocal, AllTrim( aDados[2] ))
+                cLog := AllTrim( aDados[2] ) + " - Produto já possui quantidade eleita!"
+                
+                lErro := .T.
+
+                //--Se não conseguir gerar arquivo de log, encerra a leitura do CSV
+                If !GrvLog(cArqLog, cLog)
+                    lGrvLog := .F.
+                    Exit
+                EndIf
+
+                FT_FSKIP(1)
+                Loop
+            EndIf
 
             If AllTrim( aDados[1] ) <> AllTrim(cLocal)
                 cLog := "Local informado na planilha não corresponde ao inventario selecionado!"
@@ -686,7 +694,7 @@ Static Function zImpCSV(cFileOpen, cLocal, cProduto )
 
             If !Empty(cProduto)
                 If ( AllTrim( aDados[2] ) <> AllTrim(cProduto) )
-                    cLog := "Produto informado na planilha não corresponde ao inventario selecionado!"
+                    cLog := "Produto informado na planilha: "+AllTrim( aDados[2] )+" não corresponde ao do inventario selecionado!"
                     
                     lErro := .T.
 
@@ -703,7 +711,32 @@ Static Function zImpCSV(cFileOpen, cLocal, cProduto )
 
             SB1->(DbSetOrder(1))
 			If !(SB1->(DbSeek(FwxFilial('SB1') + AllTrim( aDados[2] ))))
-                cLog := "Produto não cadastrado!"
+                cLog := AllTrim( aDados[2] ) + " - Produto não cadastrado!"
+                
+                lErro := .T.
+
+                //--Se não conseguir gerar arquivo de log, encerra a leitura do CSV
+                If !GrvLog(cArqLog, cLog)
+                    lGrvLog := .F.
+                    Exit
+                EndIf
+
+                FT_FSKIP(1)
+                Loop
+            ElseIf SB1->B1_MSBLQL == '1'
+                cLog := AllTrim( aDados[2] ) + " - Produto esta bloqueado no cadastrado! Desbloqueie para processar o ajuste de estoque desse item!"
+                    
+                lErro := .T.
+
+                //--Se não conseguir gerar arquivo de log, encerra a leitura do CSV
+                If !GrvLog(cArqLog, cLog)
+                    lGrvLog := .F.
+                    Exit
+                EndIf
+            EndIf
+
+            If !(SB1->(DbSeek(FwxFilial('SB1') + AllTrim( aDados[2] ))))
+                cLog := AllTrim( aDados[2] ) + " - Produto não cadastrado!"
                 
                 lErro := .T.
 
@@ -718,7 +751,7 @@ Static Function zImpCSV(cFileOpen, cLocal, cProduto )
             EndIf
 
             If At(".", AllTrim(aDados[3])) > 0 .Or. At(",", AllTrim(aDados[3])) > 0
-				cLog := "Não é permitido inserir ponto ou ponto e virgula na quantidade contada."
+				cLog := AllTrim( aDados[2] )+" - Não é permitido inserir ponto ou ponto e virgula na quantidade contada."
                 
                 lErro := .T.
 
@@ -735,7 +768,7 @@ Static Function zImpCSV(cFileOpen, cLocal, cProduto )
 			_nQtde := NoRound(Val(aDados[03]), TamSx3("ZZK_QTCONT")[02])
             If _nQtde <> NoRound(VAL(aDados[03]), 0)
 
-                cLog := "Não é permitido quantidade fracionada na contagem."
+                cLog := AllTrim( aDados[2] )+" - Não é permitido quantidade fracionada na contagem."
                 
                 lErro := .T.
 
@@ -826,10 +859,10 @@ Static Function zImpCSV(cFileOpen, cLocal, cProduto )
                 MsgAlert("Falha na importação dos registros, por favor, consulte arquivo de log!", "Inventario Pecas")
             EndIf
 
-            Disarmtransaction()
+            //Disarmtransaction()
         EndIf
 
-    End Transaction
+    //End Transaction
 
     //--Fecha arquivo
     FT_FUSE()
@@ -850,13 +883,17 @@ Static Function zTelaMsg()
     Local cCadastro := "Geração de lançamentos de inventario"
     Local nOpcA     := 0
 
-    AADD(aSays,"Este programa tem o objetivo de realizar a geração de lançamentos de inventario.")
-    AADD(aSays,"Clique em OK para confirmar a transferencia das contagens para tabela SB7.")
+    If U_ZGENUSER( RetCodUsr() ,"ZESTF013" ,.T.)
 
-    AADD(aButtons, { 1,.T.,{|o| nOpca := 1, o:oWnd:End() }} )
-    AADD(aButtons, { 2,.T.,{|o| nOpca := 2, o:oWnd:End() }} )
-                
-    FormBatch( cCadastro, aSays, aButtons )
+        AADD(aSays,"Este programa tem o objetivo de realizar a geração de lançamentos de inventario.")
+        AADD(aSays,"Clique em OK para confirmar a transferencia das contagens para tabela SB7.")
+
+        AADD(aButtons, { 1,.T.,{|o| nOpca := 1, o:oWnd:End() }} )
+        AADD(aButtons, { 2,.T.,{|o| nOpca := 2, o:oWnd:End() }} )
+                    
+        FormBatch( cCadastro, aSays, aButtons )
+
+    EndIf
 
 Return nOpcA
 
@@ -874,13 +911,44 @@ Static Function zTelaInv()
     Local cCadastro := "Realiza o Acerto de Inventário"
     Local nOpcA     := 0
 
-    AADD(aSays,"Este programa tem o objetivo de realizar o acerto de estoque.")
-    AADD(aSays,"Clique em OK para confirmar o acerto.")
+    If U_ZGENUSER( RetCodUsr() ,"ZESTF013" ,.T.)
 
-    AADD(aButtons, { 1,.T.,{|o| nOpca := 1, o:oWnd:End() }} )
-    AADD(aButtons, { 2,.T.,{|o| nOpca := 2, o:oWnd:End() }} )
-                
-    FormBatch( cCadastro, aSays, aButtons )
+        AADD(aSays,"Este programa tem o objetivo de realizar o acerto de estoque.")
+        AADD(aSays,"Clique em OK para confirmar o acerto.")
+
+        AADD(aButtons, { 1,.T.,{|o| nOpca := 1, o:oWnd:End() }} )
+        AADD(aButtons, { 2,.T.,{|o| nOpca := 2, o:oWnd:End() }} )
+                    
+        FormBatch( cCadastro, aSays, aButtons )
+    EndIf
+
+Return nOpcA
+
+/*
+=====================================================================================
+Programa.:              zTelaInv
+Autor....:              CAOA - Fagner Ferraz Barreto
+Data.....:              08/12/2020
+Descricao / Objetivo:   Tela de apresentação da rotina de geração de inventario SB7
+=====================================================================================
+*/
+Static Function zTelaLib()
+    Local aSays     := {}
+    Local aButtons  := {} 
+    Local cCadastro := "Realiza a liberação do Estoque"
+    Local nOpcA     := 0
+
+    If U_ZGENUSER( RetCodUsr() ,"ZESTF013" ,.T.)
+
+        AADD(aSays,"Este programa tem o objetivo de realizar a liberação do estoque.")
+        AADD(aSays,"Clique em OK para confirmar a liberação.")
+
+        AADD(aButtons, { 1,.T.,{|o| nOpca := 1, o:oWnd:End() }} )
+        AADD(aButtons, { 2,.T.,{|o| nOpca := 2, o:oWnd:End() }} )
+                    
+        FormBatch( cCadastro, aSays, aButtons )
+
+    EndIf
 
 Return nOpcA
 
@@ -963,69 +1031,84 @@ Static Function zGeraInv(cMestre, cLocal)
                 
                 // Incrementa a mensagem na régua.
                 IncProc("Efetuando a preparação do inventario!")
+            
+                SB1->( DbSetOrder(1) )
+                If SB1->( DbSeek( FWxFilial("SB1") + (cAliasQry)->ZZJ_PRODUT ) )
+                    If SB1->B1_MSBLQL == '2' //Produto desbloqueado
 
-                aInvent := 	{;
-                            {"B7_FILIAL",	(cAliasQry)->ZZJ_FILIAL,		Nil},;
-                            {"B7_COD",		(cAliasQry)->ZZJ_PRODUT,		Nil},;
-                            {"B7_LOCAL",	(cAliasQry)->ZZJ_LOCAL,		    Nil},;
-                            {"B7_DOC",		(cAliasQry)->ZZJ_MESTRE,		Nil},;
-                            {"B7_DATA",		SToD((cAliasQry)->ZZK_DATA),	Nil},;
-                            {"B7_QUANT",	(cAliasQry)->ZZK_QTCONT,		Nil},;
-                            {"B7_QTSEGUM",	(cAliasQry)->ZZK_SEGUM,		    Nil},;
-                            {"B7_CONTAGE",	(cAliasQry)->ZZK_CONTAG,		Nil},;
-                            {"B7_ORIGEM",	"ZESTF013",					    Nil},;
-                            {"B7_RECZZK",	(cAliasQry)->RECZZK,		    Nil} }
+                        aInvent := 	{;
+                                    {"B7_FILIAL",	(cAliasQry)->ZZJ_FILIAL,		Nil},;
+                                    {"B7_COD",		(cAliasQry)->ZZJ_PRODUT,		Nil},;
+                                    {"B7_LOCAL",	(cAliasQry)->ZZJ_LOCAL,		    Nil},;
+                                    {"B7_DOC",		(cAliasQry)->ZZJ_MESTRE,		Nil},;
+                                    {"B7_DATA",		SToD((cAliasQry)->ZZK_DATA),	Nil},;
+                                    {"B7_QUANT",	(cAliasQry)->ZZK_QTCONT,		Nil},;
+                                    {"B7_QTSEGUM",	(cAliasQry)->ZZK_SEGUM,		    Nil},;
+                                    {"B7_CONTAGE",	(cAliasQry)->ZZK_CONTAG,		Nil},;
+                                    {"B7_ORIGEM",	"ZESTF013",					    Nil},;
+                                    {"B7_RECZZK",	(cAliasQry)->RECZZK,		    Nil} }
 
-                zQrySB7( (cAliasQry)->ZZJ_MESTRE,;
-                        (cAliasQry)->ZZJ_LOCAL,;
-                        (cAliasQry)->ZZJ_PRODUT )
-
-                
-                (cAliasSB7)->( DbGoTop() )
-                If (cAliasSB7)->( EOF() )
+                        zQrySB7( (cAliasQry)->ZZJ_MESTRE, (cAliasQry)->ZZJ_LOCAL, (cAliasQry)->ZZJ_PRODUT )
                     
-                    //Efetua a Gravação
-                    Begin Transaction
-
-                        lMsErroAuto := .F.
-
-                        MsExecAuto({|x,y,z| Mata270(x,y,z)}, aInvent , .F. , 3)
-
-                        If lMsErroAuto
-                            nFalhou++ 
-                            //Captura o LOG para gerar um arquivo Texto.
-                            aAutoErro := GETAUTOGRLOG()
-                            cError :=   "Inventario: " + (cAliasQry)->ZZJ_MESTRE +;
-                                        " Armazem: " + (cAliasQry)->ZZJ_LOCAL +;
-                                        " Produto: " + AllTrim( (cAliasQry)->ZZJ_PRODUT ) + CRLF + CRLF
-                                    
-                            For nI := 1 To Len(aAutoErro)
-                                cError += AllTrim(aAutoErro[nI]) + CRLF
-                            Next
-                            cError += "-----------------------------------------------" + CRLF + CRLF
-
-                            //Função para Gravar o LOG
-                            nHdl := zLogInv(cError)
+                        (cAliasSB7)->( DbGoTop() )
+                        If (cAliasSB7)->( EOF() )
                         
-                        Else
-                            nGerou++
+                            //Efetua a Gravação
+                            Begin Transaction
 
-                            ZZK->( DbGoTo( (cAliasQry)->RECZZK ) )
-                            RecLock("ZZK", .F.)
-                            ZZK->ZZK_STATUS := '3' //--Transferido SB7
-                            ZZK->( MsUnlock() )
+                                lMsErroAuto := .F.
 
-                            ZZJ->( DbGoTo( (cAliasQry)->RECZZJ ) )
-                            RecLock("ZZJ", .F.)
-                            ZZJ->ZZJ_STATUS := '3' //--Transferido SB7
-                            ZZJ->( MsUnlock() )
+                                MsExecAuto({|x,y,z| Mata270(x,y,z)}, aInvent , .F. , 3)
+
+                                If lMsErroAuto
+                                    nFalhou++ 
+                                    //Captura o LOG para gerar um arquivo Texto.
+                                    aAutoErro := GETAUTOGRLOG()
+                                    cError :=   "Inventario: " + (cAliasQry)->ZZJ_MESTRE +;
+                                                " Armazem: " + (cAliasQry)->ZZJ_LOCAL +;
+                                                " Produto: " + AllTrim( (cAliasQry)->ZZJ_PRODUT ) + CRLF + CRLF
+                                            
+                                    For nI := 1 To Len(aAutoErro)
+                                        cError += AllTrim(aAutoErro[nI]) + CRLF
+                                    Next
+                                    cError += "-----------------------------------------------" + CRLF + CRLF
+
+                                    //Função para Gravar o LOG
+                                    nHdl := zLogInv(cError)
+                                
+                                Else
+                                    nGerou++
+
+                                    ZZK->( DbGoTo( (cAliasQry)->RECZZK ) )
+                                    RecLock("ZZK", .F.)
+                                    ZZK->ZZK_STATUS := '3' //--Transferido SB7
+                                    ZZK->( MsUnlock() )
+
+                                    ZZJ->( DbGoTo( (cAliasQry)->RECZZJ ) )
+                                    RecLock("ZZJ", .F.)
+                                    ZZJ->ZZJ_STATUS := '3' //--Transferido SB7
+                                    ZZJ->( MsUnlock() )
+
+                                EndIf
+
+                            End Transaction
 
                         EndIf
+                        (cAliasSB7)->( DbCloseArea() )
+                    Else
+                         nFalhou++ 
 
-                    End Transaction
+                        cError :=   "Inventario: " + (cAliasQry)->ZZJ_MESTRE +;
+                                    " Armazem: " + (cAliasQry)->ZZJ_LOCAL +;
+                                    " Produto: " + AllTrim( (cAliasQry)->ZZJ_PRODUT ) +;
+                                    " Produto esta bloqueado no cadastro." + CRLF + CRLF
+                                
+                        cError += "-----------------------------------------------" + CRLF + CRLF
 
+                        //Função para Gravar o LOG
+                        nHdl := zLogInv(cError)
+                    EndIf
                 EndIf
-                (cAliasSB7)->( DbCloseArea() )
                 (cAliasQry)->( DbSkip() )
             EndDo
 
@@ -1120,7 +1203,7 @@ Static Function zGeraAcerto(cMestre)
                 If SB1->( DbSeek( FWxFilial("SB1") + (cAliasTMP)->B7_COD ) )
 
                     //Libera o estoque para realizar o inventario.
-                    zBloqEst((cAliasTMP)->B7_COD , (cAliasTMP)->B7_LOCAL, CToD("//") )
+                    zBloqEst(.T.,(cAliasTMP)->B7_COD , (cAliasTMP)->B7_LOCAL, CToD("//") )
 
                     _aCalEst := CalcEst((cAliasTMP)->B7_COD, (cAliasTMP)->B7_LOCAL, DDatabase)   
                     
@@ -1189,7 +1272,7 @@ Static Function zGeraAcerto(cMestre)
                                 SB7->( MsUnlock() )
 
                                 //Bloqueia o estoque para realizar movimentacao
-                                zBloqEst((cAliasTMP)->B7_COD , (cAliasTMP)->B7_LOCAL, SToD((cAliasTMP)->B7_DATA) )
+                                zBloqEst(.F.,(cAliasTMP)->B7_COD , (cAliasTMP)->B7_LOCAL, SToD((cAliasTMP)->B7_DATA) )
 
                             EndIf
 
@@ -1209,7 +1292,7 @@ Static Function zGeraAcerto(cMestre)
                         SB7->( MsUnlock() )
 
                         //Bloqueia o estoque para realizar movimentacao
-                        zBloqEst((cAliasTMP)->B7_COD , (cAliasTMP)->B7_LOCAL, SToD((cAliasTMP)->B7_DATA) )
+                        zBloqEst(.F.,(cAliasTMP)->B7_COD , (cAliasTMP)->B7_LOCAL, SToD((cAliasTMP)->B7_DATA) )
                         
                     EndIf
                 Else
@@ -1606,7 +1689,7 @@ Static Function zProcBloq()
 
                 // Incrementa a mensagem na régua.
                 IncProc("Efetuando a inclusão das contagens zeradas, tabela origem saldos fisico e financeiro!")
-
+                
                 //Ativando o modelo
                 oModel:SetOperation(3)
                 oModel:Activate()
@@ -1657,12 +1740,16 @@ Static Function zQrySB2(cLocal, cProduto, cMestre )
 	EndIf
 
     cQuery := " SELECT B2_LOCAL, B2_COD FROM " + RetSqlName("SB2") + " SB2 "                + CRLF
+    cQuery += "     INNER JOIN " + RetSqlName("SB1") + " SB1 "                              + CRLF
+    cQuery += "     ON SB1.B1_FILIAL = '" + FWxFilial("SB1") + "' "                         + CRLF
+    cQuery += "     AND SB1.B1_COD = SB2.B2_COD "                                           + CRLF
+    //cQuery += "     AND SB1.B1_MSBLQL = '2' "                                               + CRLF
+    cQuery += "     AND SB1.D_E_L_E_T_ = ' ' "                                              + CRLF
     cQuery += " WHERE SB2.B2_FILIAL = '" + FWxFilial("SB2") + "' "                          + CRLF
     If !Empty(cProduto)
         cQuery += " AND SB2.B2_COD = '" + cProduto + "' "                                   + CRLF
     EndIf
     cQuery += " AND SB2.B2_LOCAL = '" + cLocal + "' "                                       + CRLF
-    cQuery += " AND SB2.B2_QATU <> 0 "                                                      + CRLF
     cQuery += " AND SB2.B2_COD <> ' ' "                                                     + CRLF
     cQuery += " AND SB2.D_E_L_E_T_ = ' ' "                                                  + CRLF
     cQuery += " GROUP BY B2_LOCAL, B2_COD "                                                 + CRLF
@@ -2085,8 +2172,6 @@ If _lLibera
     If TcSqlExec(_cUpdate) < 0
         _lRet := .F.
         Help( ,, "Inventario Pecas",, TcSqlError() , 1, 0)
-    Else
-        MsgInfo("Estoque liberado para movimentação!", "Inventario Pecas")  
     EndIf
 Else
     //--Grava data de bloqueio em todos produtos do armazem
@@ -2118,6 +2203,44 @@ Else
         EndIf
 
 EndIf
+
+Return(_lRet)
+
+/*
+=====================================================================================
+Programa.:              zBuscaZZK
+Autor....:              CAOA - Fagner Ferraz Barreto
+Data.....:              28/12/2020
+Descricao / Objetivo:   Consulta tabela SB2 para inclusão de contagens zeradas          
+=====================================================================================
+*/
+Static Function zBuscaZZK(cMestre, cLocal, cProduto )
+
+    Local cQuery	:= ""
+    Local cAliasZZK := GetNextAlias()
+    Local _lRet     := .F.
+    
+    If Select( (cAliasZZK) ) > 0
+	    (cAliasZZK)->(DbCloseArea())
+	EndIf
+
+    cQuery := " SELECT ZZK_PRODUT FROM " + RetSqlName("ZZK") + " ZZK "      + CRLF
+    cQuery += " WHERE ZZK.ZZK_FILIAL = '" + FWxFilial("ZZK") + "' "         + CRLF
+    cQuery += " AND ZZK.ZZK_MESTRE = '" + cMestre + "' "                    + CRLF
+    cQuery += " AND ZZK.ZZK_LOCAL = '" + cLocal + "' "                      + CRLF
+    cQuery += " AND ZZK.ZZK_PRODUT = '" + cProduto + "' "                   + CRLF
+    cQuery += " AND ZZK.ZZK_STATUS = '2' "                                  + CRLF
+    cQuery += " AND ZZK.ZZK_QTDELE > 0 "                                    + CRLF
+
+
+    DbUseArea( .T., "TOPCONN", TcGenQry(,,cQuery), cAliasZZK, .T., .T. )
+
+    DbSelectArea( cAliasZZK )
+    (cAliasZZK)->( DbGoTop() )
+    If !(cAliasZZK)->( EOF() )
+        _lRet := .T.
+    EndIf
+    (cAliasZZK)->(DbCloseArea())
 
 Return(_lRet)
 
