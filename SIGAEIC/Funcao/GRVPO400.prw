@@ -47,11 +47,16 @@ User Function GRVPO400()
 				SW0->(DbSeek(xFilial("SW0") + SW3->W3_CC + SW3->W3_SI_NUM ) )
 				cTpImp := SW0->W0_TIPIMP
 				cCliImp:= SW0->W0_XCLAIMP
-
-				RecLock("SW2",.F.)
-					SW2->W2_XTIPIMP := cTpImp
-					SW2->W2_XCLAIMP := cCliImp
-				SW2->( MsUnlock() )
+				
+				M->W2_XTIPIMP:= cTpImp
+				M->W2_XCLAIMP := cCliImp
+				
+				if Empty(SW2->W2_XTIPIMP) .and. !Empty(cTpImp)
+					RecLock("SW2",.F.)
+						SW2->W2_XTIPIMP := cTpImp
+						SW2->W2_XCLAIMP := cCliImp
+					SW2->( MsUnlock() )
+				EndIf
 
 				cNumSI := SW3->W3_SI_NUM
 			EndIf
@@ -225,11 +230,16 @@ User Function xGRVP400()
 	If QSW3->(!Eof())
 		cTpImp := SW0->W0_TIPIMP
 		cCliImp:= SW0->W0_XCLAIMP
-
-		SW2->(RecLock("SW2",.F.))
-		SW2->W2_XTIPIMP := cTpImp
-		SW2->W2_XCLAIMP := cCliImp
-		SW2->(MsUnlock())
+		
+		M->W2_XTIPIMP:= cTpImp
+		M->W2_XCLAIMP := cCliImp
+		
+		if Empty(SW2->W2_XTIPIMP) .and. !empty(cTpImp)
+			SW2->(RecLock("SW2",.F.))
+				SW2->W2_XTIPIMP := cTpImp
+				SW2->W2_XCLAIMP := cCliImp
+			SW2->(MsUnlock())
+		EndIf
 
 		While QSW3->(!Eof())
 
@@ -354,11 +364,16 @@ User Function xGRVG400()
 		If SW0->(DbSeek(xFilial("SW0") + SW3->W3_CC + SW3->W3_SI_NUM ) )
 			cTpImp := SW0->W0_TIPIMP
 			cCliImp:= SW0->W0_XCLAIMP
+			
+			M->W2_XTIPIMP:= cTpImp
+			M->W2_XCLAIMP := cCliImp
 
-			RecLock("SW2",.F.)
-			SW2->W2_XTIPIMP := cTpImp
-			SW2->W2_XCLAIMP := cCliImp
-			SW2->( MsUnlock() )
+			if Empty(SW2->W2_XTIPIMP) .and. !empty(cTpImp)
+				RecLock("SW2",.F.)
+					SW2->W2_XTIPIMP := cTpImp
+					SW2->W2_XCLAIMP := cCliImp
+				SW2->( MsUnlock() )
+			EndIf
 		EndIf
 
 		While !SW3->(Eof()) .And. xFilial("SW3") + SW3->W3_PO_NUM == SW2->(W2_FILIAL + W2_PO_NUM)

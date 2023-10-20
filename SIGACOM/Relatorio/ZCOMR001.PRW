@@ -373,7 +373,8 @@ STATIC FUNCTION REPORTProc(	oReport	, aElements, lEnd , cNumPc , lIsLoja )
 			C7_ENCER, C7_FILENT, C7_FISCORI,
 			C7_TPFRETE, C7_FRETE, C7_FRETCON,C7_XFORMAI,C7_XFCA,
 			%Exp:cCampos%
-			SC7.R_E_C_N_O_ AS SC7RECNO
+			SC7.R_E_C_N_O_ AS SC7RECNO,
+			C7_XOBSCOM //GAP073 - NICOLAS LIMA
 		FROM %Table:SC7% SC7
 		INNER JOIN %Table:SB1% SB1 ON
 				SB1.B1_FILIAL = %xFilial:SB1%
@@ -625,7 +626,7 @@ Manutencao efetuada:    Criacao
 =====================================================================================
 */
 STATIC FUNCTION ImpDet(oReport,aElements,lEnd)
-	PRIVATE oFont07    := TFontEx():New(oReport,"Arial",07,07,.F.,.T.,.F.)
+	PRIVATE oFont07    := TFontEx():New(oReport,"Arial",07,07,.F.,.T.,.F.) //Fonte criada, definição de altura e tipo de fonte.
 	PRIVATE oFont09    := TFontEx():New(oReport,"Arial",08,08,.F.,.T.,.F.)
 	PRIVATE oFont10    := TFontEx():New(oReport,"Arial",10,10,.F.,.T.,.F.)
 	PRIVATE oFont10N   := TFontEx():New(oReport,"Arial",10,10,.T.,.T.,.F.)
@@ -2975,7 +2976,9 @@ STATIC FUNCTION SecObsPC(oReport,lEnd,aElements,nLine,lNewPage,nPageCount)
 	nClrText   := NIL
 
 	If !lEnd
-		cItemObsM  := AllTrim( (cAliasSZV)->OBSGRPC )
+		//cItemObsM  := AllTrim( (cAliasSZV)->OBSGRPC )
+		cItemObsM  := (cAliasSC7)->(C7_XOBSCOM) //GAP073 - NICOLAS LIMA
+		
 		nTotLnObs  := MLCount(cItemObsM, nLnTamChar) // TODO LINHA VAZIA RETORNA > 0 (?)
 
 		//-- LINHA 195 CARACTERES
@@ -2991,7 +2994,9 @@ STATIC FUNCTION SecObsPC(oReport,lEnd,aElements,nLine,lNewPage,nPageCount)
 			cAux       := "LineObs" + PadL(i,2,"0")
 			// aUltComp   := AAddComponent(oReport,@aElements,cAux,TYPE_TXT,cObsLinha,nRow,nCol,oFont,nWidth,nHeight,nAlignH,nAlignV,nClrText)
 			aUltComp   := AAddComponent(oReport,@aElements,cAux,TYPE_TXT,cObsLinha,nRow,nCol,oFont,nWidth)
-			
+			/*nWidth = 860
+
+			*/
 			Aadd(oSecObsPC, aUltComp)
 		Next i
 	EndIf

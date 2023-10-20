@@ -31,7 +31,7 @@ Private oWsdl
 // - ZVEIF003 - Botão na Tela de Pedido de Venda Montadora.
 // - VX002FIN - Ponto de Entrada que dispara a integração individual para cada pedido.
 // Dispara a integração somente do pedido selecionado.
-If FWIsInCallStack("U_ZVEIF003") .Or. FWIsInCallStack("U_VX002FIN") 
+If FWIsInCallStack("U_ZVEIF003") .Or. FWIsInCallStack("U_VX002FIN") .or. FWIsInCallStack("U_ZFATF019") 
 
 	cPedVRJ := aParam01
 	lMsg	:= .T.
@@ -85,7 +85,7 @@ If (cAlsVRJ)->(!EOF())
 	If !oWsdl:ParseURL( cWsURL )
 
 		If lMsg
-			MsgInfo( "Erro de conexão com Autoware" + CRLF + CRLF +  "Não foi possivel realizar a conexão com o WS Autoware - Entre em contato com o adm do sistema IMEDIATAMENTE."+ CRLF + CRLF + "URL: "+ALLTRIM(cWsURL)+ CRLF + CRLF + "ERRO: "+oWsdl:AllTrim(cError) , "CMVAUT04" )
+			MsgInfo( "Erro de conexão com Autoware" + CRLF + CRLF +  "Não foi possivel realizar a conexão com o WS Autoware - Entre em contato com o adm do sistema IMEDIATAMENTE."+ CRLF + CRLF + "URL: "+ALLTRIM(cWsURL)+ CRLF + CRLF + "ERRO: "+AllTrim(oWsdl:cError) , "CMVAUT04" )
 		EndIf
 
 		cRet  := '2'

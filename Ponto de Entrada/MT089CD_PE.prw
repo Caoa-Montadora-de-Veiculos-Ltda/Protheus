@@ -65,22 +65,37 @@ Static Function zFMontadora()
 	Local bAddTes 	:= PARAMIXB[4] //Conteudo a ser acrescentado no array
 	Local cTabela 	:= PARAMIXB[5] //Tabela que esta sendo tratada
 	Local cTpOper 	:= PARAMIXB[6]  //Tipo de Operação
+	Local _cTesInt  := SUPERGETMV( "CMV_TPOPER", .F., '70/71')
 	Local _nProd 
 
 	If cTabela == "SC6" 
+	
 		_nProd := aScan(aHeader, {|x| AllTrim(x[2])=="C6_PRODUTO"}) 
 		bCond     := {|| (Posicione("SB1",1,xFilial("SB1")+acols[n][_nProd],"B1_ORIGEM") == (cAliasSFM)->FM_XORIGEM .Or. Empty((cAliasSFM)->FM_XORIGEM) ) } 
 		//Acrescenta compo novo a regra, esse campo devera ser acrescentdo no X2_UNICO do SFM. 
-		bSort     := {|x,y| x[11] > y[11]} 
+		if cTpOper $ _cTesInt
+			bSort     := {|x,y| x[14] > y[14]} 
+		else
+			bSort     := {|x,y| x[11] > y[11]} 
+		endif
 		bIRWhile:= {||.T.}
 		bAddTes := {||aAdd(aTes[Len(aTes)],(cAliasSFM)->FM_XORIGEM)}//Acrescento campo a ser considerado na TES Inteligente. 
-	ElseIf cTabela == "" .And. FunName() == "VEIA060" 
-		_nProd := FwFldGet("B1COD") 
-		//bCond     := {|| (Posicione("SB1",1,xFilial("SB1")+_nProd,"B1_ORIGEM") == (cAliasSFM)->FM_XORIGEM .Or. Empty((cAliasSFM)->FM_XORIGEM) ) } 
+	ElseIf cTabela == "" .And. (FunName() == "VEIA060" .or. FunName() == 'RPC')
+		
+		if FunName() == "RPC"
+			_nProd    := SB1->B1_COD
+		else
+			_nProd    := FwFldGet("B1COD") 
+		endif
+		
 		bCond     := {|| SB1->B1_ORIGEM == (cAliasSFM)->FM_XORIGEM .Or. Empty((cAliasSFM)->FM_XORIGEM)  } 
 		
 		//Acrescenta compo novo a regra, esse campo devera ser acrescentdo no X2_UNICO do SFM. 
-		bSort     := {|x,y| x[11] > y[11]} 
+		if cTpOper $ _cTesInt
+			bSort     := {|x,y| x[14] > y[14]} 
+		else
+			bSort     := {|x,y| x[11] > y[11]} 
+		endif
 		bIRWhile:= {||.T.}
 		bAddTes := {||aAdd(aTes[Len(aTes)],(cAliasSFM)->FM_XORIGEM)}//Acrescento campo a ser considerado na TES Inteligente. 
 	Else
@@ -118,27 +133,32 @@ Static Function zFBarueri()
 	Local _aAreaSA1 := SA1->(GetArea())
 	Local cMvProtoc := SuperGetMV("CMV_OPINSP",.F.,"81") // Parametro para indicar a Operação Insenta do Protocolo
 	Local lInseProtocolo := !(cTpOper $ alltrim(cMvProtoc))
-	//Local _cProd	:= ""
-	//Local _cNCM	:= ""
-
-	//If Posicione('SA1' ,1 ,xFilial('SA1') + M->VS1_CLIFAT + M->VS1_LOJA ,'A1_EST' ) $ "CE|SP"
-
+	Local _cTesInt := SUPERGETMV( "CMV_TPOPER", .F., '93')
+		
 	If  cTabela == "" .And. ( FunName() == "OFIXA011" .or. FunName() == "ZPECF008" )
 		
-		bSort   := {|x,y| x[11] > y[11]} 
+		if cTpOper $ _cTesInt
+			bSort     := {|x,y| x[14] > y[14]} 
+		else
+			bSort     := {|x,y| x[11] > y[11]} 
+		endif
+	
 		bCond   := {||(!Empty((cAliasSFM)->FM_XORIGEM) .and. AllTrim(SB1->B1_ORIGEM ) == AllTrim((cAliasSFM)->FM_XORIGEM)) .or. Empty((cAliasSFM)->FM_XORIGEM)  } 
 		bAddTes := {||AADD(aTes[Len(aTes)],(cAliasSFM)->FM_XORIGEM)}
+	
 		//alterado pos no ZPECFUNA chama função para atualizar fiscal		
 		If FWIsInCallStack("U_ZPECF008") .or. FWIsInCallStack("U_ZPECFUNA")  
 		
 			If Posicione('SA1' ,1 ,xFilial('SA1') + VS1->VS1_CLIFAT + VS1->VS1_LOJA ,'A1_EST' ) $ "CE|SP" .And. !(VS1->VS1_XTPPED) $ '011' .AND. lInseProtocolo
-				//_cNCM 	:= SB1->B1_POSIPI
-				//bCond     := {|| (AllTrim( Posicione('SYD' ,1 ,xFilial('SYD') + _cNCM ,'YD_XUFPROT' ) ) == AllTrim((cAliasSFM)->FM_DESREF)  ) } 
-
+	
 				bCond     := {|| (AllTrim( Posicione('SYD' ,1 ,xFilial('SYD') + SB1->B1_POSIPI ,'YD_XUFPROT' ) ) == AllTrim((cAliasSFM)->FM_DESREF)  ) } 
 				
 				//Acrescenta compo novo a regra, esse campo devera ser acrescentdo no X2_UNICO do SFM. 
-				bSort     := {|x,y| x[11] > y[11]} 
+				if cTpOper $ _cTesInt
+					bSort     := {|x,y| x[14] > y[14]} 
+				else
+					bSort     := {|x,y| x[11] > y[11]} 
+				endif
 				bIRWhile:= {||.T.}
 				bAddTes := {||aAdd(aTes[Len(aTes)],AllTrim((cAliasSFM)->FM_DESREF))}//Acrescento campo a ser considerado na TES Inteligente. 
 			
@@ -146,14 +166,15 @@ Static Function zFBarueri()
 		Else
 				
 			If Posicione('SA1' ,1 ,xFilial('SA1') + M->VS1_CLIFAT + M->VS1_LOJA ,'A1_EST' ) $ "CE|SP" .And. !(M->VS1_XTPPED) $ '011' .and. lInseProtocolo
-				//_cProd 	:= M->VS3_CODITE
-				//_cNCM 	:= Posicione("SB1",1,xFilial("SB1")+_cProd,"B1_POSIPI") 
-				//bCond     := {|| (AllTrim( Posicione('SYD' ,1 ,xFilial('SYD') + _cNCM ,'YD_XUFPROT' ) ) == AllTrim((cAliasSFM)->FM_DESREF)  ) } 
-
+	
 				bCond := {|| (AllTrim( Posicione('SYD' ,1 ,xFilial('SYD') + SB1->B1_POSIPI ,'YD_XUFPROT' ) ) == AllTrim((cAliasSFM)->FM_DESREF)  ) } 
 				
 				//Acrescenta compo novo a regra, esse campo devera ser acrescentdo no X2_UNICO do SFM. 
-				bSort     := {|x,y| x[11] > y[11]} 
+				if cTpOper $ _cTesInt
+					bSort     := {|x,y| x[14] > y[14]} 
+				else
+					bSort     := {|x,y| x[11] > y[11]} 
+				endif 
 				bIRWhile:= {||.T.}
 				bAddTes := {||aAdd(aTes[Len(aTes)],AllTrim((cAliasSFM)->FM_DESREF))}//Acrescento campo a ser considerado na TES Inteligente. 
 			
@@ -161,38 +182,50 @@ Static Function zFBarueri()
 		EndIf
 	ElseIf cTabela == "" .And. (FWIsInCallStack("U_ZPECF010") .or. FWIsInCallStack("U_ZPECFUNA") .or. FWIsInCallStack("U_ZPECF011")) .or. FWIsInCallStack("U_ZPECF013")
 		
-		bSort   := {|x,y| x[11] > y[11]} 
-		//bCond   := {||AllTrim(SB1->B1_ORIGEM ) == AllTrim((cAliasSFM)->FM_XORIGEM)  } 
+		if cTpOper $ _cTesInt
+			bSort     := {|x,y| x[14] > y[14]} 
+		else
+			bSort     := {|x,y| x[11] > y[11]} 
+		endif
+	
 		bCond   := {||(!Empty((cAliasSFM)->FM_XORIGEM) .and. AllTrim(SB1->B1_ORIGEM) == AllTrim((cAliasSFM)->FM_XORIGEM)) .or. Empty((cAliasSFM)->FM_XORIGEM)  } 
 		bAddTes := {||AADD(aTes[Len(aTes)],(cAliasSFM)->FM_XORIGEM)}
 		
 		If Posicione('SA1' ,1 ,xFilial('SA1') + VS1->VS1_CLIFAT + VS1->VS1_LOJA ,'A1_EST' ) $ "CE|SP" .And. !(VS1->VS1_XTPPED) $ '011' .and. lInseProtocolo
-			//_cNCM 	:= SB1->B1_POSIPI
-			//Posicione('SYD' ,1 ,xFilial('SYD') + _cNCM ,'YD_XUFPROT' )
-			//bCond     := {|| (AllTrim( Posicione('SYD' ,1 ,xFilial('SYD') + _cNCM ,'YD_XUFPROT' ) ) == AllTrim((cAliasSFM)->FM_DESREF)  ) } 
 			
 			bCond     := {|| (AllTrim( Posicione('SYD' ,1 ,xFilial('SYD') + SB1->B1_POSIPI ,'YD_XUFPROT' ) ) == AllTrim((cAliasSFM)->FM_DESREF)  ) } 
 			//Acrescenta compo novo a regra, esse campo devera ser acrescentdo no X2_UNICO do SFM. 
-			bSort     := {|x,y| x[11] > y[11]} 
+			if cTpOper $ _cTesInt
+				bSort     := {|x,y| x[14] > y[14]} 
+			else
+				bSort     := {|x,y| x[11] > y[11]} 
+			endif 
 			bIRWhile:= {||.T.}
 			bAddTes := {||aAdd(aTes[Len(aTes)],AllTrim((cAliasSFM)->FM_DESREF))}//Acrescento campo a ser considerado na TES Inteligente. 
 		EndIf
 	
 	ElseIf cTabela == "" .And. FunName() == "U_ZPECF999"
 		
-		bSort   := {|x,y| x[11] > y[11]} 
-		//bCond   := {||AllTrim(SB1->B1_ORIGEM ) == AllTrim((cAliasSFM)->FM_XORIGEM)  } 
+		if cTpOper $ _cTesInt
+			bSort     := {|x,y| x[14] > y[14]} 
+		else
+			bSort     := {|x,y| x[11] > y[11]} 
+		endif 
+	
 		bCond   := {||(!Empty((cAliasSFM)->FM_XORIGEM) .and. AllTrim(SB1->B1_ORIGEM ) == AllTrim((cAliasSFM)->FM_XORIGEM)) .or. Empty((cAliasSFM)->FM_XORIGEM)  } 
 		bAddTes := {||AADD(aTes[Len(aTes)],(cAliasSFM)->FM_XORIGEM)}
 		
 		If Posicione('SA1' ,1 ,xFilial('SA1') + z01PECF999 + z02PECF999 ,'A1_EST' ) $ "CE|SP" .AND. !EMTPY((cAliasSFM)->FM_EST) .and. lInseProtocolo
-			//_cNCM 	:= SB1->B1_POSIPI
-			//bCond     := {|| (AllTrim( Posicione('SYD' ,1 ,xFilial('SYD') + _cNCM ,'YD_XUFPROT' ) ) == AllTrim((cAliasSFM)->FM_DESREF)  ) } 
-			
+	
 			bCond     := {|| (AllTrim( Posicione('SYD' ,1 ,xFilial('SYD') + SB1->B1_POSIPI ,'YD_XUFPROT' ) ) == AllTrim((cAliasSFM)->FM_DESREF)  ) } 
 			
 			//Acrescenta compo novo a regra, esse campo devera ser acrescentdo no X2_UNICO do SFM. 
-			bSort     := {|x,y| x[11] > y[11]} 
+			if cTpOper $ _cTesInt
+				bSort     := {|x,y| x[14] > y[14]} 
+			else
+				bSort     := {|x,y| x[11] > y[11]} 
+			endif
+
 			bIRWhile:= {||.T.}
 			bAddTes := {||aAdd(aTes[Len(aTes)],AllTrim((cAliasSFM)->FM_DESREF))}//Acrescento campo a ser considerado na TES Inteligente. 
 			
@@ -208,4 +241,5 @@ Static Function zFBarueri()
 	RestArea(_aAreaSB1)
 	RestArea(_aAreaSYD)
 	RestArea(_aAreaSA1)
+
 Return({bCond,bSort,bIRWhile,bAddTes,cTpOper})

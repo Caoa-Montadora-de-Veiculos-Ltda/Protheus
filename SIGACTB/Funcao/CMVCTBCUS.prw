@@ -369,7 +369,7 @@ While !(cAliasTRB)->(Eof())
 				EndIf
 			EndIf
 		//Requisi豫o de armazem com rateio pOr Centro de Custo
-		ElseIf !Empty(SD3->D3_NUMSA) .And. !Empty(SD3->D3_ITEMSA) .And. U_TemRatCC(.T.) 
+		ElseIf !Empty(SD3->D3_NUMSA) .And. !Empty(SD3->D3_ITEMSA) .And. U_TemRatCC(.T.) .and. MV_PAR05 <> 2
 
 			lCTBReq   := .F.
 				
@@ -402,7 +402,7 @@ While !(cAliasTRB)->(Eof())
 			(cAliasTRB)->(DbSkip())
 			Loop		
 		EndIf
-	ElseIf (cAliasTRB)->TRB_ARQ == "SD2"
+	ElseIf (cAliasTRB)->TRB_ARQ == "SD2" .And. MV_PAR05 <> 1 
 		DbSelectArea("SD2")
 		SD2->(DbGoTo((cAliasTRB)->TRB_RECMOV))
 		//旼컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴커
@@ -430,7 +430,7 @@ While !(cAliasTRB)->(Eof())
 		SA1->(DbSeek(xFilial("SA1") + SD2->(D2_CLIENTE + D2_LOJA)))
 			
 		DbSelectArea("SD2")    
-		If SF4->F4_PODER3 <> "D" .And. MV_PAR05 <> 2 //Alterado Carneiro
+		If SF4->F4_PODER3 <> "D" //.And. MV_PAR05 <> 2 //Alterado Carneiro
 			If SD2->D2_TIPO != "D"
 				//-- Gera o lancamento no arquivo de prova
 				c678		:= CtRelation("678")

@@ -152,5 +152,3 @@ Static Function DeParaComb( cCombVV1 )
 	EndCase 
 
 Return cRetorno
-
-

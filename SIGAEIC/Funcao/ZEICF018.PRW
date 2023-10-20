@@ -448,6 +448,7 @@ Static Function zCmvFun05(aDocPend)
         Aadd(aLn,{"D1_RATEIO" , (cQr)->D1_RATEIO    , NIL })
 
         Aadd(aLn,{"D1_XCONT"  , (cQr)->D1_XCONT     , NIL })
+        Aadd(aLn,{"D1_XCASE"  , (cQr)->D1_XCASE     , NIL })
 
         Aadd(aItens, aLn)
         Aadd(aRecSB2, (cQr)->RECSB2)

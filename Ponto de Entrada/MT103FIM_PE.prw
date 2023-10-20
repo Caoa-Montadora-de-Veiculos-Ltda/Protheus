@@ -78,6 +78,10 @@ Static Function zMontadora()
 		Endif
 	Endif
 
+	If findfunction("U_ZEICF033") .and. nConfirma = 1 .And. nOpcao <> 5 
+        Processa({|| U_ZEICF033() }, 'EIC', 'Dados adicionais Doc Entrada (ICMS)')
+    ENDIF
+
 	ConOut("MT103FIM - FIM")
 	RestArea(aArea)
 Return

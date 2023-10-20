@@ -431,11 +431,18 @@ Static function ZUpdTable()
 Local aTabelas  := {}
 Local _cUpdate  := " "
 Local nAtual    := 0
+Local _cEmp    := FWCodEmp()
 
-//Adiciona as tabelas que irão sofrer o pack
-aAdd(aTabelas, "SA1010")
-aAdd(aTabelas, "SA2010")
-aAdd(aTabelas, "SA4010")
+If _cEmp == "2010" //Executa o p.e. Anapolis.
+    //Adiciona as tabelas que irão sofrer o pack
+    aAdd(aTabelas, "SA1010")
+    aAdd(aTabelas, "SA2010")
+    aAdd(aTabelas, "SA4010")
+Else
+    aAdd(aTabelas, "SA1020")
+    aAdd(aTabelas, "SA2020")
+    aAdd(aTabelas, "SA4020")
+EndIf
 
 ProcRegua(Len(aTabelas))
 

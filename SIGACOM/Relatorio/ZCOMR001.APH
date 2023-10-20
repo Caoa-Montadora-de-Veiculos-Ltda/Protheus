@@ -115,13 +115,16 @@
                         <p>
                             <!-- EMAIL OUTLOOK - ELEMENTO HTML DEVE RECEBER APENAS UMA CLASSE DE ESTILO -->
                             <span class="highlight-yellow">
-                                Por favor, leia com aten&ccedil;&atilde;o as recomenda&ccedil;&otilde;es abaixo, para que seu pagamento ocorra dentro do prazo acordado.<br>
+                                Teste Por favor, leia com aten&ccedil;&atilde;o as recomenda&ccedil;&otilde;es abaixo, para que seu pagamento ocorra dentro do prazo acordado.<br>
                                 &Eacute; imprescind&iacute;vel que sua nota fiscal esteja de acordo com o pedido de compra.
                             </span>
+
+                            <p class="topic-list">${DADOS_ADICIONAIS}</p> //Nicolas GAP073
+                            
                             <p>
                                 <b>
                                     <span class="highlight-blue">
-                                        &Eacute; obrigat&oacute;rio que o motorista que realizar&aacute; a entrega esteja usando m&aacute;scara e sapatos de seguran&ccedil;a para adentrar na f&aacute;brica, caso contr&aacute;rio, o material n&atilde;o ser&aacute; recebido.
+                                        Teste &Eacute; obrigat&oacute;rio que o motorista que realizar&aacute; a entrega esteja usando m&aacute;scara e sapatos de seguran&ccedil;a para adentrar na f&aacute;brica, caso contr&aacute;rio, o material n&atilde;o ser&aacute; recebido.
                                     </span>
                                 </b>
                             </p>                                

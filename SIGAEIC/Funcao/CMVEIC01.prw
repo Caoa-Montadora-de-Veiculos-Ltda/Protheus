@@ -7,20 +7,22 @@
 Programa.:              CMVEIC01
 Autor....:              Atilio Amarilla / Marcelo Haro Sanches / Marcelo Carneiro
 Data.....:              20/12/2018 / 10/04/2019
-Descricao / Objetivo:   Inclus�o de bot�es adicionais na rotina EIVEV100
+Descricao / Objetivo:   Inclusão de botôes adicionais na rotina EIVEV100
 Doc. Origem:            GAP
 Solicitante:            Cliente
 Uso......:              CAOA Montadora de Veiculos - GAP EIC004
 Obs......:              Chamado pelo PE EIVEV100
-Obs......:              - U_CMVEI01A() - Importa��o de Invoice
+Obs......:              - U_CMVEI01A() - Importação de Invoice
 ===================================================================================== */
-Static nNumInte
+Static nNumInte := 0
+Static aStIten  := {} 
 Static cFilExec := "2020"
 
 User Function CMVEIC01()
 
 	aAdd(aRotina,{"Importar Invoice",	"U_CMVEI01A",	0, 3 })
 	aAdd(aRotina,{"Invoice x Caixas",	"U_CMVEI01B",	0, 5 })
+	aAdd(aRotina,{"Limpar SZM"      ,   "U_ZEICF024",   0, 5 })
 	//	aAdd(aRotina,{"Invoice x Caixas MVC",	"U_CMVEI01D",	0, 5 })
 
 	if (1=2)
@@ -35,12 +37,12 @@ Return
 User Function CMVEI01A()
 
 	Local oDLg
-	Local nCo1      := 1
-	Local nCo2      := 5
-	Local nPos      := 0
-	Local lConfirma := .T.
-	Local bGetDir   := Nil 
-	
+	Local nCo1          := 1
+	Local nCo2          := 5
+	Local nPos          := 0
+	Local lConfirma     := .T.
+	Local bGetDir       := Nil 
+
 	Private cArqFalta
 	Private cFalta		:= ""
 	Private cTipPreco   := ""
@@ -74,10 +76,10 @@ User Function CMVEI01A()
 	Private nLayout		:= 1
 	Private nTipPreco   := 0
 	Private nTotalFOB 	:= 0
-	Private nRecZZE  	:= 0  	//usada no fun��o CMVEIC0101
+	Private nRecZZE  	:= 0  	//usada no função CMVEIC0101
 	Private lPrcInv		:= .F.
 	Private lSelPrc		:= .F.
-	Private lCapaLog	:= .F.	//usada na fun��o CMVEIC0101
+	Private lCapaLog	:= .F.	//usada na função CMVEIC0101
 	Private lAnuente 	:= .F.
 	Private lErroGer 	:= .F.
 
@@ -89,12 +91,12 @@ User Function CMVEI01A()
 	Private aSZD     	:= {}
 	Private aSINUM		:= {}
 
-	Private aLayout		:= {"CKD (CSV)","CBU - Hyundai (TXT)","CBU - Subaru (CSV)","CBU - Chery (CSV)", "Pe�as (CSV)"}
-	Private aTipPreco   := {"Considerar o pre�o da Invoice","Considerar o pre�o da P.O."}
+	Private aLayout		:= {"CKD (CSV)","CBU - Hyundai (TXT)","CBU - Subaru (CSV)","CBU - Chery (CSV)", "Peças (CSV)"}
+	Private aTipPreco   := {"Considerar o preço da Invoice","Considerar o preço da P.O."}
 
 	Private cArquivo	:= Space(50)
 	Private cPoNUM		:= Space(100)
-	Private cTitulo		:= "Integra��o de Invoice Antecipada"
+	Private cTitulo		:= "Integração de Invoice Antecipada"
 	Private cWKEW5		:= "WKEW5"
 
 	Private cDiretorio	:= GetMV("CMV_EIC01A",.T.,Space(100))
@@ -108,6 +110,16 @@ User Function CMVEI01A()
 	Private cPicVlr 	:= "@E 999,999,999.99"
 	Private lAgt_Ok		:= "1"
 	Private lOk_Shp		:= "1"
+    //Private lOk_Anu		:= "2-Não"
+
+	Private _aPergs     := {}
+	Private _aRetP      := {}
+	Private _cTitulo    := "Informe o Número da Invoice"
+	Private _cRet        
+	Private _cChave     := SPACE(TamSX3("EW4_INVOIC")[1])
+
+	Private _cChaveLock	:= ""	//GAP081
+	Private _cPoLock	:= ""	//GAP081
 
 	If (nPos:=RAt("\",cDirInicial)) > 0
 		cDirInicial := Subs(cDirInicial,1,nPos)
@@ -115,9 +127,9 @@ User Function CMVEI01A()
 
 	bGetDir := {|| cDiretorio := cGetFile ( '*.CSV|*.CSV|*.TXT|*.TXT|*.*|*.*' , "Selecione o arquivo:", 1,cDirInicial, .F., GETF_LOCALHARD + GETF_MULTISELECT ),.F.}
 
-	//N�o permite entrar na rotina caso a filial n�o esteja habilitada.
+	//Não permite entrar na rotina caso a filial não esteja habilitada.
 	if !cFilAnt $ cFilInv
-		alert("Rotina n�o permite acesso nesta filial logada.")
+		alert("Rotina não permite acesso nesta filial logada.")
 		return nil
 	EndIf
 
@@ -135,7 +147,7 @@ User Function CMVEI01A()
 
 		Define MSDialog oDlg Title cTitulo From 0,0 TO 12,80 Of oMainWnd
 			@ 0.3,nCo1	Say "Arquivo:"
-			@ 0.2,nCo2	MSGet cDiretorio SIZE 200,8 Picture "@!"  Valid (Vazio() .OR. IIF(!File(AllTrim(cDiretorio)),(MsgStop("Arquivo Inv�lido!"),.F.),.T.)) When .F. Of oDlg
+			@ 0.2,nCo2	MSGet cDiretorio SIZE 200,8 Picture "@!"  Valid (Vazio() .OR. IIF(!File(AllTrim(cDiretorio)),(MsgStop("Arquivo Inválido!"),.F.),.T.)) When .F. Of oDlg
 			@ 2,240 BUTTON "..." SIZE 12,12 ACTION (Eval(bGetDir)) Pixel OF oDlg
 			@ 1.5,nCo1	Say "Layout:" SIZE 4,2 Of oDlg
 			if FWCodEmp() == cFilExec
@@ -153,10 +165,10 @@ User Function CMVEI01A()
 			else
 				@ 2.6,nCo2 MsGet cPoNum F3 "SW2" Picture "@!" When aScan( aLayout , cLayout )<> 1 SIZE 60,08 Of oDlg
 			EndIf
-			@ 3.9,nCo1 Say "Pre�o:"
+			@ 3.9,nCo1 Say "Preço:"
 			@ 3.8,nCo2	Combobox cTipPreco ITEMS aTipPreco When aScan( aLayout , cLayout )== 1  SIZE 100,12 Of oDlg
 
-			@ 64,10   BUTTON "Integra��o" SIZE 50,24 ACTION (IIF(ValidTela(),IntegraInv(),)) Pixel OF oDlg
+			@ 64,10   BUTTON "Integração" SIZE 50,24 ACTION (IIF(ValidTela(),IntegraInv(),)) Pixel OF oDlg
 
 			@ 70,65   BUTTON "Log"        SIZE 50,12 ACTION (CMVEIC0102()               ) Pixel OF oDlg
 			@ 70,120  BUTTON "Relatorio"  SIZE 50,12 ACTION (CMVEIC0103()               ) Pixel OF oDlg
@@ -178,12 +190,14 @@ Return
 
 //----------------------------------------------------------------------------------
 
-Static Function ValidTela()
+Static Function ValidTela() //Validação de todas as informações do CSV
 	Local lRet := .T.
 	Local cExtAux := ""
+	Local cINTCSV   := AllTrim(cDiretorio)
+	Local cLinhaIT		:= ""
 
-	If !File(AllTrim(cDiretorio))
-		MsgStop("Arquivo n�o existe!")
+	If !File(AllTrim(cDiretorio)) //Valida se o arquvio existe
+		MsgStop("Arquivo não existe!")
 		lRet := .F.
 
 	ElseIf Empty(cLayout)
@@ -194,7 +208,7 @@ Static Function ValidTela()
 		nLayout   := aScan( aLayout , cLayout )
 
 		If (FWCodEmp() == cFilExec .AND. nLayout < 5) .OR. (FWCodEmp() <> cFilExec .AND. nLayout = 5)
-			FWAlertError("O layout " + Alltrim(aLayout[nLayout]) + " n�o pode ser usado nessa filial", "CMVEIC01")
+			FWAlertError("O layout " + Alltrim(aLayout[nLayout]) + " não pode ser usado nessa filial", "CMVEIC01")
 			Return
 		EndIf
 
@@ -202,7 +216,7 @@ Static Function ValidTela()
 		cExtAux   := SubsTr(AllTrim(cDiretorio),len(AllTrim(cDiretorio))-3,4)
 
 		If !Upper(cExtAux) $ ".CSV/.TXT/"
-			MsgStop("Extens�o do arquivo est� inv�lida!")
+			MsgStop("Extensão do arquivo está inválida!")
 			lRet := .F.
 
 		Else
@@ -218,9 +232,425 @@ Static Function ValidTela()
 
 	EndIf
 
-	If lRet
+    //Ajustes Referente ao GAP023
+	if  (FWCodEmp() = cFilExec .AND. nLayout = 5 .and. lRet)
+		_aPergs     := {}
+	    _aRetP      := {}
 
-		cInvNum	 := ""
+		Aadd( _aPergs ,{1,"Informe o Número de Invoice", _cChave      ,"@!" , ""  , "EW4"   ,"", 80, .F. })
+
+		If ParamBox(_aPergs, _cTitulo, _aRetP , , , .T. /*lCentered*/, 0, 0, , , .F. /*lCanSave*/, .T. /*lUserSave*/) = .T.	
+	  	   Aadd(_aRetP,_cChave)		
+		Else
+		   Aadd(_aRetP,_cChave)
+		   Aadd(_aRetP,Space(30))
+		EndIf
+
+		If Empty(_aRetP[1])
+		   MsgStop("Deve ser informado o Número da Invoice para validação com a planilha informada!")
+		   lRet := .F.
+		else
+			FT_FUse(cINTCSV)	
+	        FT_FGotop()
+			cLinhaIT := FT_FReadLn()
+			If  Empty(cLinhaIT)                           
+				MsgStop("Planilha informada sem informações ou vazia!")
+				lRet := .F.
+			EndIF
+
+			aLinha := {}
+			cLinhaIT := StrTran(cLinhaIT,';;','; ;')
+			aLinha   := StrTokArr(cLinhaIT, ";")
+            cInvoice := aLinha[02]
+			If ( _aRetP[1] <> cInvoice )
+				MsgStop("O Número da Invoice: " + alltrim(_aRetP[1]) + " não foi localizada na Planilha informada!")
+				lRet := .F.
+            Endif
+			fclose(cINTCSV)
+		EndIf
+
+	Endif
+	//Fim dos Ajustes do GAP023
+
+	//Ajustes referente ao GAP024
+	//**************** Inicio da Rotina
+	If lRet
+		FT_FUse(cINTCSV)	
+		FT_FGotop()
+
+		While !FT_FEof()  //Roda o arquivo todo
+			
+			cLinhaIT := FT_FReadLn()
+			lErro    := .F.
+			//nLinha++
+
+			If  Empty(cLinhaIT)                           
+				FT_FSkip()
+				Loop
+			EndIF
+
+			aLinha := {}
+			cLinhaIT := StrTran(cLinhaIT,';;','; ;')
+			cLinhaIT := StrTran(cLinhaIT,';;','; ;')
+			aLinha   := StrTokArr(cLinhaIT, ";")
+
+			if cLinhaIT <> "; ; ; ; ; ; ; ; ; ; ; ;" .and.  ;//Layout Franco da Rocha com linhas em branco
+			   cLinhaIT <> "; ; ; ; ; ; ; ; ; ; ;"   .and.  ;//Layout CBU Chery  com linhas em branco
+			   cLinhaIT <> "; ; ; ; ; ; ; ; ; ;"            ;//Layout CBU Subaru com linhas em branco
+
+
+				If nLayout == 1 .and. lRet   // Layout CKD - Atrela aLinha nas variáveis e valida as variáveis
+					If len(aLinha) == 12
+						cLote         := IF (!EMPTY(aLinha[01]),aLinha[01]," ")
+						cInvoice      := IF (!EMPTY(aLinha[02]),aLinha[02]," ")
+						cConhecimento := IF (!EMPTY(aLinha[03]),aLinha[03]," ")
+						cSeq          := IF (!EMPTY(aLinha[04]),aLinha[04]," ")
+						cProduto      := IF (!EMPTY(aLinha[05]),aLinha[05]," ")
+						cQtde         := IF (!EMPTY(aLinha[06]),aLinha[06]," ")
+						cValor        := IF (!EMPTY(aLinha[07]),aLinha[07]," ")
+						cNavio        := IF (!EMPTY(aLinha[08]),aLinha[08]," ")
+						cContainer    := IF (!EMPTY(aLinha[09]),aLinha[09]," ")
+						cCaixa        := IF (!EMPTY(aLinha[10]),aLinha[10]," ")
+						cPO           := IF (!EMPTY(aLinha[11]),aLinha[11]," ")
+						cUNITIZADOR   := IF (!EMPTY(aLinha[12]),aLinha[12]," ")	
+
+						if empty(cLote)
+							MsgStop("A Planilha " + cINTCSV + " contém campos dos Lotes, que estão em branco!")
+							lRet := .F.
+						Endif
+
+						if empty(cInvoice) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos dos Invoices, que estão em branco!")
+							lRet := .F.
+						Endif
+
+						if empty(cConhecimento) .and. lRet
+							MsgStop("A Planilha  " + cINTCSV + " contém campos de Conhecimentos, que estão em branco!")
+							lRet := .F.
+						Endif
+
+						if empty(cProduto) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Produtos, que estão em branco!")
+							lRet := .F.
+						Endif
+
+						if empty(cQtde) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Quantidades, que estão em branco!")
+							lRet := .F.
+						Endif
+
+						if empty(cValor) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Valores Unitários, que estão em branco!")
+							lRet := .F.
+						Endif
+
+						if empty(cContainer) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Containers, que estão em branco!")
+							lRet := .F.
+						Endif
+
+						if empty(cCaixa) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Caixas, que estão em branco!")
+							lRet := .F.
+						Endif
+
+						if empty(cPO) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Purchase Order, que estão em branco!")
+							lRet := .F.
+						Endif
+
+						if empty(cUNITIZADOR) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos da Unitizadores, que estão em branco!")
+							lRet := .F.
+						Endif
+					else
+						cSeq    := IF (!EMPTY(aLinha[04]),aLinha[04]," ")
+						MsgStop("A Planilha " + cINTCSV + " contém erro na linha: " + cSeq + " Processamento abortado!" )
+						lRet := .F.					
+					Endif
+				Endif
+
+				If nLayout == 2 .and. lRet   // Layout CBU Hyundai
+					cProforma	:= AllTrim(Subs(cLinhaIT,001,005)) // 001 a 005 - nro proforma <<< CONFIRMAR LAYOUT MIT044 COM 4 POSIÇÔES
+					cInvoice	:= AllTrim(Subs(cLinhaIT,054,016)) // 054 a 069 - nro da invoice
+					cModelo	    := AllTrim(Subs(cLinhaIT,070,013)) // AllTrim(Subs(cLinhaIT,070,013)) // 070 a 082 - codigo do modelo (retirar espacos em branco)
+					cOpcional	:= AllTrim(Subs(cLinhaIT,083,004)) // 083 a 086 - codigo do opcional
+					cCor_EXT	:= AllTrim(Subs(cLinhaIT,087,003)) // 087 a 089 - codigo da cor externa
+					cCor_INT	:= AllTrim(Subs(cLinhaIT,090,003)) // 090 a 092 - codigo da cor interna
+					cBL	        := AllTrim(Subs(cLinhaIT,101,016)) // 101 a 116 - numerdo do bl
+					cChassi	    := AllTrim(Subs(cLinhaIT,128,017)) // 128 a 144 - numero do chassi
+					cMotor	    := AllTrim(Subs(cLinhaIT,145,012)) // 145 a 156 - numero do motor
+					cModelo	    := AllTrim(Subs(cLinhaIT,206,004)) // 206 a 209 - ano modelo
+					cAno	    := AllTrim(Subs(cLinhaIT,210,004)) // 210 a 213 - ano fabricacao
+					aEspaco	    := AllTrim(Subs(cLinhaIT,214,046)) // 214 a 260 - Espaco
+
+					if empty(cProforma)
+						MsgStop("A Planilha " + cINTCSV + " contém campos dos Números das Proformas, que estão em branco!")
+						lRet := .F.
+					Endif
+					
+					if empty(cInvoice) .and. lRet
+						MsgStop("A Planilha " + cINTCSV + " contém campos de Número da Invoice, que estão em branco!")
+						lRet := .F.
+					Endif
+					
+					if empty(cModelo) .and. lRet
+						MsgStop("A Planilha " + cINTCSV + " contém campos de Código de Modelo, que estão em branco!")
+						lRet := .F.
+					Endif
+					
+					if empty(cOpcional) .and. lRet
+						MsgStop("A Planilha " + cINTCSV + " contém campos de Código de Opcional, que estão em branco!")
+						lRet := .F.
+					Endif
+					
+					if empty(cCor_EXT) .and. lRet
+						MsgStop("A Planilha " + cINTCSV + " contém campos de Cor Externa, que estão em branco!")
+						lRet := .F.
+					Endif
+					
+					if empty(cCor_INT) .and. lRet
+						MsgStop("A Planilha " + cINTCSV + " contém campos de Cor Interna, que estão em branco!")
+						lRet := .F.
+					Endif
+					
+					if empty(cBL) .and. lRet
+						MsgStop("A Planilha " + cINTCSV + " contém campos da Número do BL, que estão em branco!")
+						lRet := .F.
+					Endif
+					
+					if empty(cChassi) .and. lRet
+						MsgStop("A Planilha " + cINTCSV + " contém campos de Chassis, que estão em branco!")
+						lRet := .F.
+					Endif
+
+					if empty(cMotor) .and. lRet
+						MsgStop("A Planilha " + cINTCSV + " contém campos de Numero do Motor, que estão em branco!")
+						lRet := .F.
+					Endif
+
+					if empty(cModelo) .and. lRet
+						MsgStop("A Planilha " + cINTCSV + " contém campos de Ano de Modelo, que estão em branco!")
+						lRet := .F.
+					Endif
+
+					if empty(cAno) .and. lRet
+						MsgStop("A Planilha " + cINTCSV + " contém campos de Ano de Modelo Fabricação, que estão em branco!")
+						lRet := .F.
+					Endif
+
+				Endif
+
+				If nLayout == 3 .and. lRet   // Layout CBU Subaru
+					If len(aLinha) == 11
+						cCase     := IF (!EMPTY(aLinha[01]),aLinha[01]," ")
+						cModel    := IF (!EMPTY(aLinha[02]),aLinha[02]," ")
+						cVIN_CODE := IF (!EMPTY(aLinha[03]),aLinha[03]," ")
+						cEngine   := IF (!EMPTY(aLinha[04]),aLinha[04]," ")
+						cColor    := IF (!EMPTY(aLinha[05]),aLinha[05]," ")
+						cOpcional := IF (!EMPTY(aLinha[06]),aLinha[06]," ")
+						cChave    := IF (!EMPTY(aLinha[07]),aLinha[07]," ")
+						cMNO      := IF (!EMPTY(aLinha[08]),aLinha[08]," ")
+						cInvoice  := IF (!EMPTY(aLinha[09]),aLinha[09]," ")
+						cAnoFab   := IF (!EMPTY(aLinha[10]),aLinha[10]," ")
+						cAnoMod   := IF (!EMPTY(aLinha[11]),aLinha[11]," ")
+
+						if empty(cModel)
+							MsgStop("A Planilha " + cINTCSV + " contém campos dos Model, que estão em branco!")
+							lRet := .F.
+						Endif
+						
+						if empty(cVIN_CODE) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de VIN-CODE (Chassi), que estão em branco!")
+							lRet := .F.
+						Endif
+						
+						if empty(cEngine) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Engine / Motor, que estão em branco!")
+							lRet := .F.
+						Endif
+						
+						if empty(cColor) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Color / EEII - EE-Cor Externa / II-Cor Interna, que estão em branco!")
+							lRet := .F.
+						Endif
+						
+						if empty(cOpcional) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Opcionais, que estão em branco!")
+							lRet := .F.
+						Endif
+						
+						if empty(cMNO) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de T/MNO - Valor Total, que estão em branco!")
+							lRet := .F.
+						Endif
+						
+						if empty(cInvoice) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos da Invoice, que estão em branco!")
+							lRet := .F.
+						Endif
+						
+						if empty(cAnoFab) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Ano de Fabricação, que estão em branco!")
+							lRet := .F.
+						Endif
+
+						if empty(cAnoMod) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Ano de Modelo, que estão em branco!")
+							lRet := .F.
+						Endif
+					ELSE
+						cSeq    := IF (!EMPTY(aLinha[01]),aLinha[01]," ")
+						MsgStop("A Planilha " + cINTCSV + " contém erro na linha: " + cSeq + " Processamento abortado!" )
+						lRet    := .F.	
+					ENDIF
+				Endif
+ 
+				If nLayout == 4 .and. lRet  // Layout CBU Chery
+				    If len(aLinha) == 12
+						cSeq      := IF (!EMPTY(aLinha[01]),aLinha[01]," ")
+						cModel    := IF (!EMPTY(aLinha[02]),aLinha[02]," ")
+						cChassi   := IF (!EMPTY(aLinha[03]),aLinha[03]," ")
+						cMotor    := IF (!EMPTY(aLinha[04]),aLinha[04]," ")
+						cCor_Ext  := IF (!EMPTY(aLinha[05]),aLinha[05]," ")
+						cCor_int  := IF (!EMPTY(aLinha[06]),aLinha[06]," ")
+						cOpcional := IF (!EMPTY(aLinha[07]),aLinha[07]," ")
+						cBL       := IF (!EMPTY(aLinha[08]),aLinha[08]," ")
+						cValor    := IF (!EMPTY(aLinha[09]),aLinha[09]," ")
+						cInvoice  := IF (!EMPTY(aLinha[10]),aLinha[10]," ")
+						cAnof     := IF (!EMPTY(aLinha[11]),aLinha[11]," ")
+						cAnoM     := IF (!EMPTY(aLinha[12]),aLinha[12]," ")
+					
+						if empty(cModel)
+							MsgStop("A Planilha " + cINTCSV + " contém campos dos Modelos, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cChassi) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos dos Chassis, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cMotor) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Motor, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cCor_Ext) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Cor Externa, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cCor_int) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Cor Interna, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cOpcional) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Opcionais, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cBL) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Numero do BL, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cValor) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Valor, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cInvoice) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos da Invoice, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cAnoF) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Ano de Fabricação, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cAnoM) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Ano de Modelo, que estão em branco!")
+							lRet := .F.
+						Endif
+					ELSE
+						cSeq    := IF (!EMPTY(aLinha[01]),aLinha[01]," ")
+						MsgStop("A Planilha " + cINTCSV + " contém erro na linha: " + cSeq + " Processamento abortado!" )
+						lRet    := .F.	
+					ENDIF
+				Endif
+
+				If nLayout == 5   .and. lRet    // Layout Empresa Franco da Rocha (antiga Barueri):
+					If len(aLinha) == 13
+						cSeq     := IF (!EMPTY(aLinha[01]),aLinha[01]," ")
+						cInvoice := IF (!EMPTY(aLinha[02]),aLinha[02]," ")
+						cNCM	 := IF (!EMPTY(aLinha[03]),aLinha[03]," ")
+						cEX      := IF (!EMPTY(aLinha[04]),aLinha[04]," ")
+						cProduto := IF (!EMPTY(aLinha[05]),aLinha[05]," ")
+						cQtde    := IF (!EMPTY(aLinha[06]),aLinha[06]," ")
+						cValor   := IF (!EMPTY(aLinha[07]),aLinha[07]," ")
+						cContain := IF (!EMPTY(aLinha[08]),aLinha[08]," ")
+						cCaixa   := IF (!EMPTY(aLinha[09]),aLinha[09]," ")
+						cPeso    := IF (!EMPTY(aLinha[10]),aLinha[10]," ")
+						cPO      := IF (!EMPTY(aLinha[11]),aLinha[11]," ")
+						cConhec  := IF (!EMPTY(aLinha[12]),aLinha[12]," ")
+						cNavio   := IF (!EMPTY(aLinha[13]),aLinha[13]," ")
+						if empty(cInvoice)
+							MsgStop("A Planilha " + cINTCSV + " contém campos das Invoices, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cNCM) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos dos NCMs, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cProduto) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Produtos, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cQtde) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Quantidades, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cValor) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Valores Unitários, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cContain) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Containers, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cCaixa) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Caixas, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cPeso) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Pesos, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cPO) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos da Purchase Orders, que estão em branco!")
+							lRet := .F.
+						Endif
+						if empty(cConhec) .and. lRet
+							MsgStop("A Planilha " + cINTCSV + " contém campos de Conhecimentos, que estão em branco!")
+							lRet := .F.
+						Endif
+					ELSE
+						cSeq    := IF (!EMPTY(aLinha[01]),aLinha[01]," ")
+						MsgStop("A Planilha " + cINTCSV + " contém erro na linha: " + cSeq + " Processamento abortado!" )
+						lRet    := .F.	
+					ENDIF
+				Endif
+			Else	
+				MsgStop("A Planilha " + cINTCSV + " contém linha(s) que estão em branco!")
+				lRet := .F.
+			Endif
+			
+			FT_FSkip()
+			
+		EndDo
+
+		If (nLayout == 1 .or. nLayout == 5).and. lRet
+			_cPoLock := cPo //GAP081
+		EndIf
+		FT_FUse()
+
+		//Fim dos ajustes do GAP024
+
+
+		cInvNum	   := ""
 		cRateado   := ""
 		cFornecedor:= ""
 		cForLoj    := ""
@@ -238,11 +668,13 @@ Static Function ValidTela()
 		nVlOutD	   := 0
 		nRecW2	   := 0
 		nTotalFOB  := 0
-		nRecZZE    := 0  	//usada no fun��o CMVEIC0101
-		lCapaLog   := .F.	//usada na fun��o CMVEIC0101
+		nRecZZE    := 0  	//usada no função CMVEIC0101
+		lCapaLog   := .F.	//usada na função CMVEIC0101
 		aSINUM	   := {}
 
 	EndIf
+
+//Validação do número da Invoice Antecipada - Somente para Franco da Rocha
 
 Return lRet
 
@@ -253,8 +685,11 @@ Return lRet
 
 Static Function IntegraInv()
 	
-	Local cINTCSV   := AllTrim(cDiretorio)
-	
+	Local cINTCSV   	:= AllTrim(cDiretorio)
+	Local _cFornLock 	:= ""   //GAP081
+	Local _cForLojLock	:= ""	//GAP081
+
+	Private _lRet		:= .T. 	//GAP081
 	Private cItAcerto	:= ""
 	Private cMoedaP		:= ""
 	Private cArqFalta	:= Upper(AllTrim(cDiretorio))
@@ -266,19 +701,52 @@ Static Function IntegraInv()
 	cArqFalta	+= "-FALTA-"+DTOS(Date())+StrTran(Time(),":")+".CSV"
 	cFalta		:= ""
 
-	MontaWork1()
-	if nLayout == 5 .or. nLayout == 1
-		Processa( {|| lErroGer := !(U_ZEICF021(cINTCSV,cPoNum,nLayout))}, "Lendo Arquivo de Integra��o...", OemToAnsi("Lendo dados do arquivo..."),.F.)
+	//Ajustes Referente ao GAP081 ----------------------------------------------------
+
+	DbSelectArea('SW2') //Capa de Purchase Order
+	SW2->(DbSetOrder(1))
+	SW2->(DbSeek(FwXFilial('SW2') + (_cPoLock)))
+	_cFornLock 			:= AllTrim(SW2->W2_FORN)
+	_cForLojLock 		:= AllTrim(SW2->W2_FORLOJ)
+	_cChaveLock 		:= "CMVEIC01" + _cFornLock + _cForLojLock
+	SW2->(DbCloseArea())
+	
+	If nLayout == 5 .or. nLayout == 1
+		_lRet := .F. 
+		
+		//Garantir que o processamento seja unico
+		If !LockByName(_cChaveLock ,.T.,.T.)
+			If !MsgYesNo("Já existe um processo em andamento, deseja aguardar?", "Processo em andamento.")
+				Return
+			Endif
+			//Abre tela de processamento e aguarda a outra improtação terminar.
+			FWMsgRun(,{|| ProcessaLock()} , "Processando", "Outra importação em andamento, por favor aguarde...")		
+		Else
+			_lRet := .T.
+		EndIf
+
+		If _lRet  
+			MontaWork1()
+			Processa( {|| lErroGer := !(U_ZEICF021(cINTCSV,cPoNum,nLayout))}, "Lendo Arquivo de Integração...", OemToAnsi("Lendo dados do arquivo..."),.F.)
+			UnLockByName(_cChaveLock ,.T.,.T.) //VERIFICAR ONDE COLOCAR ISSO, ALTERAR A VARIÁVEL
+		Else 
+			MsgStop("Integração não pode ser concluída." + CRLF + "Já existe um processo em andamento.","Erro",1,0,1)
+			Return
+		EndIf 
+	
 	Else
-		Processa( {|| LerDados(cINTCSV)  }, "Lendo Arquivo de Integra��o...", OemToAnsi("Lendo dados do arquivo..."),.F.)
+		MontaWork1()
+		Processa( {|| LerDados(cINTCSV)  }, "Lendo Arquivo de Integração...", OemToAnsi("Lendo dados do arquivo..."),.F.)
 	EndIf
+
+	//Fim dos ajustes Referente ao GAP081 ----------------------------------------------------
 
 	If lErroGer
 		If !Empty(cFalta)
 			MemoWrite( cArqFalta , cFalta )
 		EndIf
 
-		MsgStop("Integra��o n�o pode ser conclu�da! Verifique relat�rio de Erros"+IIF(Empty(cFalta),"",+CRLF+" "+CRLF+"Itens sem pedidos listados em arquivo: "+cArqFalta))
+		MsgStop("Integração não pode ser concluída! Verifique relatório de Erros"+IIF(Empty(cFalta),"",+CRLF+" "+CRLF+"Itens sem pedidos listados em arquivo: "+cArqFalta))
 
 	Elseif nLayout <> 1 .and. nLayout <> 5 
 
@@ -286,7 +754,7 @@ Static Function IntegraInv()
 		If lCapaOk
 			Processa( {|| CMV01GravaInv()},"Gravando Dados da Invoice...", OemToAnsi("Gravando dados..."),.F.)
 
-			If nLayout == 1 .OR. nLayout == 5  // gravar na szm se � layout ckd
+			If nLayout == 1 .OR. nLayout == 5  // gravar na szm se é layout ckd
 				FWMsgRun(, {|| zGrvArq() }, "", "Gravando SZM...")
 			EndIf
 
@@ -294,7 +762,7 @@ Static Function IntegraInv()
 			if lOk
 				fRename(cINTCSV,Subs(cINTCSV,1,At(".CSV",Upper(cINTCSV))-1)+".OK")
 			EndIf
-			MsgInfo("Integra��o concluida com sucesso!" + CRLF +  "Para ver um log do resultado clique no bot�o 'Log' ")
+			MsgInfo("Integração concluida com sucesso!" + CRLF +  "Para ver um log do resultado clique no botão 'Log' ")
 		EndIf
 
 	EndIf
@@ -367,9 +835,11 @@ Static Function MontaWork1()
 		cArqEW5_2 := CriaTrab(Nil, .F.)
 		dbUseArea(.t.,,cArqEW5,cWKEW5,.T.,.F.)
 
+
 		(cWKEW5)->(DBClearIndex() )
   		DBCreateIndex(cWKEW5+'1', "EW5_INVOIC+EW5_PO_NUM+EW5_COD_I+EW5_SI_NUM+EW5_POSICA" , {|| EW5_INVOIC+EW5_PO_NUM+EW5_COD_I+EW5_SI_NUM+EW5_POSICA })
 		DBCreateIndex(cWKEW5+'2', "EW5_INVOIC+EW5_CC+EW5_SI_NUM+EW5_PO_NUM+EW5_POSICA+EW5_COD_I+EW5_XCASE", {|| EW5_INVOIC+EW5_CC+EW5_SI_NUM+EW5_PO_NUM+EW5_POSICA+EW5_COD_I+EW5_XCASE})
+	
 	EndIf
 
 
@@ -524,7 +994,7 @@ Static Function LerDados(cINTCSV)
 			1 - "CKD (CSV)"
 			2 - "CBU - Hyundai (TXT)"
 			3 - "CBU - Subaru (CSV)"
-		4 - "Pe�as de Reposi��o (CSV)"*/
+		4 - "Peças de Reposição (CSV)"*/
 
 		nLinha++
 		If nLayOut == 1 // CKD
@@ -580,7 +1050,7 @@ Static Function LerDados(cINTCSV)
 				lErro := .T.
 			Else
 				/* CBU HYUNDAI
-				POSI��O
+				POSIÇÃO
 				1 A 5 - NRO PROFORMA
 				46 A 52 - NOME DO NAVIO
 				54 A 69 - NRO DA INVOICE
@@ -596,7 +1066,7 @@ Static Function LerDados(cINTCSV)
 				210 A 213 - ANO FABRICACAO
 				*/
 				aCampos	:= Array(13)
-				aCampos[01]	:= AllTrim(Subs(cLinhaIT,001,005)) // 001 a 005 - nro proforma <<< CONFIRMAR LAYOUT MIT044 COM 4 POSI��ES
+				aCampos[01]	:= AllTrim(Subs(cLinhaIT,001,005)) // 001 a 005 - nro proforma <<< CONFIRMAR LAYOUT MIT044 COM 4 POSIÇÔES
 				aCampos[02]	:= AllTrim(Subs(cLinhaIT,046,007)) // 046 a 052 - nome do navio
 				aCampos[03]	:= AllTrim(Subs(cLinhaIT,054,016)) // 054 a 069 - nro da invoice
 				cInvoice    := AllTrim(aCampos[3])
@@ -632,7 +1102,7 @@ Static Function LerDados(cINTCSV)
 			[06] Opcional
 			[07] Chave / KeyNo
 			[08] T/MNO - Valor Total
-			// 10/10/2019 - Altera��o de layout. Inclus�o de colunas Invoice, Ano Fab e Ano Mod
+			// 10/10/2019 - Alteração de layout. Inclusão de colunas Invoice, Ano Fab e Ano Mod
 			[09] Invoice
 			[10] Ano Fab
 			[11] Ano Mod    */
@@ -719,7 +1189,7 @@ Static Function LerDados(cINTCSV)
 			[04] EX
 			[05] CODIGO PRODUTO
 			[06] QUANTIDADE
-			[07] VALOR UNIT�RIO
+			[07] VALOR UNITÁRIO
 			[08] CONTAINER
 			[09] CAIXA
 			[10] PESO LIQUIDO
@@ -757,7 +1227,7 @@ Static Function LerDados(cINTCSV)
 
 		If lErro
 			lErroGer := .T.
-			CMVEIC0101("Layout da linha inv�lido!",nLinha,,cFornecedor,cForloj,"R",,,cInvoice)
+			CMVEIC0101("Layout da linha inválido!",nLinha,,cFornecedor,cForloj,"R",,,cInvoice)
 			Exit
 		EndIf
 
@@ -765,7 +1235,7 @@ Static Function LerDados(cINTCSV)
 		//INVOICE
 		If Empty(cInvoice)
 			//ERRO INVOICE EM BRANCO
-			CMVEIC0101("N�mero da Invoice em branco!",nLinha,,cFornecedor,cForloj,"R",AllTrim(aCampos[1]),,)
+			CMVEIC0101("Número da Invoice em branco!",nLinha,,cFornecedor,cForloj,"R",AllTrim(aCampos[1]),,)
 			lErro := .T.
 		EndIf
 
@@ -776,8 +1246,8 @@ Static Function LerDados(cINTCSV)
 
 		cInvoice := Stuff( Space(TamSX3("EW4_INVOIC")[1]) ,1 , Len(cInvoice) , cInvoice )
 		If EW4->( dbSeek( xFilial("EW4") + cInvoice ) )
-			//ERRO INVOICE J� EXISTE
-			CMVEIC0101("N�mero da Invoice j� existe!",nLinha,,EW4->EW4_FORN,EW4->EW4_FORLOJ,"R",AllTrim(aCampos[1]),,cInvoice)
+			//ERRO INVOICE JÁ EXISTE
+			CMVEIC0101("Número da Invoice já existe!",nLinha,,EW4->EW4_FORN,EW4->EW4_FORLOJ,"R",AllTrim(aCampos[1]),,cInvoice)
 			lErro := .T.
 		EndIf
 
@@ -789,11 +1259,11 @@ Static Function LerDados(cINTCSV)
 		//PO
 		If Empty(cPoNum)
 			//ERRO PO EM BRANCO
-			CMVEIC0101("N�mero do PO em branco!",nLinha,,,,"R",,,cInvoice)
+			CMVEIC0101("Número do PO em branco!",nLinha,,,,"R",,,cInvoice)
 			lErro := .T.
 		Else
 			If !SW2->(dbSeek(xFilial("SW2")+cPONUM))
-				CMVEIC0101("PO de n�mero:" + AllTrim(cPoNum) +" n�o encontrado no sistema!",nLinha,			,		 ,		,"R"	 ,cPoNum,			,cInvoice)
+				CMVEIC0101("PO de número:" + AllTrim(cPoNum) +" não encontrado no sistema!",nLinha,			,		 ,		,"R"	 ,cPoNum,			,cInvoice)
 				lErro := .T.
 			Else
 				cIncoterm	:= SW2->W2_INCOTER
@@ -812,8 +1282,8 @@ Static Function LerDados(cINTCSV)
 
 		//INVOICE
 		If EW4->(dbSeek(xFilial("EW4")+AVKEY(cInvoice,"EW4_INVOICE")+SW2->W2_FORN+SW2->W2_FORLOJ))
-			//ERRO INVOICE J� EXISTE NO SISTEMA
-			MsgStop("Invoice n�mero:" + AllTrim(cInvoice) +" j� existe no sistema!")
+			//ERRO INVOICE JÁ EXISTE NO SISTEMA
+			MsgStop("Invoice número:" + AllTrim(cInvoice) +" já existe no sistema!")
 			lErro := .T.
 		EndIf
 
@@ -859,7 +1329,7 @@ Static Function LerDados(cINTCSV)
 
 		If Empty(AllTrim(cCodProd))
 			//ERRO PRODUTO EM BRANCO
-			CMVEIC0101("C�digo de produto em branco!",nLinha,,cFornecedor,cForloj,"R",AllTrim(cPoNum),,cInvoice)
+			CMVEIC0101("Código de produto em branco!",nLinha,,cFornecedor,cForloj,"R",AllTrim(cPoNum),,cInvoice)
 			lErro := .T.
 		Else
 			lSeekSW3	:= .F.
@@ -907,8 +1377,8 @@ Static Function LerDados(cINTCSV)
 			EndIf
 
 			If !lSeekSW3
-				//ERRO PRODUTO N�O ENCONTRADO NO PEDIDO
-				CMVEIC0101("Item " + AllTrim(cCodProd) + " n�o existe no pedido " + SW2->W2_PO_NUM ,nLinha,AllTrim(cCodProd) ,cFornecedor,cForloj,"R",AllTrim(SW2->W2_PO_NUM), , cInvoice)
+				//ERRO PRODUTO NÃO ENCONTRADO NO PEDIDO
+				CMVEIC0101("Item " + AllTrim(cCodProd) + " não existe no pedido " + SW2->W2_PO_NUM ,nLinha,AllTrim(cCodProd) ,cFornecedor,cForloj,"R",AllTrim(SW2->W2_PO_NUM), , cInvoice)
 
 				lErro := .T.
 
@@ -948,7 +1418,7 @@ Static Function LerDados(cINTCSV)
 		EndIf
 
 		If nLayout == 5 .AND. Empty(GetAdvFVal("SYD", "YD_TEC", FwXFilial("SYD") + cNcm + cExNCM, 1, " ")) == .T.
-			CMVEIC0101("NCM + Ex n�o cadastrado: " + cNcm + cExNCM + " n�o encontrado no sistema!", i,AllTrim(cCodProd),cFornecedor,cForloj, "R"	 ,cPoNum,			,cInvoice)
+			CMVEIC0101("NCM + Ex não cadastrado: " + cNcm + cExNCM + " não encontrado no sistema!", i,AllTrim(cCodProd),cFornecedor,cForloj, "R"	 ,cPoNum,			,cInvoice)
 			lErro := .T.
 		EndIf
 
@@ -1041,8 +1511,8 @@ Static Function LerDados(cINTCSV)
 		EndIf
 
 		IF Len(aReg) == 0
-			//ERRO PRODUTO N�O ENCONTRADO NO PEDIDO
-			CMVEIC0101("N�o h� saldo para o Item " + AllTrim(cCodProd) + "   pedido : " + SW2->W2_PO_NUM ,nLinha,AllTrim(cCodProd) ,cFornecedor,cForloj,"R",AllTrim(SW2->W2_PO_NUM), , cInvoice)
+			//ERRO PRODUTO NÃO ENCONTRADO NO PEDIDO
+			CMVEIC0101("Não há saldo para o Item " + AllTrim(cCodProd) + "   pedido : " + SW2->W2_PO_NUM ,nLinha,AllTrim(cCodProd) ,cFornecedor,cForloj,"R",AllTrim(SW2->W2_PO_NUM), , cInvoice)
 			lErro := .T.
 		
 			IF nLayOut == 1 // CKD
@@ -1071,9 +1541,9 @@ Static Function LerDados(cINTCSV)
 
 			IF aReg[nI,2] <= 0  .OR. VALTYPE(aReg[nI,1]) <> 'N'
 				if nI > 1
-					CMVEIC0101("Item " + AllTrim(cCodProd) + " saldo s� atende o Item anterior " + SW2->W2_PO_NUM ,nLinha,AllTrim(cCodProd) ,cFornecedor,cForloj,"R",AllTrim(SW2->W2_PO_NUM), , cInvoice)
+					CMVEIC0101("Item " + AllTrim(cCodProd) + " saldo só atende o Item anterior " + SW2->W2_PO_NUM ,nLinha,AllTrim(cCodProd) ,cFornecedor,cForloj,"R",AllTrim(SW2->W2_PO_NUM), , cInvoice)
 				else 
-					CMVEIC0101("Item " + AllTrim(cCodProd) + " n�o existe saldo no pedido " + SW2->W2_PO_NUM ,nLinha,AllTrim(cCodProd) ,cFornecedor,cForloj,"R",AllTrim(SW2->W2_PO_NUM), , cInvoice)
+					CMVEIC0101("Item " + AllTrim(cCodProd) + " não existe saldo no pedido " + SW2->W2_PO_NUM ,nLinha,AllTrim(cCodProd) ,cFornecedor,cForloj,"R",AllTrim(SW2->W2_PO_NUM), , cInvoice)
 				EndIf
 				lErro := .T.
 		
@@ -1110,8 +1580,8 @@ Static Function LerDados(cINTCSV)
 					EndIf
 		
 					If AllTrim(aCampos[13]) <> SW3->W3_ANOFAB
-						//ANO FABRICA��O DIVERGENTE
-						CMVEIC0101("Ano Fabrica��o divergente!"+AllTrim(aCampos[12])+' Pedido :'+SW3->W3_ANOMOD ,nLinha,AllTrim(cCodProd),cFornecedor,cForloj,"R",AllTrim(SW2->W2_PO_NUM),SW3->W3_POSICAO,cInvoice)
+						//ANO FABRICAÇÃO DIVERGENTE
+						CMVEIC0101("Ano Fabricação divergente!"+AllTrim(aCampos[12])+' Pedido :'+SW3->W3_ANOMOD ,nLinha,AllTrim(cCodProd),cFornecedor,cForloj,"R",AllTrim(SW2->W2_PO_NUM),SW3->W3_POSICAO,cInvoice)
 						lErro := .T.
 					EndIf
 		
@@ -1272,7 +1742,7 @@ Static Function LerDados(cINTCSV)
 		For nCnt:=1 To Len(aQuantPOInv)
 
 			If aQuantPOInv[nCnt][4] > aQuantPOInv[nCnt][5]
-				CMVEIC0101("Item " + AllTrim(aQuantPOInv[nCnt][3]) + " n�o existe saldo no pedido " + aQuantPOInv[nCnt][2] ,1/*nLinha*/,AllTrim(aQuantPOInv[nCnt][3]) ,aQuantPOInv[nCnt][6],aQuantPOInv[nCnt][7],"R",AllTrim(aQuantPOInv[nCnt][2]), , aQuantPOInv[nCnt][1])
+				CMVEIC0101("Item " + AllTrim(aQuantPOInv[nCnt][3]) + " não existe saldo no pedido " + aQuantPOInv[nCnt][2] ,1/*nLinha*/,AllTrim(aQuantPOInv[nCnt][3]) ,aQuantPOInv[nCnt][6],aQuantPOInv[nCnt][7],"R",AllTrim(aQuantPOInv[nCnt][2]), , aQuantPOInv[nCnt][1])
 				lErro := .T.
 				lErroGer := .T.
 				nPosTot := aScan(aQuantTot, { |x| Alltrim(x[1])+Alltrim(x[2])+alltrim(x[3]) ==  Alltrim(cInvoice)+Alltrim(SW2->W2_PO_NUM)+Alltrim(cCodProd) } )
@@ -1289,7 +1759,7 @@ Return
 
 //----------------------------------------------------------------------------------
 
-Static Function CMV01Capa()
+Static Function CMV01Capa() //Apenas para layouts <> 1 E <> 5
 	Local oDlg2
 	Local cDados  := cInvoice
 	Local nCo1    := 1
@@ -1314,9 +1784,9 @@ Static Function CMV01Capa()
 		@ 0.2 + nOffP12,nCo3	Say "Incoterm:"
 		@ 0.2 + nOffP12,nCo4	MSGet cIncoterm F3 "SYJ" Picture "@!" VALID (ExistCPO("SYJ")) Of oDlg2
 		@ 1.4 + nOffP12,nCo1	Say "Frete Incl S/N?" SIZE 4,2 Of oDlg2
-		@ 1.4 + nOffP12,nCo2	Combobox cFreInc ITEMS {"Sim","N�o"} When .T. SIZE 40,12 Of oDlg2
+		@ 1.4 + nOffP12,nCo2	Combobox cFreInc ITEMS {"Sim","Não"} When .T. SIZE 40,12 Of oDlg2
 		@ 1.4 + nOffP12,nCo3	Say "Seg Incl S/N?" SIZE 4,2 Of oDlg2
-		@ 1.4 + nOffP12,nCo4	Combobox cSegInc ITEMS {"Sim","N�o"} When .T. SIZE 40,12 Of oDlg2
+		@ 1.4 + nOffP12,nCo4	Combobox cSegInc ITEMS {"Sim","Não"} When .T. SIZE 40,12 Of oDlg2
 		@ 2.6 + nOffP12,nCo1	Say "Vlr Frete:"
 		@ 2.6 + nOffP12,nCo2	MSGet nVlrFre Picture cPicVlr VALID (nVlrFre >= 0) Of oDlg2
 		@ 2.6 + nOffP12,nCo3	Say "Vlr Seguro:"
@@ -1330,17 +1800,20 @@ Static Function CMV01Capa()
 		@ 5.0 + nOffP12,nCo3	Say "Outras Desp:"
 		@ 5.0 + nOffP12,nCo4	MSGet nVlOutD Picture cPicVlr VALID (nVlOutD >= 0) of oDlg2
 		@ 6.2 + nOffP12,nCo1	Say "Rateado por:" SIZE 4,2 Of oDlg2
-		@ 6.2 + nOffP12,nCo2	Combobox cRateado ITEMS {"Peso","Pre�o","Quantidade"} When .T. SIZE 80,12 Of oDlg2
+		@ 6.2 + nOffP12,nCo2	Combobox cRateado ITEMS {"Peso","Preço","Quantidade"} When .T. SIZE 80,12 Of oDlg2
 		@ 6.2 + nOffP12,nCo3	Say "Data Invoice:"
 		@ 6.2 + nOffP12,nCo4	MSGet dDtInvoice VALID !Empty(dDtInvoice) SIZE 50,08 of oDlg2
 		@ 7.4 + nOffP12,nCo1	Say "Ok Agente:" SIZE 4,2 Of oDlg2
-		@ 7.4 + nOffP12,nCo2	Combobox lAgt_Ok ITEMS {"1-Sim", "2-N�o"} When .T. SIZE 40,12 Of oDlg2
-		@ 7.4 + nOffP12,nCo1 + nOffP12+15	Say "Data Libera��o:"
+		@ 7.4 + nOffP12,nCo2	Combobox lAgt_Ok ITEMS {"1-Sim", "2-Não"} When .T. SIZE 40,12 Of oDlg2
+		@ 7.4 + nOffP12,nCo1 + nOffP12+15	Say "Data Liberação:"
 		@ 7.4 + nOffP12,nCo2 + nOffP12+15	MsGet dAgt_Ok Picture "@E" When lAgt_Ok="1" SIZE 80,12 Of oDlg2
 		@ 8.6 + nOffP12,nCo1	Say "Ok Ship:" SIZE 4,2 Of oDlg2
-		@ 8.6 + nOffP12,nCo2	Combobox lOk_Shp ITEMS {"1-Sim", "2-N�o"} When .T. SIZE 40,12 Of oDlg2
+		@ 8.6 + nOffP12,nCo2	Combobox lOk_Shp ITEMS {"1-Sim", "2-Não"} When .T. SIZE 40,12 Of oDlg2
 		@ 8.6 + nOffP12,nCo1 + nOffP12+15	Say "Ok Ship:"
 		@ 8.6 + nOffP12,nCo2 + nOffP12+15	MsGet	dOk_Shp Picture "@E" When lOk_Shp="1"  SIZE 80,12 Of oDlg2
+	    @ 9.6 + nOffP12,nCo1	Say "Itens Anuente:" SIZE 8,2 Of oDlg2
+		//@ 9.6 + nOffP12,nCo2	Combobox lOk_Anu ITEMS {"1-Sim", "2-Não"} When .F. SIZE 40,12 Of oDlg2
+		//@ 9.6 + nOffP12,nCo2	MSGet lOk_Anu  When .F. SIZE 40,12 Of oDlg2
 
 	Activate MSDialog oDlg2 ON INIT EnchoiceBar(oDlg2,{|| IIF(CMV01ValCapa(),(lCapaOK := .T.,oDlg2:End()),)},{|| oDlg2:End() },) Centered
 
@@ -1351,7 +1824,7 @@ Return
 
 //----------------------------------------------------------------------------------
 
-Static Function CMV01ValCapa()
+Static Function CMV01ValCapa() // Valida capa para layouts <> 1 E <> 5
 	Local lRet := .T.
 
 	If Empty(cIncoterm)
@@ -1366,49 +1839,49 @@ Static Function CMV01ValCapa()
 	EndIf
 
 	If nVlrFre < 0
-		MsgStop("Frete n�o pode ser negativo!")
+		MsgStop("Frete não pode ser negativo!")
 		lRet := .F.
 
 	EndIf
 
 	If nVlrSeg < 0
-		MsgStop("Seguro n�o pode ser negativo!")
+		MsgStop("Seguro não pode ser negativo!")
 		lRet := .F.
 
 	EndIf
 
 	If nVlrInland < 0
-		MsgStop("InLand n�o pode ser negativo!")
+		MsgStop("InLand não pode ser negativo!")
 		lRet := .F.
 
 	EndIf
 
 	If nVlrPack < 0
-		MsgStop("Packing n�o pode ser negativo!")
+		MsgStop("Packing não pode ser negativo!")
 		lRet := .F.
 
 	EndIf
 
 	If nVlrDesc  < 0
-		MsgStop("Desconto n�o pode ser negativo!")
+		MsgStop("Desconto não pode ser negativo!")
 		lRet := .F.
 
 	EndIf
 
 	If nVlOutD < 0
-		MsgStop("Valor de Outras Despesas n�o pode ser negativo!")
+		MsgStop("Valor de Outras Despesas não pode ser negativo!")
 		lRet := .F.
 
 	EndIf
 
 	If Empty(cFreInc)
-		MsgStop("Informe se frete � incluso!")
+		MsgStop("Informe se frete é incluso!")
 		lRet := .F.
 
 	EndIf
 
 	If Empty(cSegInc)
-		MsgStop("Informe se seguro � incluso!")
+		MsgStop("Informe se seguro é incluso!")
 		lRet := .F.
 
 	EndIf
@@ -1432,7 +1905,7 @@ Return lRet
 
 //----------------------------------------------------------------------------------
 
-Static Function CMV01GravaInv()
+Static Function CMV01GravaInv() //Gravação da tabela EW5
 	
 	Local cQuery	:= ""
 	Local nTotInv	:= 0
@@ -1447,7 +1920,7 @@ Static Function CMV01GravaInv()
 	
 	WKEW5->(dbSetOrder(2))
 
-	dbSelectAre('SW2')
+	dbSelectArea('SW2')
 	SW2->(dbSetOrder(1))
 
 	dbSelectArea("EW4")
@@ -1640,7 +2113,7 @@ Static Function CMV01GravaInv()
 				EW4->EW4_DIAS_P	:=	SW2->W2_DIAS_PA
 				EW4->EW4_FREINC	:=	IIF(cFreInc == "Sim","1","2")
 				EW4->EW4_SEGINC	:=	IIF(cSegInc == "Sim","1","2")
-				EW4->EW4_RATPOR	:=	IIF(cRateado == "Peso","1",IIF(cRateado == "Pre�o","2","3"))
+				EW4->EW4_RATPOR	:=	IIF(cRateado == "Peso","1",IIF(cRateado == "Preço","2","3"))
 				EW4->EW4_FOBTOT	:=	nTotalFOB
 				EW4->EW4_FRETEI	:=	nVlrFre
 				EW4->EW4_SEGURO	:=	nVlrSeg
@@ -1698,7 +2171,7 @@ Static Function CMV01GravaInv()
 		lOk := .T.
 		
 		if !lOk
-			MsgAlert("Existe inconsistencia de valores verifique o Logs", "Aten��o")
+			MsgAlert("Existe inconsistencia de valores verifique o Logs", "Atenção")
 		EndIf
 		
 	End Transaction
@@ -1792,9 +2265,9 @@ RETURN
 
 
 //----------------------------------------------------------------------------------
-
+// CRIAR ARQUIVO DE LOG
 Static Function CMVEIC0101(cTexto, nLinha, cProduto, cFornec, cLoja, cStatus, cPO, cPosicao, cInvoice)
-	
+	Local nX := 1
 	Default nLinha   := 0
 	Default cProduto := ""
 	Default cFornec  := ""
@@ -1802,11 +2275,11 @@ Static Function CMVEIC0101(cTexto, nLinha, cProduto, cFornec, cLoja, cStatus, cP
 	Default cPO      := ""
 	Default cPosicao := ""
 	Default cInvoice := ""
-
-	//N�o permite entrar na rotina caso a filial n�o esteja habilitada.
+	cTexto := 'Linha:' + Strzero(nLinha,5) + '|' + cTexto
+	//Não permite entrar na rotina caso a filial não esteja habilitada.
 	if !cFilAnt $ cFilInv
 
-		alert("Rotina n�o permite acesso nesta filial logada.")
+		alert("Rotina não permite acesso nesta filial logada.")
 		return nil
 
 	EndIf
@@ -1820,29 +2293,48 @@ Static Function CMVEIC0101(cTexto, nLinha, cProduto, cFornec, cLoja, cStatus, cP
 	EndIf
 
 	If !lCapaLog
-		CMVEIC0104(cProduto, cFornec, cLoja, cStatus, cPO, cPosicao, cInvoice)
+		CMVEIC0104(cProduto, cFornec, cLoja, cStatus, cPO, cPosicao, cInvoice,.F.)
+	else
+		For nX := 1 to len(aStIten)
+			
+			ZZF->(DbGoto(aStIten[nX]))
+			
+			if (EMPTY(ZZF->ZZF_FORN) .and. !Empty(cFornec) ).or. (Empty(ZZE->ZZE_FORN) .and. !Empty(cFornec))
 
+				CMVEIC0104(cProduto, cFornec, cLoja, cStatus, cPO, cPosicao, cInvoice,.T.)
+				
+				ZZF->(RecLock("ZZF",.F.))
+					ZZF->ZZF_FORN	:=	ZZE->ZZE_FORN//cFornec
+					ZZF->ZZF_LOJA	:=	ZZE->ZZE_LOJA//cLoja
+					ZZF->ZZF_PO_NUM	:=	iif( Empty(ZZF->ZZF_PO_NUM) , cPO , ZZF->ZZF_PO_NUM )
+					ZZF->ZZF_NRINTE	:=	ZZE->ZZE_NRINTE
+				ZZF->(MsUnlock())
+
+			EndIf
+		Next nX
 	EndIf
 
 	ZZF->(RecLock("ZZF",.T.))
 		ZZF->ZZF_FILIAL	:=	xFilial("ZZF")
 		ZZF->ZZF_INVOIC	:=	cInvoice
-		ZZF->ZZF_FORN	:=	cFornec
-		ZZF->ZZF_LOJA	:=	cLoja
-		ZZF->ZZF_NRINTE	:=	nNumInte
+		ZZF->ZZF_FORN	:=	ZZE->ZZE_FORN //,cFornec ,ZZE->ZZE_FORN)
+		ZZF->ZZF_LOJA	:=	ZZE->ZZE_LOJA //cLoja   ,ZZE->ZZE_LOJA)
+		ZZF->ZZF_NRINTE	:=	ZZE->ZZE_NRINTE//nNumInte
 		ZZF->ZZF_STATUS	:=	cStatus
 		ZZF->ZZF_PO_NUM	:=	cPO
 		ZZF->ZZF_COD_I	:=	cProduto
 		ZZF->ZZF_POSICA	:=	cPosicao
 		ZZF->ZZF_MOTIVO	:=	cTexto
-
 	ZZF->(MSUnlock())
-
+	
+	if Empty(ZZF->ZZF_FORN)
+		aadd(aStIten,ZZF->(Recno()))
+	EndIf
+	
 	If cStatus == "R" .AND. ZZE->ZZE_STATUS == "I"
 
 		ZZE->(RecLock("ZZE",.F.))
 			ZZE->ZZE_STATUS	:=	"R"
-
 		ZZE->(MSUnlock())
 
 	EndIf
@@ -1899,7 +2391,7 @@ Static Function CMVEIC0102()
 		ZZE->(dbSetOrder(1))
 
 	EndIf
-
+	ZZE->(DBGOTO(nRecZZe))
 	cInvoice := ZZE->ZZE_INVOIC
 	cFornec  := Posicione("SA2",1,xFilial("SA2")+ZZE->ZZE_FORN+ZZE->ZZE_LOJA,"A2_NREDUZ")
 	dDtProc  := ZZE->ZZE_DTINTE
@@ -1940,30 +2432,51 @@ Return
 
 //----------------------------------------------------------------------------------
 
-Static Function CMVEIC0104(cProduto, cFornec, cLoja, cStatus, cPO, cPosicao, cInvoice)
-
+Static Function CMVEIC0104(cProduto, cFornec, cLoja, cStatus, cPO, cPosicao, cInvoice,lAlte)
+	
 	nNumInte := 1
-	If ZZE->(dbSeek(xFilial("ZZE")+AVKEY(cInvoice,"ZZE_INVOIC")+AVKEY(cFornec,"ZZE_FORN")))
-		ZZE->(dbSeek(xFilial("ZZE")+AVKEY(cInvoice,"ZZE_INVOIC")+AVKEY(cFornec,"ZZE_FORN")+"9999999999",.T.))
-		ZZE->(dbSkip(-1))
-		nNumInte += ZZE->ZZE_NRINTE
+	
+	if lAlte
+		if empty(ZZE->ZZE_FORN) .and. !Empty(cFornec)
+			ZZE->(RecLock("ZZE",.F.))
+				ZZE->ZZE_FORN	:=	cFornec
+				ZZE->ZZE_LOJA	:=	cLoja
+			ZZE->(MSUnlock())
+			
+			ZZE->(dbSeek(xFilial("ZZE")+AVKEY(cInvoice,"ZZE_INVOIC")+AVKEY(cFornec,"ZZE_FORN")+"9999999999",.T.))
+			ZZE->(dbSkip(-1))
+			nNumInte += ZZE->ZZE_NRINTE
+			
+			ZZE->(dbgoto(nRecZZE))
 
+			ZZE->(RecLock("ZZE",.F.))
+				ZZE->ZZE_NRINTE	:=	nNumInte
+			ZZE->(MSUnlock())
+		EndIf
+
+	Else	
+		If ZZE->(dbSeek(xFilial("ZZE")+AVKEY(cInvoice,"ZZE_INVOIC")+AVKEY(cFornec,"ZZE_FORN")))
+			ZZE->(dbSeek(xFilial("ZZE")+AVKEY(cInvoice,"ZZE_INVOIC")+AVKEY(cFornec,"ZZE_FORN")+"9999999999",.T.))
+			ZZE->(dbSkip(-1))
+			nNumInte += ZZE->ZZE_NRINTE
+
+		EndIf
+		ZZE->(RecLock("ZZE",.T.))
+			ZZE->ZZE_FILIAL	:=	xFilial("ZZE")
+			ZZE->ZZE_INVOIC	:=	cInvoice
+			ZZE->ZZE_FORN	:=	cFornec
+			ZZE->ZZE_LOJA	:=	cLoja
+			ZZE->ZZE_DTINTE	:=	dDataBase
+			ZZE->ZZE_HRINTE	:=	Time()
+			ZZE->ZZE_NRINTE	:=	nNumInte
+			ZZE->ZZE_USER	:=	cUsername
+			ZZE->ZZE_STATUS	:=	"I"
+		ZZE->(MSUnlock())
+
+		nRecZZE  := ZZE->(Recno())
 	EndIf
 
-	ZZE->(RecLock("ZZE",.T.))
-		ZZE->ZZE_FILIAL	:=	xFilial("ZZE")
-		ZZE->ZZE_INVOIC	:=	cInvoice
-		ZZE->ZZE_FORN	:=	cFornec
-		ZZE->ZZE_LOJA	:=	cLoja
-		ZZE->ZZE_DTINTE	:=	dDataBase
-		ZZE->ZZE_HRINTE	:=	Time()
-		ZZE->ZZE_NRINTE	:=	nNumInte
-		ZZE->ZZE_USER	:=	cUsername
-		ZZE->ZZE_STATUS	:=	"I"
-	ZZE->(MSUnlock())
-
 	lCapaLog := .T.
-	nRecZZE  := ZZE->(Recno())
 
 Return
 
@@ -2035,7 +2548,7 @@ Return
 
 Static Function CMVEIC0103()
 	Local oDlg3
-	Local cTit       := "Relat�rio de Erros"
+	Local cTit       := "Relatório de Erros"
 	Local nCo1       := 1
 	Local nCo2       := 5
 	Local nCo3       := 20
@@ -2110,7 +2623,7 @@ Static Function CMVEIC0103()
 	Activate MSDialog oDlg3 Centered
 
 	If lConfirma3
-		Processa( {|| GeraRelatorio()},"Gerando Relat�rio de Integra��o...",OemToAnsi("Gerando Relat�rio..."),.F.)
+		Processa( {|| GeraRelatorio()},"Gerando Relatório de Integração...",OemToAnsi("Gerando Relatório..."),.F.)
 	EndIf
 
 Return
@@ -2124,7 +2637,7 @@ Static Function GeraRelatorio()
 	Local cQuery  := ""
 	Local aAux    := {}
 	Local aHead   := {}
-	Local cTitulo := "Relat�rio de Integra��es de Invoices"
+	Local cTitulo := "Relatório de Integrações de Invoices"
 	Local i
 	Local oExcel
 	Local oExcel2
@@ -2160,7 +2673,7 @@ Static Function GeraRelatorio()
 
 	If TMP1->(EOF())
 		TMP1->(dbCloseArea())
-		MsgStop("Dados n�o encontrados!")
+		MsgStop("Dados não encontrados!")
 		Return
 
 	EndIf
@@ -2170,9 +2683,9 @@ Static Function GeraRelatorio()
 	oExcel:AddTable (cTitulo,cTitulo)
 
 	If Empty(cInvoice)
-		aHead  := { "Invoice","Status Invoice","Status Item","Pedido","Posi��o","Cod. Item","Descri��o Item","Motivo"}
+		aHead  := { "Invoice","Status Invoice","Status Item","Pedido","Posição","Cod. Item","Descrição Item","Motivo"}
 	Else
-		aHead  := { "Status Item","Pedido","Posi��o","Cod. Item","Descri��o Item","Motivo"}
+		aHead  := { "Status Item","Pedido","Posição","Cod. Item","Descrição Item","Motivo"}
 		lInvSel := .T.
 	EndIf
 
@@ -2180,9 +2693,9 @@ Static Function GeraRelatorio()
 		oExcel:AddColumn(cTitulo,cTitulo,"",1, 1, .F.)
 	Next
 
-	//Cabe�alho
+	//Cabeçalho
 	aAux := {}
-	AADD(aAux,"Invoices integradas no per�odo de " + DTOC(dDtIni) + " at� " + DTOC(dDtFim) )
+	AADD(aAux,"Invoices integradas no período de " + DTOC(dDtIni) + " até " + DTOC(dDtFim) )
 
 	For i:=2 to Len(aHead)
 		AADD(aAux,"")
@@ -2255,11 +2768,11 @@ Static Function GeraRelatorio()
 
 	oExcel:Activate()
 	oExcel:GetXMLFile(cPath+cNome)
-	MsgInfo("Arquivo Gerado Com Sucesso, para ver os detalhes clique no bot�o de Log !")
+	MsgInfo("Arquivo Gerado Com Sucesso, para ver os detalhes clique no botão de Log !")
 
 	If !ApOleClient("MSExcel")
-		MsgAlert("Microsoft Excel n�o instalado!")
-		MsgAlert("O Relat�rio se encontra na pasta:"+Chr(13)+Chr(10)+cPath+cNome)
+		MsgAlert("Microsoft Excel não instalado!")
+		MsgAlert("O Relatório se encontra na pasta:"+Chr(13)+Chr(10)+cPath+cNome)
 		TMP1->(dbCloseArea())
 		Return
 	EndIf
@@ -2354,7 +2867,7 @@ User Function CMVEI01B
 
 	AADD(aRotina, {"Visualizar" , "U_CMVEI01C"  , 0, 2, 0, .T. })
 
-	//Array contendo os campos da tabela tempor�ria
+	//Array contendo os campos da tabela temporária
 	AAdd(aCampos,{"TR_FILIAL","C" ,TamSx3('EW5_FILIAL')[01], 0})
 	AAdd(aCampos,{"TR_PO"  	 ,"C" ,TamSx3('EW5_PO_NUM')[01], 0})
 	AAdd(aCampos,{"TR_POS" 	 ,"C" ,TamSx3('EW5_POSICA')[01], 0})
@@ -2365,13 +2878,13 @@ User Function CMVEI01B
 	AAdd(aCampos,{"TR_CAIXA" ,"C" ,TamSx3('ZD_CAIXA')[01], 0})
 	AAdd(aCampos,{"TR_QTDE"  ,"N" ,11, 3})
 
-	//Antes de criar a tabela, verificar se a mesma j� foi aberta
+	//Antes de criar a tabela, verificar se a mesma já foi aberta
 	If (Select("TRB") <> 0)
 		dbSelectArea("TRB")
 		TRB->(dbCloseArea ())
 	EndIf
 
-	//Criar tabela tempor�ria
+	//Criar tabela temporária
 	cArqTrb   := CriaTrab(aCampos,.T.)
 
 	//Criar e abrir a tabela
@@ -2524,7 +3037,7 @@ User Function CMVEI01D
 
 	Local aCampos	:= {}
 
-	//Array contendo os campos da tabela tempor�ria
+	//Array contendo os campos da tabela temporária
 	AAdd(aCampos,{"TR_FILIAL","C" ,TamSx3('EW5_FILIAL')[01], 0})
 	AAdd(aCampos,{"TR_PO"  	 ,"C" ,TamSx3('EW5_PO_NUM')[01], 0})
 	AAdd(aCampos,{"TR_POS" 	 ,"C" ,TamSx3('EW5_POSICA')[01], 0})
@@ -2534,13 +3047,13 @@ User Function CMVEI01D
 	AAdd(aCampos,{"TR_CAIXA" ,"C" ,TamSx3('ZD_CAIXA')[01], 0})
 	AAdd(aCampos,{"TR_QTDE"  ,"N" ,11, 3})
 
-	//Antes de criar a tabela, verificar se a mesma j� foi aberta
+	//Antes de criar a tabela, verificar se a mesma já foi aberta
 	If (Select("TRB") <> 0)
 		dbSelectArea("TRB")
 		TRB->(dbCloseArea ())
 	EndIf
 
-	//Criar tabela tempor�ria
+	//Criar tabela temporária
 	cArqTrb   := CriaTrab(aCampos,.T.)
 
 	//Criar e abrir a tabela
@@ -2632,7 +3145,7 @@ Static Function ViewDef()
 	
 	oView:SetOwnerView('FORM1','BOXFORM1')
 	oView:SetViewProperty('FORM1' , 'SETLAYOUT' , {FF_LAYOUT_VERT_DESCR_TOP,3} )
-	oView:EnableTitleView('FORM1' , 'Movimenta��o de Arquivo' )
+	oView:EnableTitleView('FORM1' , 'Movimentação de Arquivo' )
 
 Return oView
 
@@ -2721,7 +3234,7 @@ Return aLoad
 
 //----------------------------------------------------------------------------------
 
-Static Function zGrvArq()
+Static Function zGrvArq() //Grava info nas variaveis da SZM apenas nLayout == 1 .OR. nLayout == 5 
 	
 	Local cErr	     := ""
 	Local cZM_BL     := ""
@@ -2793,10 +3306,11 @@ Static Function zGrvArq()
 
 			aLn[06] := StrTran(aLn[6], ".", "" )
 
-			If lLimpaAnt = .F.
-				TcSqlExec("DELETE FROM " + RetSqlName("SZM") + " WHERE D_E_L_E_T_ = '*' AND ZM_INVOICE = '" + cZM_INVOIC + "' "   )
-				TcSqlExec("UPDATE " + RetSqlName("SZM") + " SET D_E_L_E_T_ = '*' WHERE ZM_FILIAL = '" + FwXfilial("SZM") + "' AND ZM_INVOICE = '" + cZM_INVOIC + "' ")
-				lLimpaAnt = .T.
+  		If lLimpaAnt = .F. //Alterado conforme GAP 082 - SZM.R_E_C_D_E_L_ = SZM.R_E_C_N_O_ 
+				//TcSqlExec("DELETE FROM " + RetSqlName("SZM") + " WHERE D_E_L_E_T_ = '*' AND ZM_INVOICE = '" + cZM_INVOIC + "' "   )
+				TcSqlExec("UPDATE " + RetSqlName("SZM") + " SZM SET SZM.D_E_L_E_T_ = '*', SZM.R_E_C_D_E_L_ = SZM.R_E_C_N_O_ WHERE ZM_FILIAL = '" + FwXfilial("SZM") + "' AND ZM_INVOICE = '" + cZM_INVOIC + "' ")
+				//TcSqlExec("UPDATE " + RetSqlName("SZM") + " SET D_E_L_E_T_ = '*' WHERE ZM_FILIAL = '" + FwXfilial("SZM") + "' AND ZM_INVOICE = '" + cZM_INVOIC + "' ")
+				LimpaAnt = .T.
 			EndIf
 
 			RecLock("SZM", .T.)
@@ -2832,7 +3346,7 @@ Return
 
 //----------------------------------------------------------------------------------
 
-Static function zLayouts()
+Static function zLayouts() //Configuração dos Layouts
 	Local cmd := ""
 	Local cDivi := CRLF + "------------------------------------------------" + CRLF
 
@@ -2893,14 +3407,14 @@ Static function zLayouts()
 	cmd += CRLF + "	[11] Ano Fab"
 	cmd += CRLF + "	[12] Ano Mod " + cDivi
 
-	cmd += CRLF + "Layout 05:  Pe�as (CSV)"
+	cmd += CRLF + "Layout 05:  Peças (CSV)"
 	cmd += CRLF + "	[01] SEQUENCIA DO ITEM"
 	cmd += CRLF + "	[02] NUMERO DA INVOICE"
 	cmd += CRLF + "	[03] NCM"
 	cmd += CRLF + "	[04] EX"
 	cmd += CRLF + "	[05] CODIGO PRODUTO"
 	cmd += CRLF + "	[06] QUANTIDADE"
-	cmd += CRLF + "	[07] VALOR UNIT�RIO"
+	cmd += CRLF + "	[07] VALOR UNITÁRIO"
 	cmd += CRLF + "	[08] CONTAINER"
 	cmd += CRLF + "	[09] CAIXA"
 	cmd += CRLF + "	[10] PESO LIQUIDO"
@@ -2915,7 +3429,7 @@ Return
 
 //----------------------------------------------------------------------------------
 /*/{Protheus.doc} fValTotal(nPosTot,nVal,lTipo)
-	Fun��o para validar a quantidade de cada item encontrada no arquivo com a 
+	Função para validar a quantidade de cada item encontrada no arquivo com a 
 	quantidade cadastrada no Protheus.
 
 	@type  Static Function
@@ -2926,12 +3440,12 @@ Return
 //----------------------------------------------------------------------------------
 
 Static Function fValTotal(nPosTot,nVal,lTipo)
-Local nRet := 0
-Local n    := 0 
-Local y    := 1
-Local aAux := {}
+	Local nRet := 0
+	Local n    := 0 
+	Local y    := 1
+	Local aAux := {}
 
-Default lTipo = .T.
+	Default lTipo = .T.
 	
 	if nLayOut == 5
 		if len(aQuantTot[nPosTot]) <> 6
@@ -2970,7 +3484,7 @@ Return nRet
 
 //----------------------------------------------------------------------------------
 /*/{Protheus.doc} CMV01ValAr()
-	Fun��o para validar a quantidade de cada item encontrada no arquivo com a 
+	Função para validar a quantidade de cada item encontrada no arquivo com a 
 	quantidade cadastrada no Protheus.
 
 	@type  Static Function
@@ -3087,7 +3601,7 @@ Static Function CMV01ValAr()
 		lOk := .T.
 		
 		if !lOk
-			MsgAlert("Existe inconsistencia de valores verifique o Logs", "Aten��o")
+			MsgAlert("Existe inconsistencia de valores verifique o Logs", "Atenção")
 		EndIf
 	Next
 	
@@ -3098,12 +3612,12 @@ Return lOk
 Programa.:              zRetCarUni
 Autor....:              CAOA - Sandro Ferreira
 Data.....:              04/03/2022
-Descricao / Objetivo:   Fun��o para remo��o de caracteres especiais do unitizador, 
-os caracteres removidos s�o baseados nos criterios da fun��o padr�o WmsVlStr 
+Descricao / Objetivo:   Função para remoção de caracteres especiais do unitizador, 
+os caracteres removidos são baseados nos criterios da função padrão WmsVlStr 
 =====================================================================================
 */
-Static Function zRetCarUni(cConteudo)
-	Local cCarEsp		:= "!@#$%�&()+{}^~�`][;.>,<=/�����'?|"+'"'
+Static Function zRetCarUni(cConteudo) //Substituir caracter especial
+	Local cCarEsp		:= "!@#$%¨&()+{}^~´`][;.>,<=/¢¬§ªº'?|"+'"'
 	Local nI			:= 0
 
 	//Retirando caracteres
@@ -3112,3 +3626,17 @@ Static Function zRetCarUni(cConteudo)
 	Next nI
 
 Return cConteudo
+
+//Ajustes Referente ao GAP081 ----------------------------------------------------
+Static Function ProcessaLock() //Verificar se o a chave esta lockada e libera no momento correto.
+
+	While _lRet <> .T.
+		Sleep( 3000 ) // Para o processamento por 3 segundos
+
+		If LockByName(_cChaveLock ,.T.,.T.)
+			_lRet := .T.
+		EndIf
+	EndDo
+Return
+//Fim dos ajustes Referente ao GAP081 ----------------------------------------------------
+

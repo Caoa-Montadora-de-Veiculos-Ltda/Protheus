@@ -27,25 +27,28 @@ CMV_FAT008 = Parametro se indica se processa a rotina ou não .T. = Valida a Excl
 User Function MS520VLD()
 Local cProcessa  := GetMV("CMV_FAT008",,.T.)
 Local cRet       := .F.
-Local dDtLim     := DaySum(SF2->F2_DAUTNFE, 1)
+Local dDtLim     := (GetMV("MV_SPEDEXC",,.T.)/24)//DaySum(SF2->F2_DAUTNFE, 1)'
 Local hHrAtu     := Time()
 Local dDtAtu     := Date()
 
 If cProcessa
 
-   //   Se ainda não foi transmitida, pode cancelar
-   if EMPTY(SF2->F2_DAUTNFE)  
+   //   Se ainda não foi transmitida(ou não autorizada), pode cancelar
+   if SF2->F2_FIMP $ 'N' .Or. EMPTY(SF2->F2_DAUTNFE)  
         cRet := .T.
+        dDtLim := (dDtLim+dDtAtu)
+   else
+        dDtLim := (dDtLim+SF2->F2_DAUTNFE)
    endif
    
-   //   No mesmo dia pode cancelar, nem precisa ver o horário
-   if ( SF2->F2_DAUTNFE =  dDtAtu .and. SF2->F2_DAUTNFE <= dDtLim )  
+   //   Até dia anterior do prazo pode cancelar sem precisar ver o horário
+   if ( dDtAtu < dDtLim  .and. SF2->F2_DAUTNFE < dDtLim )  
         cRet := .T.
    endif
 
-   // No dia Seguinte pode cancelar até o horário permitido
-   if (  SF2->F2_DAUTNFE <= dDtLim .and. dDtLim >= dDtAtu ) .and. (  hHrAtu  <= SF2->F2_HAUTNFE )
-        cRet := .T.
+   // No dia do prazo pode cancelar até o horário permitido
+   if ( dDtLim = dDtAtu ) .and. (  hHrAtu  <= SF2->F2_HAUTNFE )
+         cRet := .T.
    endif
 
    If !cRet

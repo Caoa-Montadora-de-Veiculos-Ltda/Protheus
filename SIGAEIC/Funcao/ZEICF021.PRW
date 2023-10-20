@@ -20,12 +20,11 @@ Historico:
 
 ===============================================================================================
 */
-User Function ZEICF021(cINTCSV,cPoNum,nLayout)
+User Function ZEICF021(cINTCSV,cPoNum,nLayout) //	
 
 Local aLinha		:= {}
 Local aItem 		:= {}
 
-Local lErro			:= .F.	
 Local lRetorno		:= .T.
 Local lRet 			:= .T.
 
@@ -35,7 +34,10 @@ Local nPos			:= 0
 Local nRec 			:= 0 
 
 Local cLinhaIT		:= ""
-
+Local cLoteHyudai   := SUPERGETMV( "CMV_EICHYU",.F., "" )  //Ajuste no Lote da Invoice antecipada para Hyundai
+Local cLote2Hyudai	:= SUPERGETMV( "CMV_EICHY2",.F., "" )  //Ajuste no Lote da Invoice antecipada para Hyundai se necessario
+Local cLote3Hyudai	:= SUPERGETMV( "CMV_EICHY3",.F., "" )  //Ajuste no Lote da Invoice antecipada para Hyundai se necessario
+Private lErro		:= .F.	
 Private aDados		:= {}
 Private cFornecedor	:= ""
 Private cForloj		:= ""
@@ -55,13 +57,16 @@ Private nVlrDesc	:= 0
 Private nVlOutD		:= 0
 Private cWKSZM      := 'WKSZM'
 Private nLay		:= 1
+Private lOk_Anu		:= "2-Não"
 
 Default cPoNum     := ""
 Default nLayOut   := 5
+aInvoice := {}
+nLay := nLayOut //Tipo do Layout
+ 
+cLoteHyudai := Alltrim(cLoteHyudai) + alltrim(cLote2Hyudai) + alltrim(cLote3Hyudai)
 
-nLay := nLayOut
-
-If Empty(cINTCSV)
+If Empty(cINTCSV) //Verifica o caminho do arquivo
 	U_FCMVEIC0101("Caminho do arquivo em Branco!",,,,"R",,,)
 	MsgInfo("Caminho do arquivo em Branco!" + CRLF +  "Para ver um log do resultado clique no botão 'Log' ")
 	Return(.F.)
@@ -72,11 +77,11 @@ EndIF
 	//Return(.F.)
 //EndIf
 
-DbSelectArea('SW2')
+DbSelectArea('SW2') //Capa de Purchase Order
 SW2->(DbSetOrder(1))
-
+ 
 If !Empty(cPoNum) .and. !SW2->(DbSeek(FwXFilial('SW2')+cPoNum))
-	U_FCMVEIC0101("Numero da Purchase Order Não Encontrado",,,,"R",,,)
+	U_FCMVEIC0101("Numero da Purchase Order Não Encontrado",,,,"R",cPoNum,,)
 	MsgInfo("Numero da Purchase Order " + Alltrim(cPoNum) + " Não Encontrado" + CRLF +  "Para ver um log do resultado clique no botão 'Log' ")
 
 	Return(.F.)
@@ -84,81 +89,86 @@ EndIf
 
 
 /*
-Lay-out do arquivo de importação
-[01] SEQUENCIA DO ITEM
-[02] NUMERO DA INVOICE
-[03] NCM
-[04] EX
-[05] CODIGO PRODUTO
-[06] QUANTIDADE
-[07] VALOR UNITÁRIO
-[08] CONTAINER
-[09] CAIXA
-[10] PESO LIQUIDO
-[11] NUMERO DA PURCHASE ORDER
-[12] CONHECIMENTO EMBARQUE
-[13] NAVIO
+	Lay-out do arquivo de importação
+	[01] SEQUENCIA DO ITEM
+	[02] NUMERO DA INVOICE
+	[03] NCM
+	[04] EX
+	[05] CODIGO PRODUTO
+	[06] QUANTIDADE
+	[07] VALOR UNITÁRIO
+	[08] CONTAINER
+	[09] CAIXA
+	[10] PESO LIQUIDO
+	[11] NUMERO DA PURCHASE ORDER
+	[12] CONHECIMENTO EMBARQUE
+	[13] NAVIO
 */
 
-FT_FUse(cINTCSV)	
+FT_FUse(cINTCSV) //Abre o arquivo .csv
 FT_FGotop()
 
-MontaSZM()
+MontaSZM() //Monta tabela SZM
 
-While !FT_FEof()
+While !FT_FEof() //Grava linha a linha as info na WKSZM
 	
-	cLinhaIT := FT_FReadLn()
+	cLinhaIT := FT_FReadLn() //Traz todas as informações da linha do arquivo
 	lErro    := .F.
 	nLinha++
 
-	If  Empty(cLinhaIT)                          .Or. ;
-        cLinhaIT                == ";"           .Or. ;
-        SubStr(cLinhaIT,1,10)   == "Engine No."  .Or. ;
+	If  Empty(cLinhaIT)                                      .Or. ; //Se a linha estiver vazia ou conter as info abaixo, pular linha
+        cLinhaIT                == ";"                       .Or. ;
+        SubStr(cLinhaIT,1,10)   == "Engine No."              .Or. ;
         cLinhaIT                == "CASE;MODEL;VIN-CODE;ENGINE;COLOR;SPECOP;KEYNO;T/MNO;"
 		FT_FSkip()
 		Loop
 	EndIF
 
-    aLinha := {}
+    aLinha 	 := {}
 	cLinhaIT := StrTran(cLinhaIT,';;','; ;')
-    aLinha   := StrTokArr(cLinhaIT, ";")
+	cLinhaIT := StrTran(cLinhaIT,';;','; ;')
+    aLinha   := StrTokArr(cLinhaIT, ";") //Distribui todas as informaçõs da linha para cada posição do array
     
-	cInvoice := aLinha[02]
+	cInvoice := aLinha[02] //Num do invoice
 	
-	if !Empty(cPoNum) .and. alltrim(cPoNum) <> alltrim(aLinha[11]) 
+	if !Empty(cPoNum) .and. alltrim(cPoNum) <> alltrim(aLinha[11]) //VALIDAÇÃO DE PO NUM
 		FT_FSkip()
 		loop
 	Endif
 	
-	If (Len(aLinha) <> 13 .and. nLay == 5) .or. (Len(aLinha) <> 12 .and. nLay == 1)
+	If (Len(aLinha) <> 13 .and. nLay == 5) .or. (Len(aLinha) <> 12 .and. nLay == 1) //Valida o comprimento do array aLinha com o tipo de layout
  		U_FCMVEIC0101("Layout da linha inválido!",nLinha,,cFornecedor,cForloj,"R",,,cInvoice)
 		lRetorno := .F.
 	EndIF
 	
-	If Empty(AllTrim(aLinha[5]))
+	If Empty(AllTrim(aLinha[5])) //Valida cod de produto preenchido
 		U_FCMVEIC0101("Código de produto em branco!",nLinha,,cFornecedor,cForloj,"R",AllTrim(cPoNum),,cInvoice)
 		lRetorno := .F.
 	EndIf
 
 	if nLay <> 5
-		aLinha := aClone( fAjuArr(aLinha,nLay) )
+		aLinha := aClone( fAjuArr(aLinha,nLay) ) //Reposiciona array aLinha e obtém valores de: cod prod + NCM + ExNCM
 	EndIf
 
 	aLinha[11] := Padr(aLinha[11],TamSx3("W2_PO_NUM")[1], " ")
 	
 	If !SW2->(DbSeek(FwXFilial('SW2') + aLinha[11]))
-		U_FCMVEIC0101("Numero da Purchase Order Não Encontrado",nLinha,,cFornecedor,cForloj,"R",,,cInvoice)
+		U_FCMVEIC0101("Numero da Purchase Order Não Encontrado",nLinha,,cFornecedor,cForloj,"R",aLinha[11],,cInvoice)
 		lRetorno := .F.
 	else
 		cFornecedor	:= SW2->W2_FORN
 		cForloj		:= SW2->W2_FORLOJ
 		cPedido 	:= SW2->W2_PO_SIGA
+		if (cFornecedor +cForloj) $  cLoteHyudai
+			aLinha[09]	 := fAjutCaixa(aLinha[09])
+		endif
+		
 	EndIf
 
-	nRec := SetSZM(aLinha,cFornecedor,cForloj,cPedido)
+	nRec := SetSZM(aLinha,cFornecedor,cForloj,cPedido) //Grava info na tab temp WKSZM
 	nPos := aScan(aDados, {|x| AllTrim(Upper(x[4])) == UPPER(ALLTRIM(aLinha[5])) .and. AllTrim(Upper(x[8])) == UPPER(ALLTRIM(aLinha[11]))})
 	//aItem := {}
-	aItem := {	StrZero( Val( aLinha[01] ), 4 ),;										//Linha
+	aItem := {	StrZero( Val( aLinha[01] ), 4 ),;					//Linha
 				VAL(aLinha[06]),;									//Quantidade
 				VAL(StrTran(aLinha[07], ",", ".")),;				//Valor
 				aLinha[08],;										//Container
@@ -176,7 +186,8 @@ While !FT_FEof()
 				0 ,; 						//RECSW5
 				nRec,; //Rec da Temporaria
 				"",;
-				.F.;
+				.F.,;
+				iif( nLay == 1 , aLinha[14] , "" );
 			}
 	
 	if nPos == 0
@@ -216,36 +227,37 @@ cInvoice := Padr(aDados[1,1],  TamSX3("EW4_INVOIC")[1] )
 
 If EW4->( dbSeek( xFilial("EW4") + cInvoice ) )
 	conout('Invoice já cadastrada anterioemnte')
-	U_FCMVEIC0101("Número da Invoice já existe!",nLinha,,EW4->EW4_FORN,EW4->EW4_FORLOJ,"R",AllTrim(aDados[1]),,cInvoice)
-	MsgInfo("Número da Invoice " + alltrim(aDados[1]) + " já existe!" + CRLF +  "Para ver um log do resultado clique no botão 'Log' ")
+	U_FCMVEIC0101("Número da Invoice já existe!",nLinha,,EW4->EW4_FORN,EW4->EW4_FORLOJ,"R",AllTrim(aDados[1,8]),,cInvoice)
+	//MsgInfo("Número da Invoice " + alltrim(aDados[1]) + " já existe!" + CRLF +  "Para ver um log do resultado clique no botão 'Log' ")
 	lRetorno := .F.
 Endif
-
-If lRetorno
+lErro := !lRetorno 
+//If lRetorno
 	//if nLay == 1
-		lRet := Val1Dados() // Unificando os Layout da Montadora com Barueri
-	//else
-	//	lRet := ValDados()	
-	//EndIf
+lRet := Val1Dados() // Unificando os Layout da Montadora com Barueri
+	//if lRet	
+SetArea()
+If lRet 
+	CMV01Capa()
+Else
+	lErro := .T.
+endif
 	
-	if lRet	
-		SetArea()
-		CMV01Capa()
-		If lCapaOK 
-			FWMsgRun(, {|| CMV01GravaInv() }, "", "Gravando Tabelas EW4 e EW5...")
+If lCapaOK .and. !lErro //.T. and !.F.
+	FWMsgRun(, {|| CMV01GravaInv() }, "", "Gravando Tabelas EW4 e EW5...")
 		
-			FWMsgRun(, {|| zGrvArq() }, "", "Gravando SZM...")
+	FWMsgRun(, {|| zGrvArq() }, "", "Gravando SZM...")
 		
-			// renomeia arquivo .csv
-			if lOk
-				fRename(cINTCSV,Subs(cINTCSV,1,At(".CSV",Upper(cINTCSV))-1)+".OK")
-			endif
-			MsgInfo("Integração concluida com sucesso!" + CRLF +  "Para ver um log do resultado clique no botão 'Log' ")
-		else
-			MsgStop("Integração Cancelada pelo Usuário!")	
-		EndIf
+	// renomeia arquivo .csv
+	if lOk
+		fRename(cINTCSV,Subs(cINTCSV,1,At(".CSV",Upper(cINTCSV))-1)+".OK")
+	endif
+	MsgInfo("Integração concluida com sucesso!" + CRLF +  "Para ver um log do resultado clique no botão 'Log' ")
+else
+	if lErro
+		MsgStop("Integração Cancelada Consulta Log!")	
 	else
-		lRetorno := .F.
+		MsgStop("Integração Cancelada pelo Usuário!")
 	endif
 
 EndIf
@@ -377,12 +389,12 @@ Return lRet
 Static Function Val1Dados()
 Local lRet 		:= .T.
 Local lErro 	:= .F.
-Local lAux 		:= .T.
+Local lAux 		:= .F.
 
 Local cAliasW3 	  := "TBLW3"
 Local cAliasSaldo := "TBWS5"
 Local cProduto 	  := ""
-Local cChave   	  := ""
+//Local cChave   	  := ""
 Local cTipo 	  := ""
 Local cPGI_NUM    := ""
 
@@ -392,12 +404,11 @@ Local nZ		:= 1
 Local nTotal 	:= 0
 Local nSaldoAnt := 0
 Local nSaldo    := 0
-Local nRec		:= 0
+//Local nRec		:= 0
 Local nQuant    := 0
 Local nLin      := 0
 Local aTotal    := {0,0}
-Local lCriaLin  := .F.
-Local lOk       := .T.
+//Local lCriaLin  := .F.
 Local aSaldos   := {}
 
 For nY := 1 to len(aDados)
@@ -407,7 +418,7 @@ For nY := 1 to len(aDados)
 	nSaldo    := 0
 	nSaldoAnt := 0 
 	aSaldos   := {}
-
+	lErro     := .F.
 	aSort( aDados[nY,5] , , , { |x,y| x[2] > y[2] } )
 	
 	cProduto := aDados[ nY , 4 ]
@@ -422,8 +433,6 @@ For nY := 1 to len(aDados)
 		U_FCMVEIC0101("Item " + AllTrim(cProduto) + " não existe no pedido " + AllTrim(cPoNum) ,nLinha,AllTrim(cProduto) ,cFornecedor,cForloj,"R",AllTrim(cPoNum), , cInvoice)
 		lErro := .T.
 	EndIf
-
-	lAux := .T.
 	
 	While !(cAliasw3)->(eof())
 		
@@ -441,7 +450,8 @@ For nY := 1 to len(aDados)
 							(cAliasW3)->W5_SALDO_Q,;
 							(cAliasW3)->W5_SALDO_Q ,;
 							SubStr((cAliasW3)->CHVW5,1,88),;
-							(cAliasW3)->SW5REC;
+							(cAliasW3)->SW5REC,;
+							(cAliasW3)->W5_PGI_NUM ;
 							})
 		else
 			aadd( aSaldos, {cProduto,;
@@ -449,7 +459,8 @@ For nY := 1 to len(aDados)
 							(cAliasW3)->W3_SALDO_Q,;
 							(cAliasW3)->W3_SALDO_Q ,;
 							SUBSTR((cAliasW3)->CHVW3,1,80),;
-							(cAliasW3)->SW3REC;
+							(cAliasW3)->SW3REC,;
+							"";
 							})
 			
 		EndIf
@@ -458,7 +469,7 @@ For nY := 1 to len(aDados)
 	nZ := 0
 	 
 	For nX := 1 to  len(aDados[nY,5]) 
-		
+		 
 		if aDados[nY,5,nX,19] 
 			LOOP
 		EndIf
@@ -474,7 +485,7 @@ For nY := 1 to len(aDados)
 			aDados[nY,5,nX,13] := cTipo
 			aDados[nY,5,nX,14] := aSaldos[nZ,6] //Rec
 			aDados[nY,5,nX,15] := aSaldos[nZ,5] //Chave
-			aDados[nY,5,nX,18] := cPGI_NUM
+			aDados[nY,5,nX,18] := aSaldos[nZ,7]  //cPGI_NUM
 			aDados[nY,5,nX,19] := .T.
 			aSaldos[nZ,4] := 0
 			aDados[nY,7] += aDados[nY,5,nX,16]
@@ -492,7 +503,7 @@ For nY := 1 to len(aDados)
 			aDados[nY,5,nX,13] := cTipo
 			aDados[nY,5,nX,14] := aSaldos[nZ,6] //Rec
 			aDados[nY,5,nX,15] := aSaldos[nZ,5] //Chave
-			aDados[nY,5,nX,18] := cPGI_NUM
+			aDados[nY,5,nX,18] := aSaldos[nZ,7] //cPGI_NUM
 			aDados[nY,5,nX,19] := .T.
 			aSaldos[nZ,4] := 0
 			aDados[nY,7] += aDados[nY,5,nX,16]
@@ -509,7 +520,7 @@ For nY := 1 to len(aDados)
 			aDados[nY,5,nX,13] := cTipo
 			aDados[nY,5,nX,14] := aSaldos[nZ,6] //Rec
 			aDados[nY,5,nX,15] := aSaldos[nZ,5] //Chave
-			aDados[nY,5,nX,18] := cPGI_NUM
+			aDados[nY,5,nX,18] := aSaldos[nZ,7] //cPGI_NUM
 			aDados[nY,5,nX,19] := .T.
 			aSaldos[nZ,4] := aSaldos[nZ,4] - nQuant
 			aDados[nY,7] += aDados[nY,5,nX,16]
@@ -540,7 +551,8 @@ For nY := 1 to len(aDados)
 						0 ,; 						//RECSW5
 						0 ,; 
 						"",;//Rec da Temporaria
-						.F.;
+						.F.,;
+						aDados[nY,5,nX ,20] ;
 					}
 			aDados[nY,5,nX ,12] := 0
 			aadd(aDados[nY,5],aItem)
@@ -555,7 +567,7 @@ For nY := 1 to len(aDados)
 				aDados[nY,5,nLin,13] := cTipo
 				aDados[nY,5,nLin,14] := aSaldos[nZ,6] //Rec
 				aDados[nY,5,nLin,15] := aSaldos[nZ,5] //Chave
-				aDados[nY,5,nLin,18] := cPGI_NUM
+				aDados[nY,5,nLin,18] := aSaldos[nZ,7] //cPGI_NUM
 				aDados[nY,5,nLin,19] := .T.
 				aSaldos[nZ,4] := 0
 				aDados[nY,7] += aDados[nY,5,nLin,16]
@@ -572,7 +584,7 @@ For nY := 1 to len(aDados)
 				aDados[nY,5,nLin,13] := cTipo
 				aDados[nY,5,nLin,14] := aSaldos[nZ,6] //Rec
 				aDados[nY,5,nLin,15] := aSaldos[nZ,5] //Chave
-				aDados[nY,5,nLin,18] := cPGI_NUM
+				aDados[nY,5,nLin,18] := aSaldos[nZ,7] //cPGI_NUM
 				aDados[nY,5,nLin,19] := .T.
 				aSaldos[nZ,4] := 0
 				aDados[nY,7] += aDados[nY,5,nLin,16]
@@ -588,7 +600,7 @@ For nY := 1 to len(aDados)
 				aDados[nY,5,nLin,13] := cTipo
 				aDados[nY,5,nLin,14] := aSaldos[nZ,6] //Rec
 				aDados[nY,5,nLin,15] := aSaldos[nZ,5] //Chave
-				aDados[nY,5,nLin,18] := cPGI_NUM
+				aDados[nY,5,nLin,18] := aSaldos[nZ,7] //cPGI_NUM
 				aDados[nY,5,nLin,19] := .T.
 				aSaldos[nZ,4] := aSaldos[nZ,4] - nQuant
 				aDados[nY,7] += aDados[nY,5,nLin,16]
@@ -598,18 +610,20 @@ For nY := 1 to len(aDados)
 	Next nX
 
 	
-	if aDados[nY,6] > aDados[nY,7] .and. !lErro
+	if aDados[nY,6] > aDados[nY,7] //.and. !lErro
 		U_FCMVEIC0101("Não há saldo para o Item " + AllTrim(cProduto) + "  pedido : " + cPoNum ,nLinha,AllTrim(cProduto) ,cFornecedor,cForloj,"R",AllTrim(cPoNum), , cInvoice)
 		lErro := .T.
 	endif
 
-	If  !lErro .and. Empty(GetAdvFVal("SYD", "YD_TEC", FwXFilial("SYD") + aDados[nY,2] + aDados[nY,3], 1, " ")) == .T.
+	If  /*!lErro .and.*/ Empty(GetAdvFVal("SYD", "YD_TEC", FwXFilial("SYD") + aDados[nY,2] + aDados[nY,3], 1, " ")) == .T.
 		U_FCMVEIC0101("NCM + Ex não cadastrado: " + aDados[nY,2] + aDados[nY,3] + " não encontrado no sistema!", nLinha,AllTrim(cProduto),cFornecedor,cForloj,"R",cPoNum,,cInvoice)
 		lErro := .T.
 	EndIF
-
+	if lErro
+		lAux := .T.
+	endif
 Next nY
-
+lErro := lAux
 lRet := !lErro
 
 Return lRet
@@ -798,7 +812,7 @@ Local cTexto := ""
 				cTipo     := aDados[nY,5,nX ,13]
 			endIf
 
-			nLinha := aDados[nY,5,nX ,1]
+			nLinha := Val(aDados[nY,5,nX ,1])
 						
 			if  cTipo == "7" .or. ( cTipo == "1" .and. !empty( aDados[nY,5,nX ,18]) )
 				if SW5->(DbSeek(cChave))
@@ -907,12 +921,13 @@ Local cTexto := ""
 							WKEW5->EW5_XCHAV2	:=  cChave
 							
 							If nLay == 1
-								WKEW5->EW5_XLOTE	:=	Alltrim( cPO ) + zRetCarUni(aDados[nY,5,nX,5])
+								WKEW5->EW5_XLOTE	:=	zRetCarUni(aDados[nY,5,nX,20]) + zRetCarUni(aDados[nY,5,nX,5])
 							EndIf
 							
 							If aDados[nY,5,nX,13] == "1"
 								lAnuente := .T.
 								WKEW5->EW5_XFLUXO := "1"
+								lOk_Anu		      := "1-Sim"
 							Else
 								WKEW5->EW5_XFLUXO := "2"
 							EndIF
@@ -920,7 +935,7 @@ Local cTexto := ""
 					WKEW5->(MSUnlock())
 				EndIf
 			Else
-				U_FCMVEIC0101("Chave não encontrado " + AllTrim(cProduto) + " pedido : " + cPoNum ,nLinha,AllTrim(cProduto) ,cFornecedor,cForloj,"R",AllTrim(cPoNum), , cInvoice)
+				U_FCMVEIC0101("Produto não encontrado " + AllTrim(cProduto) + " no pedido : " + cPoNum ,nLinha,AllTrim(cProduto) ,cFornecedor,cForloj,"R",AllTrim(cPoNum), , cInvoice)
 				lErro := .T.
 			EndIf
 		Next nY
@@ -1242,6 +1257,8 @@ Static Function CMV01Capa()
 		@ 8.6 + nOffP12,nCo2	Combobox lOk_Shp ITEMS {"1-Sim", "2-Não"} When .T. SIZE 40,12 Of oDlg2
 		@ 8.6 + nOffP12,nCo1 + nOffP12+15	Say "Ok Ship:"
 		@ 8.6 + nOffP12,nCo2 + nOffP12+15	MsGet	dOk_Shp Picture "@E" When lOk_Shp="1"  SIZE 80,12 Of oDlg2
+	    @ 9.6 + nOffP12,nCo1	Say "Itens Anuente:" SIZE 8,2 Of oDlg2
+		@ 9.6 + nOffP12,nCo2	MSGet lOk_Anu  When .F. SIZE 40,12 Of oDlg2
 	Activate MSDialog oDlg2 ON INIT EnchoiceBar(oDlg2,{|| IIF(CMV01ValCapa(),(lCapaOK := .T.,oDlg2:End()),)},{|| lCapaOk := .F. ,oDlg2:End() },) Centered
 
 Return
@@ -1320,7 +1337,7 @@ Return lRet
 
 //----------------------------------------------------------------------------------
 
-Static Function MontaSZM()
+Static Function MontaSZM() //Verificar se a tabela SZM existe e cria ela caso necessário.
 	Local aStrut1 := {}
 	Local nArea	  := Select()
 	Local cArqSZM_1 := soma1(cWKSZM)
@@ -1368,7 +1385,7 @@ Return
 
 //----------------------------------------------------------------------------------
 
-Static Function SetSZM(aLinha,cFornecedor,cForloj,cPedido)
+Static Function SetSZM(aLinha,cFornecedor,cForloj,cPedido) //Grava informações na SZM
 Local nRec := 0
 
 Default cFornecedor := ""
@@ -1386,7 +1403,7 @@ Default cPedido := ""
 		WKSZM->ZM_PROD   := aLinha[05]
 		WKSZM->ZM_DESCR  := Posicione("SB1", 1, FwxFilial("SB1") + Alltrim(aLinha[05]), "B1_DESC")
 		WKSZM->ZM_QTDE   := val(aLinha[06])
-		WKSZM->ZM_UNIT   := iif(nLay == 1 , zRetCarUni(Alltrim(aLinha[11])) + zRetCarUni(Alltrim(aLinha[09])),' ' )
+		WKSZM->ZM_UNIT   := iif(nLay == 1 , zRetCarUni(Alltrim(aLinha[14])) + zRetCarUni(Alltrim(aLinha[09])),' ' )
 		WKSZM->ZM_DOC    := ""
 		WKSZM->ZM_SERIE  := ""
 		WKSZM->ZM_FORNEC := cFornecedor
@@ -1411,21 +1428,21 @@ Return nRec
 //----------------------------------------------------------------------------------
 
 Static Function fUpdSZM(nReg,cPos,cForn,cLoja)
-Local aArea := GetArea()
+	Local aArea := GetArea()
 
-If nReg > 0
+	If nReg > 0
 
-	DbSelectArea('WKSZM')
-	WKSZM->(DbGoto(nReg))
-	RecLock('WKSZM', .F.)
-		WKSZM->ZM_POSICAO 	:= cPos
-		WKSZM->ZM_FORNEC	:= cForn
-		WKSZM->ZM_LOJA		:= cLoja	
-	WKSZM->(MsUnlock())
+		DbSelectArea('WKSZM')
+		WKSZM->(DbGoto(nReg))
+		RecLock('WKSZM', .F.)
+			WKSZM->ZM_POSICAO 	:= cPos
+			WKSZM->ZM_FORNEC	:= cForn
+			WKSZM->ZM_LOJA		:= cLoja	
+		WKSZM->(MsUnlock())
 
-EndIf
+	EndIf
 
-RestArea(aArea)
+	RestArea(aArea)
 
 Return
 
@@ -1436,16 +1453,20 @@ Return
 Static Function zGrvArq()
 	Local lLimpaAnt:= .F.
 	Local cErr	:= ""
+	Local _nStatus := 0
 	
-	DbSelectArea('WKSZM')
+	DbSelectArea('WKSZM') 
 	WKSZM->(DBGOTOP())
-
-	while WKSZM->(!Eof())
-		If lLimpaAnt = .F.
-			TcSqlExec("DELETE FROM " + RetSqlName("SZM") + " WHERE D_E_L_E_T_ = '*' AND ZM_INVOICE = '" + WKSZM->ZM_INVOICE + "' "   )
-			TcSqlExec("UPDATE " + RetSqlName("SZM") + " SET D_E_L_E_T_ = '*' WHERE ZM_FILIAL = '" + FwXfilial("SZM") + "' AND ZM_INVOICE = '" + WKSZM->ZM_INVOICE+ "' ")
-			lLimpaAnt = .T.
-		EndIF
+	//lLimpaAnt = .F. //Isso deve ser retirado.
+	
+	While WKSZM->(!Eof())
+	
+		If lLimpaAnt = .F. //Alterado conforme GAP 082 - SZM.R_E_C_D_E_L_ = SZM.R_E_C_N_O_ 
+			//TcSqlExec("DELETE FROM " + RetSqlName("SZM") + " WHERE D_E_L_E_T_ = '*' AND ZM_INVOICE = '" + WKSZM->ZM_INVOICE + "' "   )
+			TcSqlExec("UPDATE " + RetSqlName("SZM") + " SZM SET SZM.D_E_L_E_T_ = '*', SZM.R_E_C_D_E_L_ = SZM.R_E_C_N_O_  WHERE ZM_FILIAL = '" + FwXfilial("SZM") + "' AND ZM_INVOICE = '" + WKSZM->ZM_INVOICE+ "' ")
+		
+		lLimpaAnt = .T.
+		EndIf
 
 		RecLock("SZM", .T.)
 			SZM->ZM_FILIAL := WKSZM->ZM_FILIAL 
@@ -1511,6 +1532,7 @@ if nLayOut == 1
 	aAux[11] := aLinha[11] //NUMERO DA PURCHASE ORDER
 	aAux[12] := aLinha[03] //CONHECIMENTO EMBARQUE SW6
 	aAux[13] := aLinha[08] //NAVIO SW6
+	aadd(aAux,aLinha[01])
 Else
 	aAux := aClone(aLinha)
 endIf
@@ -1529,6 +1551,14 @@ Static Function zRetCarUni(cConteudo)
 
 Return cConteudo
 
+Static Function fAjutCaixa(cCase)
+
+cCase := alltrim(cCase)
+If Len(cCase) < 3 .and. Type(cCase) == "N"
+	cCase := strzero(val(cCase),3)
+endif
+
+Return cCase
 
 
 /*
