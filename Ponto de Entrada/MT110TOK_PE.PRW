@@ -4,6 +4,7 @@
 #DEFINE cFONT   '<b><font size="3" color="blue"><b>'
 #DEFINE cALERT  '<b><font size="3" color="red"><b>'
 #DEFINE cNOFONT '</b></font></b></u>'
+#DEFINE CRLF chr(13) + chr(10)  
 
 /*/{Protheus.doc} MT110TOK
 // Validacao dos campos customizados no TudoOk da Solicitacao de Compras
@@ -20,45 +21,59 @@
 
 User Function MT110TOK()
 
-Local _aArea  	:= GetArea()
-Local _lRet 	:= .T.
-//Local  _nOpc      := If(INCLUI,3, ;
-//					 IF(ALTERA,4, ;
-//					 5) )
+	Local _aArea  	:= GetArea()
+	Local _lRet 	:= .T.
 
-	//funcionalidade validar produtos de importação
-	// valida Tipo de Importacao, caso náo seja produto de importacao
-	// inibido conforme solicitação do DAC   _lRet := VLDI110TOK()
+	//Private _Logic := .F.
 	
-	//	Verifica se CENTO DE CUSTO, ITEM CONTÁBIL CLASSE DE VALOR estão preenchidos, 
-	//	ou há rateio do item DA SOLICITAÇÃO
-	If _lRet .and. FindFunction("U_ZCOMF010")
-		_lRet := U_ZCOMF010()
-	Endif
+	//Ajuste referente ao GAP091 -------------------------------------------
+	Public cCodCompr //Variável do campo C1_CODCOMP Código do comprador.
+
+		If !Empty(cCodCompr) .and. _lRet .and. FindFunction("U_ZCOMF055")
+			//_Logic := .T.
+			_lRet := U_ZCOMF055(cCodCompr)
 	
-	If _lRet .and. FindFunction("U_ZCOMF003")
-		_lRet := U_ZCF003SCVD()
-	Endif
-	//Gravar dados para auditoria
-	//If _lRet  .and. FindFunction("U_ZCOMF015")
-	//	_lRet := U_ZCOMF015( "SC" /*Doc*/,_nOpc, /*indica se devve mostrar somente a tela*/)
-	//Endif
+		EndIf
+		//Fim dos ajustes referente ao GAP091 -------------------------------------------	
 
-RestArea(_aArea)
+		//Local  _nOpc      := If(INCLUI,3, ;
+		//					 IF(ALTERA,4, ;
+		//					 5) )
 
-return _lRet
+		//funcionalidade validar produtos de importação
+		// valida Tipo de Importacao, caso náo seja produto de importacao
+		// inibido conforme solicitação do DAC   _lRet := VLDI110TOK()
+		
+		//	Verifica se CENTO DE CUSTO, ITEM CONTÁBIL CLASSE DE VALOR estão preenchidos, 
+		//	ou há rateio do item DA SOLICITAÇÃO
+		If _lRet .and. FindFunction("U_ZCOMF010")
+			_lRet := U_ZCOMF010()
+		Endif
+		
+		If _lRet .and. FindFunction("U_ZCOMF003")
+			_lRet := U_ZCF003SCVD()
+		Endif
+
+		//Gravar dados para auditoria
+		//If _lRet  .and. FindFunction("U_ZCOMF015")
+		//	_lRet := U_ZCOMF015( "SC" /*Doc*/,_nOpc, /*indica se devve mostrar somente a tela*/)
+		//Endif
+
+	RestArea(_aArea)
+
+Return _lRet
 
 
 
 //Funcao para validação
 Static Function	VLDI110TOK()
 
-Local lRet    := .T.
-Local nPosCI  := aScan(aHeader,{|x| AllTrim(x[2]) == 'C1_CORINT'})
-Local nPosCE  := aScan(aHeader,{|x| AllTrim(x[2]) == 'C1_COREXT'})
-Local nPosOT  := aScan(aHeader,{|x| AllTrim(x[2]) == 'C1_OPCION'})
-Local nPosIM  := aScan(aHeader,{|x| AllTrim(x[2]) == 'C1_IMPORT'})
-Local i 
+	Local lRet    := .T.
+	Local nPosCI  := aScan(aHeader,{|x| AllTrim(x[2]) == 'C1_CORINT'})
+	Local nPosCE  := aScan(aHeader,{|x| AllTrim(x[2]) == 'C1_COREXT'})
+	Local nPosOT  := aScan(aHeader,{|x| AllTrim(x[2]) == 'C1_OPCION'})
+	Local nPosIM  := aScan(aHeader,{|x| AllTrim(x[2]) == 'C1_IMPORT'})
+	Local i 
 
 	DbSelectArea("ZZ8")
 	Dbsetorder(1)
