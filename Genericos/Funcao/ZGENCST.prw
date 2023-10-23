@@ -410,7 +410,7 @@ If SB1->(MsSeek( FwxFilial("SB1") + AvKey(_cCodProd , "B1_COD") ))
         _cQry01 := "	"
         _cQry01 += " SELECT SB2.B2_COD, SUM(SB2.B2_VATU1) VALOR, SUM(SB2.B2_QATU) QTDE "            + CRLF
         _cQry01 += " FROM " +  RetSQLName("SB2") +" SB2 "                                           + CRLF
-        _cQry02 += " WHERE SB2.B2_FILIAL = '" + FWxFilial('SB2') + "' "                             + CRLF
+        _cQry01 += " WHERE SB2.B2_FILIAL = '" + FWxFilial('SB2') + "' "                             + CRLF
         _cQry01 += " AND SB2.B2_COD = '" + _cCodProd + "' "                                         + CRLF
         _cQry01 += " AND SB2.D_E_L_E_T_ = ' ' "                                                     + CRLF
         _cQry01 += " GROUP BY SB2.B2_COD "                                                          + CRLF
