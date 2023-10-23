@@ -32,8 +32,9 @@ User Function ZESTF013() //--U_ZESTF013()
     oBrowse:AddButton("4 - Processar Acerto"	    , { || IIF( zTelaInv() == 1, Processa( { || MATA340() }, "Acerto de inventario", "Aguarde .... Realizando o acerto de inventário...." ),Nil ), ZF13AtuZZI(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL), oBrowse:Refresh(.F.) } )
     oBrowse:AddButton("5 - Liberar Estoque"	        , { || IIF( zTelaLib() == 1, Processa( { || zBloqEst(.T., ZZI->ZZI_PRODUT, ZZI->ZZI_LOCAL, ZZI->ZZI_DATA) }, "Liberando Estoque", "Aguarde .... Realizando a liberação do estoque...." ),Nil ), oBrowse:Refresh(.F.) } ) 
     oBrowse:AddButton("Gerenciar Inventario"	    , { || ZESTF013A() ,ZF13AtuZZI(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL) ,oBrowse:Refresh(.F.) } )
-    oBrowse:AddButton("Relatorio de Conferencia"    , { || u_ZWMSR002()	})                                                            
     oBrowse:AddButton("Excluir Inventario"          , { || FWExecView("Excluir" ,"ZESTF014",5,,{|| .T.}),oBrowse:Refresh(.T.) } )
+    oBrowse:AddButton("Relatorio de Inventario "    , { || u_ZESTR001(ZZI->ZZI_MESTRE, ZZI->ZZI_LOCAL, ZZI->ZZI_PRODUT)	})                                                              
+
     oBrowse:DisableReport()
     oBrowse:Activate()
 
