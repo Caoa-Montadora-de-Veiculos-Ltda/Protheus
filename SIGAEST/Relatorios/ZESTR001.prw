@@ -201,7 +201,7 @@ Static Function zProcRel(_aRetParam, _cMestre, _cLocal, _cProduto)
                                                             (cAliasTRB)->SB2,;
                                                             (cAliasTRB)->ZZK,;
                                                             (cAliasTRB)->SB7,;
-                                                            (cAliasTRB)->SALDO_WIS})
+                                                            Iif(AllTrim((cAliasTRB)->B2_LOCAL) == "11",(cAliasTRB)->SALDO_WIS,0)})
         
             (cAliasTRB)->(DbSkip()) 
             nProc++

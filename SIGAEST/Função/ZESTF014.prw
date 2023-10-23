@@ -1,4 +1,6 @@
 #Include 'Protheus.ch'
+#Include 'Topconn.ch'
+#Include "TOTVS.CH"
 #Include 'FWMVCDef.ch'
 
 /*
