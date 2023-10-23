@@ -457,6 +457,12 @@ Begin Sequence
     			_cQuery += "	WHEN COALESCE(SB1.B1_XDTINC,'        ') <> ' ' " + CRLF 
     			_cQuery += " 		AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SB1.B1_XDTINC, 'YYYYMMDD'))) <= "+StrZero(_nMesRef,3) + " "
     			_cQuery += " 		AND NVL(SUM(MES_PONTOS.PONTOS),0) = 0 THEN '"+_aPontos[_nPos,1]+"' " + CRLF //--No periodo de 1 ano a partir da data de cadastro não possuir nenhuma venda
+    			_cQuery += "	WHEN COALESCE(SB1.B1_XUCLEG,'        ') <> ' ' " + CRLF 
+    			_cQuery += " 		AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SB1.B1_XUCLEG, 'YYYYMMDD'))) <= "+StrZero(_nMesRef,3) + " "
+    			_cQuery += " 		AND NVL(SUM(MES_PONTOS.PONTOS),0) = 0 THEN '"+_aPontos[_nPos,1]+"' " + CRLF //--No periodo de 1 ano a partir da data de cadastro não possuir nenhuma venda
+    			_cQuery += "	WHEN COALESCE(SD1SQL.DT_ULTCMP,'        ') <> ' ' " + CRLF 
+    			_cQuery += " 		AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SD1SQL.DT_ULTCMP, 'YYYYMMDD'))) <= "+StrZero(_nMesRef,3) + " "
+    			_cQuery += " 		AND NVL(SUM(MES_PONTOS.PONTOS),0) = 0 THEN '"+_aPontos[_nPos,1]+"' " + CRLF //--No periodo de 1 ano a partir da data de cadastro não possuir nenhuma venda
 			ElseIf AllTrim(_aPontos[_nPos,2])  == "Q"   //QUANTIDADE
 				//MONTAR AS PRIMEIRAS LINHAS OBEDECER ORDEM
 				//If _aPontos[_nPos,3] = "0"  //ATIVO significa que ainda esta em uma contagem de até com meses fora da curva
@@ -527,12 +533,12 @@ Begin Sequence
     _cQuery += " 				FROM MEDIAS " + CRLF
     _cQuery += " 				WHERE MEDIAS.D2_COD = SB1.B1_COD ),0) AS MOS " + CRLF				//--TMPMOS
  
-    _cQuery += " 		, NVL( (SELECT NVL(SB2SQL.SALDO_ESTOQUE / MEDIAS.DEMANDA_MEDIA,0 ) - "+StrZero(_nMesExcesso,3)+" *	MEDIAS.DEMANDA_MEDIA " + CRLF
+    _cQuery += " 		, NVL( (SELECT (NVL(SB2SQL.SALDO_ESTOQUE / MEDIAS.DEMANDA_MEDIA,0 ) - "+StrZero(_nMesExcesso,3)+" ) *	MEDIAS.DEMANDA_MEDIA " + CRLF
     _cQuery += " 				FROM MEDIAS " + CRLF
     _cQuery += " 				WHERE MEDIAS.D2_COD = SB1.B1_COD
     _cQuery += " 					AND MEDIAS.SALDO_ESTOQUE / MEDIAS.DEMANDA_MEDIA >= "+AllTrim(Str(_nMesExcesso))
     _cQuery += " 				) ,0)  AS EXCESSO_QTDE " + CRLF		//--ZO_EXQTDE
-    _cQuery += " 		, NVL( (SELECT (NVL(SB2SQL.SALDO_ESTOQUE / MEDIAS.DEMANDA_MEDIA,0 ) - "+StrZero(_nMesExcesso,3)+" *	MEDIAS.DEMANDA_MEDIA) * MEDIAS.CUSTO_UNITARIO " + CRLF
+    _cQuery += " 		, NVL( (SELECT ( (NVL(SB2SQL.SALDO_ESTOQUE / MEDIAS.DEMANDA_MEDIA,0 ) - "+StrZero(_nMesExcesso,3)+" ) *	MEDIAS.DEMANDA_MEDIA) * MEDIAS.CUSTO_UNITARIO " + CRLF
     _cQuery += " 				FROM MEDIAS " + CRLF
     _cQuery += " 				WHERE MEDIAS.D2_COD = SB1.B1_COD
     _cQuery += " 					AND MEDIAS.SALDO_ESTOQUE / MEDIAS.DEMANDA_MEDIA >= "+AllTrim(Str(_nMesExcesso))
@@ -650,6 +656,7 @@ Begin Sequence
 		//_ObrW:Refresh()
 		(_cAliasPesq)->(DbSkip())
 	EndDo	
+	_ObrW:Refresh()
 	If Select((_cAliasPesq)) <> 0
 		(_cAliasPesq)->(DbCloseArea())
 		//Ferase(_cTable+GetDBExtension())
@@ -674,7 +681,7 @@ If Select(_cAliasPesq) <> 0
 Endif
 */  
 DbSelectArea("SZO")
-_ObrW:Refresh(.T.)
+//_ObrW:Refresh(.T.)
 Return Nil
 
 
