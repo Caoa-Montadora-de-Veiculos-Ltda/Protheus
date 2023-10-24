@@ -340,6 +340,14 @@ Begin Sequence
 	Aadd(_aStruct, "ZO_MOS")
 	Aadd(_aStruct, "ZO_EXQTDE")
 	Aadd(_aStruct, "ZO_EXCUSTO")
+
+	Aadd(_aStruct, "ZO_MESINCL")   	//CURVA_INCLUSAO
+	Aadd(_aStruct, "ZO_MESPVEN")   	//CURVA_PVENDA
+	Aadd(_aStruct, "ZO_MESUVEN")   	//CURVA_UVENDA	  
+	Aadd(_aStruct, "ZO_MESPCMP")   	//CURVA_PCOMPRA	
+	Aadd(_aStruct, "ZO_MESUCMP") 	//CURVA_UCOMPRA
+	Aadd(_aStruct, "ZO_PONTOS") 	//CURVA_PONTOS
+
 	Aadd(_aStruct, "ZO_DTBASEC")
 	Aadd(_aStruct, "ZO_CODUSU")
 	Aadd(_aStruct, "ZO_NOMEUSU")
@@ -543,11 +551,40 @@ Begin Sequence
     _cQuery += " 				WHERE MEDIAS.D2_COD = SB1.B1_COD
     _cQuery += " 					AND MEDIAS.SALDO_ESTOQUE / MEDIAS.DEMANDA_MEDIA >= "+AllTrim(Str(_nMesExcesso))
     _cQuery += " 				),0)  AS CUSTO_EXCESSO " + CRLF		//--ZO_EXCUSTO 
-    _cQuery += "     	,'"+DtOs(_dDataCurva)+"' AS TMPDTBASEC " + CRLF								//--ZO_DTBASEC
-    _cQuery += "     	,'"+RetCodUsr()+"' 	AS TMPCODUSU " + CRLF									//--ZO_CODUSU 
-   	_cQuery += "     	,'"+Upper(UsrRetName(RetCodUsr()))+"' 	AS TMPNOMUSU " + CRLF				//--ZO_NOMUSU
-    _cQuery += "     	,'"+DtOs(Date())+"' AS TMPDTCALC " + CRLF									//--ZO_DTCALC 
-    _cQuery += "     	,'"+SubsTr(Time(),1,5)+"' 	AS TMPHSCALC " + CRLF 							//--ZO_HSCALC 
+
+    _cQuery += "     	, CASE	WHEN COALESCE(SB1.B1_XDTINC,'        ') <> ' ' " + CRLF
+    _cQuery += "     	  		THEN TRUNC(MONTHS_BETWEEN(TO_DATE('20230731', 'YYYYMMDD'), TO_DATE(SB1.B1_XDTINC, 'YYYYMMDD')))+1 " + CRLF
+    _cQuery += "     	 		ELSE 0 " + CRLF
+    _cQuery += "     	 		END AS CURVA_INCLUSAO " + CRLF
+
+    _cQuery += "     	, CASE	WHEN COALESCE(SB1.B1_X1VLEG,'        ') <> ' ' " + CRLF
+    _cQuery += "     	  		THEN TRUNC(MONTHS_BETWEEN(TO_DATE('20230731', 'YYYYMMDD'), TO_DATE(SB1.B1_X1VLEG, 'YYYYMMDD')))+1 " + CRLF
+    _cQuery += "     	 		ELSE 0 " + CRLF
+    _cQuery += "     	 		END AS CURVA_PVENDA " + CRLF
+
+    _cQuery += "     	, CASE	WHEN COALESCE(SB1.B1_XUVLEG,'        ') <> ' ' " + CRLF
+    _cQuery += "     	  		THEN TRUNC(MONTHS_BETWEEN(TO_DATE('20230731', 'YYYYMMDD'), TO_DATE(SB1.B1_XUVLEG, 'YYYYMMDD')))+1 " + CRLF
+    _cQuery += "     	 		ELSE 0 " + CRLF
+    _cQuery += "     	 		END AS CURVA_UVENDA " + CRLF
+
+    _cQuery += "     	, CASE	WHEN COALESCE(SB1.B1_X1CLEG,'        ') <> ' ' " + CRLF
+    _cQuery += "     	  		THEN TRUNC(MONTHS_BETWEEN(TO_DATE('20230731', 'YYYYMMDD'), TO_DATE(SB1.B1_X1CLEG, 'YYYYMMDD')))+1 " + CRLF
+    _cQuery += "     	 		ELSE 0 " + CRLF
+    _cQuery += "     	 		END AS CURVA_PCOMPRA " + CRLF
+
+    _cQuery += "     	, CASE	WHEN COALESCE(SB1.B1_XUCLEG,'        ') <> ' ' " + CRLF
+    _cQuery += "     	  		THEN TRUNC(MONTHS_BETWEEN(TO_DATE('20230731', 'YYYYMMDD'), TO_DATE(SB1.B1_XUCLEG, 'YYYYMMDD')))+1 " + CRLF
+    _cQuery += "     	 		ELSE 0 " + CRLF
+    _cQuery += "     	 		END AS CURVA_UCOMPRA " + CRLF
+
+    _cQuery += "     	 , (SELECT NVL(SUM(MES_PONTOS.PONTOS),0) FROM MES_PONTOS	WHERE MES_PONTOS.D2_COD =  SB1.B1_COD) AS PONTOS " + CRLF	
+
+    _cQuery += "     	,'"+DtOs(_dDataCurva)+"' AS DTBASEC " + CRLF							//--ZO_DTBASEC
+    _cQuery += "     	,'"+RetCodUsr()+"' 	AS CODUSU " + CRLF									//--ZO_CODUSU 
+   	_cQuery += "     	,'"+Upper(UsrRetName(RetCodUsr()))+"' 	AS NOMUSU " + CRLF				//--ZO_NOMUSU
+    _cQuery += "     	,'"+DtOs(Date())+"' AS DTCALC " + CRLF									//--ZO_DTCALC 
+    _cQuery += "     	,'"+SubsTr(Time(),1,5)+"' 	AS HSCALC " + CRLF 							//--ZO_HSCALC 
+
     _cQuery += "   		,' '        AS  D_E_L_E_T_ " + CRLF
 //    _cQuery += "  		,ROW_NUMBER() OVER (ORDER BY SZO.ZO_COD)     AS  R_E_C_N_O_ " + CRLF
 //		Estava dando erro no update constraint
@@ -794,25 +831,29 @@ Begin Sequence
 												If( _cTipo == "N" , 2 , If(_cTipo == "D" ,4 ,1) ) , ; // Codigo de formatação ( 1-General,2-Number,3-Monetário,4-DateTime )
 												_lTotalizar )
 	Next _nPos
-	_nCount := 0 	
-	While (_cAliasPesq)->(!Eof()) .And. LastKey() <> 27
-		(_cAliasPesq)->(DbGoto((_cAliasPesq)->NREGSZO))
-		_nCount ++ 	
+
+	_oBrw:GoTop()
+	_nUltimoReg	:= _oBrw:LogicLen()
+	_nReg 		:= _oBrw:At()
+	_oBrw:GoTop()
+	lExit := .F.
+
+	For _nPos := 1 To _nUltimoReg
 		_aLinha := Aclone(Array(_nColunas))
-		_oSay:SetText( "Lendo Registo " +cValToChar(_nCount) + " de "+cValToChar(_nRegProcess)+" aguarde..." ) 
-		ProcessMessage()
-		For _nPos := 1 To Len(_aLinha)
-			_nIdField := SZO->(FieldPos(_oBrw:GetColumn(_nPos):GetID()))
-			_xValor := SZO->(FieldGet(_nIdField)) 
-			_aLinha[_nPos] := If(ValType(_xValor) == "C", AllTrim(_xValor), _xValor)
+		For _nCount := 1 To Len(_aLinha)
+			//cIdField := oBrwPEC23:GetColumn(nPosCol):GetID()
+			_aLinha[_nCount] := AllTrim(_oBrw:GetColumnData(_nCount))
 		Next _nCount
 		_oFwExcel:AddRow(_cSheet ,_cTable, _aLinha) 
+		_oSay:SetText( "Lendo Registo " +cValToChar(_nPos) + " de "+cValToChar(_nUltimoReg)+" aguarde..." ) 
+		ProcessMessage()
 		_oBrw:GoDown()
-		If lExit .Or. LastKey() == 27
+		If lExit
 			Exit
 		Endif
-		(_cAliasPesq)->(DbSkip())
-	EndDo
+	Next _nPos
+	_oFwExcel:AddRow(_cSheet ,_cTable, _aLinha) 
+	_oSay:SetText( "Lendo Registo " +cValToChar(_nPos) + " de "+cValToChar(_nUltimoReg)+" aguarde..." ) 
 
 	_oFwExcel:Activate()
 	_oFwExcel:GetXMLFile(AllTrim(_cArqXML)+".xml")
