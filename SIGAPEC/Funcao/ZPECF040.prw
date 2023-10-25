@@ -488,6 +488,8 @@ Begin Sequence
 				//Else  //quando o inicial estiver igual a 0 (zero) significa que é o ultimo valor a ser considderado e sera maior que o mesmo
    				//	_cQuery += " 	WHEN NVL(MIN(MES_PONTOS.MESES),0) >=  "+AllTrim(_aPontos[_nPos,4])+"   THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF
 				//EndIf 	
+			ElseIf AllTrim(_aPontos[_nPos,2])  == "S"   //ULTIMA POSIÇÃO DA CURVA
+ 				_cQuery += " 	WHEN TRUNC(NVL(SB2SQL.SALDO_ESTOQUE,0)) > 0 	THEN 'I' "
 			ElseIf AllTrim(_aPontos[_nPos,2])  == "F"   //ULTIMA POSIÇÃO DA CURVA
 					_cCurvaFim := _aPontos[_nPos,1]
 			EndIf 
@@ -688,6 +690,11 @@ Begin Sequence
 		For _nPos := 1 To Len(_aStruct)
 			_xValor	:= (_cAliasPesq)->(FieldGet(FieldPos(_aStruct[_nPos])))
 			SZO->(FieldPut(FieldPos(_aStruct[_nPos]), _xValor))
+			If AllTrim(_aStruct[_nPos]) $ "ZO_MESPVEN|ZO_MESUVEN|ZO_MESPCMP|ZO_MESUCMP"
+				If ZPECF040AV( _aStruct[_nPos], @_xValor, _dDataCurva)  //regravo caso exista alterações de dados
+					SZO->(FieldPut(FieldPos(_aStruct[_nPos]), _xValor))
+				Endif
+			Endif
 		Next
 		SZO->(MSUnlock())
 		//_ObrW:Refresh()
@@ -722,6 +729,43 @@ DbSelectArea("SZO")
 Return Nil
 
 
+//Funcionalidade responsável por ajustar meses referente ao tempo que foi realizado compra/venda a base de calculo
+Static Function ZPECF040AV( _cCampo, _xValor, _dDataCurva)
+Local _nMes := 0
+Local _lRet := .T.
+Begin Sequence
+	If !AllTrim(_cCampo) $ "ZO_MESPVEN|ZO_MESUVEN|ZO_MESPCMP|ZO_MESUCMP"
+		_lRet := .F.
+		Break
+	Endif 
+	If AllTrim(_cCampo) == "ZO_MESPVEN" .And. !Empty( SZO->ZO_DTPRVND )
+		_nMes := DateDiffMonth( _dDataCurva , SZO->ZO_DTPRVND ) +1 //Apura Diferenca em Meses entre duas Datas(_cAliasPesq)->DT_PRI_FAT    
+		If _xValor <> _nMes
+			_xValor := _nMes
+			Break
+		Endif	
+	ElseIf AllTrim(_cCampo) == "ZO_MESUVEN" .And. !Empty( SZO->ZO_DTULVND )
+		_nMes := DateDiffMonth( _dDataCurva , SZO->ZO_DTULVND ) +1  //Apura Diferenca em Meses entre duas Datas(_cAliasPesq)->DT_PRI_FAT    
+		If _xValor <> _nMes
+			_xValor := _nMes
+			Break
+		Endif	
+	ElseIf AllTrim(_cCampo) == "ZO_MESPCMP" .And. !Empty( SZO->ZO_DTPRCMP )
+		_nMes := DateDiffMonth(_dDataCurva , SZO->ZO_DTPRCMP ) +1  //Apura Diferenca em Meses entre duas Datas(_cAliasPesq)->DT_PRI_FAT    
+		If _xValor <> _nMes
+			_xValor := _nMes
+			Break
+		Endif	
+	ElseIf AllTrim(_cCampo) == "ZO_MESUCMP" .And. !Empty( SZO->ZO_DTULCMP )
+		_nMes := DateDiffMonth( _dDataCurva , SZO->ZO_DTULCMP) +1 //Apura Diferenca em Meses entre duas Datas(_cAliasPesq)->DT_PRI_FAT    
+		If _xValor <> _nMes
+			_xValor := _nMes
+			Break
+		Endif	
+	Endif
+	_lRet := .F.
+End Sequence 
+Return _lRet 
 
 
 /*
@@ -852,9 +896,9 @@ Begin Sequence
 			Exit
 		Endif
 	Next _nPos
+	_oSay:SetText( "Gravando Planilha com "+cValToChar(_nUltimoReg)+" registro(s) aguarde..." ) 
+	ProcessMessage()
 	_oFwExcel:AddRow(_cSheet ,_cTable, _aLinha) 
-	_oSay:SetText( "Lendo Registo " +cValToChar(_nPos) + " de "+cValToChar(_nUltimoReg)+" aguarde..." ) 
-
 	_oFwExcel:Activate()
 	_oFwExcel:GetXMLFile(AllTrim(_cArqXML)+".xml")
 	_oFwExcel:DeActivate()
@@ -862,8 +906,10 @@ Begin Sequence
 	FreeObj(_oFwExcel)
 
 	// Abrindo o excel e abrindo o arquivo xml.
+	_oSay:SetText( "Abrindo Planilha com "+cValToChar(_nUltimoReg)+" registro(s) aguarde..." ) 
+	ProcessMessage()
 	_oExcel := MsExcel():New()           // Abre uma nova conex„o com Excel.
-	_oExcel:WorkBooks:Open(_cArqXML)      // Abre uma planilha.
+	_oExcel:WorkBooks:Open(_cArqXML+".xml")     // Abre uma planilha.
 	_oExcel:SetVisible(.T.)              // Visualiza a planilha.
 	_oExcel:Destroy()                    // Encerra o processo do gerenciador de tarefas.
 End Sequence 
