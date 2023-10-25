@@ -28,7 +28,7 @@ Local _lJob := IsBlind()
 
 	If _lJob
 		ConOut("*************************************************************************************************************************"	+ CRLF)
-		ConOut("----------- [ ZEICF022 ] - Inicio da funcionalidade "														+ CRLF)
+		ConOut("----------- [ ZEICF022 ] - Inicio da funcionalidade "+DtoC(Date())+" as "+Time()														+ CRLF)
 		ConOut("*************************************************************************************************************************"	+ CRLF)
 	EndIf
 
@@ -122,14 +122,15 @@ Private _aHeader    := {}
 		EndIf
 	Endif
 
+    _cProc  := SPACE(TamSX3("W6_HAWB")[1])
+    _cChave := SPACE(TamSX3("W6_HOUSE")[1])
+
 	IF _lJob
 
 	    ZEIC22job(_cURL,_lJob,_cAliasJ,_Encer,_Import)
 
     ELSE
 
-        _cProc  := SPACE(TamSX3("W6_HAWB")[1])
-        _cChave := SPACE(TamSX3("W6_HOUSE")[1])
 		_cProc  := Alltrim(SW6->W6_HAWB)
 		_cChave := Alltrim(SW6->W6_HOUSE)
 
@@ -165,7 +166,7 @@ Private _aHeader    := {}
 			_lRet :=  .F.
 		Else 
 			//Posicionar na SW6 para gravar os dados
-			ZEIC022GRV(_cHouse) 
+			ZEIC022GRV(_cHouse,(_cAlias)->NREGSW6) 
 
 			_cMsg := "Integração realizada com sucesso !"
 			MSGINFO( _cMsg, "[ZEICF022]" )
@@ -192,6 +193,7 @@ Return _lRet
 /*/
 Static Function ZEIC22job(_cURL,_lJob,_cAliasJ,_Encer,_Import)
 Local _lRet := .F.
+Local _sUrl := _cURL
 //Local _Teste:= 'SHA23090924'
 //			AND SW6.W6_HOUSE   = %Exp:_Teste%
 
@@ -204,24 +206,26 @@ Local _lRet := .F.
 			AND SW6.%notDel%		  
 	EndSql
 
-	If (_cAliasJ)->(Eof()) 	.Or. (_cAlias)->NREGSW6  == 0
+	If (_cAliasJ)->(Eof()) .Or. (_cAliasJ)->NREGSW6  == 0
         Conout("ZEICF022 - Somente processos da ASIA podem ser integrados. ")
 		_lRet :=  .F.
 	Else
-
+	   ConOut("*************************************************************************************************************************"	+ CRLF)
        Conout("ZEICF022 - Integraçao ASIA SHIPPING - JOB Inicio "+DtoC(date())+" "+Time())
 
 		While (_cAliasJ)->(!Eof()) 
 
-			If !Empty(Alltrim((_cAliasJ)->cBL))
-				_cUrl += "/"+Alltrim((_cAliasJ)->cBL)
+		    _cUrl := _sUrl
+	 	    _cChave := Alltrim((_cAliasJ)->cBL)
+
+			If !Empty(_cChave)
+				_cUrl += "/"+_cChave
 			Endif
 
 			_cRet := Httpget(_cUrl, '', _nTime , _aHeader)
 
 			if ValType(_cRet) = "U"
 			    Conout("ZEICF022 - Não existe retorno do Host, excedido o numero de tentativa de conexão ")
-				//Return .F.
 				(_cAliasJ)->(DbSkip())
 				LOOP
 			EndIf
@@ -230,15 +234,17 @@ Local _lRet := .F.
 			
 			If ValType(_oJSRet) <> "J"
 				Conout("ZEICF022 - Não retornado Json da conexão "+_cUrl)
-					//Return .F.
+				(_cAliasJ)->(DbSkip())
+				LOOP
 			Endif
 
 			_cHouse := AllTrim(_oJSRet:GetJsonText("jS_HouseBill"))
 
-			//Posicionar na SW6 para gravar os dados
-            ZEIC022GRV(_cHouse) 
-
-			_lRet :=  .T.
+			If  valtype(_cHouse) == 'C' .AND. !Empty(_cHouse) 
+				//Posicionar na SW6 para gravar os dados
+				ZEIC022GRV(_cHouse,(_cAliasJ)->NREGSW6) 
+				_lRet :=  .T.
+			ENDIF
 
 			(_cAliasJ)->(DbSkip())
 		Enddo
@@ -246,7 +252,6 @@ Local _lRet := .F.
 	Endif
 
 	Conout("ZEICF022 - Integraçao ASIA SHIPPING - Fim "+DtoC(date())+" "+Time())
-	MSGINFO("FIM", "[ZEICF022]" )
 
 Return _lRet
 
@@ -295,7 +300,7 @@ Posicionar na SW6 para gravar os dados
 @param House
 @type function
 /*/
-Static function ZEIC022GRV(_cHouse) 
+Static function ZEIC022GRV(_cHouse,NREGSW6) 
 Local _Ret  := ''
 Local _dETD := CTOD("  /  /    ")
 Local _dATA := CTOD("  /  /    ")
@@ -309,9 +314,8 @@ Local _cDest   := ' '
 Local _cVes    := ' '
 Local _cCem    := ' '
 
-dbSelectArea("SW6")
-dbSetOrder(10)   //Filial + House (10)
-If dbSeek(xFilial("SW6")+_cHouse)
+    SW6->(dbGoto(NREGSW6))
+
 	_dETD := CTOD(SUBSTR(_oJSRet:GetJsonText("jW_ETD"),1,10))
 	_dEMB := CTOD(SUBSTR(_oJSRet:GetJsonText("jW_ATD"),1,10))
 	_dATA := CTOD(SUBSTR(_oJSRet:GetJsonText("jW_ATA"),1,10))			
@@ -356,6 +360,5 @@ If dbSeek(xFilial("SW6")+_cHouse)
 	SW6->W6_XCSTAT  := AllTrim(_oJSRet:GetJsonText("cargaStatus")) 
 	SW6->W6_XCMSG   := AllTrim(_oJSRet:GetJsonText("cargaMensagem")) 
 	SW6->(MsUnLock())
-ENDIF
 
 Return(_Ret)
