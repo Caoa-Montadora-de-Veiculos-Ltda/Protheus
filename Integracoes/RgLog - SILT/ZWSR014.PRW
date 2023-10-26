@@ -28,7 +28,7 @@ User Function ZWSR014(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 	Default lBotao	 	:= .F.
 
 	Private cXTipo		:= ""
-	Private oJsRet    := JsonObject():New()
+	Private oJsRet      := JsonObject():New()
 
 	DbSelectArea("SA1")
 	DbSelectArea("SA2")
@@ -73,7 +73,8 @@ User Function ZWSR014(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 	cQry += "   	AND F3.F3_NFISCAL = SF1.F1_DOC "           			+ CRLF
     cQry += "   	AND F3.F3_CLIFOR  = SF1.F1_FORNECE "                + CRLF
 	cQry += "   	AND F3.F3_LOJA    = SF1.F1_LOJA "          			+ CRLF
-	cQry += "   	AND F3.D_E_L_E_T_ =	' ' "							+ CRLF
+	cQry += "   	AND F3.F3_DTCANC  <> ' '        "           		+ CRLF	
+	//cQry += "   	AND F3.D_E_L_E_T_ =	' ' "							+ CRLF
 	cQry += " WHERE F1.F1_FILIAL =  '"  + FWxFilial("SF1") + "'" 	   	+ CRLF
  	cQry += " AND	F1.F1_DOC    =  '"  + alltrim(cNota)   + "'"   	    + CRLF
 	cQry += " AND F1.F1_SERIE    =  '"  + alltrim(cSerie)  + "'"   	    + CRLF
@@ -104,7 +105,6 @@ User Function ZWSR014(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 
 				SA2->(dbSetOrder(3))
 				If SA2->(dbSeek(xFilial("SA2")+SA1->A1_CGC))
-
 					cForn := SA2->A2_COD
 					cLoja := SA2->A2_LOJA
 					cCnpj := SA2->A2_CGC
@@ -235,12 +235,13 @@ User Function ZWSR014(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 
 RETURN()
 
+
 Static Function ZWSR007ITE( _oJsEnt, cNota, cSerie, cForn, cLoja ,_cAlias )
 	Local _nPos   	:= 0
 	Local cCodFor	:= ""
 	Local cLojaFor	:= ""
 	Local cCodProd	:= ""
-	Local _nItem		:= 1
+	Local _nItem	:= 1
 
 	Private _aItens := {}
 
@@ -290,7 +291,7 @@ Static Function ZWSR007ITE( _oJsEnt, cNota, cSerie, cForn, cLoja ,_cAlias )
 			_aItens[_nPos]['nu_serie_produto']  := ""
 			_aItens[_nPos]['dt_addrow']    	    := ""
 			_aItens[_nPos]['nu_interface'] 	    := ""
-			_aItens[_nPos]['dt_processado']      := ""
+			_aItens[_nPos]['dt_processado']     := ""
 			_aItens[_nPos]['tp_nota']           := cXTipo
 			_aItens[_nPos]['nu_doc_erp']   	    := Alltrim((_cAlias)->D1_DOC)
 			_aItens[_nPos]['cd_registro']  	    := ""
@@ -335,8 +336,8 @@ Static Function ZWSR007ITE( _oJsEnt, cNota, cSerie, cForn, cLoja ,_cAlias )
 
 Return(_aItens)
 
-Static Function zBuscaCd(_cCodProduto)
 
+Static Function zBuscaCd(_cCodProduto)
 Local _cRet		:= "RGLOG"
 Local cQry      := '' 
 Local _cAlsSBM 	:= GetNextAlias()  
@@ -347,12 +348,12 @@ Local _cAlsSBM 	:= GetNextAlias()
 
 	cQry := " SELECT BM_CODMAR  FROM "+RetSqlName("SB1")+" SB1 "
 	cQry += " 	INNER JOIN "+RetSqlName("SBM")+" SBM "
-	cQry += " 	ON SBM.BM_FILIAL = SB1.B1_FILIAL "
-	cQry += " 	AND SBM.BM_GRUPO = SB1.B1_GRUPO "
+	cQry += " 	ON SBM.BM_FILIAL   = SB1.B1_FILIAL "
+	cQry += " 	AND SBM.BM_GRUPO   = SB1.B1_GRUPO "
 	cQry += " 	AND SBM.D_E_L_E_T_ = ' ' "
-	cQry += " WHERE SB1.B1_FILIAL = '" + FWxFilial("SB1") +"' "
-	cQry += " AND SB1.B1_COD = '"  + alltrim(_cCodProduto)  + "' "
-	cQry += " AND SB1.D_E_L_E_T_ = ' ' "
+	cQry += " WHERE SB1.B1_FILIAL  = '" + FWxFilial("SB1") +"' "
+	cQry += " AND SB1.B1_COD       = '" + alltrim(_cCodProduto)  + "' "
+	cQry += " AND SB1.D_E_L_E_T_   = ' ' "
 
 	dbUseArea(.T.,"TOPCONN",TcGenQry(,,cQry),_cAlsSBM,.T.,.F.)
 	
@@ -377,8 +378,8 @@ Local _cAlsSBM 	:= GetNextAlias()
 
 Return(_cRet)
 
-Static Function zBuscaInv(_cHawb, _cFornec, _cLjFornec, cNota)
 
+Static Function zBuscaInv(_cHawb, _cFornec, _cLjFornec, cNota)
 Local _cRet		:= cNota
 Local cQry      := '' 
 Local _cAlsSW9 	:= GetNextAlias()  
@@ -387,12 +388,12 @@ Local _cAlsSW9 	:= GetNextAlias()
 		(_cAlsSW9)->(dbCloseArea())
 	EndIf
 
-	cQry := " SELECT W9_INVOICE FROM " +RetSqlName("SW9")+" SW9 "
+	cQry := " SELECT W9_INVOICE FROM " + RetSqlName("SW9")+" SW9 "
 	cQry += " 	WHERE SW9.W9_FILIAL = '" + FWxFilial("SW9") +"' "
- 	cQry += " 	AND SW9.W9_HAWB	= '"  + alltrim(_cHawb)  + "' "
- 	cQry += " 	AND SW9.W9_FORN = '"  + alltrim(_cFornec)  + "' "
- 	cQry += " 	AND SW9.W9_FORLOJ = '"  + alltrim(_cLjFornec)  + "' "
-  	cQry += " 	AND SW9.D_E_L_E_T_ = ' ' "
+ 	cQry += " 	AND SW9.W9_HAWB	    = '" + alltrim(_cHawb)  + "' "
+ 	cQry += " 	AND SW9.W9_FORN     = '" + alltrim(_cFornec)  + "' "
+ 	cQry += " 	AND SW9.W9_FORLOJ   = '" + alltrim(_cLjFornec)  + "' "
+  	cQry += " 	AND SW9.D_E_L_E_T_  = ' ' "
 
 	dbUseArea(.T.,"TOPCONN",TcGenQry(,,cQry),_cAlsSW9,.T.,.F.)
 	
