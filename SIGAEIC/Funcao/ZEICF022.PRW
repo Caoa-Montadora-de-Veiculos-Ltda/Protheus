@@ -39,7 +39,7 @@ Local _lJob := IsBlind()
 			_cEmpresa 	:=  _aParam[1]
 			_cFilial 	:=  _aParam[2]
 			CONOUT("INICIANDO EMPRESA "+_cEmpresa)
-			CONOUT("INICIANDO FILIAL "+_cFilial)
+			CONOUT("INICIANDO FILIAL  "+_cFilial)
 			RpcClearEnv()
 			RpcSetType(3)
 			Prepare Environment Empresa _cEmpresa Filial _cFilial Modulo "EIC"
@@ -48,7 +48,7 @@ Local _lJob := IsBlind()
 			_cEmpresa	:=	"01"
 			_cFilial	:=  "2010022001"
 			CONOUT("INICIANDO EMPRESA "+_cEmpresa)
-			CONOUT("INICIANDO FILIAL "+_cFilial)
+			CONOUT("INICIANDO FILIAL  "+_cFilial)
 			RpcClearEnv()
 			RpcSetType(3)
 			Prepare Environment Empresa _cEmpresa Filial _cFilial Modulo "EIC"
@@ -64,7 +64,6 @@ Static Function ZEICF022AP(_cUrl, _cChave, _lToken, _lJob)
 Local _aMsg		:= {}
 Local _lRet 	:= .T.
 
-//após validações pde deixar os retornos em branco e validar se estiver em branco é erro
 Default _cUrl 	:= "https://api.asiashipping.com.br/bot/house"
 Default _cChave := ""    //"ASP20100044"  //informações como numero da House
 Default _lToken := .F. 
@@ -149,7 +148,6 @@ Private _aHeader    := {}
 			Return .F.
 		Endif
 
-		//Havia um endif antes desta linha Ativação de workareas
 		_cHouse := AllTrim(_oJSRet:GetJsonText("jS_HouseBill"))
 		BeginSql Alias _cAlias
 			SELECT 	SW6.R_E_C_N_O_ NREGSW6
@@ -161,7 +159,7 @@ Private _aHeader    := {}
 				AND SW6.%notDel%		  
 		EndSql 
 
-		If (_cAlias)->(Eof()) .Or. (_cAlias)->NREGSW6  == 0
+		If (_cAlias)->(Eof()) .Or. (_cAlias)->NREGSW6 == 0
 			Aadd(_aMsg,"Somente processos da ASIA podem ser integrados. "+_cChave)
 			_lRet :=  .F.
 		Else 
@@ -173,7 +171,7 @@ Private _aHeader    := {}
 			_lRet :=  .T.
 		Endif 
 
-    ENDIF  //removido lá de cima
+    ENDIF  
 
 If Select(_cAlias) <> 0
 	(_cAlias)->(DbCloseArea())
