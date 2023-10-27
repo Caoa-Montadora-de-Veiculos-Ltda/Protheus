@@ -65,20 +65,24 @@ Descricao / Objetivo:   Pós validações da inclusão
 */
 Static Function zVldIncZZI(oModel)
 	Local oModelZZI     := oModel:GetModel("ZZIMASTER") 
-    Local cAliasQry     := ""
+    Local cAliasQry     := GetNextAlias()
+    Local cQryZZI       := ""
     Local lRet          := .T.
 
     If oModel:GetOperation() == MODEL_OPERATION_INSERT
-        cAliasQry := GetNextAlias()
-        BeginSql Alias cAliasQry
-            SELECT 1
-            FROM %Table:ZZI% ZZI
-            WHERE ZZI.ZZI_FILIAL = %xFilial:ZZI%
-                AND ZZI.ZZI_LOCAL = %Exp:oModelZZI:GetValue("ZZI_LOCAL")%
-                AND ZZI.ZZI_STATUS != %Exp:'3'%
-                AND ZZI.%NotDel%
-        EndSql
 
+        cQryZZI := " SELECT * FROM " + RetSQLName("ZZI") + " ZZI "                               + CRLF
+        cQryZZI += " WHERE ZZI.D_E_L_E_T_ = ' ' "                                               + CRLF
+        cQryZZI += " AND ZZI.ZZI_STATUS <> '3' "                                                + CRLF
+        cQryZZI += " AND ZZI.ZZI_LOCAL = '" + oModelZZI:GetValue("ZZI_LOCAL") + "' "            + CRLF
+        If !Empty(oModelZZI:GetValue("ZZI_PRODUT"))
+            cQryZZI += " AND ZZI.ZZI_PRODUT = '" + oModelZZI:GetValue("ZZI_PRODUT") + "' "            + CRLF
+        EndIf
+
+        DbUseArea( .T., "TOPCONN", TcGenQry(,,cQryZZI), cAliasQry, .T., .T. )
+
+        DbSelectArea( cAliasQry )
+        (cAliasQry)->( DbGoTop() )
         If (cAliasQry)->(!Eof())
             lRet := .F.
             Help( ,, "Caoa",, "Existe inventario em contagem para o armazem " +;
