@@ -154,7 +154,7 @@ Static Function zProcRel(_aRetParam, _cMestre, _cLocal, _cProduto)
         EndIf
 
         If _aRetParam[01] == "Saldo Protheus x Saldo Wis"
-            cQuery += " AND VIEW_GERAL.SB2 <> VIEW_GERAL.SALDO_WIS " + CRLF
+            cQuery += " AND VIEW_GERAL.SB2 <> NVL(VIEW_GERAL.QTDE_WIS,0)  " + CRLF
         EndIf
 
         If _aRetParam[01] == "Saldo Protheus x Contagem Mestre"
@@ -170,7 +170,7 @@ Static Function zProcRel(_aRetParam, _cMestre, _cLocal, _cProduto)
         EndIf
 
         If _aRetParam[01] == "Contagem Eleita x Saldo Wis"
-            cQuery += " AND VIEW_GERAL.SB7 <> VIEW_GERAL.SALDO_WIS" + CRLF
+            cQuery += " AND VIEW_GERAL.SB7 <> NVL(VIEW_GERAL.QTDE_WIS,0) " + CRLF
         EndIf
         
         cQuery += "  ORDER BY VIEW_GERAL.B2_COD "
