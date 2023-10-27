@@ -18,7 +18,7 @@ Local cTitulo   := "Motivos do cancelamento da NF de entrada"  //"Exportação NF 
 
 	If _cEmp == "2020" //Executa o p.e. Franco da Rocha
 
-		aAdd(aParamBox,{2 ,"Mudança N.e Série, Valor, TES da NF ?"      ,1,{"Não","Sim"},40,"",.F.})
+		aAdd(aParamBox,{2 ,"Muda N.e Série, Valor, TES da NF ?",1,{"Não","Sim"},40,"",.F.})
 
 		If ParamBox(aParamBox,cTitulo,@aRet)
 			If MV_PAR01 == 'Sim'
