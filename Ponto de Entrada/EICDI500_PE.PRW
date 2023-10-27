@@ -23,7 +23,10 @@ Local cIntFin   := ""
 
 MV_PAR60 += TIME() + " " + cParam + " " + Char(13) + Char(10)
 
-If cParam == "DI500LOTES_ALT_CPOSENC"
+If cParam == "AROTINA"
+     aAdd( aRotina, { '>>> CAOA - Integração ASIA', "U_ZEICF022()"   ,0 ,3 } )
+
+ElseIf cParam == "DI500LOTES_ALT_CPOSENC"
 	//If FindFunction("U_CMVEIC02")
 	//	lRet := U_CMVEIC02()
 	//Endif		
