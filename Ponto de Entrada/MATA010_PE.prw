@@ -151,10 +151,10 @@ If aParam <> NIL
 	nOpcx := oObj:GetOperation()
 
 	If cIdPonto == 'FORMCOMMITTTSPOS' 
-	
+
 		IF _cEmp = '2020' .AND. _cFilial = '2001' .AND. Substr(M->B1_COD,1,1) = "R" .AND. !FWIsInCallStack("U_ZPECF023")//somente Peças Barueri
-	
-			If nOpcx == 3  .or.  nOpcx == 4  .or.  nOpcx == 5  //Inclusão ou Alteração ou Excluir
+	       
+				If nOpcx == 3  .or.  nOpcx == 4  .or.  nOpcx == 5  //Inclusão ou Alteração ou Excluir
         		cCodProd := M->B1_COD
 				RecLock("SB1", .F.)
 					SB1->B1_XDTULT := Date()
@@ -163,6 +163,12 @@ If aParam <> NIL
 			EndIf
 
 		EndIf
+
+		IF _cEmp = '2020' .AND. _cFilial = '2001' .AND. nOpcx == 3 .AND. !FWIsInCallStack("U_ZPECF023")//somente Peças Barueri
+           	RecLock("SB1", .F.)
+				SB1->B1_XDTINC := Date()
+			SB1->(MsUnlock())
+        Endif
 
 	ElseIf cIdPonto == 'FORMCOMMITTTSPRE'
 

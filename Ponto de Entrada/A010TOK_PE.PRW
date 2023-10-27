@@ -34,7 +34,9 @@ IF M->B1_IMPORT <> SB1->B1_IMPORT .and. cEmp <> "2010"
     ZZN_CAMPO  := "B1_IMPORT"
     ZZN_MOVTO  := "ALTERACAO DO CAMPO B1_IMPORT"
     ZZN->(MsUnlock())
-    cBloqProd   := .T.
+    IF SX5->X5_TABELA <> "SE"
+       cBloqProd   := .T.
+    ENDIF
 ENDIF
  
 IF M->B1_ORIGEM <> SB1->B1_ORIGEM .and. cEmp <> "2010" 
