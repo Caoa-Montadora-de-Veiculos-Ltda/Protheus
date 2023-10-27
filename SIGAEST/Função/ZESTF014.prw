@@ -75,7 +75,7 @@ Static Function zVldIncZZI(oModel)
             FROM %Table:ZZI% ZZI
             WHERE ZZI.ZZI_FILIAL = %xFilial:ZZI%
                 AND ZZI.ZZI_LOCAL = %Exp:oModelZZI:GetValue("ZZI_LOCAL")%
-                AND ZZI.ZZI_STATUS != %Exp:'6'%
+                AND ZZI.ZZI_STATUS != %Exp:'3'%
                 AND ZZI.%NotDel%
         EndSql
 

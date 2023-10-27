@@ -49,8 +49,9 @@ Static Function zProcRel(_aRetParam, _cMestre, _cLocal, _cProduto)
 
 	Local cQuery	  	:= ""
     Local nOpcFile	    := GETF_LOCALHARD+GETF_RETDIRECTORY+GETF_NETWORKDRIVE
-    Local cArquivo         := ""
+    Local cArquivo      := ""
 	Local cAliasTRB		:= GetNextAlias()
+    Local _cPlanilha    := "Mestre: "+_cMestre
 	//Local cArquivo	  	:= GetTempPath()+'inventario'+SUBSTRING(dtoc(date()),1,2)+SUBSTRING(dtoc(date()),4,2)+SUBSTRING(dtoc(date()),9,2)+'_'+SUBSTRING(time(),1,2) +SUBSTRING(time(),4,2) +SUBSTRING(time(),7,2)+'.xml'
 	Local oFWMsExcel
 	Local oExcel
@@ -69,16 +70,16 @@ Static Function zProcRel(_aRetParam, _cMestre, _cLocal, _cProduto)
 
         //Criando a Tabela
 
-        oFWMsExcel:AddTable("Relatorio","Planilha01")
+        oFWMsExcel:AddTable("Relatorio",_cPlanilha)
         //FWMsExcel():AddColumn(< cWorkSheet >, < cTable >, < cColumn >, < nAlign >, < nFormat >, < lTotal >)-> NIL
-        oFWMsExcel:AddColumn("Relatorio","Planilha01","Empresa Wis"            		,1  ,1  )
-        oFWMsExcel:AddColumn("Relatorio","Planilha01","Produto"                     ,1  ,1  )
-        oFWMsExcel:AddColumn("Relatorio","Planilha01","Descrição"                   ,1  ,1  )
-        oFWMsExcel:AddColumn("Relatorio","Planilha01","Local"                       ,1  ,1  )
-        oFWMsExcel:AddColumn("Relatorio","Planilha01","Saldo Protheus (SB2)"   	    ,3  ,2  )
-        oFWMsExcel:AddColumn("Relatorio","Planilha01","Contagem (SBK)"              ,3  ,2  )
-        oFWMsExcel:AddColumn("Relatorio","Planilha01","Contagem Efetiva (SB7)" 	    ,3  ,2  )
-        oFWMsExcel:AddColumn("Relatorio","Planilha01","Saldo Wis (RgLog)"           ,3  ,2  )
+        oFWMsExcel:AddColumn("Relatorio",_cPlanilha,"Empresa Wis"            	,1  ,1  )
+        oFWMsExcel:AddColumn("Relatorio",_cPlanilha,"Produto"                     ,1  ,1  )
+        oFWMsExcel:AddColumn("Relatorio",_cPlanilha,"Descrição"                   ,1  ,1  )
+        oFWMsExcel:AddColumn("Relatorio",_cPlanilha,"Local"                       ,1  ,1  )
+        oFWMsExcel:AddColumn("Relatorio",_cPlanilha,"Saldo Protheus (SB2)"   	    ,3  ,2  )
+        oFWMsExcel:AddColumn("Relatorio",_cPlanilha,"Contagem (ZZK)"              ,3  ,2  )
+        oFWMsExcel:AddColumn("Relatorio",_cPlanilha,"Contagem Efetiva (SB7)" 	    ,3  ,2  )
+        oFWMsExcel:AddColumn("Relatorio",_cPlanilha,"Saldo Wis (RgLog)"           ,3  ,2  )
         
         If Select( (cAliasTRB) ) > 0
             (cAliasTRB)->(DbCloseArea())
@@ -120,7 +121,8 @@ Static Function zProcRel(_aRetParam, _cMestre, _cLocal, _cProduto)
         cQuery += " 												 SELECT ZZKA.ZZK_PRODUT, ZZKA.ZZK_LOCAL, SUM(ZZKA.ZZK_QTCONT) QTDEZZK FROM " +  RetSQLName("ZZK") +" ZZKA " + CRLF
         cQuery += " 												 WHERE ZZKA.D_E_L_E_T_ = ' ' " + CRLF
         cQuery += " 												 AND ZZKA.ZZK_MESTRE = '"+_cMestre+"' " + CRLF
-        cQuery += " 												 AND ZZKA.ZZK_STATUS IN ('3','6')                          " + CRLF
+        //Query += " 												 AND ZZKA.ZZK_STATUS IN ('3','6')                          " + CRLF
+        cQuery += " 												 AND ZZK_QTDELE <> 0 " + CRLF
         cQuery += " 												 GROUP BY ZZKA.ZZK_PRODUT, ZZKA.ZZK_LOCAL " + CRLF
         cQuery += " 												)ZZK " + CRLF
         cQuery += " 									ON SB2.B2_COD = ZZK.ZZK_PRODUT " + CRLF
@@ -152,7 +154,7 @@ Static Function zProcRel(_aRetParam, _cMestre, _cLocal, _cProduto)
         EndIf
 
         If _aRetParam[01] == "Saldo Protheus x Saldo Wis"
-            cQuery += " AND VIEW_GERAL.SB2 <> VIEW_GERAL.QTDE_WIS " + CRLF
+            cQuery += " AND VIEW_GERAL.SB2 <> VIEW_GERAL.SALDO_WIS " + CRLF
         EndIf
 
         If _aRetParam[01] == "Saldo Protheus x Contagem Mestre"
@@ -160,7 +162,7 @@ Static Function zProcRel(_aRetParam, _cMestre, _cLocal, _cProduto)
         EndIf
     
         If _aRetParam[01] == "Contagem Mestre x Contagem Eleita"
-            cQuery += " AND VIEW_GERAL.SZK <> VIEW_GERAL.SB7" + CRLF
+            cQuery += " AND VIEW_GERAL.ZZK <> VIEW_GERAL.SB7" + CRLF
         EndIf
 
         If _aRetParam[01] == "Saldo Protheus x Contagem Eleita"
@@ -168,7 +170,7 @@ Static Function zProcRel(_aRetParam, _cMestre, _cLocal, _cProduto)
         EndIf
 
         If _aRetParam[01] == "Contagem Eleita x Saldo Wis"
-            cQuery += " AND VIEW_GERAL.SB7 <> VIEW_GERAL.QTDE_WIS" + CRLF
+            cQuery += " AND VIEW_GERAL.SB7 <> VIEW_GERAL.SALDO_WIS" + CRLF
         EndIf
         
         cQuery += "  ORDER BY VIEW_GERAL.B2_COD "
@@ -193,7 +195,7 @@ Static Function zProcRel(_aRetParam, _cMestre, _cLocal, _cProduto)
             // Incrementa a mensagem na régua.
             IncProc("Imprimindo: " + cValToChar(nProc) + " - " + cValToChar(nTotReg) + "...")       
 
-            oFWMsExcel:AddRow(	"Relatorio","Planilha01",{;
+            oFWMsExcel:AddRow(	"Relatorio",_cPlanilha,{;
                                                             (cAliasTRB)->EMP_WIS,;
                                                             (cAliasTRB)->B2_COD,;
                                                             (cAliasTRB)->B1_DESC,;
