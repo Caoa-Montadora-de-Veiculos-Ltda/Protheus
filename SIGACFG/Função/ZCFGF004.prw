@@ -219,6 +219,9 @@ aAdd(aSX6, { "CMV_WSR018"     , "C"   ,  .T.    , " "                           
 
 aAdd(aSX6, { "MV_INTGFE"      , "L"   ,  .T.    , ".F."                         ,  .T.      , ".F."                                ,  .T.      , ".T."            } )
 
+//Integração Asia Shipping
+aAdd(aSX6, { "CMV_EIC001"     , "C"   ,  .T.    , " "                           ,  .T.      , " "                                  ,  .T.      , " "            } )
+
 ProcRegua(Len(aSX6))
 
 //Percorre as tabelas

@@ -24,16 +24,16 @@ F 	- Função
 022 - Sequencial
 /*/
 User Function ZEICF022(_aParam)
+
 Local _lJob := IsBlind()
+Local _lRet	:= .T.
+Local _nPos
 
 	If _lJob
 		ConOut("*************************************************************************************************************************"	+ CRLF)
 		ConOut("----------- [ ZEICF022 ] - Inicio da funcionalidade "+DtoC(Date())+" as "+Time()														+ CRLF)
 		ConOut("*************************************************************************************************************************"	+ CRLF)
-	EndIf
-
-	//sendo job testar parametros
-	If _lJob
+	
 		If ValType(_aParam) == "A"
 			//VarInfo("Valores dos parametros recebidos pela rotina ZPCPJV01:",_aParam)
 			_cEmpresa 	:=  _aParam[1]
@@ -54,8 +54,35 @@ Local _lJob := IsBlind()
 			Prepare Environment Empresa _cEmpresa Filial _cFilial Modulo "EIC"
 			_lAbre		:= .T.
 		EndIf
-	EndIF
-	ZEICF022AP(, , ,_lJob)
+	EndIf
+
+	//Garantir que o processamento seja unico
+	If !LockByName("ZEICF022",.T.,.T.)  
+		//tentar locar por 10 segundos caso não consiga não prosseguir
+		_lRet := .F.
+		For _nPos := 1 To 10
+			Sleep( 1000 ) // Para o processamento por 1 segundo
+			If LockByName("ZEICF022",.T.,.T.)
+				_lRet := .T.
+			EndIf
+		Next	
+
+		If !_lRet
+			If !_lJob
+				MsgInfo("Já existe um processamento em execução rotina ZEICF022, aguarde!")
+			Else
+				ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZEICF022] Já existe um processamento em execução, aguarde!")
+				ConOut("*************************************************************************************************************************"	+ CRLF)
+				ConOut("------------------------- [ ZEICF022 ] - Já existe um processamento em execução rotina ZEICF022 -------------------------"  + CRLF)
+				ConOut("*************************************************************************************************************************"	+ CRLF)
+			EndIf
+			Break
+		EndIf
+	Else
+		ZEICF022AP(, , ,_lJob)
+		UnLockByName("ZEICF022",.T.,.T.)
+	EndIf
+	
 Return()
 
 
@@ -64,7 +91,8 @@ Static Function ZEICF022AP(_cUrl, _cChave, _lToken, _lJob)
 Local _aMsg		:= {}
 Local _lRet 	:= .T.
 
-Default _cUrl 	:= "https://api.asiashipping.com.br/bot/house"
+//Default _cUrl 	:= "https://api.asiashipping.com.br/bot/house"
+Default _cUrl 	:= SuperGetMV( "CMV_EIC001" ,,"https://api.asiashipping.com.br/bot/house")  //Link onde o Json do romaneio será liberado
 Default _cChave := ""    //"ASP20100044"  //informações como numero da House
 Default _lToken := .F. 
 
@@ -154,8 +182,9 @@ Private _aHeader    := {}
 			FROM %table:SW6% SW6
 			WHERE SW6.W6_FILIAL    = %XFilial:SW6%
 				AND SW6.W6_HOUSE   = %Exp:_cHouse%
-				AND SW6.W6_DT_ENCE = %Exp:_Encer%
 				AND SW6.W6_AGENTE  = %Exp:_Import% 
+				AND SW6.W6_NF_ENT  = ' '
+				AND SW6.W6_HOUSE   <> ' '
 				AND SW6.%notDel%		  
 		EndSql 
 
@@ -199,8 +228,9 @@ Local _sUrl := _cURL
 		SELECT SW6.W6_HOUSE cBL, SW6.R_E_C_N_O_ NREGSW6
 		FROM %table:SW6% SW6
 		WHERE SW6.W6_FILIAL    = %XFilial:SW6%
-			AND SW6.W6_DT_ENCE = %Exp:_Encer%
 			AND SW6.W6_AGENTE  = %Exp:_Import%
+			AND SW6.W6_NF_ENT  = ' '
+			AND SW6.W6_HOUSE   <> ' '
 			AND SW6.%notDel%		  
 	EndSql
 
