@@ -87,7 +87,7 @@ Static Function zCaoaSp()
            	
         	IF FWCodEmp() = '2020' .AND. FWFilial() = '2001'
 			    U_ZF10GENSAP("SA2",M->A2_COD+M->A2_LOJA,"A2_XCDSAP",nOpcx)
-		        U_ZWSR006("F"    ,M->A2_COD  ,M->A2_LOJA )
+		        U_ZWSR014( M->A2_COD, M->A2_LOJA )
 			EndIf
 
 		ENDIF
