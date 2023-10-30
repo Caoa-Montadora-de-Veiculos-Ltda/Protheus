@@ -2776,12 +2776,14 @@ Static Function fSAFX07()
 		cQ += CRLF + " 		AND SF3.F3_NFISCAL IN " + FormatIn(__cSelNfs, ";")
 	EndIf
 
-	IF cTpMov = "Entrada" 
-		cQ += CRLF + " 		AND NOT (SF3.F3_TIPO = 'S' OR SF3.F3_ESPECIE = 'RPS' OR (SF3.F3_ESPECIE = 'NFS' AND SF3.F3_CODNFE <> ' ')) "
+	IF cTpMov = "Entrada"
+//		cQ += CRLF + " 		AND NOT (SF3.F3_TIPO = 'S' OR SF3.F3_ESPECIE = 'RPS' OR (SF3.F3_ESPECIE = 'NFS' AND SF3.F3_CODNFE <> ' ')) "
+ 		cQ += CRLF + " 		AND NOT ((SUBSTR(SF3.F3_CFO,1,1) < '5' AND SF3.F3_FORMUL != 'S') OR SF3.F3_TIPO = 'S' OR SF3.F3_ESPECIE = 'RPS' OR (SF3.F3_ESPECIE = 'NFS' AND SF3.F3_CODNFE <> ' ')) "
 	Endif		 
 
-	If  cTpMov = "Saída" 
-		cQ += CRLF + " 		AND     (SF3.F3_TIPO = 'S' OR SF3.F3_ESPECIE = 'RPS' OR (SF3.F3_ESPECIE = 'NFS' AND SF3.F3_CODNFE <> ' ')) "
+	If  cTpMov = "Saída"
+//	    cQ += CRLF + " 		AND     (SF3.F3_TIPO = 'S' OR SF3.F3_ESPECIE = 'RPS' OR (SF3.F3_ESPECIE = 'NFS' AND SF3.F3_CODNFE <> ' ')) " 
+		cQ += CRLF + " 		AND     (SUBSTR(SF3.F3_CFO,1,1) >= '5' OR SF3.F3_TIPO = 'S' OR SF3.F3_ESPECIE = 'RPS' OR (SF3.F3_ESPECIE = 'NFS' AND SF3.F3_CODNFE <> ' ')) "
 	Endif
 
 	cQ += CRLF + " ORDER BY SF3.F3_FILIAL,SF3.F3_ENTRADA,SF3.F3_NFISCAL "
@@ -2957,7 +2959,8 @@ Static Function fSAFX08()
 		cQ += CRLF + " 		AND SFT.FT_FILIAL  BETWEEN '" + cFilDe         + "' AND '" + cFilAte        + "' "
 		cQ += CRLF + " 		AND SFT.FT_CLIEFOR BETWEEN '" + cCliForDe      + "' AND '" + cCliForAte     + "' "
 		cQ += CRLF + " 		AND SFT.FT_ENTRADA BETWEEN '" + dTos(dDataIni) + "' AND '" + dTos(dDataFim) + "' "
-		cQ += CRLF + " 		AND NOT (SFT.FT_TIPO = 'S' OR SFT.FT_ESPECIE = 'RPS' OR (SFT.FT_ESPECIE = 'NFS' AND SFT.FT_CODNFE <> ' ')) "
+		//cQ += CRLF + " 		AND NOT (SFT.FT_TIPO = 'S' OR SFT.FT_ESPECIE = 'RPS' OR (SFT.FT_ESPECIE = 'NFS' AND SFT.FT_CODNFE <> ' ')) "
+		cQ += CRLF + " 		AND NOT (SUBSTR(SFT.FT_CFOP,1,1) < '5' OR SFT.FT_TIPO = 'S' OR SFT.FT_ESPECIE = 'RPS' OR (SFT.FT_ESPECIE = 'NFS' AND SFT.FT_CODNFE <> ' ')) "
 
 		If Empty( __cSelNfs )
 			cQ += CRLF + " 		AND SFT.FT_NFISCAL BETWEEN '" + cDocFisDe + "' AND '" + cDocFisAte + "' "
@@ -3222,7 +3225,8 @@ Static Function fSAFX09()
 		cQ += CRLF + " 		AND SFT.FT_FILIAL  BETWEEN '" + cFilDe         + "' AND '" + cFilAte        + "' "
 		cQ += CRLF + " 		AND SFT.FT_ENTRADA BETWEEN '" + dTos(dDataIni) + "' AND '" + dTos(dDataFim) + "' "
 		cQ += CRLF + " 		AND SFT.FT_CLIEFOR BETWEEN '" + cCliForDe      + "' AND '" + cCliForAte     + "' "
-		cQ += CRLF + " 		AND (SFT.FT_TIPO = 'S' OR SFT.FT_ESPECIE = 'RPS' OR (SFT.FT_ESPECIE = 'NFS' AND SFT.FT_CODNFE <> ' ')) "
+//		cQ += CRLF + " 		AND (SFT.FT_TIPO = 'S' OR SFT.FT_ESPECIE = 'RPS' OR (SFT.FT_ESPECIE = 'NFS' AND SFT.FT_CODNFE <> ' ')) "
+		cQ += CRLF + " 		AND (SUBSTR(SFT.FT_CFOP,1,1) >= '5' OR SFT.FT_TIPO = 'S' OR SFT.FT_ESPECIE = 'RPS' OR (SFT.FT_ESPECIE = 'NFS' AND SFT.FT_CODNFE <> ' ')) "
 
 		If Empty( __cSelNfs )
 			cQ += CRLF + " 		AND SFT.FT_NFISCAL BETWEEN '" + cDocFisDe + "' AND '" + cDocFisAte + "' "
