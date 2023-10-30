@@ -425,6 +425,7 @@ Begin Sequence
     _cQuery += " 			AND SD2.D2_FILIAL BETWEEN '"+_cFilDe+"' AND '"+_cFilAte+"'  "+ CRLF
 	_cQuery += "    		AND SD2.D2_COD BETWEEN '" +_cProdutoDe+ "' AND '" +_cProdutoAte+ "' " + CRLF 
     _cQuery += " 			AND SD2.D2_CF IN "+ FormatIn(_cCFVenda,";") + " "+ CRLF
+    _cQuery += " 			AND SD2.D2_EMISSAO <= '"+DtOs(_dDataCurva)+"'" + CRLF
     _cQuery += " 			GROUP BY D2_COD , TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(D2_EMISSAO, 'YYYYMMDD'))) "+ CRLF
     _cQuery += "     		ORDER BY D2_COD "+ CRLF
     _cQuery += "  		) , "+ CRLF
