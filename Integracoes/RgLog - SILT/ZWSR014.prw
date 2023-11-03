@@ -42,8 +42,7 @@ Default _cLoja      := ""
 
     AADD(_aEmpWis, "1002" )
     AADD(_aEmpWis, "1006" )
-    AADD(_aEmpWis, "1007" )
-
+    
     _aMsgRet 	:= {}
 
     If Select( (_cAlsSA2) ) > 0
