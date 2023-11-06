@@ -100,10 +100,10 @@ USER FUNCTION ZCOMF043()
 	@ 050,150 MSGET dDtEmiss  PICTURE "@D"                                                      SIZE 045,08 PIXEL HASBUTTON OF oDlg
 
 	@ 040,220 SAY   "Filial de Entrega"                                                                     PIXEL OF oDlg
-	@ 050,220 MSGET cFilEnt PICTURE  VALID(FVAL("FILENT",cFilEnt)) F3 "SM0"                     SIZE 045,08 PIXEL OF oDlg
+	@ 050,220 MSGET cFilEnt PICTURE  VALID(FVAL("FILENT",cFilEnt)) F3 "SM0"                     SIZE 045,08 PIXEL HASBUTTON OF oDlg
 
 	@ 040,280 SAY   "Comprador"	                                                                            PIXEL OF oDlg 
-	@ 050,280 MSGET cCodCompr PICTURE cPICTC VALID(FVAL("CODCOMP",cCodCompr)) F3 "SY1"          SIZE 050,08 PIXEL OF oDlg
+	@ 050,280 MSGET cCodCompr PICTURE cPICTC VALID(FVAL("CODCOMP",cCodCompr)) F3 "_Y1USR"       SIZE 050,08 PIXEL HASBUTTON OF oDlg /*Ref. GAP091-"SY1"*/
 
 	@ 070,007 SAY   "Tipo Req"                                                                              PIXEL OF oDlg
 	@ 080,007 MSCOMBOBOX _oTpReq  VAR  cC1_XTPREQ   ITEMS aTpReq                                SIZE 60, 08 PIXEL OF oDlg
@@ -196,7 +196,7 @@ STATIC FUNCTION FVAL(cP_ACAO,xVar,yVar)
 		lRET := cCODCOMPR
 	ELSEIF cP_ACAO == "CODCOMP"
 		IF EMPTY(cCODCOMPR)
-			MSGINFO("Codigo do comprador nao informado !","Atencao")
+			MSGINFO("Código do comprador nao informado!","Atenção!")
 			lRET := .F.
 		ELSE
 			lRET := A110CodCompr(cCodCompr)
@@ -336,15 +336,17 @@ Static Function PImpCsv()
 						ENDSQL
 						IF (cQRYA)->(EOF())
 							lValid := .F.
-							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Produto nao cadastrado !"})
+							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Produto não cadastrado."})
 						ENDIF
-						If nQuant <= 0
+						//Início dos ajustes do GAP009
+						If (nQuant <= 0) .or. (nQuant <> NoRound(nQuant, 0))
 							lValid := .F.
-							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Quantidade invalida"})
+							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Não é permitido quantidade quebrada, zerada ou negativa."})
 						EndIf
+						//Fim dos ajustes do GAP009
 						If empty(dNecess) 
 							lValid := .F.
-							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Data da Necessidade invalida"})
+							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Data da Necessidade inválida."})
 						EndIf
 
 						cQRYB := "QRYB"
@@ -357,7 +359,7 @@ Static Function PImpCsv()
 						ENDSQL
 						IF (cQRYB)->(EOF())
 							lValid := .F.
-							Aadd(aErros,  {cLErro+AllTrim(cCC)+" - Centro de Custos nao cadastrado !"})
+							Aadd(aErros,  {cLErro+AllTrim(cCC)+" - Centro de Custos não cadastrado."})
 						ENDIF
 
 
@@ -404,7 +406,7 @@ Static Function PImpCsv()
 					MostraErro()
 					RollBackSx8()
 					DisarmTransaction()
-					Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Inconsistencias na inclusao da solicitacao "})
+					Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Inconsistências na inclusão da solicitção "})
 				Else
 					//Utilizado no Relatorio variaveis: cxSCDe e cxSCAte
 					If Empty(cxSCDe)
@@ -434,7 +436,7 @@ Static Function PImpCsv()
 				cTextoE += aErros[nX,1]+chr(13)+chr(10)
 			Next
 			aErros := {}
-			Define Font oFont Name "Mono AS" Size 5, 12
+			Define Font oFont Name "Mono AS" Size 7, 16
 			DEFINE MSDIALOG oDlgMemo TITLE "Solicitações não importadas!" FROM 3,0 TO 340,417 OF oMainWnd PIXEL
 			@ 5,5 Get oMemo Var cTextoE Memo Size 200, 145 Of oDlgMEMO Pixel
 			oMemo:oFont := oFont

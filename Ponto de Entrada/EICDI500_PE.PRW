@@ -15,209 +15,221 @@ Obs......:              - U_CMVEIC02() - Gravação de Lotes e informações adicion
 */
 User Function EICDI500()
 
-Local cParam 	:= IIF(Type("PARAMIXB") == "A", PARAMIXB[1], IIF(Type("PARAMIXB") == "C", PARAMIXB, ""))
-Local lRet 		:= .T.
-Local aAreaWORK := ''
-Local cIntFin   := ""
+	Local cParam 	:= IIF(Type("PARAMIXB") == "A", PARAMIXB[1], IIF(Type("PARAMIXB") == "C", PARAMIXB, ""))
+	Local lRet 		:= .T.
+	Local aAreaWORK := ''
+	Local cIntFin   := ""
+	Local nSaldoAtg := 0
 
 
-MV_PAR60 += TIME() + " " + cParam + " " + Char(13) + Char(10)
+	MV_PAR60 += TIME() + " " + cParam + " " + Char(13) + Char(10)
 
-If cParam == "DI500LOTES_ALT_CPOSENC"
-	//If FindFunction("U_CMVEIC02")
-	//	lRet := U_CMVEIC02()
-	//Endif		
+	If cParam == "DI500LOTES_ALT_CPOSENC"
+		//If FindFunction("U_CMVEIC02")
+		//	lRet := U_CMVEIC02()
+		//Endif		
 
-ElseIf cParam == "FIM_GERA_ADICOES"
+	ElseIf cParam == "FIM_GERA_ADICOES"
 
-	If Findfunction("U_ZEICF013")
-		FWMsgRun(, {|| U_ZEICF013() }, "", "Sincronizando adições..." )
-	Endif	
+		If Findfunction("U_ZEICF013")
+			FWMsgRun(, {|| U_ZEICF013() }, "", "Sincronizando adições..." )
+		Endif	
 
-ElseIf cParam == "GRV_WORK_INVOICE"	
+	ElseIf cParam == "GRV_WORK_INVOICE"	
 
-	//MsgStop("GRV_WORK_INVOICE")
-	If FindFunction("U_CMVEIC03")
-		lRet := U_CMVEIC03()
-	Endif		
-ElseIf cParam == "POS_GRAVA_TUDO" 
-	IF ExistBlock("GRVDI500")
-		MsgRun("Atualizando Informações Específicas de Importação CAOA","TOTVS",{|| ExecBlock("GRVDI500", .F., .F.) })
-	EndIF
-	If FindFunction("U_CMVEIC02")
-		lRet := U_CMVEIC02()
-	Endif
-ElseIf cParam == "VALID_OK_PEDIDO_PLI"
-    	lValidPOPLI := .T.
-ElseIf cParam == "BROWSE_SELECIONA"
-    If isInCallStack("EICDI503") .And. (INCLUI .Or. ALTERA)
-     	AADD(aBotaoItem,{"PROC"      ,{|| Proc_Chassi() },'Procura Chassi'}) 
-     	aAreaWORK	:= WORK->( GetArea() )
-		WORK->( dbGoTop() )
-		While WORK->( !Eof() )
-			WORK->W7_XCHASSI	:= Ret_Dados(1)
-			WORK->W7_XMOTOR	:= Ret_Dados(2)			
-			WORK->( dbSkip() )
-		EndDo
-		WORK->( RestArea( aAreaWORK ) )
-    EndIF
-ElseIF cParam == "ADD_TB_CAMPOS"
-    If isInCallStack("EICDI503") .And. (INCLUI .Or. ALTERA)
-		 AADD(aTB_Campos,{"W7_XCHASSI"  ,,AVSX3("EW5_XVIN",5)})
-		 AADD(aTB_Campos,{"W7_XMOTOR"  ,,AVSX3("EW5_XMOTOR",5)})
+		//MsgStop("GRV_WORK_INVOICE")
+		If FindFunction("U_CMVEIC03")
+			lRet := U_CMVEIC03()
+		Endif		
+	ElseIf cParam == "POS_GRAVA_TUDO" 
+		IF ExistBlock("GRVDI500")
+			MsgRun("Atualizando Informações Específicas de Importação CAOA","TOTVS",{|| ExecBlock("GRVDI500", .F., .F.) })
+		EndIF
+		If FindFunction("U_CMVEIC02")
+			lRet := U_CMVEIC02()
+		Endif
+	ElseIf cParam == "VALID_OK_PEDIDO_PLI"
+			lValidPOPLI := .T.
+	ElseIf cParam == "BROWSE_SELECIONA"
+		If isInCallStack("EICDI503") .And. (INCLUI .Or. ALTERA)
+			AADD(aBotaoItem,{"PROC"      ,{|| Proc_Chassi() },'Procura Chassi'}) 
+			aAreaWORK	:= WORK->( GetArea() )
+			WORK->( dbGoTop() )
+			While WORK->( !Eof() )
+				WORK->W7_XCHASSI	:= Ret_Dados(1)
+				WORK->W7_XMOTOR	:= Ret_Dados(2)			
+				WORK->( dbSkip() )
+			EndDo
+			WORK->( RestArea( aAreaWORK ) )
+		EndIF
+	ElseIF cParam == "ADD_TB_CAMPOS"
+		If isInCallStack("EICDI503") .And. (INCLUI .Or. ALTERA)
+			AADD(aTB_Campos,{"W7_XCHASSI"  ,,AVSX3("EW5_XVIN",5)})
+			AADD(aTB_Campos,{"W7_XMOTOR"  ,,AVSX3("EW5_XMOTOR",5)})
+				
+		EndIF
+	ElseIF cParam == "CARGA_PO_PLI"
+		If FunName() == "EICDI503"
+			//MsgStop(cParam)
+		
+			lInvAnt	:= .F.
+
+		EndIf
+	ElseIF cParam == "TELA_SELECAO"
+		If FunName() == "EICDI503"
+		/*	MsgStop(cParam)
+		
+			oDlgSelec:nRight += 150
+			@ 1.5,21 SAY "Invoice Ent." OF oPanel//STR0621 
+			@ 1.5,25 MSGET cInv F3 "EW4CMV" SIZE 55,8 Picture "@!" VALID ValidInv(cInv) OF oPanel
+			@ 2.5,25 LISTBOX oLbxInv VAR cInv ITEMS aInv SIZE 50,80 OF oPanel UPDATE
+
+			lInvAnt	:= .T.
+			*/
+		EndIf
+	ElseIF .F. // cParam == "BROWSE_WORK_SW9"//"GRV_WORK_ITEM"//"CRIA_VAR_MEM"
+		MsgStop(cParam)
+
+		//If FindFunction("U_CMVEIC06")
+		//	lRet := U_CMVEIC06()
+		//Endif		
+
+	ElseIF .F. //cParam == "VALIDA_MANUT_INV"
+		MsgStop(cParam)
+
+		MsgStop("WORK_CWV")
+		dbSelectArea("WORK_CWV")
+		COPY TO WORKCWV1
+
+		MsgStop("WORK_SWV")
+		dbSelectArea("WORK_SWV")
+		COPY TO WORKSWV1
+
+		MsgStop("WORK_SW8")
+		dbSelectArea("WORK_SW8")
+		COPY TO WORKSW81
+
+		MsgStop("WORK_SW9")
+		dbSelectArea("WORK_SW9"	)
+		MsgStop(LastRec())
+		MsgStop(bof())
+		MsgStop(eof())
+		COPY TO WORKSW91
+
+	ElseIF cParam == "VISUAL_CAMPOS"
+		If isInCallStack("EICDI503")
+			aAdd(aSemSX3,{"W7_XCHASSI" ,"C",AVSX3("EW5_XVIN" ,3),0}) 
+			aAdd(aSemSX3,{"W7_XMOTOR" ,"C",AVSX3("EW5_XMOTOR" ,3),0}) 
+		Endif
+	ElseIF cParam == "STRU_WORKS"
+		If isInCallStack("EICDI503") .And. (INCLUI .Or. ALTERA)
+			aAdd(aSemSX3SW7,{"W7_XCHASSI" ,"C",AVSX3("EW5_XVIN" ,3),0}) 
+			aAdd(aSemSX3SW8,{"W7_XCHASSI" ,"C",AVSX3("EW5_XVIN" ,3),0})
+			aAdd(aSemSX3SW7,{"W7_XMOTOR" ,"C",AVSX3("EW5_XMOTOR" ,3),0}) 
+			aAdd(aSemSX3SW8,{"W7_XMOTOR" ,"C",AVSX3("EW5_XMOTOR" ,3),0})
 			
-	EndIF
-ElseIF cParam == "CARGA_PO_PLI"
-	If FunName() == "EICDI503"
-		//MsgStop(cParam)
-	
-		lInvAnt	:= .F.
-
-	EndIf
-ElseIF cParam == "TELA_SELECAO"
-	If FunName() == "EICDI503"
-	/*	MsgStop(cParam)
-	
-        oDlgSelec:nRight += 150
-        @ 1.5,21 SAY "Invoice Ent." OF oPanel//STR0621 
-        @ 1.5,25 MSGET cInv F3 "EW4CMV" SIZE 55,8 Picture "@!" VALID ValidInv(cInv) OF oPanel
-        @ 2.5,25 LISTBOX oLbxInv VAR cInv ITEMS aInv SIZE 50,80 OF oPanel UPDATE
-
-        lInvAnt	:= .T.
-        */
-	EndIf
-ElseIF .F. // cParam == "BROWSE_WORK_SW9"//"GRV_WORK_ITEM"//"CRIA_VAR_MEM"
-	MsgStop(cParam)
-
-	//If FindFunction("U_CMVEIC06")
-	//	lRet := U_CMVEIC06()
-	//Endif		
-
-ElseIF .F. //cParam == "VALIDA_MANUT_INV"
-	MsgStop(cParam)
-
-	MsgStop("WORK_CWV")
-	dbSelectArea("WORK_CWV")
-	COPY TO WORKCWV1
-
-	MsgStop("WORK_SWV")
-	dbSelectArea("WORK_SWV")
-	COPY TO WORKSWV1
-
-	MsgStop("WORK_SW8")
-	dbSelectArea("WORK_SW8")
-	COPY TO WORKSW81
-
-	MsgStop("WORK_SW9")
-	dbSelectArea("WORK_SW9"	)
-	MsgStop(LastRec())
-	MsgStop(bof())
-	MsgStop(eof())
-	COPY TO WORKSW91
-
-ElseIF cParam == "VISUAL_CAMPOS"
-	If isInCallStack("EICDI503")
-		aAdd(aSemSX3,{"W7_XCHASSI" ,"C",AVSX3("EW5_XVIN" ,3),0}) 
-		aAdd(aSemSX3,{"W7_XMOTOR" ,"C",AVSX3("EW5_XMOTOR" ,3),0}) 
-	Endif
-ElseIF cParam == "STRU_WORKS"
-	If isInCallStack("EICDI503") .And. (INCLUI .Or. ALTERA)
-		aAdd(aSemSX3SW7,{"W7_XCHASSI" ,"C",AVSX3("EW5_XVIN" ,3),0}) 
-		aAdd(aSemSX3SW8,{"W7_XCHASSI" ,"C",AVSX3("EW5_XVIN" ,3),0})
-		aAdd(aSemSX3SW7,{"W7_XMOTOR" ,"C",AVSX3("EW5_XMOTOR" ,3),0}) 
-		aAdd(aSemSX3SW8,{"W7_XMOTOR" ,"C",AVSX3("EW5_XMOTOR" ,3),0})
+		Endif
 		
-	Endif
-	
-ElseIf cParam == "AADD_BROWSE_ITEM"
-    If isInCallStack("EICDI503")
-     	AADD(aCamposItem,{"W7_XCHASSI"  ,,AVSX3("EW5_XVIN",5)})
-     	AADD(aCamposItem,{"W7_XMOTOR"  ,,AVSX3("EW5_XMOTOR",5)})
-    EndIF
+	ElseIf cParam == "AADD_BROWSE_ITEM"
+		If isInCallStack("EICDI503")
+			AADD(aCamposItem,{"W7_XCHASSI"  ,,AVSX3("EW5_XVIN",5)})
+			AADD(aCamposItem,{"W7_XMOTOR"  ,,AVSX3("EW5_XMOTOR",5)})
+		EndIF
 
 
-/* =====================================================================================
-Autor....:              CAOA - Valter Carvalho
-Data.....:              07/12/2020
-Descricao / Objetivo:   inclusão do menu de remover todas
-Solicitante:            CAOA - Montadora - Anápolis
-Uso......:              ANTES_TELA_DESP
-Obs......:				ponto de entrada usado ao montar a tela de despesas.	
-						fonte do padrão eicdi501.prw
-===================================================================================== */
-ElseIf cParam == "ANTES_TELA_DESP"
+	/* =====================================================================================
+	Autor....:              CAOA - Valter Carvalho
+	Data.....:              07/12/2020
+	Descricao / Objetivo:   inclusão do menu de remover todas
+	Solicitante:            CAOA - Montadora - Anápolis
+	Uso......:              ANTES_TELA_DESP
+	Obs......:				ponto de entrada usado ao montar a tela de despesas.	
+							fonte do padrão eicdi501.prw
+	===================================================================================== */
+	ElseIf cParam == "ANTES_TELA_DESP"
 
-	Aadd(aBotoesDesp, {"", {|| zRemoveDesp()}, " >> CAOA - Excluir Todas", " >> CAOA - Excluir Todas" }    )
+		Aadd(aBotoesDesp, {"", {|| zRemoveDesp()}, " >> CAOA - Excluir Todas", " >> CAOA - Excluir Todas" }    )
 
-/* =====================================================================================
-Autor....:              CAOA - Valter Carvalho
-Data.....:              07/12/2020
-Descricao / Objetivo:   Efetua ajuste do campo integra financeiro para respeitar o campo  YB_XINTFIN
-Solicitante:            CAOA - Montadora - Anápolis
-Uso......:              ANTES_TELA_DESP
-Obs......:				ponto de entrada usado ao montar a tela de despesas.	
-						fonte do padrão eicdi501.prw
-===================================================================================== */
-ElseIf cParam == "TELA_TOTAIS_DESP"
+	/* =====================================================================================
+	Autor....:              CAOA - Valter Carvalho
+	Data.....:              07/12/2020
+	Descricao / Objetivo:   Efetua ajuste do campo integra financeiro para respeitar o campo  YB_XINTFIN
+	Solicitante:            CAOA - Montadora - Anápolis
+	Uso......:              ANTES_TELA_DESP
+	Obs......:				ponto de entrada usado ao montar a tela de despesas.	
+							fonte do padrão eicdi501.prw
+	===================================================================================== */
+	ElseIf cParam == "TELA_TOTAIS_DESP"
 
-	TRB->(DbGoTop())
+		TRB->(DbGoTop())
 
-	While TRB->(Eof()) = .F.
-		cIntFin := Posicione("SYB", 1, XFilial("SYB") + WD_DESPESA, "YB_XINTFIN")	
-		
-		If Empty(cIntFin) = .T. // se não for preenchido, então não faço nada
+		While TRB->(Eof()) = .F.
+			cIntFin := Posicione("SYB", 1, XFilial("SYB") + WD_DESPESA, "YB_XINTFIN")	
+			
+			If Empty(cIntFin) = .T. // se não for preenchido, então não faço nada
+				TRB->(DbSkip())
+				Loop
+			End		
+
+			RecLock("TRB", .F.)
+			TRB->WD_GERFIN := cIntFin
+			TRB->(MsUnlock())
 			TRB->(DbSkip())
-			Loop
-		End		
+		EndDo
 
-		RecLock("TRB", .F.)
-		TRB->WD_GERFIN := cIntFin
-		TRB->(MsUnlock())
-		TRB->(DbSkip())
-	EndDo
+		TRB->(DbGoTop())
 
-	TRB->(DbGoTop())
-EndIf
+	//Fim dos ajustes referente ao GAP009
+	ElseIf cParam == "DEPOIS_VALID_SW6" //Ativado ao alterar a quantidade de um item e clicar em OK, arredonda valores para baixo.
+		If (Type("TSALDO_Q") == "N") //Se existe a variável TSALDO_Q
+			nSaldoAtg := TSALDO_Q
+			If (TSALDO_Q <> NoRound(TSALDO_Q, 0)) .and. (TSALDO_Q > 0) //Se a var contém vírgula e é maior que zero.
+				TSALDO_Q := NoRound(TSALDO_Q, 0)
+				MsgInfo("O valor: " + Alltrim(Str(nSaldoAtg)) + " foi alterado para: " + Alltrim(Str(TSALDO_Q)) + "","Quantidade quebrada.")
+			EndIf
+		EndIf	
+	EndIf
+	//Fim dos ajustes referente ao GAP009
 
 Return lRet
 
 
 Static Function Ret_Dados(nTipo)
 
-Local cRet := ''
-Local aAreaSW3	:= SW3->( GetArea() )
+	Local cRet := ''
+	Local aAreaSW3	:= SW3->( GetArea() )
 
-SW3->(DbSetOrder(8))
-IF SW3->(DbSeek(xFilial("SW3")+PADR(Work->WKPO_NUM,TAMSX3('W3_PO_NUM')[1])+Work->WKPOSICAO))              
-   	IF nTipo == 1
-     	cRet := SW3->W3_XVIN
-    ElseIf nTipo == 2
-     	cRet := SW3->W3_XMOTOR
-    EndIF
-EndIF
-SW3->( RestArea( aAreaSW3 ) )
+	SW3->(DbSetOrder(8))
+	IF SW3->(DbSeek(xFilial("SW3")+PADR(Work->WKPO_NUM,TAMSX3('W3_PO_NUM')[1])+Work->WKPOSICAO))              
+		IF nTipo == 1
+			cRet := SW3->W3_XVIN
+		ElseIf nTipo == 2
+			cRet := SW3->W3_XMOTOR
+		EndIF
+	EndIF
+	SW3->( RestArea( aAreaSW3 ) )
 
 Return cRet
 ********************************************************************************************************************8
 Static Function Proc_Chassi
-Local aParambox	  := {}                 
-Local aRet        := {}                                                                                    
-Local nRecWork    := WORK->(Recno())
- 
+	Local aParambox	  := {}                 
+	Local aRet        := {}                                                                                    
+	Local nRecWork    := WORK->(Recno())
+	
 
-AAdd(aParamBox, {1, "Chassi:"      ,Space(TamSx3('W3_XVIN')[01]) , "@!","" ,"","", 070, .T.	})
-IF ParamBox(aParambox, "Procura Chassi"	, @aRet, , , .T. /*lCentered*/, 0, 0, , , .T. /*lCanSave*/, .T. /*lUserSave*/)
-    WORK->(dbGoTop())
-    While WORK->(!EOF())
-        IF Alltrim(MV_PAR01) $ WORK->W7_XCHASSI
-            nRecWork  := WORK->(Recno())
-            Exit
-        EndIF
-        WORK->(dbSkip())
-    End
-    WORK->(dbGoto(nRecWork))
-    oMark:oBrowse:Refresh()
-EndIF
+	AAdd(aParamBox, {1, "Chassi:"      ,Space(TamSx3('W3_XVIN')[01]) , "@!","" ,"","", 070, .T.	})
+	IF ParamBox(aParambox, "Procura Chassi"	, @aRet, , , .T. /*lCentered*/, 0, 0, , , .T. /*lCanSave*/, .T. /*lUserSave*/)
+		WORK->(dbGoTop())
+		While WORK->(!EOF())
+			IF Alltrim(MV_PAR01) $ WORK->W7_XCHASSI
+				nRecWork  := WORK->(Recno())
+				Exit
+			EndIF
+			WORK->(dbSkip())
+		End
+		WORK->(dbGoto(nRecWork))
+		oMark:oBrowse:Refresh()
+	EndIF
 Return
 
 

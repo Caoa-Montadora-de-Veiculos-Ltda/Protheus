@@ -1,5 +1,11 @@
 #Include 'Rwmake.ch'
 #Include 'TopConn.ch'
+#Include "PROTHEUS.CH"
+#include "TOTVS.ch"
+#INCLUDE "MSGRAPHI.CH"
+#INCLUDE "FWBROWSE.CH"
+#Include "FWMVCDEF.CH"
+
 
 #DEFINE cFONT   '<b><font size="3" color="blue"><b>'
 #DEFINE cALERT  '<b><font size="3" color="red"><b>'
@@ -23,6 +29,7 @@ User Function MT110TOK()
 
 	Local _aArea  	:= GetArea()
 	Local _lRet 	:= .T.
+	Local _cEmp     := FWCodEmp()
 
 	//Private _Logic := .F.
 	
@@ -37,14 +44,14 @@ User Function MT110TOK()
 		//Fim dos ajustes referente ao GAP091 -------------------------------------------	
 
 		//Local  _nOpc      := If(INCLUI,3, ;
-		//					 IF(ALTERA,4, ;
-		//					 5) )
+			//					 IF(ALTERA,4, ;
+			//					 5) )
 
-		//funcionalidade validar produtos de importação
-		// valida Tipo de Importacao, caso náo seja produto de importacao
-		// inibido conforme solicitação do DAC   _lRet := VLDI110TOK()
-		
-		//	Verifica se CENTO DE CUSTO, ITEM CONTÁBIL CLASSE DE VALOR estão preenchidos, 
+			//funcionalidade validar produtos de importação
+			// valida Tipo de Importacao, caso náo seja produto de importacao
+			// inibido conforme solicitação do DAC   _lRet := VLDI110TOK()
+			
+			//	Verifica se CENTO DE CUSTO, ITEM CONTÁBIL CLASSE DE VALOR estão preenchidos, 
 		//	ou há rateio do item DA SOLICITAÇÃO
 		If _lRet .and. FindFunction("U_ZCOMF010")
 			_lRet := U_ZCOMF010()
@@ -55,10 +62,16 @@ User Function MT110TOK()
 		Endif
 
 		//Gravar dados para auditoria
-		//If _lRet  .and. FindFunction("U_ZCOMF015")
-		//	_lRet := U_ZCOMF015( "SC" /*Doc*/,_nOpc, /*indica se devve mostrar somente a tela*/)
+			//If _lRet  .and. FindFunction("U_ZCOMF015")
+			//	_lRet := U_ZCOMF015( "SC" /*Doc*/,_nOpc, /*indica se devve mostrar somente a tela*/)
 		//Endif
 
+		//Ajuste referente ao GAP009 -------------------------------------------
+		If _cEmp == "2020" .and. FindFunction("U_ZCOMF057")//Empresa Barueri
+			_lret := U_ZCOMF057()
+		EndIf
+		//Fim dos ajustes referente ao GAP009 ----------------------------------	
+	
 	RestArea(_aArea)
 
 Return _lRet
@@ -129,3 +142,4 @@ Static Function	VLDI110TOK()
 	Next i
 
 Return lRet
+

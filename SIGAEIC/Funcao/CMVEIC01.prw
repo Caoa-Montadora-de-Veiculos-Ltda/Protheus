@@ -1,7 +1,7 @@
 #Include "Protheus.ch"
 #Include "TopConn.ch"
 #Include 'FWEditPanel.ch'
-
+ 
 /*
 =====================================================================================
 Programa.:              CMVEIC01
@@ -195,6 +195,7 @@ Static Function ValidTela() //Validação de todas as informações do CSV
 	Local cExtAux := ""
 	Local cINTCSV   := AllTrim(cDiretorio)
 	Local cLinhaIT		:= ""
+	Local nQtde
 
 	If !File(AllTrim(cDiretorio)) //Valida se o arquvio existe
 		MsgStop("Arquivo não existe!")
@@ -207,7 +208,7 @@ Static Function ValidTela() //Validação de todas as informações do CSV
 	Else
 		nLayout   := aScan( aLayout , cLayout )
 
-		If (FWCodEmp() == cFilExec .AND. nLayout < 5) .OR. (FWCodEmp() <> cFilExec .AND. nLayout = 5)
+		If (FWCodEmp() == cFilExec .AND. nLayout < 5) .OR. (FWCodEmp() <> cFilExec .AND. nLayout = 5) //Valida se o arquivo pode ser usado nesta filial.
 			FWAlertError("O layout " + Alltrim(aLayout[nLayout]) + " não pode ser usado nessa filial", "CMVEIC01")
 			Return
 		EndIf
@@ -599,10 +600,16 @@ Static Function ValidTela() //Validação de todas as informações do CSV
 							MsgStop("A Planilha " + cINTCSV + " contém campos de Produtos, que estão em branco!")
 							lRet := .F.
 						Endif
-						if empty(cQtde) .and. lRet
+						if empty(cQtde) .and. lRet //Aqui posso tratar a
 							MsgStop("A Planilha " + cINTCSV + " contém campos de Quantidades, que estão em branco!")
 							lRet := .F.
 						Endif
+						//Início dos ajustes referente ao GAP009
+						If ((val(StrTran(cQtde, ",", "."))) <> NoRound((val(StrTran(cQtde, ",", "."))), 0)) .and. ((val(StrTran(cQtde, ",", "."))) > 0)
+							MsgStop("A Planilha " + cINTCSV + " contém campos com Quantidades quebradas, por favor revise.")
+							lRet := .F.
+						EndIf
+						//Fim dos ajustes referente ao GAP009
 						if empty(cValor) .and. lRet
 							MsgStop("A Planilha " + cINTCSV + " contém campos de Valores Unitários, que estão em branco!")
 							lRet := .F.
@@ -728,7 +735,7 @@ Static Function IntegraInv()
 		If _lRet  
 			MontaWork1()
 			Processa( {|| lErroGer := !(U_ZEICF021(cINTCSV,cPoNum,nLayout))}, "Lendo Arquivo de Integração...", OemToAnsi("Lendo dados do arquivo..."),.F.)
-			UnLockByName(_cChaveLock ,.T.,.T.) //VERIFICAR ONDE COLOCAR ISSO, ALTERAR A VARIÁVEL
+			UnLockByName(_cChaveLock ,.T.,.T.) //VERIFICAR ONDE COLOCAR ISSO, ALTERAR A VARIÝVEL
 		Else 
 			MsgStop("Integração não pode ser concluída." + CRLF + "Já existe um processo em andamento.","Erro",1,0,1)
 			Return
@@ -1189,7 +1196,7 @@ Static Function LerDados(cINTCSV)
 			[04] EX
 			[05] CODIGO PRODUTO
 			[06] QUANTIDADE
-			[07] VALOR UNITÁRIO
+			[07] VALOR UNITÝRIO
 			[08] CONTAINER
 			[09] CAIXA
 			[10] PESO LIQUIDO
@@ -1246,7 +1253,7 @@ Static Function LerDados(cINTCSV)
 
 		cInvoice := Stuff( Space(TamSX3("EW4_INVOIC")[1]) ,1 , Len(cInvoice) , cInvoice )
 		If EW4->( dbSeek( xFilial("EW4") + cInvoice ) )
-			//ERRO INVOICE JÁ EXISTE
+			//ERRO INVOICE JÝ EXISTE
 			CMVEIC0101("Número da Invoice já existe!",nLinha,,EW4->EW4_FORN,EW4->EW4_FORLOJ,"R",AllTrim(aCampos[1]),,cInvoice)
 			lErro := .T.
 		EndIf
@@ -1282,7 +1289,7 @@ Static Function LerDados(cINTCSV)
 
 		//INVOICE
 		If EW4->(dbSeek(xFilial("EW4")+AVKEY(cInvoice,"EW4_INVOICE")+SW2->W2_FORN+SW2->W2_FORLOJ))
-			//ERRO INVOICE JÁ EXISTE NO SISTEMA
+			//ERRO INVOICE JÝ EXISTE NO SISTEMA
 			MsgStop("Invoice número:" + AllTrim(cInvoice) +" já existe no sistema!")
 			lErro := .T.
 		EndIf
@@ -3414,7 +3421,7 @@ Static function zLayouts() //Configuração dos Layouts
 	cmd += CRLF + "	[04] EX"
 	cmd += CRLF + "	[05] CODIGO PRODUTO"
 	cmd += CRLF + "	[06] QUANTIDADE"
-	cmd += CRLF + "	[07] VALOR UNITÁRIO"
+	cmd += CRLF + "	[07] VALOR UNITÝRIO"
 	cmd += CRLF + "	[08] CONTAINER"
 	cmd += CRLF + "	[09] CAIXA"
 	cmd += CRLF + "	[10] PESO LIQUIDO"

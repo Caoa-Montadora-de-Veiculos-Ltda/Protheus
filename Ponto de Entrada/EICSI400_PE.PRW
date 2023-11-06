@@ -18,12 +18,30 @@ User Function EICSI400()
 	Local _cEmp    := FWCodEmp()
 	Local _lRet	   := .T.
 	Local aArea	   := GetArea()
+	Local cParam 	:= IIF(Type("PARAMIXB") == "A", PARAMIXB[1], IIF(Type("PARAMIXB") == "C", PARAMIXB, ""))
+	Local nW1_QTDE 	:= 0
+	Local nW1_SALDO := 0
+	Local cCodProd 	:= ""
 
 	If _cEmp == "2010" //Executa o p.e. Anapolis.
 		_lRet := .T.
 	Else
 		_lRet := zCaoaSp() //Executa o p.e. CaoaSp
 	EndIf
+	
+	//Início dos ajustes referente ao GAP009
+	If _cEmp == "2020" .and. cParam == "DB_LINOK" .and. ((Type("SALDO") == "N") .or. (Type("QTDE") == "N")) 
+		
+		nW1_SALDO 	:= W1_SALDO_Q
+		nW1_QTDE 	:= W1_QTDE
+		cCodProd  	:= W1_COD_I			
+
+		If FindFunction("U_ZCOMF57B")//Empresa Barueri
+			_lRet := U_zCOMF57B(nW1_SALDO, nW1_QTDE, cCodProd)	
+		End If
+	//Fim dos ajustes referente ao GAP009
+	
+	EndIf 
 
 	RestArea(aArea)
 

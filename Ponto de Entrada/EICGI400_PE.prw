@@ -1,6 +1,8 @@
 #Include "TOTVS.Ch"
 #Include "Protheus.Ch"
 
+#DEFINE CRLF chr(10)+chr(13)
+
 /*/{Protheus.doc} EICGI400
 P.E. - Gravar campos específicos do SW5 - EICGI400
 @author João Carlos da Silva
@@ -18,6 +20,7 @@ User Function EICGI400()
 	Local lRet		:= .T.
 	Local aArea		:= GetArea()
 	Local aAreaSW1	:= Nil
+	Local nSaldoAtg := 0
 	
 	//If IsInCallStack("GI400SELINV")
 	//	MsgStop(cParam)
@@ -48,7 +51,7 @@ User Function EICGI400()
 		aAreaSW1 := SW1->(GetArea())
 		SW1->(dbSetOrder(1))  //W1_FILIAL+W1_CC+W1_SI_NUM+W1_COD_I
 		SW1->(dbSeek(xFilial("SW1") + WORK->(WKCC+WKSI_NUM+WKCOD_I+Str(Work->WkReg,4) )))
-//		While SW1->(!Eof() .and. W1_FILIAL+W1_CC+W1_SI_NUM == xFilial("SW1") + WORK->WKCC + WORK->WKSI_NUM)
+		//While SW1->(!Eof() .and. W1_FILIAL+W1_CC+W1_SI_NUM == xFilial("SW1") + WORK->WKCC + WORK->WKSI_NUM)
 		While !SW1->(Eof()) .and. Sw1->(W1_FILIAL+W1_CC+W1_SI_NUM+W1_Cod_I+Str(Sw1->W1_Reg,4)) == xFilial("SW1") + WORK->(WKCC+WKSI_NUM+WkCod_I+Str(Work->WkReg,4))
 			If SW1->(W1_SEQ == 0)
 				cCorInt := SW1->W1_CORINT
@@ -73,5 +76,29 @@ User Function EICGI400()
 
 	EndIf
 	
+	/*If cParam == Upper("GRAVAWORKITEM")
+		If (Type("TSALDO_Q") == "N") //Se exite a variável TSALDO_Q
+			nSaldoAtg := TSALDO_Q
+			If (TSALDO_Q <> NoRound(TSALDO_Q, 0)) .and. (TSALDO_Q > 0) //Se a var contém vírgula e é maior que zero.
+				TSALDO_Q := NoRound(TSALDO_Q, 0)
+				MsgInfo("O valor: " + Alltrim(Str(nSaldoAtg)) + " foi alterado para: " + Alltrim(Str(TSALDO_Q)) + "","Quantidade quebrada.")
+			EndIf
+		EndIf	
+	EndIf
+	If cParam == Upper("DADOS_ITENS")
+		If (Type("TSALDO_Q") == "N") //Se exite a variável TSALDO_Q
+		EndIF
+	EndIF*/
+		
+	//Início dos ajustes referente ao GAP009
+	If cParam == Upper("VAL_ITEM")
+		If (Upper(MFlag) == "SALDO_Q") .and. (TSALDO_Q <> NoRound(TSALDO_Q, 0)) .and. (TSALDO_Q > 0) //Se a var contém vírgula e é maior que zero.
+			nSaldoAtg := TSALDO_Q
+			TSALDO_Q := NoRound(TSALDO_Q, 0)
+			MsgInfo("Não é permitido informar quantidade quebrada." + CRLF + "O valor: " + Alltrim(Str(nSaldoAtg)) + " foi alterado para: " + Alltrim(Str(TSALDO_Q)) + "","Quantidade quebrada.")
+		EndIf
+	EndIF
+	//Fim dos ajustes referente ao GAP009
+
 	RestArea(aArea)
 Return(lRet)

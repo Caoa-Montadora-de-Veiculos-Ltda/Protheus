@@ -78,20 +78,20 @@ USER FUNCTION IMPCSV()
 	Aadd(aArqArq,{.F.,""})
 	DEFINE MSDIALOG oDLG TITLE "Importacao de Arquivos CSV" FROM 0,0 TO 430, 680 OF oMainWnd PIXEL
 	@ 040,007 SAY "Tipo Importação" PIXEL OF oDLG
-	@ 050,007 MSGET cTipoImp PICTURE cPICTA VALID(FVAL("TIPOIMP")) F3 "ZZ8" SIZE 035,08 PIXEL OF oDLG
+	@ 050,007 MSGET cTipoImp PICTURE cPICTA VALID(FVAL("TIPOIMP")) F3 "ZZ8" SIZE 035,08 PIXEL HASBUTTON OF oDLG
 	@ 050,046 MSGET cDESCIMP PICTURE WHEN .F. SIZE 115,08  PIXEL OF oDLG
 
 	@ 040,185 SAY "Unid. Requis." PIXEL OF oDLG
-	@ 050,185 MSGET cUnidReq PICTURE cPICTB VALID(FVAL("UNIDREQ",cUnidReq))  F3 CpoRetF3("C1_UNIDREQ") SIZE 035,08 PIXEL OF oDLG
+	@ 050,185 MSGET cUnidReq PICTURE cPICTB VALID(FVAL("UNIDREQ",cUnidReq))  F3 CpoRetF3("C1_UNIDREQ") SIZE 035,08 PIXEL HASBUTTON OF oDLG
 
 	@ 040,230 SAY "Comprador"	PIXEL OF oDLG PIXEL
-	@ 050,230 MSGET cCodCompr PICTURE cPICTC VALID(FVAL("CODCOMP",cCodCompr)) F3 "SY1" SIZE 035,08 PIXEL OF oDLG
+	@ 050,230 MSGET cCodCompr PICTURE cPICTC VALID(FVAL("CODCOMP",cCodCompr)) F3 "_Y1USR" SIZE 035,08 PIXEL HASBUTTON OF oDLG /*Ref. GAP091-"SY1"*/
 
 	@ 040,270 SAY "Quant.Kit" PIXEL OF oDlg
 	@ 050,270 MSGET nQtdKIT PICTURE cPICTD VALID(nQtdKIT>0) WHEN xWhenKit(cTipoImp,cMVTipo) SIZE 035,08  PIXEL OF oDLG
 
 	@ 070,007 SAY "Fornecedor" PIXEL OF oDlg
-	@ 080,007 MSGET cFornC1 PICTURE cPICTE VALID (FVAL("FORNEC1")) F3 "SA2" SIZE 035,08 PIXEL OF oDlg
+	@ 080,007 MSGET cFornC1 PICTURE cPICTE VALID (FVAL("FORNEC1")) F3 "SA2" SIZE 035,08 PIXEL HASBUTTON OF oDlg
 	*
 	@ 070,046 SAY "Lj" PIXEL OF oDlg
 	@ 080,046 MSGET cLojaC1 PICTURE cPICTF VALID (FVAL("LOJAC1")) SIZE 015,08  PIXEL OF oDlg
@@ -100,7 +100,7 @@ USER FUNCTION IMPCSV()
 	@ 080,066 MSGET cDesFor PICTURE WHEN .F. SIZE 115,08  PIXEL OF oDlg
 	*
 	@ 070,185 SAY "Moeda" PIXEL OF oDlg
-	@ 080,185 MSGET cMoedaYf PICTURE cPICTG VALID (FVAL("MOEDAC1")) F3 "SYF"  SIZE 035,08 PIXEL OF oDlg
+	@ 080,185 MSGET cMoedaYf PICTURE cPICTG VALID (FVAL("MOEDAC1")) F3 "SYF"  SIZE 035,08 PIXEL HASBUTTON OF oDlg
 	*
 	@ 070,230 SAY "Moeda" PIXEL OF oDlg
 	@ 080,230 MSGET nMoedaC1 PICTURE cPICTH WHEN .F. SIZE 25,08  PIXEL OF oDlg
@@ -615,6 +615,7 @@ Static Function ImpCsv02(oSay)
 				aItem  := {}
 				aErros := {}
 				cNumSc := GetSX8Num("SC1")
+				//Preenche infor do cabeçalho
 				Aadd( aCab,{"C1_FILIAL"  , cFILSC1              , Nil}) // Filial
 				Aadd( aCab,{"C1_NUM"     , cNumSc               , Nil}) // Num. da Solic.Compra
 				Aadd( aCab,{"C1_EMISSAO" , dDATABASE            , Nil}) // Data Emissao
@@ -664,7 +665,6 @@ Static Function ImpCsv02(oSay)
 						Aadd(aErros,  {"Layout incorreto na linha " + PadL(nB, 5, "0") + " Verifique a quantidade de campos (4-Kits, 9-Veiculos, 7-Peças)"})
 						Loop
 					EndIf
-
 					If WmsVlStr(cProforma) = .F.
 						Aadd(aErros,  {"Arq: " + AllTrim(aArqArq[nA,2]) + ", proforma: " + Alltrim(cProforma) + " contêm caracteres especiais, linha " + cValTochar(nB)})
 						Loop
@@ -712,10 +712,12 @@ Static Function ImpCsv02(oSay)
 							lValid := .F.
 							Aadd(aErros,  {cLErro + AllTrim(cProduto) + " - Não existe amarracao de fabricante. Fornecedor: " + cFornC1 + " - Loja: " + cLojaC1})
 						EndIf
-						If nQuant <= 0
+						//Início dos ajustes do GAP009
+						If (nQuant <= 0) .or. (nQuant <> NoRound(nQuant, 0))
 							lValid := .F.
-							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Quantidade inválida"})
+							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Não é permitido quantidade quebrada, zerada ou negativa."})
 						EndIf
+						//Fim dos ajustes do GAP009
 						If nVlUnit <= 0
 							lValid := .F.
 							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Preço unitário inválido"})
@@ -888,7 +890,7 @@ Static Function ImpCsv02(oSay)
 				cTextoE += aErros[nX,1]+chr(13)+chr(10)
 			Next
 			aErros := {}
-			Define Font oFont Name "Mono AS" Size 5, 12
+			Define Font oFont Name "Mono AS" Size 7, 16
 			DEFINE MSDIALOG oDlgMemo TITLE "Solicitações não importadas!" FROM 3,0 TO 340,417 OF oMainWnd PIXEL
 			@ 5,5 Get oMemo Var cTextoE Memo Size 200, 145 Of oDlgMEMO Pixel
 			oMemo:oFont := oFont

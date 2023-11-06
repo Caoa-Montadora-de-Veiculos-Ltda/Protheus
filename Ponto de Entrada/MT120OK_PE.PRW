@@ -25,7 +25,13 @@ User Function MT120OK()
    Else
       _lRet := zCaoaSp() //Executa o p.e. CaoaSp
    EndIf
-
+	
+	//Início dos ajustes referente ao GAP009
+	If _cEmp == "2020" .and. FindFunction("U_ZCOMF057")//Empresa Barueri
+		_lret := U_zPedComp()
+	EndIf
+	//Início dos ajustes referente ao GAP009
+   
    RestArea(aArea)
 
 Return(_lRet)
@@ -40,44 +46,44 @@ Descricao / Objetivo:   Executa chamada Montadora
 */
 Static Function zMontadora()
 
-Local _lRet       := .T.
-Local  _nOpc      := If(INCLUI,3, ;
-					 IF(ALTERA,4, ;
-					 5) )
+	Local _lRet       := .T.
+	Local  _nOpc      := If(INCLUI,3, ;
+						IF(ALTERA,4, ;
+						5) )
 
-Begin Sequence
+	Begin Sequence
 
-	// ** ************************************************************ ** //
-    // **  VALIDAR CAMPOS, INFORMACOES ADICIONAIS (Enchoise / MsmGet)  ** //
-    // ** ************************************************************ ** //
-	If FindFunction("U_ZCOMF015")
-		_lRet := U_ZCOMF015( "PC" /*Doc*/,_nOpc, /*indica se devve mostrar somente a tela*/)
-	EndIf
+		// ** ************************************************************ ** //
+		// **  VALIDAR CAMPOS, INFORMACOES ADICIONAIS (Enchoise / MsmGet)  ** //
+		// ** ************************************************************ ** //
+		If FindFunction("U_ZCOMF015")
+			_lRet := U_ZCOMF015( "PC" /*Doc*/,_nOpc, /*indica se devve mostrar somente a tela*/)
+		EndIf
 
-	//--Validação somente no PC
-	If IsInCallStack("MATA121")
+		//--Validação somente no PC
+		If IsInCallStack("MATA121")
 
-		ZA4->( dbSetOrder(3) )
-		IF !EMPTY(cC7_XTPRE2) 
-			If !( ZA4->( dbSeek( FWxFilial("ZA4") + "SC" + cC7_XTPRE2  + "PC" + cC7_XTPREQ   )    )   )
-				MSGINFO("NÃo existe Amarração para essa Solicitação de Compras X Pedido de Compras!","Atenção!")
+			ZA4->( dbSetOrder(3) )
+			IF !EMPTY(cC7_XTPRE2) 
+				If !( ZA4->( dbSeek( FWxFilial("ZA4") + "SC" + cC7_XTPRE2  + "PC" + cC7_XTPREQ   )    )   )
+					MSGINFO("Não existe Amarração para essa Solicitação de Compras X Pedido de Compras!","Atenção!")
+					_lRet := .F.
+					Return _lRet
+				Endif
+			ENDIF
+
+			IF EMPTY(cC7_XTPREQ) 
+				MSGINFO("O Pedido de Compras não pode ser gravado com o campo Tipo de Documento em Branco!","Atenção!")
 				_lRet := .F.
 				Return _lRet
 			Endif
-		ENDIF
 
-		IF EMPTY(cC7_XTPREQ) 
-			MSGINFO("O Pedido de Compras não pode ser gravado com o campo Tipo de Documento em Branco!","Atenção!")
-			_lRet := .F.
-			Return _lRet
-		Endif
-
-		//--Validações do campo e-mail do PC
-		If FindFunction("U_ZCOMF029")
-			_lRet := U_ZCF29PCVD()
+			//--Validações do campo e-mail do PC
+			If FindFunction("U_ZCOMF029")
+				_lRet := U_ZCF29PCVD()
+			EndIf
 		EndIf
-	EndIf
-End Sequence
+	End Sequence
 
 Return _lRet
 
@@ -90,25 +96,25 @@ Descricao / Objetivo:   Executa chamada CaoaSp
 ===============================================================================================
 */
 Static Function zCaoaSp()
-Local _lRet       := .T.
-Local  _nOpc      := If(INCLUI,3, ;
-					 IF(ALTERA,4, ;
-					 5) )
+	Local _lRet       := .T.
+	Local  _nOpc      := If(INCLUI,3, ;
+						IF(ALTERA,4, ;
+						5) )
 
-Begin Sequence
-	// ** ************************************************************ ** //
-    // **  VALIDAR CAMPOS, INFORMACOES ADICIONAIS (Enchoise / MsmGet)  ** //
-    // ** ************************************************************ ** //
-	If FindFunction("U_ZCOMF015")
-		_lRet := U_ZCOMF015( "PC" /*Doc*/,_nOpc, /*indica se devve mostrar somente a tela*/)
-	EndIf
-
-	//--Validação somente no PC
-	If IsInCallStack("MATA121")
-		//--Validações do campo e-mail do PC
-		If FindFunction("U_ZCOMF029")
-			_lRet := U_ZCF29PCVD()
+	Begin Sequence
+		// ** ************************************************************ ** //
+		// **  VALIDAR CAMPOS, INFORMACOES ADICIONAIS (Enchoise / MsmGet)  ** //
+		// ** ************************************************************ ** //
+		If FindFunction("U_ZCOMF015")
+			_lRet := U_ZCOMF015( "PC" /*Doc*/,_nOpc, /*indica se devve mostrar somente a tela*/)
 		EndIf
-	EndIf
-End Sequence
+
+		//--Validação somente no PC
+		If IsInCallStack("MATA121")
+			//--Validações do campo e-mail do PC
+			If FindFunction("U_ZCOMF029")
+				_lRet := U_ZCF29PCVD()
+			EndIf
+		EndIf
+	End Sequence
 Return _lRet
