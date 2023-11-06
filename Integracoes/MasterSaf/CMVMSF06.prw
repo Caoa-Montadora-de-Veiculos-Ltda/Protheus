@@ -2778,7 +2778,7 @@ Static Function fSAFX07()
 
 	IF cTpMov = "Entrada"
 //		cQ += CRLF + " 		AND NOT (SF3.F3_TIPO = 'S' OR SF3.F3_ESPECIE = 'RPS' OR (SF3.F3_ESPECIE = 'NFS' AND SF3.F3_CODNFE <> ' ')) "
- 		cQ += CRLF + " 		AND NOT ((SUBSTR(SF3.F3_CFO,1,1) < '5' AND SF3.F3_FORMUL != 'S') OR SF3.F3_TIPO = 'S' OR SF3.F3_ESPECIE = 'RPS' OR (SF3.F3_ESPECIE = 'NFS' AND SF3.F3_CODNFE <> ' ')) "
+ 		cQ += CRLF + " 		AND NOT ( (SUBSTR(SF3.F3_CFO,1,1) < '5' ) OR SF3.F3_TIPO = 'S' OR SF3.F3_ESPECIE = 'RPS' OR (SF3.F3_ESPECIE = 'NFS' AND SF3.F3_CODNFE <> ' ')) "
 	Endif		 
 
 	If  cTpMov = "Saída"
