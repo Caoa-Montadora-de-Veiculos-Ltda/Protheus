@@ -791,9 +791,6 @@ Local _aBak			:= {}
 Local _cValidItSubs := Upper(AllTrim(SuperGetMV( "CMV_PEC022"  ,,"" )))   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
 
 Local _nPos
-Local _aRetSaldo 
-Local _lRetorno 
-Local _cMens
 //Local _aCpoVazio	:= {"VS1_XAGLU","VS1_XDTAGL","VS1_XHSAGL","VS1_XUSUGL","VS1_OBSAGL"}
 //Local _nTam			:= TamSx3("B2_LOCAL")[1]
 Local _nSaldoSB2
@@ -821,24 +818,19 @@ Begin Sequence
 		, 	SB1.B1_MSBLQL
 		, 	SB1.B1_XNUMINM 
 		, 	SB1.B1_XVLDINM 
-		, 	AVG(	CASE WHEN VS3.VS3_CODITE IS NOT NULL 
-				THEN
-				(	SELECT NVL((B2VS3.B2_QATU - B2VS3.B2_RESERVA - B2VS3.B2_QACLASS),0) 
-					FROM %Table:SB2%  B2VS3 
-					WHERE 	B2VS3.B2_FILIAL		= %xFilial:SB2%	
-						AND B2VS3.B2_COD 		= VS3.VS3_CODITE 										
-						AND B2VS3.B2_LOCAL 		= %Exp:_cArmazem%
-						AND B2VS3.%notDel% 
-				) 
-	  	  		ELSE 
-					0	  
-	  	  		END ) AS SLD_VS3
+		, 	AVG(NVL((SB2.B2_QATU - SB2.B2_RESERVA - SB2.B2_QACLASS),0)) AS SLD_VS3
 		,	AVG(COALESCE(VS3.R_E_C_N_O_,0)) NREGVS3 	
+		,   MAX(SB2.B2_DTINV) DATAINVENT
 		FROM %Table:VS3% VS3
 		LEFT  JOIN %Table:SB1% SB1
 			ON SB1.B1_FILIAL 		= %xFilial:SB1%
 			AND SB1.B1_COD 			= VS3.VS3_CODITE
 			AND SB1.%notDel%
+		LEFT  JOIN %Table:SB2% SB2 
+			ON 	SB2.B2_FILIAL		= %xFilial:SB2%	
+			AND SB2.B2_COD 			= VS3.VS3_CODITE 										
+			AND SB2.B2_LOCAL 		= %Exp:_cArmazem%
+			AND SB2.%notDel% 
 		WHERE VS3.VS3_FILIAL 		= %xFilial:VS3%
 			AND VS3.VS3_NUMORC 		= %Exp:_cNumOrc%
 			AND VS3.%notDel%
@@ -919,7 +911,9 @@ Begin Sequence
 		Aadd(_aMensAglu,"Orçamento não possui itens localizados !")
 		Break	
 	Endif
-	
+	//Carrega Objeto para calculo PEC
+	Private _oSaldoPec	:= SaldoCAOAPEC():New(_cCodProd, _cArmazem, _cGrupo, _cMarca)
+
 	While (_cAliasPesq)->(!Eof())
 		//Ajustar tamanho código produto
 		//_cArmazem	:= (_cAliasPesq)->VS3_LOCAL
@@ -962,7 +956,7 @@ Begin Sequence
 			EndIf		
 			//Validar Imetro
 			//GAP_PECCD01 - Controle de Validade de Produtos com Inm V1.
-			//ja esta posicionado no SB1 função U_XSLDCAOAEstoque
+			//ja esta posicionado no SB1 
 			If !Empty((_cAliasPesq)->B1_XNUMINM) .And. (_cAliasPesq)->B1_XVLDINM < DtOS(DATE())
 				Aadd(_aMensAglu,"Produto "+ AllTrim(_cCodProd) +" não permitido faturar, restrição INMETRO !")
 				Aadd(_aBak,{(	_cAliasPesq)->NREGVS3,;
@@ -977,19 +971,27 @@ Begin Sequence
 			//Caso o saldo tenha sido encontrado no produto devo validar pelo Sistema 
 			//no caso
 		Endif
-		_nSaldoSB2 := 0
+		//GAP098 | Desmembrar itens bloqueados por inventário
+		//Verificar se esta em inventário DAC 07/11/2023
+		If !Empty((_cAliasPesq)->DATAINVENT)  
+			Aadd(_aMensAglu,"Produto "+ AllTrim(_cCodProd) +" bloqueado para inventário !")
+			Aadd(_aBak,{(	_cAliasPesq)->NREGVS3,;
+				 			_cCodProd,; 
+							(_cAliasPesq)->QTDE_TOTAL,;
+							_aMensAglu[Len(_aMensAglu)],; 
+							.T. ,;							//_Lxbo 
+							.T. })							//_lZera	
+	   		(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
+			Loop
+		EndIf		
+
 		If (_cAliasPesq)->SLD_VS3 > 0 
-			_aRetSaldo 	:= U_XSLDCAOAEstoque(_cCodProd, _cArmazem, _cGrupo ) //procurar saldo entre Wis e Proteus DAC 25/05/2022
-			_lRetorno  	:= _aRetSaldo[1]  //Retorna verdadeiro ou falso
-			_nSaldoSB2  := _aRetSaldo[2]  //Retorna oSaldo calculado
-			_cMens		:= _aRetSaldo[3]  //Retorna as Mensagens de validações	 
-			_cCodProd	:= _aRetSaldo[4]  //pego o produto novamente pois o mesmo pode ter sido ajustado o tamanho
-			//quando retorno mensagem ja devo separar para gravar	
-			If !Empty(_cMens)
-				Aadd(_aMensAglu,_cMens)
-			EndIf	
-			If !_lRetorno  //posição de retorno
-				Aadd(_aMensAglu, _cMens)  //retorno de msg
+			_oSaldoPec	:= CarregaCAOAPEC(_cCodProd, _cArmazem, _cGrupo, _cMarca, /*nSaldoSB2*/)
+			//ocorreu problemas no calculo
+			If Len(_oSaldoPec:_aError) > 0  
+				For _nPos := 1 To Len(_oSaldo:_aError)
+					Aadd(_aMensAglu,_oSaldo:_aError[_nPos])
+				Next
 				Aadd(_aBak,{(	_cAliasPesq)->NREGVS3,;
 			 					_cCodProd,; 
 								(_cAliasPesq)->QTDE_TOTAL,;
@@ -999,6 +1001,7 @@ Begin Sequence
 				(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
 				Loop
 			EndIf
+			_nSaldoSB2 := _oSaldoPec:_nSaldoPEC
 		EndIf
 		//Avaliar e tratar item parcial quando for parcial deverá utilizar o saldo do B2 e o restante deverá gerar separação via Bakorder
 		If (_cAliasPesq)->QTDE_TOTAL <= _nSaldoSB2  //possui saldo posso processar
@@ -1016,7 +1019,7 @@ Begin Sequence
 				//Verifica se tem item substituto
 				_nQtdeItem := (_cAliasPesq)->QTDE_TOTAL
 				Aadd(_aMensAglu,"Existe saldo no item principal, procurar item Substitutos para o produto " +AllTrim(_cCodProd)+ " armazem "+_cArmazem+"+ verificar se existe saldo produtos antigos !")	
-				_lRet := ZPECF08SUB( _cNumOrc, _cGrupo, _cCodProd, _cArmazem, @_nQtdeItem )
+				_lRet := ZPECF08SUB( _cNumOrc, _cGrupo, _cCodProd, _cArmazem, @_nQtdeItem, _cMarca )
 				//Caso seja feito parcial informar
 				If _lRet .and. _nQtdeItem <> (_cAliasPesq)->QTDE_TOTAL
 					Aadd(_aMensAglu,"Feita Sustituição "+If(_nQtdeItem > 0," parcial","")+ "do item principal, por item Substitutos para o produto " +AllTrim(_cCodProd)+ " armazem "+_cArmazem+" não possui saldo total no substituto ! ")	
@@ -1025,6 +1028,7 @@ Begin Sequence
 			(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
 			Loop
 		EndIf
+
 		//Verificar utilização do parcial
 		Aadd(_aMensAglu,"Produto "+AllTrim(_cCodProd)+" armazem "+_cArmazem+" não possui saldo suficiente para faturamento, saldo atual " +AllTrim(Transform(_nSaldoSB2,"@E 999,999.999")))	
 		 _nQtdeParc := 0  
@@ -1061,7 +1065,7 @@ Begin Sequence
 			//MV_MIL0095 -- Fase de Conferência e Separação Personalizada      = 4
 			//Verificar pelo padrão existem regras que verificam produtos com situações diferentes exemplo similar DAC 01/12/2022
 			//If (_cAliasPesq)->SLD_SUBSTI > 0
-			_lRet := ZPECF08SUB( _cNumOrc, _cGrupo, _cCodProd, _cArmazem, @_nQtdeItem )
+			_lRet := ZPECF08SUB( _cNumOrc, _cGrupo, _cCodProd, _cArmazem, @_nQtdeItem, _cMarca )
 			//Caso consegui completar orçamento posso sair
 			If _lRet .and. _nQtdeItem <= 0
 				(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
@@ -1071,7 +1075,7 @@ Begin Sequence
 			//EndIf
 			//2- item similar
 			//If (_cAliasPesq)->SLD_SIMILAR > 0
-			_lRet := ZPECF08SIM( _cNumOrc, _cGrupo, _cCodProd, _cArmazem, @_nQtdeItem  )
+			_lRet := ZPECF08SIM( _cNumOrc, _cGrupo, _cCodProd, _cArmazem, @_nQtdeItem, _cMarca  )
 			//Caso consegui completar orçamento posso sair
 			If _lRet .and. _nQtdeItem <= 0  
 				(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
@@ -1082,7 +1086,7 @@ Begin Sequence
 			/* conforme Zé não vai entrar num primeiro momento
 			Zé solicitou validação do KIT 03/02/2022 DAC */
 			//If (_cAliasPesq)->SLD_KIT	
-			_lRet := ZPECF08KIT( _cNumOrc, _cGrupo, _cCodProd, _cArmazem, @_nQtdeItem, (_cAliasPesq)->NREGVS3, _lParcial )
+			_lRet := ZPECF08KIT( _cNumOrc, _cGrupo, _cCodProd, _cArmazem, @_nQtdeItem, (_cAliasPesq)->NREGVS3, _lParcial, _cMarca )
 			//Caso consegui completar orçamento posso sair
 			If _lRet //.and. _nQtdeItem <= 0   //kit tem que ser tratado diferente na questão quantidade se retornar verdadeiro a quantidade do produto original ja foi zerada na funcionalidade
 				(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
@@ -1143,19 +1147,15 @@ Responsável por pesquisar item substituto
 @return		_lRet		- Verdadeiro ou falso
 @history    
 /*/
-Static Function	ZPECF08SUB(_cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem)
-	Local _lRet			:= .F.
-	Local _nQtdeAnt		:= _nQtdeItem
-	Local _nSaldoSB2
-	Local _aItemRelac	
-	Local _cCodSubst
-	Local _cGrupoSubst 
-	Local _nQtdePrd  
-	Local _nPos
-	Local _aRetSaldo 
-	Local _lRetorno
-	Local _cMens
-	Local _cCodProd	
+Static Function	ZPECF08SUB(_cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _cMarca)
+Local _lRet			:= .F.
+Local _nQtdeAnt		:= _nQtdeItem
+Local _nSaldoSB2
+Local _aItemRelac	
+Local _cCodSubst
+Local _cGrupoSubst 
+Local _nQtdePrd  
+Local _nPos
 
 	//Local _lSaldoItSubs	:= GetNewPar("MV_CHKQSUB","N") == "S"  //indica se verifica saldo do SB2 para dar continuidade no processamento
 
@@ -1172,19 +1172,14 @@ Static Function	ZPECF08SUB(_cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem)
 			_cGrupoSubst	:= _aItemRelac[_nPos,1]
 			_cCodSubst 		:= AllTrim(_aItemRelac[_nPos,2])
 			_nSaldoSB2 		:= _aItemRelac[_nPos,7]
-			//Verificar saldo wis DAC 26/05/2022
-			_aRetSaldo 	:= U_XSLDCAOAEstoque(_cCodSubst, _cLocal, _cGrupoSubst, _nSaldoSB2 ) //procurar saldo entre Wis e Proteus DAC 25/05/2022
-			_lRetorno  	:= _aRetSaldo[1]  //Retorna verdadeiro ou falso
-			_nSaldoSB2  := _aRetSaldo[2]  //Retorna oSaldo calculado
-			_cMens		:= _aRetSaldo[3]  //Retorna as Mensagens de validações	 
-			_cCodProd	:= _aRetSaldo[4]  //pego o produto novamente pois o mesmo pode ter sido ajustado o tamanho
-			//quando retorno mensagem ja devo separar para gravar	
-			If !Empty(_cMens)
-				Aadd(_aMensAglu,_cMens)
-			EndIf	
-			If !_lRetorno
-				Break
-			Endif
+			
+			//Calcular o Saldo
+			_oSaldoPec	:= CarregaCAOAPEC(_cCodSubst, _cLocal, _cGrupoSubst, _cMarca, _nSaldoSB2)
+			If Len(_oSaldoPec:_aError) > 0  //ocorreu problemas no calculo
+				Aadd(_aMensAglu,"Não existe saldo do item Substituto " +AllTrim(_cCodSubst)+ " para o produto " +AllTrim(_cCodItem))	
+				Break 
+			Endif	
+			_nSaldoSB2 := _oSaldoPec:_nSaldoPEC
 			//Caso esteja zerado
 			If _nSaldoSB2 <= 0
 				Aadd(_aMensAglu,"Não existe saldo do item Substituto " +AllTrim(_cCodSubst)+ " para o produto " +AllTrim(_cCodItem))	
@@ -1229,18 +1224,14 @@ Responsável por pesquisar item Similar
 @return		_lRet		- Verdadeiro ou falso
 @history    
 /*/
-Static Function ZPECF08SIM( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem)
+Static Function ZPECF08SIM( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _cMarca)
 	Local _lRet 	:= .F.
 	Local _nQtdeAnt := _nQtdeItem
 	Local _aItemSim
 	Local _nPos
 	Local _cCodSimilar
 	Local _cGrupoSubst
-	Local _aRetSaldo
-	Local _lRetorno  
 	Local _nSaldoSB2
-	Local _cMens
-	Local _cCodProd	
 	//Local _lSaldoItSubs	:= GetNewPar("MV_CHKQSUB","N") == "S"  //indica se verifica saldo do SB2 para dar continuidade no processamento
 
 	Begin Sequence
@@ -1257,20 +1248,14 @@ Static Function ZPECF08SIM( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem)
 			_cGrupoSubst	:= _aItemSim[_nPos,1]
 			_cCodSimilar	:= AllTrim(_aItemSim[_nPos,2])
 			_nSaldoSB2 		:= _aItemSim[_nPos,4] //SB2->(SaldoSB2())
-			//Verificar saldo wis DAC 26/05/2022
-			_aRetSaldo 	:= U_XSLDCAOAEstoque(_cCodSimilar, _cLocal, _cGrupoSubst, _nSaldoSB2 ) //procurar saldo entre Wis e Proteus DAC 25/05/2022
-			_lRetorno  	:= _aRetSaldo[1]  //Retorna verdadeiro ou falso
-			_nSaldoSB2  := _aRetSaldo[2]  //Retorna oSaldo calculado
-			_cMens		:= _aRetSaldo[3]  //Retorna as Mensagens de validações	 
-			_cCodProd	:= _aRetSaldo[4]  //pego o produto novamente pois o mesmo pode ter sido ajustado o tamanho
-			//quando retorno mensagem ja devo separar para gravar	
-			If !Empty(_cMens)
-				Aadd(_aMensAglu,_cMens)
-			EndIf	
-			If !_lRetorno
-				Break
-			Endif
 
+			//Calcular o Saldo
+			_oSaldoPec	:= CarregaCAOAPEC(_cCodSimilar, _cLocal, _cGrupoSubst, _cMarca, _nSaldoSB2)
+			If Len(_oSaldoPec:_aError) > 0  //ocorreu problemas no calculo
+				Aadd(_aMensAglu,"Não existe saldo do item Similar " +AllTrim(_cCodSimilar)+ " para o produto " +AllTrim(_cCodItem))	
+				Break 
+			Endif	
+			_nSaldoSB2 := oSaldo:_nSaldoPEC
 			//Caso esteja zerado
 			If _nSaldoSB2 <= 0
 				Aadd(_aMensAglu,"Não existe saldo do item Similar " +AllTrim(_cCodSimilar)+ " para o produto " +AllTrim(_cCodItem))	
@@ -1284,7 +1269,7 @@ Static Function ZPECF08SIM( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem)
 			EndIf	
 			//Gravar o saldo existente em novo registro
 			If !ZPECF08PARC( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSimilar, _cGrupoSubst, @_nQtdeItem, _nQtdePrd, _nSaldoSB2, "2" )
-				Aadd(_aMensAglu,"Não foi possivel montar PARCIAL doProduto "+AllTrim(_cCodItem))	
+				Aadd(_aMensAglu,"Não foi possivel montar PARCIAL do Produto "+AllTrim(_cCodItem))	
 				Break
 			EndIf
 			//Se zerou é por que conseguiu atingir todos os produtos
@@ -1318,7 +1303,7 @@ Responsável por pesquisar e verificar se existe KIT disponivel
 @history    06/07/2022 DAC - JC solicitou alterar o tipo VEH_TIPO = 2 para VEH_TIPO = 1
 			21/07/2022 DAC - Alteração na seleção do KIT irá verificar VEH_TIPO 1 e 2, onde 1 = MANDATÓRIO e 2 = CORRELATO
 /*/
-Static Function ZPECF08KIT( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _nRegVS3, _lParcial  )
+Static Function ZPECF08KIT( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _nRegVS3, _lParcial, _cMarca  )
 	//Local aRet := OFIOC040(_cGrupo,AllTrim(_cCodItem)+"KIT")
 	Local _cCodKit 		:= AllTrim(_cCodItem) //+"KIT"  	//verificar se o codigo do kit será o mesmo código com final KIT - CONFORME ALINHADO COM ZÉ SERA INCLUÍDO NO CADASTRO COM MESMO CÓDIGO DE PRODUTO ACRESCENTANDO NO FINAL KIT
 	Local _cGrupoKit	:= _cGrupo							//verificar se o grupo do kit sera o mesmo do grupo do produto normal - CONFORME ALINHADO COM ZÉ SIM DEVERÁ SER O MESMO GRUPO DO PRODUTO ORIGINAL	
@@ -1376,7 +1361,7 @@ Static Function ZPECF08KIT( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _
 				_cCodKit	:= VEH->VEH_CODKIT
 				_aKit  	:= {}
 				_aBak	:= {}
-				_aRet 	:= ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodKit, _cCodItem, _cLocal, _nRegVS3)
+				_aRet 	:= ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodKit, _cCodItem, _cLocal, _nRegVS3, _cMarca)
 				If Len(_aRet) == 0 .or. Len(_aRet[1]) == 0  //sempre tem que ter um KIT
 					_lRet := .F.
 					Break	
@@ -1412,20 +1397,17 @@ Static Function ZPECF08KIT( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _
 Return _lRet
 
 //Avaliar itens do KIT
-Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodKit, _cCodItem, _cLocal, _nRegVS3)
+Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodKit, _cCodItem, _cLocal, _nRegVS3, _cMarca)
 	Local _lRet			:= .T.
 	Local _cAliasPesq	:= GetNextAlias()
 	Local _aKit			:= {}
 	Local _aBak			:= {}
 	Local _cCodSubst
 	Local _cGrupoSubst
-	Local _aRetSaldo
-	Local _lRetorno  
 	Local _nSaldoSB2
-	Local _cMens
-	Local _cCodProd	
 	Local _nQtdePrd
 	Local _nQtde
+	Local _oSaldo
 
 	Default _nRegVS3 	:= 0
 
@@ -1474,23 +1456,17 @@ Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodK
 				(_cAliasPesq)->(DbSkip())
 				Loop
 			EndIf	   
-			_nSaldoSB2 := SB2->(SaldoSB2())
 
-			//Verificar saldo wis DAC 26/05/2022
-			_aRetSaldo 	:= U_XSLDCAOAEstoque(_cCodSubst, _cLocal, _cGrupoSubst, _nSaldoSB2 ) //procurar saldo entre Wis e Proteus DAC 25/05/2022
-			_lRetorno  	:= _aRetSaldo[1]  //Retorna verdadeiro ou falso
-			_nSaldoSB2  := _aRetSaldo[2]  //Retorna oSaldo calculado
-			_cMens		:= _aRetSaldo[3]  //Retorna as Mensagens de validações	 
-			_cCodProd	:= _aRetSaldo[4]  //pego o produto novamente pois o mesmo pode ter sido ajustado o tamanho
-			//quando retorno mensagem ja devo separar para gravar	
-			If !Empty(_cMens)
-				Aadd(_aMensAglu,_cMens)
-			EndIf	
-			If !_lRetorno
-				_aKit := {}
+			//Calcular o Saldo
+			_nSaldoSB2 := SB2->(SaldoSB2())
+			_oSaldoPec	:= CarregaCAOAPEC(_cCodSubst, _cLocal, _cGrupoSubst, _cMarca, _nSaldoSB2)
+			If Len(_oSaldo:_aError) > 0  //ocorreu problemas no calculo
+				Aadd(_aMensAglu,"KIT - Não existe saldo do item KIT " +AllTrim(_cCodSubst)+ " para o produto " +AllTrim(_cCodKit)+" armazém "+_cLocal)	
 				(_cAliasPesq)->(DbSkip())
 				Loop
-			Endif
+			Endif	
+			_nSaldoSB2 := _oSaldoPec:_nSaldoPEC
+
 			//como é KIT tenho que multiplicar pela quantidade
 			_nQtdePrd := _nQtdeItem * VE8->VE8_QTDADE  //verificar se a conta será realizada deste jeito ESTA CORRETO
 			//Verifico se o tipo do KIT VEH for "2=KIT" e não tiver saldo não posso utilizar
@@ -3040,9 +3016,6 @@ Local _cAliasPesq	:= GetNextAlias()
 Local _cArmazem		:= _cLocal
 Local _aBak			:= {}
 Local _nPos
-Local _aRetSaldo 
-Local _lRetorno 
-Local _cMens
 Local _nSaldoSB2
 Local _nQtdeItem 
 Local _cCodProd
@@ -3138,29 +3111,22 @@ Begin Sequence
    			(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
 			Loop
 		Endif
-		_nSaldoSB2 := 0
-		If (_cAliasPesq)->SLD_VS3 > 0 
-			_aRetSaldo 	:= U_XSLDCAOAEstoque(_cCodProd, _cArmazem, _cGrupo ) //procurar saldo entre Wis e Proteus DAC 25/05/2022
-			_lRetorno  	:= _aRetSaldo[1]  //Retorna verdadeiro ou falso
-			_nSaldoSB2  := _aRetSaldo[2]  //Retorna oSaldo calculado
-			_cMens		:= _aRetSaldo[3]  //Retorna as Mensagens de validações	 
-			_cCodProd	:= _aRetSaldo[4]  //pego o produto novamente pois o mesmo pode ter sido ajustado o tamanho
-			//quando retorno mensagem ja devo separar para gravar	
-			If !Empty(_cMens)
-				Aadd(_aMensAglu,_cMens)
-			EndIf	
-			If !_lRetorno  //posição de retorno
-				Aadd(_aMensAglu, _cMens)  //retorno de msg
-				Aadd(_aBak,{(	_cAliasPesq)->NREGVS3,;
-			 					_cCodProd,; 
-								(_cAliasPesq)->QTDE_TOTAL,;
-								_aMensAglu[Len(_aMensAglu)],; 
-								.T. ,;							//_Lxbo 
-								.T. })							//_lZera	
-				(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
-				Loop
-			EndIf
+		_oSaldoPec	:= CarregaCAOAPEC(_cCodProd, (_cAliasPesq)->VS3_LOCAL, _cGrupo, _cMarca, /*nSaldoSB2*/)
+		If Len(_oSaldo:_aError) > 0  //ocorreu problemas no calculo
+			For _nPos := 1 To Len(_oSaldo:_aError)
+				Aadd(_aMensAglu,_oSaldo:_aError[_nPos])
+			Next
+			Aadd(_aBak,{(	_cAliasPesq)->NREGVS3,;
+							_cCodProd,; 
+							(_cAliasPesq)->QTDE_TOTAL,;
+							_aMensAglu[Len(_aMensAglu)],; 
+							.T. ,;							//_Lxbo 
+							.T. })							//_lZera	
+			(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
+			Loop
 		EndIf
+		_nSaldoSB2 := _oSaldoPec:_nSaldoPEC
+
 		//Avaliar e tratar item parcial quando for parcial deverá utilizar o saldo do B2 e o restante deverá gerar separação via Bakorder
 		If (_cAliasPesq)->QTDE_TOTAL <= _nSaldoSB2  //possui saldo posso processar
 			_lSepara := .T.   //ja indico que existira separação

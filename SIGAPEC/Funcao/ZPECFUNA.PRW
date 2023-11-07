@@ -3658,6 +3658,21 @@ User Function XSLDCAOAEstoque(_cCodProd, _cArmazem, _cGrupo, _nSaldoSB2, _cMarca
 		If Empty(_cGrupoRet)
 			_cGrupoRet := SB1->B1_GRUPO
 		EndIf
+		//GAP098 | Desmembrar itens bloqueados por inventário
+		//Verificar se esta em inventário DAC 07/11/2023
+		If SB2->B2_COD <> SB1->B1_COD .Or. AllTrim(SB2->B2_LOCAL) <> AllTrim(_cArmazemRet)
+			SB2->(DbSetOrder(1))
+			If !SB2->(DbSeek(XFilial("SB2")+SB1->B1_COD+_cArmazemRet))
+				Aadd(_aMens,"Produto "+ AllTrim(_cCodProdRet) +" Armazém "+_cArmazemRet+" não localizao função XSLDCAOAEstoque !")
+				_lRet := .F.
+				Break
+			Endif
+		Endif 
+		If !Empty(SB2->B2_DTINV)
+			Aadd(_aMens,"Produto "+ AllTrim(_cCodProdRet) +" Armazém "+_cArmazemRet+" com vloqueio de inventário função XSLDCAOAEstoque !")
+			_lRet := .F.
+			Break
+		Endif
 		//quando vem informado o saldo nÃ£o sera validado novamente, isto ocorrera no similar, kit
 		If _nSaldoSB2 <= 0
 			//FunÃ§Ã£o no padrÃ£o SIGAPEC		
