@@ -435,12 +435,9 @@ User Function CMVMSF06()
 		aAdd(aParamBox,{1 ,"Nota Fiscal Inicial:"        ,Space(TamSX3("F1_DOC")[1])   ,""    ,"",""   ,"", 80,.F.}) // Tipo caractere
 		aAdd(aParamBox,{1 ,"Nota Fiscal Final:"          ,Repl("Z",TamSX3("F1_DOC")[1]),""    ,"",""   ,"", 80,.F.}) // Tipo caractere
 		aAdd(aParamBox,{1 ,"Local do Arquivo:"           ,"C:\TEMP\"+Space(50)         ,"@S50","","",""   ,100,.T.}) // Tipo caractere
-
 		aAdd(aParamBox,{2 ,"Gera com cabeçalho:"         ,1,{"Não","Sim"},40,"",.F.})
 		aAdd(aParamBox,{2 ,"Selecionar Notas Fiscais:"   ,1,{"Não","Sim"},40,"",.F.})
-
 		aAdd(aParamBox,{2 ,"Tipo de Nota Fiscal:"        ,"Entrada",{"Entrada","Saída","Ambas"},40,"",.F.})
-
 		If ParamBox(aParamBox,"Parametros para geração do Arquivo...",@aRet)
 			cFilDe     := aRet[1]
 			cFilAte    := aRet[2]
