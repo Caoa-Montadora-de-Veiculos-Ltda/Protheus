@@ -8,6 +8,7 @@
 #define CRLF chr(13) + chr(10)
 
 Static oZPEC08Peca  := DMS_Peca():New()
+Static _oSaldoPec	:= SaldoCAOAPEC():New()  //GAP098 | Desmembrar itens bloqueados por inventário - Alteração funcionalidade de verificação saldo WIS e Protheus DAC 08/11/2023
 
 /*/{Protheus.doc} ZPECF008
 Responsável por Aglutinar e Separação do orçamento passando pelas fases automaticamente
@@ -23,6 +24,8 @@ Responsável por Aglutinar e Separação do orçamento passando pelas fases automati
 @history    DAC - 16/12/2022 PEC031 - Limite de Credito - Revitalização DAC
 @    		DAC -19/05/2023
             PEC042 - Controle de saldo e e-mail apos integracao de armazenagem - Imprimir sem passar pelo parâmetro chamada ZPECR007
+			GAP098 | Desmembrar itens bloqueados por inventário - Alteração funcionalidade de verificação saldo WIS e Protheus DAC 08/11/2023
+
 /*/
 User Function ZPECF008()
 	Local _aSays	    := {}
@@ -662,7 +665,7 @@ Begin Sequence
 			//gravar informações no VS1
 			_cObs := 	Upper("Aglutinado/Separação "+ _cAglutina +" em "+ DtoC(Date()) +" "+ ;
 		  				SubsTr(Time(),1,5) +" hs." +If(_lRet," com sucesso "," não realizado")) + CRLF
-			_cObs += "PROCESSANDO ARMAZÉM"+ _cLocal + CRLF
+			_cObs += "PROCESSANDO ARMAZÉM -> "+ _cLocal + CRLF
 			
 			If Len(_aMensAglu) > 0
 				For _nPos := 1 To Len(_aMensAglu)
@@ -791,6 +794,7 @@ Local _aBak			:= {}
 Local _cValidItSubs := Upper(AllTrim(SuperGetMV( "CMV_PEC022"  ,,"" )))   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
 
 Local _nPos
+Local _cGrupo
 //Local _aCpoVazio	:= {"VS1_XAGLU","VS1_XDTAGL","VS1_XHSAGL","VS1_XUSUGL","VS1_OBSAGL"}
 //Local _nTam			:= TamSx3("B2_LOCAL")[1]
 Local _nSaldoSB2
@@ -912,7 +916,6 @@ Begin Sequence
 		Break	
 	Endif
 	//Carrega Objeto para calculo PEC
-	Private _oSaldoPec	:= SaldoCAOAPEC():New(_cCodProd, _cArmazem, _cGrupo, _cMarca)
 
 	While (_cAliasPesq)->(!Eof())
 		//Ajustar tamanho código produto
@@ -985,12 +988,14 @@ Begin Sequence
 			Loop
 		EndIf		
 
+		_nSaldoSB2 := 0
 		If (_cAliasPesq)->SLD_VS3 > 0 
-			_oSaldoPec	:= CarregaCAOAPEC(_cCodProd, _cArmazem, _cGrupo, _cMarca, /*nSaldoSB2*/)
+			//GAP098 | Desmembrar itens bloqueados por inventário - Alteração funcionalidade de verificação saldo WIS e Protheus DAC 08/11/2023
+			_oSaldoPec:CarregaCAOAPEC(_cCodProd, _cArmazem, _cGrupo, _cMarca, /*nSaldoSB2*/)
 			//ocorreu problemas no calculo
 			If Len(_oSaldoPec:_aError) > 0  
-				For _nPos := 1 To Len(_oSaldo:_aError)
-					Aadd(_aMensAglu,_oSaldo:_aError[_nPos])
+				For _nPos := 1 To Len(_oSaldoPec:_aError)
+					Aadd(_aMensAglu,_oSaldoPec:_aError[_nPos])
 				Next
 				Aadd(_aBak,{(	_cAliasPesq)->NREGVS3,;
 			 					_cCodProd,; 
@@ -1156,6 +1161,7 @@ Local _cCodSubst
 Local _cGrupoSubst 
 Local _nQtdePrd  
 Local _nPos
+Local _nCount
 
 	//Local _lSaldoItSubs	:= GetNewPar("MV_CHKQSUB","N") == "S"  //indica se verifica saldo do SB2 para dar continuidade no processamento
 
@@ -1173,10 +1179,14 @@ Local _nPos
 			_cCodSubst 		:= AllTrim(_aItemRelac[_nPos,2])
 			_nSaldoSB2 		:= _aItemRelac[_nPos,7]
 			
+			//GAP098 | Desmembrar itens bloqueados por inventário - Alteração funcionalidade de verificação saldo WIS e Protheus DAC 08/11/2023
 			//Calcular o Saldo
-			_oSaldoPec	:= CarregaCAOAPEC(_cCodSubst, _cLocal, _cGrupoSubst, _cMarca, _nSaldoSB2)
+			_oSaldoPec:CarregaCAOAPEC(_cCodSubst, _cLocal, _cGrupoSubst, _cMarca, _nSaldoSB2)
 			If Len(_oSaldoPec:_aError) > 0  //ocorreu problemas no calculo
 				Aadd(_aMensAglu,"Não existe saldo do item Substituto " +AllTrim(_cCodSubst)+ " para o produto " +AllTrim(_cCodItem))	
+				For _nCount := 1 To Len(_oSaldoPec:_aError)
+					Aadd(_aMensAglu, _oSaldoPec:_aError[_nCount])
+				Next _nCount
 				Break 
 			Endif	
 			_nSaldoSB2 := _oSaldoPec:_nSaldoPEC
@@ -1195,6 +1205,12 @@ Local _nPos
 				Aadd(_aMensAglu,"Não foi possivel montar PARCIAL doProduto "+AllTrim(_cCodItem))	
 				Break
 			EndIf		
+			If Len(_oSaldoPec:_aMsg) > 0  //ocorreu problemas no calculo
+				Aadd(_aMensAglu,"Utilizado saldo do item Substituto " +AllTrim(_cCodSubst)+ " para o produto " +AllTrim(_cCodItem))	
+				For _nCount := 1 To Len(_oSaldoPec:_aMsg)
+					Aadd(_aMensAglu, _oSaldoPec:_aMsg[_nCount])
+				Next _nCount
+			Endif	
 			If _nQtdeItem <= 0
 				Exit
 			EndIf		
@@ -1232,6 +1248,7 @@ Static Function ZPECF08SIM( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _
 	Local _cCodSimilar
 	Local _cGrupoSubst
 	Local _nSaldoSB2
+	Local _nCount
 	//Local _lSaldoItSubs	:= GetNewPar("MV_CHKQSUB","N") == "S"  //indica se verifica saldo do SB2 para dar continuidade no processamento
 
 	Begin Sequence
@@ -1249,13 +1266,17 @@ Static Function ZPECF08SIM( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _
 			_cCodSimilar	:= AllTrim(_aItemSim[_nPos,2])
 			_nSaldoSB2 		:= _aItemSim[_nPos,4] //SB2->(SaldoSB2())
 
+			//GAP098 | Desmembrar itens bloqueados por inventário - Alteração funcionalidade de verificação saldo WIS e Protheus DAC 08/11/2023
 			//Calcular o Saldo
-			_oSaldoPec	:= CarregaCAOAPEC(_cCodSimilar, _cLocal, _cGrupoSubst, _cMarca, _nSaldoSB2)
+			_oSaldoPec:CarregaCAOAPEC(_cCodSimilar, _cLocal, _cGrupoSubst, _cMarca, _nSaldoSB2)
 			If Len(_oSaldoPec:_aError) > 0  //ocorreu problemas no calculo
 				Aadd(_aMensAglu,"Não existe saldo do item Similar " +AllTrim(_cCodSimilar)+ " para o produto " +AllTrim(_cCodItem))	
+				For _nCount := 1 To Len(_oSaldoPec:_aError)
+					Aadd(_aMensAglu, _oSaldoPec:_aError[_nCount])
+				Next _nCount
 				Break 
 			Endif	
-			_nSaldoSB2 := oSaldo:_nSaldoPEC
+			_nSaldoSB2 := _oSaldoPec:_nSaldoPEC
 			//Caso esteja zerado
 			If _nSaldoSB2 <= 0
 				Aadd(_aMensAglu,"Não existe saldo do item Similar " +AllTrim(_cCodSimilar)+ " para o produto " +AllTrim(_cCodItem))	
@@ -1274,6 +1295,13 @@ Static Function ZPECF08SIM( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _
 			EndIf
 			//Se zerou é por que conseguiu atingir todos os produtos
 			//VERIFICAR POSTERIORMENTE SE IRA PODER SER COM PARCIAL CASO SEJA AI TEM QUE RETORNAR VERDADEIRO E MONTAR OUTRO ORÇAMENTO COM A QUANTIDADE FALTANTE
+			If Len(_oSaldoPec:_aMsg) > 0  //ocorreu problemas no calculo
+				Aadd(_aMensAglu,"Utiizado saldo do item Similar " +AllTrim(_cCodSimilar)+ " para o produto " +AllTrim(_cCodItem))	
+				For _nCount := 1 To Len(_oSaldoPec:_aMsg)
+					Aadd(_aMensAglu, _oSaldoPec:_aMsg[_nCount])
+				Next _nCount
+			Endif	
+
 			If _nQtdeItem <= 0
 				Exit
 			EndIf		
@@ -1407,7 +1435,7 @@ Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodK
 	Local _nSaldoSB2
 	Local _nQtdePrd
 	Local _nQtde
-	Local _oSaldo
+	Local _nCount
 
 	Default _nRegVS3 	:= 0
 
@@ -1459,9 +1487,13 @@ Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodK
 
 			//Calcular o Saldo
 			_nSaldoSB2 := SB2->(SaldoSB2())
-			_oSaldoPec	:= CarregaCAOAPEC(_cCodSubst, _cLocal, _cGrupoSubst, _cMarca, _nSaldoSB2)
-			If Len(_oSaldo:_aError) > 0  //ocorreu problemas no calculo
+			//GAP098 | Desmembrar itens bloqueados por inventário - Alteração funcionalidade de verificação saldo WIS e Protheus DAC 08/11/2023
+			_oSaldoPec:CarregaCAOAPEC(_cCodSubst, _cLocal, _cGrupoSubst, _cMarca, _nSaldoSB2)
+			If Len(_oSaldoPec:_aError) > 0  //ocorreu problemas no calculo
 				Aadd(_aMensAglu,"KIT - Não existe saldo do item KIT " +AllTrim(_cCodSubst)+ " para o produto " +AllTrim(_cCodKit)+" armazém "+_cLocal)	
+				For _nCount := 1 To Len(_oSaldoPec:_aError)
+					Aadd(_aMensAglu, _oSaldoPec:_aError[_nCount])
+				Next _nCount
 				(_cAliasPesq)->(DbSkip())
 				Loop
 			Endif	
@@ -1530,6 +1562,12 @@ Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodK
 						_nSaldoSB2,;
 						VE8->VE8_TIPO})		//09 - VS3_PECKIT 0=Não;1=Mandatório;2=Correlato 
 
+			If Len(_oSaldoPec:_aMsg) > 0  //ocorreu problemas no calculo
+				Aadd(_aMensAglu,"KIT - Utilizado saldo do item KIT " +AllTrim(_cCodSubst)+ " para o produto " +AllTrim(_cCodKit)+" armazém "+_cLocal)	
+				For _nCount := 1 To Len(_oSaldoPec:_aMsg)
+					Aadd(_aMensAglu, _oSaldoPec:_aMsg[_nCount])
+				Next _nCount
+			Endif	
 			(_cAliasPesq)->(DbSkip())
 		EndDo
 	End Sequence
@@ -3111,10 +3149,11 @@ Begin Sequence
    			(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
 			Loop
 		Endif
-		_oSaldoPec	:= CarregaCAOAPEC(_cCodProd, (_cAliasPesq)->VS3_LOCAL, _cGrupo, _cMarca, /*nSaldoSB2*/)
-		If Len(_oSaldo:_aError) > 0  //ocorreu problemas no calculo
-			For _nPos := 1 To Len(_oSaldo:_aError)
-				Aadd(_aMensAglu,_oSaldo:_aError[_nPos])
+		//GAP098 | Desmembrar itens bloqueados por inventário - Alteração funcionalidade de verificação saldo WIS e Protheus DAC 08/11/2023
+		_oSaldoPec:CarregaCAOAPEC(_cCodProd, (_cAliasPesq)->VS3_LOCAL, _cGrupo, _cMarca, /*nSaldoSB2*/)
+		If Len(_oSaldoPec:_aError) > 0  //ocorreu problemas no calculo
+			For _nPos := 1 To Len(_oSaldoPec:_aError)
+				Aadd(_aMensAglu,_oSaldoPec:_aError[_nPos])
 			Next
 			Aadd(_aBak,{(	_cAliasPesq)->NREGVS3,;
 							_cCodProd,; 
@@ -3172,6 +3211,11 @@ Begin Sequence
 						_cObs,;
 						.T.,;    ///*_LXBO*/
 						_lZera /*indica se zera ou*/})
+		If Len(_oSaldoPec:_aMsg) > 0	
+			For _nPos := 1 To Len(_oSaldoPec:_aMsg)
+				Aadd(_aMensAglu,_oSaldoPec:_aMsg[_nPos])
+			Next _nPos
+		Endif
 	   (_cAliasPesq)->(DbSkip())
 	Enddo
 End Sequence

@@ -8,7 +8,7 @@ Classe para localizar saldo WIS e retornar saldo valido entre WIS e Prothes
 @history  substitui a função U_XSLDCAOAEstoque   
 
 exemplo chamada
-		_oSaldoWis := SaldoCAOAPEC():New("R-F4J16-1012030            ")
+		_oSaldoWis:SaldoCAOAPEC():New("R-F4J16-1012030            ")
 		//_nSaodoWIS := _oSaldoWis:RetSaldoWIS()
 		_oSaldo    := _oSaldoWis:RetSldCAOAPEC()	
 
@@ -92,7 +92,7 @@ Begin Sequence
 		Break
 	Endif
 	//Carregar todos os Saldos
-	_oSaldo:RetSldCAOAPEC()	
+	Self:RetSldCAOAPEC()	
 End Sequence
 Return Nil
 
@@ -103,25 +103,39 @@ Local cWhere 		:= ""
 Local aSaldo		:= {}
 Local cCodProd 		:= AllTrim(::_cCodProd)
 Local cArmazem 		:= ""
-Local nSaldoSB2
+Local nSaldoSB2     := 0
 Local oZPEC08Peca
 Local nPos
 
 Begin Sequence
-	nSaldoSB2 := ::_nSaldoEST
 	//caso não esteja preenchido Produto
 	If Empty(cCodProd)
 		Aadd(::_aError,"Produto Não Informado")
 		Break
 	Endif 
+
+	//GAP098 | Desmembrar itens bloqueados por inventário
+	//Verificar se esta em inventário DAC 07/11/2023
+	If SB2->B2_COD <> cCodProd .Or. AllTrim(SB2->B2_LOCAL) <> AllTrim(cArmazem)
+		SB2->(DbSetOrder(1))
+		If !SB2->(DbSeek(XFilial("SB2")+cCodProd+cArmazem))
+			Aadd(::_aError, "Produto "+ AllTrim(cCodProd) +" Armazém "+cArmazem+" não localizao função RetSldCAOAPEC !")
+			Break
+		Endif
+		If !Empty(SB2->B2_DTINV)
+			Aadd(::_aError, "Produto "+ AllTrim(cCodProd) +" Armazém "+cArmazem+" com bloqueio de inventário função RetSldCAOAPEC !")
+			Break
+		Endif
+	Endif 
+
+	/*
+	nSaldoSB2 := ::_nSaldoEST
 	If ! ::lAvaliaWis .and. nSaldoSB2 > 0
 		::_nSaldoPEC := nSaldoSB2
 		Break 
 	Endif
-
-	//Garantir que carrega saldo WIS
-	::_nSaldoWIS := _oSaldoWis:RetSaldoWIS()  //carrego o valor do saldo WIS
-
+	*/
+	
 	//Garantir que as variaveis possuam conteúdo
 	If Empty( ::_cGrupo ) .And. AllTrim(cCodProd) == AllTrim(VS3->VS3_CODITE)
 		::_cGrupo := VS3->VS3_GRUITE
@@ -159,20 +173,6 @@ Begin Sequence
 		::_cArmazem	:= SB1->B1_LOCPAD
 	Endif
 
-	//GAP098 | Desmembrar itens bloqueados por inventário
-	//Verificar se esta em inventário DAC 07/11/2023
-	If SB2->B2_COD <> SB1->B1_COD .Or. AllTrim(SB2->B2_LOCAL) <> AllTrim(cArmazem)
-		SB2->(DbSetOrder(1))
-		If !SB2->(DbSeek(XFilial("SB2")+SB1->B1_COD+cArmazem))
-			Aadd(::_aError, "Produto "+ AllTrim(cCodProd) +" Armazém "+cArmazem+" não localizao função RetSldCAOAPEC !")
-			Break
-		Endif
-		If !Empty(SB2->B2_DTINV)
-			Aadd(::_aError, "Produto "+ AllTrim(cCodProd) +" Armazém "+cArmazem+" com bloqueio de inventário função RetSldCAOAPEC !")
-			Break
-		Endif
-	Endif 
-
 	//quando vem informado o saldo não sera validado novamente, isto ocorrera no similar, kit
 	If nSaldoSB2 <= 0
 		//Função no padrão SIGAPEC		
@@ -180,7 +180,7 @@ Begin Sequence
 		oZPEC08Peca:SetGrupo(SB1->B1_GRUPO)
 		oZPEC08Peca:SetCodigo(SB1->B1_COD)
 		nSaldoSB2 	:= 0
-		aSaldo 	:= oZPEC08Peca:EstqSaldo(,.t.,.t.)
+		aSaldo 		:= oZPEC08Peca:EstqSaldo(,.t.,.t.)
 		For nPos := 1 To Len(aSaldo)
 			If AllTrim(cArmazem) == AllTrim(aSaldo[nPos,2])
 				nSaldoSB2 	:= aSaldo[nPos,3]  //(_cAliasPesq)->SALDOSB2
@@ -192,13 +192,16 @@ Begin Sequence
 	//Atualizo o saldo Protheus
 	::_nSaldoEST := nSaldoSB2
 	//Caso não seja para avaliar WIS
-	If ! ::lAvaliaWis 
+	If ! (Self:_lAvaliaWis) 
 		::_nSaldoPEC := nSaldoSB2
 		If ::_nSaldoPEC == 0 
 			Aadd(::_aError, "Produto "+AllTrim(cCodProd)+", com saldo Protheus "+AllTrim(Str(::_nSaldoPEC))+" Armazem "+cArmazem+", possui saldo zerado , SALDO INVALIDO ! ")
 		Endif
 		Break
 	Endif
+
+	//Garantir que carrega saldo WIS
+	::_nSaldoWIS := Self:RetSaldoWIS()  //carrego o valor do saldo WIS
 
 	If ::_nSaldoWIS == 0 .Or. ::_nSaldoEST == 0 
 		Aadd(::_aError, "Produto "+AllTrim(cCodProd)+", com saldo Protheus "+AllTrim(Str(::_nSaldoEST))+" Saldo atual Wis "+AllTrim(Str(::_nSaldoWis))+" Armazem "+cArmazem+", possui saldo zerado em uma das opções, SALDO INVALIDO ! ")
@@ -283,6 +286,7 @@ Begin Sequence
 	Endif 
 	//Atribuo o saldo WIS ao objeto
 	::_nSaldoWIS := nSaldoWIS
+End Sequence	
 Return nSaldoWIS
 
 
