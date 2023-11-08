@@ -45,10 +45,6 @@ User Function ZCOMF057()
             nQtdPos 	:= GDFieldPos("C1_QUANT")
             nProdPos 	:= GDFieldPos("C1_PRODUTO")
             lContinua := .T.
-        ElseIf IsInCallStack("MATA103") //DOCUMENTO DE ENTRADA
-            nQtdPos 	:= GDFieldPos("D1_QUANT") //Campos do DOCUMENTO DE ENTRADA
-            nProdPos 	:= GDFieldPos("D1_COD")
-            lContinua := .T.
         Else
             MsgInfo("Erro na função ZCOMF057, entre em contato com a equipe de sistemas.")
             lContinua := .F.
@@ -118,6 +114,10 @@ User Function zPedComp()
     If IsInCallStack("MATA121") //PEDIDO DE COMPRAS
         nQtdPos 	:= GDFieldPos("C7_QUANT")
         nProdPos 	:= GDFieldPos("C7_PRODUTO") //Campos do PEDIDO DE COMPRAS
+        lContinua := .T.
+    ElseIf IsInCallStack("MATA103") //DOCUMENTO DE ENTRADA
+        nQtdPos 	:= GDFieldPos("D1_QUANT") //Campos do DOCUMENTO DE ENTRADA
+        nProdPos 	:= GDFieldPos("D1_COD")
         lContinua := .T.
     Else
         MsgInfo("Erro na função ZCOMF057, entre em contato com a equipe de sistemas.")

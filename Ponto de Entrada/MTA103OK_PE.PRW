@@ -17,8 +17,8 @@ User function MTA103OK()
     Local _cEmp    := FWCodEmp()
     
     //Início dos ajustes referentes ao GAP009
-    If _cEmp == "2020" .and. FindFunction("U_ZCOMF057")//Empresa Barueri
-		_lret := U_ZCOMF057()
+    If _cEmp == "2020" .and. FindFunction("U_zPedComp()")//Empresa Barueri
+		_lret := U_zPedComp()
     EndIf
     //Fim dos ajustes referentes ao GAP009
 

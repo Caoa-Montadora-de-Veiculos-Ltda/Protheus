@@ -114,7 +114,7 @@ Static Function RetornaCarac(cCpo, nQtde)
                             cCpoLmp	)       //Campo que dispara o gatilho
                 EndIf            
                 aCols[n][nPosQtde] := nQtde
-                &("M->"+cCpoLmp) := nQtdeni
+                &("M->"+cCpoLmp) := nQtde
                 lRet := .T.
 
             Else
