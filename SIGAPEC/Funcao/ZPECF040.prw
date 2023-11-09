@@ -156,7 +156,7 @@ Begin Sequence
 		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Código Veículo "+AllTrim(_cMarca)+" não cadastrado"),4,1)   
 		Break 
 	Endif 
-	FwMsgRun(,{ |_oSay| ZPECF040QY(_aRet, @_oSay ) }, "Selecionando dados para a Montagem Curva ABC", "Aguarde...")  
+	FwMsgRun(,{ |_oSay| ZPECF040QY(_aRet, @_oSay ) }, "Processando a Curva ABC", "Aguarde...")  
 	//Libera para utilização de outros usuarios
 	_oBrw:Refresh(.T.)
 End Sequence
@@ -239,7 +239,7 @@ Begin Sequence
 	Endif 
 
 	_cHoraIni := Time()
-	_oSay:SetText("Aguarde preparando informações "+Time())
+	_oSay:SetText("Aguarde preparando informações - Hora: "+Time())
 	ProcessMessage()
 
 	//montar regra procura de pontos
@@ -313,7 +313,7 @@ Begin Sequence
 		Ferase(_cAliasPesq+GetDBExtension())
 	Endif  
 
-	_oSay:SetText("Aguarde Calculando CURVA ... Hora Inicial "+Time() )
+	_oSay:SetText("Aguarde Calculando CURVA ... Hora: "+Time() )
 	ProcessMessage()
 
 	SZO->(DbSetOrder(1))
@@ -453,7 +453,7 @@ Begin Sequence
    	_cQuery += " SELECT  '"+FwXFilial("SZO")+"' AS ZO_FILIAL" + CRLF						//--ZO_FILIAL							//--TMPFILIAL
     _cQuery += " 		,SB1.B1_COD	 AS ZO_COD" + CRLF   									//--ZO_COD
     _cQuery += " 		,SB1.B1_DESC    AS DESCRICAO " + CRLF								//--ZO_DESCPRD
-    _cQuery += " 		,COALESCE(SBM.BM_CODMAR,' ')	AS MARCA " + CRLF					//--ZO_MARCA
+    _cQuery += " 		,NVL(SBM.BM_CODMAR,' ')	AS MARCA " + CRLF					//--ZO_MARCA
 	//montar informações curva ABC pontos	
 	If Len(_aPontos) == 0
     	_cQuery += "' ' AS  CURVA_PONTOS " + CRLF											//--ZO_CURVQTD
@@ -463,13 +463,13 @@ Begin Sequence
 			If AllTrim(_aPontos[_nPos,2])  == "P"  	//PONTOS
      			_cQuery += " 	WHEN NVL(SUM(MES_PONTOS.PONTOS),0) BETWEEN " +_aPontos[_nPos,3]+" AND "+_aPontos[_nPos,4]+" 	THEN '"+_aPontos[_nPos,1]+"' " + CRLF
 			ElseIf AllTrim(_aPontos[_nPos,2])  == "N"  //NOVO tem que avaliar se tem menos de um ano
-    			_cQuery += "	WHEN COALESCE(SB1.B1_XDTINC,'        ') <> ' ' " + CRLF 
+    			_cQuery += "	WHEN SB1.B1_XDTINC <> ' ' " + CRLF 
     			_cQuery += " 		AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SB1.B1_XDTINC, 'YYYYMMDD'))) <= "+StrZero(_nMesRef,3) + " "
     			_cQuery += " 		AND NVL(SUM(MES_PONTOS.PONTOS),0) = 0 THEN '"+_aPontos[_nPos,1]+"' " + CRLF //--No periodo de 1 ano a partir da data de cadastro não possuir nenhuma venda
-    			_cQuery += "	WHEN COALESCE(SB1.B1_XUCLEG,'        ') <> ' ' " + CRLF 
+    			_cQuery += "	WHEN SB1.B1_XUCLEG <> ' ' " + CRLF 
     			_cQuery += " 		AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SB1.B1_XUCLEG, 'YYYYMMDD'))) <= "+StrZero(_nMesRef,3) + " "
     			_cQuery += " 		AND NVL(SUM(MES_PONTOS.PONTOS),0) = 0 THEN '"+_aPontos[_nPos,1]+"' " + CRLF //--No periodo de 1 ano a partir da data de cadastro não possuir nenhuma venda
-    			_cQuery += "	WHEN COALESCE(SD1SQL.DT_ULTCMP,'        ') <> ' ' " + CRLF 
+    			_cQuery += "	WHEN SD1SQL.DT_ULTCMP <> ' ' " + CRLF 
     			_cQuery += " 		AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SD1SQL.DT_ULTCMP, 'YYYYMMDD'))) <= "+StrZero(_nMesRef,3) + " "
     			_cQuery += " 		AND NVL(SUM(MES_PONTOS.PONTOS),0) = 0 THEN '"+_aPontos[_nPos,1]+"' " + CRLF //--No periodo de 1 ano a partir da data de cadastro não possuir nenhuma venda
 			ElseIf AllTrim(_aPontos[_nPos,2])  == "Q"   //QUANTIDADE
@@ -477,8 +477,8 @@ Begin Sequence
 				//If _aPontos[_nPos,3] = "0"  //ATIVO significa que ainda esta em uma contagem de até com meses fora da curva
     				//_cQuery += " 	WHEN NVL(MIN(MES_PONTOS.MESES),0) <= "+AllTrim((_aPontos[_nPos,4]))+" AND NVL(SUM(MES_PONTOS.PONTOS),0) > "+Str(_nPontosCurva)+" THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF
 				_cQuery += " 	WHEN NVL(MIN(MES_PONTOS.MESES),0) > 0 AND NVL(MIN(MES_PONTOS.MESES),0)  "+AllTrim((_aPontos[_nPos,3]))+ "  " +AllTrim((_aPontos[_nPos,4]))+" THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF
-				_cQuery += " 	WHEN COALESCE(SB1.B1_XUVLEG,'        ') > ' ' AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SB1.B1_XUVLEG, 'YYYYMMDD')))+1 "+AllTrim((_aPontos[_nPos,3]))+ "  "+AllTrim((_aPontos[_nPos,4]))+" THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF 
-				_cQuery += " 	WHEN COALESCE(SB1.B1_XUCLEG,'        ') > ' ' AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SB1.B1_XUCLEG, 'YYYYMMDD')))+1 "+AllTrim((_aPontos[_nPos,3]))+ "  "+AllTrim((_aPontos[_nPos,4]))+" THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF 
+				_cQuery += " 	WHEN SB1.B1_XUVLEG <> ' ' AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SB1.B1_XUVLEG, 'YYYYMMDD')))+1 "+AllTrim((_aPontos[_nPos,3]))+ "  "+AllTrim((_aPontos[_nPos,4]))+" THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF 
+				_cQuery += " 	WHEN SB1.B1_XUCLEG <> ' ' AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SB1.B1_XUCLEG, 'YYYYMMDD')))+1 "+AllTrim((_aPontos[_nPos,3]))+ "  "+AllTrim((_aPontos[_nPos,4]))+" THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF 
 					//_cQuery += " 	WHEN COALESCE(SB1.B1_XDTINC,'        ') = ' ' AND COALESCE(SB1.B1_XUVLEG,'        ') > ' ' AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SB1.B1_XUVLEG, 'YYYYMMDD')))+1  <= "+AllTrim((_aPontos[_nPos,4]))+" THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF 
 					//_cQuery += " 	WHEN COALESCE(SB1.B1_XDTINC,'        ') = ' ' AND COALESCE(SB1.B1_XUCLEG,'        ') > ' ' AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SB1.B1_XUCLEG, 'YYYYMMDD')))+1  <= "+AllTrim((_aPontos[_nPos,4]))+" THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF 
 				//ElseIf _aPontos[_nPos,3] = "I"  //INATIVO significa que ainda esta em uma contagem de até com meses fora da curva
@@ -501,7 +501,7 @@ Begin Sequence
     _cQuery += " 			FROM MES_PONTOS " + CRLF
     _cQuery += " 			WHERE MES_PONTOS.D2_COD =  SB1.B1_COD " + CRLF
     _cQuery += " 			) AS  CURVA_PONTOS " + CRLF												//--ZO_CURVQTD
-    _cQuery += " 		, COALESCE( ( 	SELECT TRIM(SX5.X5_CHAVE) " + CRLF
+    _cQuery += " 		, NVL( ( 	SELECT TRIM(SX5.X5_CHAVE) " + CRLF
     _cQuery += " 						FROM "+RetSqlName("SX5")+" SX5 " + CRLF  
     _cQuery += " 						WHERE SX5.D_E_L_E_T_ 	= ' ' " + CRLF
     _cQuery += " 							AND SX5.X5_FILIAL 	= '"+FwXFilial("SX5")+"' " + CRLF
@@ -512,28 +512,28 @@ Begin Sequence
     _cQuery += "   		, TRUNC(NVL(SB2SQL.SALDO_ESTOQUE,0)) AS SALDO_ESTOQUE " + CRLF				//--ZO_SALDOES 
     _cQuery += "  		, NVL(SB2SQL.CUSTO_UNITARIO,0)      AS CUSTO_UNITARIO 	" + CRLF			//--ZO_CUSTUNI
     _cQuery += "  		, NVL(SB2SQL.SALDO_ESTOQUE * SB2SQL.CUSTO_UNITARIO, 0)	AS CUSTO_TOTAL" + CRLF //--ZO_CUSTTOT
-    _cQuery += "  		, COALESCE(B1_XDTINC,' ')  AS DT_CAD_PRD " + CRLF							//--ZO_DTPRDCA  DATA da inclusão cadastro SB1
+    _cQuery += "  		, SB1.B1_XDTINC AS DT_CAD_PRD " + CRLF							//--ZO_DTPRDCA  DATA da inclusão cadastro SB1
 
     _cQuery += " 	    , 	CASE " + CRLF
 	//Caso esteja preenchida a do legado a prioridade é dela
-    _cQuery += " 	    		WHEN COALESCE(SB1.B1_X1CLEG,' ') 	 <> ' '	THEN SB1.B1_X1CLEG " 		+ CRLF		//--Ultima Compra Legado
-    _cQuery += " 	    		WHEN COALESCE(SD1SQL.DT_PRIMCMP,' ') <> ' ' THEN SD1SQL.DT_PRIMCMP " 	+ CRLF
+    _cQuery += " 	    		WHEN SB1.B1_X1CLEG <> ' ' THEN SB1.B1_X1CLEG " 		+ CRLF		//--Ultima Compra Legado
+    _cQuery += " 	    		WHEN SD1SQL.DT_PRIMCMP <> ' ' THEN SD1SQL.DT_PRIMCMP " 	+ CRLF
     _cQuery += " 	    	ELSE ' ' " + CRLF
     _cQuery += " 	    	END AS DT_PRI_CMP " + CRLF												//--ZO_DTULCMP
     _cQuery += " 	    , 	CASE " + CRLF
-    _cQuery += " 	    		WHEN COALESCE(SD1SQL.DT_ULTCMP,' ') <> ' ' 	THEN SD1SQL.DT_ULTCMP " + CRLF
-    _cQuery += " 	    		WHEN COALESCE(SB1.B1_XUCLEG,' ') 	<> ' '	THEN SB1.B1_XUCLEG " + CRLF		//--Ultima Compra Legado
+    _cQuery += " 	    		WHEN SD1SQL.DT_ULTCMP <> ' ' THEN SD1SQL.DT_ULTCMP " + CRLF
+    _cQuery += " 	    		WHEN SB1.B1_XUCLEG <> ' ' THEN SB1.B1_XUCLEG " + CRLF		//--Ultima Compra Legado
     _cQuery += " 	    	ELSE ' ' " + CRLF
     _cQuery += " 	    	END AS DT_ULT_CMP " + CRLF												//--ZO_DTULCMP
 	//Caso esteja preenchida a do legado a prioridade é dela
     _cQuery += " 	    , 	CASE " + CRLF
-    _cQuery += " 	    		WHEN COALESCE(SB1.B1_X1VLEG,' ') 		<> ' '	THEN SB1.B1_X1VLEG	" 		+ CRLF		//--Ultima Venda Legado
-    _cQuery += " 	    		WHEN COALESCE(SD2SQLPRD.NF_PRIVND,' ') 	<> ' ' 	THEN SD2SQLPRD.NF_PRIVND " 	+ CRLF
+    _cQuery += " 	    		WHEN SB1.B1_X1VLEG <> ' ' THEN SB1.B1_X1VLEG	" 		+ CRLF		//--Ultima Venda Legado
+    _cQuery += " 	    		WHEN SD2SQLPRD.NF_PRIVND <> ' ' THEN SD2SQLPRD.NF_PRIVND " 	+ CRLF
     _cQuery += " 	    	ELSE ' ' " + CRLF
     _cQuery += " 	    	END AS DT_PRI_FAT " + CRLF												//--TMPDTULVND
     _cQuery += " 	    , 	CASE " + CRLF
-    _cQuery += " 	    		WHEN COALESCE(SD2SQLPRD.NF_ULTVND,' ') 	<> ' ' 	THEN SD2SQLPRD.NF_ULTVND " + CRLF
-    _cQuery += " 	    		WHEN COALESCE(SB1.B1_XUVLEG,' ') 			<> ' '	THEN SB1.B1_XUVLEG	" + CRLF		//--Ultima Venda Legado
+    _cQuery += " 	    		WHEN SD2SQLPRD.NF_ULTVND <> ' ' THEN SD2SQLPRD.NF_ULTVND " + CRLF
+    _cQuery += " 	    		WHEN SB1.B1_XUVLEG <> ' ' THEN SB1.B1_XUVLEG	" + CRLF		//--Ultima Venda Legado
     _cQuery += " 	    	ELSE ' ' " + CRLF
     _cQuery += " 	    	END AS DT_ULT_FAT " + CRLF												//--ZO_DTULVND
     _cQuery += " 	    , NVL(SD2SQLPRD.TOT_PECAS,0) AS TOT_PECAS " + CRLF				//--ZO_TOTVEND	
@@ -555,27 +555,27 @@ Begin Sequence
     _cQuery += " 					AND MEDIAS.SALDO_ESTOQUE / MEDIAS.DEMANDA_MEDIA >= "+AllTrim(Str(_nMesExcesso))
     _cQuery += " 				),0)  AS CUSTO_EXCESSO " + CRLF		//--ZO_EXCUSTO 
 
-    _cQuery += "     	, CASE	WHEN COALESCE(SB1.B1_XDTINC,'        ') <> ' ' " + CRLF
+    _cQuery += "     	, CASE	WHEN SB1.B1_XDTINC <> ' ' " + CRLF
     _cQuery += "     	  		THEN TRUNC(MONTHS_BETWEEN(TO_DATE('20230731', 'YYYYMMDD'), TO_DATE(SB1.B1_XDTINC, 'YYYYMMDD')))+1 " + CRLF
     _cQuery += "     	 		ELSE 0 " + CRLF
     _cQuery += "     	 		END AS CURVA_INCLUSAO " + CRLF
 
-    _cQuery += "     	, CASE	WHEN COALESCE(SB1.B1_X1VLEG,'        ') <> ' ' " + CRLF
+    _cQuery += "     	, CASE	WHEN SB1.B1_X1VLEG <> ' ' " + CRLF
     _cQuery += "     	  		THEN TRUNC(MONTHS_BETWEEN(TO_DATE('20230731', 'YYYYMMDD'), TO_DATE(SB1.B1_X1VLEG, 'YYYYMMDD')))+1 " + CRLF
     _cQuery += "     	 		ELSE 0 " + CRLF
     _cQuery += "     	 		END AS CURVA_PVENDA " + CRLF
 
-    _cQuery += "     	, CASE	WHEN COALESCE(SB1.B1_XUVLEG,'        ') <> ' ' " + CRLF
+    _cQuery += "     	, CASE	WHEN SB1.B1_XUVLEG <> ' ' " + CRLF
     _cQuery += "     	  		THEN TRUNC(MONTHS_BETWEEN(TO_DATE('20230731', 'YYYYMMDD'), TO_DATE(SB1.B1_XUVLEG, 'YYYYMMDD')))+1 " + CRLF
     _cQuery += "     	 		ELSE 0 " + CRLF
     _cQuery += "     	 		END AS CURVA_UVENDA " + CRLF
 
-    _cQuery += "     	, CASE	WHEN COALESCE(SB1.B1_X1CLEG,'        ') <> ' ' " + CRLF
+    _cQuery += "     	, CASE	WHEN SB1.B1_X1CLEG <> ' ' " + CRLF
     _cQuery += "     	  		THEN TRUNC(MONTHS_BETWEEN(TO_DATE('20230731', 'YYYYMMDD'), TO_DATE(SB1.B1_X1CLEG, 'YYYYMMDD')))+1 " + CRLF
     _cQuery += "     	 		ELSE 0 " + CRLF
     _cQuery += "     	 		END AS CURVA_PCOMPRA " + CRLF
 
-    _cQuery += "     	, CASE	WHEN COALESCE(SB1.B1_XUCLEG,'        ') <> ' ' " + CRLF
+    _cQuery += "     	, CASE	WHEN SB1.B1_XUCLEG <> ' ' " + CRLF
     _cQuery += "     	  		THEN TRUNC(MONTHS_BETWEEN(TO_DATE('20230731', 'YYYYMMDD'), TO_DATE(SB1.B1_XUCLEG, 'YYYYMMDD')))+1 " + CRLF
     _cQuery += "     	 		ELSE 0 " + CRLF
     _cQuery += "     	 		END AS CURVA_UCOMPRA " + CRLF
@@ -616,8 +616,8 @@ Begin Sequence
     _cQuery += "  			) SB2SQL " + CRLF
     _cQuery += "  			ON SB2SQL.B2_COD = SB1.B1_COD " + CRLF 
     _cQuery += "  LEFT JOIN (	SELECT 	SD1.D1_COD " + CRLF
-    _cQuery += "  						,COALESCE( MIN(  SD1.D1_DTDIGIT),'        ' ) AS DT_PRIMCMP " + CRLF
-    _cQuery += "  						,COALESCE( MAX(  SD1.D1_DTDIGIT),'        ' ) AS DT_ULTCMP " + CRLF
+    _cQuery += "  						,MIN(  SD1.D1_DTDIGIT ) AS DT_PRIMCMP " + CRLF
+    _cQuery += "  						,MAX(  SD1.D1_DTDIGIT ) AS DT_ULTCMP " + CRLF
     _cQuery += "  				FROM "+RetSqlName("SD1")+" SD1 " + CRLF 
     _cQuery += "  				LEFT JOIN "+RetSqlName("SF4")+" SF4 " + CRLF 
     _cQuery += " 	 	   			ON  SF4.D_E_L_E_T_ 	= ' ' " + CRLF
@@ -662,13 +662,13 @@ Begin Sequence
 
 	_cTimeCalc := Time()
 	
-	_oSay:SetText("Aguarde atualizando registros ... Hora Inicial "+Time() )
+	_oSay:SetText("Aguarde atualizando registros ... Hora: "+Time() )
 	ProcessMessage()
 	
 	DbSelectArea(_cAliasPesq)
 	(_cAliasPesq)->(DbGotop())
-	//Count To _nRegProcess	
-	//(_cAliasPesq)->(DbGotop())
+	Count To _nRegProcess	
+	(_cAliasPesq)->(DbGotop())
 	
 	If (_cAliasPesq)->(Eof())
 		_cMens := "Não foi Calculado Curva para nenhum item !"  
@@ -677,10 +677,10 @@ Begin Sequence
 	Endif
 	_nCount := 0
 	While (_cAliasPesq)->(!Eof())
-		//_nCount ++
-		//_oSay:SetText("Aguarde atualizando registros "+STRZero(_nCount,7)+" de "+STRZero(_nRegProcess,7)+" ... Hora Inicial "+Time() )
 
-		//ProcessMessage()
+		_nCount ++
+		_oSay:SetText("Aguarde atualizando registros "+STRZero(_nCount,7)+" de "+STRZero(_nRegProcess,7)+" ... Hora: "+Time() )
+		ProcessMessage()
 
 		_lExclusive := !SZO->(DbSeek(FWxFilial("SZO")+(_cAliasPesq)->ZO_COD))
 		If ! RecLock("SZO",_lExclusive)
@@ -818,7 +818,7 @@ Begin Sequence
 	Endif 
 
 	//Selecionar pasta para geração
-	_cDir := cGetFile(_cType, OemToAnsi("Selecione a Pasta "), 0,, .T.,GETF_LOCALFLOPPY + GETF_LOCALHARD + GETF_NETWORKDRIVE + GETF_RETDIRECTORY)
+	_cDir := cGetFile(_cType, OemToAnsi("Selecione a Pasta "), 0,, .T.,GETF_LOCALFLOPPY + GETF_LOCALHARD + GETF_NETWORKDRIVE + GETF_RETDIRECTORY,)
 	//³ Parametro: GETF_LOCALFLOPPY - Inclui o floppy drive local.   ³
 	//³            GETF_LOCALHARD - Inclui o Harddisk local.         ³
 	If Empty(_cDir)
