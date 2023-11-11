@@ -38,8 +38,10 @@ User Function ZPECF008()
 	Local _lZPECF008    := SuperGetMV( "CMV_PEC009"  ,,.T. )   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
 	//Local _lAvaliaOrc   := SuperGetMV( "CMV_PEC032"  ,,.F. )   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
 	//Local _lAvaliaItem  := SuperGetMV( "CMV_PEC033"  ,,.F. )   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
-	Local _cArmazemFDR 	:= AllTrim(SuperGetMV( "CMV_PEC036" ,,"" ))   //Parâmetro para indicação de utilização de validação armazem Franco da Rocha
+	//Local _cArmazemFDR 	:= AllTrim(SuperGetMV( "CMV_PEC036" ,,"" ))   //Parâmetro para indicação de utilização de validação armazem Franco da Rocha
 
+	Local _cArmazem    	:= AllTrim(SuperGetMV( "CMV_PEC050"  ,,"" ))   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
+	Local _aArmazem 	:= {}
 	//Local _cFilDe 	:= Space(TamSx3("VS1_FILIAL")[1])
 	//Local _cFilAte	:= Space(TamSx3("VS1_FILIAL")[1])
 	Local _cCliFatDe	:= Space(TamSx3("VS1_CLIFAT")[1])
@@ -58,10 +60,9 @@ User Function ZPECF008()
 	Local _aChave 		:= {}
 	Local _lJob   		:=	If( IsBlind(),.T.,.F.)
 	Local _oSay			:= Nil
-	Local _cLocal		:= "01"  //iniciar com armazem 01
-	Local _cObsPrc		:= ""
 	Local _aOndaRel 	:= {}
 	Local _nPos
+	Local _cVar
 
 	Private _cAglutina 	:= ""
 	Private _aMensAglu	:= {}
@@ -78,6 +79,31 @@ User Function ZPECF008()
 		Endif
 		*/
 		//If U_ZGENUSER( RetCodUsr() ,"ZPECF008" ,.T.)
+
+		If Empty(_cArmazem)
+			Help( , ,"Atenção",,"Não informado parâmetro CMV_PEC050 de Armazém a ser avaliado na Onda !",4,1) //Atenção / 
+			_lRet := .F.
+			Break	
+		Endif 
+		//_cArmazem  := FormatIn(_cArmazem,";")
+		_cVar := ""
+		For _nPos := 1 To Len(_cArmazem)
+			If SubsTr(_cArmazem,_nPos,1) == ";"  
+				AAdd(_aArmazem, _cVar )
+				_cVar := ""
+			Else	
+				_cVar := SubsTr(_cArmazem,_nPos,1)
+			Endif	
+		Next	
+		If !Empty(_cVar)
+			AAdd(_aArmazem, _cVar )
+		Endif
+		If Len(_aArmazem) == 0
+			Help( , ,"Atenção",,"Verificar parâmetro CMV_PEC050 de Armazém a ser avaliado na Onda, com problemas !",4,1) //Atenção / 
+			_lRet := .F.
+			Break	
+		Endif 
+
 		BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
 			SELECT 	VX5.VX5_CHAVE,
 					VX5.VX5_CODIGO,
@@ -141,25 +167,17 @@ User Function ZPECF008()
 		Endif
 		_cAglutina 	:= ""
 		_aMensAglu	:= {}
-		_cObsPrc    := ""
 		//Carregar processo
-		If _lJob
-			ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _cLocal,/*indica FDR*/ , @_cObsPrc )
-			//validar armazem Franco da Rocha caso existam saldos manutenção temporária devido mudança,  DAC 02/02/2023
-			If !Empty(_cArmazemFDR)
-				ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _cArmazemFDR, .T., @_cObsPrc )
+		For _nPos := 1 To Len(_aArmazem)
+			If _lJob
+				ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _aArmazem[_nPos], @_aOndaRel )
+			Else
+				FwMsgRun(,{ |_oSay| ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _aArmazem[_nPos], @_aOndaRel, @_oSay ) }, "Separação Orçamentos armazém PADRÃO", "Aguarde...")  //Separação Orçamentos / Aguarde
 			Endif
-			Conout("[ZPECF008]"+CRLF+_cObsPrc)
-		Else
-			FwMsgRun(,{ |_oSay| ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _cLocal ,/*indica FDR*/, @_cObsPrc , @_aOndaRel, @_oSay ) }, "Separação Orçamentos armazém PADRÃO", "Aguarde...")  //Separação Orçamentos / Aguarde
-			//validar armazem Franco da Rocha caso existam saldos manutenção temporária devido mudança,  DAC 02/02/2023
-			If !Empty(_cArmazemFDR) 
-				FwMsgRun(,{ |_oSay| ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _cArmazemFDR , .T., @_cObsPrc,  @_aOndaRel, @_oSay ) }, "Separação Orçamentos armazém "+_cArmazemFDR, "Aguarde...")  //Separação Orçamentos / Aguarde
-			Endif
-			MSGINFO( _cObsPrc , "[ZPECF008] - Atenção" )
-			ZPECF08R07(_aOndaRel)
-		Endif
-
+		Next
+		ZPECF08RESumo(_aOndaRel)
+		//Validadr aondarel se possui enviado
+		ZPECF08R07(_aOndaRel)
 	End Sequence 
 	If Select(_cAliasPesq) <> 0
 		(_cAliasPesq)->(DbCloseArea())
@@ -181,7 +199,7 @@ Responsável pelo processamento Aglutinando e Separando do orçamento passando pel
 @return		Nulo
 @history    06/07/2022 DAC - Alterado select para onda incluído para não trazer com picking preenchido ZK_XPICKI
 /*/
-Static Function ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave , _cLocal, _lArmFDR, _cObsPrc, _aOndaRel, _oSay )
+Static Function ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave , _cLocal, _aOndaRel, _oSay )
 Local _cAliasTRB    	:= GetNextAlias()      
 Local _cCliFatDe 		:= _aRet[01]
 Local _cLojaCFDe		:= _aRet[02]
@@ -207,13 +225,12 @@ Local _lValCred  		:= .T.
 Local _cFaseConf 		:= Alltrim(GetNewPar("MV_MIL0095","4")) // Fase de Conferencia e Separacao
 Local _cFaseOrc 		:= AllTrim(GetNewPar("MV_FASEORC","023R45F"))
 Local _cConectWis  		:= AllTrim(SuperGetMV( "CMV_PEC031"  ,,"WIS.V_ENDERECO_ESTOQUE@DBLINK_WISPROD")) 
-Local _cTPedTransfFDR 	:= AllTrim(SuperGetMV( "CMV_PEC038" ,,"" ))   //Parâmetro para indicação de tipo de pedido de transferencia
+Local _cTPedTransf 	:= AllTrim(SuperGetMV( "CMV_PEC038" ,,"" ))   //Parâmetro para indicação de tipo de pedido de transferencia
 
 Local _nRegProcess		:= 0
 Local _nProcessado		:= 0
 Local _nGerado			:= 0
 Local _nTotByPass		:= 0
-Local _nGeradoErr		:= 0
 Local _nLimAvalia		:= 0
 
 Local _lInconSaldo		
@@ -238,11 +255,6 @@ Local _cHsFinal
 Local _cCdEmpWIS
 Local _cLojaCredito
 Local _cFaseRet
-
-Default _lArmFDR := .F.
-
-//Private _cAglutina 	:= ""
-//Private _aMensAglu	:= {}
 
 _dInicio 	:= Date()
 _cHsInicio 	:= SubsTr(Time(),1,5)
@@ -328,13 +340,7 @@ Begin Sequence
 	//acrecentado validações gerais
 	_cWhere += 	" AND VS1.VS1_FILIAL	= '" +XFilial("VS1")+ "' " + CRLF
 	//caso seja armazem Franco da Rocha não pode tratar com o numero do orçamento somente com o numero de aglutinação DAC 02/02/2023
-	If _lArmFDR .and. !Empty(_cAglutina)
-		_cWhere += 	" AND VS1.VS1_XAGLU BETWEEN '" +_cAglutina+ "'	AND '" +_cAglutina+ "' " + CRLF 
-		_cWhere += 	" AND VS1.VS1_XBO = 'S' " + CRLF
-	Else
-		_cWhere += 	" AND VS1.VS1_NUMORC BETWEEN '" +_cNumOrcDe+ "'	AND '" +_cNumOrcAte+ "' " + CRLF 
-	EndIf
-
+	_cWhere += 	" AND VS1.VS1_NUMORC BETWEEN '" +_cNumOrcDe+ "'	AND '" +_cNumOrcAte+ "' " + CRLF 
 	_cWhere += 	" AND VS1.VS1_TIPORC = '1' " + CRLF
 	_cWhere += 	" AND VS1.VS1_XMARCA = '"    +_cMarca+ "' " + CRLF 
 	_cWhere += 	" AND VS1.VS1_XPICKI = ' ' " + CRLF
@@ -390,13 +396,8 @@ Begin Sequence
 	//_cCdEmpresa := "%"+_cCdEmpresa+"%"
 	//CRIO O NUMERO DA AGLUTINAÇÃO E CONFIRMO PARA NÃO PERDER O PONTEIRO
 	//somente criar numero de aglutinação no processo normal não do armazem FDR DAC 02/02/2023
-	//If !_lArmFDR  //caso faça isto dara erro na 10 pois xonda será o mesmo da aglutinação antes de testas FDR
 	_cAglutina := GETSX8NUM("VS1","VS1_XAGLU")
 	VS1->(ConfirmSx8())
-
-	//Aadd(_aOndaRel,_cAglutina)
-
-	//Endif	
 
 	//Caso o usuário informe a numeração do orçamentono parametor inicial e final não executar como bypass DAC 
 	If !Empty(_cNumOrcDe) .or.  !"Z" $ _cNumOrcAte
@@ -461,9 +462,7 @@ Begin Sequence
 
 	//TCSetField(_cAliasTRB,'ZD0_DATPRF','D',8,0)
 	If (_cAliasTRB)->(Eof())  
-		If !_lArmFDR
-			Aviso("AVISO","Não foram encontrados Orçamentos ! ",{"Ok"})
-		EndIf	
+		Aviso("AVISO","Não foram encontrados Orçamentos ! ",{"Ok"})
 		_lRet := .F.
 		Break	
 	Endif
@@ -477,7 +476,7 @@ Begin Sequence
 	//_cAglutina := GETSX8NUM("VS1","VS1_XAGLU")
     While (_cAliasTRB)->(!Eof())
 		//caso seja o armazém de transferência não validar somente validar se não for transferência o tipo de pedido, esta transferência sera de Barueri para FDR DAC 08/02/2023
-		If _lArmFDR .and. !Empty(_cTPedTransfFDR) .and. AllTrim((_cAliasTRB)->VS1_XTPPED) == _cTPedTransfFDR 	
+		If !Empty(_cTPedTransf) .and. AllTrim((_cAliasTRB)->VS1_XTPPED) == _cTPedTransf 	
 			(_cAliasTRB)->(DbSkip())
 			Loop
 		Endif	
@@ -543,7 +542,7 @@ Begin Sequence
 				VS1->(MsUnlock())
 			EndIf
 			//somente validar se não for transferência o tipo de pedido, esta transferência sera de Barueri para FDR DAC 08/02/2023
-			If Empty(_cTPedTransfFDR) .Or. AllTrim(VS1->VS1_XTPPED) <> _cTPedTransfFDR
+			If Empty(_cTPedTransf) .Or. AllTrim(VS1->VS1_XTPPED) <> _cTPedTransf
 				//Verificar Fases
 				If "2" $ _cFaseOrc  //somente se estiver na fase do orçamento conforme alinhado com Zé 30/11/2021
 					U_XFASEORC("2")  //Verifica se passa pela Fase MARGEM DE LUCRO
@@ -569,14 +568,14 @@ Begin Sequence
 				_lInconSaldo 	:= .F.  //inconsistencias com saldo serão as unicas que gravarão XBO = S conforme alinhado com Zé 04/02/2022  DAC 04/02/2022
 				Begin Transaction
 					//Caso esteja com bloqueio de limite verificar se é possivel utilizar o limite para os itens existentes em quanto o valor estiver atendendo a quantidade
-					If _lRet .and. !Empty(_cTPedTransfFDR) .And. AllTrim(VS1->VS1_XTPPED) == _cTPedTransfFDR
-						If !ZPECF8TVS3(VS1->VS1_NUMORC, VS1->VS1_XMARCA, @_aBackOrder, _cConectWis, _cCdEmpWIS, _cLocal, _cTPedTransfFDR)
+					If _lRet .and. !Empty(_cTPedTransf) .And. AllTrim(VS1->VS1_XTPPED) == _cTPedTransf
+						If !ZPECF8TVS3(VS1->VS1_NUMORC, VS1->VS1_XMARCA, @_aBackOrder, _cConectWis, _cCdEmpWIS, _cLocal, _cTPedTransf)
 							_lRet 		 := .F.
 							_lInconSaldo := .T.
            					Disarmtransaction()
 						EndIf  
 					ElseIf _lRet
-						If !ZPECF08VS3(VS1->VS1_NUMORC, VS1->VS1_XMARCA, @_aBackOrder, _cConectWis, _cCdEmpWIS, _cLocal, _cTPedTransfFDR)
+						If !ZPECF08VS3(VS1->VS1_NUMORC, VS1->VS1_XMARCA, @_aBackOrder, _cConectWis, _cCdEmpWIS, _cLocal, _cTPedTransf)
 							_lRet 		 := .F.
 							_lInconSaldo := .T.
            					Disarmtransaction()
@@ -635,7 +634,7 @@ Begin Sequence
 					//Retorno para o registro VS1 pode ter sido disposicionado DAC 20/06/2022
 					//Mesmo que esta bloqueado por limite de crédito deixo fazer o carregamento devido os arquivos em bakorder
 					VS1->(DbGoto((_cAliasTRB)->NREGVS1))
-					If _lRet .and. !ZPECF08CAR(VS1->VS1_NUMORC, @_aBackOrder, @_aSeqVS3,(_cAliasTRB)->NREGVS1, @_aVS3Reg, If(_lArmFDR, _cLocal, ""))
+					If _lRet .and. !ZPECF08CAR(VS1->VS1_NUMORC, @_aBackOrder, @_aSeqVS3,(_cAliasTRB)->NREGVS1, @_aVS3Reg, _cLocal)
 						_lRet := .F.
            				Disarmtransaction()
 					EndIf	
@@ -717,14 +716,9 @@ Begin Sequence
 				Next
 				_lSepara	:= .F.
 				_nGerado  	--
-				_nGeradoErr	++
 			//Envia o picking pata a RG LOG
 			Else
 				StartJob("U_ZWSR007",GetEnvServer(),.F.,_cAglutina, _cPicking, /*_lDataEnv*/, cEmpAnt, cFilAnt, /*_aMens*/)
-				//Incluir processamento da onda somente quando tiver algum titulo gerado
-				If Ascan(_aOndaRel, _cAglutina) == 0
-					Aadd(_aOndaRel,_cAglutina)
-				EndIf
 			EndIf
 		EndIf
 	EndDo
@@ -736,28 +730,21 @@ Begin Sequence
 	StartJob("U_XFUNPRRGlog",GetEnvServer(),.F.,_cAglutina, cEmpAnt, cFilAnt, /*_nReprocessado*/, /*_oSay*/)
 End Sequence
 Sleep(5000) //aguardar um momento para inicializar reprocesso assim não causa sobreposição	
-//Função que verifica a quantidade de envios realizadas com Sucesso
-_nGeradoErr += XCONTIRGLog( _cAglutina )
-
-_cObs		:= Upper("Processo referente a Onda  "	+_cAglutina+" finalizado !!!")  + CRLF
-_cObs		+= CRLF
-_cObs		+= Upper("REFERENTE AO ARMAZÉM " +If(_lArmFDR, _cLocal, "PADRÃO"))
-_cObs		+= CRLF
-_cObs		+= "Total Reg................ 	 " 		+ StrZero(_nTotByPass+_nRegProcess,7)	+" Registros" + CRLF
-_cObs		+= "Selecionados........  " 			+ StrZero(_nRegProcess,7)	+" Registros" + CRLF
-_cObs		+= CRLF
-_cObs		+= "Lidos.......................  " 	+ StrZero(_nProcessado,7)	+" Registros" + CRLF 
-_cObs		+= "Gerados.................  " 		+ StrZero(_nGerado,7)  		+" Registros" + CRLF
-_cObs		+= "Enviados................  " 		+ StrZero(XCONTERGLog( _cAglutina ),7)  +" Registros" + CRLF
-_cObs		+= "Problemas envio.. " 				+ StrZero(_nGeradoErr,7)  +" Registros" + CRLF
-_cObs		+= CRLF
-_cObs		+= "Iniciado em.........  " 			+ DtoC(_dInicio)+ " as " 	+_cHsInicio   + CRLF 
-_cObs		+= "Finalizado em.....  " 				+ DtoC(_dFinal) + " as " 	+_cHsFinal    + CRLF
+//Guardar dados para mostrar no final
+Aadd(_aOndaRel,{ _cAglutina  					/*Num Aglutina*/ ; 
+				, _cLocal    					/*Armazem*/ ;
+				, _nTotByPass+_nRegProcess 		/*Total Registros*/ ;
+				, _nRegProcess 					/*Selecionados*/ ;
+				, _nProcessado 					/*Lidos*/ ;
+				, _nGerado 						/*Gerados*/ ;
+				, XCONTERGLog( _cAglutina ) 	/*Enviados*/ ;
+				, XCONTIRGLog( _cAglutina ) 	/*Problemas de Envio*/ ;
+				, DtoC(_dInicio)+ " as " 	+_cHsInicio /*Iniciado em*/ ;
+				, DtoC(_dFinal) + " as " 	+_cHsFinal  /*Finalizado em*/ ;
+				})
 
 //U_CAOA_TRFO(_cAglutina, cEmpAnt, cFilAnt)
 //StartJob("U_CAOA_TRFO",GetEnvServer(),.F.,_cAglutina, cEmpAnt, cFilAnt) // Transferencia entre filial não validado
-_cObsPrc += CRLF
-_cObsPrc += _cObs
 //MSGINFO( _cObs , "[ZPECF008] - Atenção" )
 If Select((_cAliasTRB)) <> 0
 	(_cAliasTRB)->(DbCloseArea())
@@ -784,7 +771,7 @@ Responsável por verificar se pode liberar o orçamento para carregamento
 			DAC 08/08/2023
 			GAP			- Incluindo validação tipo de Pedido para transferência Barueri para FDR
 /*/
-Static Function	ZPECF08VS3(_cNumOrc, _cMarca, _aBackOrder, _cConectWis, _cCdEmpWIS, _cLocal, _cTPedTransfFDR)  
+Static Function	ZPECF08VS3(_cNumOrc, _cMarca, _aBackOrder, _cConectWis, _cCdEmpWIS, _cLocal, _cTPedTransf)  
 Local _lRet 		:= .F.
 Local _lSepara		:= .F.
 Local _lParcial		:= .F.
@@ -945,7 +932,7 @@ Begin Sequence
 		Endif
 		//Verificar se esta bloqueado
 		//Tratamento de trasferencia para FDR por tipo de pedido DAC 08/02/2023
-		If Empty(_cTPedTransfFDR) .Or. AllTrim(VS1->VS1_XTPPED) <> _cTPedTransfFDR
+		If Empty(_cTPedTransf) .Or. AllTrim(VS1->VS1_XTPPED) <> _cTPedTransf
 			If (_cAliasPesq)->B1_MSBLQL == "1"  
 				Aadd(_aMensAglu,"Produto "+ AllTrim(_cCodProd) +" bloqueado não será permitido faturar !")
 				Aadd(_aBak,{(	_cAliasPesq)->NREGVS3,;
@@ -1015,7 +1002,7 @@ Begin Sequence
 			// não verificar substituto para Subaro quando existe saldo  //DAC 02/03/2022
 			_lSepara := .T.   //ja indico que existira separação
 			//Tratamento de trasferencia para FDR por tipo de pedido DAC 08/02/2023
-			If Empty(_cTPedTransfFDR) .Or. AllTrim(VS1->VS1_XTPPED) <> _cTPedTransfFDR
+			If Empty(_cTPedTransf) .Or. AllTrim(VS1->VS1_XTPPED) <> _cTPedTransf
 				//no caso de não estar no parametro posso passar para próximo registro
 				If !Empty(_cValidItSubs) .and. VS1->VS1_XMARCA $ _cValidItSubs  //alterado para parametro conforme solicitação JC 19/05/2022 DAC
 					(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
@@ -1054,7 +1041,7 @@ Begin Sequence
 			_lSepara 	:= .T.
 		Else
 			//Tratamento de trasferencia para FDR por tipo de pedido DAC 08/02/2023
-			If !Empty(_cTPedTransfFDR) .And. AllTrim(VS1->VS1_XTPPED) == _cTPedTransfFDR
+			If !Empty(_cTPedTransf) .And. AllTrim(VS1->VS1_XTPPED) == _cTPedTransf
 				(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
 				Loop
 			Endif
@@ -1063,7 +1050,7 @@ Begin Sequence
 
 		//Tratamento de trasferencia para FDR por tipo de pedido DAC 08/02/2023
 		//necessário validar e ir até o final caso seja saldo parcial do tipo de transferência, pode gerar backorder
-		If Empty(_cTPedTransfFDR) .Or. AllTrim(VS1->VS1_XTPPED) <> _cTPedTransfFDR
+		If Empty(_cTPedTransf) .Or. AllTrim(VS1->VS1_XTPPED) <> _cTPedTransf
 			//Após continuar avaliando
 			//analisar possibilidades de utilizar outros produtos
 			//1 item substituto
@@ -1106,10 +1093,10 @@ Begin Sequence
 			_lZera := .T.
 		Endif	 
 
-		If Empty(_cTPedTransfFDR) .Or. AllTrim(VS1->VS1_XTPPED) <> _cTPedTransfFDR
+		If Empty(_cTPedTransf) .Or. AllTrim(VS1->VS1_XTPPED) <> _cTPedTransf
 			_cObs := If(Len(_aBak) > 0,"","Não possui Saldo, item Substituto,item Similar, KIT para produto no armazem "+_cArmazem) 
 		Else
-			_cObs := If(Len(_aBak) > 0,"","Não possui Saldo total para a transfereria FDR conforme parametrização tipo de pedido "+_cTPedTransfFDR+" armazém "+_cArmazem) 
+			_cObs := If(Len(_aBak) > 0,"","Não possui Saldo total para a transfereria FDR conforme parametrização tipo de pedido "+_cTPedTransf+" armazém "+_cArmazem) 
 		Endif
 		Aadd(_aBak,{	(_cAliasPesq)->NREGVS3,;
 						 _cCodProd,; 
@@ -1726,12 +1713,13 @@ Return _lRet
 
 
 //Avaliar se pode realizar fechamnto
-Static Function ZPECF08CAR(_cNumOrc, _aBackOrder, _aSeqVS3, _nRegVS1, _aVS3Reg, _cArmazemFDR)
+Static Function ZPECF08CAR(_cNumOrc, _aBackOrder, _aSeqVS3, _nRegVS1, _aVS3Reg, _cLocal)
 	Local _lRet 		:= .T.
 	Local _cNumSeq
 	//Garantir que esta posicionado no VS1 DAC 20/06/2022
-	Default _nRegVS1 		:= VS1->(Recno()) 
-	Default _cArmazemFDR	:= ""
+	Default _nRegVS1 	:= VS1->(Recno()) 
+	Default _cLocal	:= ""
+
 	Begin Sequence
 		//Montar novo orçamento caso tenha inconsistencias em itens DAC 08/02/2022
 		If Len(_aBackOrder) > 0
@@ -1762,9 +1750,9 @@ Static Function ZPECF08CAR(_cNumOrc, _aBackOrder, _aSeqVS3, _nRegVS1, _aVS3Reg, 
 				Exit
 			Endif
 			VS3->VS3_SEQUEN := _cNumSeq
-			//Atualizar para o armazem de Franco da Rocha quando estiver lendo o depósito deste processo  DAC 02/02/2023
-			If !Empty(_cArmazemFDR)
-				VS3->VS3_LOCAL 	:= _cArmazemFDR
+			//Atualizar para o armazem  quando estiver lendo o depósito deste processo  DAC 02/02/2023
+			If !Empty(_cLocal)
+				VS3->VS3_LOCAL 	:= _cLocal
 				//VS3->VS3_SQCONF := ""   //STRZERO(Val(VS3->VS3_SEQUEN),Len(VS3->VS3_SQCONF))  //caso não faça isto na troca da sequencia terei problemas na geração do VM5 no retorno do carregamento DAC 04/02/2022 
 			EndIf
 			If !Empty(VS3->VS3_SQCONF) 
@@ -3046,7 +3034,7 @@ Responsável por verificar se pode liberar o orçamento para carregamento que este
 @menu       Nao Informado
 @return		_lRet	- Verdadeiro ou falso  
 @history    /*/
-Static Function	ZPECF8TVS3(_cNumOrc, _cMarca, _aBackOrder, _cConectWis, _cCdEmpWIS, _cLocal, _cTPedTransfFDR)  
+Static Function	ZPECF8TVS3(_cNumOrc, _cMarca, _aBackOrder, _cConectWis, _cCdEmpWIS, _cLocal, _cTPedTransf)  
 Local _lRet 		:= .F.
 Local _lSepara		:= .F.
 Local _lParcial		:= .F.
@@ -3201,9 +3189,9 @@ Begin Sequence
 		Endif	 
 
 		If _lParcial
-			_cObs := If(Len(_aBak) > 0,"","Urilizado saldo parcial "+AllTrim(STR(_nQtdeParc))+" de acordo com tipo de pedido transferencia FDR "+_cTPedTransfFDR+" armazém "+_cArmazem) 
+			_cObs := If(Len(_aBak) > 0,"","Urilizado saldo parcial "+AllTrim(STR(_nQtdeParc))+" de acordo com tipo de pedido transferencia FDR "+_cTPedTransf+" armazém "+_cArmazem) 
 		Else
-			_cObs := If(Len(_aBak) > 0,"","Não possui Saldo  para a transfereria FDR conforme parametrização tipo de pedido "+_cTPedTransfFDR+" armazém "+_cArmazem) 
+			_cObs := If(Len(_aBak) > 0,"","Não possui Saldo  para a transfereria FDR conforme parametrização tipo de pedido "+_cTPedTransf+" armazém "+_cArmazem) 
 		Endif
 		Aadd(_aBak,{	(_cAliasPesq)->NREGVS3,;
 						 _cCodProd,; 
@@ -3255,9 +3243,16 @@ Begin Sequence
 	If Len(_aOndaRel) == 0
 		Break
 	Endif
+	_cOndaRel := ""
 	For _nPos := 1 To Len(_aOndaRel)
-		_cOndaRel += (_aOndaRel[_nPos]+";")
+		If _aOndaRel[_nPos,07] > 0  //Enviados
+			_cOndaRel += (_aOndaRel[_nPos,1]+";")
+		Endif	
     Next
+	//Não existem enviados
+	If Empty(_cOndaRel)
+		Break
+	Endif	
 	_cOndaRel := SubsTr(_cOndaRel,1,Len(_cOndaRel)-1)
 	//passar parametros para a 
 	aAdd( aRetP , _cOndaRel)  	//Onda
@@ -3272,4 +3267,43 @@ Begin Sequence
 	U_ZPECR007(aRetP)	
 End Sequence
 
+Return Nil
+
+
+//Tela final com resumo do processamento
+Static Function ZPECF08RESumo(_aOndaRel)
+Local _aTitulo := {}
+Local _oBrTela
+Local _nPos 
+
+	Aadd(_aTitulo,{"Aglutina"		, Len(VS1->VS1_XAGLU)	,"@!" })	
+	Aadd(_aTitulo,{"Armazem"		, Len(VS3->VS3_LOCAL)	,"@!" })	
+	Aadd(_aTitulo,{"Total Registros", 14					,"@E 99,999,999,999" })	
+	Aadd(_aTitulo,{"Selecionados"	, 14					,"@E 99,999,999,999" })	
+	Aadd(_aTitulo,{"Lidos"			, 14					,"@E 99,999,999,999" })	
+	Aadd(_aTitulo,{"Gerados"		, 14					,"@E 99,999,999,999" })	
+	Aadd(_aTitulo,{"Enviados"		, 14					,"@E 99,999,999,999" })	
+	Aadd(_aTitulo,{"Problemas Envio", 14					,"@E 99,999,999,999" })	
+	Aadd(_aTitulo,{"Iniciado em"	, 15					,"@E 99,999,999,999" })	
+	Aadd(_aTitulo,{"Finalizado em"	, 15					,"@E 99,999,999,999" })	
+
+	_oBrTela := FWBrowse():New()
+	_oBrTela:SetDataArray(.T.)
+	_oBrTela:SetArray(_aOndaRel)
+	_oBrTela:DisableConfig(.T.)
+	_oBrTela:DisableReport(.T.)
+	_oBrTela:DisableLocate(.T.)
+	_oBrTela:DisableFilter(.T.)
+	_oBrTela:SetDescription("Processo realizado na Onda")
+
+	For _nPos := 1 To Len(_aTitulo)
+		oColumn := FWBrwColumn():New()
+		oColumn:SetData({||_aOndaRel[_oBrRelac:nAt,_nPo]})
+		oColumn:SetTitle(_aTitulo[_nPos,1] ) 
+		oColumn:SetSize(_aTitulo[_nPos,2])
+		oColumn:SetPicture(_aTitulo[_nPos,3])
+		//oColumn:SetDecimal()
+		_oBrTela:SetColumns({oColumn})
+	Next
+	_oBrTela:Activate()
 Return Nil
