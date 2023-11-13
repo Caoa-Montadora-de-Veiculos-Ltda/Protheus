@@ -3272,51 +3272,60 @@ Return Nil
 
 //Tela final com resumo do processamento
 Static Function ZPECF08RESumo(_aOndaRel)
-Local _aTitulo := {}
-Local _oBrTela
+Local oBrowse     := Nil
+Local oModal   := Nil
+Local aBrwData    := {}
+Local aBrwModel   := {}
+Local aBrwCol     := {}
+Local aBrwSeek    := {}
+Local aBrwFil     := {}
+Local aCoors      := FwGetDialogSize()
 Local _nPos 
-//Local oDlg
 
     //DEFINE DIALOG oDlg TITLE "Processamento Ona" FROM 180,180 TO 550,700 PIXEL
+	aBrwData := _aOndaRel
+	Aadd(aBrwModel,{"Aglutina"			,"@!" 			 		,Len(VS1->VS1_XAGLU), 00	, 1	})	
+	Aadd(aBrwModel,{"Armazem"			,"@!" 					,Len(VS3->VS3_LOCAL), 00	, 1	})	
+	Aadd(aBrwModel,{"Total Registros"	,"@E 999,999,999" 	,11					, 00	, 1	})	
+	Aadd(aBrwModel,{"Selecionados"	 	,"@E 999,999,999" 	,11					, 00	, 1	})	
+	Aadd(aBrwModel,{"Lidos"				,"@E 999,999,999" 	,11					, 00	, 1	})	
+	Aadd(aBrwModel,{"Enviados"			,"@E 999,999,999" 	,11					, 00	, 1	})	
+	Aadd(aBrwModel,{"Problemas Envio"	,"@E 999,999,999" 	,11					, 00	, 1	})	
+	Aadd(aBrwModel,{"Iniciado em"		,"@!" 				,15					, 00	, 1	})	
+	Aadd(aBrwModel,{"Finalizado em"		,"@!" 				,15					, 00	, 1	})	
+	
+	aAdd(aBrwModel, {'Filial'        , '@!'    , 02, 00, 1})
 
-	Aadd(_aTitulo,{"Aglutina"		, Len(VS1->VS1_XAGLU)	,"@!" })	
-	Aadd(_aTitulo,{"Armazem"		, Len(VS3->VS3_LOCAL)	,"@!" })	
-	Aadd(_aTitulo,{"Total Registros", 14					,"@E 99,999,999,999" })	
-	Aadd(_aTitulo,{"Selecionados"	, 14					,"@E 99,999,999,999" })	
-	Aadd(_aTitulo,{"Lidos"			, 14					,"@E 99,999,999,999" })	
-	Aadd(_aTitulo,{"Gerados"		, 14					,"@E 99,999,999,999" })	
-	Aadd(_aTitulo,{"Enviados"		, 14					,"@E 99,999,999,999" })	
-	Aadd(_aTitulo,{"Problemas Envio", 14					,"@E 99,999,999,999" })	
-	Aadd(_aTitulo,{"Iniciado em"	, 15					,"@E 99,999,999,999" })	
-	Aadd(_aTitulo,{"Finalizado em"	, 15					,"@E 99,999,999,999" })	
+	For _nPos := 1 To Len(aBrwModel)
+    	aAdd(aBrwFil, {aBrwModel[_nPos,1], aBrwModel[_nPos,1], 'C', aBrwModel[_nPos,3], aBrwModel[_nPos,4], aBrwModel[_nPos,2]} )
+    	aAdd(aBrwCol, FwBrwColumn():New())
+    	aBrwCol[Len(aBrwCol)]:SetData( &('{ || aBrwData[oBrowse:nAt,' + cValToChar(_nPos) + ']}') )
+    	aBrwCol[Len(aBrwCol)]:SetTitle(aBrwModel[_nPos,1])
+    	aBrwCol[Len(aBrwCol)]:SetPicture(aBrwModel[_nPos,2])
+    	aBrwCol[Len(aBrwCol)]:SetSize(aBrwModel[_nPos,3])
+    	aBrwCol[Len(aBrwCol)]:SetDecimal(aBrwModel[_nPos,4])
+    	aBrwCol[Len(aBrwCol)]:SetAlign(aBrwModel[_nPos,5])
+	Next _nPos
 
- 	_oBrTela := FWMBrowse():New()
-	_oBrTela:SetDataArray(.T.)
-	_oBrTela:SetMenuDef('')
-	_oBrTela:SetArray(_aOndaRel)
-	_oBrTela:DisableConfig(.T.)
-	_oBrTela:DisableReport(.T.)
-	_oBrTela:DisableLocate(.T.)
-	_oBrTela:DisableFilter(.T.)
-    _oBrTela:SetAmbiente(.F.) //Habilita a utilização da funcionalidade Ambiente no Browse
-    _oBrTela:SetIgnoreARotina(.T.) // Indica que a mbrowse, ira ignorar a variavel private aRotina na construção das opções de menu.
-    _oBrTela:SetWalkThru(.F.)
-    //_oBrTela:SetFixedBrowse(.T.)
-	_oBrTela:DisableDetails()
-    _oBrTela:SetUseFilter(.F.)
-    _oBrTela:SetDBFFilter(.F.)
-    _oBrTela:SetFilterDefault( "" ) //Exemplo de como inserir um filtro padrao >>> "TR_ST == 'A'"
+	oModal := FwDialogModal():New()
 
-	_oBrTela:SetDescription("Processo realizado na Onda")
+    oModal:SetTitle('Processamento Onda')
+    oModal:SetEscClose(.F.)
+    oModal:SetSize(aCoors[3] / 2.7, aCoors[4] / 2.9)
+    oModal:CreateDialog()
 
-	For _nPos := 1 To Len(_aTitulo)
-		oColumn := FWBrwColumn():New()
-		oColumn:SetData({||_aOndaRel[_oBrRelac:nAt,_nPo]})
-		oColumn:SetTitle(_aTitulo[_nPos,1] ) 
-		oColumn:SetSize(_aTitulo[_nPos,2])
-		oColumn:SetPicture(_aTitulo[_nPos,3])
-		//oColumn:SetDecimal()
-		_oBrTela:SetColumns({oColumn})
-	Next
-	_oBrTela:Activate()
-Return Nil
+    oModal:EnableFormBar(.T.)
+    oModal:CreateFormBar()
+
+    oBrowse := FwBrowse():New()
+    oBrowse:SetDataArray()
+    oBrowse:SetArray(aBrwData)
+    oBrowse:SetColumns(aBrwCol)
+    //oBrowse:SetSeek(, aBrwSeek)
+    oBrowse:SetUseFilter()    
+    oBrowse:SetFieldFilter(aBrwFil)
+    oBrowse:SetOwner(oModal:GetPanelMain())
+    oBrowse:Activate()
+    oModal:AddButton('Sair'    , { || oModal:DeActivate() }, 'Sair',,.T.,.F.,.T.,)
+	oModal:Activate()
+Return Nil	
