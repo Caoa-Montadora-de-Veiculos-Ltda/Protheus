@@ -725,7 +725,7 @@ Begin Sequence
 	//Verifica se existe picking pendente ao qual não foi enviado
 	_dFinal 	:= Date() 
 	_cHsFinal	:= Substr(Time(),1,5)
-	Sleep(30000) //aguardar um momento para inicializar reprocesso assim não causa sobreposição	
+	//--DAC Sleep(30000) //aguardar um momento para inicializar reprocesso assim não causa sobreposição	
 	//Função para reprocessar envio RGLOG
 	StartJob("U_XFUNPRRGlog",GetEnvServer(),.F.,_cAglutina, cEmpAnt, cFilAnt, /*_nReprocessado*/, /*_oSay*/)
 End Sequence
@@ -3275,6 +3275,9 @@ Static Function ZPECF08RESumo(_aOndaRel)
 Local _aTitulo := {}
 Local _oBrTela
 Local _nPos 
+//Local oDlg
+
+    //DEFINE DIALOG oDlg TITLE "Processamento Ona" FROM 180,180 TO 550,700 PIXEL
 
 	Aadd(_aTitulo,{"Aglutina"		, Len(VS1->VS1_XAGLU)	,"@!" })	
 	Aadd(_aTitulo,{"Armazem"		, Len(VS3->VS3_LOCAL)	,"@!" })	
@@ -3287,13 +3290,23 @@ Local _nPos
 	Aadd(_aTitulo,{"Iniciado em"	, 15					,"@E 99,999,999,999" })	
 	Aadd(_aTitulo,{"Finalizado em"	, 15					,"@E 99,999,999,999" })	
 
-	_oBrTela := FWBrowse():New()
+ 	_oBrTela := FWMBrowse():New()
 	_oBrTela:SetDataArray(.T.)
+	_oBrTela:SetMenuDef('')
 	_oBrTela:SetArray(_aOndaRel)
 	_oBrTela:DisableConfig(.T.)
 	_oBrTela:DisableReport(.T.)
 	_oBrTela:DisableLocate(.T.)
 	_oBrTela:DisableFilter(.T.)
+    _oBrTela:SetAmbiente(.F.) //Habilita a utilização da funcionalidade Ambiente no Browse
+    _oBrTela:SetIgnoreARotina(.T.) // Indica que a mbrowse, ira ignorar a variavel private aRotina na construção das opções de menu.
+    _oBrTela:SetWalkThru(.F.)
+    //_oBrTela:SetFixedBrowse(.T.)
+	_oBrTela:DisableDetails()
+    _oBrTela:SetUseFilter(.F.)
+    _oBrTela:SetDBFFilter(.F.)
+    _oBrTela:SetFilterDefault( "" ) //Exemplo de como inserir um filtro padrao >>> "TR_ST == 'A'"
+
 	_oBrTela:SetDescription("Processo realizado na Onda")
 
 	For _nPos := 1 To Len(_aTitulo)
