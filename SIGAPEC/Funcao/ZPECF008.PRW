@@ -92,7 +92,7 @@ User Function ZPECF008()
 				AAdd(_aArmazem, _cVar )
 				_cVar := ""
 			Else	
-				_cVar := SubsTr(_cArmazem,_nPos,1)
+				_cVar += SubsTr(_cArmazem,_nPos,1)
 			Endif	
 		Next	
 		If !Empty(_cVar)
@@ -169,10 +169,12 @@ User Function ZPECF008()
 		_aMensAglu	:= {}
 		//Carregar processo
 		For _nPos := 1 To Len(_aArmazem)
+			NNR->(DbSetOrder(1)) //NNR_FILIAL+NNR_CODIGO                                                                                                                                           
+			NNR->(DbSeek(XFilial("NNR")+_aArmazem[_nPos]))
 			If _lJob
 				ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _aArmazem[_nPos], @_aOndaRel )
 			Else
-				FwMsgRun(,{ |_oSay| ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _aArmazem[_nPos], @_aOndaRel, @_oSay ) }, "Separação Orçamentos armazém PADRÃO", "Aguarde...")  //Separação Orçamentos / Aguarde
+				FwMsgRun(,{ |_oSay| ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _aArmazem[_nPos], @_aOndaRel, @_oSay ) }, "Separação Orçamentos armazém "+_aArmazem[_nPos]+" - "+AllTrim(NNR->NNR_DESCRI)+", Aguarde...")  //Separação Orçamentos / Aguarde
 			Endif
 		Next
 		ZPECF08RESumo(_aOndaRel)
@@ -725,14 +727,18 @@ Begin Sequence
 	//Verifica se existe picking pendente ao qual não foi enviado
 	_dFinal 	:= Date() 
 	_cHsFinal	:= Substr(Time(),1,5)
-	//--DAC Sleep(30000) //aguardar um momento para inicializar reprocesso assim não causa sobreposição	
+	Sleep(10000) //aguardar um momento para inicializar reprocesso assim não causa sobreposição	
 	//Função para reprocessar envio RGLOG
 	StartJob("U_XFUNPRRGlog",GetEnvServer(),.F.,_cAglutina, cEmpAnt, cFilAnt, /*_nReprocessado*/, /*_oSay*/)
 End Sequence
 Sleep(5000) //aguardar um momento para inicializar reprocesso assim não causa sobreposição	
 //Guardar dados para mostrar no final
+NNR->(DbSetOrder(1)) //NNR_FILIAL+NNR_CODIGO                                                                                                                                           
+NNR->(DbSeek(XFilial("NNR")+_cLocal))
+
 Aadd(_aOndaRel,{ _cAglutina  					/*Num Aglutina*/ ; 
 				, _cLocal    					/*Armazem*/ ;
+				, NNR->NNR_DESCRI				/*Desc Armazem*/ ;
 				, _nTotByPass+_nRegProcess 		/*Total Registros*/ ;
 				, _nRegProcess 					/*Selecionados*/ ;
 				, _nProcessado 					/*Lidos*/ ;
@@ -2321,7 +2327,7 @@ Static Function XTRANSRERVA()
 				MSGINFO(OemToAnsi("Necessário confirmação dos parâmetros"),OemToAnsi("Atenção")) 
 				Loop 
 			Endif
-			NNR->(DbSetOrer(1)) //NNR_FILIAL+NNR_CODIGO                                                                                                                                           
+			NNR->(DbSetOrder(1)) //NNR_FILIAL+NNR_CODIGO                                                                                                                                           
 			If !NNR->(DbSeek(XFilial("NNR")+_cOrigem))
 				MSGINFO(OemToAnsi("Armazém "+_cOrigem+" não cadastrado !"),OemToAnsi("Atenção"))  
 				Loop
@@ -3277,25 +3283,25 @@ Local oModal   := Nil
 Local aBrwData    := {}
 Local aBrwModel   := {}
 Local aBrwCol     := {}
-Local aBrwSeek    := {}
+//Local aBrwSeek    := {}
 Local aBrwFil     := {}
 Local aCoors      := FwGetDialogSize()
 Local _nPos 
 
     //DEFINE DIALOG oDlg TITLE "Processamento Ona" FROM 180,180 TO 550,700 PIXEL
 	aBrwData := _aOndaRel
-	Aadd(aBrwModel,{"Aglutina"			,"@!" 			 		,Len(VS1->VS1_XAGLU), 00	, 1	})	
-	Aadd(aBrwModel,{"Armazem"			,"@!" 					,Len(VS3->VS3_LOCAL), 00	, 1	})	
-	Aadd(aBrwModel,{"Total Registros"	,"@E 999,999,999" 	,11					, 00	, 1	})	
-	Aadd(aBrwModel,{"Selecionados"	 	,"@E 999,999,999" 	,11					, 00	, 1	})	
-	Aadd(aBrwModel,{"Lidos"				,"@E 999,999,999" 	,11					, 00	, 1	})	
-	Aadd(aBrwModel,{"Enviados"			,"@E 999,999,999" 	,11					, 00	, 1	})	
-	Aadd(aBrwModel,{"Problemas Envio"	,"@E 999,999,999" 	,11					, 00	, 1	})	
-	Aadd(aBrwModel,{"Iniciado em"		,"@!" 				,15					, 00	, 1	})	
-	Aadd(aBrwModel,{"Finalizado em"		,"@!" 				,15					, 00	, 1	})	
+	Aadd(aBrwModel,{"Aglutina"			,"@!" 			 	,Len(VS1->VS1_XAGLU)	, 00	, 1	})	
+	Aadd(aBrwModel,{"Armazem"			,"@!" 				,Len(VS3->VS3_LOCAL)	, 00	, 1	})	
+	Aadd(aBrwModel,{"Desc. Armazem"		,"@!" 				,Len(NNR->NNR_DESCRI)	, 00	, 1	})	
+	Aadd(aBrwModel,{"Total Registros"	,"@E 9999,999" 		,08						, 00	, 1	})	
+	Aadd(aBrwModel,{"Selecionados"	 	,"@E 9999,999" 		,08						, 00	, 1	})	
+	Aadd(aBrwModel,{"Lidos"				,"@E 9999,999" 		,08						, 00	, 1	})	
+	Aadd(aBrwModel,{"Gerados"			,"@E 9999,999" 		,08						, 00	, 1	})	
+	Aadd(aBrwModel,{"Enviados"			,"@E 9999,999" 		,08						, 00	, 1	})	
+	Aadd(aBrwModel,{"Problemas Envio"	,"@E 9999,999" 		,08						, 00	, 1	})	
+	Aadd(aBrwModel,{"Iniciado em"		,"@!" 				,15						, 00	, 1	})	
+	Aadd(aBrwModel,{"Finalizado em"		,"@!" 				,15						, 00	, 1	})	
 	
-	aAdd(aBrwModel, {'Filial'        , '@!'    , 02, 00, 1})
-
 	For _nPos := 1 To Len(aBrwModel)
     	aAdd(aBrwFil, {aBrwModel[_nPos,1], aBrwModel[_nPos,1], 'C', aBrwModel[_nPos,3], aBrwModel[_nPos,4], aBrwModel[_nPos,2]} )
     	aAdd(aBrwCol, FwBrwColumn():New())
