@@ -46,6 +46,7 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 	Local _cHsIni		:= Time()  //PEC025
 	Local _nRegSF1		:= 0
 	Local _cDocOri      := ""
+	Local _cDeposito	:= ""
 	Local _lError
 	Local _nError
 	Local _cStatus
@@ -160,7 +161,7 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 				cXTipo := "OUT"
 			EndIf	
 		EndIf
-
+		_cDeposito  := (_cAlias)->DEPOSITO
 		If _lRet
 			_lError := .F.  //controle para que não se marque como integrado
 			While ((_cAlias)->( !Eof() ))
