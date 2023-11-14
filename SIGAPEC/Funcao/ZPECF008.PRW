@@ -227,7 +227,7 @@ Local _lValCred  		:= .T.
 Local _cFaseConf 		:= Alltrim(GetNewPar("MV_MIL0095","4")) // Fase de Conferencia e Separacao
 Local _cFaseOrc 		:= AllTrim(GetNewPar("MV_FASEORC","023R45F"))
 Local _cConectWis  		:= AllTrim(SuperGetMV( "CMV_PEC031"  ,,"WIS.V_ENDERECO_ESTOQUE@DBLINK_WISPROD")) 
-Local _cTPedTransf 	:= AllTrim(SuperGetMV( "CMV_PEC038" ,,"" ))   //Parâmetro para indicação de tipo de pedido de transferencia
+Local _cTPedTransf 		:= AllTrim(SuperGetMV( "CMV_PEC038" ,,"" ))   //Parâmetro para indicação de tipo de pedido de transferencia
 
 Local _nRegProcess		:= 0
 Local _nProcessado		:= 0
