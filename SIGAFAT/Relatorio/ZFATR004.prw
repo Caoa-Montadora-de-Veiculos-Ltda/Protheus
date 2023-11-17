@@ -130,6 +130,8 @@ Static Function zRel0004(cArquivo)
         oFWMsExcel:AddColumn( cAba1 ,cTabela1   ,"Dt Emissão Nota Fiscal"       ,2	,4	,.F.	) // Center - Data
         oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Cond. Pagto"                  ,2	,1	,.F.	) // Center - Texto
         oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Desc. Cond. Pagto"            ,1	,1	,.F.	) // Center - Texto
+        oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Forma. Pagto"                 ,2	,1	,.F.	) // Center - Texto
+        oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Desc. Forma. Pagto"           ,1	,1	,.F.	) // Center - Texto
         oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Dt Emissão Tit."              ,2	,4	,.F.	) // Center - Data
         oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Dt Vencimento Tit."           ,2	,4	,.F.	) // Center - Data
         oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Dt Baixa Financeira"          ,2	,4	,.F.	) // Center - Data
@@ -173,7 +175,9 @@ Static Function zRel0004(cArquivo)
                                                         (cAliasTRB)->F2_CHVNFE,;    //--Chave NF
                                                         IIF( Empty( SToD( (cAliasTRB)->F2_EMISSAO ) ), "", SToD( (cAliasTRB)->F2_EMISSAO ) ),;  //--Dt Emiss„o Nota Fiscal
                                                         (cAliasTRB)->VRJ_FORPAG,;
-                                                        (cAliasTRB)->E4_DESCRI,;                                                        
+                                                        (cAliasTRB)->E4_DESCRI,;
+														(cAliasTRB)->VRL_XFORPA,;
+														(cAliasTRB)->DESCRI,;
                                                         IIF( Empty( SToD( (cAliasTRB)->E1_EMISSAO ) ), "", SToD( (cAliasTRB)->E1_EMISSAO ) ),;    //--Dt Emiss„o Tit.
                                                         IIF( Empty( SToD( (cAliasTRB)->E1_VENCTO  ) ), "", SToD( (cAliasTRB)->E1_VENCTO  ) ),;    //--Dt Vencimento Tit.
                                                         IIF( Empty( SToD( (cAliasTRB)->E1_BAIXA   ) ), "", SToD( (cAliasTRB)->E1_BAIXA   ) ),;    //--Dt Baixa Financeira  
@@ -214,6 +218,7 @@ Static Function zRel0004(cArquivo)
 
 Return()
 //-------------------------------------------------
+
 //--------------------------------------------------
 Static Function fQuery()
 	Local cQuery := ""	
@@ -255,7 +260,10 @@ Static Function fQuery()
 	cQuery += CRLF + "          COALESCE(VV1.VV1_CODMAR, SC6.C6_XCODMAR) AS VV0_CODMAR, "
 	cQuery += CRLF + "          SA1.A1_NREDUZ, "
 	cQuery += CRLF + "          COALESCE( SD1.D1_EMISSAO,'      ') AS D1_EMISSAO, "
-	cQuery += CRLF + "          SD2.D2_COD	"
+	cQuery += CRLF + "          SD2.D2_COD,	"
+	cQuery += CRLF + "          COALESCE (VRL.VRL_XFORPA, '  ') AS VRL_XFORPA, "
+	cQuery += CRLF + "          COALESCE ((SELECT E4.E4_DESCRI FROM " + RetSqlName( "SE4" ) + " E4 WHERE E4.E4_FILIAL = '" + xFilial("SE4") + "' AND  E4.E4_CODIGO = VRL.VRL_XFORPA AND E4.D_E_L_E_T_ = ' ' ), ' ') AS DESCRI "
+
 	cQuery += CRLF + "  FROM " + RetSqlName( "SE1" ) + " SE1  "
 	
 	cQuery += CRLF + "  	JOIN " + RetSqlName( "SF2" ) + " SF2  "
@@ -307,12 +315,12 @@ Static Function fQuery()
 	cQuery += CRLF + "		    AND VV0.D_E_L_E_T_ = ' ' "
 	
 	cQuery += CRLF + "    	LEFT JOIN " + RetSqlName( "VV1" ) + " VV1   "
-	cQuery += CRLF + " 	  	    ON  VV1.VV1_FILIAL = '" + xFilial("VV1") + "'  "
+	cQuery += CRLF + " 	  	    ON  VV1.VV1_FILIAL = '" + xFilial("VV1") + "' "
 	cQuery += CRLF + "          AND VV1.VV1_CHASSI = SD2.D2_NUMSERI  "
 	cQuery += CRLF + "          AND VV1.D_E_L_E_T_ = ' '  "
 	
 	cQuery += CRLF + "     	LEFT JOIN " + RetSqlName( "VV2" ) + " VV2    "
-	cQuery += CRLF + "          ON  VV2.VV2_FILIAL  = '" + xFilial("VV2") + "'  "
+	cQuery += CRLF + "          ON  VV2.VV2_FILIAL  = '" + xFilial("VV2") + "' "
 	cQuery += CRLF + "          AND VV2.VV2_CODMAR  = VV1.VV1_CODMAR    "
 	cQuery += CRLF + "          AND VV2.VV2_MODVEI  = VV1.VV1_MODVEI   "
 	cQuery += CRLF + "          AND VV2.VV2_SEGMOD  = VV1.VV1_SEGMOD   "
@@ -328,6 +336,11 @@ Static Function fQuery()
     cQuery += CRLF + "    		AND VRJ.VRJ_PEDIDO = VRK.VRK_PEDIDO "
     cQuery += CRLF + "    		AND VRJ.D_E_L_E_T_ = ' ' "
 
+	cQuery += CRLF + "		LEFT JOIN " + RetSqlName( "VRL" ) + " VRL "
+	cQuery += CRLF + "         ON  VRL.VRL_FILIAL = '" + xFilial("VV3") + "' "
+	cQuery += CRLF + "         AND VRL.VRL_PEDIDO = VRJ.VRJ_PEDIDO "
+	cQuery += CRLF + "         AND VRL.D_E_L_E_T_ = ' ' "
+
 	cQuery += CRLF + "  	LEFT JOIN " + RetSqlName( "VV3" ) + " VV3  "
 	cQuery += CRLF + "          ON  VV3.VV3_FILIAL     = '" + xFilial("VV3") + "'  "
 	cQuery += CRLF + "          AND (VV3.VV3_TIPVEN = SC5.C5_XTIPVEN OR VV3.VV3_TIPVEN = VRJ.VRJ_TIPVEN)  "
@@ -342,7 +355,7 @@ Static Function fQuery()
 	cQuery += CRLF + "  	LEFT JOIN " + RetSqlName( "VX5" ) + " VX5  ON  VX5.VX5_FILIAL = '" + xFilial("VX5") + "' AND  VX5.VX5_CHAVE = '068' AND  VX5.VX5_CODIGO = VV2.VV2_OPCION AND  VX5.D_E_L_E_T_ = ' '  "
 	cQuery += CRLF + "  	LEFT JOIN " + RetSqlName( "VX5" ) + " VX5B ON VX5B.VX5_FILIAL = '" + xFilial("VX5") + "' AND VX5B.VX5_CHAVE = '067' AND VX5B.VX5_CODIGO = VV2.VV2_COREXT AND VX5B.D_E_L_E_T_ = ' '  "
 	
-	cQuery += CRLF + "  WHERE SE1.E1_FILIAL = '" + xFilial("SE1") + "'  "
+	cQuery += CRLF + "  WHERE SE1.E1_FILIAL = '" + xFilial("SE1") + "' "
 	cQuery += CRLF + "		AND SE1.D_E_L_E_T_ = ' ' "
 	
 	If Empty( aRet[6] ) 
@@ -371,7 +384,7 @@ Static Function fQuery()
 
 	cQuery += CRLF + "  GROUP BY SE1.E1_FILIAL, "
 	cQuery += CRLF + "		VRK.VRK_PEDIDO, "
-	cQuery += CRLF + "		SD2.D2_PEDIDO,  "
+	cQuery += CRLF + "		SD2.D2_PEDIDO, "
 	cQuery += CRLF + "		SF2.F2_COND, "
 	cQuery += CRLF + "		VV3.VV3_DESCRI, "
 	cQuery += CRLF + "		SD2.D2_NUMSERI, "
@@ -385,7 +398,7 @@ Static Function fQuery()
 	cQuery += CRLF + "		SF2.F2_DOC, "
 	cQuery += CRLF + "		SF2.F2_SERIE,  "
 	cQuery += CRLF + "		SF2.F2_EMISSAO, "
-	cQuery += CRLF + "		VRK.VRK_VALTAB,  "
+	cQuery += CRLF + "		VRK.VRK_VALTAB, "
 	cQuery += CRLF + "		SF2.F2_VALFAT, "
 	cQuery += CRLF + "		SF2.F2_CHVNFE, "
 	cQuery += CRLF + "		SE1.E1_EMISSAO, "
@@ -393,7 +406,7 @@ Static Function fQuery()
 	cQuery += CRLF + "		SE1.E1_BAIXA, "
 	cQuery += CRLF + "		SE1.E1_VALOR, "
 	cQuery += CRLF + "		SE1.E1_PARCELA, "
-	cQuery += CRLF + "		SE1.E1_SALDO,  "
+	cQuery += CRLF + "		SE1.E1_SALDO, "
 	cQuery += CRLF + "		SA1.A1_CGC, "
 	cQuery += CRLF + "		SA1.A1_NOME, "
 	cQuery += CRLF + "		SA1.A1_MUN, "
@@ -408,10 +421,11 @@ Static Function fQuery()
 	cQuery += CRLF + "		SD1.D1_EMISSAO, "
 	cQuery += CRLF + "		SD2.D2_COD, "
 	cQuery += CRLF + "		SC6.C6_XPRCTAB, "
-	cQuery += CRLF + "		SC6.C6_XCODMAR,  "
-	cQuery += CRLF + "	    VV1.VV1_MODVEI , "
+	cQuery += CRLF + "		SC6.C6_XCODMAR, "
+	cQuery += CRLF + "	    VV1.VV1_MODVEI, "
 	cQuery += CRLF + "      VV1.VV1_FABMOD, "
-	cQuery += CRLF + "      VV1.VV1_CODMAR 
+	cQuery += CRLF + "      VV1.VV1_CODMAR, "
+	cQuery += CRLF + "      VRL.VRL_XFORPA "
 	cQuery += CRLF + " ORDER BY 1, 2, 11, 12 "
 
 Return cQuery
