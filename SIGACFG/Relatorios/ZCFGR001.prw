@@ -28,7 +28,7 @@ User Function ZCFGR001() // u_ZFISR001()
     
     If ParamBox(aPergs, "Parametros ", aRetP, , , , , , , , ,.T.) 
 
-	    cArquivo := cGetFile(cExtens,cTitulo,,cMainPath,.F.)
+	    cArquivo := cGetFile(cExtens,cTitulo,,cMainPath,.F.,)
 	    If !Empty(cArquivo)
 	        Processa({|| zRel0001(cArquivo)}	,"Gerando Relatório de Usuários.."	)
 	    EndIf
@@ -124,7 +124,7 @@ Static Function zRel0001(cArquivo)
 
     cQryUsr += " ORDER BY USR_ID "                                                                       + CRLF
 
-	cQryUsr := ChangeQuery(cQryUsr)
+	//cQryUsr := ChangeQuery(cQryUsr)
 
 	// Executa a consulta.
 	DbUseArea( .T., "TOPCONN", TcGenQry(,,cQryUsr), cTmpUsr, .T., .T. )
@@ -285,7 +285,7 @@ Static Function zRel0001(cArquivo)
             cQryGrp += " AND USR_GRUPO <> ' ' "                                         + CRLF
             cQryGrp += " ORDER BY USR_GRUPO "                                           + CRLF
 
-            cQryGrp := ChangeQuery(cQryGrp)
+            //cQryGrp := ChangeQuery(cQryGrp)
 
 	        // Executa a consulta.
 	        DbUseArea( .T., "TOPCONN", TcGenQry(,,cQryGrp), cTmpGrp, .T., .T. )
@@ -307,7 +307,7 @@ Static Function zRel0001(cArquivo)
                     cQryMod += " AND GR__ACESSO = 'T' "                                                     + CRLF
                     cQryMod += " ORDER BY GR__MODULO "                                                      + CRLF
 
-                    cQryMod := ChangeQuery(cQryMod)
+                    //cQryMod := ChangeQuery(cQryMod)
 
 	                // Executa a consulta.
 	                DbUseArea( .T., "TOPCONN", TcGenQry(,,cQryMod), cTmpMod, .T., .T. )
@@ -322,7 +322,7 @@ Static Function zRel0001(cArquivo)
                                                 Alltrim( (cTmpUsr)->USR_NOME )      ,; // NOME DO USUÁRIO
                                                 IIf( (cTmpUsr)->USR_MSBLQL == "2" , "ATIVO", "BLOQUEADO" )  ,; //STATUS DO USUÁRIO
                                                 Alltrim( cRegra )                   ,; // REGRA DO GRUPO
-                                                IIF( Empty( SToD( (cTmpUsr)->USR_DTLOGON ) ), "", SToD( (cTmpUsr)->USR_DTLOGON ) ) ,;
+                                                SToD( (cTmpUsr)->USR_DTLOGON )       ,;
                                                 "SIM"                               ,; // MÓDULO POR GRUPO
                                                 "NÃO"                               ,; // MÓDULO POR USUÁRIO
                                                 IIf( PadL( (cTmpMod)->GR__MODULO, 2, "0" ) == "01" , "SIM", " " ) ,; // TEM ACESSO AO SIGAATF   
@@ -443,7 +443,7 @@ Static Function zRel0001(cArquivo)
             cQryUsM += " AND USR_ID = '" + Alltrim( (cTmpUsr)->USR_ID ) + "' "      + CRLF
             cQryUsM += " ORDER BY USR_MODULO "                                      + CRLF
 
-            cQryUsM := ChangeQuery(cQryUsM)
+            //cQryUsM := ChangeQuery(cQryUsM)
 
 	        // Executa a consulta.
 	        DbUseArea( .T., "TOPCONN", TcGenQry(,,cQryUsM), cTmpUsM, .T., .T. )
@@ -463,7 +463,7 @@ Static Function zRel0001(cArquivo)
                                             Alltrim( (cTmpUsr)->USR_NOME )      ,; // NOME DO USUÁRIO
                                             IIf( (cTmpUsr)->USR_MSBLQL == "2" , "ATIVO", "BLOQUEADO" )  ,; //STATUS DO USUÁRIO
                                             Alltrim( cRegra )                   ,; // REGRA DO GRUPO
-                                            IIF( Empty( SToD( (cTmpUsr)->USR_DTLOGON ) ), "", SToD( (cTmpUsr)->USR_DTLOGON ) ) ,;
+                                            SToD( (cTmpUsr)->USR_DTLOGON )      ,;
                                             "NÃO"                               ,; // MÓDULO POR GRUPO
                                             "SIM"                               ,; // MÓDULO POR USUÁRIO
                                             IIf( PadL( (cTmpUsM)->USR_MODULO , 2, "0" ) == "01" , "SIM", " " ) ,; // TEM ACESSO AO SIGAATF   
@@ -605,7 +605,7 @@ Static Function zRel0001(cArquivo)
                     EndIf       
                 Next
 
-                cUsrTOut    := zTOutUsr(aPrinter[_nX][002])
+                cUsrTOut    := '0' //zTOutUsr(aPrinter[_nX][002])
                 
 
                 oFWMSExcel:AddRow( cAba1	,cTabela1	,{  Alltrim( aPrinter[_nX][002] ) ,; // ID DO USUÁRIO
@@ -614,7 +614,7 @@ Static Function zRel0001(cArquivo)
                                                             Alltrim( aPrinter[_nX][005] ) ,; // STATUS DO USUÁRIO
                                                             Alltrim( aPrinter[_nX][006] ) ,; // REGRA DO GRUPO
                                                             Alltrim( aPrinter[_nX][007] ) ,; // ULTIMO LOGON 
-                                                            Alltrim( aPrinter[_nX][008] ) ,; // MÓDULO POR GRUPO
+                                                            Alltrim( aPrinter[_nX][008] ) ,; // MÓDULO POR GRUPOevandro
                                                             Alltrim( aPrinter[_nX][009] ) ,; // MÓDULO POR USUÁRIO
                                                             Alltrim( aPrinter[_nX][010] ) ,; // TEM ACESSO AO SIGAATF   
                                                             Alltrim( aPrinter[_nX][011] ) ,; // TEM ACESSO AO SIGACOM   
@@ -2669,7 +2669,7 @@ cQry += " WHERE D_E_L_E_T_ = ' ' "                      + CRLF
 cQry += " AND USR_ID = '" + Alltrim( cUser ) + "' "     + CRLF 
 cQry += " ORDER BY USR_ID "                             + CRLF
 
-cQry := ChangeQuery(cQry)
+//cQry := ChangeQuery(cQry)
 
 // Executa a consulta.
 DbUseArea( .T., "TOPCONN", TcGenQry(,,cQry), cTable, .T., .T. )
@@ -2681,6 +2681,8 @@ If (cTable)->(!Eof())
 Else
     cRet := "0"
 EndIf
+
+(cTable)->(DbCloseArea())
 
 Return(cRet)
 /*
@@ -2717,7 +2719,7 @@ cQry += " AND IDGRUPO.USR_ID = '" + Alltrim( cUser ) + "' "                     
 cQry += " AND IDGRUPO.USR_GRUPO <> ' ' "                                                                                                                    + CRLF                        
 cQry += " ORDER BY IDGRUPO.USR_GRUPO "                                                                                                                      + CRLF   
 
-cQry := ChangeQuery(cQry)
+//cQry := ChangeQuery(cQry)
 
 // Executa a consulta.
 DbUseArea( .T., "TOPCONN", TcGenQry(,,cQry), cTable, .T., .T. )
@@ -2731,11 +2733,12 @@ If (cTable)->(!Eof())
 
         (cTable)->(DbSkip())
     EndDo
-    (cTable)->(DbCloseArea())  
+    //(cTable)->(DbCloseArea())  
 Else
     aAdd( aGrpRet, {  "NÃO PERTENCE A GRUPO"," "  })   //Grupo de acesso 
 EndIf
 
+(cTable)->(DbCloseArea())
 
 Return(aGrpRet)
 
