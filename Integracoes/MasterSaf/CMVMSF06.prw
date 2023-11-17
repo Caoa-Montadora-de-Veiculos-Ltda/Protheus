@@ -404,7 +404,7 @@ User Function CMVMSF06()
 
 	//--Variavel que carrega as notas fiscais selecionadas via markbrowse
 	Private __cSelNfs := ""
-
+	
 	AAdd( aSay , "Esta Rotina tem como objetivo gerar informações do ERP Protheus " )
 	AAdd( aSay , "para o MasterSAF via arquivo TXT conforme documentação técnica " )
 	//AAdd( aSay , "Project Charter - XXXXXX")   
@@ -4373,7 +4373,7 @@ Static Function fSAFX108()
 	cQ += CRLF + "				AND SD3C.D3_FILIAL  = SC2.C2_FILIAL  "
 	cQ += CRLF + "				AND SD3C.D3_OP      = SC2.C2_NUM||SC2.C2_ITEM||SC2.C2_SEQUEN "
 	cQ += CRLF + "				AND SD3C.D3_OP      <> ' ' "
-	cQ += CRLF + "				AND SD3C.D3_CF      NOT IN  ('PR0','PR1' ) "
+	cQ += CRLF + "				AND SD3C.D3_CF      IN  ('PR0','PR1' ) "
 	cQ += CRLF + "				AND SD3C.D3_ESTORNO <> 'S' ) as D3_CUSTO1 "
 	cQ += CRLF + "		,SC2.*  "
 	
@@ -4385,7 +4385,7 @@ Static Function fSAFX108()
 	cQ += CRLF + "  		AND TRIM(SD3.D3_OP) = TRIM(SC2.C2_NUM) || TRIM(SC2.C2_ITEM) || TRIM(SC2.C2_SEQUEN) "
 	cQ += CRLF + "         	AND SD3.D3_ESTORNO  <> 'S' "
 	cQ += CRLF + "         	AND SD3.D3_OP       <> ' '  "
-	cQ += CRLF + "  		AND SD3.D3_CF NOT IN  ('PR0','PR1' ) "
+	cQ += CRLF + "  		AND SD3.D3_CF       IN  ('PR0','PR1' ) "
 	cQ += CRLF + "         	AND SD3.D3_TIPO     = 'PA'  "
 	
 	cQ += CRLF + "		WHERE   SC2.D_E_L_E_T_ = ' '  "
@@ -4459,6 +4459,15 @@ Static Function fSAFX108()
 			Endif	
 			
 			(cAliasTrb)->(dbSkip())
+
+			if len(aItens) >= _nLimite  //a cada 1000 linhas é gravado no arquivo para liberar a memória
+				SalvaTXT(aCab,aItens)
+				aItens := {}
+				IF LDebug
+					(cAliasTrb)->(dbCloseArea())
+					RETURN
+				ENDIF
+			ENDIF
 		Enddo
 	Else
 		APMsgAlert(cTab+": Estrutura não cadastrada na tabela 'SZR - CAMPOS TABELA MASTERSAF'.Verifique.")
@@ -4500,13 +4509,27 @@ Static Function fSAFX109()
 	cQ += CRLF + "         	AND SD3.D3_ESTORNO <> 'S' "
 	cQ += CRLF + "         	AND SD3.D3_OP      <> ' '  "
 	cQ += CRLF + "  		AND SD3.D3_CF NOT IN  ('PR0','PR1' ) "
-	cQ += CRLF + "         	AND SD3.D3_OP       <> 'PA'  "
 	
 	cQ += CRLF + "  	WHERE SC2.D_E_L_E_T_ = ' '  "
 	cQ += CRLF + "  		AND SC2.C2_FILIAL  BETWEEN '" + cFilDe    + "' AND '" + cFilAte  + "' "
-	cQ += CRLF + "  		AND SC2.C2_DATPRI  >= '" + dTos(dDataIni) + "'   "
-	cQ += CRLF + " 			AND SC2.C2_DATPRF  <= '" + dTos(dDataFim) + "'
-	
+	cQ += CRLF + "  		AND SC2.C2_DATPRI  >= '" + dTos(dDataIni) + "' "
+	cQ += CRLF + " 			AND SC2.C2_DATPRF  <= '" + dTos(dDataFim) + "' "
+	cQ += CRLF + "			AND SC2.C2_NUM||SC2.C2_ITEM||SC2.C2_SEQUEN IN( SELECT  "
+	cQ += CRLF + "					DISTINCT CONCAT(CONCAT(C2_NUM,C2_ITEM),C2_SEQUEN) AS OP "
+	cQ += CRLF + "				FROM " + RetSqlName("SC2") + " SC2A "
+	cQ += CRLF + "			  	INNER JOIN " + RetSqlName("SD3") + " SD3A  
+	cQ += CRLF + "			  		ON  SD3A.D_E_L_E_T_  = ' '  "
+	cQ += CRLF + "			  		AND SD3A.D3_FILIAL   = SC2.C2_FILIAL  "
+	cQ += CRLF + "			  		AND TRIM(SD3A.D3_OP) = TRIM(SC2A.C2_NUM) || TRIM(SC2A.C2_ITEM) || TRIM(SC2A.C2_SEQUEN) "
+	cQ += CRLF + "			       	AND SD3A.D3_ESTORNO  <> 'S' "
+	cQ += CRLF + "			       	AND SD3A.D3_OP       <> ' ' "
+	cQ += CRLF + "			    	AND SD3A.D3_CF       IN  ('PR0','PR1' ) "
+	cQ += CRLF + "			       	AND SD3A.D3_TIPO     = 'PA' "
+	cQ += CRLF + "				WHERE   SC2A.D_E_L_E_T_ = ' ' "
+	cQ += CRLF + "						AND SC2A.C2_FILIAL = SC2.C2_FILIAL  
+	cQ += CRLF + "						AND SC2A.C2_DATPRI >= '" + dTos(dDataIni) + "' " 
+	cQ += CRLF + "						AND SC2A.C2_DATPRF <= '" + dTos(dDataFim) + "' ) "
+
 	cQ += CRLF + "  ORDER BY SC2.C2_FILIAL,SC2.C2_EMISSAO,SC2.C2_NUM ,SD3.D3_COD "
 	
 	If lDebug
@@ -4562,7 +4585,15 @@ Static Function fSAFX109()
 				nPosCmpCab:=PosCabArray(aItens,"NUM_ITEM")
 				aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"(cAliasTrb)->C2_ITEM")
 			Endif	
-		
+			
+			if len(aItens) >= _nLimite  //a cada 1000 linhas é gravado no arquivo para liberar a memória
+				SalvaTXT(aCab,aItens)
+				aItens := {}
+				IF LDebug
+					(cAliasTrb)->(dbCloseArea())
+					RETURN
+				ENDIF
+			ENDIF
 			(cAliasTrb)->(dbSkip())
 		Enddo
 	Else
@@ -6376,6 +6407,8 @@ EndDo
 
 (cAlias)->(dbCloseArea())
 Return
+
+
 
 /*
 =======================================================================================
