@@ -153,6 +153,9 @@ User Function ZPECF008()
 		AADD(_aSays,OemToAnsi(STR0031)) //previas e enviando a quantidade para a separação dos orçamentos.
 		AADD(_aSays,OemToAnsi(STR0032)) //Clique no botão Parâmetros para alterar as definições da rotina. 
 		AADD(_aSays,OemToAnsi(STR0033)) //Depois clique no Botão OK.
+		AADD(_aSays,OemToAnsi("")) 		//""
+		AADD(_aSays,OemToAnsi("ARMAZÉNS DE PROCESSAMENTO DA ONDA ==> "+ AllTrim(_cArmazem))) //Depois clique no Botão OK.
+
 		AADD(_aButtons, { 1,.T.,{|o| FechaBatch(),_nRet:=1											}})
 		AADD(_aButtons, { 2,.T.,{|o| FechaBatch()													}})
 		AADD(_aButtons, { 5,.T.,{|o| ParamBox(_aPar,_cTitle,@_aRet,,,.T.,,,,"ZPECF008",.T.,.T.) 			}})

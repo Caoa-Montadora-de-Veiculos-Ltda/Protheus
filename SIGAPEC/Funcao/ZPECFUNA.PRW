@@ -3919,11 +3919,11 @@ Return _cNumRet
 
 
 /*/{Protheus.doc} zTpOper
-//Verifica informa��es de campos obrigat�rios 
+//Verifica informaÃ§Ãµes de campos obrigatÃ³rios 
 @author Evandro Mariano
 @since 06/05/2022
 @version undefined
-@param _aMsg, array, descri��o
+@param _aMsg, array, descriÃ§Ã£o
 @type function
 /*/
 User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
@@ -3936,7 +3936,7 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 	//Local lGRTrib			:= .F.
 	Local _cRet 			:= " "
 	Local _aAreaSA1			:= SA1->(GetArea())
-	Local _cTipoOrc			:= AllTrim(Posicione("VX5", 1, XFilial("VX5") + "Z02" + PadR( AllTrim(_cTipoPed), TamSX3("VX5_CODIGO")[1] ), "VX5_DESCRI")) //Tipo do Or�amento (Venda/Transferencia/Remessa)
+	Local _cTipoOrc			:= AllTrim(Posicione("VX5", 1, XFilial("VX5") + "Z02" + PadR( AllTrim(_cTipoPed), TamSX3("VX5_CODIGO")[1] ), "VX5_DESCRI")) //Tipo do OrÃ§amento (Venda/Transferencia/Remessa)
 	Local _cCnpjTransf  	:= AllTrim(SuperGetMV( "CMV_WSR019"  ,,"03471344"))	//Raiz CNPJ de transferencia
 
 	//Local _cZFVenda		:= AllTrim(SuperGetMV( "CMV_WSR021"  ,,"AC|93;AP|92;AM|93;RO|93;RR|93"))	//Zona Franca - Venda
@@ -3946,28 +3946,31 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 	//Local _cGRTrib			:= AllTrim(SuperGetMV( "CMV_WSR052"  ,,"100;200"))	//Zona Franca
 
 	Local _cBxInter 		:= AllTrim(SuperGetMV( "CMV_WSR039"  ,,"011"))		//Codigo Baixa Interna
-	Local _cOpUsoInt		:= AllTrim(SuperGetMV( "CMV_WSR043"  ,,"75"))		//Opera��o Uso Interno
+	Local _cOpUsoInt		:= AllTrim(SuperGetMV( "CMV_WSR043"  ,,"75"))		//OperaÃ§Ã£o Uso Interno
 
 	Local _cBxScrap			:= AllTrim(SuperGetMV( "CMV_WSR027"  ,,"013"))		//Codigo Scrap
-	Local _cOpRefugo		:= AllTrim(SuperGetMV( "CMV_WSR022"  ,,"59"))		//Opera��o Refugo
+	Local _cOpRefugo		:= AllTrim(SuperGetMV( "CMV_WSR022"  ,,"59"))		//OperaÃ§Ã£o Refugo
 
 	Local _cBxTfUso			:= AllTrim(SuperGetMV( "CMV_WSR040"  ,,"014"))		//Codigo Transferencia Uso
-	Local _cOpTfUso			:= AllTrim(SuperGetMV( "CMV_WSR044"  ,,"98"))		//Opera��o Transferencia Uso
+	Local _cOpTfUso			:= AllTrim(SuperGetMV( "CMV_WSR044"  ,,"98"))		//OperaÃ§Ã£o Transferencia Uso
 
 	Local _cBxRemAr			:= AllTrim(SuperGetMV( "CMV_WSR046"  ,,"015"))		//Codigo Remessa Armazenamento
-	Local _cOpRemAr			:= AllTrim(SuperGetMV( "CMV_WSR048"  ,,"XA"))		//Opera��o Remessa Armazenamento
+	Local _cOpRemAr			:= AllTrim(SuperGetMV( "CMV_WSR048"  ,,"XA"))		//OperaÃ§Ã£o Remessa Armazenamento
 
 	Local _cBxRemTs			:= AllTrim(SuperGetMV( "CMV_WSR047"  ,,"016"))		//Codigo Remessa Teste
-	Local _cOpRemTs			:= AllTrim(SuperGetMV( "CMV_WSR049"  ,,"XB"))		//Opera��o Remessa Teste
+	Local _cOpRemTs			:= AllTrim(SuperGetMV( "CMV_WSR049"  ,,"XB"))		//OperaÃ§Ã£o Remessa Teste
 
-	Local _cOpTransf		:= AllTrim(SuperGetMV( "CMV_WSR020"  ,,"81"))		//Opera��o Transferencia
-	Local _cOpVenda			:= AllTrim(SuperGetMV( "CMV_WSR023"  ,,"90"))		//Opera��o Venda
-	Local _cOpVdUso			:= AllTrim(SuperGetMV( "CMV_WSR041"  ,,"XX"))		//Opera��o Venda/uso
-	Local _cOpRemessa		:= AllTrim(SuperGetMV( "CMV_WSR025"  ,,"77"))		//Opera��o Remessa
+	Local _cOpTransf		:= AllTrim(SuperGetMV( "CMV_WSR020"  ,,"81"))		//OperaÃ§Ã£o Transferencia
+	Local _cOpVenda			:= AllTrim(SuperGetMV( "CMV_WSR023"  ,,"90"))		//OperaÃ§Ã£o Venda
+	Local _cOpVdUso			:= AllTrim(SuperGetMV( "CMV_WSR041"  ,,"XX"))		//OperaÃ§Ã£o Venda/uso
+	Local _cOpRemessa		:= AllTrim(SuperGetMV( "CMV_WSR025"  ,,"77"))		//OperaÃ§Ã£o Remessa
 
-	Local _cOpVEndaZF		:= AllTrim(SuperGetMV( "CMV_WSR021"  ,,"ZF|93;ZD|92"))		//Opera��o Venda/uso ZF
-	Local _cOpVdUsoZF		:= AllTrim(SuperGetMV( "CMV_WSR042"  ,,"ZF|xx;ZD|xy"))		//Opera��o Venda/uso ZF
-	Local _cOpRemessaZF		:= AllTrim(SuperGetMV( "CMV_WSR024"  ,,"ZF|77;ZD|77"))		//Opera��o Venda/uso ZF
+	Local _cOpVEndaZF		:= AllTrim(SuperGetMV( "CMV_WSR021"  ,,"ZF|93;ZD|92"))		//OperaÃ§Ã£o Venda/uso ZF
+	Local _cOpVdUsoZF		:= AllTrim(SuperGetMV( "CMV_WSR042"  ,,"ZF|xx;ZD|xy"))		//OperaÃ§Ã£o Venda/uso ZF
+	Local _cOpRemessaZF		:= AllTrim(SuperGetMV( "CMV_WSR024"  ,,"ZF|77;ZD|77"))		//OperaÃ§Ã£o Venda/uso ZF
+
+	Local _cOpVendaZFFM     := ' '
+	Local _cUFCliente		:= ' '
 
 	//SB1->( DbSetOrder(1))
 	//SB1->( DbSeek(XFilial("SB1")+_cCodItem) )
@@ -3990,23 +3993,33 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 	If SA1->(DbSeek(XFilial("SA1")+_cCliente+_cLoja))
 
 		lSeekSA1 := .T.
-		If SA1->A1_EST $ _cZFranca
+		_cUFCliente := SA1->A1_EST
+		If _cUFCliente $ _cZFranca
 			lZFMan := .T.
 		EndIf
 
 		_cQuery := " SELECT "
-		_cQuery += " FM_CLIENTE, FM_LOJACLI "
-		_cQuery += " FROM "+RetSqlName("SFM")
+		_cQuery += " 	SFM.FM_CLIENTE, SFM.FM_LOJACLI, SFM.FM_TIPO "
+		_cQuery += " FROM " + RetSqlName("SFM") + " SFM "
 		_cQuery += " WHERE "
-		_cQuery += " FM_FILIAL  = '"+xFilial("SFM")+"' AND "
-		_cQuery += " FM_CLIENTE = '"+_cCliente+"' AND "
-		_cQuery += " FM_LOJACLI = '"+_cLoja+"' AND "
-		_cQuery += " D_E_L_E_T_ = ' ' "
+		_cQuery += " 	SFM.FM_FILIAL  = '"+xFilial("SFM")+"' AND "
+		_cQuery += " 	SFM.D_E_L_E_T_ = ' ' AND "
+		_cQuery += "	( "
+		_cQuery += " 		( SFM.FM_CLIENTE = '" + _cCliente + "' AND "
+		_cQuery += " 		  SFM.FM_LOJACLI = '" + _cLoja    + " ' "
+		_cQuery += "		) OR 
+		_cQuery += "		( SFM.FM_EST     = '" + _cUFCliente + " ' AND "
+		_cQuery += "		  SFM.FM_CLIENTE = ' ' "
+		_cQuery += "		) "
+		_cQuery += "	 ) "
+		_cQuery += " ORDER BY SFM.FM_CLIENTE DESC "
+
 		dbUseArea( .T., "TOPCONN", TcGenQry(,,_cQuery), _cAliasSFM, .T., .T. )
 
 		(_cAliasSFM)->(dbGoTop())
 		If !(_cAliasSFM)->(EoF())
 			lZFDed := .T.
+			_cOpVendaZFFM := ((_cAliasSFM)->FM_TIPO)
 		EndIf
 		(_cAliasSFM)->(DbCloseArea())
 
@@ -4032,7 +4045,7 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 		If _cTipoOrc == "VENDA"
 
 			If lZFDed
-				_cRet := Substr( _cOpVEndaZF,(At("ZD", _cOpVEndaZF )+3),2)
+				_cRet := _cOpVendaZFFM // Substr( _cOpVEndaZF,(At("ZD", _cOpVEndaZF )+3),2)
 			ElseIf lZFMan
 				_cRet := Substr( _cOpVEndaZF,(At("ZF", _cOpVEndaZF )+3),2)
 			Else
@@ -4079,6 +4092,8 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 	RestArea(_aAreaSA1)
 
 Return(_cRet)
+
+
 
 
 /*/{Protheus.doc} XRESCAOAPEC
