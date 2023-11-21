@@ -3996,13 +3996,21 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 		EndIf
 
 		_cQuery := " SELECT "
-		_cQuery += " FM_CLIENTE, FM_LOJACLI, FM_TIPO "
-		_cQuery += " FROM "+RetSqlName("SFM")
+		_cQuery += " 	SFM.FM_CLIENTE, SFM.FM_LOJACLI, SFM.FM_TIPO "
+		_cQuery += " FROM " + RetSqlName("SFM") + " SFM "
 		_cQuery += " WHERE "
-		_cQuery += " FM_FILIAL  = '"+xFilial("SFM")+"' AND "
-		_cQuery += " FM_CLIENTE = '"+_cCliente+"' AND "
-		_cQuery += " FM_LOJACLI = '"+_cLoja+"' AND D_E_L_E_T_ = ' ' OR (FM_EST = '"+_cUFCliente+"' AND FM_CLIENTE = ' ')"
-		_cQuery += " ORDER BY FM_CLIENTE DESC "
+		_cQuery += " 	SFM.FM_FILIAL  = '"+xFilial("SFM")+"' AND "
+		_cQuery += " 	SFM.D_E_L_E_T_ = ' ' AND "
+		_cQuery += "	( "
+		_cQuery += " 		( SFM.FM_CLIENTE = '" + _cCliente + "' AND "
+		_cQuery += " 		  SFM.FM_LOJACLI = '" + _cLoja    + " ' "
+		_cQuery += "		) OR 
+		_cQuery += "		( SFM.FM_EST     = '" + _cUFCliente + " ' AND "
+		_cQuery += "		  SFM.FM_CLIENTE = ' ' "
+		_cQuery += "		) "
+		_cQuery += "	 ) "
+		_cQuery += " ORDER BY SFM.FM_CLIENTE DESC "
+
 		dbUseArea( .T., "TOPCONN", TcGenQry(,,_cQuery), _cAliasSFM, .T., .T. )
 
 		(_cAliasSFM)->(dbGoTop())
