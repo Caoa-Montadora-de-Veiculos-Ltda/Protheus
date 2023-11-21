@@ -51,7 +51,7 @@ Default _cLoja      := ""
 
     _cQrySA2 := " "
     _cQrySA2 += "SELECT A2_CGC, A2_COD, A2_LOJA, A2_NOME, A2_NREDUZ, A2_END, A2_BAIRRO, A2_MUN, A2_EST, A2_TEL ,A2_CEP ,A2_CODPAIS "    + CRLF 
-    _cQrySA2 += ",A2_INSCR, A2_NREDUZ, A2_TIPO, A2_COD_MUN, A2_MSBLQL, R_E_C_N_O_  AS RECSA2 "                                          + CRLF
+    _cQrySA2 += ",A2_INSCR, A2_NREDUZ, A2_TIPO, A2_COD_MUN, A2_MSBLQL, A2_XINTEG, R_E_C_N_O_  AS RECSA2 "                               + CRLF
     _cQrySA2 += " FROM " + RetSQLName("SA2") + " SA2 "                                                                                  + CRLF
     _cQrySA2 += " WHERE SA2.A2_FILIAL = '" + FwXFilial("SA2") + "' "                                                                    + CRLF
     If !Empty(_cCodigo)                                             

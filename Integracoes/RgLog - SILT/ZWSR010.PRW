@@ -170,6 +170,8 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 				_cDocOri := cNota+";"+cSerie
 				_cDeposito  := (_cAlias)->DEPOSITO
 
+				_nItem		:= 1
+
 				FreeObj(oJsEnt)                     
 				oJsEnt := JsonObject():new()
 				oJsEnt["usuario"]    := _cUsua    // Usuário
