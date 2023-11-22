@@ -973,7 +973,7 @@ Begin Sequence
 		//GAP098 | Desmembrar itens bloqueados por inventário
 		//Verificar se esta em inventário DAC 07/11/2023
 		If !Empty((_cAliasPesq)->DATAINVENT)  
-			Aadd(_aMensAglu,"Produto "+ AllTrim(_cCodProd) +" bloqueado para inventário !")
+			Aadd(_aMensAglu,"Produto "+ AllTrim(_cCodProd) +" bloqueado para inventário "+(_cAliasPesq)->DATAINVENT+" ! ZPECF008")
 			Aadd(_aBak,{(	_cAliasPesq)->NREGVS3,;
 				 			_cCodProd,; 
 							(_cAliasPesq)->QTDE_TOTAL,;

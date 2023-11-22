@@ -123,7 +123,7 @@ Begin Sequence
 			Break
 		Endif
 		If !Empty(SB2->B2_DTINV)
-			Aadd(::_aError, "Produto "+ AllTrim(cCodProd) +" Armazém "+cArmazem+" com bloqueio de inventário função RetSldCAOAPEC !")
+			Aadd(::_aError, "Produto "+ AllTrim(cCodProd) +" Armazém "+cArmazem+" com bloqueio de inventário em "+SB2->B2_DTINV+" RetSldCAOAPEC !")
 			Break
 		Endif
 	Endif 
