@@ -564,9 +564,6 @@ Begin Sequence
 					EndIf
 				EndIf
 			Endif	
-			IF VS1->VS1_CLIFAT == '000314'
-				CONOUT('TESTE')
-			ENDIF
 			//Verifica Saldos 
 			If _lRet
 				_aBackOrder 	:= {}
@@ -734,7 +731,7 @@ Begin Sequence
 	//Função para reprocessar envio RGLOG
 	StartJob("U_XFUNPRRGlog",GetEnvServer(),.F.,_cAglutina, cEmpAnt, cFilAnt, /*_nReprocessado*/, /*_oSay*/)
 End Sequence
-Sleep(5000) //aguardar um momento para inicializar reprocesso assim não causa sobreposição	
+Sleep(50000) //aguardar um momento para inicializar reprocesso assim não causa sobreposição	
 //Guardar dados para mostrar no final
 NNR->(DbSetOrder(1)) //NNR_FILIAL+NNR_CODIGO                                                                                                                                           
 NNR->(DbSeek(XFilial("NNR")+_cLocal))
