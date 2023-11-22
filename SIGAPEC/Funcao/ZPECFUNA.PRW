@@ -1601,7 +1601,11 @@ Begin Sequence
 	_nLimAvalia := 0   //Zero a avaliação de crédito onde constará o limite a ser utilizado
 	_aRetLc := U_ZFATF014(_cCliente, SA1->A1_XTPCRED, _cLoja)
 	//1=Credito Disponivel;2=Falta de Saldo;3=Titulos Em Atraso;4=Credito Vencido;5=Bloqueado                                         
-	If _aRetLc[01] == "2"
+	If ValType(_aRetLc) <> "A" .or. Len(_aRetLc) == 0
+		Aadd(_aMsg, "Não foi possível verificar limite de crédito disponível.")
+		_cFaseRet 	:= "3" 
+		Break
+	ElseIf _aRetLc[01] == "2"
 		//enviar o limite para ser avaliado DAC 14/11/2022
 		//			 					NCC			  ( Titulos em Aberto + Pedidos em Bo + (Em Reserva + Em faturamento + Em Separação))
 		_nLimAvalia := (SA1->A1_XLC +  _aRetLc[06]) - ( _aRetLc[03] + _aRetLc[04]  + _aRetLc[05] )  ////retirar NCC (06) caso exista pois é crédito cliente DAC 05/04/2023
@@ -3933,7 +3937,7 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 	//Local lGRTrib			:= .F.
 	Local _cRet 			:= " "
 	Local _aAreaSA1			:= SA1->(GetArea())
-	Local _cTipoOrc			:= AllTrim(Posicione("VX5", 1, XFilial("VX5") + "Z02" + PadR( AllTrim(_cTipoPed), TamSX3("VX5_CODIGO")[1] ), "VX5_DESCRI")) //Tipo do Orçamento (Venda/Transferencia/Remessa)
+	Local _cTipoOrc			:= AllTrim(Posicione("VX5", 1, XFilial("VX5") + "Z02" + PadR( AllTrim(_cTipoPed), TamSX3("VX5_CODIGO")[1] ), "VX5_DESCRI")) //Tipo do OrÃ§amento (Venda/Transferencia/Remessa)
 	Local _cCnpjTransf  	:= AllTrim(SuperGetMV( "CMV_WSR019"  ,,"03471344"))	//Raiz CNPJ de transferencia
 
 	//Local _cZFVenda		:= AllTrim(SuperGetMV( "CMV_WSR021"  ,,"AC|93;AP|92;AM|93;RO|93;RR|93"))	//Zona Franca - Venda
@@ -3943,28 +3947,28 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 	//Local _cGRTrib			:= AllTrim(SuperGetMV( "CMV_WSR052"  ,,"100;200"))	//Zona Franca
 
 	Local _cBxInter 		:= AllTrim(SuperGetMV( "CMV_WSR039"  ,,"011"))		//Codigo Baixa Interna
-	Local _cOpUsoInt		:= AllTrim(SuperGetMV( "CMV_WSR043"  ,,"75"))		//Operação Uso Interno
+	Local _cOpUsoInt		:= AllTrim(SuperGetMV( "CMV_WSR043"  ,,"75"))		//OperaÃ§Ã£o Uso Interno
 
 	Local _cBxScrap			:= AllTrim(SuperGetMV( "CMV_WSR027"  ,,"013"))		//Codigo Scrap
-	Local _cOpRefugo		:= AllTrim(SuperGetMV( "CMV_WSR022"  ,,"59"))		//Operação Refugo
+	Local _cOpRefugo		:= AllTrim(SuperGetMV( "CMV_WSR022"  ,,"59"))		//OperaÃ§Ã£o Refugo
 
 	Local _cBxTfUso			:= AllTrim(SuperGetMV( "CMV_WSR040"  ,,"014"))		//Codigo Transferencia Uso
-	Local _cOpTfUso			:= AllTrim(SuperGetMV( "CMV_WSR044"  ,,"98"))		//Operação Transferencia Uso
+	Local _cOpTfUso			:= AllTrim(SuperGetMV( "CMV_WSR044"  ,,"98"))		//OperaÃ§Ã£o Transferencia Uso
 
 	Local _cBxRemAr			:= AllTrim(SuperGetMV( "CMV_WSR046"  ,,"015"))		//Codigo Remessa Armazenamento
-	Local _cOpRemAr			:= AllTrim(SuperGetMV( "CMV_WSR048"  ,,"XA"))		//Operação Remessa Armazenamento
+	Local _cOpRemAr			:= AllTrim(SuperGetMV( "CMV_WSR048"  ,,"XA"))		//OperaÃ§Ã£o Remessa Armazenamento
 
 	Local _cBxRemTs			:= AllTrim(SuperGetMV( "CMV_WSR047"  ,,"016"))		//Codigo Remessa Teste
-	Local _cOpRemTs			:= AllTrim(SuperGetMV( "CMV_WSR049"  ,,"XB"))		//Operação Remessa Teste
+	Local _cOpRemTs			:= AllTrim(SuperGetMV( "CMV_WSR049"  ,,"XB"))		//OperaÃ§Ã£o Remessa Teste
 
-	Local _cOpTransf		:= AllTrim(SuperGetMV( "CMV_WSR020"  ,,"81"))		//Operação Transferencia
-	Local _cOpVenda			:= AllTrim(SuperGetMV( "CMV_WSR023"  ,,"90"))		//Operação Venda
-	Local _cOpVdUso			:= AllTrim(SuperGetMV( "CMV_WSR041"  ,,"XX"))		//Operação Venda/uso
-	Local _cOpRemessa		:= AllTrim(SuperGetMV( "CMV_WSR025"  ,,"77"))		//Operação Remessa
+	Local _cOpTransf		:= AllTrim(SuperGetMV( "CMV_WSR020"  ,,"81"))		//OperaÃ§Ã£o Transferencia
+	Local _cOpVenda			:= AllTrim(SuperGetMV( "CMV_WSR023"  ,,"90"))		//OperaÃ§Ã£o Venda
+	Local _cOpVdUso			:= AllTrim(SuperGetMV( "CMV_WSR041"  ,,"XX"))		//OperaÃ§Ã£o Venda/uso
+	Local _cOpRemessa		:= AllTrim(SuperGetMV( "CMV_WSR025"  ,,"77"))		//OperaÃ§Ã£o Remessa
 
-	Local _cOpVEndaZF		:= AllTrim(SuperGetMV( "CMV_WSR021"  ,,"ZF|93;ZD|92"))		//Operação Venda/uso ZF
-	Local _cOpVdUsoZF		:= AllTrim(SuperGetMV( "CMV_WSR042"  ,,"ZF|xx;ZD|xy"))		//Operação Venda/uso ZF
-	Local _cOpRemessaZF		:= AllTrim(SuperGetMV( "CMV_WSR024"  ,,"ZF|77;ZD|77"))		//Operação Venda/uso ZF
+	Local _cOpVEndaZF		:= AllTrim(SuperGetMV( "CMV_WSR021"  ,,"ZF|93;ZD|92"))		//OperaÃ§Ã£o Venda/uso ZF
+	Local _cOpVdUsoZF		:= AllTrim(SuperGetMV( "CMV_WSR042"  ,,"ZF|xx;ZD|xy"))		//OperaÃ§Ã£o Venda/uso ZF
+	Local _cOpRemessaZF		:= AllTrim(SuperGetMV( "CMV_WSR024"  ,,"ZF|77;ZD|77"))		//OperaÃ§Ã£o Venda/uso ZF
 
 	Local _cOpVendaZFFM     := ' '
 	Local _cUFCliente		:= ' '
@@ -3996,13 +4000,21 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 		EndIf
 
 		_cQuery := " SELECT "
-		_cQuery += " FM_CLIENTE, FM_LOJACLI, FM_TIPO "
-		_cQuery += " FROM "+RetSqlName("SFM")
+		_cQuery += " 	SFM.FM_CLIENTE, SFM.FM_LOJACLI, SFM.FM_TIPO "
+		_cQuery += " FROM " + RetSqlName("SFM") + " SFM "
 		_cQuery += " WHERE "
-		_cQuery += " FM_FILIAL  = '"+xFilial("SFM")+"' AND "
-		_cQuery += " FM_CLIENTE = '"+_cCliente+"' AND "
-		_cQuery += " FM_LOJACLI = '"+_cLoja+"' AND D_E_L_E_T_ = ' ' OR (FM_EST = '"+_cUFCliente+"' AND FM_CLIENTE = ' ')"
-		_cQuery += " ORDER BY FM_CLIENTE DESC "
+		_cQuery += " 	SFM.FM_FILIAL  = '"+xFilial("SFM")+"' AND "
+		_cQuery += " 	SFM.D_E_L_E_T_ = ' ' AND "
+		_cQuery += "	( "
+		_cQuery += " 		( SFM.FM_CLIENTE = '" + _cCliente + "' AND "
+		_cQuery += " 		  SFM.FM_LOJACLI = '" + _cLoja    + " ' "
+		_cQuery += "		) OR 
+		_cQuery += "		( SFM.FM_EST     = '" + _cUFCliente + " ' AND "
+		_cQuery += "		  SFM.FM_CLIENTE = ' ' "
+		_cQuery += "		) "
+		_cQuery += "	 ) "
+		_cQuery += " ORDER BY SFM.FM_CLIENTE DESC "
+
 		dbUseArea( .T., "TOPCONN", TcGenQry(,,_cQuery), _cAliasSFM, .T., .T. )
 
 		(_cAliasSFM)->(dbGoTop())
