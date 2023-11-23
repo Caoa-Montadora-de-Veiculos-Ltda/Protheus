@@ -237,6 +237,8 @@ Local _nProcessado		:= 0
 Local _nGerado			:= 0
 Local _nTotByPass		:= 0
 Local _nLimAvalia		:= 0
+Local	_nEnviado 		
+Local	_nEnviadoErr 	
 
 Local _lInconSaldo		
 Local _cStatus
@@ -727,11 +729,22 @@ Begin Sequence
 	//Verifica se existe picking pendente ao qual não foi enviado
 	_dFinal 	:= Date() 
 	_cHsFinal	:= Substr(Time(),1,5)
-	Sleep(10000) //aguardar um momento para inicializar reprocesso assim não causa sobreposição	
-	//Função para reprocessar envio RGLOG
-	StartJob("U_XFUNPRRGlog",GetEnvServer(),.F.,_cAglutina, cEmpAnt, cFilAnt, /*_nReprocessado*/, /*_oSay*/)
+	//GAP098 caso não gerou processo não verificar picking
+	If _nGerado > 0
+		Sleep(10000) //aguardar um momento para inicializar reprocesso assim não causa sobreposição	
+		//Função para reprocessar envio RGLOG
+		StartJob("U_XFUNPRRGlog",GetEnvServer(),.F.,_cAglutina, cEmpAnt, cFilAnt, /*_nReprocessado*/, /*_oSay*/)
+	Endif
 End Sequence
-Sleep(50000) //aguardar um momento para inicializar reprocesso assim não causa sobreposição	
+//GAP098 caso não gerou processo não verificar picking
+_nEnviado 		:= 0 	/*Enviados*/ 
+_nEnviadoErr 	:= 0 	/*Problemas de Envio*/ 
+
+If _nGerado > 0
+	Sleep(30000) //aguardar um momento para inicializar reprocesso assim não causa sobreposição	
+	_nEnviado 		:= XCONTERGLog( _cAglutina ) 	/*Enviados*/ 
+	_nEnviadoErr 	:= XCONTIRGLog( _cAglutina ) 	/*Problemas de Envio*/ 
+Endif
 //Guardar dados para mostrar no final
 NNR->(DbSetOrder(1)) //NNR_FILIAL+NNR_CODIGO                                                                                                                                           
 NNR->(DbSeek(XFilial("NNR")+_cLocal))
@@ -743,8 +756,8 @@ Aadd(_aOndaRel,{ _cAglutina  					/*Num Aglutina*/ ;
 				, _nRegProcess 					/*Selecionados*/ ;
 				, _nProcessado 					/*Lidos*/ ;
 				, _nGerado 						/*Gerados*/ ;
-				, XCONTERGLog( _cAglutina ) 	/*Enviados*/ ;
-				, XCONTIRGLog( _cAglutina ) 	/*Problemas de Envio*/ ;
+				, _nEnviado 					/*Enviados*/ ;
+				, _nEnviadoErr 					/*Problemas de Envio*/ ;
 				, DtoC(_dInicio)+ " as " 	+_cHsInicio /*Iniciado em*/ ;
 				, DtoC(_dFinal) + " as " 	+_cHsFinal  /*Finalizado em*/ ;
 				})

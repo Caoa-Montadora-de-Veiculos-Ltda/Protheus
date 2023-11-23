@@ -3357,7 +3357,7 @@ User Function XMOVA261(_cNumOrc, _cCodProd, _cArmorig, _cArmdes, _nQtde, _nRegvs
 		aadd(_aLinha,{"D3_NUMLOTE"	, IIf(!Empty(VS3->VS3_NUMLOT),VS3->VS3_NUMLOT,"")		, Nil}) //sublote Origem
 		aadd(_aLinha,{"D3_DTVALID"	, IIf(!Empty(VS3->VS3_DTVALI),VS3->VS3_DTVALI,cTod(""))	, Nil}) //data validade
 		aadd(_aLinha,{"D3_POTENCI"	, 0 						, Nil}) // Potencia
-		aadd(_aLinha,{"D3_QUANT"		, _nQtde					, Nil}) //Quantidade
+		aadd(_aLinha,{"D3_QUANT"	, _nQtde					, Nil}) //Quantidade
 		aadd(_aLinha,{"D3_QTSEGUM"	, 0 						, Nil}) //Seg unidade medida
 		aadd(_aLinha,{"D3_ESTORNO"	, ""						, Nil}) //Estorno
 		aadd(_aLinha,{"D3_SEQCALC"	, ""						, Nil}) //Seq. 
