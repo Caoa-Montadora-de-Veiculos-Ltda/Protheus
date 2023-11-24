@@ -268,7 +268,10 @@ Begin Sequence
 	_ObrW:AddLegend("ZK_STATUS = 'R' "  ,"ORANGE" 	   	,"Reprocessado")
 	_ObrW:AddLegend("ZK_STATUS = ' ' "  ,"WHITE" 	   	,"Sem Informação")
 	_ObrW:AddButton("Visualiza Picking"		, { || FWMsgRun(, {|oSay| ZPECF031PK(_cAliasPesq,@_ObrW) }, "Picking"	, "Localizando Picking") },,,, .F., 2 )
-	_ObrW:AddButton("Visualiza Orçamento"  	, { || FWMsgRun(, {|oSay| U_XFVERORC(_cAliasPesq,@_ObrW) }, "Orçamento", "Localizando Orçamento") },,,, .F., 2 )  //função no ZPECFUNA
+    //GAP098 verificado funcionalidade XFVERORC descontinuada devido auste ZPECFUNA alterada DAC 24/11/2023
+	//_ObrW:AddButton("Visualiza Orçamento"  	, { || FWMsgRun(, {|oSay| U_XFVERORC(_cAliasPesq,@_ObrW) }, "Orçamento", "Localizando Orçamento") },,,, .F., 2 )  //função no ZPECFUNA
+ 	_ObrW:AddButton("Visualiza Orçamento"  	, { || FWMsgRun(, {|oSay| U_MILAXTABELA((_cAliasPesq)->RECNOVS1) }, "Orçamento", "Localizando Orçamento") },,,, .F., 2 )  //função no ZPECFUNA
+
    //Ativamos a classe
     _ObrW:Refresh(.T.)
 	_ObrW:Activate()

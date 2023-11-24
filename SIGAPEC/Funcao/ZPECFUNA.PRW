@@ -5242,6 +5242,7 @@ Mostrat Orçamento
 @version 2.0
 @project	PEC044 - Revitalização Consulta Peças - Abri consulta orçamento
 /*/
+/* Descontinuada GAP098 DAC 24/11/2023
 User Function XFVERORC(_cAliasPesq,_ObrW)
 Local _lRet     := .T.
 Local _nOpc     := 2
@@ -5317,7 +5318,32 @@ FECHA  	  := ( _nOpc == 6 )
     cFaseOrc := OI001GETFASE(VS1->VS1_NUMORC)
     If _lRet 
         //OXA012V("VS1",_nReg,2)
-        OX001EXEC("VS1",_nReg,2, /*lLibPV*/)
+        OX001EXEC("VS1",_nReg,2, /lLibPV/)
     EndIf
     RestArea(_aArea)
 Return Nil
+*/
+
+/*/{Protheus.doc} MILAXTABELA
+Mostrar Orçamento 
+@author DAC - Denilso 
+@since 31/05/2023
+@version 2.0
+@project	PEC044 - RevitalizaÃ§Ã£o Consulta PeÃ§as - Abri consulta Orçamento
+@Obs		Devido a forma de tratamento oficna/peÃ§as nÃ£o Ã© possivel chamar a 
+			consulta de oramentos a nÃ£o ser passando por esta funÃ§Ã£o MILAXTABELA
+			caso nÃ£o passe ai ira tratar CNPJs que estÃ£o hard cold no programa
+/*/
+
+USER Function MILAXTABELA(_nRegVS1)
+//Local _cFunName :=  Funname()
+Local _aArea := GetArea()
+	DbSelectArea("VS1")
+    VS1->(DbGoto(_nRegVS1))
+	//SetFunName("OFIXA018")
+	lRet = OXA012V()
+    //SetFunName(_cFunName)
+RestArea(_aArea)
+Return Nil
+       
+
