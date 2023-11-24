@@ -65,7 +65,7 @@ User Function ZFATF014(_cCliFat, _cTpCred, _cLoja, _lZera)
 				ZFAT014GER(/*_cCliFat*/ ,/* _cLoja */)  //quando geral não enviar a loja
 				Break
 			Endif
-			//Caso não venha a loja informado localizo a principal que deve ter a referencias do cr�dito DAC 28/03/2023
+			//Caso não venha a loja informado localizo a principal que deve ter a referencias do crédito DAC 28/03/2023
 			If Empty(_cLoja) .or. Empty(_cTpCred)
 				_cLoja	:= ZFATF014LJ( _cCliFat, _cLoja, @_cTpCred)
 			Endif
@@ -75,7 +75,7 @@ User Function ZFATF014(_cCliFat, _cTpCred, _cLoja, _lZera)
 			Endif
 			_nValAtr 	:= ZFATF14TAT(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Titulos Em Atraso a mais de 3 dias.
 			_nValAbe 	:= ZFATF14TAB(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Titulos Em Aberto
-			//Na questão BO foi necessario separar pois � verificado VS1 para pe�as e SC6 para Fabrica
+			//Na questão BO foi necessario separar pois é verificado VS1 para peças e SC6 para Fabrica
 			//para Fabrica
 			If FWCodEmp() == "2010"
 				_nValBo  	:= ZFATF14TBF(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Pedidos Em Bo
@@ -86,7 +86,7 @@ User Function ZFATF014(_cCliFat, _cTpCred, _cLoja, _lZera)
 				_nValPed 	:= ZFATF14TPP(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Pedidos Em Reserva/Em Faturamento/Em Separa��o
 			Endif
 
-			/*  Caso incluam credito avaliar se tem NCC para retornar cr�dito, Financeiro CAOA informou que atualmente não calcula o Cr�dito para L.C.
+			/*  Caso incluam credito avaliar se tem NCC para retornar crédito, Financeiro CAOA informou que atualmente não calcula o Cr�dito para L.C.
 			_nValCred 	:= ZProc040(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA)
 			*/
 			_cRet := ZFATF14SA1(_cCliFat, _cTpCred, _nValAtr, _nValAbe, _nValBo, _nValPed, _nValCred, _cLoja) //Grava os Dados na SA1
@@ -111,6 +111,8 @@ User Function ZFATF014(_cCliFat, _cTpCred, _cLoja, _lZera)
 	Else
 		If !_lJob
 			MsgStop("Rotina não pode ser concluída." + CRLF + "Já existe um processo em andamento.","Erro",1,0,1)
+			MsgStop("O cliente: " + _cCliFat + "esta sendo processado por outra rotina, ")
+			
 			_lRet := .F.
 			_aRet := Nil
 			//Return _lRet
@@ -119,7 +121,7 @@ User Function ZFATF014(_cCliFat, _cTpCred, _cLoja, _lZera)
 			_aRet := Nil
 			//Return Nil
 		ENDIF
-	EndIf
+	EndIf  
 
 	RestArea(_aArea)
 
@@ -191,7 +193,7 @@ Static Function ZFATF14TAT(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPg
 		_cWhereSE1 := "%"+_cWhereSE1+"%"
 
 		//Procura os titulos em aberto no financeiro.
-		BeginSql Alias _cAliasPesq //Define o nome do alias tempor�rio
+		BeginSql Alias _cAliasPesq //Define o nome do alias temporário
 		SELECT SE1.E1_CLIENTE, SUM(SE1.E1_SALDO) AS TIT_VENCIDO 
 		FROM %table:SE1% SE1 
 		JOIN  %Table:SF2% SF2  												
@@ -228,18 +230,18 @@ Return(_nValAtraso)
 
 /*/{Protheus.doc} ZFATF14TAB
 Verifica os Titulos Em Aberto
-@param     	_cCliFat	,c�digo cliente
-			_cTpCred	,tipo de cr�dito utilizado 
-			_cTpOper	,tipo de opera��o a ser utilizada
-			_cPgNAval	,condi��o de pgto a vista 	
-			_cPgFP		,condi��o de pagamento Forplan  
-			_cPgCAOA,	,condi��o de pagamento CAO
+@param     	_cCliFat	,código cliente
+			_cTpCred	,tipo de crédito utilizado 
+			_cTpOper	,tipo de operação a ser utilizada
+			_cPgNAval	,condição de pgto a vista 	
+			_cPgFP		,condição de pagamento Forplan  
+			_cPgCAOA,	,condição de pagamento CAO
 @return		_nValAberto	,Valores em aberto
 @author     CAOA - Evandro A Mariano dos Santos 
 @version    12.1.17 / Superior
 @project	GRUPO CAOA 
 @since      28/07/2022
-@history 	28/03/2023	,GAP FIN108 - Revitaliza��o Credito [ Montadora ]
+@history 	28/03/2023	,GAP FIN108 - Revitalização Credito [ Montadora ]
 						 Ajustando funcionalidade para utilizar LC na Montadora como em Barueri
 /*/
 Static Function ZFATF14TAB(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA)
@@ -999,8 +1001,8 @@ Return _lRet
 
 
 /*/{Protheus.doc} ZFAT014GER
-Fun��o respons�vel por verificar se existe outro tipo de credito cadastrado
-caso exista retornar� .F. Falso
+Função responsável por verificar se existe outro tipo de credito cadastrado
+caso exista retornará .F. Falso
 @param      _cCliFat 	- Codigo do cliente  
 			_cLoja 		- Loja do Cliente 
 @return     Logico
@@ -1023,7 +1025,7 @@ Static Function ZFAT014GER(_cCliFat, _cLoja)
 		Endif
 		_cWhere := "%"+_cWhere+"%"
 
-		BeginSql Alias _cAliasPesq //Define o nome do alias tempor�rio
+		BeginSql Alias _cAliasPesq //Define o nome do alias temporário
 		SELECT ISNULL(SA1.R_E_C_N_O_,0) NREGSA1
 		FROM  %Table:SA1% SA1
 		WHERE SA1.A1_FILIAL 	= %XFilial:SA1%

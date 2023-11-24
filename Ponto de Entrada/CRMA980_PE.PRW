@@ -43,11 +43,17 @@ User Function CRMA980()
 		//If (_cIdPonto =="MODELPRE")
 		//Na ativação do modelo.
 		If (_cIdPonto =="MODELVLDACTIVE")
-			ZCRMA980LC(_nOpcx, .F.)  //Processo antes de Atualizar
+			_lRet := ZCRMA980LC(_nOpcx, .F.)  //Processo antes de Atualizar
+			Break
 			//Após a gravação total do modelo e fora da transação.
 		ElseIf (_cIdPonto =="MODELCOMMITNTTS")
 			If _nOpcx == 3 .or. _nOpcx == 4 //.or. _nOpcx == 5 //Inclusão ou Alteração ou Excluir
 				_lRet := ZCRMA980LC(_nOpcx)
+				
+				//If nOper == 5
+                //	xRet := u_M030DEL()
+            	//EndIf
+				
 				Break
 			EndIf
 			//quando exclusão zero a loja para atualizar todos  DAC 03/04/2023
@@ -55,10 +61,12 @@ User Function CRMA980()
 				_cLoja := ""
 			EndIf
 			//Antes da gravação da tabela do formulário.
-		ElseIf _cIdPonto == 'FORMCOMMITTTSPRE'
+		ElseIf _cIdPonto == "FORMCOMMITTTSPRE"
 			//Grava log RGLOG
 			//Avalia antes de gravar se foi alterado algum campo customizado para gravar tabela de Log SZ2
-			ZCRMA980VA(/*_cUserSol*/, /*_cRotina*/)
+			
+			ZCRMA980VA(/*_cUserSol*/, /*_cRotina*/) //--- ALTERADO
+			
 			//ElseIf  _cIdPonto == 'MODELPOS'
 		EndIf
 
