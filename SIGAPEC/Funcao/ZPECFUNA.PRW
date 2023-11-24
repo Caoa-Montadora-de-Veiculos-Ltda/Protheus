@@ -26,13 +26,16 @@ Liberar orçamento verifica se esta disponível para separação e grava separação
 @obs 
 @menu       Nao Informado
 @return		_lRet 		- Verdadeiro ou falso
-@history    
-
+@history    28/07/2023 GAP002  Integração da separação - Informar produto e quantidade da cubagem
+			incluído _lAtualiza para atualização do VS1 em alguns casos não será necessário
 /*/
-User Function XOFUNLIB( _cNumOrc, _aSeqVS3, _aVS3Reg )
+User Function XOFUNLIB( _cNumOrc, _aSeqVS3, _aVS3Reg, _lAtualiza )
 	Local _lRet 		:= .T.
 	//Local _cNroConf
 	Local _cDocto
+
+	Default _lAtualiza	:= .T.
+
 	//Caso não esteja habilitada crio para que possa retornar mesgs
 	If Type("_aMensAglu") == "U"
 		Private _aMensAglu := {}
@@ -50,7 +53,7 @@ User Function XOFUNLIB( _cNumOrc, _aSeqVS3, _aVS3Reg )
 		_cDocto := VS1->(OX001RESITE(VS1->VS1_NUMORC, .T., _aSeqVS3))
 		//Alterado para utilizar reserva CAOA - DAC 16/08/2022
 		//_cDocto := U_XRESCAOAPEC(_cNumOrc, .T., _aSeqVS3)
-		If Empty(_cDocto) .or. _cDocto == "NA"
+		If _lAtualiza .And. (Empty(_cDocto) .or. _cDocto == "NA")
 			Aadd(_aMensAglu,"Não foi possivel fazer reserva os status serão retornados, verificar com ADM SISTEMAS !")
 			RecLock('VS1',.F.)
 				VS1->VS1_XBO := 'E'
@@ -5059,38 +5062,134 @@ End Begin
 Return _lRet
 
 
-//Atualiza TES inteligente e recalcula Picking 29/03/2023
-User Function ZPECREGFI(cZK_XPICKI)
-	Local _lRet			:= .T.
-	Local _cAliasPesq 	:= GetNextAlias()	
-	Local _cMens
-	Local _cTESVS3		:= " "
-	Local _cCodIte		:= " "
-	Local _cNumOrc		:= " "
-	Local _cXREGFI		:= " "
-	Local _cOperVS3		:= " "
-	Local _cStatus		:= "F"
-	
-	BeginSql Alias _cAliasPesq
-		SELECT DISTINCT	VS1_CLIFAT,VS1_LOJA,VS1_NCLIFT,VS1_NUMORC,VS1_TIPORC,VS1_DATORC, VS1_XMARCA
-  		FROM %table:VS1% VS1
-   		WHERE 	VS1.VS1_FILIAL  	= %XFilial:VS1%
-			AND VS1.VS1_XPICKI  	= %Exp:cZK_XPICKI%
-			AND VS1.VS1_TIPORC 		= '1' 
-			AND VS1.VS1_STATUS  	= %Exp:_cStatus%
-			AND VS1.VS1_NUMNFI		= ' '
-		  	AND VS1.%notDel%		  
-	EndSql      
-	If (_cAliasPesq)->(Eof()) 
-		MsgInfo("Não localizado orçamentos com Picking "+cZK_XPICKI+" para recalcular !","Atenção") 
+/*/{Protheus.doc} ZPECREGFI
+Atualiza TES inteligente e recalcula Picking 29/03/2023
+@param      cZK_XPICKI 	- Numero Picking 	
+			_cNumOrc	- Numero do orçamento VS1
+@return     Logico
+@author     Não informado
+@version    12.1.17 / Superior
+@project	
+@since      29/03/2023
+@history    DAC - 23/06/2022 - Ajuste funcionalidade e implementação registro VS1  
+				Break antes de iniciar o Sequence
+				Implementado parâmetro _cNumOrc para permitir que a função possa receber somente um orçamento para refazer calculo
+				Alterado Select ja trazendo os registros da VS3		
+				Acresentado no SELECT VS3->VS3_XREGFI igual a "T"	
+/*/
+User Function ZPECREGFI(cZK_XPICKI, _cNumOrc)
+Local _lRet			:= .T.
+Local _cAliasPesq 	:= GetNextAlias()
+//Local _aOrcs2 		:= {}
+//Local _nX 			:= 0
+Local _cMens
+Local _cTESVS3		:= " "
+Local _cCodIte		:= " "
+//Local _cNumOrc		:= " "
+Local _cXREGFI		:= " "
+Local _cOperVS3		:= " "
+Local _cStatus		:=  "4,F" 							  //Por erro na chamada pelo ZWSR009
+Local _lJob 		:= IsBlind()   //pode ser chamado por Json ou job GAP002 DAC 09/08/2023
+Local _cWhere		:= ""
+Local _aArea 		:= GetArea()
+Local _nRegVS1 		:= VS1->(Recno())
+
+
+Default cZK_XPICKI	:= ""
+Default _cNumOrc	:= ""
+
+Begin sequence  //Ajuste Select não estava dentro do Begin GAP002  DAC 09/08/2023 
+	If Empty(cZK_XPICKI) .and. Empty(_cNumOrc)
+		_cMens := "[ZPECREGFI] Não Informado Picking e ou Orçamento !"
+		If !_lJob
+			MsgInfo(_cMens,"Atenção") 
+		Endif 
+		Conout(_cMens) 
+		_lRet := .F. 
 		Break
+	Endif 
+	//Trata somente o orçamento caso seja informado o numero do orçamento //DAC GAP002
+	If !Empty(_cNumOrc)
+		_cWhere +=   " AND VS1.VS1_NUMORC = '"+_cNumOrc+"' "
+	Else
+		_cWhere +=   " AND VS1.VS1_XPICKI = '"+cZK_XPICKI+"' "
+	Endif		
+	_cWhere 	:= "%"+_cWhere+"%"
+	_cStatus	:= '%' + FormatIn(_cStatus,',') + '%' //Por erro na chamada pelo ZWSR009
+
+	BeginSql Alias _cAliasPesq
+		SELECT VS1_CLIFAT,VS1_LOJA,VS1_NCLIFT,VS1_NUMORC,VS1_TIPORC,VS1_DATORC, VS1_XMARCA
+				,NVL(VS1.R_E_C_N_O_,0) NREGVS1
+				,NVL(VS3.R_E_C_N_O_,0) NREGVS3
+  		FROM %table:VS1% VS1
+		JOIN %Table:VS3% VS3
+			ON  VS3.VS3_FILIAL 		= %XFilial:VS3%
+			AND VS3.VS3_NUMORC		= VS1.VS1_NUMORC
+		  	AND VS3.%notDel%	
+   		WHERE 	VS1.VS1_FILIAL  	= %XFilial:VS1%
+				%Exp:_cWhere%
+			AND VS1.VS1_TIPORC 		= '1' 
+			AND VS1.VS1_STATUS  	IN %Exp:_cStatus% //Por erro na chamada pelo ZWSR009
+			AND VS1.VS1_NUMNFI		= ' '
+			AND VS3.VS3_XREGFI		= 'T'
+		  	AND VS1.%notDel%	
+	EndSql
+//		SELECT DISTINCT	VS1_CLIFAT,VS1_LOJA,VS1_NCLIFT,VS1_NUMORC,VS1_TIPORC,VS1_DATORC, VS1_XMARCA
+//			AND VS1.VS1_XPICKI  	= %Exp:cZK_XPICKI%
+
+	If (_cAliasPesq)->(Eof())
+		//Avaliando saida DAC 09/08/2023 GAP002
+		_cMens := "[ZPECREGFI] Não localizado Orçamentos com Picking "+cZK_XPICKI+" para alterar TES, com referencia VS3_XREGFI igual a [T] !"
+		//If !_lJob
+		//	MsgInfo(_cMens,"Atenção") 
+		//Endif 
+		Conout(_cMens) 
+		Break //Por erro na chamada pelo ZWSR009
 	EndIf	
-Begin sequence
+
 	While !(_cAliasPesq)->(Eof())
+		_cNumOrc 	:= (_cAliasPesq)->VS1_NUMORC
+		VS1->(DbGoto((_cAliasPesq)->NREGVS1))
+		_cMens := ""
+		While (_cAliasPesq)->(!Eof()) .and. (_cAliasPesq)->VS1_NUMORC == _cNumOrc
+			VS3->(DbGoto((_cAliasPesq)->NREGVS3))
+			cTES := " "
+			_cOperVS3 := Alltrim(VS3->VS3_OPER)
+			_cTESVS3  := Alltrim(VS3->VS3_CODTES)
+			_cCodIte  := Alltrim(VS3->VS3_CODITE)
+			_cXREGFI  := Alltrim(VS3->VS3_XREGFI)
+			cTES := Alltrim(MaTesInt(2, _cOperVS3, VS1->VS1_CLIFAT, VS1->VS1_LOJA,"C", _cCodIte))
+			_cMens := "TES Inteligente: NumOrc: "+_cNumOrc+ "/ Cliente: "+VS1->VS1_CLIFAT+VS1->VS1_LOJA+"/ Produto " +_cCodIte+"/ Oper: "+_cOperVS3+"/ Regra: "+_cXREGFI+" / TES_ORC: " +_cTESVS3+ " / Tes Intelig: " +cTES +CRLF
+			If (!(_cXREGFI = "T") .and. !(_cTESVS3 = cTES) .and. !Empty(cTES))
+				VS1->(RecLock("VS1",.F.))
+				VS3->(RecLock("VS3",.F.))
+				_cMens += "O produto " +_cCodIte+ " teve a TES " +_cTESVS3+ " alterada para " +cTES+ " conforme OperaÃ§Ã£o " +_cOperVS3+ " no momento do faturamento em " +DtoC(date()) + " Ã s " + Time() + CRLF
+				VS1->VS1_OBSAGL	:= Upper(_cMens) + CRLF + AllTrim(VS1->VS1_OBSAGL)
+				VS3->VS3_CODTES := cTES
+				VS3->VS3_SITTRI := U_XFUNSITT(cTES, VS3->VS3_CODITE, VS3->VS3_GRUITE)
+				VS3->(MsUnlock())
+				VS1->(MsUnlock())
+			Elseif Empty(cTES)
+				_cMens += "Erro no retorno da TES Inteligente -> Tes: "+cTES+" Oper: " +_cOperVS3+ " Cliente: "+VS1->VS1_CLIFAT+" Loja: "+VS1->VS1_LOJA+" Cod: "+_cCodIte+DtoC(date()) + " Ã s " + Time() + CRLF
+				_lRet := .F.
+			EndIf	
+	       	(_cAliasPesq)->(DbSkip())
+		EndDo
+		If !_lRet 
+			If !_lJob
+				MsgInfo(_cMens,"Atenção") 
+			Endif 
+			Conout(_cMens) 
+		Endif 
+		U_ORCCALFIS(VS1->VS1_NUMORC,.F./*atualiza o preÃ§o*/)
+	EndDo
+	
+		/*
 		_cCliente 	:= (_cAliasPesq)->VS1_CLIFAT
 		_cLoja 		:= (_cAliasPesq)->VS1_LOJA
 		_cNumOrc 	:= (_cAliasPesq)->VS1_NUMORC
 		_cMens 		:= " "
+		aadd( _aOrcs2,_cNumOrc)
 		VS1->(dbSetOrder(1))
 		VS3->(dbSetOrder(1))
 		If VS3->(dbSeek(xFilial("VS3")+_cNumOrc))
@@ -5106,27 +5205,34 @@ Begin sequence
 				If (!(_cXREGFI = "T") .and. !(_cTESVS3 = cTES) .and. !Empty(cTES))
 					VS1->(RecLock("VS1",.F.))
 					VS3->(RecLock("VS3",.F.))
-					_cMens += "O produto " +_cCodIte+ " teve a TES " +_cTESVS3+ " alterada para " +cTES+ " conforme Operação " +_cOperVS3+ " no momento do faturamento em " +DtoC(date()) + " às " + Time() + CRLF
-					VS1->VS1_OBSAGL		:= Upper(_cMens) + CRLF + AllTrim(VS1->VS1_OBSAGL)
+					_cMens += "O produto " +_cCodIte+ " teve a TES " +_cTESVS3+ " alterada para " +cTES+ " conforme OperaÃ§Ã£o " +_cOperVS3+ " no momento do faturamento em " +DtoC(date()) + " Ã s " + Time() + CRLF
+					VS1->VS1_OBSAGL	:= Upper(_cMens) + CRLF + AllTrim(VS1->VS1_OBSAGL)
 					VS3->VS3_CODTES := cTES
 					VS3->VS3_SITTRI := U_XFUNSITT(cTES, VS3->VS3_CODITE, VS3->VS3_GRUITE)
 					VS3->(MsUnlock())
 				Elseif Empty(cTES)
-					_cMens += "Erro no retorno da TES Inteligente -> Tes: "+cTES+" Oper: " +_cOperVS3+ " Cliente: "+_cCliente+" Loja: "+_cLoja+" Cod: "+_cCodIte+DtoC(date()) + " às " + Time() + CRLF
+					_cMens += "Erro no retorno da TES Inteligente -> Tes: "+cTES+" Oper: " +_cOperVS3+ " Cliente: "+_cCliente+" Loja: "+_cLoja+" Cod: "+_cCodIte+DtoC(date()) + " Ã s " + Time() + CRLF
 					_lRet := .F.
 				EndIf	
 	        	VS3->(dbSkip())
 			EndDo
 			VS1->(MsUnlock())
 		Else
-			_cMens := "Erro na Busca dos itens do ORC: " +(_cAliasPesq)->VS1_NUMORC+ " às " + Time() + CRLF
+			_cMens := "Erro na Busca dos itens do ORC: " +(_cAliasPesq)->VS1_NUMORC+ " Ã s " + Time() + CRLF
 			_lRet := .F.
 		EndIf
 		(_cAliasPesq)->(dbSkip())
 	EndDo
-	U_ORCCALFIS(_cNumOrc,.F./*atualiza o preço*/)
+	For _nX := 1 to len(_aOrcs2)
+		U_ORCCALFIS(_aOrcs2[_nX],.F.)
+	Next _nX
+	*/
 End Sequence
+RestArea(_aArea)
+VS1->(DbGoto(_nRegVS1))
+
 Return _lRet
+
 
 
 /*/{Protheus.doc} XFVERORC
