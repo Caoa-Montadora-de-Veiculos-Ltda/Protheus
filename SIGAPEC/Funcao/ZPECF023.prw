@@ -364,6 +364,11 @@ Local _nItem     := 0
         cItens    :=    '0000'
 
         FOR _nY := 1 TO LEN(aDados)
+             
+            if _nY = 3
+               aDados[03] := SUBSTR( aDados[03], 1, 60 ) 
+            endif
+
             // Realiza tratamento do campo usado de acordo com o Tipo
             IF ((_nY < 5 .OR. _nY = 13) .OR. (_nY > 21 .and. _nY < 27) ) 
                 _cRetorno := aDados[_nY]
