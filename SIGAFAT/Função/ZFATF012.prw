@@ -6,13 +6,13 @@
 Programa.:              ZFATF012
 Autor....:              CAOA - Evandro A Mariano dos Santos 
 Data.....:              29/08/2022
-Descricao / Objetivo:   Realiza a importação da Planilha de Crédito Floor Plan
+Descricao / Objetivo:   Realiza a importaï¿½ï¿½o da Planilha de Crédito Floor Plan
 Doc. Origem:            
 Solicitante:            
 Uso......:              [Barueri] - Financeiro
-@project	GRUPO CAOA GAP FIN108 - Revitalização Credito [ Montadora ]
+@project	GRUPO CAOA GAP FIN108 - revitalização Credito [ Montadora ]
 Obs......: 
-@history 	04/04/2023	, DAC, Revitalização Limite de Crédito, alterado chamada de funcionalidade ZFATF017 para ZFATF014  
+@history 	04/04/2023	, DAC, revitalização Limite de Crédito, alterado chamada de funcionalidade ZFATF017 para ZFATF014  
 =====================================================================================
 */
 User Function ZFATF012()
@@ -55,12 +55,12 @@ User Function ZFATF012()
 	EndIf
 
 	//Criando a janela
-	DEFINE MSDIALOG _oDlgImp TITLE "[ ZFATF012 ] - Importação Crédito Floor Plan" FROM 000, 000  TO _nAltura, _nLargura COLORS 0, 16777215 PIXEL
+	DEFINE MSDIALOG _oDlgImp TITLE "[ ZFATF012 ] - Importação de Crédito Floor Plan" FROM 000, 000  TO _nAltura, _nLargura COLORS 0, 16777215 PIXEL
 
-	//Grupo AçÃµes
+	//Grupo Ações
 	@ 010, 003 	GROUP _oGrpAco TO (_nAltura/2)-3, (_nLargura/2) 	PROMPT "[ CAOA ] - Importação" 		OF _oDlgImp COLOR 0, 16777215 PIXEL
 
-	//BotÃµes
+	//Botões
 	@ 043, 050  BUTTON _oBtnImp  PROMPT "Importar"   SIZE 60, 014 OF _oDlgImp ACTION ( zProcImp()       ) PIXEL
 	@ 043, 225  BUTTON _oBtnSair PROMPT "Sair"       SIZE 60, 014 OF _oDlgImp ACTION ( _oDlgImp:End()   ) PIXEL
 
@@ -94,9 +94,9 @@ Static Function zProcImp() //u_ZFATF012()
 
 	//Se tiver o arquivo selecionado e ele existir
 	If !Empty(cFileOpen) .And. File(cFileOpen)
-		Processa({|| ( _lRet := zImporta(cFileOpen) ) }, "Importando Crédito Floor Plan...")
+		Processa({|| ( _lRet := zImporta(cFileOpen) ) }, "Importando Crédito Floor Plan...") //Valida arquivo importado.
 		If _lRet
-			FWMsgRun(, {|| U_ZFATF014() },'Atualização Limite de Crédito','Aguarde atualizando Saldos do Limite de Credito dos Clientes')
+			FWMsgRun(, {|| U_ZFATF014() },'Atualização Limite de Crédito','Aguarde atualizando Saldos do Limite de Crédito dos Clientes')		
 		EndIf
 	EndIf
 
@@ -123,7 +123,7 @@ Static Function zImporta(_cArqSel)
 	//Local _cCnpjMatriz  := ""
 	Local _cSeparador	:= ";"
 	Local _cMsgLog      := ""
-	Local _cTitLog      := "[ZFATF012] - Log Importação Crédito Floor Plan"
+	Local _cTitLog      := "[ZFATF012] - Log Importação de Crédito Floor Plan"
 	Local _dDataVenc    := CToD("//")
 	Local _lRet         := .F.
 	Local _nVlrLim      := 0
@@ -131,10 +131,9 @@ Static Function zImporta(_cArqSel)
 	Local _aLinhas
 	Local _nRegSA1
 
-
 	Private _cLog       := ""
 
-	//Abre as tabelas que serão usadas
+	//Abre as tabelas que serao usadas
 	DbSelectArea('SA1')
 
 	//Definindo o arquivo a ser lido
@@ -143,20 +142,20 @@ Static Function zImporta(_cArqSel)
 	//Se o arquivo pode ser aberto
 	If (_oArquivo:Open())
 
-		//Se não for fim do arquivo
+		//Se nao for fim do arquivo
 		If ! (_oArquivo:EoF())
 
-			//Definindo o tamanho da régua
+			//Definindo o tamanho da regua
 			_aLinhas := _oArquivo:GetAllLines()
 			_nTotLinhas := Len(_aLinhas)
 			ProcRegua(_nTotLinhas)
 
-			//Método GoTop não funciona (dependendo da versão da LIB), deve fechar e abrir novamente o arquivo
+			//Metodo GoTop nao funciona (dependendo da versão da LIB), deve fechar e abrir novamente o arquivo
 			_oArquivo:Close()
 			_oArquivo := FWFileReader():New(_cArqSel)
 			_oArquivo:Open()
 
-			//Zera o crédito Floor Plan antes de iniciar a importação.
+			//Zera o credito Floor Plan antes de iniciar a importação.
 			If zUpdateFp()
 
 				//Iniciando controle de transação
@@ -269,7 +268,7 @@ Static Function zImporta(_cArqSel)
 
 				End Transaction
 			Else
-				MsgStop("Não foi possivel apagar o Limite de Crédito Atual, reprocesse o arquivo!", "Atenção")
+				MsgStop("não foi possivel apagar o Limite de Crédito Atual, reprocesse o arquivo!", "Atenção")
 			EndIf
 
 		Else
@@ -371,8 +370,8 @@ Static Function zBuscaCli(_cCnpj)
 	
 	(_cAlsSA1)->(DbCloseArea())
 */
-	//Alteração FIN100 Limite de crédito revitalização DAC 09/03/2022
-	BeginSql Alias _cAliasPesq //Define o nome do alias temporário
+	//Alteração FIN100 Limite de Crédito revitalização DAC 09/03/2022
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporï¿½rio
 		SELECT 	ISNULL(SA1.R_E_C_N_O_,0) NREGSA1, SA1.A1_XTPCRED 
 		FROM  %Table:SA1% SA1
 		WHERE SA1.A1_FILIAL 	= %XFilial:SA1%

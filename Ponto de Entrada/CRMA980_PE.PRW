@@ -116,8 +116,6 @@ Static Function ZCRMA980LC(_nOpcx, _lPrcLog)
 		_lRet := .F.
 	EndIF
 
-	MsgInfo("RETORNO AO PE","TESTE")
-
 Return(_lRet)
 
 

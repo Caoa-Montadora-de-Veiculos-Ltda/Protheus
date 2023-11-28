@@ -22,7 +22,7 @@ Begin Sequence
 		EndIf
 		Break	
 	Endif
-	//Garantir que o processamento seja unico
+	//Garantir que o processamento seja único
 	If !LockByName(_cChave,.T.,.T.)  
 		//tentar locar por 10 segundos caso não consiga não prosseguir
 		_lRet := .F.
@@ -46,7 +46,7 @@ Begin Sequence
 	EndIf
 	CONOUT("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZFATJ001] Iniciado processamento Avaliação Limite de Crédito ")
 	If _lJob
-		U_ZFATF014()  //Sem parametros processa todo
+		U_ZFATF014()  //Sem parâmetros processa todos os clientes.
 	Else
         FwMsgRun(,{ || U_ZFATF014() }, 'Limite Crédito','Atualizando Limite de Crédito Caoa, aguarde...')  //Separação Orçamentos / Aguarde
 	Endif

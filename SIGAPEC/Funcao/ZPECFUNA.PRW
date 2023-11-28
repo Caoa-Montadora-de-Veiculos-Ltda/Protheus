@@ -1598,25 +1598,25 @@ Begin Sequence
 		EndIf
 	EndIf
 	Aadd(_aMsg,"Avaliando Limite de Credito para o cliente "+_cCliente+" loja "+_cLoja+" - Matriz")
-	_nLimAvalia := 0   //Zero a avalia√ß√£o de cr√©dito onde constar√° o limite a ser utilizado
+	_nLimAvalia := 0   //Zero a avaliaÁ„o de crÈdito onde constar· o limite a ser utilizado
 	_aRetLc := U_ZFATF014(_cCliente, SA1->A1_XTPCRED, _cLoja)
 	//1=Credito Disponivel;2=Falta de Saldo;3=Titulos Em Atraso;4=Credito Vencido;5=Bloqueado                                         
 	If ValType(_aRetLc) <> "A" .or. Len(_aRetLc) == 0
-		Aadd(_aMsg, "N√£o foi poss√≠vel verificar limite de cr√©dito dispon√≠vel.")
+		Aadd(_aMsg, "N„o foi possÌ≠vel verificar limite de crÈdito disponÌvel.")
 		_cFaseRet 	:= "3" 
 		Break
 	ElseIf _aRetLc[01] == "2"
 		//enviar o limite para ser avaliado DAC 14/11/2022
 		//			 					NCC			  ( Titulos em Aberto + Pedidos em Bo + (Em Reserva + Em faturamento + Em Separa√ß√£o))
 		_nLimAvalia := (SA1->A1_XLC +  _aRetLc[06]) - ( _aRetLc[03] + _aRetLc[04]  + _aRetLc[05] )  ////retirar NCC (06) caso exista pois √© cr√©dito cliente DAC 05/04/2023
-		//Quando for B.o. somo novamente ao saldo que tenho a utilizar  o valor pois j√° somou no acumulado de B.o. e o mesmo √© cr√©dito ainda para utilizar
-		//Conforme revitaliza√ß√£o sempre somar o que est√° pendente ser√° sempre B.O. DAC 02/03/2023
-		If ( _cFaseRet == "0" .OR. _cFaseRet == "3" ) //VS1->VS1_XBO == 'S' //BO e Em an√°lise consomem limite de cr√©dito 12/2022
+		//Quando for B.o. somo novamente ao saldo que tenho a utilizar  o valor pois j· somou no acumulado de B.o. e o mesmo √© cr√©dito ainda para utilizar
+		//Conforme revitalizaÁ„o sempre somar o que est· pendente ser· sempre B.O. DAC 02/03/2023
+		If ( _cFaseRet == "0" .OR. _cFaseRet == "3" ) //VS1->VS1_XBO == 'S' //BO e Em an·lise consomem limite de crÈdito 12/2022
 			//_nLimAvalia += _nValTotPed
-			//neste caso deduzo o limite para que possa avaliar, pois na somat√≥rio dos BO's o mesmo foi somado DAC 21/03/2023
+			//neste caso deduzo o limite para que possa avaliar, pois na somatÛrio dos BO's o mesmo foi somado DAC 21/03/2023
 			_nLimAvalia +=  ( _nValTotPed * (If(_nFatorRed > 0,_nFatorRed/100,1)) )
 		EndIf
-		Aadd(_aMsg, "Cliente n√£o possui limite de cr√©dito dispon√≠vel Status [2]")
+		Aadd(_aMsg, "Cliente n„o possui limite de crÈdito disponÌvel Status [2]")
 		_cFaseRet 	:= "3" 
 		Break
 	ElseIf _aRetLc[01] == "3"
@@ -1624,11 +1624,11 @@ Begin Sequence
 		_cFaseRet 	:= ""
 		Break
 	ElseIf _aRetLc[01] == "4"
-		Aadd(_aMsg, "Cliente possui limite de cr√©dito vencido Status[4]")
+		Aadd(_aMsg, "Cliente possui limite de crÈdito vencido Status[4]")
 		_cFaseRet 	:= ""
 		Break
 	ElseIf _aRetLc[01] == "5"
-		Aadd(_aMsg, "Cliente possui limite de cr√©dito bloqueado Status[5]")
+		Aadd(_aMsg, "Cliente possui limite de crÈdito bloqueado Status[5]")
 		_cFaseRet 	:= ""
 		Break
 	EndIf
@@ -1638,19 +1638,19 @@ Begin Sequence
 	_nLcUsado := ( _aRetLc[03] + _aRetLc[04]  + _aRetLc[05] ) - _aRetLc[06]  //retirar NCC caso exista pois √© cr√©dito cliente DAC 05/04/2023 
 	//DAC 06/12/2022
 	_nLimAvalia := SA1->A1_XLC - _nLcUsado 
-	//Quando for B.o. deduzu o valor pois j√° somou no acumulado de B.o.
-	// n√£o utilizar no momento/* N√£o deduzir ja esta na somat√≥ria dos BOs com fator de redu√ß√£o validar com o or√ßamento em quest√£o DAC 21/03/2023
+	//Quando for B.o. deduzu o valor pois j· somou no acumulado de B.o.
+	// n„o utilizar no momento/* N„o deduzir ja esta na somatÛria dos BOs com fator de reduÁ„o validar com o orÁamento em quest„o DAC 21/03/2023
 
 	If ( _cFaseRet == "0" .OR. _cFaseRet == "3" ) //.And. VS1->VS1_XBO == 'S'
 		_nLcUsado 	:= _nLcUsado - ( _nValTotPed * (If(_nFatorRed > 0 ,_nFatorRed/100, 1)) ) 
-		//somo o valor novamente pois estara na somat√≥ria dos BO's e necessitarei utilizar o valor do mesmo para compor a diferen√ßa DAC 15/12
+		//somo o valor novamente pois estara na somatÛria dos BO's e necessitarei utilizar o valor do mesmo para compor a diferenÁa DAC 15/12
 		_nLimAvalia +=  ( _nValTotPed * (If(_nFatorRed > 0 , _nFatorRed/100, 1)) ) 
 	EndIf
 
-	//Esta op√ß√£o √© somente para avalia√ß√£o pe√ßas DAC 05/04/2023
+	//Esta opÁ„oo È somente para avaliÁ„o peÁas DAC 05/04/2023
 	If _lAvaliaPecas .and. (_nLcUsado > SA1->A1_XLC )  //.Or. SA1->A1_XDTLC < DATE())
-		//Fa√ßo a grava√ß√£o com a loja originada do VS1 para garantir integridade das bases DAC 24/05/2022	
-		If !XFLPESQVSW(_cPedido, _cCliente, _cLoja, Iif(SA1->A1_XTPCRED=="1",.T.,.F.),  @_aMsg)  //caso passe  n√£o tem bloqueios
+		//Fa√ßo a gravaÁ„o com a loja originada do VS1 para garantir integridade das bases DAC 24/05/2022	
+		If !XFLPESQVSW(_cPedido, _cCliente, _cLoja, Iif(SA1->A1_XTPCRED=="1",.T.,.F.),  @_aMsg)  //caso passe  n„o tem bloqueios
 			//_cFaseRet := XFLCREVSWG( VS1->VS1_NUMORC, VS1->VS1_CLIFAT, VS1->VS1_LOJA, "BLOQUEIO FORPLAN", @_aMsg )  //inclui registro de libera√ß√£o Forplan, verifica se ja possui libera√ß√£o para mudan√ßa de status	
 			_cFaseRet 	:= "3"
 			Break
@@ -1663,7 +1663,7 @@ Begin Sequence
 		_cFaseRet 	:= "3"
 		Break
 	EndIf
-	//caso passe pela valida√ß√£o do limite de cr√©dito a fase √© a inicial
+	//caso passe pela validaÁ„o do limite de crÈdito a fase È a inicial
 	_cFaseRet := "0"
 End Sequence
 Return _cFaseRet
@@ -1671,12 +1671,12 @@ Return _cFaseRet
 
 
 /*/{Protheus.doc} XLJLCREDito
-localizar loja do cliente que esteja cadastrada com limite de cr√©dito
+localizar loja do cliente que esteja cadastrada com limite de crÈdito
 @param      _cCliFat 	- Codigo do cliente  
 @return     _cLoja
 @author     DAC Denilso
 @version    12.1.17 / Superior
-@project	GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (Revitaliza√ß√£o Limite de Cr√©dito)
+@project	GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (RevitalizaÁ„o Limite de CrÈdito)
 @since      02/03/2023
 /*/
 User Function XLJLCREDito(_cCliente)
@@ -1684,7 +1684,7 @@ Local _cLoja		:= ""
 Local _cAliasPesq 	:= GetNextAlias()
 
 Begin Sequence
-	BeginSql Alias _cAliasPesq //Define o nome do alias tempor√°rio 
+	BeginSql Alias _cAliasPesq //Define o nome do alias tempor·rio 
 		SELECT ISNULL(SA1.R_E_C_N_O_,0) NREGSA1
 		FROM  %Table:SA1% SA1
 		WHERE SA1.A1_FILIAL 	= %XFilial:SA1%
