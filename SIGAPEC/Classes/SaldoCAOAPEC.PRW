@@ -217,11 +217,12 @@ Begin Sequence
 		::_nSaldoPEC	:= nSaldoSB2
 		Aadd(::_aMsg, "Produto "+AllTrim(cCodProd)+", com saldo Protheus "+AllTrim(Str(nSaldoSB2))+" Saldo atual Wis "+AllTrim(Str(::_nSaldoWis))+" Armazem "+cArmazem+", sera utilizado saldo Protheus !")
 	Endif
-	If Select((_cAliasPesq)) <> 0
-		(_cAliasPesq)->(DbCloseArea())
-		Ferase(_cAliasPesq+GetDBExtension())
-	Endif 
 End Sequence
+If Select((_cAliasPesq)) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif 
+
 Return Nil 
 
 	
