@@ -5329,10 +5329,10 @@ Mostrar OrÁamento
 @author DAC - Denilso 
 @since 31/05/2023
 @version 2.0
-@project	PEC044 - Revitaliza√ß√£o Consulta Pe√ßas - Abri consulta OrÁamento
-@Obs		Devido a forma de tratamento oficna/pe√ßas n√£o √© possivel chamar a 
-			consulta de oramentos a n√£o ser passando por esta fun√ß√£o MILAXTABELA
-			caso n√£o passe ai ira tratar CNPJs que est√£o hard cold no programa
+@project	PEC044 - RevitalizaÁ„o Consulta PeÁas - Abri consulta OrÁamento
+@Obs		Devido a forma de tratamento oficna/pe√ßas n„o È possivel chamar a 
+			consulta de oramentos a n„o ser passando por esta funÁ„o MILAXTABELA
+			caso n„o passe ai ira tratar CNPJs que est√£o hard cold no programa
 /*/
 
 USER Function MILAXTABELA(_nRegVS1)

@@ -979,10 +979,9 @@ Begin Sequence
 			If _lRet .and. _nQtdeItem <> (_cAliasPesq)->QTDE_TOTAL
 				Aadd(_aMensAglu,"Feita Sustituição "+If(_nQtdeItem > 0," parcial","")+ "do item principal, por item Substitutos para o produto " +AllTrim(_cCodProd)+ " armazem "+_cArmazem+" não possui saldo total no substituto ! ")	
 			EndIf
+			(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
+			Loop
 		Endif
-		(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
-		Loop
-
 
 		//Verificar utilização do parcial
 		Aadd(_aMensAglu,"Produto "+AllTrim(_cCodProd)+" armazem "+_cArmazem+" não possui saldo suficiente para faturamento, saldo atual " +AllTrim(Transform(_nSaldoSB2,"@E 999,999.999")))	
