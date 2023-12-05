@@ -512,7 +512,7 @@ Begin Sequence
 			_nProcessado	++
 			VS1->(DbGoto((_cAliasTRB)->NREGVS1))
 			If !Softlock("VS1") // Travar Registro do VS1
-        		Help( , ,OemToAnsi(STR0028),,OemToAnsi("Não Foi ossivel travar registro orçamento "+VS1->VS1_NUMORC+" para processamento a operação será abortada !"),4,1) //Atenção / "Não Foi ossivel travar registro para processamento a operação será abortada ! 
+        		Help( , ,OemToAnsi(STR0028),,OemToAnsi("Não Foi possível travar registro orçamento "+VS1->VS1_NUMORC+" para processamento a operação será abortada !"),4,1) //Atenção / "Não Foi ossivel travar registro para processamento a operação será abortada ! 
 				_lRet 	:= .F.
 				Break	
 			EndIf
@@ -910,7 +910,7 @@ Begin Sequence
 			Loop
 		EndIf		
 
-		//Validar Imetro
+		//Validar Inmetro
 		//GAP_PECCD01 - Controle de Validade de Produtos com Inm V1.
 		//ja esta posicionado no SB1 
 		If !Empty((_cAliasPesq)->B1_XNUMINM) .And. (_cAliasPesq)->B1_XVLDINM < DtOS(DATE())
@@ -1056,7 +1056,7 @@ Begin Sequence
 	   (_cAliasPesq)->(DbSkip())
 	Enddo
 End Sequence
-//no caso que conseguiu passar um item posso fazer backorder, caso não não gerar backorder
+//no caso que conseguiu passar um item posso fazer backorder, caso não, não gerar backorder.
 If _lSepara .and. Len(_aBak) > 0
 	For _nPos := 1 To Len(_aBak)
 		Aadd(_aBackOrder,_aBak[_nPos])
