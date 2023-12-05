@@ -13,9 +13,7 @@ Obs......:
 ===============================================================================================
 */
 User Function OX004APV
-
 Local _lRet := .T.
-
 Begin Sequence
     If FWIsInCallStack("U_ZPECF013") .and. Type("_aVarVS3") == "A"   
 		//somente realizar a operação caso  estejam diferentes a variaveis no padrão estava somente faturando 1
@@ -331,6 +329,17 @@ Begin Sequence
     	aCabPV[_nPosCpo,2] := _cMensNF // inicialmente so colocar a primeira msg padrão
    	Else
 		aAdd(aCabPV, {"C5_MENNOTA", _cMensNF , Nil})
+	Endif
+
+	//@project	GAP002 | Integração da separação - Informar produto e quantidade da cubagem - DAC 20/09/2023 
+	//Gravar numero picking no SC5
+	If SC5->(FieldPos("C5_XPICKI")) > 0 .And. !Empty(_cPicking)
+   		_nPosCpo 	:= Ascan(aCabPV,{|x| AllTrim(x[1]) == "C5_XPICKI"} )
+ 		If _nPosCpo > 0
+    		aCabPV[_nPosCpo,2] := _cPicking // inicialmente so colocar a primeira msg padrão
+   		Else
+			aAdd(aCabPV, {"C5_XPICKI", _cPicking , Nil})
+		Endif
 	Endif
 
 End Sequence
