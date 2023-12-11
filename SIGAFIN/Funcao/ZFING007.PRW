@@ -44,7 +44,7 @@ User Function ZFING007()
                     //M->C5_XPVFT := '1'
                     _nVlra      := SE1->E1_VALOR
                     _dVenc1     := SE1->E1_VENCTO
-                    _cCondPgto  := SC5->C5_CONDPAG
+                    _cCondPgto  := M->C5_CONDPAG    //SC5->C5_CONDPAG
 
 
                 //ENDIF
@@ -105,8 +105,9 @@ Local _aParc := {}
 Local cQy	  := ""
 Local cAlias  := "COND"
 Local _Cond   := ""
+Local _Tipo   := ""
 
-	cQy := " SELECT E4_COND " + CRLF 
+	cQy := " SELECT E4_COND,E4_TIPO " + CRLF 
 	cQy += "  FROM " + RetSQLName("SE4") + CRLF 
 	cQy += " WHERE " + CRLF 
 	cQy += " 	D_E_L_E_T_ = ' '" + CRLF 
@@ -116,11 +117,12 @@ Local _Cond   := ""
 	TcQuery cQy new Alias (cAlias)
 
     _Cond := Alltrim((cAlias)->E4_COND)
+    _Tipo := Alltrim((cAlias)->E4_TIPO)
 
 	(cAlias)->(DbCloseArea())
 
-    IF _Cond <> "00"
-        _aParc     :=  Condicao(_nValor,_cCondPgto,,_dEmissao)
+    IF _Cond <> "00" .AND. _Tipo <> '9'
+        _aParc     :=  Condicao(_nValor,_cCondPgto,,_dEmissao,)
         _dVenc     :=  _aParc[1,1]
     ELSE
         _dVenc     := _dEmissao
