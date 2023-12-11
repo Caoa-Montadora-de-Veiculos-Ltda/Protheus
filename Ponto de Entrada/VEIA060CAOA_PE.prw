@@ -9,7 +9,13 @@ Local oObj
 Local cIdPonto   := "" 
 Local cIdModel   := "" 
 Local _nP235     := superGetMv( "CMV_PEC040", ,6 )	
-Local _nP4       := superGetMv( "CMV_PEC041", ,8 )
+Local _nP4       := superGetMv( "CMV_PEC041", ,8 )   //HYU, CHE
+Local _nSBR      := superGetMv( "CMV_PEC042", ,4 )
+Local _nSBRF     := superGetMv( "CMV_PEC043", ,5 )
+
+Local _cForest   := superGetMv( "CMV_PEC044", ,"SJGALK8/SJ5CLBC/SJ5EL7C/SKEDLFL/SK7ALEL/SK7AL8L/SK7BLEL/SK7BLFL/SK7CLEL/SK7CLFL")
+
+Local _nPerc     := 0
 
 Local cTpVdNaoPe := "" 
 Local _cPgNF     := AllTrim( GetMV('CMV_FAT011') )
@@ -177,13 +183,28 @@ If aParam <> Nil
 					RecLock("VRK",.F.) 
 						VRK->VRK_XPECOM := _nP235
 					VRK->(MsUnlock())
+					RecLock("VV2",.F.) 
+						VV2->VV2_XCOMIS := _nP235
+					VV2->(MsUnlock())					
 					VRK->(DbSkip())
 				End
+
 			ELSEIF VRJ->VRJ_TIPVEN = "04" .AND. VRK->VRK_CODMAR $ ("HYU/CHE")
 				WHILE VRK->VRK_FILIAL = VRJ->VRJ_FILIAL .AND. VRK->VRK_PEDIDO = VRJ->VRJ_PEDIDO
+				    nposModV := At(VV2_DESMOD, _cForest)
+				    IF VRK_CODMAR = "HYU" .OR. VRK_CODMAR = "CHE"
+					    _nPerc := _nP4
+				    ELSEIF VRK_CODMAR = "SBR" .AND. nposModV = 0
+					    _nPerc := _nSBR
+				    ELSEIF VRK_CODMAR = "SBR" .AND. nposModV <> 0
+					    _nPerc := _nSBRF
+					ENDIF
 					RecLock("VRK",.F.) 
-						VRK->VRK_XPECOM := _nP4
+						VRK->VRK_XPECOM := _nPerc
 					VRK->(MsUnlock())
+					RecLock("VV2",.F.) 
+						VV2->VV2_XCOMIS := _nPerc
+					VV2->(MsUnlock())
 					VRK->(DbSkip())
 				End
 			EndIf 
@@ -195,6 +216,20 @@ If aParam <> Nil
 EndIf
 	
 Return xRet 
+
+
+/*/{Protheus.doc} nomeStaticFunction
+	(long_description)
+	@type  Static Function
+	@author user
+	@since 06/12/2023
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	@example
+	(examples)
+	@see (links_or_references)
+/*/
 
 
 
