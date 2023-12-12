@@ -182,6 +182,7 @@ If aParam <> Nil
 				WHILE VRK->VRK_FILIAL = VRJ->VRJ_FILIAL .AND. VRK->VRK_PEDIDO = VRJ->VRJ_PEDIDO
 					RecLock("VRK",.F.) 
 						VRK->VRK_XPECOM := _nP235
+						VRK->VRK_XVLCOM := (_nP235 * VRK->VRK_VALVDA) / 100
 					VRK->(MsUnlock())
 					RecLock("VV2",.F.) 
 						VV2->VV2_XCOMIS := _nP235
@@ -201,6 +202,7 @@ If aParam <> Nil
 					ENDIF
 					RecLock("VRK",.F.) 
 						VRK->VRK_XPECOM := _nPerc
+						VRK->VRK_XVLCOM := (_nPerc * VRK->VRK_VALVDA) / 100
 					VRK->(MsUnlock())
 					RecLock("VV2",.F.) 
 						VV2->VV2_XCOMIS := _nPerc

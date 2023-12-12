@@ -26,12 +26,16 @@ User Function PEDVEI011()
 	AADD(aIteTPv, {"C6_XBASPI"  , VVA->VVA_XBASPI          ,NIL})
 	AADD(aIteTPv, {"C6_XBASCO"  , VVA->VVA_XBASCO          ,NIL})
 	AADD(aIteTPv, {"C6_XBASIP"  , VVA->VVA_XBASIP          ,NIL})
-	AADD(aIteTPv, {"C6_XPECOM"  , VVA->VVA_XPECOM          ,NIL})
-	AADD(aIteTPv, {"C6_XVLCOM"  , VVA->VVA_XVLCOM          ,NIL})
+	//AADD(aIteTPv, {"C6_XPECOM"  , VRK->VRK_XPECOM          ,NIL})
+	//AADD(aIteTPv, {"C6_XVLCOM"  , VRK->VRK_XVLCOM          ,NIL})
 
 	If ! Empty(VVA->VVA_VRKNUM)
 		VRK->(dbSetOrder(1))
 		If VRK->(dbSeek(xFilial("VRK") + Left(VVA->VVA_VRKNUM, TamSX3("VRK_PEDIDO")[1]) + VVA->VVA_VRKITE))
+
+			AADD(aIteTPv, {"C6_XPECOM"  , VRK->VRK_XPECOM ,NIL})
+			AADD(aIteTPv, {"C6_XVLCOM"  , VRK->VRK_XVLCOM ,NIL})
+
 			nPosTES := aScan( aIteTPv , { |x| x[1] == "C6_TES"})
 			AADD( aIteTPv , { NIL, NIL, NIL} ) 
 			AIns( aIteTPv , nPosTES)
