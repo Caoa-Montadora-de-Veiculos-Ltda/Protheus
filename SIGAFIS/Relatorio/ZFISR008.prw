@@ -49,6 +49,7 @@ Static Function zSelect2(nRadio)
 	Local cArquivo	:= ""
 	Private cPergR1	:= "ZFISR008R1"
 	Private cPergR2	:= "ZFISR008R2"
+	Private lMvNFLeiZF := SuperGetMV("MV_NFLEIZF",,.F.)
 
 	If nRadio == 1
 		If Pergunte( cPergR1	,.T.	)
@@ -65,6 +66,7 @@ Static Function zSelect2(nRadio)
 			EndIf
 		EndIf
 	EndIf
+
 Return()
 
 /*
@@ -80,6 +82,7 @@ Obs......:
 =====================================================================================
 */
 Static Function zRel001B(cArquivo)
+
 	Local cQuery		:= ""
 	Local cAliasTRB		:= GetNextAlias()
 	Local cTMPCanc		:= GetNextAlias()
@@ -114,6 +117,7 @@ Static Function zRel001B(cArquivo)
 	Local cCodNatur		:= ""
 	Local cCodChassi	:= ""
 	Local nVlCom		:= 0
+	Local nTotal 		:= 0
 	Local cNF           := " "
 	Local cTes          := " "
 	Local nTot01        := nTot02   := nTot03   := nTot04   := nTot05   := nTot06   := nTot07   := nTot08   := nTot09   := nTot10    := 0
@@ -160,7 +164,9 @@ Static Function zRel001B(cArquivo)
 	cQuery += " D1_BASEISS, D1_ALIQISS, D1_ABATISS, D1_ABATMAT, D1_VALISS, FT_CODBCC, FT_INDNTFR, "									+ CRLF
 	cQuery += " D1_VALFRE, D1_DESPESA, D1_CUSTO, D1_SEGURO, D1_VALACRS, D1_II, FT_ICMSCOM, D1_TNATREC, D1_CONHEC, "					+ CRLF
 	cQuery += " D1_PESO, FT_MVALPIS, FT_MVALCOF, W6_DTREG_D, W6_DI_NUM, YD_PER_II, VRK_OPCION, W9_TX_FOB, D1_CHASSI "							+ CRLF
+
 	cQuery += " FROM " + RetSQLName('SD1') + " SD1 "																				+ CRLF
+
 	cQuery += " INNER JOIN " + RetSQLName('SF1') + " SF1 "			 																+ CRLF
 	cQuery += " 	ON SF1.F1_FILIAL = '" + FWxFilial('SF1') + "' "																	+ CRLF
 	cQuery += " 	AND SF1.F1_DOC = SD1.D1_DOC " 																					+ CRLF
@@ -178,7 +184,7 @@ Static Function zRel001B(cArquivo)
 	cQuery += " 	ON SB1.B1_FILIAL = '" + FWxFilial('SB1') + "'  "																+ CRLF
 	cQuery += "		AND SB1.B1_COD = SD1.D1_COD  "	 																				+ CRLF
 	cQuery += "     AND SB1.D_E_L_E_T_ = ' '   " 																					+ CRLF
-
+	
 	If !Empty( MV_PAR20 )
 		cQuery += " 	AND SB1.B1_GRUPO = '" + MV_PAR20 + "' "																		+ CRLF
 	EndIf
@@ -264,10 +270,10 @@ Static Function zRel001B(cArquivo)
 
 	If !Empty( MV_PAR18 )
 		cQuery += " 	AND SD1.D1_CF = '" + MV_PAR18 + "' " 																		+ CRLF
-	EndIf  
+	EndIf
 
-    If !Empty( MV_PAR23) .OR. !Empty( MV_PAR24 )
-	   cQuery += " 	AND SD1.D1_CHASSI BETWEEN '" + MV_PAR23 + "' AND '" + MV_PAR24 + "' " 												+ CRLF
+    If !Empty( MV_PAR22) .OR. !Empty( MV_PAR23 )
+	   cQuery += " 	AND SD1.D1_CHASSI BETWEEN '" + MV_PAR22 + "' AND '" + MV_PAR23 + "' " 												+ CRLF
     EndIf
 
 	cQuery += " GROUP BY 	D1_FILIAL, D1_COD, D1_DOC, D1_SERIE, D1_TES, D1_CF, D1_FORNECE, D1_LOJA, D1_EMISSAO, D1_DTDIGIT, " 		+ CRLF
@@ -289,7 +295,9 @@ Static Function zRel001B(cArquivo)
 	cQuery += " D1_BASEISS, D1_ALIQISS, D1_ABATISS, D1_ABATMAT, D1_VALISS, FT_CODBCC, FT_INDNTFR, "									+ CRLF
 	cQuery += " D1_VALFRE, D1_DESPESA, D1_CUSTO, D1_SEGURO, D1_VALACRS, D1_II, FT_ICMSCOM, D1_TNATREC, D1_CONHEC,  "				+ CRLF
 	cQuery += " D1_PESO, FT_MVALPIS, FT_MVALCOF, W6_DTREG_D, W6_DI_NUM, YD_PER_II, VRK_OPCION, W9_TX_FOB, D1_CHASSI "							+ CRLF
-	cQuery += " ORDER BY SD1.D1_FILIAL, SD1.D1_EMISSAO, SD1.D1_DOC, SD1.D1_SERIE, SD1.D1_TES, SD1.D1_ITEM, SD1.D1_FORNECE, SD1.D1_LOJA "		+ CRLF
+
+	cQuery += " ORDER BY SD1.D1_FILIAL, SD1.D1_EMISSAO, SD1.D1_DOC, SD1.D1_SERIE, SD1.D1_TES, SD1.D1_ITEM, SD1.D1_FORNECE, SD1.D1_LOJA "+ CRLF
+
 	cQuery := ChangeQuery(cQuery)
 
 	// Executa a consulta.
@@ -631,6 +639,11 @@ Static Function zRel001B(cArquivo)
 			zRel003B(@nVlIPIRegi, @nVlIPIPres, (cAliasTRB)->F1_ESPECIE, (cAliasTRB)->F1_DOC, (cAliasTRB)->F1_SERIE,;
 					(cAliasTRB)->D1_FORNECE, (cAliasTRB)->D1_LOJA, (cAliasTRB)->D1_ITEM )
 
+			if !lMvNFLeiZF
+				nTotal := (cAliasTRB)->D1_TOTAL  
+			Else
+                nTotal := (cAliasTRB)->D1_TOTAL - ((cAliasTRB)->D1_DESCZFP + (cAliasTRB)->D1_DESCZFC) //--Valor Total Item
+			EndIF
             //Acumula Totais
 			aCampo01 :=	cCgcCpf
 			aCampo02 := cIncEst                                                                   				//--Insc.Estadual
@@ -638,7 +651,7 @@ Static Function zRel001B(cArquivo)
 			aCampo04 :=	cEstCli                                                                   				//--UF
 			aCampo05 := (cAliasTRB)->D1_TES                                                       				//--Tes
 			aCampo06 :=	Alltrim( (cAliasTRB)->F4_FINALID )                                        				//--Finalidade TES
-			nTot01   +=  iif(valtype((cAliasTRB)->D1_TOTAL)    = "N", (cAliasTRB)->D1_TOTAL   ,0) 				//--Valor Total Item
+			nTot01   +=  nTotal//iif(valtype((cAliasTRB)->D1_TOTAL)    = "N", (cAliasTRB)->D1_TOTAL   ,0) 				//--Valor Total Item
             aCampo07 :=   (cAliasTRB)->D1_CF                                                      				//--Cfop
 			nTot02   +=  iif(valtype((cAliasTRB)->FT_VALCONT)  = "N", (cAliasTRB)->FT_VALCONT ,0) 				//--Valor Contábil
 			nTot03   +=  iif(valtype((cAliasTRB)->FT_BASEICM)  = "N", (cAliasTRB)->FT_BASEICM ,0) 				//--Base ICMS
@@ -1089,6 +1102,9 @@ Static Function zRel002B(cArquivo)
 	Local nTotReg		:= ""
 	Local nVlIPIRegi	:= 0
 	Local nVlIPIPres	:= 0
+	Local nDesconto		:= 0
+	Local nDesVrIcms	:= 0
+	Local nTotal		:= 0
 
 	Local nTot01 := nTot02 := nTot03 := nTot04 := nTot05 := nTot06 := nTot07 := nTot08 := nTot09 := nTot10  := 0
 	Local nTot11 := nTot12 := nTot13 := nTot14 := nTot15 := nTot16 := nTot17 := nTot18 := nTot19 := nTot20  := 0
@@ -1121,7 +1137,7 @@ Static Function zRel002B(cArquivo)
 	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, D2_ITEM, "							+ CRLF
 	cQuery += " F2_ESPECIE,F2_CODNFE,F2_MENNOTA,F2_USERLGI,F2_USERLGA,F2_TIPO, FT_CHVNFE,F2_DOC, F2_SERIE, F2_FIMP,  " 		+ CRLF
 	cQuery += " FT_VALCONT, F2_FORMUL, D2_CONTA, D2_NFORI, D2_SERIORI, D2_PRUNIT,D2_TOTAL, "								+ CRLF
-	cQuery += " D2_DESC, FT_CLASFIS, D2_DESCZFP, D2_DESCZFC, D2_TIPO, "														+ CRLF
+	cQuery += " D2_DESC, FT_CLASFIS, D2_DESCZFP, D2_DESCZFC, D2_TIPO, D2_DESCON,"														+ CRLF
 	cQuery += " FT_BASEICM, FT_ALIQICM, FT_VALICM, C6_CHASSI, "																+ CRLF
 	cQuery += " FT_BASEIPI, FT_ALIQIPI, FT_VALIPI, FT_ARETPIS, FT_ARETCOF, FT_VRETPIS, FT_VRETCOF, FT_BRETPIS, "			+ CRLF
 	cQuery += " FT_BASERET, FT_ICMSRET, FT_DIFAL, FT_BRETCOF, "																+ CRLF
@@ -1133,7 +1149,7 @@ Static Function zRel002B(cArquivo)
 	cQuery += " FT_BASEINS,FT_ALIQINS,D2_ABATINS,FT_VALINS, D2_UM, D2_QUANT, "												+ CRLF
 	cQuery += " D2_BASEISS,D2_ALIQISS,D2_ABATISS,D2_ABATMAT,D2_VALISS, D2_ITEMCC, "											+ CRLF
 	cQuery += " FT_BASECSL,FT_ALIQCSL,FT_VALCSL, D2_CUSTO1, VRK_CHASSI, VRJ_CODCLI, VRJ_LOJA, C6_XVLCOM, "					+ CRLF
-	cQuery += " C6_TNATREC, C6_NFORI, C6_FILIAL, C6_NUM, VV3_TIPVEN, VV3_DESCRI, VRJ_CLIRET, VRK_OPCION "					+ CRLF
+	cQuery += " C6_TNATREC, C6_NFORI, C6_FILIAL, C6_NUM, VV3_TIPVEN, VV3_DESCRI, VRJ_CLIRET, VRK_OPCION,D2_DESCZFR , D2_VRDICMS " + CRLF
 	cQuery += " FROM   " + RetSQLName("SD2") + " SD2 " 																		+ CRLF
 	
 	cQuery += "	INNER JOIN " + RetSQLName("SF2") + " SF2 "																+ CRLF
@@ -1241,7 +1257,7 @@ Static Function zRel002B(cArquivo)
 	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, D2_ITEM, "							+ CRLF
 	cQuery += " F2_ESPECIE,F2_CODNFE,F2_MENNOTA,F2_USERLGI,F2_USERLGA,F2_TIPO, FT_CHVNFE,F2_DOC, F2_SERIE, F2_FIMP,  " 		+ CRLF
 	cQuery += " FT_VALCONT, F2_FORMUL, D2_CONTA, D2_NFORI, D2_SERIORI, D2_PRUNIT,D2_TOTAL, "								+ CRLF
-	cQuery += " D2_DESC, FT_CLASFIS, D2_DESCZFP, D2_DESCZFC, D2_TIPO, "														+ CRLF
+	cQuery += " D2_DESC, FT_CLASFIS, D2_DESCZFP, D2_DESCZFC, D2_TIPO,D2_DESCON, "														+ CRLF
 	cQuery += " FT_BASEICM, FT_ALIQICM, FT_VALICM, C6_CHASSI, "																+ CRLF
 	cQuery += " FT_BASEIPI, FT_ALIQIPI, FT_VALIPI, FT_ARETPIS, FT_ARETCOF, FT_VRETPIS, FT_VRETCOF, FT_BRETPIS, "			+ CRLF
 	cQuery += " FT_BASERET, FT_ICMSRET, FT_DIFAL, FT_BRETCOF, "																+ CRLF
@@ -1253,7 +1269,7 @@ Static Function zRel002B(cArquivo)
 	cQuery += " FT_BASEINS,FT_ALIQINS,D2_ABATINS,FT_VALINS, D2_UM, D2_QUANT, "												+ CRLF
 	cQuery += " D2_BASEISS,D2_ALIQISS,D2_ABATISS,D2_ABATMAT,D2_VALISS, D2_ITEMCC, "											+ CRLF
 	cQuery += " FT_BASECSL,FT_ALIQCSL,FT_VALCSL, D2_CUSTO1, VRK_CHASSI, VRJ_CODCLI, VRJ_LOJA, C6_XVLCOM,  "					+ CRLF
-	cQuery += " C6_TNATREC, C6_NFORI, C6_FILIAL, C6_NUM, VV3_TIPVEN, VV3_DESCRI, VRJ_CLIRET, VRK_OPCION "					+ CRLF
+	cQuery += " C6_TNATREC, C6_NFORI, C6_FILIAL, C6_NUM, VV3_TIPVEN, VV3_DESCRI, VRJ_CLIRET, VRK_OPCION,D2_DESCZFR, D2_VRDICMS"					+ CRLF
 
 	cQuery += " ORDER BY SD2.D2_FILIAL, SD2.D2_DOC, SD2.D2_SERIE, SD2.D2_CLIENTE, SD2.D2_LOJA , SD2.D2_TES" 						+ CRLF
 
@@ -1265,7 +1281,6 @@ Static Function zRel002B(cArquivo)
 	DbSelectArea((cAliasTRB))
 	nTotReg := Contar(cAliasTRB,"!Eof()")
 	(cAliasTRB)->(dbGoTop())
-	
 
 	If (cAliasTRB)->(!Eof())
 
@@ -1615,16 +1630,29 @@ Static Function zRel002B(cArquivo)
 					aCampo01 :=	cCgcCpf
 					aCampo02 :=	cCGCLocEnt
 					aCampo03 := cIncEst                              //--Insc.Estadual
+			nDesconto   := (cAliasTRB)->D2_DESCON
+        	nDesVrIcms  := 0
+			If  (cAliasTRB)->D2_VRDICMS > 0  .and. nDesconto >= (cAliasTRB)->D2_VRDICMS 
+				nDesVrIcms := (cAliasTRB)->D2_VRDICMS
+			EndIF
+        
+        	if !lMvNFLeiZF
+				nTotal := ((cAliasTRB)->D2_TOTAL  + nDesconto + (cAliasTRB)->D2_DESCZFR ) - nDesVrIcms 
+			Else
+                nTotal := ((cAliasTRB)->D2_TOTAL  + nDesconto + (cAliasTRB)->D2_DESCZFR ) - ( (cAliasTRB)->D2_DESCZFP + (cAliasTRB)->D2_DESCZFC + nDesVrIcms )  //--Valor Total Item
+			EndIF
+			nVlrDesc := nDesconto
+
 					aCampo04 :=	cTpPessoa                            //--Pessoa Fisica/Juridica
 					aCampo05 :=	cEstCli                              //--UF
 					aCampo06 := (cAliasTRB)->D2_TES                  //--Tes
 					aCampo07 :=	Alltrim( (cAliasTRB)->F4_FINALID )   //--Finalidade TES
-					nTot01   +=  iif(valtype((cAliasTRB)->D2_TOTAL)    = "N", (cAliasTRB)->D2_TOTAL   ,0) //--Valor Total Item
+					nTot01   +=  nTotal//iif(valtype((cAliasTRB)->D2_TOTAL)    = "N", (cAliasTRB)->D2_TOTAL   ,0) //--Valor Total Item
 					aCampo08 := (cAliasTRB)->D2_CF    //--Cfop
 					nTot02   +=  iif(valtype((cAliasTRB)->FT_VALCONT)  = "N", (cAliasTRB)->FT_VALCONT ,0) //--Valor Contábil
-					nTot03   +=  iif(valtype((cAliasTRB)->FT_BASEICM)  = "N", (cAliasTRB)->FT_BASEICM ,0) //--Base ICMS
-					aCAmpo09 := (cAliasTRB)->FT_ALIQICM   //--Aliq. ICMS
-					nTot04   +=  iif(valtype((cAliasTRB)->FT_VALICM)   = "N", (cAliasTRB)->FT_VALICM  ,0) //--Valor ICMS
+					nTot03   += iif( Alltrim((cAliasTRB)->F2_ESPECIE) <> "RPS",( iif(valtype((cAliasTRB)->FT_BASEICM)  = "N", (cAliasTRB)->FT_BASEICM ,0) ),0) //--Base ICMS
+					aCAmpo09 := iif( Alltrim((cAliasTRB)->F2_ESPECIE) <> "RPS",((cAliasTRB)->FT_ALIQICM ),0)  //--Aliq. ICMS
+					nTot04   += iif( Alltrim((cAliasTRB)->F2_ESPECIE) <> "RPS",( iif(valtype((cAliasTRB)->FT_VALICM)   = "N", (cAliasTRB)->FT_VALICM  ,0) ),0) //--Valor ICMS
 					aCAmpo10 := (cAliasTRB)->C6_XVLCOM    //--Comissão
 					nTot05   +=  iif(valtype((cAliasTRB)->FT_BASEIPI)  = "N", (cAliasTRB)->FT_BASEIPI ,0) //--Base IPI
 					aCampo11 := (cAliasTRB)->FT_ALIQIPI    //--Aliq. IPI
