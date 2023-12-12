@@ -732,7 +732,7 @@ Begin Sequence
    	While (_cAliasPesq)->(!Eof())
 		_cErro		:= "" 
 		_lLibera 	:= .F.
-		//Caso a quaantidade WIS e Protheus esteja igual a Zero não processar
+		//Caso a quantidade WIS e Protheus esteja igual a Zero não processar
 		If  (_cAliasPesq)->QT_WIS  == 0 .And. (_cAliasPesq)->QT_PROT  == 0
 			_cErro := "divergencia"
 			_cMens := "Pedido " 			+ _cPicking +" | "
