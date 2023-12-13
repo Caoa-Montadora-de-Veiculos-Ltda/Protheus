@@ -33,9 +33,9 @@ User Function ZFING007()
          
         IF Altera
            DbSelectArea("SE1")
-	       SE1->(DbSetOrder(1))  //Filial + Prefixo + Num + Parcela + Tipo
+	       SE1->(DbSetOrder(2))  //Filial + Prefixo + Num + Parcela + Tipo
 
-		   if SE1->( DbSeek(xFilial("SE1") + 'PVF' + M->C5_NUM + '   ' + '1 ' + 'RA ') )
+		   if SE1->( DbSeek(xFilial("SE1") + M->C5_CLIENTE + M->C5_LOJACLI + 'PVF' + M->C5_NUM + '   ' + '1 ' + 'RA ') )
                
                 //IF SE1->E1_BAIXA //O titulo precisa estar baixado
 
@@ -121,7 +121,7 @@ Local _Tipo   := ""
 
 	(cAlias)->(DbCloseArea())
 
-    IF _Cond <> "00" .AND. _Tipo <> '9'
+    IF _Cond <> "00" //.AND. _Tipo <> '9'
         _aParc     :=  Condicao(_nValor,_cCondPgto,,_dEmissao,)
         _dVenc     :=  _aParc[1,1]
     ELSE

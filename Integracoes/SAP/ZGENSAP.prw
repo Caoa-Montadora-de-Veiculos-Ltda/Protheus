@@ -204,7 +204,7 @@ Descricao / Objetivo:
 //User Function OperIntSAP(nOpc)
 User Function ZF05GENSAP(nOpc)
 
-Local aArea := {SZ7->(GetArea()),SE2->(GetArea()),SF1->(GetArea()),SF2->(GetArea()),GetArea()}
+Local aArea := {SZ7->(GetArea()),SE2->(GetArea()),SF1->(GetArea()),SF2->(GetArea()),SE1->(GetArea()),GetArea()}
 Local cQ := ""
 Local aRet := {{},"",{},nOpc}
 Local lSF1 := IIf(CT2->CT2_LP $ "650/655",.T.,.F.)
