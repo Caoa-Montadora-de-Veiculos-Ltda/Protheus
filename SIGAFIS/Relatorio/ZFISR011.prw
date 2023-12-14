@@ -6,8 +6,9 @@ User Function ZFISR011()
     Local oReport,  oSection
 
     Private cAliasTMP := GetNextAlias()
-
-	oReport:= TReport():New("ZFISR005",;
+    Private lMvNFLeiZF := SuperGetMV("MV_NFLEIZF",,.F.)
+    
+	oReport:= TReport():New("ZFISR011",;
                             "Saidas",;
                             "ZFISR001R2",;
                             {|oReport|  ReportPrint(oReport)},;
@@ -413,7 +414,23 @@ Static Function ReportPrint(oReport)
         nVlIPIPres := 0
         //-- Retorna Valor de IPI regional e presumido
         zRel0003(@nVlIPIRegi, @nVlIPIPres, (cAliasTMP)->F2_ESPECIE, (cAliasTMP)->F2_DOC, (cAliasTMP)->F2_SERIE,;
-                (cAliasTMP)->D2_CLIENTE, (cAliasTMP)->D2_LOJA, (cAliasTMP)->D2_ITEM )	
+                (cAliasTMP)->D2_CLIENTE, (cAliasTMP)->D2_LOJA, (cAliasTMP)->D2_ITEM )
+        
+        nVlrFrete 	:= (cAliasTMP)->D2_VALFRE
+		nVlrSeguro	:= (cAliasTMP)->D2_SEGURO
+		nVlrDesp	:= (cAliasTMP)->D2_DESPESA
+		nDesconto   := (cAliasTMP)->D2_DESCON
+        nDesVrIcms  := 0
+		If  (cAliasTMP)->D2_VRDICMS > 0  .and. nDesconto >= (cAliasTMP)->D2_VRDICMS 
+			nDesVrIcms := (cAliasTMP)->D2_VRDICMS
+		EndIF
+        
+        if !lMvNFLeiZF
+			nTotal := ((cAliasTMP)->D2_TOTAL  + nDesconto + (cAliasTMP)->D2_DESCZFR ) - nDesVrIcms 
+		Else
+            nTotal := ((cAliasTMP)->D2_TOTAL  + nDesconto + (cAliasTMP)->D2_DESCZFR ) - ( (cAliasTMP)->D2_DESCZFP + (cAliasTMP)->D2_DESCZFC + nDesVrIcms )  //--Valor Total Item
+		EndIF
+		nVlrDesc := nDesconto	
 
         oSection:Cell( "CgcCpf"      ):SetValue( cCgcCpf                            ) //--Cnpj/Cpf
         oSection:Cell( "CGCLocEnt"   ):SetValue( cCGCLocEnt                         ) //--CNPJ Loc. Entr.
@@ -429,14 +446,14 @@ Static Function ReportPrint(oReport)
         oSection:Cell( "VRK_OPCION"  ):SetValue( AllTrim( (cAliasTMP)->VRK_OPCION ) ) //--Opcional
         oSection:Cell( "B1_GRUPO"    ):SetValue( AllTrim( (cAliasTMP)->B1_GRUPO   ) ) //--Grupo\Linha
         oSection:Cell( "BM_DESC"     ):SetValue( AllTrim( Posicione("SBM",1,xFilial("SBM")+(cAliasTMP)->B1_GRUPO,"BM_DESC") ) ) //--Descrição do Grupo
-        oSection:Cell( "D2_TOTAL"    ):SetValue( (cAliasTMP)->D2_TOTAL ) //--Valor Total Item
+        oSection:Cell( "D2_TOTAL"    ):SetValue( nTotal ) //--Valor Total Item
         oSection:Cell( "D2_PRUNIT"   ):SetValue( (cAliasTMP)->D2_PRUNIT ) //--Valor Unit. Item
         oSection:Cell( "D2_DESCON"   ):SetValue( (cAliasTMP)->D2_DESCON ) //--Valor Desc. Item
         oSection:Cell( "D2_CF"       ):SetValue( (cAliasTMP)->D2_CF ) //--Cfop
         oSection:Cell( "FT_VALCONT"  ):SetValue( (cAliasTMP)->FT_VALCONT ) //--Valor Contábil
-        oSection:Cell( "FT_BASEICM"  ):SetValue( (cAliasTMP)->FT_BASEICM ) //--Base ICMS
-        oSection:Cell( "FT_ALIQICM"  ):SetValue( (cAliasTMP)->FT_ALIQICM ) //--Aliq. ICMS
-        oSection:Cell( "FT_VALICM"   ):SetValue( (cAliasTMP)->FT_VALICM ) //--Valor ICMS
+        oSection:Cell( "FT_BASEICM"  ):SetValue( iif( Alltrim((cAliasTMP)->F2_ESPECIE) <> "RPS",(cAliasTMP)->FT_BASEICM , 0 ) )    //--Base ICMS(cAliasTMP)->FT_BASEICM ) //--Base ICMS
+        oSection:Cell( "FT_ALIQICM"  ):SetValue( iif( Alltrim((cAliasTMP)->F2_ESPECIE) <> "RPS",(cAliasTMP)->FT_ALIQICM , 0 ) )   //--Aliq. ICMS(cAliasTMP)->FT_ALIQICM ) //--Aliq. ICMS
+        oSection:Cell( "FT_VALICM"   ):SetValue( iif( Alltrim((cAliasTMP)->F2_ESPECIE) <> "RPS",(cAliasTMP)->FT_VALICM  , 0 ) )    //--Valor ICMS(cAliasTMP)->FT_VALICM ) //--Valor ICMS
         oSection:Cell( "C6_XVLCOM"   ):SetValue( (cAliasTMP)->C6_XVLCOM ) //--Comissão
         oSection:Cell( "FT_BASEIPI"  ):SetValue( (cAliasTMP)->FT_BASEIPI ) //--Base IPI
         oSection:Cell( "FT_ALIQIPI"  ):SetValue( (cAliasTMP)->FT_ALIQIPI ) //--Aliq. IPI
@@ -683,7 +700,7 @@ Static Function zTmpRadio3()
 
 	cQuery += " GROUP BY D2_FILIAL, D2_COD, D2_DOC,D2_SERIE, D2_TES, D2_CF,D2_CLIENTE,D2_LOJA,D2_EMISSAO, D2_ITEMPV, "		+ CRLF
 	cQuery += " F4_FINALID, F4_TEXTO, FT_CTIPI, FT_CSTPIS, FT_CSTCOF, F4_ICM, F4_IPI, F4_CREDICM, F4_CREDIPI, F4_DUPLIC, "	+ CRLF
-	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, B1_EX_NBM, D2_ITEM, "							+ CRLF
+	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, B1_EX_NBM, D2_ITEM, "				+ CRLF
 	cQuery += " F2_ESPECIE,F2_CODNFE,F2_MENNOTA,F2_USERLGI,F2_USERLGA,F2_TIPO, FT_CHVNFE,F2_DOC, F2_SERIE, F2_FIMP,  " 		+ CRLF
 	cQuery += " FT_VALCONT, F2_FORMUL, D2_CONTA, D2_NFORI, D2_SERIORI, D2_PRUNIT,D2_TOTAL, "								+ CRLF
 	cQuery += " D2_DESPESA, D2_SEGURO, D2_VALFRE, D2_DESCON, "	                                                            + CRLF
@@ -699,8 +716,8 @@ Static Function zTmpRadio3()
 	cQuery += " FT_BASEINS,FT_ALIQINS,D2_ABATINS,FT_VALINS, D2_UM, D2_QUANT, "												+ CRLF
 	cQuery += " D2_BASEISS,D2_ALIQISS,D2_ABATISS,D2_ABATMAT,D2_VALISS, D2_ITEMCC, "											+ CRLF
 	cQuery += " FT_BASECSL,FT_ALIQCSL,FT_VALCSL, D2_CUSTO1, VRK_CHASSI, VRJ_CODCLI, VRJ_LOJA, C6_XVLCOM,  "					+ CRLF
-	cQuery += " C6_TNATREC, C6_NFORI, C6_FILIAL, C6_NUM, VV3_TIPVEN, VV3_DESCRI, VRJ_CLIRET, VRK_OPCION, F2_VALBRUT "		+ CRLF
-
+	cQuery += " C6_TNATREC, C6_NFORI, C6_FILIAL, C6_NUM, VV3_TIPVEN, VV3_DESCRI, VRJ_CLIRET, VRK_OPCION, F2_VALBRUT, "		+ CRLF
+    cQuery += " D2_DESCZFR, D2_VRDICMS
 	cQuery += CRLF + " ORDER BY SD2.D2_FILIAL, SD2.D2_DOC, SD2.D2_SERIE, SD2.D2_CLIENTE, SD2.D2_LOJA "
 
 	cQuery := ChangeQuery(cQuery)
