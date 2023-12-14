@@ -56,8 +56,8 @@ If UPPER(Alltrim(CT2->CT2_ROTINA)) $ UPPER(cxRot)
 	If ((nOpc == 3 /*.or. nOpc == 4*/) .and. (IsInCallStack("U_DEPCTBGRV") .or. IsInCallStack("U_DPCTB102GR"))) .or. ;
 		((nOpc == 5 .or. nOpc == 6) .and. (IsInCallStack("U_ANTCTBGRV") .or. IsInCallStack("U_ANCTB102GR"))) .or. ;
 		(nOpc == 3 .and. IsInCallStack("U_ANTCTBGRV"))
-        IF nOpc == 3 .and. IsInCallStack("U_ANTCTBGRV")
-            CT2->(DBSETORDER(14))
+        IF nOpc == 3 .and. IsInCallStack("U_ANTCTBGRV")  //posicionar no LP de PVF
+            CT2->(DbOrderNickName("CT2ORIGEM"))
 		    CT2->(DBSEEK(xFilial("CT2")+"501-"))
         ENDIF
 		aRet := U_ZF05GENSAP(nOpc)
