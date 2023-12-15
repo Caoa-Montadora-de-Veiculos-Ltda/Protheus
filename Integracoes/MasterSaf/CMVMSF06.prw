@@ -6443,8 +6443,6 @@ EndDo
 (cAlias)->(dbCloseArea())
 Return
 
-
-
 /*
 =======================================================================================
 Programa.:              fGetCCC()
@@ -6499,6 +6497,14 @@ Default dData    := Date()
 
 Return cContaCred
 
+/*
+=======================================================================================
+Programa.:              fConvItem()
+Autor....:              CAOA -- Reinaldo Rabelo da Silva
+Data.....:              15/12/2023
+Descricao / Objetivo:   Ajusta o numero do item                                 
+=======================================================================================
+*/
 
 Static Function fConvItem(cItem,cChave)
 Local cRet := cItem
