@@ -25,7 +25,7 @@ Rdmake 	responsavel Integração SAP Contas a Receber RA
 @obs        Nao Informado
 @project    CAOA
 @menu       Nao Informado
-@table 		SE1 - Contas a Receber           
+@table 		SE1 - Contas a Receber  ajustado não enviar num boleto p/ parcela1 qdo RA e sim no RA         
 @history  	
 --------------------------------------------------------------------------------------*/
 User Function CMVSAP26( aParam )
@@ -89,6 +89,7 @@ Local cNumAtrib     := ""
 Local cPrefVei      := ""
 Local nPos          := 0
 Local xRet          := Nil
+Local cNBC          := ""
 Local cCondPag      := ""
 Local nCnt	        := 0
 Local nCount	    := 0
@@ -370,9 +371,7 @@ while !(cAliasNF)->(Eof())
 			Endif
 				
 			// posiciona cliente
-
-
-
+			SA1->(dbSetOrder(1))
 			SA1->(dbSeek(xFilial("SA1")+SE1->E1_CLIENTE+SE1->E1_LOJA))
 		
 			// verifica se cliente jah foi enviado ao sap
@@ -943,7 +942,16 @@ while !(cAliasNF)->(Eof())
 				
 				IF SUBSTR(SE1->E1_NATUREZ,1,2)=="11"
 					nPos := aScan( aSimple, {|aVet| aVet[2] == "chaveReferenciaItemDocumento".and. aVet[5] == "ContasAReceberRequest#1.documentos#1.AccountReceivable#" + Alltrim(Str(nz))} )//chaveReferenciaItemDocumento
-					xRet := oWsdl:SetValue( aSimple[nPos][1], SE1->E1_NUMBCO)
+					//Tratamento p/ numero do boleto na inegração SAP
+                    If Alltrim(SE1->E1_TIPO) = "RA" 
+					    cNBC := Posicione("SE1", 01, xFilial("SE1")+'5  '+SE1->E1_NUM+'1 '+'NF ', "E1_NUMBCO")
+					    xRet := oWsdl:SetValue( aSimple[nPos][1], cNBC)  //SE1->E1_NUMBCO
+					ELSEIf Alltrim(SE1->E1_TIPO) <> "RA" .AND. SE1->E1_PREFIXO = '5  ' .AND. SE1->E1_PARCELA = '1 ' .AND. !Empty(SE1->E1_PEDIDO)	 
+					    xRet := oWsdl:SetValue( aSimple[nPos][1], " ")   //SE1->E1_NUMBCO
+					ELSEIf Alltrim(SE1->E1_TIPO) <> "RA" .AND. Empty(SE1->E1_PEDIDO)	 
+					    xRet := oWsdl:SetValue( aSimple[nPos][1], SE1->E1_NUMBCO)   //SE1->E1_NUMBCO
+					ENDIF
+					
 					If !xRet
 						U_ZF12GENSAP((cAliasNF)->Z7_FILIAL,(cAliasNF)->Z7_XTABELA,(cAliasNF)->Z7_XCHAVE,(cAliasNF)->Z7_XSEQUEN,"E","chaveReferenciaItemDocumento Erro: " + oWsdl:cError)
 						lContinua := .F.
