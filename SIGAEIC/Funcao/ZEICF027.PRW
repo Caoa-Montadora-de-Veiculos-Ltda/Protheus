@@ -7,8 +7,8 @@
 #Include "PROTHEUS.CH"
 #Include "FWMBROWSE.CH"
 
-/*/{Protheus.doc} ZEICF025
-Integração  Asia Shipping - Followup-House  recebimento de mercadorias 
+/*/{Protheus.doc} ZEICF027
+Integração  Asia Shipping - Followup-OrderRef  recebimento de mercadorias 
 @author 	A.Carlos
 @since 		21/12/2023
 @version 	undefined
@@ -17,19 +17,19 @@ Integração  Asia Shipping - Followup-House  recebimento de mercadorias
 @client   	CAOA 
 @return   	_aMsg - Array com retorno Json código e ocorrencia
 @project 	Interfaces_PortalV3_v2 x Protheus v2
-            https://api.asiashipping.com.br/followup/House
+            https://api.asiashipping.com.br/bot/OrderRef
 Z	-Customizado
 EIC	- Modulo
 F 	- Função
-025 - Sequencial
+027 - Sequencial
 /*/
-User Function ZEICF025(_aParam)
+User Function ZEICF027(_aParam)
 Local _lJob   := IsBlind()
 Local _lToken := .T.  
 
 	If _lJob
 		ConOut("*************************************************************************************************************************"	+ CRLF)
-		ConOut("----------- [ ZEICF025 ] - Inicio da funcionalidade "+DtoC(Date())+" as "+Time()														+ CRLF)
+		ConOut("----------- [ ZEICF027 ] - Inicio da funcionalidade "+DtoC(Date())+" as "+Time()														+ CRLF)
 		ConOut("*************************************************************************************************************************"	+ CRLF)
 	EndIf
 
@@ -56,12 +56,12 @@ Local _lToken := .T.
 			_lAbre		:= .T.
 		EndIf
 	EndIF
-	ZEICF025AP(, , _lToken,_lJob)
+	ZEICF027AP(, , _lToken,_lJob)
 Return()
 
 
-/*/{Protheus.doc} ZEICF025AP
-Chamado pela função ZEICF025 integração  Asia Shipping - Followup-House  busca de Token para autenticação 
+/*/{Protheus.doc} ZEICF027AP
+Chamado pela função ZEICF027 integração  Asia Shipping - Followup-House  busca de Token para autenticação 
 @author 	A.Carlos
 @since 		21/12/2023
 @version 	undefined
@@ -70,30 +70,27 @@ Chamado pela função ZEICF025 integração  Asia Shipping - Followup-House  busca d
 @client   	CAOA 
 @return   	Token para autenticação
 */
-Static Function ZEICF025AP(_cUrl, _cChave, _lToken, _lJob)
+Static Function ZEICF027AP(_cUrl, _cChave, _lToken, _lJob)
 Local _aMsg		:= {}
 Local _lRet 	:= .T.
 
 Default _cChave := "ASP20100044"  //informações como numero da House
-Default _cUrlFH	:= "https://api.asiashipping.com.br/followup/House"
-//Default _cUrlFS	:= "https://api.asiashipping.com.br/followup/Shipment"
-//Default _cUrlOR	:= "https://api.asiashipping.com.br/bot/OrderRef"
-//esses 03 últimos URL necessitam de Token
+Default _cUrlFH	:= "https://api.asiashipping.com.br/bot/OrderRef"
 
-Conout("INICIANDO FUNCIONALIDADE ZEICF025 - Asia Shipping em "+DtoC(Date())+" as "+Time())
-_lRet := ZEICF025PR( _cUrl, _cChave, _lToken, _aMsg, _lJob )
+Conout("INICIANDO FUNCIONALIDADE ZEICF027 - Asia Shipping em "+DtoC(Date())+" as "+Time())
+_lRet := ZEICF027PR( _cUrl, _cChave, _lToken, _aMsg, _lJob )
 
 IF Len(_aMsg) > 0 		
 	//Tratar erros aqui
     SetMsgRet(_aMsg)	
 EndIf
 
-Conout("TERMINO FUNCIONALIDADE ZEICF025 - Asia Shipping em "+DtoC(Date())+" as "+Time())
+Conout("TERMINO FUNCIONALIDADE ZEICF027 - Asia Shipping em "+DtoC(Date())+" as "+Time())
 Return Nil
 
 
-/*/{Protheus.doc} ZEICF025PR
-Chamado pela função ZEICF025AP gera Token 
+/*/{Protheus.doc} ZEICF027PR
+Chamado pela função ZEICF027AP gera Token 
 @author 	A.Carlos
 @since 		21/12/2023
 @version 	undefined
@@ -101,7 +98,7 @@ Chamado pela função ZEICF025AP gera Token
 @type 		function
 @ Obs		Os paremetros de token, usuário e senha serão enviados no cabeçalho 
 /*/
-Static Function ZEICF025PR( _cUrl, _cChave, _lToken, _aMsg, _lJob )
+Static Function ZEICF027PR( _cUrl, _cChave, _lToken, _aMsg, _lJob )
 Local _cUserName    := "Authorization"  
 Local _cPassword    := "Bearer eyJhbGciOiJlUzl1Nils"
 Local _lRet			:= .T.
@@ -126,7 +123,7 @@ Private _aHeader    := {}
 
 	If _lToken
 	    
-		_cToken := U_getToken()
+		_cToken := U_getToken2()
 		
 		if Valtype(_cToken) = "U"
 			Aadd(_aMsg,"Não existe retorno do Host Token, excedido o numero de tentativas de conexão "+_cUrlToken)
@@ -136,13 +133,13 @@ Private _aHeader    := {}
 		EndIf
 
 		//Montar o token e acrescentar no cabeçalho _aHeader para acessar as APIs protegidas
-        ZEIC25FH(_cUrlFH,_nTime,_aHeader,_Import,_Encer,_Teste)
+        ZEIC27FH(_cUrlFH,_nTime,_aHeader,_Import,_Encer,_Teste)
 
 	Endif
 
 	IF _lJob
 
-	    ZEIC25job(_cURL,_lJob,_cAliasJ,_Encer,_Import)
+	    ZEIC27job(_cURL,_lJob,_cAliasJ,_Encer,_Import)
 
 	ENDIF
 
@@ -154,7 +151,7 @@ Endif
 Return _lRet
 
 
-/*/{Protheus.doc} ZEIC25job
+/*/{Protheus.doc} ZEIC27job
 //Carrega House de todos os processo em aberto para atualizar
 @author A.Carlos
 @since 31/07/2023
@@ -162,7 +159,7 @@ Return _lRet
 @param _lJob
 @type function  AND SW6.W6_NF_ENT <> ' '
 /*/
-Static Function ZEIC25job(_cURL,_lJob,_cAliasJ,_Encer,_Import)
+Static Function ZEIC27job(_cURL,_lJob,_cAliasJ,_Encer,_Import)
 Local _lRet := .F.
 Local _sUrl := _cURL
 Local _Teste:= 'SHA23090924'
@@ -179,11 +176,11 @@ Local _Teste:= 'SHA23090924'
 	EndSql
 
 	If (_cAliasJ)->(Eof()) .Or. (_cAliasJ)->NREGSW6  == 0
-        Conout("ZEICF025 - Somente processos da ASIA podem ser integrados. ")
+        Conout("ZEICF027 - Somente processos da ASIA podem ser integrados. ")
 		_lRet :=  .F.
 	Else
 	   ConOut("*************************************************************************************************************************"	+ CRLF)
-       Conout("ZEICF025 - Integraçao ASIA SHIPPING - JOB Inicio "+DtoC(date())+" "+Time())
+       Conout("ZEICF027 - Integraçao ASIA SHIPPING - JOB Inicio "+DtoC(date())+" "+Time())
 
 		While (_cAliasJ)->(!Eof()) 
 
@@ -197,7 +194,7 @@ Local _Teste:= 'SHA23090924'
 			_cRet := Httpget(_cUrl, '', _nTime , _aHeader)
 
 			if ValType(_cRet) = "U"
-			    Conout("ZEICF025 - Não existe retorno do Host, excedido o numero de tentativa de conexão ")
+			    Conout("ZEICF027 - Não existe retorno do Host, excedido o numero de tentativa de conexão ")
 				(_cAliasJ)->(DbSkip())
 				LOOP
 			EndIf
@@ -205,7 +202,7 @@ Local _Teste:= 'SHA23090924'
 			_oJSRet:FromJSON(_cRet)
 			
 			If ValType(_oJSRet) <> "J"
-				Conout("ZEICF025 - Não retornado Json da conexão "+_cUrl)
+				Conout("ZEICF027 - Não retornado Json da conexão "+_cUrl)
 				(_cAliasJ)->(DbSkip())
 				LOOP
 			Endif
@@ -223,7 +220,7 @@ Local _Teste:= 'SHA23090924'
 
 	Endif
 
-	Conout("ZEICF025 - Integraçao ASIA SHIPPING - Fim "+DtoC(date())+" "+Time())
+	Conout("ZEICF027 - Integraçao ASIA SHIPPING - Fim "+DtoC(date())+" "+Time())
 
 Return _lRet
 
@@ -258,21 +255,21 @@ Local _nPos
 	Endif
 //End Sequence
 
-MSGINFO( _cMsg, "[ZEICF025]" )
+MSGINFO( _cMsg, "[ZEICF027]" )
 Return {_nMsg,EncodeUtf8(_cMsg)}
 //Return {"Code":_nMsg,"detailedMessage": "","message":EncodeUtf8(_cMsg)}
 
 
 
-/*/{Protheus.doc} ZEIC025GRV
-Chamado pela função ZEICF025PR posicionar na SW6 para gravar os dados
+/*/{Protheus.doc} ZEIC027GRV
+Chamado pela função ZEICF027PR posicionar na SW6 para gravar os dados
 @author A.Carlos
 @since 21/12/2023
 @version undefined
 @param House, NREGSW6
 @type function
 /*/
-Static function ZEIC025GRV(_cHouse,NREGSW6) 
+Static function ZEIC027GRV(_cHouse,NREGSW6) 
 Local _Ret  := ''
 Local _dETD := CTOD("  /  /    ")
 Local _dATA := CTOD("  /  /    ")
@@ -350,7 +347,7 @@ Return(_Ret)
     @version 1.0
     @return cToken, character, Bearer Token
 /*/
-User Function getToken()
+User Function getToken2()
     Local _cToken    As Character // Bearer Token
     Local cBaseURL   As Character // Base URL
     Local cPath      As Character // endpoint path
@@ -403,7 +400,7 @@ User Function getToken()
 Return _cToken
 
  
-/*/{Protheus.doc} ZEIC25FH
+/*/{Protheus.doc} ZEIC27FH
 Carrega os dados do Json e solicita a gravação na SW6
 @type  Static Function
 @author A.Carlos
@@ -413,7 +410,7 @@ Carrega os dados do Json e solicita a gravação na SW6
 @return return_var, _lRet
 @example
 /*/
-Static Function ZEIC25FH(_cUrlFH,_nTime,_aHeader,_Import,_Encer,_Teste)
+Static Function ZEIC27FH(_cUrlFH,_nTime,_aHeader,_Import,_Encer,_Teste)
 Local _cAlias := GetNextAlias()
 Local _aMsg	  := {}
 Local _aHeaFH := {}  
@@ -465,7 +462,7 @@ Else
 	ZEIC022GRV(_cHouse,(_cAlias)->NREGSW6) 
 
 	_cMsg := "Integração realizada com sucesso !"
-	MSGINFO( _cMsg, "[ZEICF025]" )
+	MSGINFO( _cMsg, "[ZEICF027]" )
 	_lRet :=  .T.
 Endif 
 
