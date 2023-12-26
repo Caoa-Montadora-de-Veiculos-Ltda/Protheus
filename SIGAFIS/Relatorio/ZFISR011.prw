@@ -7,7 +7,7 @@ User Function ZFISR011()
 
     Private cAliasTMP := GetNextAlias()
 
-	oReport:= TReport():New("ZFISR005",;
+	oReport:= TReport():New("ZFISR011",;
                             "Saidas",;
                             "ZFISR001R2",;
                             {|oReport|  ReportPrint(oReport)},;
