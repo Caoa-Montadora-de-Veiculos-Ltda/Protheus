@@ -8,7 +8,7 @@
 Programa.:              ZFISR016
 Autor....:              CAOA - Nicolas C Lima Santos 
 Data.....:              18/12/23
-Descricao / Objetivo:   Relatorio de Notas Fiscais de Entrada/Saída com chave
+Descricao / Objetivo:   Relatório de Notas Fiscais de ENTRADA com chave
 Doc. Origem:            
 Solicitante:            
 Uso......:              
@@ -28,24 +28,21 @@ User Function ZFISR016()
 	Local 	cFornecedor := Space(TamSX3('F1_FORNECE')[1])
 	Local 	cLoja 		:= Space(TamSX3('F1_LOJA')[1])
 	local   aTipoNF   	:= {"Todas"	,"N - Normal","D - Devolução","B - Beneficiamento","I = Compl. ICMS", "P = Compl. ICMS", "C = Compl. Preço"}
-	Local 	aSerie 		:= {}
 
 	Private cTabela 	:= GetNextAlias()
 
-	aSerie := zSerie()
-
 	aAdd(aPergs, {1,"Dt emissao de"			,dDtEmiss	,/*Pict*/	,/*Valid*/	,/*F3*/		,/*When*/,50,.F.})  //MV_PAR01
-	aAdd(aPergs, {1,"Dt emissao ate"		,dDtEmiss	,/*Pict*/,MV_PAR04 > MV_PAR03,/*F3*/,/*When*/,50,.F.})  //MV_PAR02
-	aAdd(aPergs, {1,"Numero NF"				,nNumNF		,/*Pict*/	,/*Valid*/	,"SF1"		,/*When*/,80,.F.})  //MV_PAR03
-	aAdd(aPergs ,{2,"Serie NF"				, "T", aSerie,50,"",.F.})											//MV_PAR04
-	aAdd(aPergs, {1,"Código SAP"			,cCodSAP	,/*Pict*/	,/*Valid*/	,/*F3*/		,/*When*/,80,.F.})  //MV_PAR05
-	aAdd(aPergs, {1,"Fornecedor"			,cFornecedor,/*Pict*/	,/*Valid*/	,"A2A"		,/*When*/,80,.F.}) 	//MV_PAR06
-	aAdd(aPergs, {1,"Loja"					,cLoja		,/*Pict*/	,/*Valid*/	,"A2L"		,/*When*/,80,.F.}) 	//MV_PAR07
+	aAdd(aPergs, {1,"Dt emissao ate"		,dDtEmiss	,/*Pict*/,MV_PAR02 > MV_PAR01,/*F3*/,/*When*/,50,.F.})  //MV_PAR02
+	aAdd(aPergs, {1,"Numero NF"				,nNumNF		,/*Pict*/	,/*Valid*/	,"SF1"		,/*When*/,50,.F.})  //MV_PAR03
+	aAdd(aPergs, {1,"Serie NF"				,nSerieNF	,/*Pict*/	,/*Valid*/	,"_SF1SE"	,/*When*/,50,.F.})  //MV_PAR04
+	aAdd(aPergs, {1,"Código SAP"			,cCodSAP	,/*Pict*/	,/*Valid*/	,"_F1SAP"	,/*When*/,50,.F.})  //MV_PAR05
+	aAdd(aPergs, {1,"Fornecedor"			,cFornecedor,/*Pict*/	,/*Valid*/	,"A2A"		,/*When*/,50,.F.}) 	//MV_PAR06
+	aAdd(aPergs, {1,"Loja"					,cLoja		,/*Pict*/	,/*Valid*/	,"A2L"		,/*When*/,50,.F.}) 	//MV_PAR07
 	aAdd(aPergs ,{2,"Tipo de NF"			, "T", aTipoNF,50,"",.F.})											//MV_PAR08
 											
 
 
-	If ParamBox(aPergs, "Informe os parâmetros", , , , , , , , , .F., .F.)
+	If ParamBox(aPergs, "Informe os parâmetros para Nota Fiscal de entrada", , , , , , , , , .F., .F.)
 		oReport := fReportDef()
 		oReport:PrintDialog()
 	EndIf
@@ -71,7 +68,7 @@ Static Function fReportDef() //Definições do relatório
 	Local oSection	:= Nil
 	
 	oReport:= TReport():New("ZFISR016",;				// --Nome da impressão
-                            "Relatório de NF entrada/saída com chave",;  // --Título da tela de parâmetros
+                            "Relatório de NF entrada com chave",;  // --Título da tela de parâmetros
                             ,;      		// --Grupo de perguntas na SX1, ao invés das pereguntas estou usando Parambox
                             {|oReport|  ReportPrint(oReport),};
                             ) // --Descrição do relatório
@@ -88,7 +85,7 @@ Static Function fReportDef() //Definições do relatório
 	
 	//Impressão por planilhas
 	oReport:SetDevice(4)        		//--Define o tipo de impressão selecionado. Opções: 1-Arquivo,2-Impressora,3-Email,4-Planilha, 5-Html e 6-PDF
-	oReport:SetTpPlanilha({.F., .F., .T., .F.}) //Formato Tabela {Normal, Suprimir linhas brancas e totais, Formato de Tabela, Formato de Tabela xlsx}
+	oReport:SetTpPlanilha({.T., .T., .T., .T.}) //Formato Tabela {Normal, Suprimir linhas brancas e totais, Formato de Tabela, Formato de Tabela xlsx}
  
 	//Definições de fonte:
 	oReport:SetLineHeight(50) 			//--Espaçamento entre linhas
@@ -98,7 +95,7 @@ Static Function fReportDef() //Definições do relatório
 	//Pergunte(oReport:GetParam(),.F.) 		//--Adicionar as perguntas na SX1
 
 	oSection := TRSection():New(oReport,; 	//--Criando a seção de dados
-		OEMToAnsi("Relatório de NF entrada/saída com chave"),;
+		OEMToAnsi("Relatório de NF entrada com chave"),;
 		{cTabela})
 	oReport:SetTotalInLine(.F.) 			//--Desabilita o total de linhas
 		
@@ -119,7 +116,7 @@ Static Function fReportDef() //Definições do relatório
 	TRCell():New( oSection  ,"F1_COND"      ,cTabela ,"Cond pagamento"	,/*cPicture*/,TamSx3("F1_COND")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
 	TRCell():New( oSection  ,"E4_DESCRI"    ,cTabela ,"Desc Cond pag."	,/*cPicture*/,TamSx3("E4_DESCRI")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 	TRCell():New( oSection  ,"F1_CHVNFE"    ,cTabela ,"Chave"			,/*cPicture*/,TamSx3("F1_CHVNFE")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-	TRCell():New( oSection  ,"F1_TIPO"      ,cTabela ,"Tipo de NF"		,/*cPicture*/,TamSx3("F1_TIPO")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+	TRCell():New( oSection  ,"TIPO_NF"      ,cTabela ,"Tipo de NF"		,/*cPicture*/,TamSx3("F1_TIPO")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 
 Return oReport
 
@@ -131,7 +128,6 @@ Static Function ReportPrint(oReport)
 	Local nAtual	:= 0
 	Local nTotal	:= 0
 	Local cMV_PAR08 := "" //Tipo de NF
-    //Local nMV_PAR11 
 
 	If!(empty(MV_PAR08)) .and. (MV_PAR08 == 'T')	
 		//MV_PAR08 := str(MV_PAR08)
@@ -180,7 +176,7 @@ Static Function ReportPrint(oReport)
 	cQry += "		AND SE4.E4_CODIGO 	= SF1.F1_COND "					+ CRLF
 	cQry += "		AND SE4.D_E_L_E_T_ 	= ' ' "							+ CRLF									
 	cQry += "	WHERE "													+ CRLF
-	cQry += "		SF1.F1_FILIAL 		= '" + FWxFilial("SW9") + "'"	+ CRLF	
+	cQry += "		SF1.F1_FILIAL 		= '" + FWxFilial("SF1") + "'"	+ CRLF	
 	cQry += "		AND SF1.F1_CHVNFE	!= ' ' "						+ CRLF	
 		
 	If !Empty(DtoS(MV_PAR02)) //DT INVOICE ATE
@@ -232,7 +228,7 @@ Static Function ReportPrint(oReport)
 	DbUseArea( .T., "TOPCONN", TcGenQry(,,cQry), cTabela, .T., .T. )
 
 	//Setando o total da régua.
-	Count to nTotIssoal
+	Count to nTotal
 	oReport:SetMeter(nTotal)
 	
 	//Enquanto houver dados
@@ -262,7 +258,7 @@ Static Function ReportPrint(oReport)
 	FwRestArea(aArea)
 Return
 
-
+//Não utilizado
 Static Function zSerie()
 	Local aArea 	:= FWGetArea()
 	Local cQry2		:= ""

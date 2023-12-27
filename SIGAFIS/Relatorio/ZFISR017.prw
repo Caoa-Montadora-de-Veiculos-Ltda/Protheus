@@ -5,10 +5,10 @@
 #define CRLF chr(13) + chr(10)  
 /*
 =====================================================================================
-Programa.:              ZFISR016
+Programa.:              ZFISR017
 Autor....:              CAOA - Nicolas C Lima Santos 
 Data.....:              18/12/23
-Descricao / Objetivo:   Relatorio de Notas Fiscais de Entrada/Saída com chave
+Descricao / Objetivo:   Relatório de Notas Fiscais de SAÍDA com chave
 Doc. Origem:            
 Solicitante:            
 Uso......:              
@@ -16,34 +16,31 @@ Obs......:
 =====================================================================================
 */
 
-User Function ZFISR016()
+User Function ZFISR017()
     
 	Local	aArea 		:= FwGetArea()
 	Local	oReport
 	Local	aPergs		:= {}
-	Local 	nFilial 	:= Space(TamSX3("F1_FILIAL")[1])
-	Local	nNumNF		:= Space(TamSX3('F1_DOC')[1]) 
-	Local	nSerieNF	:= Space(TamSX3('F1_SERIE')[1])
+	Local	nNumNF		:= Space(TamSX3('F2_DOC')[1]) 
+	Local	nSerieNF	:= Space(TamSX3('F2_SERIE')[1])
 	Local	dDtEmiss	:= Ctod(Space(8)) //Data de emissao de NF
-	Local	cCodSAP		:= Space(TamSX3('F1_XCODSAP')[1])
-	Local 	cFornecedor := Space(TamSX3('F1_FORNECE')[1])
-	Local 	cLoja 		:= Space(TamSX3('F1_LOJA')[1])
-	local   aTipoNF   	:= {"Todas"	,"N - Normal","D - Devolução","B - Beneficiamento","I = Compl. ICMS", "P = Compl. ICMS", "C = Compl. Preço"}
+	Local	cCodSAP		:= Space(TamSX3('F2_XCODSAP')[1])
+	Local 	cCliente 	:= Space(TamSX3('F2_CLIENTE')[1])
+	Local 	cLoja 		:= Space(TamSX3('F2_LOJA')[1])
+	local   aTipoNF   	:= {"Todas"	,"N - Normal","D - Devolução","I = Compl. ICMS", "P = Compl. ICMS", "C = Compl. Preço"}
 	
 	Private cTabela 	:= GetNextAlias()
 
- 	aAdd(aPergs, {1,"Filial de"				,nFilial	,/*Pict*/	,/*Valid*/	,"XM0"		,/*When*/,50,.F.}) 	//MV_PAR01
-	aAdd(aPergs, {1,"Filial ate"			,nFilial	,/*Pict*/	,/*Valid*/	,/*F3*/		,/*When*/,50,.F.})  //MV_PAR02
-	aAdd(aPergs, {1,"Dt emissao de"			,dDtEmiss	,/*Pict*/	,/*Valid*/	,/*F3*/		,/*When*/,50,.F.})  //MV_PAR03
-	aAdd(aPergs, {1,"Dt emissao ate"		,dDtEmiss	,/*Pict*/,MV_PAR04 > MV_PAR03,/*F3*/,/*When*/,50,.F.})  //MV_PAR04
-	aAdd(aPergs, {1,"Numero NF"				,nNumNF		,/*Pict*/	,/*Valid*/	,"SF1"		,/*When*/,80,.F.})  //MV_PAR05
-	aAdd(aPergs, {1,"Serie NF"				,nSerieNF	,/*Pict*/	,/*Valid*/	,/*F3*/		,/*When*/,80,.F.})  //MV_PAR06
-	aAdd(aPergs, {1,"Código SAP"			,cCodSAP	,/*Pict*/	,/*Valid*/	,/*F3*/		,/*When*/,80,.F.})  //MV_PAR07
-	aAdd(aPergs, {1,"Fornecedor"			,cFornecedor,/*Pict*/	,/*Valid*/	,/*F3*/		,/*When*/,80,.F.}) 	//MV_PAR08
-	aAdd(aPergs, {1,"Loja"					,cLoja		,/*Pict*/	,/*Valid*/	,/*F3*/		,/*When*/,80,.F.}) 		//MV_PAR09
-	aAdd(aPergs ,{2,"Tipo de NF"			, "T", aTipoNF,50,"",.F.})											//MV_PAR10
+ 	aAdd(aPergs, {1,"Dt emissao de"			,dDtEmiss	,/*Pict*/	,/*Valid*/	,/*F3*/		,/*When*/,50,.F.})  //MV_PAR01
+	aAdd(aPergs, {1,"Dt emissao ate"		,dDtEmiss	,/*Pict*/,MV_PAR02 > MV_PAR01,/*F3*/,/*When*/,50,.F.})  //MV_PAR02
+	aAdd(aPergs, {1,"Numero NF"				,nNumNF		,/*Pict*/	,/*Valid*/	,"SF2"		,/*When*/,50,.F.})  //MV_PAR03
+	aAdd(aPergs, {1,"Serie NF"				,nSerieNF	,/*Pict*/	,/*Valid*/	,"_SF1SE"	,/*When*/,50,.F.})  //MV_PAR04
+	aAdd(aPergs, {1,"Código SAP"			,cCodSAP	,/*Pict*/	,/*Valid*/	,"_F2SAP"	,/*When*/,50,.F.})  //MV_PAR05
+	aAdd(aPergs, {1,"Cliente"				,cCliente	,/*Pict*/	,/*Valid*/	,"SA1"		,/*When*/,50,.F.}) 	//MV_PAR06
+	aAdd(aPergs, {1,"Loja"					,cLoja		,/*Pict*/	,/*Valid*/	,"SA1LJ"	,/*When*/,50,.F.}) 	//MV_PAR07
+	aAdd(aPergs ,{2,"Tipo de NF"			, "T", aTipoNF,50,"",.F.})											//MV_PAR08
 
-	If ParamBox(aPergs, "Informe os parâmetros", , , , , , , , , .F., .F.)
+	If ParamBox(aPergs, "Informe os parâmetros para Nota Fiscal de saída", , , , , , , , , .F., .F.)
 		oReport := fReportDef()
 		oReport:PrintDialog()
 	EndIf
@@ -59,7 +56,7 @@ Data.....:              18/12/23
 Descricao / Objetivo:   Gera relatorio
 Doc. Origem:            
 Solicitante:           
-Uso......:              ZFISR016
+Uso......:              ZFISR017
 Obs......:
 =====================================================================================
 */
@@ -68,8 +65,8 @@ Static Function fReportDef() //Definições do relatório
 	Local oReport
 	Local oSection	:= Nil
 	
-	oReport:= TReport():New("ZFISR016",;				// --Nome da impressão
-                            "Relatório de NF entrada/saída com chave",;  // --Título da tela de parâmetros
+	oReport:= TReport():New("ZFISR017",;				// --Nome da impressão
+                            "Relatório de NF saída com chave",;  // --Título da tela de parâmetros
                             ,;      		// --Grupo de perguntas na SX1, ao invés das pereguntas estou usando Parambox
                             {|oReport|  ReportPrint(oReport),};
                             ) // --Descrição do relatório
@@ -86,7 +83,7 @@ Static Function fReportDef() //Definições do relatório
 	
 	//Impressão por planilhas
 	oReport:SetDevice(4)        		//--Define o tipo de impressão selecionado. Opções: 1-Arquivo,2-Impressora,3-Email,4-Planilha, 5-Html e 6-PDF
-	oReport:SetTpPlanilha({.F., .F., .T., .F.}) //Formato Tabela {Normal, Suprimir linhas brancas e totais, Formato de Tabela, Formato de Tabela xlsx}
+	oReport:SetTpPlanilha({.T., .T., .T., .T.}) //Formato Tabela {Normal, Suprimir linhas brancas e totais, Formato de Tabela, Formato de Tabela xlsx}
  
 	//Definições de fonte:
 	oReport:SetLineHeight(50) 			//--Espaçamento entre linhas
@@ -96,28 +93,28 @@ Static Function fReportDef() //Definições do relatório
 	//Pergunte(oReport:GetParam(),.F.) 		//--Adicionar as perguntas na SX1
 
 	oSection := TRSection():New(oReport,; 	//--Criando a seção de dados
-		OEMToAnsi("Relatório de NF entrada/saída com chave"),;
+		OEMToAnsi("Relatório de NF saída com chave"),;
 		{cTabela})
 	oReport:SetTotalInLine(.F.) 			//--Desabilita o total de linhas
 		
 	
 	//TRCell():New(oSection2,"CR_DATALIB"	,"SCR"	,'Data Aprov SC'	,/*Picture*/,TamSx3("CR_DATALIB")[1] 	,/*lPixel*/,/* {|| }*/)
 	//--Colunas do relatório
-	TRCell():New( oSection  ,"F1_FILIAL"  	,cTabela ,"Filial"			,/*cPicture*/,TamSx3("F1_FILIAL")[1] 	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
-	TRCell():New( oSection  ,"F1_XCODSAP"  	,cTabela ,"Código SAP"		,/*cPicture*/,TamSx3("F1_XCODSAP")[1] 	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
-    TRCell():New( oSection  ,"F1_DOC"       ,cTabela ,"Num. Documento"	,/*cPicture*/,TamSx3("F1_DOC")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-    TRCell():New( oSection  ,"F1_SERIE"     ,cTabela ,"Série"			,/*cPicture*/,TamSx3("F1_SERIE")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+	TRCell():New( oSection  ,"F2_FILIAL"  	,cTabela ,"Filial"			,/*cPicture*/,TamSx3("F2_FILIAL")[1] 	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
+	TRCell():New( oSection  ,"F2_XCODSAP"  	,cTabela ,"Código SAP"		,/*cPicture*/,TamSx3("F2_XCODSAP")[1] 	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
+    TRCell():New( oSection  ,"F2_DOC"       ,cTabela ,"Num. Documento"	,/*cPicture*/,TamSx3("F2_DOC")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+    TRCell():New( oSection  ,"F2_SERIE"     ,cTabela ,"Série"			,/*cPicture*/,TamSx3("F2_SERIE")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
     TRCell():New( oSection  ,"DT_EMIS"      ,cTabela ,"Data de emissão"	,/*cPicture*/,08						, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-	TRCell():New( oSection  ,"F1_FORNECE"   ,cTabela ,"Fornecedor"		,/*cPicture*/,TamSx3("F1_FORNECE")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-	TRCell():New( oSection  ,"F1_LOJA"      ,cTabela ,"Loja"			,/*cPicture*/,TamSx3("F1_LOJA")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-	TRCell():New( oSection  ,"A2_NOME"      ,cTabela ,"Desc. Fornec"	,/*cPicture*/,TamSx3("F1_FORNECE")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-	TRCell():New( oSection  ,"A2_CGC"      	,cTabela ,"CNPJ"			,/*cPicture*/,TamSx3("A2_CGC")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-	TRCell():New( oSection  ,"F1_VALMERC"   ,cTabela ,"Valor líquido"	,/*cPicture*/,TamSx3("F1_VALMERC")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-	TRCell():New( oSection  ,"F1_VALBRUT"  	,cTabela ,"Valor bruto"		,/*cPicture*/,TamSx3("F1_VALBRUT")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
-	TRCell():New( oSection  ,"F1_COND"      ,cTabela ,"Cond pagamento"	,/*cPicture*/,TamSx3("F1_COND")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
+	TRCell():New( oSection  ,"F2_CLIENTE"   ,cTabela ,"Cliente"			,/*cPicture*/,TamSx3("F2_CLIENTE")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+	TRCell():New( oSection  ,"F2_LOJA"      ,cTabela ,"Loja"			,/*cPicture*/,TamSx3("F2_LOJA")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+	TRCell():New( oSection  ,"A1_NOME"      ,cTabela ,"Desc. Cliente"	,/*cPicture*/,TamSx3("F2_CLIENTE")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+	TRCell():New( oSection  ,"A1_CGC"      	,cTabela ,"CNPJ"			,/*cPicture*/,TamSx3("A1_CGC")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+	TRCell():New( oSection  ,"F2_VALMERC"   ,cTabela ,"Valor líquido"	,/*cPicture*/,TamSx3("F2_VALMERC")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+	TRCell():New( oSection  ,"F2_VALBRUT"  	,cTabela ,"Valor bruto"		,/*cPicture*/,TamSx3("F2_VALBRUT")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
+	TRCell():New( oSection  ,"F2_COND"      ,cTabela ,"Cond pagamento"	,/*cPicture*/,TamSx3("F2_COND")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
 	TRCell():New( oSection  ,"E4_DESCRI"    ,cTabela ,"Desc Cond pag."	,/*cPicture*/,TamSx3("E4_DESCRI")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-	TRCell():New( oSection  ,"F1_CHVNFE"    ,cTabela ,"Chave"			,/*cPicture*/,TamSx3("F1_CHVNFE")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-	TRCell():New( oSection  ,"F1_TIPO"      ,cTabela ,"Tipo de NF"		,/*cPicture*/,TamSx3("F1_TIPO")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+	TRCell():New( oSection  ,"F2_CHVNFE"    ,cTabela ,"Chave"			,/*cPicture*/,TamSx3("F2_CHVNFE")[1]	, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+	TRCell():New( oSection  ,"TIPO_NF"      ,cTabela ,"Tipo de NF"		,/*cPicture*/,TamSx3("F2_TIPO")[1]		, /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 
 Return oReport
 
@@ -128,109 +125,105 @@ Static Function ReportPrint(oReport)
 	Local oSectDad  := Nil
 	Local nAtual	:= 0
 	Local nTotal	:= 0
-	Local cMV_PAR10 := "" //Tipo de NF
-    //Local nMV_PAR11 
+	Local cMV_PAR08 := "" //Tipo de NF
 
-	If!(empty(MV_PAR10)) .and. (MV_PAR10 == 'T')	
-		//MV_PAR10 := str(MV_PAR10)
-		cMV_PAR10 := MV_PAR10		
+	If!(empty(MV_PAR08)) .and. (MV_PAR08 == 'T')	
+		//MV_PAR08 := str(MV_PAR08)
+		cMV_PAR08 := MV_PAR08		
 	Else
-		cMV_PAR10 	:= Substr(MV_PAR10,1,1) //Tipo de NF
+		cMV_PAR08 	:= Substr(MV_PAR08,1,1) //Tipo de NF
 	EndIF
 
 	//Pegando as secoes do relatório
 	oSectDad := oReport:Section(1) //Primeira seção disponível
 
 	cQry += " 	SELECT DISTINCT " 		 			+ CRLF
-	cQry += "		 SF1.F1_FILIAL "	 			+ CRLF
-	cQry += "		, SF1.F1_XCODSAP "	 			+ CRLF
-	cQry += "		, SF1.F1_DOC "					+ CRLF
-	cQry += "		, SF1.F1_SERIE "				+ CRLF
-	cQry += "		, SF1.F1_EMISSAO AS DT_EMIS "	+ CRLF
-	cQry += "		, SF1.F1_FORNECE "				+ CRLF
-	cQry += "		, SF1.F1_LOJA "					+ CRLF
-	cQry += "		, SA2.A2_NOME "					+ CRLF
-	cQry += "		, SA2.A2_CGC "					+ CRLF
-	cQry += "		, SF1.F1_VALMERC "				+ CRLF
-	cQry += "		, SF1.F1_VALBRUT "				+ CRLF
-	cQry += "		, SF1.F1_COND "					+ CRLF
+	cQry += "		 SF2.F2_FILIAL "	 			+ CRLF
+	cQry += "		, SF2.F2_XCODSAP "	 			+ CRLF
+	cQry += "		, SF2.F2_DOC "					+ CRLF
+	cQry += "		, SF2.F2_SERIE "				+ CRLF
+	cQry += "		, SF2.F2_EMISSAO AS DT_EMIS "	+ CRLF
+	cQry += "		, SF2.F2_CLIENTE "				+ CRLF
+	cQry += "		, SF2.F2_LOJA "					+ CRLF
+	cQry += "		, SA1.A1_NOME "					+ CRLF
+	cQry += "		, SA1.A1_CGC "					+ CRLF
+	cQry += "		, SF2.F2_VALMERC "				+ CRLF
+	cQry += "		, SF2.F2_VALBRUT "				+ CRLF
+	cQry += "		, SF2.F2_COND "					+ CRLF
 	cQry += "		, SE4.E4_DESCRI "				+ CRLF
-	cQry += "		, SF1.F1_CHVNFE "				+ CRLF
+	cQry += "		, SF2.F2_CHVNFE "				+ CRLF
 	cQry += "		, CASE "						+ CRLF
-	cQry += "			WHEN F1_TIPO = 'N' THEN 'NORMAL' " 				+ CRLF
-	cQry += "			WHEN F1_TIPO = 'D' THEN 'DEVOLUÇÃO' "			+ CRLF
-	cQry += "			WHEN F1_TIPO = 'B' THEN 'BENEFICIAMENTO' "  	+ CRLF
-	cQry += "			WHEN F1_TIPO = 'C' THEN 'COMPL. PREÇO' "		+ CRLF
-	cQry += "			WHEN F1_TIPO = 'I' THEN 'NF COMPL. ICMS' "  	+ CRLF
-	cQry += "			WHEN F1_TIPO = 'P' THEN 'NF COMPL. IPI' " 		+ CRLF
+	cQry += "			WHEN SF2.F2_TIPO = 'N' THEN 'NORMAL' " 				+ CRLF
+	cQry += "			WHEN SF2.F2_TIPO = 'D' THEN 'DEVOLUÇÃO' "			+ CRLF
+	cQry += "			WHEN SF2.F2_TIPO = 'C' THEN 'COMPL. PREÇO' "		+ CRLF
+	cQry += "			WHEN SF2.F2_TIPO = 'I' THEN 'NF COMPL. ICMS' "  	+ CRLF
+	cQry += "			WHEN SF2.F2_TIPO = 'P' THEN 'NF COMPL. IPI' " 		+ CRLF
 	cQry += "		END AS TIPO_NF " 									+ CRLF
 	cQry += "	FROM "													+ CRLF
-	cQry +=	" 	" + RetSqlName("SF1") + " SF1 "   						+ CRLF
+	cQry +=	" 	" + RetSqlName("SF2") + " SF2 "   						+ CRLF
 	cQry += "	LEFT JOIN "												+ CRLF
-	cQry += "	" + RetSqlName("SA2") + " SA2 "							+ CRLF
-	cQry += "	 	ON SA2.A2_FILIAL 	= '" + FWxFilial("SA2") + "'"	+ CRLF
-	cQry += "		AND SF1.F1_FORNECE 	= SA2.A2_COD "					+ CRLF
-	cQry += "		AND SF1.F1_LOJA 	= SA2.A2_LOJA "					+ CRLF
-	cQry += "		AND SA2.D_E_L_E_T_ 	= ' ' "							+ CRLF									
+	cQry += "	" + RetSqlName("SA1") + " SA1 "							+ CRLF
+	cQry += "	 	ON SA1.A1_FILIAL 	= '" + FWxFilial("SA1") + "'"	+ CRLF
+	cQry += "		AND SF2.F2_CLIENTE 	= SA1.A1_COD "					+ CRLF
+	cQry += "		AND SF2.F2_LOJA 	= SA1.A1_LOJA "					+ CRLF
+	cQry += "		AND SA1.D_E_L_E_T_ 	= ' ' "							+ CRLF									
 	cQry += "	LEFT JOIN "												+ CRLF
 	cQry += "	" + RetSqlName("SE4") + " SE4 "							+ CRLF
 	cQry += "	 	ON SE4.E4_FILIAL 	= '" + FWxFilial("SE4") + "'"	+ CRLF
-	cQry += "		AND SE4.E4_CODIGO 	= SF1.F1_COND "					+ CRLF
+	cQry += "		AND SE4.E4_CODIGO 	= SF2.F2_COND "					+ CRLF
 	cQry += "		AND SE4.D_E_L_E_T_ 	= ' ' "							+ CRLF									
 	cQry += "	WHERE "													+ CRLF
-	cQry += "		SF1.F1_FILIAL 		= '" + FWxFilial("SW9") + "'"	+ CRLF	
-	cQry += "		AND SF1.F1_CHVNFE	!= ' ' "						+ CRLF	
+	cQry += "		SF2.F2_FILIAL 		= '" + FWxFilial("SF2") + "'"	+ CRLF	
+	cQry += "		AND SF2.F2_CHVNFE	!= ' ' "						+ CRLF	
 		
-	If !Empty(DtoS(MV_PAR04)) //DT INVOICE ATE
-		cQry += " 	AND SF1.F1_EMISSAO BETWEEN '" 	+ DtoS(MV_PAR03) + "' AND '" + DtoS(MV_PAR04) + "'" + CRLF
+	If !Empty(DtoS(MV_PAR02)) //DT INVOICE ATE
+		cQry += " 	AND SF2.F2_EMISSAO BETWEEN '" 	+ DtoS(MV_PAR01) + "' AND '" + DtoS(MV_PAR02) + "'" + CRLF
 	EndIf
 
-	If !Empty(MV_PAR05) // NUM DOCUMENTO NF
-		cQry += "	AND SF1.F1_DOC 	 = '" + MV_PAR05 + "'" + CRLF
+	If !Empty(MV_PAR03) // NUM DOCUMENTO NF
+		cQry += "	AND SF2.F2_DOC 	 = '" + MV_PAR03 + "'" + CRLF
 	EndIf
 		
-	If !Empty(MV_PAR06) // NUM SERIE NF
-		cQry += "	AND SF1.F1_SERIE = '" + MV_PAR06 + "'" + CRLF
+	If !Empty(MV_PAR04) // NUM SERIE NF
+		cQry += "	AND SF2.F2_SERIE = '" + MV_PAR04 + "'" + CRLF
 	EndIf
 
-	If !Empty(MV_PAR07) // CODIGO DE INTEGRAÇÃO COM SAP
-		cQry += "	AND SF1.F1_XCODSAP = '" + MV_PAR07 + "'" + CRLF
+	If !Empty(MV_PAR05) // CODIGO DE INTEGRAÇÃO COM SAP
+		cQry += "	AND SF2.F2_XCODSAP = '" + MV_PAR05 + "'" + CRLF
 	EndIf
 
-	If !Empty(MV_PAR08) // CODIGO DO FORNECEDOR
-		cQry += "	AND SF1.F1_FORNECE = '" + MV_PAR08 + "'" + CRLF
+	If !Empty(MV_PAR06) // CODIGO DO FORNECEDOR
+		cQry += "	AND SF2.F2_FORNECE = '" + MV_PAR06 + "'" + CRLF
 	EndIf
 	
-	If !Empty(MV_PAR09) // CODIGO DA LOJA
-		cQry += "	AND SF1.F1_LOJA = '" 	+ MV_PAR09 + "'" + CRLF
+	If !Empty(MV_PAR07) // CODIGO DA LOJA
+		cQry += "	AND SF2.F2_LOJA = '" 	+ MV_PAR07 + "'" + CRLF
 	EndIf
 
-	If !Empty(cMV_PAR10)
+	If !Empty(cMV_PAR08)
 		Do case //TIPO DE NF
-			case cMV_PAR10 = 'T'
-				cQry += "	AND SF1.F1_TIPO 		!= ' '" 		+ CRLF //TODAS
-			case nMV_PAR10 = 'N' 
-				cQry += "	AND SF1.F1_TIPO 		= 'N'" 			+ CRLF //NORMAL
-			case cMV_PAR10 = 'D'
-				cQry += "	AND SF1.F1_TIPO 		= 'D'" 			+ CRLF //DEVOLUÇÃO
-			case cMV_PAR10 = 'B'
-				cQry += "	AND SF1.F1_TIPO 		= 'B'" 			+ CRLF //BENEFICIAMENTO
-			case cMV_PAR10 = 'I'
-				cQry += "	AND SF1.F1_TIPO 		= 'I'" 			+ CRLF //COPML. PREÇO
-			case cMV_PAR10 = 'P'
-				cQry += "	AND SF1.F1_TIPO 		= 'P'" 			+ CRLF //NF COMPL. ICMS
-			case cMV_PAR10 = 'C'
-				cQry += "	AND SF1.F1_TIPO 		= 'C'" 			+ CRLF //NF COMPL. IPI
+			case cMV_PAR08 = 'T'
+				cQry += "	AND SF2.F2_TIPO 		!= ' '" 		+ CRLF //TODAS
+			case nMV_PAR08 = 'N' 
+				cQry += "	AND SF2.F2_TIPO 		= 'N'" 			+ CRLF //NORMAL
+			case cMV_PAR08 = 'D'
+				cQry += "	AND SF2.F2_TIPO 		= 'D'" 			+ CRLF //DEVOLUÇÃO
+			case cMV_PAR08 = 'I'
+				cQry += "	AND SF2.F2_TIPO 		= 'I'" 			+ CRLF //COPML. PREÇO
+			case cMV_PAR08 = 'P'
+				cQry += "	AND SF2.F2_TIPO 		= 'P'" 			+ CRLF //NF COMPL. ICMS
+			case cMV_PAR08 = 'C'
+				cQry += "	AND SF2.F2_TIPO 		= 'C'" 			+ CRLF //NF COMPL. IPI
 		EndCase
 	EndIF
 
-	cQry += "		AND SF1.D_E_L_E_T_ 	= ' '"						+ CRLF
+	cQry += "		AND SF2.D_E_L_E_T_ 	= ' '"						+ CRLF
 
 	//Executando a conulta.
 	DbUseArea( .T., "TOPCONN", TcGenQry(,,cQry), cTabela, .T., .T. )
 
 	//Setando o total da régua.
-	Count to nTotIssoal
+	Count to nTotal
 	oReport:SetMeter(nTotal)
 	
 	//Enquanto houver dados
