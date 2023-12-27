@@ -123,7 +123,7 @@ Private _aHeader    := {}
 
 	If _lToken
 	    
-		_cToken := U_getToken2()
+		_cToken := U_getToke2()
 		
 		if Valtype(_cToken) = "U"
 			Aadd(_aMsg,"Não existe retorno do Host Token, excedido o numero de tentativas de conexão "+_cUrlToken)
@@ -339,7 +339,7 @@ Return(_Ret)
 
 
 
-/*/{Protheus.doc}   getToken
+/*/{Protheus.doc}   getToke
     get Bearer Token using /token endpoint
     @type  Function
     @author A.Carlos
@@ -347,7 +347,7 @@ Return(_Ret)
     @version 1.0
     @return cToken, character, Bearer Token
 /*/
-User Function getToken2()
+User Function getToke2()
     Local _cToken    As Character // Bearer Token
     Local cBaseURL   As Character // Base URL
     Local cPath      As Character // endpoint path

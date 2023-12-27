@@ -74,7 +74,7 @@ Static Function ZEICF025AP(_cUrl, _cChave, _lToken, _lJob)
 Local _aMsg		:= {}
 Local _lRet 	:= .T.
 
-Default _cChave := "ASP20100044"  //informações como numero da House
+Default _cChave := "SHA23090924"  //informações como numero da House
 Default _cUrlFH	:= "https://api.asiashipping.com.br/followup/House"
 //Default _cUrlFS	:= "https://api.asiashipping.com.br/followup/Shipment"
 //Default _cUrlOR	:= "https://api.asiashipping.com.br/bot/OrderRef"
@@ -109,7 +109,6 @@ Local _cAlias 		:= GetNextAlias()
 Local _cAliasJ 		:= GetNextAlias()
 Local _Import       := '013' 
 Local _Encer        := ' '     //DTOS('  /  /    ')
-Local _Teste        := 'SHA23090924'  //remover depois de testado
 
 Private _cToken
 Private _cProc      := SPACE(TamSX3("W6_HAWB")[1])        
@@ -119,6 +118,7 @@ Private _nTime		:= 120
 Private _aHeader    := {}  
 
     _cChave := SPACE(TamSX3("W6_HOUSE")[1])
+	_cChave := "SHA23090924"  //informações como numero da House
 
 	Aadd(_aHeader, "Authorization: Basic " + Encode64(_cUserName + ":" + _cPassword))
 	Aadd(_aHeader,'Content-Type: application/json; charset=utf-8')
@@ -126,7 +126,7 @@ Private _aHeader    := {}
 
 	If _lToken
 	    
-		_cToken := U_getToken()
+		_cToken := U_getToke1()
 		
 		if Valtype(_cToken) = "U"
 			Aadd(_aMsg,"Não existe retorno do Host Token, excedido o numero de tentativas de conexão "+_cUrlToken)
@@ -136,13 +136,13 @@ Private _aHeader    := {}
 		EndIf
 
 		//Montar o token e acrescentar no cabeçalho _aHeader para acessar as APIs protegidas
-        ZEIC25FH(_cUrlFH,_nTime,_aHeader,_Import,_Encer,_Teste)
+        ZEIC25FH(_cUrlFH,_nTime,_aHeader,_Import,_Encer,_cChave)
 
 	Endif
 
 	IF _lJob
 
-	    ZEIC25job(_cURL,_lJob,_cAliasJ,_Encer,_Import)
+	    ZEIC25job(_cUrlFH,_lJob,_cAliasJ,_Encer,_Import,_nTime,_aHeader,_cChave)
 
 	ENDIF
 
@@ -160,12 +160,21 @@ Return _lRet
 @since 31/07/2023
 @version undefined
 @param _lJob
-@type function  AND SW6.W6_NF_ENT <> ' '
-/*/
-Static Function ZEIC25job(_cURL,_lJob,_cAliasJ,_Encer,_Import)
-Local _lRet := .F.
-Local _sUrl := _cURL
-Local _Teste:= 'SHA23090924'
+@type function  
+/*/                     
+Static Function ZEIC25job(_cURL,_lJob,_cAliasJ,_Encer,_Import,_nTime,_aHeader,_cChave)
+Local _lRet   := .F.
+Local _sUrl   := _cURL
+Local _aHeaFH := {}  
+Local _jBody  := ' '      // corpo
+
+_jBody := JsonObject():New()
+_jBody["username"] := "Caoa"
+_jBody["password"] := "bRTxqzUyJwN5BnT"
+
+Aadd(_aHeaFH, "Authorization: Bearer " + _cToken )
+Aadd(_aHeaFH,'Content-Type: application/json')
+//Local _Teste:= 'SHA23090924'
 //			AND SW6.W6_HOUSE   = %Exp:_Teste%
 
 	BeginSql Alias _cAliasJ
@@ -174,7 +183,6 @@ Local _Teste:= 'SHA23090924'
 		WHERE SW6.W6_FILIAL    = %XFilial:SW6%
 			AND SW6.W6_DT_ENCE = %Exp:_Encer%
 			AND SW6.W6_AGENTE  = %Exp:_Import%
-			AND SW6.W6_HOUSE   = %Exp:_Teste%
 			AND SW6.%notDel%		  
 	EndSql
 
@@ -194,7 +202,7 @@ Local _Teste:= 'SHA23090924'
 				_cUrl += "/"+_cChave
 			Endif
 
-			_cRet := Httpget(_cUrl, '', _nTime , _aHeader)
+			_cRet := Httpget(_cUrl, '', _nTime , _aHeaFH)
 
 			if ValType(_cRet) = "U"
 			    Conout("ZEICF025 - Não existe retorno do Host, excedido o numero de tentativa de conexão ")
@@ -210,7 +218,7 @@ Local _Teste:= 'SHA23090924'
 				LOOP
 			Endif
 
-			_cHouse := AllTrim(_oJSRet:GetJsonText("jS_HouseBill"))
+			_cHouse := AllTrim(_oJSRet:GetJsonText("HouseBill"))
 
 			If  valtype(_cHouse) == 'C' .AND. !Empty(_cHouse) 
 				//Posicionar na SW6 para gravar os dados
@@ -273,32 +281,72 @@ Chamado pela função ZEICF025PR posicionar na SW6 para gravar os dados
 @type function
 /*/
 Static function ZEIC025GRV(_cHouse,NREGSW6) 
-Local _Ret  := ''
-Local _dETD := CTOD("  /  /    ")
-Local _dATA := CTOD("  /  /    ")
-Local _dETA := CTOD("  /  /    ")
-Local _dEMB := CTOD("  /  /    ") 
-Local _cVtrans := ' '
-Local _cIdet   := ' '
-Local _cCemerc := ' '
-Local _cOrig   := ' '
-Local _cDest   := ' '
-Local _cVes    := ' '
-Local _cCem    := ' '
-Local _cNomArm := ' '
+Local _Ret     := ' '
+Local cXSHIPME := ' '                  //W6_XSHIPME   //ShipmentNum
+Local nEIHQTD  := 0                    //EIH_QTDADE   //Quantidade de packs
+Local cXPTYPE  := ' '                  //SJF_XPTYPE   //Tipo de pack
+Local nMT3     := 0                    //W6_MT3       //Volume
+Local dCargo   := CTOD("  /  /    ")   //W6_XCARGOR   //Estimativa de carga pronta
+Local dCargoP  := CTOD("  /  /    ")   //W6_XCARGOP   //Carga pronta
+Local dAutoE   := CTOD("  /  /    ")   // W6_XAUTOE    //Data de autorização de envio
+Local dETE     := CTOD("  /  /    ")   //W6_DT_ETD    //ETD - Origem (Estimativa de Saida)
+Local cATD     := ' '                  //W6_XATD      //ATD - Origem (Data real Disponivel para Entrega)
+Local dETA     := CTOD("  /  /    ")   //W6_DT_ETA    //ETA - Destino (Estimado de Chegada)
+Local dXATA    := CTOD("  /  /    ")   //W6_XATA      //ATA - Destino (Atracação)
+Local cPortOri := ' '                  //W6_ORIGEM    //Porto Origem
+Local cPortDes := ' '                  //W6_DEST      //Porto Destino
+Local cXCARRIE := ' '                  //W6_XCARRIE   //Nome do armador
+Local cIDENTVE := ' '                  //W6_IDENTVE   //Navio
+Local cVIAGEM  := ' '                  //W6_VIAGEM    //Viagem
+Local cXREFARM := ' '                  //W6_XREFARM   //Referência do armador
+Local cHOUSE   := ' '                  //W6_HOUSE     //Conhecimento de House
+Local mVM_COMP := ' '                  //W6_VM_COMP   //Descrição detalhada dos bens
+Local nPESO_BR := 0                    //W6_PESO_BR   //Peso bruto
+Local cModCon  := ' '                  //W6_XMODCON   //Modalida de Container
+Local cXMCONT  := ' '                  //W6_XMCONT    //Modo de contêiner
+Local cXTIPOL  := ' '                  //W6_XTIPOL    //Tipo de liberação
+Local cXCONSC  := ' '                  //W6_XCONSC    //Número de consolidação da carga
+Local cXCEMERC := ' '                  //W6_XCEMERC   //CE Mercante
+Local cXTLDEM  := ' '                  //W6_XTLDEM    //Tempo livre de demurrage
+Local mXANOTA  := ' '                  //W6_XANOTA    //Anotações do Agente
+Local cXCSTAT  := ' '                  //W6_XCSTAT    //Status da carga
+Local cXCHOUSE := ' '                  //W6_XCHOUSE   //Conhecimento de House recebido (Sim/Não)
+Local cXEUROPA := ' '                  //W6_XEUROPA   //Se carga é Via Europa
 
     SW6->(dbGoto(NREGSW6))
 
-	_cNomArm := CTOD(SUBSTR(_oJSRet:GetJsonText("jW_CarrierName"),1,40))
-
-    
-
-	_dETD := CTOD(SUBSTR(_oJSRet:GetJsonText("jW_ETD"),1,10))
-	_dEMB := CTOD(SUBSTR(_oJSRet:GetJsonText("jW_ATD"),1,10))
-	_dATA := CTOD(SUBSTR(_oJSRet:GetJsonText("jW_ATA"),1,10))			
-	_dETA := CTOD(SUBSTR(_oJSRet:GetJsonText("jW_ETA"),1,10))
+    cXSHIPME   := _oJSRet:GetJsonText("ShipmentNum")
+	nEIHQTD    := _oJSRet:GetJsonText("PacksQTD")
+	cXPTYPE    := _oJSRet:GetJsonText("PacksType")
+	nMT3       := _oJSRet:GetJsonText("VolQTD")
+	dCargo     := CTOD(SUBSTR(_oJSRet:GetJsonText("CargoReadyEstimate"),1,10))
+	dCargoP    := CTOD(SUBSTR(_oJSRet:GetJsonText("CargoReadyActual"),1,10))
+	dAutoE     := CTOD(SUBSTR(_oJSRet:GetJsonText("ShipAuthorizationDate"),1,10))
+	dETE       := CTOD(SUBSTR(_oJSRet:GetJsonText("EstimateDeparture"),1,10))
+	dETA       := CTOD(SUBSTR(_oJSRet:GetJsonText("EstimateArrival"),1,10))
+	dXATA      := CTOD(SUBSTR(_oJSRet:GetJsonText("ActualArrival"),1,10))
+	cPortOri   := Substr(_oJSRet:GetJsonText("PortofLoading"),1,3)
+	cPortDes   := Substr(_oJSRet:GetJsonText("PortofDischarge"),1,3)
+	cATD       := _oJSRet:GetJsonText("ActualDeparture")
+	cXCARRIE   := _oJSRet:GetJsonText("CarrierName")
+	cIDENTVE   := _oJSRet:GetJsonText("Vessel")
+	cVIAGEM    := Alltrim(_oJSRet:GetJsonText("Voyage"))
+	cXREFARM   := _oJSRet:GetJsonText("BookingRef")
+	cHOUSE     := _oJSRet:GetJsonText("HouseBill")
+	mVM_COMP   := _oJSRet:GetJsonText("DetailedGoodsDescription")
+	nPESO_BR   := _oJSRet:GetJsonText("GrossWeight")
+	cModCon    := _oJSRet:GetJsonText("HouseBillDLVMode")
+	cXMCONT    := _oJSRet:GetJsonText("ContainerMode")
+	cXTIPOL    := _oJSRet:GetJsonText("ReleaseType")
+	cXCONSC    := _oJSRet:GetJsonText("ConsolidationNum")
+	cXCEMERC   := _oJSRet:GetJsonText("CEMercante")
+	cXTLDEM    := _oJSRet:GetJsonText("DemurrageFreeTime")
+	mXANOTA    := _oJSRet:GetJsonText("ClientVisibleJobNotes")
+	cXCSTAT    := _oJSRet:GetJsonText("CargoStatus")
+	cXCHOUSE   := _oJSRet:GetJsonText("IsHBLReceived")
+	cXEUROPA   := _oJSRet:GetJsonText("IsEuropeRoute")
 		
-	IF (AllTrim(_oJSRet:GetJsonText("jW_TransportMode")) = 'SEA' .OR. AllTrim(_oJSRet:GetJsonText("jW_TransportMode")) = 'FSA')
+/*	IF (AllTrim(_oJSRet:GetJsonText("jW_TransportMode")) = 'SEA' .OR. AllTrim(_oJSRet:GetJsonText("jW_TransportMode")) = 'FSA')
 		_cVtrans := 'M'       
 	ELSEIF (AllTrim(_oJSRet:GetJsonText("jW_TransportMode")) = 'AIR' .OR. AllTrim(_oJSRet:GetJsonText("jW_TransportMode")) = 'FAS')
 		_cVtrans := 'A' 
@@ -308,41 +356,71 @@ Local _cNomArm := ' '
 		_cVtrans := ' '  			
 	ENDIF
 	_cVes := AllTrim(_oJSRet:GetJsonText("jW_Vessel"))
-	IF RAT('Dispon',_cVes) > 0	
-		_cIdet := ' '
-	ELSE
-		_cIdet := AllTrim(_oJSRet:GetJsonText("jW_Vessel"))			
-	ENDIF
-	_cCem := AllTrim(_oJSRet:GetJsonText("jS_CEMercante"))
-	IF RAT('Dispon',_cCem) > 0	
-		_cCemerc := ' '
-	ELSE
-		_cCemerc := AllTrim(_oJSRet:GetJsonText("jS_CEMercante"))			
-	ENDIF
 
 	_cOrig  := Posicione("SY9",4,xFilial("SY9")+AllTrim(_oJSRet:GetJsonText("jS_RL_NKOrigin")),"Y9_SIGLA")
 	_cDest  := Posicione("SY9",4,xFilial("SY9")+AllTrim(_oJSRet:GetJsonText("jS_RL_NKDestination")),"Y9_SIGLA")
-	//_cHouse := AllTrim(_oJSRet:GetJsonText("jS_HouseBill"))
+*/
+	
+	IF cIDENTVE = 'NULL'	
+		cIDENTVE := ' '
+	ENDIF
+
+	IF cXCEMERC = 'NULL'
+		_cCemerc := ' '
+	ENDIF
+
+    EIH->(DbSetOrder(1))      //EIH_FILIAL+EIH_HAWB+EIH_CODIGO                                                                                                                                  
+    If EIH->(DbSeek(xFilial("EIH")+SW6->W6_HAWB))
+		EIH->(RecLock("EIH",.F.))
+		EIH->EIH_QTDADE := Val(nEIHQTD)    //n 5 
+		EIH->(MsUnLock())
+    Endif 
+
+    SJF->(DbSetOrder(1))      //JF_FILIAL+JF_CODIGO  da embalagem                                                                                                                                                                                                                                                                               
+    If SJF->(DbSeek(xFilial("SJF")+EIH->EIH_CODIGO))	
+		SJF->(RecLock("SJF",.F.))
+		SJF->JF_XPTYPE := cXPTYPE         //c  
+		SJF->(MsUnLock())
+    Endif 
 
 	SW6->(RecLock("SW6",.F.))
-	SW6->W6_ORIGEM  := _cOrig
-	SW6->W6_DEST    := _cDest
-	SW6->W6_IDENTVE := _cIdet	
-	SW6->W6_VIA_TRA := _cVtrans 
-	SW6->W6_XCEMERC := _cCemerc 
-	SW6->W6_DT_ETD  := _dETD
-	SW6->W6_DT_EMB  := _dEMB
-	SW6->W6_DT_ETA  := _dETA
-	SW6->W6_CHEG    := _dATA
-	SW6->W6_XCSTAT  := AllTrim(_oJSRet:GetJsonText("cargaStatus")) 
-	SW6->W6_XCMSG   := AllTrim(_oJSRet:GetJsonText("cargaMensagem")) 
+	SW6->W6_MT3     := Val(nMT3)       //n 8,2
+	SW6->W6_XSHIPME := cXSHIPME        //c 10
+	SW6->W6_XCARGOR := dCargo          //D 8
+	SW6->W6_XCARGOP := dCargoP         //D 8
+	SW6->W6_XAUTOE  := dAutoE  
+	SW6->W6_DT_ETD  := dETE
+	SW6->W6_XATD    := cATD
+	SW6->W6_DT_ETA  := dETA
+	SW6->W6_XATA    := dXATA
+	SW6->W6_XCARRIE := cXCARRIE
+	SW6->W6_IDENTVE := cIDENTVE
+	SW6->W6_VIAGEM  := cVIAGEM
+	SW6->W6_XREFARM := cXREFARM
+	SW6->W6_HOUSE   := cHOUSE
+	SW6->W6_ORIGEM  := cPortOri
+	SW6->W6_DEST    := cPortDes
+	SW6->W6_PESO_BR := Val(nPESO_BR)
+	SW6->W6_XMODCON := cModCon
+	SW6->W6_XMCONT  := cXMCONT
+	SW6->W6_XTIPOL  := cXTIPOL
+	SW6->W6_XCONSC  := cXCONSC
+	SW6->W6_XCEMERC := cXCEMERC
+	SW6->W6_XTLDEM  := cXTLDEM
+	SW6->W6_XANOTA  := mXANOTA
+	SW6->W6_XCSTAT  := cXCSTAT
+	SW6->W6_XCHOUSE := cXCHOUSE
+	SW6->W6_XEUROPA := cXEUROPA
+
 	SW6->(MsUnLock())
+
+	MSMM(,58,,mVM_COMP,1,,,"SW6","W6_COMPLEM")
 
 Return(_Ret)
 
 
 
-/*/{Protheus.doc}   getToken
+/*/{Protheus.doc}   getToke1
     get Bearer Token using /token endpoint
     @type  Function
     @author A.Carlos
@@ -350,7 +428,7 @@ Return(_Ret)
     @version 1.0
     @return cToken, character, Bearer Token
 /*/
-User Function getToken()
+User Function getToke1()
     Local _cToken    As Character // Bearer Token
     Local cBaseURL   As Character // Base URL
     Local cPath      As Character // endpoint path
@@ -370,7 +448,7 @@ User Function getToken()
     cPassword  := "bRTxqzUyJwN5BnT"               // type here user password
     cBaseURL   := "https://api.asiashipping.com.br/account/token/"   // type here your base URL
     cPath      := "?grant_type=" + cGrantType + "&username=" + cUserName + "&password=" + cPassword // type here token endpoint
-    aHeader    := {} ///api.asiashipping.com.br/account/token/
+    aHeader    := {} 
 	jBody      := ''
 
 	jBody := JsonObject():New()
@@ -388,7 +466,6 @@ User Function getToken()
     oRest := FWRest():New(cBaseURL)
     oRest:setPath(cPath)
  
-    // request
 	oRest:SetPostParams(jBody:toJson())
     If (oRest:Post(aHeader))
         cResponse := oRest:GetResult()
@@ -413,7 +490,7 @@ Carrega os dados do Json e solicita a gravação na SW6
 @return return_var, _lRet
 @example
 /*/
-Static Function ZEIC25FH(_cUrlFH,_nTime,_aHeader,_Import,_Encer,_Teste)
+Static Function ZEIC25FH(_cUrlFH,_nTime,_aHeader,_Import,_Encer,_cChave)
 Local _cAlias := GetNextAlias()
 Local _aMsg	  := {}
 Local _aHeaFH := {}  
@@ -427,8 +504,8 @@ Aadd(_aHeaFH, "Authorization: Bearer " + _cToken )
 Aadd(_aHeaFH,'Content-Type: application/json')
 //Aadd(_aHeaFH,'Accept: application/json')
 
-_cProc  := Alltrim(SW6->W6_HAWB)
-_cChave := _Teste  //Alltrim(SW6->W6_HOUSE)
+//_cProc  := Alltrim(SW6->W6_HAWB)
+//_cChave := _Teste  //Alltrim(SW6->W6_HOUSE)
 
 _cUrlFH += "?HouseBill="+_cChave
 _cRet := Httpget(_cUrlFH, '', _nTime , _aHeaFH)
@@ -445,7 +522,7 @@ If ValType(_oJSRet) <> "J"
 	Return .F.
 Endif
 
-_cHouse := AllTrim(_oJSRet:GetJsonText("jS_HouseBill"))
+_cHouse := AllTrim(_oJSRet:GetJsonText("HouseBill"))
 BeginSql Alias _cAlias
 	SELECT 	SW6.R_E_C_N_O_ NREGSW6
 	FROM %table:SW6% SW6
@@ -453,7 +530,7 @@ BeginSql Alias _cAlias
 		AND SW6.W6_HOUSE   = %Exp:_cHouse%
 		AND SW6.W6_DT_ENCE = %Exp:_Encer%
 		AND SW6.W6_AGENTE  = %Exp:_Import% 
-		AND SW6.W6_HOUSE   = %Exp:_Teste%
+		//AND SW6.W6_HOUSE   = %Exp:_cChave%
 		AND SW6.%notDel%		  
 EndSql 
 
@@ -462,7 +539,7 @@ If (_cAlias)->(Eof()) .Or. (_cAlias)->NREGSW6 == 0
 	_lRet :=  .F.
 Else 
 	//Posicionar na SW6 para gravar os dados
-	ZEIC022GRV(_cHouse,(_cAlias)->NREGSW6) 
+	ZEIC025GRV(_cHouse,(_cAlias)->NREGSW6) 
 
 	_cMsg := "Integração realizada com sucesso !"
 	MSGINFO( _cMsg, "[ZEICF025]" )
