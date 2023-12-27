@@ -10,6 +10,9 @@ User Function F040FCR()
 		If Findfunction("U_CMVSAP15")
 			U_CMVSAP15(3)
 		EndIf
+		If Findfunction("U_ZFINF006")
+			U_ZFINF006()
+		EndIf
 	Else
 		If Findfunction("U_ZSAPF015")
 			U_ZSAPF015(3)

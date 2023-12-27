@@ -95,6 +95,9 @@ Local nCnt	        := 0
 Local nCount	    := 0
 //Local cDescErro	:= ""
 
+Local nRegRA        := 0
+Local nRegNF	    := 0
+
 private lIsBlind := IsBlind() .OR. Type("__LocalDriver") == "U"
 
 If !Empty(aParam)
@@ -944,10 +947,21 @@ while !(cAliasNF)->(Eof())
 					nPos := aScan( aSimple, {|aVet| aVet[2] == "chaveReferenciaItemDocumento".and. aVet[5] == "ContasAReceberRequest#1.documentos#1.AccountReceivable#" + Alltrim(Str(nz))} )//chaveReferenciaItemDocumento
 					//Tratamento p/ numero do boleto na inegração SAP
                     If Alltrim(SE1->E1_TIPO) = "RA" 
-					    cNBC := Posicione("SE1", 1, xFilial("SE1")+"5  "+ALLTRIM(SE1->E1_TITPAI), "E1_NUMBCO")
-					    xRet := oWsdl:SetValue( aSimple[nPos][1], cNBC)  //SE1->E1_NUMBCO
-					ELSEIf Alltrim(SE1->E1_TIPO) <> "RA" .AND. SE1->E1_PREFIXO = '5  ' .AND. SE1->E1_PARCELA = '1 ' .AND. !Empty(SE1->E1_PEDIDO)	 
-					    xRet := oWsdl:SetValue( aSimple[nPos][1], " ")   //SE1->E1_NUMBCO
+					    nRegRA := SE1->( Recno() )
+					    cNBC := Posicione("SE1", 1, xFilial("SE1")+"5  "+ALLTRIM(SE1->E1_TITPAI)+"1 "+"NF", "E1_NUMBCO")
+					    nRegNF := SE1->( Recno() )
+	
+						SE1->(DbGoto(nRegRA))
+						RecLock("SE1", .F.)
+						SE1->E1_NUMBCO := cNBC 
+						SE1->( MsUnLock() )
+
+						SE1->(DbGoto(nRegNF))
+						RecLock("SE1", .F.)
+						SE1->E1_NUMBCO := ''
+						SE1->( MsUnLock() )
+						
+						xRet := oWsdl:SetValue( aSimple[nPos][1], cNBC)  //SE1->E1_NUMBCO
 					ELSEIf Alltrim(SE1->E1_TIPO) <> "RA" .AND. Empty(SE1->E1_PEDIDO)	 
 					    xRet := oWsdl:SetValue( aSimple[nPos][1], SE1->E1_NUMBCO)   //SE1->E1_NUMBCO
 					ENDIF

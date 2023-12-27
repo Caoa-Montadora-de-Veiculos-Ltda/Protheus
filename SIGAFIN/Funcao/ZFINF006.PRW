@@ -21,30 +21,27 @@ Local   _aArea   := GetArea()
 Local   _cNUM    := " "
 Local   _cNUMBCO := " "
 
-_cNUM    := (SE1)->E1_NUM
-_cNUMBCO := (SE1)->E1_NUMBCO
+//IF SE4->E4_TIPO <> '9'
 
-(SE1)->(DbSetOrder(1)) //Filial + Prefixo + Num + Parcela + Tipo
-(SE1)->(DbGotop())
+    _cNUM    := SE1->E1_NUM
+    _cNUMBCO := SE1->E1_NUMBCO
 
-WHILE SE1->(!Eof())  
+    SE1->(DbSetOrder(1)) //Filial + Prefixo + Num + Parcela + Tipo
+    SE1->(DbGotop())
 
-    IF SE1->E1_PREFIXO = 'PVF' .AND. SE1->E1_PARCELA = '1 ' .AND. SE1->E1_PEDIDO = _cNUM .AND. SE1->E1_TIPO = 'RA ' 	
+    If SE1->(dbSeek(xFilial("SE1")+'PVF'+SE1->E1_PEDIDO+'1 '+'RA '))
+                                                                                                                    
         If SE1->(RecLock("SE1",.F.))
             SE1->E1_TITPAI := _cNUM
             SE1->E1_NUMBCO := _cNUMBCO
-           SE1->(MsUnLock())			
-		    EndIf
-        //ELSEIF (SE1)->E1_PREFIXO = '5  ' .AND. (SE1)->E1_PARCELA = '1 ' .AND. (SE1)->E1_NUM = _cNUM		
-        //    If SE1->(RecLock("SE1",.F.))
-        //	    SE1->E1_NUMBCO := " "
-        //        SE1->(MsUnLock())			
-        //EndIf	
-    EndIf 
+            SE1->(MsUnLock())			
+        EndIf
 
-    SE1->(dbSkip())	
+        SE1->(dbSkip())	
 
-End
+    Endif
+
+//Endif
 
 RestArea(_aArea)
 Return(.T.)
