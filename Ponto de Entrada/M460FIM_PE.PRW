@@ -20,6 +20,8 @@ User Function M460FIM()
     Local _cQuery       := ""
     Local _cChave       := xFilial("SE1") + "5  " + SC5->C5_NOTA
     Local _cTmpAlias    := GetNextAlias()
+    Local _nRecSE1      := 0    
+    Local _nRecBol      := 0   
     Local aArea         := GetArea()
     Local aAreaSF2      := SF2->(GetArea())
     Local aAreaVV0      := VV0->(GetArea())
@@ -73,6 +75,7 @@ User Function M460FIM()
             SE1->(dbGoTop())
             SE1->(DbSetOrder(1))       //E1_FILIAL+E1_PREFIXO+E1_NUM+E1_PARCELA+E1_TIPO
             If SE1->(DbSeek(_cChave))
+                _nRecSE1 := SE1->(Recno()) 
                 WHILE SE1->( !EOF() .AND. (xFilial("SE1")+SE1->E1_PREFIXO+SE1->E1_NUM) = _cChave ) 
                     RecLock("SE1",.F.)
                     SE1->E1_PEDIDO  := SC5->C5_NUM
@@ -80,10 +83,19 @@ User Function M460FIM()
                     SE1->E1_AGEDEP  := _cAge
                     SE1->E1_CONTA   := _cConta
                     MsUnlock()
+                    
                     //emissão de Boleto
                     IF SE1->E1_XFORMA == 'BOL'
                         U_RF01B062(E1_PORTADO,E1_AGEDEP,E1_CONTA,'001',/*lSetup*/,/*cNotIni*/,/*cNotFim*/,/*cSerie*/,_cChave)
+                    	_nRecBol := SE1->(Recno()) 
+
+                        SE1->(dbGoTo(_nRecSE1))
+                        If Findfunction("U_ZFINF006") .AND. SE1->E1_PARCELA ='1 ' .AND. SE1->E1_TIPO = 'NF '
+                            U_ZFINF006()
+                        EndIf
+                        SE1->(dbGoTo(_nRecBol))
                     ENDIF
+
                     SE1->(DbSkip())
                 END
             EndIf

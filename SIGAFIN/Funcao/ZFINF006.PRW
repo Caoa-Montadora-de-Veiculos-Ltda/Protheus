@@ -13,27 +13,34 @@
 @since  	20/12/23
 @return  	
 @obs       
-@project
+@project 
 @history    grava o E1_NUMBCO para o título de RA e não o da Parela1 quando PVF (efeito SAP)
 /*/
 User Function ZFINF006()
 Local   _aArea   := GetArea()
-Local   _cNUM    := " "
-Local   _cNUMBCO := " "
+Local   _cNum    := " "
+Local   _cNumbco := " "
+Local   _cPedido := SPACE(TamSX3("E1_NUM")[1])  
 
-//IF SE4->E4_TIPO <> '9'
+IF SE4->E4_CTRADT <> '1' 
 
-    _cNUM    := SE1->E1_NUM
-    _cNUMBCO := SE1->E1_NUMBCO
+    _cNum    := SE1->E1_NUM
+    _cNumbco := SE1->E1_NUMBCO
+    _cPedido := PADR(SE1->E1_PEDIDO,09) 
+
+    If SE1->(RecLock("SE1",.F.))
+        SE1->E1_NUMBCO := ' '
+        SE1->(MsUnLock())			
+    EndIf
 
     SE1->(DbSetOrder(1)) //Filial + Prefixo + Num + Parcela + Tipo
     SE1->(DbGotop())
 
-    If SE1->(dbSeek(xFilial("SE1")+'PVF'+SE1->E1_PEDIDO+'1 '+'RA '))
+    If SE1->(dbSeek(xFilial("SE1")+'PVF'+_cPedido+'1 '+'RA '))
                                                                                                                     
         If SE1->(RecLock("SE1",.F.))
-            SE1->E1_TITPAI := _cNUM
-            SE1->E1_NUMBCO := _cNUMBCO
+            SE1->E1_TITPAI := _cNum
+            SE1->E1_NUMBCO := _cNumbco
             SE1->(MsUnLock())			
         EndIf
 
@@ -41,7 +48,7 @@ Local   _cNUMBCO := " "
 
     Endif
 
-//Endif
+Endif
 
 RestArea(_aArea)
 Return(.T.)
