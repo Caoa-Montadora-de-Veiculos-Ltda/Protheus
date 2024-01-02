@@ -946,7 +946,7 @@ while !(cAliasNF)->(Eof())
 				IF SUBSTR(SE1->E1_NATUREZ,1,2)=="11"
 					nPos := aScan( aSimple, {|aVet| aVet[2] == "chaveReferenciaItemDocumento".and. aVet[5] == "ContasAReceberRequest#1.documentos#1.AccountReceivable#" + Alltrim(Str(nz))} )//chaveReferenciaItemDocumento
 					//Tratamento p/ numero do boleto na inegração SAP
-                    If Alltrim(SE1->E1_TIPO) = "RA" 
+                    /*If Alltrim(SE1->E1_TIPO) = "RA" 
 					    nRegRA := SE1->( Recno() )
 					    cNBC := Posicione("SE1", 1, xFilial("SE1")+"5  "+ALLTRIM(SE1->E1_TITPAI)+"1 "+"NF", "E1_NUMBCO")
 					    nRegNF := SE1->( Recno() )
@@ -961,10 +961,10 @@ while !(cAliasNF)->(Eof())
 						SE1->E1_NUMBCO := ''
 						SE1->( MsUnLock() )
 						
-						xRet := oWsdl:SetValue( aSimple[nPos][1], cNBC)  //SE1->E1_NUMBCO
-					ELSEIf Alltrim(SE1->E1_TIPO) <> "RA" .AND. Empty(SE1->E1_PEDIDO)	 
-					    xRet := oWsdl:SetValue( aSimple[nPos][1], SE1->E1_NUMBCO)   //SE1->E1_NUMBCO
-					ENDIF
+						xRet := oWsdl:SetValue( aSimple[nPos][1],SE1->E1_NUMBCO )    // cNBC
+					ELSEIf Alltrim(SE1->E1_TIPO) <> "RA" .AND. Empty(SE1->E1_PEDIDO) */	 
+					    xRet := oWsdl:SetValue( aSimple[nPos][1], SE1->E1_NUMBCO )   //SE1->E1_NUMBCO
+					//ENDIF
 					
 					If !xRet
 						U_ZF12GENSAP((cAliasNF)->Z7_FILIAL,(cAliasNF)->Z7_XTABELA,(cAliasNF)->Z7_XCHAVE,(cAliasNF)->Z7_XSEQUEN,"E","chaveReferenciaItemDocumento Erro: " + oWsdl:cError)
