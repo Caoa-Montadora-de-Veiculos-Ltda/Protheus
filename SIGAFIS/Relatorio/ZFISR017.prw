@@ -204,7 +204,7 @@ Static Function ReportPrint(oReport)
 		Do case //TIPO DE NF
 			case cMV_PAR08 = 'T'
 				cQry += "	AND SF2.F2_TIPO 		!= ' '" 		+ CRLF //TODAS
-			case nMV_PAR08 = 'N' 
+			case cMV_PAR08 = 'N' 
 				cQry += "	AND SF2.F2_TIPO 		= 'N'" 			+ CRLF //NORMAL
 			case cMV_PAR08 = 'D'
 				cQry += "	AND SF2.F2_TIPO 		= 'D'" 			+ CRLF //DEVOLUÇÃO

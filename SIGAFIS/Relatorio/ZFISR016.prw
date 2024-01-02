@@ -40,8 +40,6 @@ User Function ZFISR016()
 	aAdd(aPergs, {1,"Loja"					,cLoja		,/*Pict*/	,/*Valid*/	,"A2L"		,/*When*/,50,.F.}) 	//MV_PAR07
 	aAdd(aPergs ,{2,"Tipo de NF"			, "T", aTipoNF,50,"",.F.})											//MV_PAR08
 											
-
-
 	If ParamBox(aPergs, "Informe os parâmetros para Nota Fiscal de entrada", , , , , , , , , .F., .F.)
 		oReport := fReportDef()
 		oReport:PrintDialog()
@@ -207,14 +205,14 @@ Static Function ReportPrint(oReport)
 		Do case //TIPO DE NF
 			case cMV_PAR08 = 'T'
 				cQry += "	AND SF1.F1_TIPO 		!= ' '" 		+ CRLF //TODAS
-			case nMV_PAR08 = 'N' 
+			case CMV_PAR08 = 'N' 
 				cQry += "	AND SF1.F1_TIPO 		= 'N'" 			+ CRLF //NORMAL
 			case cMV_PAR08 = 'D'
 				cQry += "	AND SF1.F1_TIPO 		= 'D'" 			+ CRLF //DEVOLUÇÃO
 			case cMV_PAR08 = 'B'
 				cQry += "	AND SF1.F1_TIPO 		= 'B'" 			+ CRLF //BENEFICIAMENTO
 			case cMV_PAR08 = 'I'
-				cQry += "	AND SF1.F1_TIPO 		= 'I'" 			+ CRLF //COPML. PREÇO
+				cQry += "	AND SF1.F1_TIPO 		= 'I'" 			+ CRLF //COMPL. PREÇO
 			case cMV_PAR08 = 'P'
 				cQry += "	AND SF1.F1_TIPO 		= 'P'" 			+ CRLF //NF COMPL. ICMS
 			case cMV_PAR08 = 'C'
