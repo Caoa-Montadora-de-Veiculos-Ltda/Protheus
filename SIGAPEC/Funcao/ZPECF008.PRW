@@ -1489,7 +1489,7 @@ Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodK
 			EndIf	
 			//Caso passe guardar no KIT
 			AAdd(_aKit,{_cNumOrc,; 
-						_cGrupo,;
+						_cGrupoKit,;
 						_cCodItem,;
 						_cLocal,;
 						_cCodSubst,;
