@@ -123,7 +123,7 @@ Local _Tipo   := ""
 
     IF _Cond <> "00" //.AND. _Tipo <> '9'
         _aParc     :=  Condicao(_nValor,_cCondPgto,,_dEmissao,)
-        _dVenc     :=  _aParc[1,1]
+        _dVenc     :=  _dEmissao+30 //_aParc[1,1]
     ELSE
         _dVenc     := _dEmissao
     ENDIF
