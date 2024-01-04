@@ -654,10 +654,10 @@ Static Function zRel001B(cArquivo)
 			nTot01   +=  nTotal//iif(valtype((cAliasTRB)->D1_TOTAL)    = "N", (cAliasTRB)->D1_TOTAL   ,0) 				//--Valor Total Item
             aCampo07 :=   (cAliasTRB)->D1_CF                                                      				//--Cfop
 			nTot02   +=  iif(valtype((cAliasTRB)->FT_VALCONT)  = "N", (cAliasTRB)->FT_VALCONT ,0) 				//--Valor Contábil
-			nTot03   +=  iif(valtype((cAliasTRB)->FT_BASEICM)  = "N", (cAliasTRB)->FT_BASEICM ,0) 				//--Base ICMS
-			aCampo08 := (cAliasTRB)->FT_ALIQICM                                                   				//--Aliq. ICMS
-			nTot04   +=  iif(valtype((cAliasTRB)->FT_VALICM)   = "N", (cAliasTRB)->FT_VALICM  ,0) 				//--Valor ICMS
-			aCampo09 := IIF( (cAliasTRB)->F1_TIPO $ "B|D" , nVlCom , 0 )                          				//--Comissão
+			nTot03   +=  iif( Alltrim((cAliasTRB)->F1_ESPECIE) <> "RPS", (cAliasTRB)->FT_BASEICM , 0) 			//--Base ICMS
+			aCampo08 :=  iif( Alltrim((cAliasTRB)->F1_ESPECIE) <> "RPS", (cAliasTRB)->FT_ALIQICM , 0)           //--Aliq. ICMS
+			nTot04   +=  iif( Alltrim((cAliasTRB)->F1_ESPECIE) <> "RPS", (cAliasTRB)->FT_VALICM  , 0) 			//--Valor ICMS
+			aCampo09 :=  IIF( (cAliasTRB)->F1_TIPO $ "B|D" , nVlCom , 0 )                          				//--Comissão
 			nTot05   +=  iif(valtype((cAliasTRB)->FT_BASEIPI)  = "N", (cAliasTRB)->FT_BASEIPI ,0) 				//--Base IPI
 			aCampo10 := (cAliasTRB)->FT_ALIQIPI                                                   				//--Aliq. IPI	
 			nTot06   +=  iif(valtype((cAliasTRB)->FT_VALIPI)   = "N", (cAliasTRB)->FT_VALIPI  ,0) 				//--Valor IPI

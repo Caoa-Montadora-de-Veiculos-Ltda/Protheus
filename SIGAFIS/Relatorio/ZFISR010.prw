@@ -417,9 +417,9 @@ Static Function  ReportPrint(oReport)
          oSection:Cell( "D1_TOTAL"  ):SetValue( (cAliasTMP)->D1_TOTAL ) //--Valor Total Item
          oSection:Cell( "D1_CF"     ):SetValue( (cAliasTMP)->D1_CF ) //--Cfop
          oSection:Cell( "FT_VALCONT"):SetValue( (cAliasTMP)->FT_VALCONT ) //--Valor Contábil
-         oSection:Cell( "FT_BASEICM"):SetValue( (cAliasTMP)->FT_BASEICM ) //--Base ICMS
-         oSection:Cell( "FT_ALIQICM"):SetValue( (cAliasTMP)->FT_ALIQICM ) //--Aliq. ICMS
-         oSection:Cell( "FT_VALICM" ):SetValue( (cAliasTMP)->FT_VALICM ) //--Valor ICMS
+         oSection:Cell( "FT_BASEICM"):SetValue( iif( Alltrim((cAliasTMP)->F1_ESPECIE) <> "RPS", (cAliasTMP)->FT_BASEICM , 0) ) //--Base ICMS
+         oSection:Cell( "FT_ALIQICM"):SetValue( iif( Alltrim((cAliasTMP)->F1_ESPECIE) <> "RPS", (cAliasTMP)->FT_ALIQICM , 0) ) //--Aliq. ICMS
+         oSection:Cell( "FT_VALICM" ):SetValue( iif( Alltrim((cAliasTMP)->F1_ESPECIE) <> "RPS", (cAliasTMP)->FT_VALICM  , 0) ) //--Valor ICMS
          oSection:Cell( "VlCom"     ):SetValue( IIF( (cAliasTMP)->F1_TIPO $ "B|D" , nVlCom , 0 ) ) //--Comissão
          oSection:Cell( "FT_BASEIPI"):SetValue( (cAliasTMP)->FT_BASEIPI ) //--Base IPI					
          oSection:Cell( "FT_ALIQIPI"):SetValue( (cAliasTMP)->FT_ALIQIPI ) //--Aliq. IPI			
