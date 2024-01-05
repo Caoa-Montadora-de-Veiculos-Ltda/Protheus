@@ -445,13 +445,13 @@ Begin Transaction
 
 	If lMsErroAuto .And. Upper(Alltrim(VRJ->VRJ_PEDCOM)) != Upper(Alltrim(aCpoVRJ[2][2]))
 		aErro   := oModel:GetErrorMessage()
-		cErro +=  "Id do formulrio de origem:" + ' [' + AllToChar( aErro[1]  ) + ']'+CRLF 
+		cErro +=  "Id do formulario de origem:" + ' [' + AllToChar( aErro[1]  ) + ']'+CRLF 
 		cErro +=  "Id do campo de origem:     " + ' [' + AllToChar( aErro[2]  ) + ']'+CRLF
-		cErro +=  "Id do formulrio de erro:  " + ' [' + AllToChar( aErro[3]  ) + ']'+CRLF
+		cErro +=  "Id do formulario de erro:  " + ' [' + AllToChar( aErro[3]  ) + ']'+CRLF
 		cErro +=  "Id do campo de erro:       " + ' [' + AllToChar( aErro[4]  ) + ']'+CRLF
 		cErro +=  "Id do erro:                " + ' [' + AllToChar( aErro[5]  ) + ']'+CRLF
 		cErro +=  "Mensagem do erro:          " + ' [' + AllToChar( aErro[6]  ) + ']'+CRLF
-		cErro +=  "Mensagem da soluo:       " + ' [' + AllToChar( aErro[7]  ) + ']'+CRLF
+		cErro +=  "Mensagem da solucao:       " + ' [' + AllToChar( aErro[7]  ) + ']'+CRLF
 		cErro +=  "Valor atribuido:           " + ' [' + AllToChar( aErro[8]  ) + ']'+CRLF
 		cErro +=  "Valor anterior:            " + ' [' + AllToChar( aErro[9]  ) + ']'+CRLF
 		lRet := .F.
@@ -509,16 +509,25 @@ Begin Transaction
             ConfirmSX8() 
             
             aCabPed := {}
-            Aadd(aCabPed, {"C5_NUM"    ,cNumPed                 , Nil}); Aadd(aCabPed, {"C5_TIPO"   ,"N"                        , Nil})
-            Aadd(aCabPed, {"C5_CLIENTE",(cTmpAlias)->VRJ_CODCLI , Nil}); Aadd(aCabPed, {"C5_LOJACLI",(cTmpAlias)->VRJ_LOJA      , Nil})
-            Aadd(aCabPed, {"C5_CLIENT" ,(cTmpAlias)->VRJ_CODCLI , Nil}); Aadd(aCabPed, {"C5_LOJAENT",(cTmpAlias)->VRJ_LOJA      , Nil})
-            Aadd(aCabPed, {"C5_TRANSP" ,(cTmpAlias)->VRJ_CODTRA , Nil}); Aadd(aCabPed, {"C5_TIPOCLI",(cTmpAlias)->VRJ_TIPOCL    , Nil})
-            Aadd(aCabPed, {"C5_CONDPAG",(cTmpAlias)->VRJ_FORPAG , Nil}); Aadd(aCabPed, {"C5_EMISSAO",dDataBase                  , Nil})
-            Aadd(aCabPed, {"C5_TPFRET" ,(cTmpAlias)->VRJ_TPFRET , Nil}); Aadd(aCabPed, {"C5_MOEDA"  ,1                          , Nil})
-            Aadd(aCabPed, {"C5_PESOL"  ,(cTmpAlias)->VRJ_PESOL  , Nil}); Aadd(aCabPed, {"C5_PBRUTO" ,(cTmpAlias)->VRJ_PBRUTO    , Nil})
-            Aadd(aCabPed, {"C5_VOLUME1",(cTmpAlias)->VRJ_VOLUME , Nil}); Aadd(aCabPed, {"C5_ESPECI1",(cTmpAlias)->VRJ_ESPECI    , Nil})
-            Aadd(aCabPed, {"C5_TIPLIB" ,"1"                     , Nil}); Aadd(aCabPed, {"C5_NATUREZ",(cTmpAlias)->VRJ_NATURE    , Nil})
-            Aadd(aCabPed, {"C5_XTIPVEN",(cTmpAlias)->VRJ_TIPVEN , Nil})
+            Aadd(aCabPed, {"C5_NUM"    ,cNumPed                    , Nil}) 
+            Aadd(aCabPed, {"C5_TIPO"   ,"N"                        , Nil})
+            Aadd(aCabPed, {"C5_CLIENTE",(cTmpAlias)->VRJ_CODCLI    , Nil}) 
+            Aadd(aCabPed, {"C5_LOJACLI",(cTmpAlias)->VRJ_LOJA      , Nil})
+            Aadd(aCabPed, {"C5_CLIENT" ,(cTmpAlias)->VRJ_CODCLI    , Nil}) 
+            Aadd(aCabPed, {"C5_LOJAENT",(cTmpAlias)->VRJ_LOJA      , Nil})
+            Aadd(aCabPed, {"C5_TRANSP" ,(cTmpAlias)->VRJ_CODTRA    , Nil}) 
+            Aadd(aCabPed, {"C5_TIPOCLI",(cTmpAlias)->VRJ_TIPOCL    , Nil})
+            Aadd(aCabPed, {"C5_CONDPAG",(cTmpAlias)->VRJ_FORPAG    , Nil}) 
+            Aadd(aCabPed, {"C5_EMISSAO",dDataBase                  , Nil})
+            Aadd(aCabPed, {"C5_TPFRET" ,(cTmpAlias)->VRJ_TPFRET    , Nil}) 
+            Aadd(aCabPed, {"C5_MOEDA"  ,1                          , Nil})
+            Aadd(aCabPed, {"C5_PESOL"  ,(cTmpAlias)->VRJ_PESOL     , Nil}) 
+            Aadd(aCabPed, {"C5_PBRUTO" ,(cTmpAlias)->VRJ_PBRUTO    , Nil})
+            Aadd(aCabPed, {"C5_VOLUME1",(cTmpAlias)->VRJ_VOLUME    , Nil}) 
+            Aadd(aCabPed, {"C5_ESPECI1",(cTmpAlias)->VRJ_ESPECI    , Nil})
+            Aadd(aCabPed, {"C5_TIPLIB" ,"1"                        , Nil}) 
+            Aadd(aCabPed, {"C5_NATUREZ",(cTmpAlias)->VRJ_NATURE    , Nil})
+            Aadd(aCabPed, {"C5_XTIPVEN",(cTmpAlias)->VRJ_TIPVEN    , Nil})
 
             aItePed := {}
             While (cTmpAlias)->(!Eof())
@@ -539,21 +548,34 @@ Begin Transaction
                 aLinha   := {}
                 cProduto := Alltrim((cTmpAlias)->VRK_MODVEI)+Alltrim((cTmpAlias)->VRK_SEGMOD)
 
-                Aadd( aLinha, { "C6_ITEM"   , Right((cTmpAlias)->VRK_ITEPED,2),Nil  })
-                Aadd( aLinha, { "C6_PRODUTO", cProduto                , Nil  }); Aadd( aLinha , { "C6_QTDVEN" , 1                       , Nil } )
-                Aadd( aLinha, { "C6_PRCVEN" , (cTmpAlias)->VRK_VALMOV , Nil  }); Aadd( aLinha , { "C6_VALOR"  , (cTmpAlias)->VRK_VALMOV , Nil } )
-                Aadd( aLinha, { "C6_PRUNIT" , (cTmpAlias)->VRK_VALMOV , Nil  }); Aadd( aLinha , { "C6_TES"    , (cTmpAlias)->VRK_CODTES , Nil } )
-                Aadd( aLinha, { "C6_OPER"   , (cTmpAlias)->VRK_OPER   , Nil  }); Aadd( aLinha , { "C6_PEDCLI" , (cTmpAlias)->VRJ_PEDCOM , Nil } )
-                Aadd( aLinha, { "C6_QTDLIB" , 0                       , Nil  }); Aadd( aLinha , { "C6_CHASSI" , CriaVar("C6_CHASSI" )   , Nil } )
-                Aadd( aLinha, { "C6_LOCALIZ", CriaVar("C6_LOCALIZ")   , Nil  }); Aadd( aLinha , { "C6_NUMSERI", CriaVar("C6_NUMSERI")   , Nil } )
-                Aadd( aLinha, { "C6_XCODMAR", (cTmpAlias)->VRK_CODMAR , Nil  }); Aadd( aLinha , { "C6_XDESMAR", VE1->VE1_DESMAR         , Nil } )
-                Aadd( aLinha, { "C6_XCORINT", (cTmpAlias)->VRK_CORINT , Nil  }); Aadd( aLinha , { "C6_XCOREXT", (cTmpAlias)->VRK_COREXT , Nil } )
-                Aadd( aLinha, { "C6_XMODVEI", (cTmpAlias)->VRK_MODVEI , Nil  }); Aadd( aLinha , { "C6_XDESMOD", VV2->VV2_DESMOD         , Nil } )
-                Aadd( aLinha, { "C6_XSEGMOD", (cTmpAlias)->VRK_SEGMOD , Nil  }); Aadd( aLinha , { "C6_XDESSEG", VVX->VVX_DESSEG         , Nil } )
-                Aadd( aLinha, { "C6_XFABMOD", (cTmpAlias)->VRK_FABMOD , Nil  }); Aadd( aLinha , { "C6_XGRPMOD", ""                      , Nil } )
-                Aadd( aLinha, { "C6_XPRCTAB", (cTmpAlias)->VRK_VALTAB , Nil  }); Aadd( aLinha , { "C6_XVLRPRD", (cTmpAlias)->VRK_VALPRE , Nil } )
-                Aadd( aLinha, { "C6_XVLRMVT", (cTmpAlias)->VRK_VALMOV , Nil  }); Aadd( aLinha , { "C6_XVLRVDA", (cTmpAlias)->VRK_VALVDA , Nil } )
-                Aadd( aLinha, { "C6_XBASST",  (cTmpAlias)->VRK_XBASST , Nil  })
+                Aadd( aLinha, { "C6_ITEM"   , Right((cTmpAlias)->VRK_ITEPED,2),Nil  } )
+                Aadd( aLinha, { "C6_PRODUTO", cProduto                , Nil } ) 
+                Aadd( aLinha, { "C6_QTDVEN" , 1                       , Nil } )
+                Aadd( aLinha, { "C6_PRCVEN" , (cTmpAlias)->VRK_VALMOV , Nil } )
+                Aadd( aLinha, { "C6_VALOR"  , (cTmpAlias)->VRK_VALMOV , Nil } )
+                Aadd( aLinha, { "C6_PRUNIT" , (cTmpAlias)->VRK_VALMOV , Nil } )
+                Aadd( aLinha, { "C6_OPER"   , (cTmpAlias)->VRK_OPER   , Nil } )
+                Aadd( aLinha, { "C6_TES"    , (cTmpAlias)->VRK_CODTES , Nil } )
+                Aadd( aLinha, { "C6_PEDCLI" , (cTmpAlias)->VRJ_PEDCOM , Nil } )
+                Aadd( aLinha, { "C6_QTDLIB" , 0                       , Nil } )
+                Aadd( aLinha, { "C6_CHASSI" , CriaVar("C6_CHASSI" )   , Nil } )
+                Aadd( aLinha, { "C6_LOCALIZ", CriaVar("C6_LOCALIZ")   , Nil } )
+                Aadd( aLinha, { "C6_NUMSERI", CriaVar("C6_NUMSERI")   , Nil } )
+                Aadd( aLinha, { "C6_XCODMAR", (cTmpAlias)->VRK_CODMAR , Nil } )
+                Aadd( aLinha, { "C6_XDESMAR", VE1->VE1_DESMAR         , Nil } )
+                Aadd( aLinha, { "C6_XCORINT", (cTmpAlias)->VRK_CORINT , Nil } )
+                Aadd( aLinha, { "C6_XCOREXT", (cTmpAlias)->VRK_COREXT , Nil } )
+                Aadd( aLinha, { "C6_XMODVEI", (cTmpAlias)->VRK_MODVEI , Nil } )
+                Aadd( aLinha, { "C6_XDESMOD", VV2->VV2_DESMOD         , Nil } )
+                Aadd( aLinha, { "C6_XSEGMOD", (cTmpAlias)->VRK_SEGMOD , Nil } )
+                Aadd( aLinha, { "C6_XDESSEG", VVX->VVX_DESSEG         , Nil } )
+                Aadd( aLinha, { "C6_XFABMOD", (cTmpAlias)->VRK_FABMOD , Nil } )
+                Aadd( aLinha, { "C6_XGRPMOD", ""                      , Nil } )
+                Aadd( aLinha, { "C6_XPRCTAB", (cTmpAlias)->VRK_VALTAB , Nil } )
+                Aadd( aLinha, { "C6_XVLRPRD", (cTmpAlias)->VRK_VALPRE , Nil } )
+                Aadd( aLinha, { "C6_XVLRMVT", (cTmpAlias)->VRK_VALMOV , Nil } )
+                Aadd( aLinha, { "C6_XVLRVDA", (cTmpAlias)->VRK_VALVDA , Nil } )
+                Aadd( aLinha, { "C6_XBASST",  (cTmpAlias)->VRK_XBASST , Nil } )
                 Aadd( aItePed ,  aLinha )
                 (cTmpAlias)->(DbSkip())
             EndDo
