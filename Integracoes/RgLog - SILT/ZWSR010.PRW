@@ -161,14 +161,14 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 				cXTipo := "OUT"
 			EndIf	
 		EndIf
-		_cDeposito  := (_cAlias)->DEPOSITO
+		_cDeposito  := alltrim((_cAlias)->DEPOSITO)
 		If _lRet
 			_lError := .F.  //controle para que não se marque como integrado
 			While ((_cAlias)->( !Eof() ))
 				SF1->(DbGoto((_cAlias)->NREGSF1))  //PEC023
 				_nRegSF1 := (_cAlias)->NREGSF1
 				_cDocOri := cNota+";"+cSerie
-				_cDeposito  := (_cAlias)->DEPOSITO
+				_cDeposito  := alltrim((_cAlias)->DEPOSITO)
 
 				_nItem		:= 1
 
@@ -201,7 +201,7 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 				oJsEnt['recebimento']['cd_registro'] 	  	  := ""
 				oJsEnt['recebimento']['qt_itens']   	  	  := "" //--Fixo Cirilo
 				//oJsEnt['recebimento']['cd_deposito'] 	  	  := //zBuscaCd( (_cAlias)->D1_COD )  
-				oJsEnt['recebimento']['cd_deposito'] 	  	  := (_cAlias)->DEPOSITO   //PEC069
+				oJsEnt['recebimento']['cd_deposito'] 	  	  := alltrim((_cAlias)->DEPOSITO)   //PEC069
 				oJsEnt['recebimento']['cd_motorista'] 	  	  := ""
 				oJsEnt['recebimento']['dt_agenda'] 	          := ""
 				oJsEnt['recebimento']['ds_transportadora']    := ""       //Fixo pelo exemplo RgLog
@@ -304,7 +304,7 @@ Static Function ZWSR007ITE( _oJsEnt, cNota, cSerie, cForn, cLoja , _cDeposito, _
 
 		ZD1->( DbSetOrder(1) )
 		//no caso de exitir mais de uma marca devrá processar marca separada PEC069 DAC 10/07/2023
-		While (_cAlias)->(!Eof()) .And.  _cDeposito ==  (_cAlias)->DEPOSITO
+		While (_cAlias)->(!Eof()) .And.  alltrim(_cDeposito) ==  alltrim((_cAlias)->DEPOSITO)
 			cNota    := PadR( Alltrim((_cAlias)->D1_DOC), TamSX3("ZD1_DOC")[1] )
 			cSerie 	 := PadR( Alltrim((_cAlias)->D1_SERIE), TamSX3("ZD1_SERIE")[1] )
 			cCodFor  := PadR( cForn, TamSX3("ZD1_FORNEC")[1] )
@@ -346,7 +346,7 @@ Static Function ZWSR007ITE( _oJsEnt, cNota, cSerie, cForn, cLoja , _cDeposito, _
 			_aItens[_nPos]['ds_loja']    	    := ""
 			_aItens[_nPos]['nu_pedido']    	    := ""
 			//_aItens[_nPos]['cd_deposito']    	:= zBuscaCd( Alltrim((_cAlias)->D1_COD) )
-			_aItens[_nPos]['cd_deposito'] 		:= (_cAlias)->DEPOSITO   //PEC069
+			_aItens[_nPos]['cd_deposito'] 		:= alltrim((_cAlias)->DEPOSITO)   //PEC069
 			_aItens[_nPos]['qt_transferencia']  := ""
 			_aItens[_nPos]['loja']    	        := ""
 			_aItens[_nPos]['qt_cross_docking']  := ""

@@ -679,9 +679,9 @@ Static Function zRel0001(cArquivo)
 														nTotal ,; //(cAliasTRB)->D1_TOTAL,;    //--Valor Total Item
 														(cAliasTRB)->D1_CF,;    //--Cfop
 														(cAliasTRB)->FT_VALCONT,;    //--Valor Contábil
-														(cAliasTRB)->FT_BASEICM,;    //--Base ICMS
-														(cAliasTRB)->FT_ALIQICM,;    //--Aliq. ICMS
-														(cAliasTRB)->FT_VALICM,;    //--Valor ICMS
+														iif( Alltrim((cAliasTRB)->F1_ESPECIE) <> "RPS", (cAliasTRB)->FT_BASEICM , 0),;   //(cAliasTRB)->FT_BASEICM,;    //--Base ICMS
+														iif( Alltrim((cAliasTRB)->F1_ESPECIE) <> "RPS", (cAliasTRB)->FT_ALIQICM , 0),;   //(cAliasTRB)->FT_ALIQICM,;    //--Aliq. ICMS
+														iif( Alltrim((cAliasTRB)->F1_ESPECIE) <> "RPS", (cAliasTRB)->FT_VALICM  , 0),;   //(cAliasTRB)->FT_VALICM,;    //--Valor ICMS
 														IIF( (cAliasTRB)->F1_TIPO $ "B|D" , nVlCom , 0 ),;    //--Comissão
 														(cAliasTRB)->FT_BASEIPI,;    //--Base IPI					
 														(cAliasTRB)->FT_ALIQIPI,;    //--Aliq. IPI			
