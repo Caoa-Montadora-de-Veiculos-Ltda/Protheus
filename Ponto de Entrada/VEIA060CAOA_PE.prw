@@ -8,10 +8,10 @@ Local xRet       := .T.
 Local oObj 
 Local cIdPonto   := "" 
 Local cIdModel   := "" 
-Local _nP235     := superGetMv( "CMV_PEC040", ,6 )	
-Local _nP4       := superGetMv( "CMV_PEC041", ,8 )   //HYU, CHE
-Local _nSBR      := superGetMv( "CMV_PEC042", ,4 )
-Local _nSBRF     := superGetMv( "CMV_PEC043", ,5 )
+Local _nP235     := superGetMv( "CMV_FAT014", ,6 )	
+Local _nP4       := superGetMv( "CMV_FAT015", ,8 )   //HYU, CHE
+Local _nSBR      := superGetMv( "CMV_FAT016", ,4 )
+Local _nSBRF     := superGetMv( "CMV_FAT017", ,5 )
 
 Local _cForest   := superGetMv( "CMV_PEC044", ,"SJGALK8/SJ5CLBC/SJ5EL7C/SKEDLFL/SK7ALEL/SK7AL8L/SK7BLEL/SK7BLFL/SK7CLEL/SK7CLFL")
 
