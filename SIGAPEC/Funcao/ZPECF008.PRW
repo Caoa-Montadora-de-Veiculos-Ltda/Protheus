@@ -279,7 +279,7 @@ Begin Sequence
 	_cFasePrd := SubsTr(_cFaseOrc, 1, _nPosCpo -1)+ " "
 
 	//Verificar informações passadas no pergunte 
-	If _nTodos <> 1   //Caso não esteja informado todas as alternativas  devo avaliar as altenativas selecionadas
+	If _nTodos <> 1   //Caso não esteudas
 		//Verificarei nos itens contidos no VX5 e acrescentados nas perguntas
 		For _nPos := 1 To Len(_aChave)
 			//Verifico se esta marcado com Sim
@@ -1674,7 +1674,7 @@ Static Function ZPECF08CAR(_cNumOrc, _aBackOrder, _aSeqVS3, _nRegVS1, _aVS3Reg, 
 		If Len(_aBackOrder) > 0
 			_lRet := U_XOFUNCLO( _cNumOrc, /*_cGrupo*/, /*_cCodProd*/, /*_nQtdeItem*/, /*_lZera*/, /*_aVazioCpo*/, _aBackOrder)
 			If ! _lRet
-				Aadd(_aMensAglu,"Ocorrerão problemas para clonar itens que não possuem status para carregamento aos quais passriam para backorder <ZPECF08CAR> !")
+				Aadd(_aMensAglu,"Ocorrerão problemas para clonar itens que não possuem status para carregamento aos quais passariam para backorder <ZPECF08CAR> !")
 				Break	
 			EndIf
 		EndIf	

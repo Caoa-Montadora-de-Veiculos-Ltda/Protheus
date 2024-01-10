@@ -104,7 +104,7 @@ Begin Sequence
 
 	// Valida os dados do oJson
 	_lRet := ValidOJson(@_oJson,"A")
-	If !_lRet 
+	If !_lRet
 		Break
 	EndIf	
 	_lRet := .F.   //necessário pois estara com o ultimo que é verdadeiro caso de erro no programa
@@ -213,121 +213,121 @@ Realiza a atualização do piking recebido pela RG LOG
 
 /*/
 Static Function ZPEC11GPIK(_oJson, _cTipo, _aRegVS1, _lDivergencia )
-Local _lRet			:= .F.
-Local _cAlias 		:= GetNextAlias()
-Local _cPicking		:= ""
-Local _cFaseConf 	:= Alltrim(GetNewPar("MV_MIL0095","4")) // Fase de Conferencia e Separacao
-Local _cFaseFat		:= "F"
-Local _cObs			:= ""
-Local _aMsgCAOA		:= {}
-Local _aOrc			:= {}
-Local _lFatAutomaTico  := SuperGetMV( "CMV_PEC045"  ,,.F.)  //"WIS.T_DET_PEDIDO_SAIDA@DBLINK_WISHML"
+	Local _lRet			:= .F.
+	Local _cAlias 		:= GetNextAlias()
+	Local _cPicking		:= ""
+	Local _cFaseConf 	:= Alltrim(GetNewPar("MV_MIL0095","4")) // Fase de Conferencia e Separacao
+	Local _cFaseFat		:= "F"
+	Local _cObs			:= ""
+	Local _aMsgCAOA		:= {}
+	Local _aOrc			:= {}
+	Local _lFatAutomaTico  := SuperGetMV( "CMV_PEC045"  ,,.F.)  //"WIS.T_DET_PEDIDO_SAIDA@DBLINK_WISHML"
 
-Local _nPos
+	Local _nPos
 
-Begin Sequence
-	//_nPos := _oJson["nu_pedidoorigem"][1]:GetJsonText("nu_pedido")
-	// numero do pedido
-	DbSelectArea("SZK")
-	_cPicking 	:= AllTrim(_oJson["nu_pedidoorigem"][1]:GetJsonText("nu_pedido")) 
-	If !ZPEC11LPIK( _cPicking ) 
-		//GAP002 tratar além de processado se esta bloqueado cancelado
-		//ZPEC11RMsg("nu_pedido","Pedido "+_cPicking+" ja consta no cadastro Picking como recebido, não sera processado !")
-		Break
-	EndIf
-
-	BeginSql Alias _cAlias
-		SELECT 	VS1.R_E_C_N_O_ NREGVS1
-       	FROM %table:VS1% VS1
-       	WHERE VS1.VS1_FILIAL  	= %XFilial:VS1%
-			AND VS1.VS1_XPICKI 	= %Exp:_cPicking%
-		  	AND VS1.%notDel%		  
-	EndSql      
-	If (_cAlias)->(Eof()) 	
-		ZPEC11RMsg("nexistepick","Pedido "+_cPicking+" não localizou itens !")
-		Break
-	Endif   
-	//GAP002  guardar oe orçamentos antes de processar
-	While (_cAlias)->(!Eof())
-		Aadd(_aRegVS1, (_cAlias)->NREGVS1)
-		(_cAlias)->(DbSkip())
-	EndDo
-	//Repito a passagem VS1 para que seja atualizado todos os orçamentos existentes no picking
-	For _nPos := 1 To Len(_aRegVS1)
-		VS1->(DbGoto(_aRegVS1[_nPos]))
-		//MESMO COM FASE DE CONFERÊNCIA NÃO GRAVOU NO PICKING SZK DAC 08/06/2022
-		If VS1->VS1_STATUS  <> _cFaseConf
-			ZPEC11RMsg("nostatusorc","Item do Pedido "+_cPicking+" correspondente a numeração "+VS1->VS1_NUMORC+" com fase "+VS1->VS1_STATUS+", diferente de Separação, não sera processado !")
+	Begin Sequence
+		//_nPos := _oJson["nu_pedidoorigem"][1]:GetJsonText("nu_pedido")
+		// numero do pedido
+		DbSelectArea("SZK")
+		_cPicking 	:= AllTrim(_oJson["nu_pedidoorigem"][1]:GetJsonText("nu_pedido")) 
+		If !ZPEC11LPIK( _cPicking ) 
+			//GAP002 tratar além de processado se esta bloqueado cancelado
+			//ZPEC11RMsg("nu_pedido","Pedido "+_cPicking+" ja consta no cadastro Picking como recebido, não sera processado !")
 			Break
 		EndIf
-	Next
 
-	//Controlar a gravação dos dados do orçamento caso tenha 
-	Begin Transaction 
-		_lRet := ZPEC11VWIS(_cPicking, @_lDivergencia)
-		//DAC Selecionar processo VS5 e VS6 de carregamento e efetuar baixa
-		//SE NÃO TIVER PASSAR PARA PROXIMO REGISTRO
-		If _lRet 
-			For _nPos := 1 To Len(_aRegVS1)
-				VS1->(DbGoto(_aRegVS1[_nPos]))
-				_lRet := ZPEC11Separa(VS1->VS1_NUMORC, _cPicking)
-		
-				If ! _lRet
-					Exit  //sair do for
-				Endif
-				_cObs 	:= "Gravado a conferência (VM5) para os itens de separação  corretamente no recebimento do REST, para o orçamento "+VS1->VS1_NUMORC 
-				Aadd(_aMsgCAOA, Upper(_cObs) )
-
-				//efetua a gravação da tabela para controle de picking obtenção de pesos e medidas para a nota
-				_lRet := U_ZPEC11GSZK(_oJson, /*_lGravaIni*/, _cPicking, /*_cObsMenNF*/, /*_cMarca*/, _lRet)
-				If ! _lRet
-					_cObs	:= "OCORREU PROBLEMAS NO RETORNO DE SEPARAÇÃO REFERENTE PEDIDO "+_cPicking+", PARA O ORÇAMENTO "+VS1->VS1_NUMORC+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+" NÃO FOI GRAVADO" 
-					ZPEC11RMsg("divergencia",_cObs)  
-					ZPEC11EMAI({_cObs}, _cPicking ) //ENVIA EMAIL COM PROBLEMA
-					Exit  //sair do for
-				Endif
-				_cObs	:= "RETORNO DE SEPARAÇÃO REFERENTE PICKING "+_cPicking+", PARA O ORÇAMENTO "+VS1->VS1_NUMORC+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5) 
-				Aadd(_aMsgCAOA, Upper(_cObs) )
-
-				//Gravar como liberado para faturar
-				VS1->(RecLock("VS1",.F.))
-				VS1->VS1_STATUS := _cFaseFat
-				//VS1->VS1_OBSAGL	:= Upper(_cObs) +CRLF+ VS1->VS1_OBSAGL  //GAP002 será gravado posteriormente _aMsgCAOA
-				VS1->(MsUnLock())
-
-				//Gravo dados necessário para o VS1 orçamento
-				//Atualiza TES Inteligente
-				If !U_ZPECREGFI(_cPicking, VS1->VS1_NUMORC) //cZK_XPICKI _cPicking
-					_cObs		:= 	"ERRO NA ATUALIZAÇÃO TES INTELIGENTE NO PICKING "+_cPicking+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)
-					ZPEC11EMAI({_cObs}, _cPicking )  //ENVIA E-MAIL
-					Aadd(_aMsgCAOA, Upper(_cObs) )  //GUARDA MENSAGEM  PARA GRAVAR NO ORÇAMENTO
-				EndIf
-			Next	 	 
-		Endif 
-		//Caso tenha dado problema abortar
-		If !_lRet	
-			Disarmtransaction()
-		Endif
-	End Transaction 
-
-    //Após receber tenho que tentar faturar, porém caso ocorra problemas os mesmos não retornarão para RGLOG pois ja foi recebido o picking
-	If _lRet  .And. _lFatAutomaTico
-		_aOrc := {}
-		//a funcionalidade de faturamento somente recebe dados relativos ao numero de orçamento
+		BeginSql Alias _cAlias
+			SELECT 	VS1.R_E_C_N_O_ NREGVS1
+			FROM %table:VS1% VS1
+			WHERE VS1.VS1_FILIAL  	= %XFilial:VS1%
+				AND VS1.VS1_XPICKI 	= %Exp:_cPicking%
+				AND VS1.%notDel%		  
+		EndSql      
+		If (_cAlias)->(Eof()) 	
+			ZPEC11RMsg("nexistepick","Pedido "+_cPicking+" não localizou itens !")
+			Break
+		Endif   
+		//GAP002  guardar oe orçamentos antes de processar
+		While (_cAlias)->(!Eof())
+			Aadd(_aRegVS1, (_cAlias)->NREGVS1)
+			(_cAlias)->(DbSkip())
+		EndDo
+		//Repito a passagem VS1 para que seja atualizado todos os orçamentos existentes no picking
 		For _nPos := 1 To Len(_aRegVS1)
 			VS1->(DbGoto(_aRegVS1[_nPos]))
-			Aadd(_aOrc,VS1->VS1_NUMORC)
-		Next 
-		StartJob("U_ZPECF036",GetEnvServer(),.F.,_aOrc, _cPicking, cEmpAnt, cFilAnt, /*ENVIA EMAIL*/, /*Indica transaction*/,/*indica job*/)
-		//U_ZPECF036(_aOrc, _cPicking, /*ENVIA EMAIL*/, /*Indica para não utilizar transaction*/)
-	Endif
+			//MESMO COM FASE DE CONFERÊNCIA NÃO GRAVOU NO PICKING SZK DAC 08/06/2022
+			If VS1->VS1_STATUS  <> _cFaseConf
+				ZPEC11RMsg("nostatusorc","Item do Pedido "+_cPicking+" correspondente a numeração "+VS1->VS1_NUMORC+" com fase "+VS1->VS1_STATUS+", diferente de Separação, não sera processado !")
+				Break
+			EndIf
+		Next
 
-End Sequence
+		//Controlar a gravação dos dados do orçamento caso tenha 
+		Begin Transaction 
+			_lRet := ZPEC11VWIS(_cPicking, @_lDivergencia)
+			//DAC Selecionar processo VS5 e VS6 de carregamento e efetuar baixa
+			//SE NÃO TIVER PASSAR PARA PROXIMO REGISTRO
+			If _lRet 
+				For _nPos := 1 To Len(_aRegVS1)
+					VS1->(DbGoto(_aRegVS1[_nPos]))
+					_lRet := ZPEC11Separa(VS1->VS1_NUMORC, _cPicking)
+			
+					If ! _lRet
+						Exit  //sair do for
+					Endif
+					_cObs 	:= "Gravado a conferência (VM5) para os itens de separação  corretamente no recebimento do REST, para o orçamento "+VS1->VS1_NUMORC 
+					Aadd(_aMsgCAOA, Upper(_cObs) )
 
-If Select(_cAlias) <> 0
-	(_cAlias)->(DbCloseArea())
-	Ferase(_cAlias+GetDBExtension())
-Endif  
+					//efetua a gravação da tabela para controle de picking obtenção de pesos e medidas para a nota
+					_lRet := U_ZPEC11GSZK(_oJson, /*_lGravaIni*/, _cPicking, /*_cObsMenNF*/, /*_cMarca*/, _lRet)
+					If ! _lRet
+						_cObs	:= "OCORREU PROBLEMAS NO RETORNO DE SEPARAÇÃO REFERENTE PEDIDO "+_cPicking+", PARA O ORÇAMENTO "+VS1->VS1_NUMORC+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+" NÃO FOI GRAVADO" 
+						ZPEC11RMsg("divergencia",_cObs)  
+						ZPEC11EMAI({_cObs}, _cPicking ) //ENVIA EMAIL COM PROBLEMA
+						Exit  //sair do for
+					Endif
+					_cObs	:= "RETORNO DE SEPARAÇÃO REFERENTE PICKING "+_cPicking+", PARA O ORÇAMENTO "+VS1->VS1_NUMORC+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5) 
+					Aadd(_aMsgCAOA, Upper(_cObs) )
+
+					//Gravar como liberado para faturar
+					VS1->(RecLock("VS1",.F.))
+					VS1->VS1_STATUS := _cFaseFat
+					//VS1->VS1_OBSAGL	:= Upper(_cObs) +CRLF+ VS1->VS1_OBSAGL  //GAP002 será gravado posteriormente _aMsgCAOA
+					VS1->(MsUnLock())
+
+					//Gravo dados necessário para o VS1 orçamento
+					//Atualiza TES Inteligente
+					If !U_ZPECREGFI(_cPicking, VS1->VS1_NUMORC) //cZK_XPICKI _cPicking
+						_cObs		:= 	"ERRO NA ATUALIZAÇÃO TES INTELIGENTE NO PICKING "+_cPicking+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)
+						ZPEC11EMAI({_cObs}, _cPicking )  //ENVIA E-MAIL
+						Aadd(_aMsgCAOA, Upper(_cObs) )  //GUARDA MENSAGEM  PARA GRAVAR NO ORÇAMENTO
+					EndIf
+				Next	 	 
+			Endif 
+			//Caso tenha dado problema abortar
+			If !_lRet	
+				Disarmtransaction()
+			Endif
+		End Transaction 
+
+		//Após receber tenho que tentar faturar, porém caso ocorra problemas os mesmos não retornarão para RGLOG pois ja foi recebido o picking
+		If _lRet  .And. _lFatAutomaTico
+			_aOrc := {}
+			//a funcionalidade de faturamento somente recebe dados relativos ao numero de orçamento
+			For _nPos := 1 To Len(_aRegVS1)
+				VS1->(DbGoto(_aRegVS1[_nPos]))
+				Aadd(_aOrc,VS1->VS1_NUMORC)
+			Next 
+			StartJob("U_ZPECF036",GetEnvServer(),.F.,_aOrc, _cPicking, cEmpAnt, cFilAnt, /*ENVIA EMAIL*/, /*Indica transaction*/,/*indica job*/)
+			//U_ZPECF036(_aOrc, _cPicking, /*ENVIA EMAIL*/, /*Indica para não utilizar transaction*/)
+		Endif
+
+	End Sequence
+
+	If Select(_cAlias) <> 0
+		(_cAlias)->(DbCloseArea())
+		Ferase(_cAlias+GetDBExtension())
+	Endif  
 Return _lRet
 
 
@@ -1533,7 +1533,7 @@ Return nil
 { "usuario": "RGLOG.REST",
 	"senha": "CaOa!RgLogRest@2021*",
 	"nu_pedidoorigem": [{
-		"nu_pedido": "00000510",
+		"nu_pedido": "00000510", //Numero do picking
 		"cd_situacao": "001",
 		"vol_barcode": null,
 		"vol_sequencia": 1.00,

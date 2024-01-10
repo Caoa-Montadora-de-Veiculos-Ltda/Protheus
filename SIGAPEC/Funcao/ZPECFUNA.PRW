@@ -591,10 +591,12 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 					Endif	
 					//DAC 07/03/2023
 					//Conforme alinhado com Zé quando BO o armazém tem que ser 01
-					//No processo da onda no armazém 11 esta gerando BO com local 11
-					If _lXBO .And. AllTrim(_xValor) <> "01"
-						_xValor := "01"
-					Endif
+					//No processo da onda no armazém 11 esta gerando BO com local 11 
+					//Nicolas 10/01/2024 
+					//Conforme alinhado com Juarez o armazém do BO deve ser conforme o orçamento original.
+					//If _lXBO .And. AllTrim(_xValor) <> "01"
+					//	_xValor := "01"
+					//Endif
 				ElseIf _cCampo $ "VS3_OPER"  
 					If Empty(_cOper)
 						_xValor := U_zTpOper( _cCliente, _cLoja, _cTipoPed )	
@@ -5346,4 +5348,3 @@ Local _aArea := GetArea()
 RestArea(_aArea)
 Return Nil
        
-
