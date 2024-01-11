@@ -35,7 +35,7 @@ user function CMVINT99()
     private cQry	:= ""
     Private cDelete := ""
     Private cTable  := ""
-Private oMark
+    Private oMark
 
     aAdd(aParamBox,{1 ,"Filial de:",Space(TamSX3("Z7_FILIAL")[1]),"","","SM0","",50,.F.})
     aAdd(aParamBox,{1 ,"Filial ate:",Space(TamSX3("Z7_FILIAL")[1]),"","","SM0","",50,.T.})
@@ -139,9 +139,9 @@ Private oMark
         //oBrowse:= FWMBrowse():New()
         oBrowse:= FWMarkBrowse():New()
         oBrowse:SetAlias( cAliasTmp )
-oBrowse:SetSemaphore(.T.)
+        oBrowse:SetSemaphore(.T.)
         oBrowse:SetDescription( 'Log de Integração de Envio SAP' )
-//oBrowse:SetFieldMark( 'Z7_OK' )
+        //oBrowse:SetFieldMark( 'Z7_OK' )
         //oBrowse:SetAllMark( { || oBrowse:AllMark() } )
 		oBrowse:AddMarkColumns({|| If(Empty((cAliasTmp)->Z7_OK), 'LBNO', 'LBOK') }, {|| ZDupColClick() } , {||CMVMARC(oBrowse:Mark(),lMarcar := !lMarcar )})     
         //oBrowse:bAllMark := { || FwMsgRun(,{ ||CMVMARC(oBrowse:Mark(),_lMarcar := !_lMarcar )}, "Aguarde...", "Processando atualizando registros ..."), _oBrowse:Refresh(.T.)  }	
@@ -640,121 +640,114 @@ Static Function xCMVVSE2()
 Return
 
 User Function xCMVREP()
-    Local _nPos         := 0
+
     Local cAlias 		:= oBrowse:Alias()
     Local nRec			:= (cAlias)->RECSZ7
     Local _cEmp         := FWCodEmp()
-    Local cMarca        := oBrowse:Mark()
+	Local cMarca        := oBrowse:Mark()
 
-While !Eof() 
+    While !Eof() 
 
         If (cAlias)->Z7_OK <> ' '
 
             nRec   := (cAlias)->RECSZ7
 
-    dbSelectArea("SZ7")
-    SZ7->(dbSetOrder(0))
-    SZ7->(dbGoto(nRec))
+            dbSelectArea("SZ7")
+            SZ7->(dbSetOrder(0))
+            SZ7->(dbGoto(nRec))
 
-    If SZ7->Z7_XSTATUS $ "P|A|E" // obs: testar sempre o campo Z7_XSTATUS diretamente pela tabela, ao inves do temporario, pois o campo pode jah ter sido alterado de conteudo pelo job e o temporario estarah refletindo o conteudo anterior do campo.
-        If SZ7->Z7_XSTATUS <> "P"
-            SZ7->(RecLock("SZ7",.F.))
-            SZ7->Z7_XSTATUS := "P"
-            SZ7->(MsUnLock())
-        EndIf
+            If SZ7->Z7_XSTATUS $ "P|A|E" // obs: testar sempre o campo Z7_XSTATUS diretamente pela tabela, ao inves do temporario, pois o campo pode jah ter sido alterado de conteudo pelo job e o temporario estarah refletindo o conteudo anterior do campo.
+                If SZ7->Z7_XSTATUS <> "P"
+                    SZ7->(RecLock("SZ7",.F.))
+                    SZ7->Z7_XSTATUS := "P"
+                    SZ7->(MsUnLock())
+                EndIf
 
-        RecLock( cAlias , .F. )
-        (cAlias)->(Z7_OK)	:= iIf( Empty((cAlias)->Z7_OK ) , oBrowse:Mark() , " ")
-        (cAlias)->(MsUnlock())
+                RecLock( cAlias , .F. )
+                (cAlias)->(Z7_OK)	:= iIf( Empty((cAlias)->Z7_OK ) , oBrowse:Mark() , " ")
+                (cAlias)->(MsUnlock())
 
-        If _cEmp == "2010" //Executa o p.e. Anapolis.
+                If _cEmp == "2010" //Executa o p.e. Anapolis.
+                    If (cAlias)->Z7_XTABELA == "SA1"
+                        //U_CMVSAP02( nil , nil , nRec )
+                        U_CMVSAP02( { { cEmpAnt , cFilAnt , nRec } } )
+                    ElseIf (cAlias)->Z7_XTABELA == "SA2"
+                        //U_CMVSAP01( nil , nil , nRec)
+                        U_CMVSAP01( { { cEmpAnt , cFilAnt , nRec } } )
+                    ElseIf (cAlias)->Z7_XTABELA == "CT2"
+                        //U_CMVSAP08(nRec)
+                        U_CMVSAP08( { { cEmpAnt , cFilAnt , nRec } } )
+                    ElseIf ((cAlias)->Z7_XTABELA == "SF2" .and. ((cAlias)->Z7_TIPONF <> 'B' .and. (cAlias)->Z7_TIPONF <> 'D' ));
+                            .or. ((cAlias)->Z7_XTABELA == "SF1" .and. (cAlias)->Z7_TIPONF == 'D' )
+                        //U_CMVSAP12( nRec )
+                        U_CMVSAP12( { { cEmpAnt , cFilAnt , nRec } } )
+                    ElseIf ((cAlias)->Z7_XTABELA == "SF1" .and. ((cAlias)->Z7_TIPONF <> 'B' .and. (cAlias)->Z7_TIPONF <> 'D' ));
+                            .or. ((cAlias)->Z7_XTABELA == "SF2" .and. (cAlias)->Z7_TIPONF == 'D' )
+                        //U_CMVSAP03( nil , nil , nRec )
+                        U_CMVSAP03( { { cEmpAnt , cFilAnt , nRec } } )
+                    ElseIf (cAlias)->Z7_XTABELA == "SE2"
+                        //U_CMVSAP13( nil ,nil , nRec )
+                        U_CMVSAP13( { { cEmpAnt , cFilAnt , nRec } } )
+                        // chamada da cmvsap03, pois titulos em moeda diferente da 1 do Comex sao enviados por esta rotina
+                        If SZ7->Z7_XSTATUS == "P"
+                            U_CMVSAP03( { { cEmpAnt , cFilAnt , nRec } } )
+                        Endif
+                    ElseIf (cAlias)->Z7_XTABELA == "SE1"
+                        U_CMVSAP17( { { cEmpAnt , cFilAnt , nRec } } )
+                    Else
+                        //Alert("Tipo não contemplado no reprocessamento")
+                        Help("",1,"Reprocessamento",,"Tipo não contemplado no reprocessamento",1,0)
+                        return nil
+                    EndIf
+                Else
+                    If (cAlias)->Z7_XTABELA == "SA1"
+                        //U_ZSAPF002( nil , nil , nRec )
+                        U_ZSAPF002( { { cEmpAnt , cFilAnt , nRec } } )
+                    ElseIf (cAlias)->Z7_XTABELA == "SA2"
+                        //U_ZSAPF001( nil , nil , nRec)
+                        U_ZSAPF001( { { cEmpAnt , cFilAnt , nRec } } )
+                    ElseIf (cAlias)->Z7_XTABELA == "CT2"
+                        //U_ZSAPF008(nRec)
+                        U_ZSAPF008( { { cEmpAnt , cFilAnt , nRec } } )
+                    ElseIf ((cAlias)->Z7_XTABELA == "SF2" .and. ((cAlias)->Z7_TIPONF <> 'B' .and. (cAlias)->Z7_TIPONF <> 'D' ));
+                            .or. ((cAlias)->Z7_XTABELA == "SF1" .and. (cAlias)->Z7_TIPONF == 'D' )
+                        //U_ZSAPF012( nRec )
+                        U_ZSAPF012( { { cEmpAnt , cFilAnt , nRec } } )
+                    ElseIf ((cAlias)->Z7_XTABELA == "SF1" .and. ((cAlias)->Z7_TIPONF <> 'B' .and. (cAlias)->Z7_TIPONF <> 'D' ));
+                            .or. ((cAlias)->Z7_XTABELA == "SF2" .and. (cAlias)->Z7_TIPONF == 'D' )
+                        //U_ZSAPF003( nil , nil , nRec )
+                        U_ZSAPF003( { { cEmpAnt , cFilAnt , nRec } } )
+                    ElseIf (cAlias)->Z7_XTABELA == "SE2"
+                        //U_ZSAPF013( nil ,nil , nRec )
+                        U_ZSAPF013( { { cEmpAnt , cFilAnt , nRec } } )
+                        // chamada da ZSAPF003, pois titulos em moeda diferente da 1 do Comex sao enviados por esta rotina
+                        If SZ7->Z7_XSTATUS == "P"
+                            U_ZSAPF003( { { cEmpAnt , cFilAnt , nRec } } )
+                        Endif
+                    ElseIf (cAlias)->Z7_XTABELA == "SE1"
+                        U_ZSAPF017( { { cEmpAnt , cFilAnt , nRec } } )
+                    Else
+                        //Alert("Tipo não contemplado no reprocessamento")
+                        Help("",1,"Reprocessamento",,"Tipo não contemplado no reprocessamento",1,0)
+                        return nil
+                    EndIf
+                EndIf
 
-            _nPos := At("RA", (cAlias)->Z7_XCHAVE)
+                Int99RegAltBrow(SZ7->Z7_FILIAL,SZ7->(Recno()),SZ7->Z7_XSTATUS,SZ7->Z7_XDTENV,SZ7->Z7_XHRENV,SZ7->Z7_XLOTE,SZ7->Z7_XOPESAP,SZ7->Z7_LOTEINC)
 
-            If (cAlias)->Z7_XTABELA == "SA1"
-                //U_CMVSAP02( nil , nil , nRec )
-                U_CMVSAP02( { { cEmpAnt , cFilAnt , nRec } } )
-            ElseIf (cAlias)->Z7_XTABELA == "SA2"
-                //U_CMVSAP01( nil , nil , nRec)
-                U_CMVSAP01( { { cEmpAnt , cFilAnt , nRec } } )
-            ElseIf (cAlias)->Z7_XTABELA == "CT2"
-                //U_CMVSAP08(nRec)
-                U_CMVSAP08( { { cEmpAnt , cFilAnt , nRec } } )
-            ElseIf ((cAlias)->Z7_XTABELA == "SF2" .and. ((cAlias)->Z7_TIPONF <> 'B' .and. (cAlias)->Z7_TIPONF <> 'D' ));
-                    .or. ((cAlias)->Z7_XTABELA == "SF1" .and. (cAlias)->Z7_TIPONF == 'D' )
-                //U_CMVSAP12( nRec )
-                U_CMVSAP12( { { cEmpAnt , cFilAnt , nRec } } )
-            ElseIf ((cAlias)->Z7_XTABELA == "SF1" .and. ((cAlias)->Z7_TIPONF <> 'B' .and. (cAlias)->Z7_TIPONF <> 'D' ));
-                    .or. ((cAlias)->Z7_XTABELA == "SF2" .and. (cAlias)->Z7_TIPONF == 'D' )
-                //U_CMVSAP03( nil , nil , nRec )
-                U_CMVSAP03( { { cEmpAnt , cFilAnt , nRec } } )  //Quando emitida a NF
-            ElseIf (cAlias)->Z7_XTABELA == "SE2"
-                //U_CMVSAP13( nil ,nil , nRec )
-                U_CMVSAP13( { { cEmpAnt , cFilAnt , nRec } } )
-                // chamada da cmvsap03, pois titulos em moeda diferente da 1 do Comex sao enviados por esta rotina
-                If SZ7->Z7_XSTATUS == "P"
-                    U_CMVSAP03( { { cEmpAnt , cFilAnt , nRec } } )
-                Endif
-            ElseIf SZ7->Z7_XTABELA == "SE1" 
-                IF _nPos = 0
-                    U_CMVSAP17( { { cEmpAnt , cFilAnt , nRec } } )
-                ELSE
-                    U_CMVSAP26( { { cEmpAnt , cFilAnt , nRec } } )
-                ENDIF
+                oBrowse:Refresh()
+
+                //Atualiza a tela
+                //xCMIAtu()
+
             Else
-                //Alert("Tipo não contemplado no reprocessamento")
-                Help("",1,"Reprocessamento",,"Tipo não contemplado no reprocessamento",1,0)
-                return nil
+                //Alert("Será permitido reprocessamento para os registros com Status: P=Pendente, A=Aguardando retorno,E=Erro."+CRLF+;
+                //IIf(!SZ7->Z7_XSTATUS == (cAlias)->Z7_XSTATUS,"O status deste registro foi alterado pelo retorno da integração com o SAP, utilize a opçao 'Atualização tela', para verificar o novo status.",""))
+                Help("",1,"Reprocessamento",,"Será permitido reprocessamento para os registros com Status: P=Pendente, A=Aguardando retorno,E=Erro."+;
+                IIf(!SZ7->Z7_XSTATUS == (cAlias)->Z7_XSTATUS,"O status deste registro foi alterado pelo retorno da integração com o SAP, utilize a opçao 'Atualização tela', para verificar o novo status.",""),1,0)
             EndIf
-        Else
-             If (cAlias)->Z7_XTABELA == "SA1"
-                //U_ZSAPF002( nil , nil , nRec )
-                U_ZSAPF002( { { cEmpAnt , cFilAnt , nRec } } )
-            ElseIf (cAlias)->Z7_XTABELA == "SA2"
-                //U_ZSAPF001( nil , nil , nRec)
-                U_ZSAPF001( { { cEmpAnt , cFilAnt , nRec } } )
-            ElseIf (cAlias)->Z7_XTABELA == "CT2"
-                //U_ZSAPF008(nRec)
-                U_ZSAPF008( { { cEmpAnt , cFilAnt , nRec } } )
-            ElseIf ((cAlias)->Z7_XTABELA == "SF2" .and. ((cAlias)->Z7_TIPONF <> 'B' .and. (cAlias)->Z7_TIPONF <> 'D' ));
-                    .or. ((cAlias)->Z7_XTABELA == "SF1" .and. (cAlias)->Z7_TIPONF == 'D' )
-                //U_ZSAPF012( nRec )
-                U_ZSAPF012( { { cEmpAnt , cFilAnt , nRec } } )
-            ElseIf ((cAlias)->Z7_XTABELA == "SF1" .and. ((cAlias)->Z7_TIPONF <> 'B' .and. (cAlias)->Z7_TIPONF <> 'D' ));
-                    .or. ((cAlias)->Z7_XTABELA == "SF2" .and. (cAlias)->Z7_TIPONF == 'D' )
-                //U_ZSAPF003( nil , nil , nRec )
-                U_ZSAPF003( { { cEmpAnt , cFilAnt , nRec } } )
-            ElseIf (cAlias)->Z7_XTABELA == "SE2"
-                //U_ZSAPF013( nil ,nil , nRec )
-                U_ZSAPF013( { { cEmpAnt , cFilAnt , nRec } } )
-                // chamada da ZSAPF003, pois titulos em moeda diferente da 1 do Comex sao enviados por esta rotina
-                If SZ7->Z7_XSTATUS == "P"
-                    U_ZSAPF003( { { cEmpAnt , cFilAnt , nRec } } )
-                Endif
-            ElseIf (cAlias)->Z7_XTABELA == "SE1"
-                U_ZSAPF017( { { cEmpAnt , cFilAnt , nRec } } )
-            Else
-                //Alert("Tipo não contemplado no reprocessamento")
-                Help("",1,"Reprocessamento",,"Tipo não contemplado no reprocessamento",1,0)
-                return nil
-            EndIf
+
         EndIf
-
-        Int99RegAltBrow(SZ7->Z7_FILIAL,SZ7->(Recno()),SZ7->Z7_XSTATUS,SZ7->Z7_XDTENV,SZ7->Z7_XHRENV,SZ7->Z7_XLOTE,SZ7->Z7_XOPESAP,SZ7->Z7_LOTEINC)
-
-        oBrowse:Refresh()
-
-        //Atualiza a tela
-        //xCMIAtu()
-
-    Else
-        //Alert("Será permitido reprocessamento para os registros com Status: P=Pendente, A=Aguardando retorno,E=Erro."+CRLF+;
-        //IIf(!SZ7->Z7_XSTATUS == (cAlias)->Z7_XSTATUS,"O status deste registro foi alterado pelo retorno da integração com o SAP, utilize a opçao 'Atualização tela', para verificar o novo status.",""))
-        Help("",1,"Reprocessamento",,"Será permitido reprocessamento para os registros com Status: P=Pendente, A=Aguardando retorno,E=Erro."+;
-        IIf(!SZ7->Z7_XSTATUS == (cAlias)->Z7_XSTATUS,"O status deste registro foi alterado pelo retorno da integração com o SAP, utilize a opçao 'Atualização tela', para verificar o novo status.",""),1,0)
-    EndIf
-
-EndIf
 
         dbSelectArea(cAlias)
         dbSkip()
