@@ -193,6 +193,12 @@ If aParam <> Nil
 							VRK->VRK_XVLCOM := (VV2->VV2_XCOM5 * VRK->VRK_VALVDA) / 100
 						VRK->(MsUnlock())
 						_nPerc := VV2->VV2_XCOM5
+					Case VRJ->VRJ_TIPVEN = "06"   //Comissão			
+						RecLock("VRK",.F.) 
+							VRK->VRK_XPECOM := VV2->VV2_XCOM6
+							VRK->VRK_XVLCOM := (VV2->VV2_XCOM6 * VRK->VRK_VALVDA) / 100
+						VRK->(MsUnlock())
+						_nPerc := VV2->VV2_XCOM6
 					Case VRJ->VRJ_TIPVEN = "04" .AND. VRK->VRK_CODMAR $ ("HYU/CHE")
 				        //nposModV := At(VV2_DESMOD, _cForest)
 						//IF VRK_CODMAR = "HYU" .OR. VRK_CODMAR = "CHE"
