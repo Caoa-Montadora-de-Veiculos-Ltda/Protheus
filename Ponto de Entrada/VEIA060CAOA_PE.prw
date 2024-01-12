@@ -8,12 +8,8 @@ Local xRet       := .T.
 Local oObj 
 Local cIdPonto   := "" 
 Local cIdModel   := "" 
-Local _nP235     := superGetMv( "CMV_FAT014", ,6 )	
-Local _nP4       := superGetMv( "CMV_FAT015", ,8 )   //HYU, CHE
-Local _nSBR      := superGetMv( "CMV_FAT016", ,4 )
-Local _nSBRF     := superGetMv( "CMV_FAT017", ,5 )
 
-Local _cForest   := superGetMv( "CMV_PEC044", ,"SJGALK8/SJ5CLBC/SJ5EL7C/SKEDLFL/SK7ALEL/SK7AL8L/SK7BLEL/SK7BLFL/SK7CLEL/SK7CLFL")
+//Local _cForest   := superGetMv( "CMV_PEC044", ,"SJGALK8/SJ5CLBC/SJ5EL7C/SKEDLFL/SK7ALEL/SK7AL8L/SK7BLEL/SK7BLFL/SK7CLEL/SK7CLFL")
 
 Local _nPerc     := 0
 
@@ -177,39 +173,46 @@ If aParam <> Nil
 
 		VRK->(dbSetOrder(1))
 		If VRK->(dbSeek(xFilial("VRK") + VRJ->VRJ_PEDIDO ))
+			WHILE VRK->VRK_FILIAL = VRJ->VRJ_FILIAL .AND. VRK->VRK_PEDIDO = VRJ->VRJ_PEDIDO
+                Do Case
+					Case VRJ->VRJ_TIPVEN = "02"   //Comissão			
+						RecLock("VRK",.F.) 
+							VRK->VRK_XPECOM := VV2->VV2_XCOM2
+							VRK->VRK_XVLCOM := (VV2->VV2_XCOM2 * VRK->VRK_VALVDA) / 100
+						VRK->(MsUnlock())
+						_nPerc := VV2->VV2_XCOM2
+					Case VRJ->VRJ_TIPVEN = "03"   //Comissão			
+						RecLock("VRK",.F.) 
+							VRK->VRK_XPECOM := VV2->VV2_XCOM3
+							VRK->VRK_XVLCOM := (VV2->VV2_XCOM3 * VRK->VRK_VALVDA) / 100
+						VRK->(MsUnlock())
+						_nPerc := VV2->VV2_XCOM3
+					Case VRJ->VRJ_TIPVEN = "05"   //Comissão			
+						RecLock("VRK",.F.) 
+							VRK->VRK_XPECOM := VV2->VV2_XCOM5
+							VRK->VRK_XVLCOM := (VV2->VV2_XCOM5 * VRK->VRK_VALVDA) / 100
+						VRK->(MsUnlock())
+						_nPerc := VV2->VV2_XCOM5
+					Case VRJ->VRJ_TIPVEN = "04" .AND. VRK->VRK_CODMAR $ ("HYU/CHE")
+				        //nposModV := At(VV2_DESMOD, _cForest)
+						//IF VRK_CODMAR = "HYU" .OR. VRK_CODMAR = "CHE"
+							_nPerc := VV2->VV2_XCOM4
+						//ELSEIF VRK_CODMAR = "SBR" .AND. nposModV = 0
+						//	_nPerc := _nSBR
+						//ELSEIF VRK_CODMAR = "SBR" .AND. nposModV <> 0
+						//	_nPerc := _nSBRF
+						//ENDIF
+						RecLock("VRK",.F.) 
+							VRK->VRK_XPECOM := VV2->VV2_XCOM4
+							VRK->VRK_XVLCOM := (VV2->VV2_XCOM4 * VRK->VRK_VALVDA) / 100
+						VRK->(MsUnlock())
+                End Case
 
-			If VRJ->VRJ_TIPVEN $ ("02/03/05") 
-				WHILE VRK->VRK_FILIAL = VRJ->VRJ_FILIAL .AND. VRK->VRK_PEDIDO = VRJ->VRJ_PEDIDO
-					RecLock("VRK",.F.) 
-						VRK->VRK_XPECOM := _nP235
-						VRK->VRK_XVLCOM := (_nP235 * VRK->VRK_VALVDA) / 100
-					VRK->(MsUnlock())
-					RecLock("VV2",.F.) 
-						VV2->VV2_XCOMIS := _nP235
-					VV2->(MsUnlock())					
-					VRK->(DbSkip())
-				End
-
-			ELSEIF VRJ->VRJ_TIPVEN = "04" .AND. VRK->VRK_CODMAR $ ("HYU/CHE")
-				WHILE VRK->VRK_FILIAL = VRJ->VRJ_FILIAL .AND. VRK->VRK_PEDIDO = VRJ->VRJ_PEDIDO
-				    nposModV := At(VV2_DESMOD, _cForest)
-				    IF VRK_CODMAR = "HYU" .OR. VRK_CODMAR = "CHE"
-					    _nPerc := _nP4
-				    ELSEIF VRK_CODMAR = "SBR" .AND. nposModV = 0
-					    _nPerc := _nSBR
-				    ELSEIF VRK_CODMAR = "SBR" .AND. nposModV <> 0
-					    _nPerc := _nSBRF
-					ENDIF
-					RecLock("VRK",.F.) 
-						VRK->VRK_XPECOM := _nPerc
-						VRK->VRK_XVLCOM := (_nPerc * VRK->VRK_VALVDA) / 100
-					VRK->(MsUnlock())
-					RecLock("VV2",.F.) 
-						VV2->VV2_XCOMIS := _nPerc
-					VV2->(MsUnlock())
-					VRK->(DbSkip())
-				End
-			EndIf 
+				RecLock("VV2",.F.) 
+					VV2->VV2_XCOMIS := _nPerc
+				VV2->(MsUnlock())
+				VRK->(DbSkip())
+			End
 
 		EndIf
 
