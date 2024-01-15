@@ -38,7 +38,7 @@ User Function ZFATF024()
     Private oPanGrid //Objeto da Grid
     Private oBrowse  //Objeto da tela
     Private cAliasTmp := GetNextAlias() //Alias da tabela temporária
-    Private bBlocoIni := {|| MsgInfo("TESTE","TESTE") } //Aqui voce pode adicionar funcoes customizadas que irao ser adicionadas ao abrir a dialog. //Preciso tester isso
+    //Private bBlocoIni := {|| MsgInfo("TESTE","TESTE") } //Aqui voce pode adicionar funcoes customizadas que irao ser adicionadas ao abrir a dialog. //Preciso tester isso
 
     //Botões - Posição
     Private nBotPosCol0   := 0  //Posição coluna Botão PROCESSAR
@@ -48,7 +48,7 @@ User Function ZFATF024()
     
     //Objeto 00 Botão PROCESSAR
     Private oBtnObj0                  //Objeto do botão
-    Private cBtnObj0 := 'Processar'   //Título do botão
+    Private cBtnObj0    := 'Processar'   //Título do botão
     Private bBtnObj0 := {|| MsgInfo("Gerar relatório","Gerar relatório")/*zOpc(nRadOpc), oDialog:End()*/} //Funcionalidade do botão
     /*oBtnObj0:SetCSS("TButton            { font: bold;       background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,stop: 0 #3DAFCC, stop: 1 #0D9CBF);    color: #FFFFFF;     border-width: 1px;     border-style: solid;     border-radius: 3px;     border-color: #369CB5; }" + CRLF +;
                     "TButton:focus      { padding:0px;      outline-width:1px; outline-style:solid; outline-color: #51DAFC; outline-radius:3px; border-color:#369CB5;}" + CRLF +;
@@ -57,17 +57,17 @@ User Function ZFATF024()
     */
     //Objeto 01 Botão CANCELAR
     Private oBtnObj1 //Objeto do botão
-    Private cBtnObj1 := 'Cancelar' //Título do botão
+    Private cBtnObj1    := 'Cancelar' //Título do botão
     Private bBtnObj1 := {|| oDialog:End() }  //Funcionalidade do botão - Encerrar tela
 
     //Objeto 02 Botão SIMULAR
     Private oBtnObj2                  //Objeto do botão
-    Private cBtnObj2 := 'Simular'   //Título do botão
+    Private cBtnObj2    := 'Simular'   //Título do botão
     Private bBtnObj2 := {|| MsgInfo("Simular","Simular")/*zOpc(nRadOpc), oDialog:End()*/} //Funcionalidade do botão
         
     //Objeto 03 Número da NF
     Private oSayObj3 
-    Private cSayObj3 := 'Número da NF:'
+    Private cSayObj3    := 'Número da NF:'
 
     //Objeto 04 GET Numero da NF -> F2_DOC
     Private oGetObj4 
@@ -99,7 +99,7 @@ User Function ZFATF024()
 
     //Objeto 11 Nome Cliente
     Private oSayObj11 
-    Private cSayObj11    := 'Nome Cliente:'
+    Private cSayObj11   := 'Nome Cliente:'
 
     //Objeto 12 GET Nome Cliente -> A1_NOME
     Private oGetObj12 
@@ -107,7 +107,7 @@ User Function ZFATF024()
 
     //Objeto 13 Peso cubado atual
     Private oSayObj13 
-    Private cSayObj13    := 'Peso cubado atual:'
+    Private cSayObj13   := 'Peso cubado atual:'
 
     //Objeto 14 GET Peso Cubado atual -> F2_XPESOC
     Private oGetObj14 
@@ -115,7 +115,7 @@ User Function ZFATF024()
 
     //Objeto 15 Peso bruto atual
     Private oSayObj15 
-    Private cSayObj15    := 'Peso bruto atual:'
+    Private cSayObj15   := 'Peso bruto atual:'
 
     //Objeto 16 GET Peso bruto atual -> F2_PBRUTO
     Private oGetObj16 
@@ -123,7 +123,7 @@ User Function ZFATF024()
 
     //Objeto 17 Peso cubado NOVO
     Private oSayObj17 
-    Private cSayObj17   := 'Peso cubado NOVO:'
+    Private cSayObj17   := 'Peso cubado novo:'
 
     //Objeto 18 GET Peso Cubado NOVO -> F2_XPESOC
     Private oGetObj18 
@@ -131,15 +131,49 @@ User Function ZFATF024()
 
     //Objeto 19 Peso bruto NOVO
     Private oSayObj19 
-    Private cSayObj19   := 'Peso bruto NOVO:'
+    Private cSayObj19   := 'Peso bruto novo:'
 
     //Objeto 20 GET Peso bruto NOVO -> F2_PBRUTO
     Private oGetObj20 
     Private xGetObj20   := TamSX3("F2_PBRUTO")
 
+    //Adiciona as colunas que serão criadas na temporária
+    aAdd(aCampos, { 'ID_COMPR' , 'C', 15, 0}) //Código
+    aAdd(aCampos, { 'NOME'     , 'C', 50, 0}) //Descrição
+
+    //Cria a tabela temporária
+    oTempTable:= FWTemporaryTable():New(cAliasTmp)
+    oTempTable:SetFields( aCampos )
+    oTempTable:AddIndex("1", {"ID_COMPR"})
+    oTempTable:AddIndex("2", {"NOME"})
+    oTempTable:Create()  
+
+    //Popula a tabela temporária
+    fPopula()
+
+    //Adiciona as colunas que serão exibidas no FWBrowse
+    aColunas := fCriaCols()
+
+
     //Criar a Dialog
     oDialog := TDialog():New(0 , 0, nJanAltura, nJanLargur, cJanTitulo,/*[ uParam6 ]*/,/*[ uParam7 ]*/,/*[ uParam8 ]*/,/* [ uParam9 ]*/,/*[ nClrText ]*/, nCorFundo,/*[ uParam12 ]*/,/*[ oWnd ]*/, lDimPixels )   
       
+        //Dados da Grid
+        oPanGrid := tPanel():New(002, 002, '', oDlg, , , , RGB(000,000,000), RGB(254,254,254), ((nJanLarg/2)-1),133/*110*/) //((nJanLarg/2)-1),((nJanAltu/2) - 1))
+        oBrowse  := FWBrowse():New()
+        oBrowse:SetAlias(cAliasTmp)
+        oBrowse:DisableFilter()
+        oBrowse:DisableReport()
+        oBrowse:SetFontBrowse(oFontPadrao)
+        //oBrowse:SetDoubleClick( {|| lRet := .T., oDlg:End(), fSelecionar()} ) 
+        oBrowse:SetDataTable()
+        oBrowse:SetInsert(.F.)
+        oBrowse:SetDelete(.F., { || .F. })
+        oBrowse:lHeaderClick := .T. //Teste
+        oBrowse:SetColumns(aColunas)
+        oBrowse:SetOwner(oPanGrid)
+        oBrowse:Activate()
+
         //Objeto 00 Botão PROCESSAR Classe TButton
         nObjLargu   := 40
         nObjAltur   := 15
