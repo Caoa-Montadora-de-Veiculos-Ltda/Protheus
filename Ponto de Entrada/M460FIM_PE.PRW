@@ -85,7 +85,7 @@ User Function M460FIM()
                     MsUnlock()
                     
                     //emissão de Boleto
-                    IF SE1->E1_XFORMA == 'BOL'
+                    IF SE1->E1_XFORMA $ ('BOL','VFP','TED') 
                         U_RF01B062(E1_PORTADO,E1_AGEDEP,E1_CONTA,'001',/*lSetup*/,/*cNotIni*/,/*cNotFim*/,/*cSerie*/,_cChave)
                     	_nRecBol := SE1->(Recno()) 
 

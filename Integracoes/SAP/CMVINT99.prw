@@ -696,7 +696,7 @@ While !Eof()
                     U_CMVSAP03( { { cEmpAnt , cFilAnt , nRec } } )
                 Endif
             ElseIf SZ7->Z7_XTABELA == "SE1" 
-                IF _nPos = 0
+                IF _nPos = 0  //se não for RA
                     U_CMVSAP17( { { cEmpAnt , cFilAnt , nRec } } )
                 ELSE
                     U_CMVSAP26( { { cEmpAnt , cFilAnt , nRec } } )
