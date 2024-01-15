@@ -619,7 +619,8 @@ Begin Sequence
     _cQuery += "  						,MIN(  SD1.D1_DTDIGIT ) AS DT_PRIMCMP " + CRLF
     _cQuery += "  						,MAX(  SD1.D1_DTDIGIT ) AS DT_ULTCMP " + CRLF
     _cQuery += "  				FROM "+RetSqlName("SD1")+" SD1 " + CRLF 
-    _cQuery += "  				LEFT JOIN "+RetSqlName("SF4")+" SF4 " + CRLF 
+    //_cQuery += "  				LEFT JOIN "+RetSqlName("SF4")+" SF4 " + CRLF 
+    _cQuery += "  				JOIN "+RetSqlName("SF4")+" SF4 " + CRLF 
     _cQuery += " 	 	   			ON  SF4.D_E_L_E_T_ 	= ' ' " + CRLF
     _cQuery += "  					AND SF4.F4_FILIAL 	= '"+FwXFilial("SF4")+"' " + CRLF 
     _cQuery += "     				AND SF4.F4_CODIGO  	= SD1.D1_TES " + CRLF
