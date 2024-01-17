@@ -106,7 +106,7 @@ User Function ZFATF024()
 
     //Objeto 11 Nome Cliente
     Private oSayObj11 
-    Private cSayObj11   := 'Nome Cliente:'
+    Private cSayObj11   := 'Nome:'
 
     //Objeto 12 GET Nome Cliente -> A1_NOME
     Private oGetObj12 
@@ -144,14 +144,23 @@ User Function ZFATF024()
     Private oGetObj20 
     Private xGetObj20   := TamSX3("F2_PBRUTO")
 
+    //Objeto 21 SERIE
+    Private oSayObj21 
+    Private cSayObj21   := 'Série:'
+
+    //Objeto 22 GET SERIE -> F2_SERIE
+    Private oGetObj22 
+    Private xGetObj22   := '10'//TamSX3("F2_SERIE")
+
     //Adiciona as colunas que serão criadas na temporária
     aAdd(aCampos, { 'SEQ'           , 'C', 15, 0}) //Sequência
     aAdd(aCampos, { 'CODIGO'        , 'C', 15, 0}) //Código
     aAdd(aCampos, { 'DESCRICAO'     , 'C', 50, 0}) //Descrição
-    aAdd(aCampos, { 'QTDE'          , 'C', 04, 0}) //Quantidade
-    aAdd(aCampos, { 'PESOBRT'      , 'C', 04, 0}) //Peso bruto
-    aAdd(aCampos, { 'PESOCUBA'     , 'C', 04, 0}) //Peso Cubado
-    
+    aAdd(aCampos, { 'QTDE'          , 'N', 04, 0}) //Quantidade
+    aAdd(aCampos, { 'PESO_BRT'      , 'N', 04, 0}) //Peso bruto
+    aAdd(aCampos, { 'PESO_CUBA'     , 'N', 04, 0}) //Peso Cubado
+    aAdd(aCampos, { 'PESO_BRTNV'    , 'N', 04, 0}) //Peso bruto NOVO
+    aAdd(aCampos, { 'PESO_CUBNV'    , 'N', 04, 0}) //Peso Cubado NOVO
     //Cria a tabela temporária
     oTempTable:= FWTemporaryTable():New(cAliasTmp)
     oTempTable:SetFields(aCampos)
@@ -170,7 +179,7 @@ User Function ZFATF024()
     oDialog := TDialog():New(0 , 0, nJanAltura, nJanLargur, cJanTitulo,/*[ uParam6 ]*/,/*[ uParam7 ]*/,/*[ uParam8 ]*/,/* [ uParam9 ]*/,/*[ nClrText ]*/, nCorFundo,/*[ uParam12 ]*/,/*[ oWnd ]*/, lDimPixels )   
       
         //Dados da Grid
-        oPanGrid := tPanel():New(065, 002, '', oDialog, , , , RGB(000,000,000), RGB(254,254,254), ((nJanLargur/2)-1), 100/*110*/) //((nJanLarg/2)-1),((nJanAltu/2) - 1))
+        oPanGrid := tPanel():New(065, 002, '', oDialog, , , , RGB(000,000,000), RGB(254,254,254), ((nJanLargur/2)-1), 110/*110*/) //((nJanLarg/2)-1),((nJanAltu/2) - 1))
         oBrowse  := FWBrowse():New()
         oBrowse:SetAlias(cAliasTmp)
         oBrowse:DisableFilter()
@@ -203,8 +212,8 @@ User Function ZFATF024()
         //Objeto 02 Botão SIMULAR Classe TButton
         nObjLargu   := 40
         nObjAltur   := 15
-        nObjLinha   := 35 //((nJanAltura/2) - (nObjAltur + 6))
-        nObjColun2  := 170 //((nObjColun0-4) - (nObjLargu+2)) //nJanLargur ->  = 43
+        nObjLinha   := 40 //((nJanAltura/2) - (nObjAltur + 6))
+        nObjColun2  := 180 //((nObjColun0-4) - (nObjLargu+2)) //nJanLargur ->  = 43
         oBtnObj2    := TButton():New(nObjLinha, nObjColun2, cBtnObj2, oDialog, bBtnObj2, nObjLargu, nObjAltur, , oFontPadrao, , lDimPixels)
 
         //Objeto 03 TSay NÚMERO DE NF Classe TSay
@@ -215,70 +224,70 @@ User Function ZFATF024()
         oSayObj3    := TSay():New(nObjLinha, nObjColun, {|| cSayObj3}, oDialog, /*cPicture*/, oFontPadrao, , , , lDimPixels, /*nClrText*/, /*nClrBack*/, nObjLargu, nObjAltur, , , , , , /*lHTML*/)
             
         //Objeto 04 TGet NÚMERO DE NF Classe TGet
-        nObjLargu   := 35
+        nObjLargu   := 40
         nObjAltur   := 10
         nObjLinha   := 4
-        nObjColun   := 50
+        nObjColun   := 49
         oGetObj4    := TGet():New(nObjLinha, nObjColun, {|u| Iif(PCount() > 0 , xGetObj4 := u, xGetObj4)}, oDialog, nObjLargu, nObjAltur, /*cPict*/, /*bValid*/, /*nClrFore*/, /*nClrBack*/, oFontPadrao, , , lDimPixels)
         oGetObj4:lReadOnly  := .T.                           //Para permitir o usuario clicar mas nao editar o campo
 
         //Objeto 05 TSay PEDIDO Classe TSay
         nObjLargu   := 80
         nObjAltur   := 10
-        nObjLinha   := 5
-        nObjColun   := 95
+        nObjLinha   := 20
+        nObjColun   := 5
         oSayObj5    := TSay():New(nObjLinha, nObjColun, {|| cSayObj5}, oDialog, /*cPicture*/, oFontPadrao, , , , lDimPixels, /*nClrText*/, /*nClrBack*/, nObjLargu, nObjAltur, , , , , , /*lHTML*/)
             
         //Objeto 06 TGet PEDIDO Classe TGet
-        nObjLargu   := 35
+        nObjLargu   := 40
         nObjAltur   := 10
-        nObjLinha   := 4
-        nObjColun   := 125
+        nObjLinha   := 19
+        nObjColun   := 49
         oGetObj6    := TGet():New(nObjLinha, nObjColun, {|u| Iif(PCount() > 0 , xGetObj6 := u, xGetObj6)}, oDialog, nObjLargu, nObjAltur, /*cPict*/, /*bValid*/, /*nClrFore*/, /*nClrBack*/, oFontPadrao, , , lDimPixels)
         oGetObj6:lReadOnly  := .T.                           //Para permitir o usuario clicar mas nao editar o campo
        
         //Objeto 07 TSay CHAVE Classe TSay
         nObjLargu   := 80
         nObjAltur   := 10
-        nObjLinha   := 20
-        nObjColun   := 5
+        nObjLinha   := 5
+        nObjColun   := 160
         oSayObj7    := TSay():New(nObjLinha, nObjColun, {|| cSayObj7}, oDialog, /*cPicture*/, oFontPadrao, , , , lDimPixels, /*nClrText*/, /*nClrBack*/, nObjLargu, nObjAltur, , , , , , /*lHTML*/)
 
         //Objeto 08 TGet CHAVE Classe TGet
-        nObjLargu   := 180
+        nObjLargu   := 165
         nObjAltur   := 10
-        nObjLinha   := 19
-        nObjColun   := 50
+        nObjLinha   := 4
+        nObjColun   := 181
         oGetObj8    := TGet():New(nObjLinha, nObjColun, {|u| Iif(PCount() > 0 , xGetObj8 := u, xGetObj8)}, oDialog, nObjLargu, nObjAltur, /*cPict*/, /*bValid*/, /*nClrFore*/, /*nClrBack*/, oFontPadrao, , , lDimPixels)
         oGetObj8:lReadOnly  := .T.                           //Para permitir o usuario clicar mas nao editar o campo
       
         //Objeto 09 TSay CLIENTE Classe TSay
         nObjLargu   := 80
         nObjAltur   := 10
-        nObjLinha   := 5
-        nObjColun   := 160
+        nObjLinha   := 20
+        nObjColun   := 95
         oSayObj9   := TSay():New(nObjLinha, nObjColun, {|| cSayObj9}, oDialog, /*cPicture*/, oFontPadrao, , , , lDimPixels, /*nClrText*/, /*nClrBack*/, nObjLargu, nObjAltur, , , , , , /*lHTML*/)
 
         //Objeto 10 TGet CLIENTE Classe TGet
         nObjLargu   := 35
         nObjAltur   := 10
-        nObjLinha   := 4
-        nObjColun   := 180
+        nObjLinha   := 19
+        nObjColun   := 118
         oGetObj10   := TGet():New(nObjLinha, nObjColun, {|u| Iif(PCount() > 0 , xGetObj10 := u, xGetObj10)}, oDialog, nObjLargu, nObjAltur, /*cPict*/, /*bValid*/, /*nClrFore*/, /*nClrBack*/, oFontPadrao, , , lDimPixels)
         oGetObj10:lReadOnly  := .T.                           //Para permitir o usuario clicar mas nao editar o campo
 
         //Objeto 11 TSay NOME CLIENTE Classe TSay
         nObjLargu   := 80
         nObjAltur   := 10
-        nObjLinha   := 5
-        nObjColun   := 225
+        nObjLinha   := 20
+        nObjColun   := 160
         oSayObj11   := TSay():New(nObjLinha, nObjColun, {|| cSayObj11}, oDialog, /*cPicture*/, oFontPadrao, , , , lDimPixels, /*nClrText*/, /*nClrBack*/, nObjLargu, nObjAltur, , , , , , /*lHTML*/)
 
         //Objeto 12 TGet NOME CLIENTE Classe TGet
-        nObjLargu   := 150
+        nObjLargu   := 165
         nObjAltur   := 10
-        nObjLinha   := 4
-        nObjColun   := 255
+        nObjLinha   := 19
+        nObjColun   := 181
         oGetObj12   := TGet():New(nObjLinha, nObjColun, {|u| Iif(PCount() > 0 , xGetObj12 := u, xGetObj12)}, oDialog, nObjLargu, nObjAltur, /*cPict*/, /*bValid*/, /*nClrFore*/, /*nClrBack*/, oFontPadrao, , , lDimPixels)
         oGetObj12:lReadOnly  := .T.                           //Para permitir o usuario clicar mas nao editar o campo
 
@@ -293,7 +302,7 @@ User Function ZFATF024()
         nObjLargu   := 30
         nObjAltur   := 10
         nObjLinha   := 34
-        nObjColun   := 60
+        nObjColun   := 59
         oGetObj14   := TGet():New(nObjLinha, nObjColun, {|u| Iif(PCount() > 0 , xGetObj14 := u, xGetObj14)}, oDialog, nObjLargu, nObjAltur, /*cPict*/, /*bValid*/, /*nClrFore*/, /*nClrBack*/, oFontPadrao, , , lDimPixels)
         oGetObj14:lReadOnly  := .T.                           //Para permitir o usuario clicar mas nao editar o campo
         
@@ -308,7 +317,7 @@ User Function ZFATF024()
         nObjLargu   := 30
         nObjAltur   := 10
         nObjLinha   := 34
-        nObjColun   := 140
+        nObjColun   := 145
         oGetObj16   := TGet():New(nObjLinha, nObjColun, {|u| Iif(PCount() > 0 , xGetObj16 := u, xGetObj16)}, oDialog, nObjLargu, nObjAltur, /*cPict*/, /*bValid*/, /*nClrFore*/, /*nClrBack*/, oFontPadrao, , , lDimPixels)
         oGetObj16:lReadOnly  := .T.                           //Para permitir o usuario clicar mas nao editar o campo
 
@@ -323,7 +332,7 @@ User Function ZFATF024()
         nObjLargu   := 30
         nObjAltur   := 10
         nObjLinha   := 49
-        nObjColun   := 60
+        nObjColun   := 59
         oGetObj18   := TGet():New(nObjLinha, nObjColun, {|u| Iif(PCount() > 0 , xGetObj18 := u, xGetObj18)}, oDialog, nObjLargu, nObjAltur, /*cPict*/, /*bValid*/, /*nClrFore*/, /*nClrBack*/, oFontPadrao, , , lDimPixels)
         oGetObj18:lReadOnly  := .T.                           //Para permitir o usuario clicar mas nao editar o campo
         
@@ -338,10 +347,25 @@ User Function ZFATF024()
         nObjLargu   := 30
         nObjAltur   := 10
         nObjLinha   := 49
-        nObjColun   := 140//-10
+        nObjColun   := 145
         oGetObj20   := TGet():New(nObjLinha, nObjColun, {|u| Iif(PCount() > 0 , xGetObj20 := u, xGetObj20)}, oDialog, nObjLargu, nObjAltur, /*cPict*/, /*bValid*/, /*nClrFore*/, /*nClrBack*/, oFontPadrao, , , lDimPixels)
         oGetObj20:lReadOnly  := .T.                           //Para permitir o usuario clicar mas nao editar o campo
-
+        
+         //Objeto 21 TSay SERIE Classe TSay
+        nObjLargu   := 80
+        nObjAltur   := 10
+        nObjLinha   := 5
+        nObjColun   := 95
+        oSayObj21    := TSay():New(nObjLinha, nObjColun, {|| cSayObj21}, oDialog, /*cPicture*/, oFontPadrao, , , , lDimPixels, /*nClrText*/, /*nClrBack*/, nObjLargu, nObjAltur, , , , , , /*lHTML*/)
+            
+        //Objeto 22 TGet SERIE Classe TGet
+        nObjLargu   := 20
+        nObjAltur   := 10
+        nObjLinha   := 4
+        nObjColun   := 118
+        oGetObj22    := TGet():New(nObjLinha, nObjColun, {|u| Iif(PCount() > 0 , xGetObj22 := u, xGetObj22)}, oDialog, nObjLargu, nObjAltur, /*cPict*/, /*bValid*/, /*nClrFore*/, /*nClrBack*/, oFontPadrao, , , lDimPixels)
+        oGetObj22:lReadOnly  := .T.                           //Para permitir o usuario clicar mas nao editar o campo
+       
     oDialog:Activate(, , , lCentraliz, , , )
 
     FWRestarea(aArea)
@@ -353,7 +377,7 @@ Return
 Static Function fPopula()
 
     Local cQuery := ""
-    Local cDocumento := alltrim(str(000533511))
+    Local cDocumento := strZero(000533511,9)
     Local nPesoBrtNovo := 2
     Local nPesoCubNovo := 3  
 
@@ -394,9 +418,9 @@ Static Function fPopula()
             (cAliasTmp)->DESCRICAO      := Alltrim(QRYDADTMP->GW8_DSITEM)
             (cAliasTmp)->QTDE           := (QRYDADTMP->GW8_QTDE)
             (cAliasTmp)->PESO_BRT       := (QRYDADTMP->GW8_PESOR)
-            (cAliasTmp)->PESO_CUBA    := (QRYDADTMP->GW8_PESOC) 
-            (cAliasTmp)->PESO_BRT_NOVO  := nPesoBrtNovo
-            (cAliasTmp)->PESO_CUB_NOVO  := nPesoCubNovo         
+            (cAliasTmp)->PESO_CUBA      := (QRYDADTMP->GW8_PESOC) 
+            (cAliasTmp)->PESO_BRTNV     := nPesoBrtNovo
+            (cAliasTmp)->PESO_CUBNV     := nPesoCubNovo         
         (cAliasTmp)->(MsUnlock())
 
         QRYDADTMP->(DbSkip())
@@ -420,14 +444,14 @@ Static Function fCriaCols()
     //[4] - Tamanho
     //[5] - Decimais
     //[6] - Máscara
-    aAdd(aEstrut, { 'SEQ'          , 'Sequência'         , 'C', 005, 0, ''})
-    aAdd(aEstrut, { 'CODIGO'       , 'Código'            , 'C', 015, 0, ''}) 
-    aAdd(aEstrut, { 'DESCRICAO'    , 'Descrição'         , 'C', 040, 0, ''}) 
-    aAdd(aEstrut, { 'QTDE'         , 'Quantidade'        , 'C', 005, 0, ''})
-    aAdd(aEstrut, { 'PESO_BRT'     , 'Peso Bruto Atual'  , 'C', 005, 2, ''}) 
-    aAdd(aEstrut, { 'PESO_CUBA'  , 'Peso Cubado Atual' , 'C', 040, 2, ''})
-    aAdd(aEstrut, { 'PESO_BRT_NOVO', 'Peso Bruto Novo'   , 'C', 005, 2, ''}) 
-    aAdd(aEstrut, { 'PESO_CUB_NOVO', 'Peso Bruto Novo'   , 'C', 040, 2, ''}) 
+    aAdd(aEstrut, { 'SEQ'          , 'Seq'         , 'C', 001, 0, ''})
+    aAdd(aEstrut, { 'CODIGO'       , 'Código'            , 'C', 008, 0, ''}) 
+    aAdd(aEstrut, { 'DESCRICAO'    , 'Descrição'         , 'C', 020, 0, ''}) 
+    aAdd(aEstrut, { 'QTDE'         , 'Qtd'        , 'N', 001, 0, ''})
+    aAdd(aEstrut, { 'PESO_BRT'     , 'Peso Brt At'  , 'N', 001, 2, ''}) 
+    aAdd(aEstrut, { 'PESO_CUBA'    , 'Peso Cub At' , 'N', 001, 2, ''})
+    aAdd(aEstrut, { 'PESO_BRTNV'   , 'Peso Brt Nv'   , 'N', 001, 2, ''}) 
+    aAdd(aEstrut, { 'PESO_CUBNV'   , 'Peso Brt Nv'   , 'N', 001, 2, ''}) 
 
     //Percorrendo todos os campos da estrutura
     For nAtual := 1 To Len(aEstrut)
