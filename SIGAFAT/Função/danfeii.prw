@@ -388,7 +388,7 @@ If !lImpDir .or. MV_PAR04 == 0 /* Caso impressão de DANFE seja realizada via Aut
 			else
 				aXml := GetXML(cIdEnt,aNotas,@cModalidade, if( valtype(oDanfe) == "O", oDanfe:lInJob, nil ) )
 			endif
-
+			cPegaXml := aXML[1][2]
 			nLenNotas := Len(aNotas)
 
 			For nX := 1 To nLenNotas

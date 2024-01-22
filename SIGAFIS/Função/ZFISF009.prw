@@ -1,8 +1,12 @@
 #INCLUDE "PROTHEUS.CH"
 #INCLUDE "FWMVCDEF.CH"
 #INCLUDE "DBINFO.CH"
-#INCLUDE "TOTVS.CH"
 #INCLUDE "FWBROWSE.CH"
+#Include "TBIConn.ch" 
+#Include "Colors.ch"
+#Include "RPTDef.ch"
+#Include "FWPrintSetup.ch"
+#INCLUDE "TOTVS.CH"
 
 Static _oMark     
 
@@ -15,6 +19,9 @@ Local _oFnt10    	:= TFont():New("Courier New",10,0)
 Local _aColumns
 Local _aCampos
 Local _oSay
+
+Private cPegaXml   := ""  //Obtido dentro da rotina da Danfe.
+Private cXMensagem := ""
 
 //Private aRotina	 :=  {}  //Menudef() //Se for criar menus via MenuDef         
 //Private _nCopias := 1
@@ -103,130 +110,257 @@ Return _lRet
 
 Static Function ZFISF09GAQ( _oSay) 
 Local _cMarca   := _oMark:Mark()
-Local _cArqXML  := "" 
-Local _lMostra  := .T.
-    If _oMark:IsMark(_cMarca)
-        Pergunte("NFSIGW",.F.)
-        MV_PAR01 := SF2->F2_SERIE
-        MV_PAR02 := SF2->F2_DOC  
-        MV_PAR03 := SF2->F2_DOC  
-        MV_PAR04 := "c:\temp\"  
-        MV_PAR05 := Date() - 600  
-        MV_PAR06 := Date()  
-        //StaticCall(SPEDNFE,SpedPExp, MV_PAR01, MV_PAR02, MV_PAR03, MV_PAR04,.T.,MV_PAR05, MV_PAR06, , 1,)
-        //SpedPExp(cIdEnt,cSerie,cNotaIni,cNotaFim,cDirDest,lEnd,dDataDe,dDataAte,cCnpjDIni,cCnpjDFim,nTipo,lCTe,cSerMax,cOpcExp)
-        _oMark:SetInvert(.F.)
-        SpedExport()
-        //zSpedXML(SF2->F2_DOC, SF2->F2_SERIE, @_cArqXML, _lMostra)
-        _oMark:refresh()
-    Endif  
+Local _cPasta   := "c:\temp\" 
+Local cNomeArquivo := ""
+Local _cArquivo := ""
+
+    //SF2->(DbGotop())
+    //While SF2->(!Eof())
+        If _oMark:IsMark(_cMarca)
+            //MProcDanfe(_cPasta, @_cArquivo)
+            SF2->(MProcDanfe(cNomeArquivo,_cPasta))
+            _oMark:refresh()
+        Endif 
+    //    SF2->(DbSkip()) 
+    //EndDo    
 Return .t.
 
 
 
-    
-/*/{Protheus.doc} zSpedXML
-Função que gera o arquivo xml da nota (normal ou cancelada) através do documento e da série disponibilizados
-@author Atilio
-@since 25/07/2017
+//-------------------------------------------------------------------
+/*/{Protheus.doc} MProcDanfe
+Processar a Danfe e enviar e-mail
+@author Antonio C Ferreira
+@since 17/06/2021
 @version 1.0
-@param cDocumento, characters, Código do documento (F2_DOC)
-@param cSerie, characters, Série do documento (F2_SERIE)
-@param cArqXML, characters, Caminho do arquivo que será gerado (por exemplo, C:\TOTVS\arquivo.xml)
-@param lMostra, logical, Se será mostrado mensagens com os dados (erros ou a mensagem com o xml na tela)
-@type function
-@example Segue exemplo abaixo
-    u_zSpedXML("000000001", "1", "C:\TOTVS\arquivo1.xml", .F.) //Não mostra mensagem com o XML
-        
-    u_zSpedXML("000000001", "1", "C:\TOTVS\arquivo2.xml", .T.) //Mostra mensagem com o XML
 /*/
-    
-Static Function zSpedXML(cDocumento, cSerie, cArqXML, lMostra)
-    Local aArea        := GetArea()
-    Local cURLTss      := PadR(GetNewPar("MV_SPEDURL","http://"),250)  
-    Local oWebServ
-    Local cTextoXML    := ""
-    Local oFileXML
+//-------------------------------------------------------------------
+STATIC Function MProcDanfe(cNomeArquivo, _cPasta)
 
-    Default cDocumento := ""
-    Default cSerie     := ""
-    Default cArqXML    := GetTempPath()+"arquivo_"+cSerie+cDocumento+".xml"
-    Default lMostra    := .F.
+    Local aArea      := GetArea()
+    Local nA         := 0
+	Local cMensagem  := ""
+    Local cDir       := SuperGetMV('MV_RELT',,"\SPOOL\")
 
-    Private cIdEnt     := ""
+    Private cPegaXml   := ""  //Obtido dentro da rotina da Danfe.
+    Private cXMensagem := ""
 
-    If IsReady()
-	    //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-	    //³Obtem o codigo da entidade                                              ³
-	    //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-	    cIdEnt := SF2->(RetIdEnti())  //GetIdEnt()
-    Endif 
+    Begin Sequence
 
-    //Se tiver documento
-    If !Empty(cDocumento) .and. !Empty(cIdEnt)
-        cDocumento := PadR(cDocumento, TamSX3('F2_DOC')[1])
-        cSerie     := PadR(cSerie,     TamSX3('F2_SERIE')[1])
-            
-        //Instancia a conexão com o WebService do TSS    
-        oWebServ:= WSNFeSBRA():New()
-        oWebServ:cUSERTOKEN        := "TOTVS"
-        oWebServ:cID_ENT           := cIdEnt
-        oWebServ:oWSNFEID          := NFESBRA_NFES2():New()
-        oWebServ:oWSNFEID:oWSNotas := NFESBRA_ARRAYOFNFESID2():New()
-        aAdd(oWebServ:oWSNFEID:oWSNotas:oWSNFESID2,NFESBRA_NFESID2():New())
-        aTail(oWebServ:oWSNFEID:oWSNotas:oWSNFESID2):cID := (cSerie+cDocumento)
-        oWebServ:nDIASPARAEXCLUSAO := 0
-        oWebServ:_URL              := AllTrim(cURLTss)+"/NFeSBRA.apw"
-            
-        //Se tiver notas
-        If oWebServ:RetornaNotas()
-            
-            //Se tiver dados
-            If Len(oWebServ:oWsRetornaNotasResult:OWSNOTAS:oWSNFES3) > 0
-                
-                //Se tiver sido cancelada
-                If oWebServ:oWsRetornaNotasResult:OWSNOTAS:oWSNFES3[1]:oWSNFECANCELADA != Nil
-                    cTextoXML := oWebServ:oWsRetornaNotasResult:OWSNOTAS:oWSNFES3[1]:oWSNFECANCELADA:cXML
-                        
-                //Senão, pega o xml normal (foi alterado abaixo conforme dica do Jorge Alberto)
-                Else
-                    cTextoXML := '<?xml version="1.0" encoding="UTF-8"?>'
-                    cTextoXML += '<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">'
-                    cTextoXML += oWebServ:oWsRetornaNotasResult:OWSNOTAS:oWSNFES3[1]:oWSNFE:cXML
-                    cTextoXML += oWebServ:oWsRetornaNotasResult:OWSNOTAS:oWSNFES3[1]:oWSNFE:cXMLPROT
-                    cTextoXML += '</nfeProc>'
-                EndIf
-                    
-                //Gera o arquivo
-                oFileXML := FWFileWriter():New(cArqXML, .T.)
-                oFileXML:SetEncodeUTF8(.T.)
-                oFileXML:Create()
-                oFileXML:Write(cTextoXML)
-                oFileXML:Close()
-                    
-                //Se for para mostrar, será mostrado um aviso com o conteúdo
-                If lMostra
-                    Aviso("zSpedXML", cTextoXML, {"Ok"}, 3)
-                EndIf
-                    
-            //Caso não encontre as notas, mostra mensagem
-            Else
-                ConOut("zSpedXML > Verificar parâmetros, documento e série não encontrados ("+cDocumento+"/"+cSerie+")...")
-                    
-                If lMostra
-                    Aviso("zSpedXML", "Verificar parâmetros, documento e série não encontrados ("+cDocumento+"/"+cSerie+")...", {"Ok"}, 3)
-                EndIf
-            EndIf
-            
-        //Senão, houve erros na classe
-        Else
-            ConOut("zSpedXML > "+IIf(Empty(GetWscError(3)), GetWscError(1), GetWscError(3))+"...")
-                
-            If lMostra
-                Aviso("zSpedXML", IIf(Empty(GetWscError(3)), GetWscError(1), GetWscError(3)), {"Ok"}, 3)
-            EndIf
+
+        If  FindFunction("ColUsaColab")
+            lUsaColab := ColUsaColab("1")
         EndIf
-    EndIf
-    RestArea(aArea)
-Return
 
+
+//        SM0Filial("01001")  //Kert
+
+        //Processar na filial 01001 a nota de saida.
+        XSpedDanfe(0/*nTipo*/, 2/*nPar*/, @cNomeArquivo)
+
+        Do  While (++nA < 10)
+
+            Sleep(5000)  //espera pelo pdf
+
+            If  File(cDir + cNomeArquivo + ".pdf")
+                Exit
+            EndIf
+        
+        EndDo
+
+        If  !( File(cDir + cNomeArquivo + ".pdf") )
+            cMensagem := If(!Empty(cXMensagem), cXMensagem, "Problema para gerar o arquivo pdf! Empresa: " + cEmpresa + " - Codigo: " + cCodigo)
+            Break
+        EndIf
+
+        MemoWrit(_cPasta + cNomeArquivo + ".xml", cPegaXml)
+        lRet := __CopyFile(cDir + cNomeArquivo + ".pdf", _cPasta+cNomeArquivo+".pdf",,,.F.)
+        //MEnviarEMail(cDir + cNomeArquivo + ".pdf", cDir + cNomeArquivo + ".xml", @cMensagem)
+
+    End Sequence
+
+
+    RestArea(aArea)
+
+Return cMensagem
+
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} XSpedDanfe
+Adaptado para gerar o pdf da Danfe via job.
+@author Antonio C Ferreira
+@since 24/06/2021
+@version 1.0
+/*/
+//-------------------------------------------------------------------
+STATIC Function XSpedDanfe(nTipo, nPar, cFilePrint)
+
+Local cIdEnt 		:= ""
+Local aIndArq   	:= {}
+Local oDanfe
+Local oSetup
+Local aDevice  		:= {}
+Local cSession  	:= GetPrinterSession()
+//Local nRet 			:= 0
+Local lUsaColab		:= ColUsaColab("1")
+local cBarra		:= ""
+local nX 			:= 0
+local cDir			:= ""
+local lJob			:= .T. //isBlind()
+local lDanfeII		:= findfunction("u_PrtNfeSef")
+local lDanfeIII		:= findfunction("u_DANFE_P1")
+local cMsgVld		:= ""
+
+Default nTipo		:= 0
+default nPar		:= 0
+default cFilePrint	:= ""
+
+Private lNaoPreview := .T.  //Para nao abrir o pdf.
+Private oXTemLog    := Nil
+
+/*
+If findfunction("U_DANFE_V") .and. if(lJob, nPar == 1, .T.)
+	nRet := U_Danfe_v()
+Elseif findfunction("U_DANFE_VI") .and. if(lJob, nPar == 2, .T.)// Incluido esta validaþÒo pois o cliente informou que nÒo utiliza o DANFEII
+	nRet := U_Danfe_vi()
+EndIf
+*/
+
+AADD(aDevice,"DISCO") // 1
+AADD(aDevice,"SPOOL") // 2
+AADD(aDevice,"EMAIL") // 3
+AADD(aDevice,"EXCEL") // 4
+AADD(aDevice,"HTML" ) // 5
+AADD(aDevice,"PDF"  ) // 6
+
+cIdEnt := RetIdEnti(lUsaColab)
+
+cFilePrint := "DANFE_"+AllTrim(SF2->F2_DOC)+Dtos(MSDate())+StrTran(Time(),":","")
+
+nLocal       	:= If(fwGetProfString(cSession,"LOCAL","SERVER",.T.)=="SERVER",1,2 )
+nOrientation 	:= If(fwGetProfString(cSession,"ORIENTATION","PORTRAIT",.T.)=="PORTRAIT",1,2)
+cDevice     	:= If(Empty(fwGetProfString(cSession,"PRINTTYPE","SPOOL",.T.)),"PDF",fwGetProfString(cSession,"PRINTTYPE","SPOOL",.T.))
+nPrintType      := aScan(aDevice,{|x| x == cDevice })
+
+//+-------------------------------------------+
+//|Ajuste no pergunte NFSIGW                  |
+//+-------------------------------------------+
+//AjustaSX1()
+
+cBarra := "\"
+if IsSrvUnix()
+	cBarra := "/"
+endif
+
+If  CTIsReady(,,,lUsaColab)
+	dbSelectArea("SF2")
+	RetIndex("SF2")
+	dbClearFilter()
+	//+------------------------------------------------------------------------+
+	//|Obtem o codigo da entidade                                              |
+	//+------------------------------------------------------------------------+
+	If  .T. //nRet >= 20100824
+
+		cDir := SuperGetMV('MV_RELT',,"\SPOOL\")
+		if !empty(cDir) .and. !ExistDir(cDir)
+			aDir := StrTokArr(cDir, cBarra)
+			cDir := ""
+			for nX := 1 to len(aDir)
+				cDir += aDir[nX] + cBarra
+				if !ExistDir(cDir)
+					MakeDir(cDir)
+				endif
+			next
+		endif
+
+		If  (nTipo <> 1)
+			lAdjustToLegacy := .F. // Inibe legado de resoluþÒo com a TMSPrinter
+			oDanfe := FWMSPrinter():New(cFilePrint, IMP_PDF, lAdjustToLegacy, cDir /*cPathInServer*/, .T. )
+
+			oDanfe:cPathPDF := cDir
+
+			if  lJob
+				oDanfe:SetViewPDF(.F.)
+				oDanfe:lInJob := .T.
+			endif
+
+			// ----------------------------------------------
+			// Cria e exibe tela de Setup Customizavel
+			// OBS: Utilizar include "FWPrintSetup.ch"
+			// ----------------------------------------------
+			//nFlags := PD_ISTOTVSPRINTER+ PD_DISABLEORIENTATION + PD_DISABLEPAPERSIZE + PD_DISABLEPREVIEW + PD_DISABLEMARGIN
+			nFlags := PD_ISTOTVSPRINTER + PD_DISABLEPAPERSIZE + PD_DISABLEPREVIEW + PD_DISABLEMARGIN
+			If ( !oDanfe:lInJob )
+				oSetup := FWPrintSetup():New(nFlags, "DANFE")
+				// ----------------------------------------------
+				// Define saida
+				// ----------------------------------------------
+				oSetup:SetPropert(PD_PRINTTYPE   , nPrintType)
+				oSetup:SetPropert(PD_ORIENTATION , nOrientation)
+				oSetup:SetPropert(PD_DESTINATION , nLocal)
+				oSetup:SetPropert(PD_MARGIN      , {60,60,60,60})
+				oSetup:SetPropert(PD_PAPERSIZE   , 2)
+
+				If ExistBlock( "SPNFESETUP" )
+					Execblock( "SPNFESETUP" , .F. , .F. , {oDanfe, oSetup} )
+				Endif
+			EndIf
+
+			// ----------------------------------------------
+			// Pressionado botÒo OK na tela de Setup
+			// ----------------------------------------------
+			If lJob .or. oSetup:Activate() == PD_OK // PD_OK =1
+				//+-------------------------------------------+
+				//|Salva os Parametros no Profile             |
+				//+-------------------------------------------+
+
+				fwWriteProfString( cSession, "LOCAL"      , if( lJob, "SERVER"		, If(oSetup:GetProperty(PD_DESTINATION)==1 ,"SERVER"    ,"CLIENT"    )), .T. )
+				fwWriteProfString( cSession, "PRINTTYPE"  , if( lJob, "PDF"		, If(oSetup:GetProperty(PD_PRINTTYPE)==2   ,"SPOOL"     ,"PDF"       )), .T. )
+				fwWriteProfString( cSession, "ORIENTATION", if( lJob, "PORTRAIT"	, If(oSetup:GetProperty(PD_ORIENTATION)==1 ,"PORTRAIT"  ,"LANDSCAPE" )), .T. )
+
+				// Configura o objeto de impressÒo com o que foi configurado na interface.
+				oDanfe:setCopies( val( if( lJob, "1", oSetup:cQtdCopia )) )
+
+                //oXTemLog := XTemLog():New("001")
+
+				If  .T. //( lJob .and. nPar == 1 ) .or. ( !lJob .and. oSetup:GetProperty(PD_ORIENTATION) == 1 )
+					//+-------------------------------------------+
+					//|Danfe Retrato DANFEII.PRW                  |
+					//+-------------------------------------------+
+					if(lDanfeII, u_PrtNfeSef(cIdEnt ,/*cVal1*/ ,/*cVal2*/ ,oDanfe ,oSetup ,cFilePrint , .T./*lIsLoja*/, /*nTipo*/), cMsgVld := "Fonte de impressÒo de DANFE nÒo compilado !")
+				ElseIf ( lJob .and. nPar == 2 ) .or. !lJob
+					//+-------------------------------------------+
+					//|Danfe Paisagem DANFEIII.PRW                |
+					//+-------------------------------------------+
+					if(lDanfeIII, u_DANFE_P1(cIdEnt ,/*cVal1*/ ,/*cVal2*/ ,oDanfe ,oSetup ,/*lIsLoja*/ ), cMsgVld := "Fonte de impressÒo de DANFE nÒo compilado !" )
+				EndIf
+
+			Endif
+		ElseIf nTipo == 1
+			if(lDanfeII, U_PrtNfeSef(cIdEnt ,/*cVal1*/ ,/*cVal2*/ , , , ,/*lIsLoja*/, 1), cMsgVld := "Fonte de impressÒo de DANFE nÒo compilado !")
+		EndIf
+	Else
+		if(lDanfeII, U_PrtNfeSef(cIdEnt ,/*cVal1*/ ,/*cVal2*/ , , , ,/*lIsLoja*/), cMsgVld := "Fonte de impressÒo de DANFE nÒo compilado !")
+	EndIf
+	
+	if !lJob
+		if !empty(cMsgVld)
+			Help(NIL, NIL, "RDMAKE", NIL, cMsgVld, 1, 0, NIL, NIL, NIL, NIL, NIL, {"Acesse o portal do cliente baixe os fontes DANFEII.PRW, DANFEIII.PRW e compile em seu ambiente"})
+		endif
+
+		Pergunte("NFSIGW",.F.) 
+		if  .F. //len(aFilBrw) > 0
+			bFiltraBrw := {|| FilBrowse(aFilBrw[1],@aIndArq,@aFilBrw[2])}
+			Eval(bFiltraBrw)
+		endif
+	EndIf
+
+EndIf
+
+oDanfe := Nil
+oSetup := Nil
+
+//Limpa arquivos temporarios .rel da pasta MV_RELT
+//SpedCleRelt()
+
+Return .T.
