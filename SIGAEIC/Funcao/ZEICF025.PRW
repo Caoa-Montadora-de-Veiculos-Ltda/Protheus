@@ -282,6 +282,16 @@ Chamado pela função ZEICF025PR posicionar na SW6 para gravar os dados
 /*/
 Static function ZEIC025GRV(_cHouse,NREGSW6) 
 Local _Ret     := ' '
+Local _names   := ' '
+Local _nX      := 0
+Local nQtdeTtl := 0
+Local nQtde    := 0
+Local nOUTCTN  := 0
+Local nQtd40HC := 0
+Local nQtd40   := 0
+Local nQtd20   := 0
+Local cConType := ' '
+Local cTipoCT  := ' '
 Local cXSHIPME := ' '                  //W6_XSHIPME   //ShipmentNum
 Local nEIHQTD  := 0                    //EIH_QTDADE   //Quantidade de packs
 Local cXPTYPE  := ' '                  //SJF_XPTYPE   //Tipo de pack
@@ -290,12 +300,13 @@ Local dCargo   := CTOD("  /  /    ")   //W6_XCARGOR   //Estimativa de carga pron
 Local dCargoP  := CTOD("  /  /    ")   //W6_XCARGOP   //Carga pronta
 Local dAutoE   := CTOD("  /  /    ")   // W6_XAUTOE    //Data de autorização de envio
 Local dETE     := CTOD("  /  /    ")   //W6_DT_ETD    //ETD - Origem (Estimativa de Saida)
-Local cATD     := ' '                  //W6_XATD      //ATD - Origem (Data real Disponivel para Entrega)
+Local cATD     := " "                  //W6_XATD      //ATD - Origem (Data real Disponivel para Entrega)
 Local dETA     := CTOD("  /  /    ")   //W6_DT_ETA    //ETA - Destino (Estimado de Chegada)
 Local dXATA    := CTOD("  /  /    ")   //W6_XATA      //ATA - Destino (Atracação)
 Local cPortOri := ' '                  //W6_ORIGEM    //Porto Origem
 Local cPortDes := ' '                  //W6_DEST      //Porto Destino
 Local cXCARRIE := ' '                  //W6_XCARRIE   //Nome do armador
+//Local cVtrans  := ' '                  //Via de Transporte
 Local cIDENTVE := ' '                  //W6_IDENTVE   //Navio
 Local cVIAGEM  := ' '                  //W6_VIAGEM    //Viagem
 Local cXREFARM := ' '                  //W6_XREFARM   //Referência do armador
@@ -325,9 +336,7 @@ Local cXEUROPA := ' '                  //W6_XEUROPA   //Se carga é Via Europa
 	dETE       := CTOD(SUBSTR(_oJSRet:GetJsonText("EstimateDeparture"),1,10))
 	dETA       := CTOD(SUBSTR(_oJSRet:GetJsonText("EstimateArrival"),1,10))
 	dXATA      := CTOD(SUBSTR(_oJSRet:GetJsonText("ActualArrival"),1,10))
-	cPortOri   := Substr(_oJSRet:GetJsonText("PortofLoading"),1,3)
-	cPortDes   := Substr(_oJSRet:GetJsonText("PortofDischarge"),1,3)
-	cATD       := _oJSRet:GetJsonText("ActualDeparture")
+	cATD       := SUBSTR(_oJSRet:GetJsonText("ActualDeparture"),1,10)
 	cXCARRIE   := _oJSRet:GetJsonText("CarrierName")
 	cIDENTVE   := _oJSRet:GetJsonText("Vessel")
 	cVIAGEM    := Alltrim(_oJSRet:GetJsonText("Voyage"))
@@ -346,20 +355,20 @@ Local cXEUROPA := ' '                  //W6_XEUROPA   //Se carga é Via Europa
 	cXCHOUSE   := _oJSRet:GetJsonText("IsHBLReceived")
 	cXEUROPA   := _oJSRet:GetJsonText("IsEuropeRoute")
 		
-/*	IF (AllTrim(_oJSRet:GetJsonText("jW_TransportMode")) = 'SEA' .OR. AllTrim(_oJSRet:GetJsonText("jW_TransportMode")) = 'FSA')
+/*	IF (AllTrim(_oJSRet:GetJsonText("TipoFrete")) = 'SEA' .OR. AllTrim(_oJSRet:GetJsonText("TipoFrete")) = 'FSA')
 		_cVtrans := 'M'       
-	ELSEIF (AllTrim(_oJSRet:GetJsonText("jW_TransportMode")) = 'AIR' .OR. AllTrim(_oJSRet:GetJsonText("jW_TransportMode")) = 'FAS')
+	ELSEIF (AllTrim(_oJSRet:GetJsonText("TipoFrete")) = 'AIR' .OR. AllTrim(_oJSRet:GetJsonText("TipoFrete")) = 'FAS')
 		_cVtrans := 'A' 
-	ELSEIF AllTrim(_oJSRet:GetJsonText("jW_TransportMode")) = 'ROA'
+	ELSEIF AllTrim(_oJSRet:GetJsonText("TipoFrete")) = 'ROA'
 		_cVtrans := 'R' 
 	ELSE
 		_cVtrans := ' '  			
-	ENDIF
-	_cVes := AllTrim(_oJSRet:GetJsonText("jW_Vessel"))
+	ENDIF*/
 
-	_cOrig  := Posicione("SY9",4,xFilial("SY9")+AllTrim(_oJSRet:GetJsonText("jS_RL_NKOrigin")),"Y9_SIGLA")
-	_cDest  := Posicione("SY9",4,xFilial("SY9")+AllTrim(_oJSRet:GetJsonText("jS_RL_NKDestination")),"Y9_SIGLA")
-*/
+//	_cVes := AllTrim(_oJSRet:GetJsonText("jW_Vessel"))
+
+	cPortOri  := Posicione("SY9",4,xFilial("SY9")+AllTrim(_oJSRet:GetJsonText("PortofLoading")),"Y9_SIGLA")
+	cPortDes  := Posicione("SY9",4,xFilial("SY9")+AllTrim(_oJSRet:GetJsonText("PortofDischarge")),"Y9_SIGLA")
 	
 	IF cIDENTVE = 'NULL'	
 		cIDENTVE := ' '
@@ -383,6 +392,61 @@ Local cXEUROPA := ' '                  //W6_XEUROPA   //Se carga é Via Europa
 		SJF->(MsUnLock())
     Endif 
 
+    _names := Len(_oJSRet['Containers'])
+
+    cConType := ''
+	nQtdeTtl := 0
+	nOUTCTN  := 0
+    nQtd40HC := 0
+    nQtd40   := 0
+    nQtd20   := 0
+
+    FOR _nX := 1 TO _names
+        nQtde    := Val(_oJSRet["Containers"][_nX]["ContainerQTD"])
+        cConType := Alltrim(_oJSRet["Containers"][_nX]["ContainerType"])
+		IF cConType = "40HC" 
+			nQtd40HC := nQtd40HC + nQtde
+			cTipoCT  := "3"
+		ELSEIF cConType = "20"  		
+			nQtd20   := nQtd20 + nQtde
+			cTipoCT  := "1"		    
+		ELSEIF cConType = "40"  
+			nQtd40   := nQtd40 + nQtde
+			cTipoCT  := "2"	
+		ELSE 
+			nOUTCTN  := nOUTCTN + nQtde 
+			cTipoCT  := "4"	
+		ENDIF
+
+		nQtdeTtl := nQtdeTtl + nQtde
+
+		cContainer := Alltrim(_oJSRet["Containers"][_nX]["ContainerNum"])
+
+		SJD->(DbSetOrder(1))//FILIAL+HAWB+Cont
+		SJD->(DbGotop())
+		IF SJD->(dbSeek(xFilial("SJD") + SW6->W6_HAWB + cContainer ))
+			SJD->(RecLock("SJD",.F.))		    
+			SJD->JD_LACRE   := Alltrim(_oJSRet["Containers"][_nX]["ContainerSelo"])	
+			SJD->JD_DEVOLUC := CTOD(SUBSTR(_oJSRet["Containers"][_nX]["DevContVazio"],1,10))
+			SJD->JD_TIPO_CT := cTipoCT			
+			SJD->JD_QTD_REC := nQtdeTtl
+	        SJD->(MsUnLock())
+		ELSE
+			SJD->(RecLock("SJD",.T.))
+			SJD->JD_FILIAL  := xFilial("SJD")			
+			SJD->JD_HAWB    := Alltrim(SW6->W6_HAWB)
+			SJD->JD_CONTAIN := cContainer
+			SJD->JD_ARMADOR := '003'  //Ainda não tem o De x Para
+			SJD->JD_CADEADO := '000'  //Ainda não tem
+			SJD->JD_DEVOLUC := CTOD(SUBSTR(_oJSRet["Containers"][_nX]["DevContVazio"],1,10)) 
+			SJD->JD_LACRE   := Alltrim(_oJSRet["Containers"][_nX]["ContainerSelo"])												    
+			SJD->JD_TIPO_CT := cTipoCT	
+			SJD->JD_QTD_REC := nQtdeTtl
+	        SJD->(MsUnLock())
+        ENDIF
+
+    NEXT _nX
+
 	SW6->(RecLock("SW6",.F.))
 	SW6->W6_MT3     := Val(nMT3)       //n 8,2
 	SW6->W6_XSHIPME := cXSHIPME        //c 10
@@ -393,6 +457,7 @@ Local cXEUROPA := ' '                  //W6_XEUROPA   //Se carga é Via Europa
 	SW6->W6_XATD    := cATD
 	SW6->W6_DT_ETA  := dETA
 	SW6->W6_XATA    := dXATA
+	//SW6->W6_VIA_TRA := cVtrans 
 	SW6->W6_XCARRIE := cXCARRIE
 	SW6->W6_IDENTVE := cIDENTVE
 	SW6->W6_VIAGEM  := cVIAGEM
@@ -411,6 +476,10 @@ Local cXEUROPA := ' '                  //W6_XEUROPA   //Se carga é Via Europa
 	SW6->W6_XCSTAT  := cXCSTAT
 	SW6->W6_XCHOUSE := cXCHOUSE
 	SW6->W6_XEUROPA := cXEUROPA
+	SW6->W6_CONTA20 := nQtd20
+	SW6->W6_CONTA40 := nQtd40
+	SW6->W6_CON40HC := nQtd40HC
+	SW6->W6_OUT_CTN := Str(Int(nOUTCTN))
 
 	SW6->(MsUnLock())
 
