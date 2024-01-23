@@ -931,12 +931,14 @@ Begin Sequence
 		EndSql
 		//Caso não localize um produto no picking abortar toda a operação
 		If (_cAliasPesq)->(Eof())
-			Aadd(_aMsgCAOA,"Nao localizado Pedido "+_cPicking+" para o Produto "+_cCodProd)
+			Aadd(_aMsgCAOA,"Nao localizado Pedido "+_cPicking+" para o Produto "+_cCodProd) //_aMsgCAOA[2] := "Atualizando produdo R-151000079AA orcamento" + str((_cAliasPesq)->VS3_NUMORC) + " Qtde Protheus " + (_cAliasPesq)->VS3_QTDITE + "Qtde WIS 0"
 			Break
 		Endif	
 
 		//Processar podem existir mais de um orçamento pois o picking é agrupamento de orçamentos
-		Aadd(_aMsgCAOA, "Atualizando produdo "+AllTrim(_cCodProd)+" orcamento "+VS3->VS3_NUMORC+", Qtde Protheus "+AllTrim(STR(VS3->VS3_QTDITE))+" Qtde WIS "+AllTrim(STR(_nQtdeDivWiS)))
+		//Aadd(_aMsgCAOA, "Atualizando produdo "+AllTrim(_cCodProd)+" orcamento "+VS3->VS3_NUMORC+", Qtde Protheus "+AllTrim(STR(VS3->VS3_QTDITE))+" Qtde WIS "+AllTrim(STR(_nQtdeDivWiS)))
+		//Ajuste a pedido do JUAREZ, GAP098, Mensagem estava sendo grava com número de orçamento sempre com a informação da primeira linha da tabela VS3. Nicolas Lima 
+		Aadd(_aMsgCAOA, "Atualizando produdo " + AllTrim(_cCodProd) + " orcamento " + Alltrim((_cAliasPesq)->VS3_NUMORC) + " Qtde Protheus " + Alltrim(str((_cAliasPesq)->VS3_QTDITE)) + " Qtde WIS " + AllTrim(str(_nQtdeDivWiS)))
 		_nSaldoWis	:= _nQtdeDivWiS
 		_nSaldoProt := _nQtdeDivPRO
 		While (_cAliasPesq)->(!Eof())
@@ -1336,7 +1338,6 @@ Funcionalidade Responsavel para enviar e-mail com divergencias ocorridas no proc
 @project	GAP002 | Integração da separação - Informar produto e quantidade da cubagem
 @Obs		
 /*/
-
 Static Function ZPEC11EMAI(_aMsg, _cPicking, _cCodProd, _cAssunto)
 Local _cAliasPesq	:= GetNextAlias()   
 Local _cEmail		:= ""

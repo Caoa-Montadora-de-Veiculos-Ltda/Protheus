@@ -11,6 +11,8 @@ Responsável pelas funções customizadas com utilizades em outros programas
 #INCLUDE "FWMVCDEF.CH"
 #include "Totvs.ch"
 #include "Topconn.ch"
+#include "rwmake.ch"
+#include "tbiconn.ch"
 #define CRLF chr(13) + chr(10)
  
 Static oZPEC08Peca  := DMS_Peca():New()
@@ -4121,6 +4123,7 @@ Return(_cRet)
 	E este saldo deve ser endereçado ao ENDER01
 /*/
 User Function XRESCAOAPEC(_cNumOrc, _lReserva, _aRegVS3, _cArmOrig, _cArmDes, _lTela)
+		
 	Local _aAuto  		:= {}
 	Local _aItens 		:= {}
 	Local _aMsg			:= {}
@@ -4129,6 +4132,12 @@ User Function XRESCAOAPEC(_cNumOrc, _lReserva, _aRegVS3, _cArmOrig, _cArmDes, _l
 	Local _lRet 		:= .T.
 	Local _cMens
 	Local _nPos
+
+	Local aLogAuto := {}
+	//Variáveis de controle do ExecAuto
+	Private lMSHelpAuto     := .T.
+	Private lAutoErrNoFile  := .T.
+	Private lMsErroAuto     := .F.
 
 	Default _cNumOrc	:= ""
 	Default _cArmOrig  	:= ""    //'61' Codigo do Armazem de Pecas RESERVADAS             
@@ -4167,7 +4176,7 @@ User Function XRESCAOAPEC(_cNumOrc, _lReserva, _aRegVS3, _cArmOrig, _cArmDes, _l
 		Endif
 
 		_nOpcAuto := 3   //Inclusao
-		Private lMsErroAuto := .F.
+	
 		Begin Transaction
 			//incluir itens VS3
 			//montar por numero de registro	
@@ -4206,9 +4215,13 @@ User Function XRESCAOAPEC(_cNumOrc, _lReserva, _aRegVS3, _cArmOrig, _cArmDes, _l
 
 				MSExecAuto({|x,y| mata261(x,y)}, _aAuto, _nOpcAuto)
 				if lMsErroAuto
+					//Pegando log do ExecAuto
+					aLogAuto := GetAutoGRLog()
+					
 					_cMens := "Problemas no execauto MATA261, comunicar ADM Sistemas !!! " 
 					AAdd(_aMsg,_cMens)
 					_lRet := .F.
+					
 					//MostraErro()
 					Disarmtransaction()
 				EndIf
