@@ -1,9 +1,9 @@
-#INCLUDE "TOTVS.CH"
-#INCLUDE "TopConn.ch"
-#INCLUDE "RESTFUL.CH"
+#Include "TOTVS.CH"
+#Include "TopConn.CH"
+#Include "RESTFUL.CH"
 #Include "RWMAKE.Ch"
 #Include "TBICONN.CH"
-#Include "parmtype.ch"
+#Include "Parmtype.ch"
 #Include "PROTHEUS.CH"
 #Include "FWMBROWSE.CH"
 
@@ -74,8 +74,12 @@ Static Function ZEICF025AP(_cUrl, _cChave, _lToken, _lJob)
 Local _aMsg		:= {}
 Local _lRet 	:= .T.
 
-Default _cChave := "SHA23090924"  //informações como numero da House
-Default _cUrlFH	:= "https://api.asiashipping.com.br/followup/House"
+Private cUserName   := GETMV("CMV_EIC004")     // type here user name              
+Private cPassword   := GETMV("CMV_EIC005")     // type here user password    "bRTxqzUyJwN5BnT" 
+
+Default _cChave := "SHA23090924"          //informações como numero da House
+Default _cUrlFH	:= GETMV("CMV_EIC001")   ///"https://api.asiashipping.com.br/followup/House"
+
 //Default _cUrlFS	:= "https://api.asiashipping.com.br/followup/Shipment"
 //Default _cUrlOR	:= "https://api.asiashipping.com.br/bot/OrderRef"
 //esses 03 últimos URL necessitam de Token
@@ -120,7 +124,7 @@ Private _aHeader    := {}
     _cChave := SPACE(TamSX3("W6_HOUSE")[1])
 	_cChave := "SHA23090924"  //informações como numero da House
 
-	Aadd(_aHeader, "Authorization: Basic " + Encode64(_cUserName + ":" + _cPassword))
+	Aadd(_aHeader,"Authorization: Basic " + Encode64(_cUserName + ":" + _cPassword))
 	Aadd(_aHeader,'Content-Type: application/json; charset=utf-8')
 	Aadd(_aHeader,'Accept: application/json')
 
@@ -169,10 +173,10 @@ Local _aHeaFH := {}
 Local _jBody  := ' '      // corpo
 
 _jBody := JsonObject():New()
-_jBody["username"] := "Caoa"
-_jBody["password"] := "bRTxqzUyJwN5BnT"
+_jBody["username"] := cUserName
+_jBody["password"] := cPassword
 
-Aadd(_aHeaFH, "Authorization: Bearer " + _cToken )
+Aadd(_aHeaFH,"Authorization: Bearer " + _cToken )
 Aadd(_aHeaFH,'Content-Type: application/json')
 //Local _Teste:= 'SHA23090924'
 //			AND SW6.W6_HOUSE   = %Exp:_Teste%
@@ -195,14 +199,14 @@ Aadd(_aHeaFH,'Content-Type: application/json')
 
 		While (_cAliasJ)->(!Eof()) 
 
-		    _cUrl := _sUrl
+		    _cUrl   := _sUrl
 	 	    _cChave := Alltrim((_cAliasJ)->cBL)
 
 			If !Empty(_cChave)
 				_cUrl += "/"+_cChave
 			Endif
 
-			_cRet := Httpget(_cUrl, '', _nTime , _aHeaFH)
+			_cRet := Httpget(_cUrl, ' ', _nTime , _aHeaFH)
 
 			if ValType(_cRet) = "U"
 			    Conout("ZEICF025 - Não existe retorno do Host, excedido o numero de tentativa de conexão ")
@@ -283,6 +287,7 @@ Chamado pela função ZEICF025PR posicionar na SW6 para gravar os dados
 Static function ZEIC025GRV(_cHouse,NREGSW6) 
 Local _Ret     := ' '
 Local _names   := ' '
+Local _CodArm  := ' '
 Local _nX      := 0
 Local nQtdeTtl := 0
 Local nQtde    := 0
@@ -306,7 +311,6 @@ Local dXATA    := CTOD("  /  /    ")   //W6_XATA      //ATA - Destino (Atracação
 Local cPortOri := ' '                  //W6_ORIGEM    //Porto Origem
 Local cPortDes := ' '                  //W6_DEST      //Porto Destino
 Local cXCARRIE := ' '                  //W6_XCARRIE   //Nome do armador
-//Local cVtrans  := ' '                  //Via de Transporte
 Local cIDENTVE := ' '                  //W6_IDENTVE   //Navio
 Local cVIAGEM  := ' '                  //W6_VIAGEM    //Viagem
 Local cXREFARM := ' '                  //W6_XREFARM   //Referência do armador
@@ -355,27 +359,11 @@ Local cXEUROPA := ' '                  //W6_XEUROPA   //Se carga é Via Europa
 	cXCHOUSE   := _oJSRet:GetJsonText("IsHBLReceived")
 	cXEUROPA   := _oJSRet:GetJsonText("IsEuropeRoute")
 		
-/*	IF (AllTrim(_oJSRet:GetJsonText("TipoFrete")) = 'SEA' .OR. AllTrim(_oJSRet:GetJsonText("TipoFrete")) = 'FSA')
-		_cVtrans := 'M'       
-	ELSEIF (AllTrim(_oJSRet:GetJsonText("TipoFrete")) = 'AIR' .OR. AllTrim(_oJSRet:GetJsonText("TipoFrete")) = 'FAS')
-		_cVtrans := 'A' 
-	ELSEIF AllTrim(_oJSRet:GetJsonText("TipoFrete")) = 'ROA'
-		_cVtrans := 'R' 
-	ELSE
-		_cVtrans := ' '  			
-	ENDIF*/
-
-//	_cVes := AllTrim(_oJSRet:GetJsonText("jW_Vessel"))
-
 	cPortOri  := Posicione("SY9",4,xFilial("SY9")+AllTrim(_oJSRet:GetJsonText("PortofLoading")),"Y9_SIGLA")
 	cPortDes  := Posicione("SY9",4,xFilial("SY9")+AllTrim(_oJSRet:GetJsonText("PortofDischarge")),"Y9_SIGLA")
 	
 	IF cIDENTVE = 'NULL'	
 		cIDENTVE := ' '
-	ENDIF
-
-	IF cXCEMERC = 'NULL'
-		_cCemerc := ' '
 	ENDIF
 
     EIH->(DbSetOrder(1))      //EIH_FILIAL+EIH_HAWB+EIH_CODIGO                                                                                                                                  
@@ -390,6 +378,13 @@ Local cXEUROPA := ' '                  //W6_XEUROPA   //Se carga é Via Europa
 		SJF->(RecLock("SJF",.F.))
 		SJF->JF_XPTYPE := cXPTYPE         //c  
 		SJF->(MsUnLock())
+    Endif 
+
+    SY5->(DbSetOrder(2))      //Y5_FILIAL+Y5_NOME                                                                                                                                                                                                                                                                               
+    If SY5->(DbSeek(xFilial("SY5")+cXCARRIE))
+        _CodArm := SY5->Y5_COD
+    Else
+        _CodArm := Space(06)
     Endif 
 
     _names := Len(_oJSRet['Containers'])
@@ -457,7 +452,7 @@ Local cXEUROPA := ' '                  //W6_XEUROPA   //Se carga é Via Europa
 	SW6->W6_XATD    := cATD
 	SW6->W6_DT_ETA  := dETA
 	SW6->W6_XATA    := dXATA
-	//SW6->W6_VIA_TRA := cVtrans 
+	SW6->W6_ARMADOR := _CodArm
 	SW6->W6_XCARRIE := cXCARRIE
 	SW6->W6_IDENTVE := cIDENTVE
 	SW6->W6_VIAGEM  := cVIAGEM
@@ -502,8 +497,6 @@ User Function getToke1()
     Local cBaseURL   As Character // Base URL
     Local cPath      As Character // endpoint path
     Local cGrantType As Character // grant type
-    Local cUserName  As Character // user name
-    Local cPassword  As Character // password
     Local cResponse  As Character // response
     Local cStatus    As Character // status code
     Local cError     As Character // error message
@@ -512,17 +505,16 @@ User Function getToke1()
     Local aHeader    As Array     // request header
     Local jBody      As Character // corpo
 
-    cGrantType := "password"                      // type here grant type to request
-    cUserName  := "Caoa"                          // type here user name
-    cPassword  := "bRTxqzUyJwN5BnT"               // type here user password
-    cBaseURL   := "https://api.asiashipping.com.br/account/token/"   // type here your base URL
+    cGrantType := GETMV("CMV_EIC003")     //type here grant type to request "password"       
+    cBaseURL   := GETMV("CMV_EIC002")     //"https://api.asiashipping.com.br/account/token/"   // type here your base URL
+
     cPath      := "?grant_type=" + cGrantType + "&username=" + cUserName + "&password=" + cPassword // type here token endpoint
     aHeader    := {} 
 	jBody      := ''
 
 	jBody := JsonObject():New()
-	jBody["username"] := "Caoa"
-	jBody["password"] := "bRTxqzUyJwN5BnT"
+	jBody["username"] := cUserName
+	jBody["password"] := cPassword
 
 	ConOut("corpo:")
 	ConOut(jBody)
@@ -566,8 +558,8 @@ Local _aHeaFH := {}
 Local _jBody  := ' '      // corpo
 
 _jBody := JsonObject():New()
-_jBody["username"] := "Caoa"
-_jBody["password"] := "bRTxqzUyJwN5BnT"
+_jBody["username"] := cUsername
+_jBody["password"] := cPassword
 
 Aadd(_aHeaFH, "Authorization: Bearer " + _cToken )
 Aadd(_aHeaFH,'Content-Type: application/json')
