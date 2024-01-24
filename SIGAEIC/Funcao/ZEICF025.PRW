@@ -77,7 +77,7 @@ Local _lRet 	:= .T.
 Private cUserName   := GETMV("CMV_EIC004")     // type here user name              
 Private cPassword   := GETMV("CMV_EIC005")     // type here user password    "bRTxqzUyJwN5BnT" 
 
-Default _cChave := "SHA23090924"          //informações como numero da House
+Default _cChave := " "                    ///"SHA23090924"          //informações como numero da House
 Default _cUrlFH	:= GETMV("CMV_EIC001")   ///"https://api.asiashipping.com.br/followup/House"
 
 //Default _cUrlFS	:= "https://api.asiashipping.com.br/followup/Shipment"
@@ -122,7 +122,7 @@ Private _nTime		:= 120
 Private _aHeader    := {}  
 
     _cChave := SPACE(TamSX3("W6_HOUSE")[1])
-	_cChave := "SHA23090924"  //informações como numero da House
+	_cChave := SW6->W6_HOUSE     //"SHA23090924"  //informações como numero da House
 
 	Aadd(_aHeader,"Authorization: Basic " + Encode64(_cUserAut + ":" + _cPassAut))
 	Aadd(_aHeader,'Content-Type: application/json; charset=utf-8')
