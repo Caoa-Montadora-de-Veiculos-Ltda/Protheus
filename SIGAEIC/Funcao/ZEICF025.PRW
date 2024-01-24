@@ -106,8 +106,8 @@ Chamado pela função ZEICF025AP gera Token
 @ Obs		Os paremetros de token, usuário e senha serão enviados no cabeçalho 
 /*/
 Static Function ZEICF025PR( _cUrl, _cChave, _lToken, _aMsg, _lJob )
-Local _cUserName    := "Authorization"  
-Local _cPassword    := "Bearer eyJhbGciOiJlUzl1Nils"
+Local _cUserAut     := GETMV("CMV_EIC006")    //"Authorization"
+Local _cPassAut     := GETMV("CMV_EIC007")    //"Bearer eyJhbGciOiJlUzl1Nils"  
 Local _lRet			:= .T.
 Local _cAlias 		:= GetNextAlias()
 Local _cAliasJ 		:= GetNextAlias()
@@ -124,7 +124,7 @@ Private _aHeader    := {}
     _cChave := SPACE(TamSX3("W6_HOUSE")[1])
 	_cChave := "SHA23090924"  //informações como numero da House
 
-	Aadd(_aHeader,"Authorization: Basic " + Encode64(_cUserName + ":" + _cPassword))
+	Aadd(_aHeader,"Authorization: Basic " + Encode64(_cUserAut + ":" + _cPassAut))
 	Aadd(_aHeader,'Content-Type: application/json; charset=utf-8')
 	Aadd(_aHeader,'Accept: application/json')
 
@@ -341,9 +341,9 @@ Local cXEUROPA := ' '                  //W6_XEUROPA   //Se carga é Via Europa
 	dETA       := CTOD(SUBSTR(_oJSRet:GetJsonText("EstimateArrival"),1,10))
 	dXATA      := CTOD(SUBSTR(_oJSRet:GetJsonText("ActualArrival"),1,10))
 	cATD       := SUBSTR(_oJSRet:GetJsonText("ActualDeparture"),1,10)
+	cVIAGEM    := Alltrim(_oJSRet:GetJsonText("Voyage"))
 	cXCARRIE   := _oJSRet:GetJsonText("CarrierName")
 	cIDENTVE   := _oJSRet:GetJsonText("Vessel")
-	cVIAGEM    := Alltrim(_oJSRet:GetJsonText("Voyage"))
 	cXREFARM   := _oJSRet:GetJsonText("BookingRef")
 	cHOUSE     := _oJSRet:GetJsonText("HouseBill")
 	mVM_COMP   := _oJSRet:GetJsonText("DetailedGoodsDescription")
@@ -431,7 +431,7 @@ Local cXEUROPA := ' '                  //W6_XEUROPA   //Se carga é Via Europa
 			SJD->JD_FILIAL  := xFilial("SJD")			
 			SJD->JD_HAWB    := Alltrim(SW6->W6_HAWB)
 			SJD->JD_CONTAIN := cContainer
-			SJD->JD_ARMADOR := '003'  //Ainda não tem o De x Para
+			SJD->JD_ARMADOR := Substr(_CodArm,3,3)  //Ainda não tem o De x Para
 			SJD->JD_CADEADO := '000'  //Ainda não tem
 			SJD->JD_DEVOLUC := CTOD(SUBSTR(_oJSRet["Containers"][_nX]["DevContVazio"],1,10)) 
 			SJD->JD_LACRE   := Alltrim(_oJSRet["Containers"][_nX]["ContainerSelo"])												    
@@ -460,7 +460,6 @@ Local cXEUROPA := ' '                  //W6_XEUROPA   //Se carga é Via Europa
 	SW6->W6_HOUSE   := cHOUSE
 	SW6->W6_ORIGEM  := cPortOri
 	SW6->W6_DEST    := cPortDes
-	SW6->W6_PESO_BR := Val(nPESO_BR)
 	SW6->W6_XMODCON := cModCon
 	SW6->W6_XMCONT  := cXMCONT
 	SW6->W6_XTIPOL  := cXTIPOL
@@ -474,6 +473,7 @@ Local cXEUROPA := ' '                  //W6_XEUROPA   //Se carga é Via Europa
 	SW6->W6_CONTA20 := nQtd20
 	SW6->W6_CONTA40 := nQtd40
 	SW6->W6_CON40HC := nQtd40HC
+	SW6->W6_PESO_BR := Val(nPESO_BR)
 	SW6->W6_OUT_CTN := Str(Int(nOUTCTN))
 
 	SW6->(MsUnLock())
