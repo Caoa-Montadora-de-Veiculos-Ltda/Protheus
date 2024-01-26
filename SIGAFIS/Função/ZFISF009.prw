@@ -9,11 +9,24 @@
 #INCLUDE "TOTVS.CH"
 #INCLUDE "SHELL.CH"
 
-Static _oMark
-Static _oDlgMark	:= Nil
-Static _oFnt10    	:= TFont():New("Courier New",10,0)
-Static _oOk       	:= LoadBitmap( GetResources(), "CHECKED" )   //CHECKED    //LBOK  //LBTIK
-Static _oNo       	:= LoadBitmap( GetResources(), "UNCHECKED" ) //UNCHECKED  //LBNO
+Static _oMark		As Object
+Static _oDlgMark	As Object
+Static _oCheckCli	As Object
+Static _oCheckTra	As Object
+Static _oCheckAll	As Object
+Static _lCheckCli 	As logical
+Static _lCheckTra    As logical
+Static _lCheckAll  	As logical
+
+Static _cNotaDe	 	:= Space(Len(SF2->F2_DOC))
+Static _cNotaAte 	:= Space(Len(SF2->F2_DOC))
+Static _cCodCli  	:= Space(Len(SF2->F2_CLIENTE))
+Static _cLojaCli 	:= Space(Len(SF2->F2_LOJA))
+Static _cCNPJCli 	:= Space(Len(SA1->A1_CGC))
+Static _cEmailEsp	:= Space(200)
+
+//Static _oOk       	:= LoadBitmap( GetResources(), "CHECKED" )   //CHECKED    //LBOK  //LBTIK
+//Static _oNo       	:= LoadBitmap( GetResources(), "UNCHECKED" ) //UNCHECKED  //LBNO
 
 User Function ZFISF009()
 Local _cIdCab
@@ -23,55 +36,42 @@ Local _oPanelUp
 Local _oTela
 Local _oPanelDown
 Local _oGroup
-LOcal _oFont
+Local _oFnt10    	:= TFont():New("Courier New",10,0)
 Local _aAdvSize		:= {}
 Local _aInfoAdvSize	:= {}
 Local _aObjSize		:= {}
 Local _aObjCoords	:= {}
-Local _bCalcula 	:= {||If (ZFISF009Calcula(),_oDlgMark:End(),Nil) }
+Local _bProcessa 	:= {||If (ZFISF09Processa(),_oDlgMark:End(),Nil) }
 Local _bFiltro 		:= {||ZFISF009Filtro() }
-Local _cNotaDe		:= Space(Len(SF2->F2_DOC))
-Local _cNotaAte		:= Space(Len(SF2->F2_DOC))
-Local _cEmailEsp	:= Space(200)
+Local _aArea 		:= GetArea()
+Local _aRotina   	:= {}
+
 //Local _nAltura  	:= 180
 //Local _nLargura 	:= 650
-Local lCheck     As logical
-Local oCheck1
 
 Local _aColumns
 Local _aCampos
 
-/*
-Private _aRotMark  	:= {}
-Private _cFilCalc	:= Space( GetSx3Cache("RCH_FILIAL", "X3_TAMANHO") )
-Private _cFilFiltr	:= cFilCalc
-Private _cProcesso	:= Space( GetSx3Cache("RCH_PROCES", "X3_TAMANHO") )
-Private _cRoteiro	:= Space( GetSx3Cache("RCH_ROTEIR", "X3_TAMANHO") )
-Private _cPeriodo	:= Space( GetSx3Cache("RCH_PER", "X3_TAMANHO") )
-Private _cNumPag	:= Space( GetSx3Cache("RCH_NUMPAG", "X3_TAMANHO") )
-Private _oTmpTable
-Private _lGestPubl := if(ExistFunc("fUsaGFP"),fUsaGFP(),.f.)
-*/
 
 	DbSelectArea("SF2")
-//SET FILTER TO TAB_PROC  == ""
 //_aColsMark:= fMntColsMark()
 
-
+	If Type("aRotina") == "A"	
+ 		_aRotina   	:= aRotina
+	Endif	
+	aRotina := MenuDef()
 	//_aAdvSize		:= MsAdvSize( .F.,.F.,370)
 	_aAdvSize		:= MsAdvSize( )
 	_aInfoAdvSize	:= { _aAdvSize[1] , _aAdvSize[2] , _aAdvSize[3] , _aAdvSize[4] , 5 , 15 }
 	aAdd( _aObjCoords , { 000 , 000 , .T. , .T. } )
 	_aObjSize		:= MsObjSize( _aInfoAdvSize , _aObjCoords )
 	
-	//Define MsDialog _oDlgMark FROM 0, 0 To _nAltura, _nLargura Title "Envio Danfe XML Notas de Saida" Pixel  
-	
 	Define MsDialog _oDlgMark From _aAdvSize[7],0 to _aAdvSize[6],_aAdvSize[5] Title "Envio Danfe XML Notas de Saida" Pixel  
 
 
 	// Cria o conteiner onde ser? colocados os paineis
 	_oTela     	:= FWFormContainer():New( _oDlgMark )
-	_cIdCab	  	:= _oTela:CreateHorizontalBox( 20 )
+	_cIdCab	  	:= _oTela:CreateHorizontalBox( 25 )
 	_cIdGrid   	:= _oTela:CreateHorizontalBox( 70 )
 
 	_oTela:Activate( _oDlgMark, .F. )
@@ -81,27 +81,37 @@ Private _lGestPubl := if(ExistFunc("fUsaGFP"),fUsaGFP(),.f.)
 	_oPanelDown	:= _oTela:GeTPanel( _cIdGrid )
  	
 	_nLinha 	:= _aObjSize[1,2]
-	_nCol   	:= 55
+	_nCol   	:= 70
 	_nLinha2 	:= _aObjSize[1,4] //*0.62
 	//@ 0 , _aObjSize[1,2]	GROUP _oGroup TO 26,_aObjSize[1,4]*0.62 LABEL OemToAnsi("Filtrar Notas") OF _oPanelUp PIXEL	
-	@ 0 , _nLinha	GROUP _oGroup TO _nCol,_nLinha2  LABEL OemToAnsi("Parametros PEsquisa") OF _oPanelUp PIXEL	
+	@ 0 , _nLinha	GROUP _oGroup TO _nCol,_nLinha2  LABEL OemToAnsi("Parametros Pesquisa") OF _oPanelUp PIXEL	
 	
 	_nLinha := _aObjSize[1,1]*0.2
-	_nCol   := _aObjSize[1,2]  
+	_nCol   := _aObjSize[1,2] + 10  
 	//_oGroup:oFont:= _oFont
 	lCheck := .F.
 
 
 	@ _nLinha	, _nCol+1 	SAY   OemToAnsi("Nota Fiscal De") SIZE 038,007 		OF _oPanelUp PIXEL
 	@ _nLinha+6	, _nCol+1 	MSGET _cNotaDe SIZE 010,007		OF _oPanelUp F3 'SF2' PIXEL WHEN .T. VALID .T.
-   	oCheck := TCheckBox():New(_nLinha, _nCol+200, "CheckBox", {||lCheck}, _oDlgMark, 100, 210,,,,,,,,.T.)
-
 	@ _nLinha	, _nCol+80 	SAY   OemToAnsi("Nota Fiscal Ate") SIZE 038,007 	OF _oPanelUp PIXEL
 	@ _nLinha+6	, _nCol+80	MSGET _cNotaAte SIZE 010,007	OF _oPanelUp F3 'SF2' PIXEL WHEN .T. VALID .T.
+   	_oCheckCli := TCheckBox():New(_nLinha, _nCol+500, "Envia e-mail para Clientes", {||_lCheckCli}, _oDlgMark, 100, 210,,,,,,,,.T.)
 
-	@ _nLinha+20, _nCol+1 	SAY   OemToAnsi("E-mail Especifico") SIZE 038,007 	OF _oPanelUp PIXEL
-	@ _nLinha+30, _nCol+1	MSGET _cEmailEsp SIZE 350,007	OF _oPanelUp  		PIXEL WHEN .T. VALID ZFIS09EmailVld(_cEmailEsp)
-	
+	_nLinha += 20
+	@ _nLinha	, _nCol+1 	SAY   OemToAnsi("Cod. Cliente") SIZE 038,007 	OF _oPanelUp PIXEL
+	@ _nLinha+6 , _nCol+1	MSGET _cCodCli SIZE 050,007	OF _oPanelUp  	F3 'SA1'	PIXEL WHEN .T. VALID ZFIS09ClilVld(_cCodCli)
+	@ _nLinha	, _nCol+80 	SAY   OemToAnsi("Loja Cliente") SIZE 038,007 	OF _oPanelUp PIXEL
+	@ _nLinha+6 , _nCol+80	MSGET _cLojaCli SIZE 050,007	OF _oPanelUp  				PIXEL WHEN .T. VALID ZFIS09ClilVld(_cCodCli, _cLojaCli)
+	@ _nLinha	, _nCol+160 SAY   OemToAnsi("CNPJ Cliente") SIZE 038,007 	OF _oPanelUp PIXEL
+	@ _nLinha+6 , _nCol+160	MSGET _cCNPJCli SIZE 050,007	OF _oPanelUp  				PIXEL WHEN .T. VALID ZFIS09ClilVld(/*_cCodCli*/, /*_cLojaCli*/, _cCNPJCli)
+   	_oCheckTra := TCheckBox():New(_nLinha, _nCol+500, "Envia e-mail para Transportador", {||_lCheckTra}, _oDlgMark, 100, 210,,,,,,,,.T.)
+
+	_nLinha += 20
+	@ _nLinha	, _nCol+1 	SAY   OemToAnsi("E-mail Especifico") SIZE 038,007 	OF _oPanelUp PIXEL
+	@ _nLinha+6 , _nCol+1	MSGET _cEmailEsp SIZE 350,007	OF _oPanelUp  		PIXEL WHEN .T. VALID ZFIS09EmailVld(_cEmailEsp)
+   	_oCheckAll := TCheckBox():New(_nLinha, _nCol+500, "Envia e-mail para Todos", {||_lCheckAll}, _oDlgMark, 100, 210,,,,,,,,.T.)
+
  	//oCheck1 := TCheckBox():New(_nLinha,_nCol,'Item 1',{||lCheck},_oPanelUp,180,210,,,oFont,,,,,.T.,,,{oCheck1:Refresh()})
 
     //Preparar visualização de colunas   
@@ -119,16 +129,27 @@ Private _lGestPubl := if(ExistFunc("fUsaGFP"),fUsaGFP(),.f.)
     _oMark:SetAlias( "SF2" )
     _oMark:SetFields(_aColumns)
     _oMark:SetFontBrowse(_oFnt10) 
-    //_oMark:SetSemaphore(.T.)     
     _oMark:SetDescription("Selecionar Notas ")  
 	//Indica o container onde sera criado o browse
 	_oMark:SetOwner(_oPanelDown)
     //Indicador do campo que sofrerá o checklist
     _oMark:SetFieldMark( 'F2_OK' )
-    // _oMark:AddMarkColumns( _oOk, _oOk,_oOk)   
     //Cria botão sair caso não esteja previsto  
     _oMark:ForceQuitButton()                  
+    _oMark:SetMenuDef( 'ZFISF009' )
+    _oMark:AddLegend( "F2_FIMP==' ' .AND. AllTrim(F2_ESPECIE)=='SPED'"  , "DISABLE" , OemToAnsi("NF não transmitida")  )  
+    _oMark:AddLegend( "F2_FIMP=='S'"                                    , "ENABLE"  , OemToAnsi("NF Autorizada")  )  
+    _oMark:AddLegend( "F2_FIMP=='T'"                                    , "BR_AZUL" , OemToAnsi("NF Transmitida")  )  
+    _oMark:AddLegend( "F2_FIMP=='D'"                                    , "BR_CINZA" , OemToAnsi("NF Uso Denegado")  )  
+    _oMark:AddLegend( "F2_FIMP=='N'"                                    , "BR_PRETO" , OemToAnsi("NF nao autorizada")  )  
+
+	_oMark:AddButton("Envia Docto."		, _bProcessa,,,, .F., 2 )  //Envia  
+	_oMark:AddButton("Sel Parametros"	, _bFiltro 	,,,, .F., 2 )  //Filtra 
+
     //Função para Validar registro selecionado 
+    //_oMark:SetSemaphore(.T.)     
+    // _oMark:AddMarkColumns( _oOk, _oOk,_oOk)   
+
     //_oMark:Valid(U_???MRK())
     //_oMark:SetValid({||U_???MRK()})
     //_oMark:SetDoubleClick({||U_???MRK() })
@@ -136,20 +157,18 @@ Private _lGestPubl := if(ExistFunc("fUsaGFP"),fUsaGFP(),.f.)
     //_oMark:SetDoubleClick({||U_?????MRK()})   
 	//_oMark:SetEditCell ( .T., {||U_?????()} )
     //_oMark:AddMarkColumns({| If(ZFISF09MRK(), _oOk, _oNo ) })
-    _oMark:SetMenuDef( '' )
     //Montar legenda 
-    _oMark:AddLegend( "F2_FIMP==' ' .AND. AllTrim(F2_ESPECIE)=='SPED'"  , "DISABLE" , OemToAnsi("NF não transmitida")  )  
-    _oMark:AddLegend( "F2_FIMP=='S'"                                    , "ENABLE"  , OemToAnsi("NF Autorizada")  )  
-    _oMark:AddLegend( "F2_FIMP=='T'"                                    , "BR_AZUL" , OemToAnsi("NF Transmitida")  )  
-    _oMark:AddLegend( "F2_FIMP=='D'"                                    , "BR_CINZA" , OemToAnsi("NF Uso Denegado")  )  
-    _oMark:AddLegend( "F2_FIMP=='N'"                                    , "BR_PRETO" , OemToAnsi("NF nao autorizada")  )  
     //BOTOES
-	_oMark:AddButton("Envia Docto.", _bCalcula,,,, .F., 2 )  //Envia  
-	_oMark:AddButton("Sel Parametros", _bFiltro ,,,, .F., 2 )   
 	//MARCAR TODOS
 	_oMark:bAllMark := { || SetMarkAll(_oMark:Mark(),_lMarcar := !_lMarcar ), _oMark:Refresh(.T.)  }
 	_oMark:Activate()
 	ACTIVATE MSDIALOG _oDlgMark CENTERED
+
+//Voltar menu anterior
+If Len(_aRotina) > 0
+	aRotina := _aRotina
+Endif
+RestArea(_aArea)
 
 Return Nil
 
@@ -184,6 +203,31 @@ Local _aAreaMark  := SF2->( GetArea() )
 Return .T.
 
 
+Static Function ZFISF009Filtro()
+Local _cFiltro := ""
+
+	DbSelectAre("SF2")
+
+	_cFiltro  +=  " 	F2_FILIAL = '"+xFilial('SF2')+"'"
+	If ! Empty(_cNotaAte)
+		_cFiltro  +=  "	AND F2_DOC BETWEEN '" + _cNotaDe + "' AND '" + _cNotaAte + "' "+ CRLF 
+	Endif
+	If !Empty(_cCodCli) .And. Empty(_cCNPJCli)
+		_cFiltro  +=  "	AND F2_CLIENTE = '" + _cCodCli + "' "+ CRLF 
+		If !Empty(_cLojaCli)
+			_cFiltro  +=  "	AND F2_LOJA = '" + _cLojaCli + "' "+ CRLF 
+		Endif 
+	Endif
+	If !Empty(_cCNPJCli)
+		SA1->(DbSetOrder(3))
+		If SA1->(DbSeek(FWxFilial("SA1")+_cCNPJCli))
+			_cFiltro  +=  "	AND F2_CLIENTE = '" + SA1->A1_COD + "' AND F2_LOJA = '"+SA1->A1_LOJA+"' "+ CRLF 
+		Endif 
+	Endif
+	_oMark:SetFilterDefault("@"+_cFiltro)
+    _oMark:Refresh(.T.)
+
+Return _cFiltro
 
 
 //========================================================
@@ -209,7 +253,7 @@ Return _lRet
 
 
 
-Static Function ZFISF09GAQ( _oSay) 
+Static Function ZFISF09Processa( _oSay) 
 Local _cMarca   := _oMark:Mark()
 Local _cPasta   := "c:\temp\" 
 Local cNomeArquivo := ""
@@ -226,6 +270,24 @@ Local cNomeArquivo := ""
     //EndDo    
 Return .t.
 
+
+Static Function ZFIS09ClilVld(_cCod, _cLoja, _cCnpj)
+Local _lRet 	:= .T.
+Local _cChave	:= ""
+	If ValType(_cCod) == "C" .And. ValType(_cLoja) == "C" .And. !Empty(_cCod)
+		SA1->(DbSetOrder(1))
+		_cChave := XFilial("SA1")+_cCod+_cLoja		
+	ElseIf ValType(_cCnpj) == "C"  .And. !Empty(_cCnpj)
+		SA1->(DbSetOrder(3))
+		_cChave := XFilial("SA1")+_cCnpj		
+	Endif
+	If !Empty(_cChave)
+		_lRet := SA1->(DbSeek(_cChave))
+		If !_lRet
+			MsgInfo("Cliente Não localizado !")
+		Endif 
+	Endif	
+Return _lRet 
 
 
 //-------------------------------------------------------------------
@@ -468,3 +530,9 @@ oSetup := Nil
 //SpedCleRelt()
 
 Return .T.
+
+
+
+Static Function MenuDef()
+Local _aRotina := {} 
+Return _aRotina
