@@ -424,7 +424,7 @@ Local cXEUROPA := ' '                  //W6_XEUROPA   //Se carga é Via Europa
 			SJD->JD_LACRE   := Alltrim(_oJSRet["Containers"][_nX]["ContainerSelo"])	
 			SJD->JD_DEVOLUC := CTOD(SUBSTR(_oJSRet["Containers"][_nX]["DevContVazio"],1,10))
 			SJD->JD_TIPO_CT := cTipoCT			
-			SJD->JD_QTD_REC := nQtdeTtl
+			SJD->JD_QTD_REC := nQtde
 	        SJD->(MsUnLock())
 		ELSE
 			SJD->(RecLock("SJD",.T.))
