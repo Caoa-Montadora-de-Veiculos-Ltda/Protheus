@@ -31,7 +31,7 @@ Static _cEmailEsp	:= Space(200)
 User Function ZFISF009()
 Local _cIdCab
 Local _cIdGrid
-Local _lMarcar     	:= .F.
+//Local _lMarcar     	:= .F.
 Local _oPanelUp
 Local _oTela
 Local _oPanelDown
@@ -145,6 +145,8 @@ Local _aCampos
 
 	_oMark:AddButton("Envia Docto."		, _bProcessa,,,, .F., 2 )  //Envia  
 	_oMark:AddButton("Sel Parametros"	, _bFiltro 	,,,, .F., 2 )  //Filtra 
+    //_oMark:SetDoubleClick({||ZFISF09MRK()})   
+	_oMark:SetValid({||ZFISF09MRK()})
 
     //Função para Validar registro selecionado 
     //_oMark:SetSemaphore(.T.)     
@@ -160,7 +162,7 @@ Local _aCampos
     //Montar legenda 
     //BOTOES
 	//MARCAR TODOS
-	_oMark:bAllMark := { || SetMarkAll(_oMark:Mark(),_lMarcar := !_lMarcar ), _oMark:Refresh(.T.)  }
+	//_oMark:bAllMark := { || SetMarkAll(_oMark:Mark(),_lMarcar := !_lMarcar ), _oMark:Refresh(.T.)  }
 	_oMark:Activate()
 	ACTIVATE MSDIALOG _oDlgMark CENTERED
 
@@ -190,6 +192,7 @@ Marca/Desmarca todos os itens da markbrowse
 @since 16/05/2016
 @version 1.0
 /*/
+/*
 Static Function SetMarkAll(_cMarca, _lMarcar )
 Local _aAreaMark  := SF2->( GetArea() )
 	SF2->( dbGoTop() )
@@ -201,7 +204,7 @@ Local _aAreaMark  := SF2->( GetArea() )
 	EndDo
 	RestArea( _aAreaMark )
 Return .T.
-
+*/
 
 Static Function ZFISF009Filtro()
 Local _cFiltro := ""
@@ -238,8 +241,7 @@ Local _lRet := .T.
 Local _cMarca := _oMark:Mark()
 Begin Sequence               
     //Caso esteja desmarcando não validar
-    If !_oMark:IsMark(_cMarca)  
-		_lRet := .F.	
+    If _oMark:IsMark(_cMarca)  
       Break
     Endif
 	If SF2->F2_FIMP <> 'S'
@@ -531,8 +533,12 @@ oSetup := Nil
 
 Return .T.
 
-
-
+//Menudef
 Static Function MenuDef()
 Local _aRotina := {} 
 Return _aRotina
+
+
+
+
+
