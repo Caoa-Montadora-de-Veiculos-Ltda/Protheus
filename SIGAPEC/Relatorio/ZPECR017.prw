@@ -50,15 +50,17 @@ Obs......:
 
 Static Function zProcRel(_aRetParam)
 
-	Local cQuery	  	:= ""
-	Local cAliasTRB		:= GetNextAlias()
-	Local cArquivo	  	:= GetTempPath()+'Cadproduto_'+SUBSTRING(dtoc(date()),1,2)+SUBSTRING(dtoc(date()),4,2)+SUBSTRING(dtoc(date()),9,2)+'_'+SUBSTRING(time(),1,2) +SUBSTRING(time(),4,2) +SUBSTRING(time(),7,2)+'.xml'
-	Local oFWMsExcel
-	Local oExcel
-  	Local nTotReg		:= 0
-    Local nProc         := 1
-    Local cTxPis        := GETMV("MV_TXPIS")
-    Local cTxCofins     := GETMV("MV_TXCOFIN")
+Local cQuery	  	:= ""
+Local cAliasTRB		:= GetNextAlias()
+Local cArquivo	  	:= GetTempPath()+'Cadproduto_'+SUBSTRING(dtoc(date()),1,2)+SUBSTRING(dtoc(date()),4,2)+SUBSTRING(dtoc(date()),9,2)+'_'+SUBSTRING(time(),1,2) +SUBSTRING(time(),4,2) +SUBSTRING(time(),7,2)+'.xml'
+Local oFWMsExcel
+Local oExcel
+Local nTotReg		:= 0
+Local nProc         := 1
+Local cTxPis        := GETMV("MV_TXPIS")
+Local cTxCofins     := GETMV("MV_TXCOFIN")
+Local _cCFCompra    := AllTrim(SuperGetMV( "CMV_PEC048" , ,"" ))   ///Parâmetro para indicação CF de Compras, para controlar select da curva ABC para notas de Compras
+Local _cCFVenda     := AllTrim(SuperGetMV( "CMV_PEC047" , ,"" ))   //Parâmetro para indicação CF de Venda, para controlar select da curva ABC para notas de saida
 
 //Criando o objeto que irá gerar o conteúdo do Excel
     oFWMsExcel := FWMSExcel():New()
@@ -146,7 +148,10 @@ Static Function zProcRel(_aRetParam)
     cQuery += " 				AND SF4.F4_ESTOQUE = 'S' " + CRLF
     cQuery += " 				AND SF4.D_E_L_E_T_ = ' '  " + CRLF
     cQuery += " 			WHERE SD1.D1_FILIAL = '" + FWxFilial('SD1') + "' " + CRLF
-    cQuery += " 			AND SD1.D1_CF IN ('1102','2102','3102') " + CRLF
+    //Alterado conforme GAP122 manter mesma regra da Curva ABC DAC 30/01/2024
+    //cQuery += " 			AND SD1.D1_CF IN ('1102','2102','3102') " + CRLF
+    cQuery += "  					AND SD1.D1_CF IN "+ FormatIn(_cCFCompra,";") + " "+ CRLF
+
     cQuery += " 			AND SD1.D1_COD = SB1.B1_COD " + CRLF
     cQuery += " 			AND SD1.D_E_L_E_T_ = ' ' ) 		AS DT_ULT_COMPRA " + CRLF
     cQuery += "         ,(	SELECT MIN(SD1.D1_DTDIGIT)       " + CRLF
@@ -157,7 +162,10 @@ Static Function zProcRel(_aRetParam)
     cQuery += " 				AND SF4.F4_ESTOQUE = 'S' " + CRLF
     cQuery += " 				AND SF4.D_E_L_E_T_ = ' '  " + CRLF
     cQuery += " 			WHERE SD1.D1_FILIAL = '" + FWxFilial('SD1') + "' " + CRLF
-    cQuery += " 			AND SD1.D1_CF IN ('1102','2102','3102') " + CRLF
+    //Alterado conforme GAP122 manter mesma regra da Curva ABC DAC 30/01/2024
+    //cQuery += " 			AND SD1.D1_CF IN ('1102','2102','3102') " + CRLF
+    cQuery += "  					AND SD1.D1_CF IN "+ FormatIn(_cCFCompra,";") + " "+ CRLF
+
     cQuery += " 			AND SD1.D1_COD = SB1.B1_COD " + CRLF
     cQuery += " 			AND SD1.D_E_L_E_T_ = ' ' ) 		AS DT_PRI_COMPRA " + CRLF
     cQuery += "         , (	SELECT MAX(SD2.D2_EMISSAO)       " + CRLF
@@ -168,7 +176,9 @@ Static Function zProcRel(_aRetParam)
     cQuery += " 				AND SF4.F4_ESTOQUE = 'S' " + CRLF
     cQuery += " 				AND SF4.D_E_L_E_T_ = ' '  " + CRLF
     cQuery += " 			WHERE SD2.D2_FILIAL = '" + FWxFilial('SD2') + "' " + CRLF
-    cQuery += " 			AND SD2.D2_CF IN ('5102','5152','5403','6102','6110','6403') " + CRLF
+    //Alterado conforme GAP122 manter mesma regra da Curva ABC DAC 30/01/2024
+    //cQuery += " 			AND SD2.D2_CF IN ('5102','5152','5403','6102','6110','6403') " + CRLF
+    cQuery += " 			AND SD2.D2_CF IN "+ FormatIn(_cCFVenda,";") + " "+ CRLF
     cQuery += " 			AND SD2.D2_COD = SB1.B1_COD " + CRLF
     cQuery += " 			AND SD2.D_E_L_E_T_ = ' ' ) 		AS DT_ULT_VENDA " + CRLF
     cQuery += "         , (	SELECT MIN(SD2.D2_EMISSAO)       " + CRLF
@@ -179,7 +189,9 @@ Static Function zProcRel(_aRetParam)
     cQuery += " 				AND SF4.F4_ESTOQUE = 'S' " + CRLF
     cQuery += " 				AND SF4.D_E_L_E_T_ = ' '  " + CRLF
     cQuery += " 			WHERE SD2.D2_FILIAL = '" + FWxFilial('SD2') + "' " + CRLF
-    cQuery += " 			AND SD2.D2_CF IN ('5102','5152','5403','6102','6110','6403') " + CRLF
+    //Alterado conforme GAP122 manter mesma regra da Curva ABC DAC 30/01/2024
+    //cQuery += " 			AND SD2.D2_CF IN ('5102','5152','5403','6102','6110','6403') " + CRLF
+    cQuery += " 			AND SD2.D2_CF IN "+ FormatIn(_cCFVenda,";") + " "+ CRLF
     cQuery += " 			AND SD2.D2_COD = SB1.B1_COD " + CRLF
     cQuery += " 			AND SD2.D_E_L_E_T_ = ' ' ) 		AS DT_PRI_VENDA " + CRLF
     cQuery += " FROM " +  RetSQLName("SB1") +" SB1 " + CRLF
