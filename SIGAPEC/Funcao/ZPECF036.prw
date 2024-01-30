@@ -101,6 +101,8 @@ User Function ZPECF036(_aOrcs, _cPicking, _cEmpresa, _cFilial, _lEnviaEmail, _lT
 			ZPECF036EM(_aMsg, _cPedido, _aPicking, "Problemas no Faturamento")
 		Endif
 	Endif
+
+	MsgInfo("Rotina Encerrada", "Teste")
 Return _aMsg
 
 
@@ -633,12 +635,15 @@ Static Function ZPECF036PV(_aOrcs, _cPicking, _cPedido, _aRegVS1, _aPicking, _aV
 		Enddo
 		_cPedido := SC5->C5_NUM
 		//Atualizar Pedido com o numero da Cotação sempre será utilizado o numero inicial
-		If SC5->(FieldPos("C5_XPICKI")) > 0
-			SC5->(RecLock("SC5",.f.))
-			SC5->C5_XPICKI = VS1->VS1_NUMORC
-			SC5->(MsUnlock())
-		Endif
-
+		/*
+			//Nic Lima 29/01/2024 - GAP098 - Alinhado com Juarez.
+			//Deve ser gravado o número de Picking no PV, isso já é feito no execauto.
+			If SC5->(FieldPos("C5_XPICKI")) > 0
+				SC5->(RecLock("SC5",.f.))
+				SC5->C5_XPICKI = VS1->VS1_NUMORC
+				SC5->(MsUnlock())
+			Endif
+		*/
 		/*
 
 			// Liberacao de pedidos
@@ -1111,8 +1116,8 @@ Static Function ZPEFF036FN(_cNota, _cSerie,  _nRegSC5, _nRegSF2, _nRegSE4, _aReg
 
 	Local _nPos
 
-	Private lMsErroAuto 	:= .F.	// variável que define que o help deve ser gravado no arquivo de log e que as informações estão vindo à partir da rotina automática.
-	Private lAutoErrNoFile 	:= .T.  //Variavel de Controle do GetAutoGRLog
+	Private lMsErroAuto 	:= .F.	//variável que define que o help deve ser gravado no arquivo de log e que as informações estão vindo à partir da rotina automática.
+	Private lAutoErrNoFile 	:= .T.  //variavel de Controle do GetAutoGRLog
 
 	Default  _nRegSC5	:= 0
 	Default _nRegSF2	:= 0
@@ -1720,7 +1725,7 @@ Static Function ZPECF036EV(_aMsg, _cPedido, _aPicking, _cAssunto, _cEmails, _cEM
 		_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>" + _cCodUsu+"-"+_cNomeUsu + "</font></td>"+ CRLF
 		_cHtml += "									</tr>"+ CRLF
 		_cHtml += "									<tr>"+ CRLF
-		_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Picking:	</b></font></td>"+ CRLF
+		_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Pedido:	</b></font></td>"+ CRLF
 		_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>"+ _cPedido +"</font></td>"+ CRLF
 		_cHtml += "									</tr>"+ CRLF
 		_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Picking:	</b></font></td>"+ CRLF

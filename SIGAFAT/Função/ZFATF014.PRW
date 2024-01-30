@@ -95,10 +95,10 @@ User Function ZFATF014(_cCliFat, _cTpCred, _cLoja, _lZera)
 			EndIf
 		End Sequence
 
-		If FunName() == "MATA030"
+		//If FunName() == "MATA030"
 		//If !_lJob
-			MsgInfo("ROTINA LOCKADA","TESTE")
-		EndIF
+		MsgInfo("ROTINA LOCKADA 2","TESTE 2")
+		//EndIF
 		
 		AADD(_aRet, _cRet)
 		AADD(_aRet, _nValAtr)

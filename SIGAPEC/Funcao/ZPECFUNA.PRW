@@ -1607,7 +1607,7 @@ Begin Sequence
 	Aadd(_aMsg,"Avaliando Limite de Credito para o cliente "+_cCliente+" loja "+_cLoja+" - Matriz")
 	_nLimAvalia := 0   //Zero a avaliação de crédito onde constará o limite a ser utilizado
 	_aRetLc := U_ZFATF014(_cCliente, SA1->A1_XTPCRED, _cLoja)
-	//GAP096  Nick CAOA 21/11/2023
+	//GAP096  Nic CAOA 21/11/2023
 	//1=Credito Disponivel;2=Falta de Saldo;3=Titulos Em Atraso;4=Credito Vencido;5=Bloqueado                                         
 	If ValType(_aRetLc) <> "A" .Or. Len(_aRetLc) == 0 
 		Aadd(_aMsg, "Não foi possível verificar limite de crédito disponível")
