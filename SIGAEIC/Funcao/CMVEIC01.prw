@@ -2356,14 +2356,14 @@ Static Function CMVEIC0102()
 	Local cInvoice := ""
 	Local cFornec  := ""
 	Local cStats   := ""
-	Local cNumInt  := ""
+	Local cNumInt  := Space(3)
 	Local cTit     := "Log de Erros"
 	Local nCo1     := 1
 	Local nCo2     := 5
-	Local nCo3     := 20 
-	local nCo4     := 24
-	Local nCo5     := 40
-	Local nCo6     := 44
+	Local nCo3     := 30 
+	local nCo4     := 34
+	Local nCo5     := 50
+	Local nCo6     := 53
 	Local dDtProc  := CTOD("  /  /  ")
 	
 	Private cArqLog := ""
@@ -2400,7 +2400,7 @@ Static Function CMVEIC0102()
 	cFornec  := Posicione("SA2",1,xFilial("SA2")+ZZE->ZZE_FORN+ZZE->ZZE_LOJA,"A2_NREDUZ")
 	dDtProc  := ZZE->ZZE_DTINTE
 	cStats   := IIF(ZZE->ZZE_STATUS == "I","Integrada","Rejeitada")
-	cNumInt  := ZZE->ZZE_NRINTE
+	cNumInt  := strzero(ZZE->ZZE_NRINTE,3)
 	MontaWork(.T.)
 
 	Define MSDialog oDlg3 Title cTit From 0,0 TO 40,160 Of oMainWnd
@@ -2411,17 +2411,17 @@ Static Function CMVEIC0102()
 		@ 0.2 , nCo5 Say "Data:"              Of oDlg3
 		@ 0.2 , nCo6 MsGet dDtProc When .F.   Of oDlg3
 		@ 1.4 , nCo1 Say "Num. Tentativa:"    Of oDlg3
-		@ 1.4 , nCo2 Msget cNumInt When .F.   Of oDlg3
+		@ 1.3 , nCo2+1 Msget cNumInt When .F. Of oDlg3
 		@ 1.4 , nCo3 Say "Status"             Of oDlg3
-		@ 1.4 , nCo4 MsGet cStats When .F.    Of oDlg3
-		@ 15 , 260 BUTTON "Sair" SIZE 40,12 ACTION (oDlg3:End()) Pixel OF oDlg3
+		@ 1.3 , nCo4 MsGet cStats When .F.    Of oDlg3
 		@ 35 , 10 Say "Itens:" Pixel          Of oDlg3
 		@ 35,40  CHECKBOX lRejeic  PROMPT "Rejeitados" Size 60,5 OF oDlg3
 		@ 35,100 CHECKBOX lSucess  PROMPT "Sucessos"   Size 60,5 OF oDlg3
 		@ 35,160 CHECKBOX lMensag  PROMPT "Mensagens"  Size 60,5 OF oDlg3
 		@ 35,220 CHECKBOX lAjust   PROMPT "Ajustes"    Size 60,5 OF oDlg3
 
-		@ 35,280 BUTTON "Atualizar" SIZE 40,12 ACTION (MontaWork(.t.), oBrw:oBrowse:Refresh()) Pixel OF oDlg3
+		@ 34, 270 BUTTON "Atualizar" SIZE 40,12 ACTION (MontaWork(.t.), oBrw:oBrowse:Refresh()) Pixel OF oDlg3
+		@ 34, 320 BUTTON "Sair"      SIZE 40,12 ACTION (oDlg3:End()                           ) Pixel OF oDlg3
 		oBrw := (cWork2)->(MsGetDB():New(60,10,(oDlg3:nClientHeight-25)/2,(oDlg3:nClientWidth-8)/2, 2, , , , .F.,{},, .F.,,cWork2,/*"u_SVDWFIOK"*/,,.T., oDlg3, .T.,, "",""))
 
 	Activate MSDialog oDlg3 Centered
@@ -2555,10 +2555,10 @@ Static Function CMVEIC0103()
 	Local cTit       := "Relatório de Erros"
 	Local nCo1       := 1
 	Local nCo2       := 5
-	Local nCo3       := 20
-	Local nCo4       := 24
-	Local nCo5       := 40
-	Local nCo6       := 44
+	Local nCo3       := 30
+	Local nCo4       := 35
+	Local nCo5       := 50
+	Local nCo6       := 55
 	Local lConfirma3 := .F.
 
 	Private cArqLog  := ""
@@ -2566,7 +2566,7 @@ Static Function CMVEIC0103()
 	Private cStatus  := "Todas"
 	Private cFornec	 := Space(06)
 	Private cLoja    := SpacE(02)
-	Private cInvoice := Space(15)
+	Private cInvoice := Space(30)
 	Private dDtIni   := CTOD("  /  /  ")
 	Private dDtFim   := CTOD("  /  /  ")
 	Private lRejeic  := .T.
@@ -2622,7 +2622,7 @@ Static Function CMVEIC0103()
 		@ 35 , 220 CHECKBOX lAjust  PROMPT "Ajustes"    Size 60,5 OF oDlg3
 		
 		@ 50 , 10 BUTTON "Imprimir" SIZE 40,12 ACTION (lConfirma3 := .T.,oDlg3:End()) Pixel OF oDlg3
-		@ 50 , 60 BUTTON "Sair" SIZE 40,12 ACTION (lConfirma3 := .F.,oDlg3:End()) Pixel OF oDlg3
+		@ 50 , 60 BUTTON "Sair"     SIZE 40,12 ACTION (lConfirma3 := .F.,oDlg3:End()) Pixel OF oDlg3
 
 	Activate MSDialog oDlg3 Centered
 
