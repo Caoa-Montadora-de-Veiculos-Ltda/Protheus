@@ -202,11 +202,11 @@ Static Function ZPECF036PV(_aOrcs, _cPicking, _cPedido, _aRegVS1, _aPicking, _aV
 				Break
 			Endif
 			/*
-			//Caso informado picking validar com orçamento, desta forma estou permitindo somente faturar um picking 
-			If !Empty(_cPicking) .And. AllTrim(_cPicking) <> AllTrim(VS1->VS1_XPICKI)
-				Aadd(_aMsg,"Orçamento "+VS1->VS1_NUMORC+" com Picking "+VS1->VS1_XPICKI+" diferente do Picking para faturamento "+_cPicking+", não será geraco notafiscal Nota Fiscal ") 
-				Break
-			Endif
+				//Caso informado picking validar com orçamento, desta forma estou permitindo somente faturar um picking 
+				If !Empty(_cPicking) .And. AllTrim(_cPicking) <> AllTrim(VS1->VS1_XPICKI)
+					Aadd(_aMsg,"Orçamento "+VS1->VS1_NUMORC+" com Picking "+VS1->VS1_XPICKI+" diferente do Picking para faturamento "+_cPicking+", não será geraco notafiscal Nota Fiscal ") 
+					Break
+				Endif
 			*/
 			//Guardar numero do picking
 			If Ascan(_aPicking,VS1->VS1_XPICKI) == 0
@@ -429,6 +429,7 @@ Static Function ZPECF036PV(_aOrcs, _cPicking, _cPedido, _aRegVS1, _aPicking, _aV
 				_nVOL4 	+= VS1->VS1_VOLUM4
 			EndIf
 		Next
+		
 		/*
 			//Ajustar valores
 			MaFisRef("NF_DESPESA"	,, _nValDes)
@@ -706,7 +707,6 @@ Static Function ZPECF036PV(_aOrcs, _cPicking, _cPedido, _aRegVS1, _aPicking, _aV
 		_cPicking := _aPicking[1]
 	Endif
 Return _lRet
-
 
 
 
@@ -1178,7 +1178,7 @@ Static Function ZPEFF036FN(_cNota, _cSerie,  _nRegSC5, _nRegSF2, _nRegSE4, _aReg
 			EndSql
 
 			If (_cAliasPesq)->(Eof()) .or. (_cAliasPesq)->NREGVS9 == 0
-				Aadd(_aMsg,"Não localizado Liberação de Pedidos para nota "+_cNota+" serie "+_cSerie+" com orçamento "+VS1->VS1_NUMORC+" para a geração do Financeiro")
+				Aadd(_aMsg,"Não localizado Liberação de Pedidos para nota "+_cNota+" série "+_cSerie+" com orçamento "+VS1->VS1_NUMORC+" para a geração do Financeiro")
 				Break
 			Endif
 
@@ -1221,14 +1221,14 @@ Static Function ZPEFF036FN(_cNota, _cSerie,  _nRegSC5, _nRegSF2, _nRegSE4, _aReg
 			Else
 				_cParcela := Soma1( str(_nParcelas-1,TamSx3("E1_PARCELA")[1]) )
 			Endif
-		/*
-			If VS1->(FieldPos("VS1_VLBRNF")) > 0 .and. VS1->VS1_VLBRNF == "0" .and. VS1->(FieldPos("VS1_FPGBAS")) > 0  .and. ;
-				!Empty(VS1->VS1_FPGBAS) .and. !_lMultOrc
-					nValTit := aParcBRNF[_nPos,2]
-			Else
-				nValTit := VS9->VS9_VALPAG
-			EndIf
-		*/
+			/*
+				If VS1->(FieldPos("VS1_VLBRNF")) > 0 .and. VS1->VS1_VLBRNF == "0" .and. VS1->(FieldPos("VS1_FPGBAS")) > 0  .and. ;
+					!Empty(VS1->VS1_FPGBAS) .and. !_lMultOrc
+						nValTit := aParcBRNF[_nPos,2]
+				Else
+					nValTit := VS9->VS9_VALPAG
+				EndIf
+			*/
 			_nValTit := VS9->VS9_VALPAG
 
 			_aTitulo := {	{"E1_PREFIXO" 	,	_cPrefNF		,Nil},;
@@ -1280,6 +1280,23 @@ Static Function ZPEFF036FN(_cNota, _cSerie,  _nRegSC5, _nRegSF2, _nRegSE4, _aReg
 				Break
 			EndIf
 		Endif
+
+		/* Informações VS9
+			VS9->VS9_FILIAL := xFilial("VS9")
+			VS9->VS9_NUMIDE := VS1->VS1_NUMORC
+			VS9->VS9_SEQUEN := STRZERO(1,TamSX3("VS9_SEQUEN")[1]) -> Controle de seq de parcelas
+			VS9->VS9_DATPAG := dDataBase -> Data do pagamento
+				dDataBase -> Variavel publica que contém a data logada no sistema
+			VS9->VS9_VALPAG := _nValDup -> Valor do pagamento
+				_nValDup 	+= VS1->VS1_VALDUP - Acredito que seja o valor somado dos itens do orçamento
+			VS9->VS9_TIPPAG := _cTipo -> Forma de pagamento para particionar os valores da entrada
+				_cTipo := "DP"
+			VS9->VS9_ENTRAD := "N" -> Informar se tem entrada
+
+			VS9->VS9_NATURE - Natureza financeira de peças -> Todos os registros vazios no BD.
+			VS9->VS9_PORTAD - Código do portador deste título
+		
+		*/
 
 		// Gravar o F2_VALFAT com a soma de todos os titulos referente a NF //
 		SF2->(DbGoto(_nRegSF2))

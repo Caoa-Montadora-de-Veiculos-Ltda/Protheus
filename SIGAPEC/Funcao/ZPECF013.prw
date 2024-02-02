@@ -1424,77 +1424,77 @@ Begin Sequence
 	aAdd(_aTotais,	{"TOTAL SELECIONADO",0,0}) // TOTAL SELECIONADO
 
 	/* Alterado para não ocorrer erros quando mais de um usuário DAC 01/06/2022
-	
-	If (Select("TRBNF") <> 0 )
-		dbSelectArea("TRBNF")
-		dbCloseArea()
-	Endif
+		
+		If (Select("TRBNF") <> 0 )
+			dbSelectArea("TRBNF")
+			dbCloseArea()
+		Endif
 
-	//Mostrar marca DAC 01/06/2022
-	_cQuery := " SELECT VS1_CLIFAT,VS1_LOJA,VS1_NCLIFT,VS1_NUMORC,VS1_TIPORC,VS1_DATORC"
-	_cQuery += " FROM "+RetSQLName("VS1")+" VS1 "
-	_cQuery += "    WHERE VS1.VS1_FILIAL='"+xFilial("VS1")+"' "
-	_cQuery += "          AND VS1.VS1_XPICKI = '" + cZK_XPICKI + "'"
-	_cQuery += "          AND VS1.VS1_TIPORC = '1'  "
-	//_cQuery += "          AND VS1.VS1_STATUS = 'F'  "
-	_cQuery += "          AND VS1.D_E_L_E_T_ <> '*' "
-	//_cQuery += "          AND VS1.VS1_CLIFAT = '" + MV_PAR01 + "'"
-	//_cQuery += "          AND VS1.VS1_LOJA   = '" + MV_PAR02 + "'"
-	_cQuery += "          AND VS1.VS1_STATUS = '" + _cStatus + "'"  //eXite status para faturamento DAC 17/02/2022  
-	_cQuery += "          AND VS1.VS1_NUMNFI = ' '  "
+		//Mostrar marca DAC 01/06/2022
+		_cQuery := " SELECT VS1_CLIFAT,VS1_LOJA,VS1_NCLIFT,VS1_NUMORC,VS1_TIPORC,VS1_DATORC"
+		_cQuery += " FROM "+RetSQLName("VS1")+" VS1 "
+		_cQuery += "    WHERE VS1.VS1_FILIAL='"+xFilial("VS1")+"' "
+		_cQuery += "          AND VS1.VS1_XPICKI = '" + cZK_XPICKI + "'"
+		_cQuery += "          AND VS1.VS1_TIPORC = '1'  "
+		//_cQuery += "          AND VS1.VS1_STATUS = 'F'  "
+		_cQuery += "          AND VS1.D_E_L_E_T_ <> '*' "
+		//_cQuery += "          AND VS1.VS1_CLIFAT = '" + MV_PAR01 + "'"
+		//_cQuery += "          AND VS1.VS1_LOJA   = '" + MV_PAR02 + "'"
+		_cQuery += "          AND VS1.VS1_STATUS = '" + _cStatus + "'"  //eXite status para faturamento DAC 17/02/2022  
+		_cQuery += "          AND VS1.VS1_NUMNFI = ' '  "
 
-	_cQuery := ChangeQuery(_cQuery)
-	dbUseArea(.T.,"TOPCONN",TcGenQry(,,_cQuery),"TRBNF",.T.,.T.)
-	//DAC 19/12/2022 se não encontrou nada
-	If TRBNF->(Eof())
-		MsgInfo("Não localizado orçamentos com Picking "+cZK_XPICKI+" com status para faturar !","Atenção") 
-		return Nil
-	EndIf
+		_cQuery := ChangeQuery(_cQuery)
+		dbUseArea(.T.,"TOPCONN",TcGenQry(,,_cQuery),"TRBNF",.T.,.T.)
+		//DAC 19/12/2022 se não encontrou nada
+		If TRBNF->(Eof())
+			MsgInfo("Não localizado orçamentos com Picking "+cZK_XPICKI+" com status para faturar !","Atenção") 
+			return Nil
+		EndIf
 
-	aAdd(_aPesos,{"PESO LIQUIDO",0,0})                     
-	aAdd(_aPesos,{"PESO BRUTO  ",0,0})                     
-	aAdd(_aPesos,{"PESO CUBADO ",0,0})
+		aAdd(_aPesos,{"PESO LIQUIDO",0,0})                     
+		aAdd(_aPesos,{"PESO BRUTO  ",0,0})                     
+		aAdd(_aPesos,{"PESO CUBADO ",0,0})
 
-	DBSelectArea("TRBNF")
-	DBGoTop()
+		DBSelectArea("TRBNF")
+		DBGoTop()
 
-	while !(TRBNF->(eof()))
-    	nValpec := 0
-    	//cSequen := Val(VS3->VS3_SEQUEN)      //STRZERO(SZK->(SZK_SEQREG),3)
-		//cSeqSZK := STR(cSequen)+".00"
-		VS3->(dbSetOrder(1))
-		If VS3->(dbSeek(xFilial("VS3")+TRBNF->(VS1_NUMORC)))   //+cSequen
-       	 	Do While (VS3->(!EOF()) .AND. VS3->VS3_NUMORC = TRBNF->(VS1_NUMORC)) 
-	        	nValpec += VS3->VS3_VALPEC
-            	//SKZ->(dbSetOrder(1))     //Filial+Sequencia registro
-	        	//SKZ->(dbGotop())
-	        	//If SKZ->(dbSeek(xFilial("SKZ")+VS3->VS3_XPICKI+cSeqSZK))   
-				//nPesol := SKZ->SKZ_PLIQUI
-				//nPesob := SKZ->SKZ_PBRUTO
-				//nPesos := SKZ->SKZ_PESOC
-				//SKZ->(dbSkip())
-	        	//ENDIF
-	        	VS3->(dbSkip())
-			ENDDO
-		ENDIF
+		while !(TRBNF->(eof()))
+			nValpec := 0
+			//cSequen := Val(VS3->VS3_SEQUEN)      //STRZERO(SZK->(SZK_SEQREG),3)
+			//cSeqSZK := STR(cSequen)+".00"
+			VS3->(dbSetOrder(1))
+			If VS3->(dbSeek(xFilial("VS3")+TRBNF->(VS1_NUMORC)))   //+cSequen
+				Do While (VS3->(!EOF()) .AND. VS3->VS3_NUMORC = TRBNF->(VS1_NUMORC)) 
+					nValpec += VS3->VS3_VALPEC
+					//SKZ->(dbSetOrder(1))     //Filial+Sequencia registro
+					//SKZ->(dbGotop())
+					//If SKZ->(dbSeek(xFilial("SKZ")+VS3->VS3_XPICKI+cSeqSZK))   
+					//nPesol := SKZ->SKZ_PLIQUI
+					//nPesob := SKZ->SKZ_PBRUTO
+					//nPesos := SKZ->SKZ_PESOC
+					//SKZ->(dbSkip())
+					//ENDIF
+					VS3->(dbSkip())
+				ENDDO
+			ENDIF
 
-		aAdd(	_aIntIte,{;
-	         	TRBNF->(VS1_NUMORC),;
-	         	TRBNF->(VS1_TIPORC),;
-	            stod(TRBNF->(VS1_DATORC)),;
-	            STR(nValpec) })      //TRBNF->(VS1_VTOTNF)
- 		_aTotais[1,2] ++
-		_aTotais[1,3] = STR(nValpec)
-    	_aPesos[1,3] += nPesol
-		_aPesos[2,3] +=	nPesob
-		_aPesos[3,3] +=	nPesos
+			aAdd(	_aIntIte,{;
+					TRBNF->(VS1_NUMORC),;
+					TRBNF->(VS1_TIPORC),;
+					stod(TRBNF->(VS1_DATORC)),;
+					STR(nValpec) })      //TRBNF->(VS1_VTOTNF)
+			_aTotais[1,2] ++
+			_aTotais[1,3] = STR(nValpec)
+			_aPesos[1,3] += nPesol
+			_aPesos[2,3] +=	nPesob
+			_aPesos[3,3] +=	nPesos
 
-		//implementado marca para controlar faturamento caso esteja faturando esta marca não permitir que outro usuário fature DAC 01/06/2022
-		If !Empty(TRBNF->VS1_XMARCA)
-			_cMarca := TRBNF->VS1_XMARCA
-		EndIF	
-   		TRBNF->(dbSkip())
-	END
+			//implementado marca para controlar faturamento caso esteja faturando esta marca não permitir que outro usuário fature DAC 01/06/2022
+			If !Empty(TRBNF->VS1_XMARCA)
+				_cMarca := TRBNF->VS1_XMARCA
+			EndIF	
+			TRBNF->(dbSkip())
+		END
 	*/
 	BeginSql Alias _cAliasPesq
 		SELECT 	VS1_CLIFAT,VS1_LOJA,VS1_NCLIFT,VS1_NUMORC,VS1_TIPORC,VS1_DATORC, VS1_XMARCA
@@ -1621,7 +1621,7 @@ Begin Sequence
 
 		//For Next da desreserva 
 		For nCntFor := 1 to Len(aOrcs)
-		//retirar reserva 
+			//retirar reserva 
 			If _lReserva
 				aResDel		:= {}
 				_aVS3Reg	:= {}
