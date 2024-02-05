@@ -14,9 +14,10 @@ Static _oDlgMark	As Object
 Static _oCheckCli	As Object
 Static _oCheckTra	As Object
 Static _oCheckAll	As Object
-Static _lCheckCli 	As logical
-Static _lCheckTra    As logical
-Static _lCheckAll  	As logical
+Static _lCheckCli   AS Logical
+Static _lCheckTra 	AS Logical
+Static _lCheckAll	AS Logical
+
 
 Static _cNotaDe	 	:= Space(Len(SF2->F2_DOC))
 Static _cNotaAte 	:= Space(Len(SF2->F2_DOC))
@@ -24,6 +25,7 @@ Static _cCodCli  	:= Space(Len(SF2->F2_CLIENTE))
 Static _cLojaCli 	:= Space(Len(SF2->F2_LOJA))
 Static _cCNPJCli 	:= Space(Len(SA1->A1_CGC))
 Static _cEmailEsp	:= Space(200)
+Static _aMsgPrcEmail:= {}
 
 //Static _oOk       	:= LoadBitmap( GetResources(), "CHECKED" )   //CHECKED    //LBOK  //LBTIK
 //Static _oNo       	:= LoadBitmap( GetResources(), "UNCHECKED" ) //UNCHECKED  //LBNO
@@ -45,16 +47,15 @@ Local _aObjCoords	:= {}
 //Local _bFiltro 		:= {||ZFISF009Filtro() }
 Local _aArea 		:= GetArea()
 Local _aRotina   	:= {}
-
-//Local _nAltura  	:= 180
-//Local _nLargura 	:= 650
-
 Local _aColumns
 Local _aCampos
 
+	_lCheckCli	:= .F.
+	_lCheckTra 	:= .F.
+	_lCheckAll	:= .F.
 
 	DbSelectArea("SF2")
-//_aColsMark:= fMntColsMark()
+	//_aColsMark:= fMntColsMark()
 
 	If Type("aRotina") == "A"	
  		_aRotina   	:= aRotina
@@ -89,17 +90,15 @@ Local _aCampos
 	_nLinha := _aObjSize[1,1]*0.2
 	_nCol   := _aObjSize[1,2] + 10  
 	//_oGroup:oFont:= _oFont
-	_lCheckCli 	:= .F.
- 	_lCheckTra  := .F.
-	_lCheckAll  := .F.
-
 
 	@ _nLinha	, _nCol+1 	SAY   OemToAnsi("Nota Fiscal De") SIZE 038,007 		OF _oPanelUp PIXEL
 	@ _nLinha+6	, _nCol+1 	MSGET _cNotaDe SIZE 010,007		OF _oPanelUp F3 'SF2' PIXEL WHEN .T. VALID .T.
 	@ _nLinha	, _nCol+80 	SAY   OemToAnsi("Nota Fiscal Ate") SIZE 038,007 	OF _oPanelUp PIXEL
 	@ _nLinha+6	, _nCol+80	MSGET _cNotaAte SIZE 010,007	OF _oPanelUp F3 'SF2' PIXEL WHEN .T. VALID .T.
-   	_oCheckCli := TCheckBox():New(_nLinha, _nCol+500, "Envia e-mail para Clientes", {||_lCheckCli}, _oDlgMark, 100, 210,,,,,,,,.T.)
-
+	 
+   	_oCheckCli := TCheckBox():New(_nLinha, _nCol+500, "Envia e-mail para Clientes", /*{||_lCheckCli }*/, _oPanelUp, 100, 210,,,,,,,,.T.,,,)
+	//_oCheckCli := TCheckBox():Create( _oDlgMark,{||_lCheckCli},_nLinha, _nCol+500,'Envia e-mail para Clientes',100,210,,,,,,,,.T.,'Envia e-mail para Clientes',,)
+	_oCheckCli:bLClicked := {|| _lCheckCli:=!_lCheckCli}
 	_nLinha += 20
 	@ _nLinha	, _nCol+1 	SAY   OemToAnsi("Cod. Cliente") SIZE 038,007 	OF _oPanelUp PIXEL
 	@ _nLinha+6 , _nCol+1	MSGET _cCodCli SIZE 050,007	OF _oPanelUp  	F3 'SA1'	PIXEL WHEN .T. VALID ZFIS09ClilVld(_cCodCli)
@@ -107,14 +106,17 @@ Local _aCampos
 	@ _nLinha+6 , _nCol+80	MSGET _cLojaCli SIZE 050,007	OF _oPanelUp  				PIXEL WHEN .T. VALID ZFIS09ClilVld(_cCodCli, _cLojaCli)
 	@ _nLinha	, _nCol+160 SAY   OemToAnsi("CNPJ Cliente") SIZE 038,007 	OF _oPanelUp PIXEL
 	@ _nLinha+6 , _nCol+160	MSGET _cCNPJCli SIZE 050,007	OF _oPanelUp  				PIXEL WHEN .T. VALID ZFIS09ClilVld(/*_cCodCli*/, /*_cLojaCli*/, _cCNPJCli)
-   	_oCheckTra := TCheckBox():New(_nLinha, _nCol+500, "Envia e-mail para Transportador", {||_lCheckTra}, _oDlgMark, 100, 210,,,,,,,,.T.)
-
+   	_oCheckTra := TCheckBox():New(_nLinha, _nCol+500, "Envia e-mail para Transportador", /*{||_lCheckTra }*/, _oPanelUp, 100, 210,,,,,,,,.T.,,,)
+	//_oCheckTra := TCheckBox():Create( _oDlgMark,{||_lCheckTra},_nLinha, _nCol+500,'Envia e-mail para Transportador',100,210,,,,,,,,.T.,'Envia e-mail para Transportador',,)
+	_oCheckTra:bLClicked := {|| _lCheckTra:=!_lCheckTra}
+	
 	_nLinha += 20
 	@ _nLinha	, _nCol+1 	SAY   OemToAnsi("E-mail Especifico") SIZE 038,007 	OF _oPanelUp PIXEL
 	@ _nLinha+6 , _nCol+1	MSGET _cEmailEsp SIZE 350,007	OF _oPanelUp  		PIXEL WHEN .T. VALID ZFIS09VldEmail(_cEmailEsp)
-   	_oCheckAll := TCheckBox():New(_nLinha, _nCol+500, "Envia e-mail para Todos", {||_lCheckAll}, _oDlgMark, 100, 210,,,,,,,,.T.)
-
+   	_oCheckAll := TCheckBox():New(_nLinha, _nCol+500, "Envia e-mail para Todos", /*{||_lCheckAll }*/, _oPanelUp, 100, 210,,,,,,,,.T.,,,)
+	//_oCheckAll := TCheckBox():Create( _oDlgMark,{||_lCheckAll},_nLinha, _nCol+500,'Envia e-mail para Todos',100,210,,,,,,,,.T.,'Envia e-mail para Todos',,)
  	//oCheck1 := TCheckBox():New(_nLinha,_nCol,'Item 1',{||lCheck},_oPanelUp,180,210,,,oFont,,,,,.T.,,,{oCheck1:Refresh()})
+	_oCheckAll:bLClicked := {|| _lCheckAll:=!_lCheckAll}
 
     //Preparar visualização de colunas   
     _aColumns := {}
@@ -144,7 +146,6 @@ Local _aCampos
     _oMark:AddLegend( "F2_FIMP=='T'"                                    , "BR_AZUL" , OemToAnsi("NF Transmitida")  )  
     _oMark:AddLegend( "F2_FIMP=='D'"                                    , "BR_CINZA" , OemToAnsi("NF Uso Denegado")  )  
     _oMark:AddLegend( "F2_FIMP=='N'"                                    , "BR_PRETO" , OemToAnsi("NF nao autorizada")  )  
-
 	//_oMark:AddButton("Envia Docto."		, _bProcessa,,,, .F., 2 )  //Envia  
 	//_oMark:AddButton("Sel Parametros"	, _bFiltro 	,,,, .F., 2 )  //Filtra 
     _oMark:AddButton("Envia Docto" 	    , { || FwMsgRun(,{ | _oSay | If(ZFISF09Processa( @_oSay), _oDlgMark:End(),_oMark:Refresh(.T.)) }    , "Processando Arquivo "       , "Aguarde...")  },,,, .F., 2 )  
@@ -162,7 +163,6 @@ Local _aCampos
 
     //Função para Validar registro selecionado 
     //_oMark:SetSemaphore(.T.)     
-    // _oMark:AddMarkColumns( _oOk, _oOk,_oOk)   
 
     //_oMark:Valid(U_???MRK())
     //_oMark:SetValid({||U_???MRK()})
@@ -171,10 +171,13 @@ Local _aCampos
     //_oMark:SetDoubleClick({||U_?????MRK()})   
 	//_oMark:SetEditCell ( .T., {||U_?????()} )
     //_oMark:AddMarkColumns({| If(ZFISF09MRK(), _oOk, _oNo ) })
+	//_oMark:SetAfterMark({|| ZFISF006VL() })
     //Montar legenda 
     //BOTOES
 	//MARCAR TODOS
 	//_oMark:bAllMark := { || SetMarkAll(_oMark:Mark(),_lMarcar := !_lMarcar ), _oMark:Refresh(.T.)  }
+	//_oMark:SetMark( _cMarca, "SF2", "F2_OK" )
+
 	_oMark:Activate()
 	ACTIVATE MSDIALOG _oDlgMark CENTERED
 
@@ -187,36 +190,7 @@ RestArea(_aArea)
 Return Nil
 
 
-Static Function ZFIS09VldEmail(_cEmail)
-Local _lRet := .T.
-	If Empty(_cEmail)
-		//_lRet := .F. 
-	ElseIf 	At("@",_cEmail) == 0
-		_lRet := .F.
-		MsgInfo("Informar e-mail correto !","Atenção")
-	Endif 
-Return _lRet		
 
-
-/*/{Protheus.doc} SetMarkAll
-Marca/Desmarca todos os itens da markbrowse
-@author Leandro Drumond
-@since 16/05/2016
-@version 1.0
-/*/
-/*
-Static Function SetMarkAll(_cMarca, _lMarcar )
-Local _aAreaMark  := SF2->( GetArea() )
-	SF2->( dbGoTop() )
-	While SF2->( !Eof() )
-		RecLock( "SF2", .F. )
-		SF2->F2_OK := IIf( _lMarcar, _cMarca, '  ' )
-		SF2->(MsUnLock())
-		SF2->( dbSkip() )
-	EndDo
-	RestArea( _aAreaMark )
-Return .T.
-*/
 
 Static Function ZFISF009Filtro(_oSay)
 Local _cFiltro := ""
@@ -270,13 +244,14 @@ End Sequence
 Return _lRet 
 
 
-
+//Processa a geração e envio de e-mail caso existam
 Static Function ZFISF09Processa( _oSay) 
 Local _cMarca   := _oMark:Mark()
 Local _cPasta   := ""
 Local _cAlias 	:= GetNextAlias()
 Local _lRet 	:= .T.
 Local _cType 		:= OemToAnsi("Todos") + "(*.*) |*.*|"
+Local _nPos
 
 Begin Sequence
     //Define o nome do alias temporário
@@ -302,17 +277,28 @@ Begin Sequence
 		Break
 	Endif
 
+	_aMsgPrcEmail := {}  //Serão gravados todas as atividades e erros nesta matriz
     While (_cAlias)->(!Eof())
 		SF2->(DbGoto((_cAlias)->NREGSF2))
+
         If SF2->F2_OK == _cMarca
+			_oSay:SetText("Processando nota fisca: "+SF2->F2_DOC)
+			ProcessMessage()
             //MProcDanfe(_cPasta, @_cArquivo)
-            SF2->(MProcDanfe(_cPasta))
+            SF2->(MProcDanfe(_cPasta, @_oSay))
 			RecLock( "SF2", .F. )
 			SF2->F2_OK := '  ' 
 			SF2->(MsUnLock())
         Endif 
 		(_cAlias)->(DbSkip()) 
     EndDo
+	If Len(_aMsgPrcEmail) > 0
+		_cMens := "Inconsistências no envio dos e-mails"+ CRLF
+		For _nPos := 1 To Len(_aMsgPrcEmail)
+			_cMens += _aMsgPrcEmail[_nPos]
+		Next
+		MsgInfo(_cMens, "Atenção")    
+	Endif
 	MsgInfo("Gerado arquivos conforme pasta "+_cPasta+" informada", "Atenção")    
     _oMark:Refresh(.T.)
 
@@ -324,26 +310,6 @@ Endif
 Return _lRet
 
 
-
-Static Function ZFIS09ClilVld(_cCod, _cLoja, _cCnpj)
-Local _lRet 	:= .T.
-Local _cChave	:= ""
-	If ValType(_cCod) == "C" .And. ValType(_cLoja) == "C" .And. !Empty(_cCod)
-		SA1->(DbSetOrder(1))
-		_cChave := XFilial("SA1")+_cCod+_cLoja		
-	ElseIf ValType(_cCnpj) == "C"  .And. !Empty(_cCnpj)
-		SA1->(DbSetOrder(3))
-		_cChave := XFilial("SA1")+_cCnpj		
-	Endif
-	If !Empty(_cChave)
-		_lRet := SA1->(DbSeek(_cChave))
-		If !_lRet
-			MsgInfo("Cliente Não localizado !", "Atenção")
-		Endif 
-	Endif	
-Return _lRet 
-
-
 //-------------------------------------------------------------------
 /*/{Protheus.doc} MProcDanfe
 Processar a Danfe e enviar e-mail
@@ -352,11 +318,12 @@ Processar a Danfe e enviar e-mail
 @version 1.0
 /*/
 //-------------------------------------------------------------------
-STATIC Function MProcDanfe( _cPasta )
+STATIC Function MProcDanfe( _cPasta, _oSay )
 Local nA         	:= 0
 Local cMensagem  	:= ""
 Local cDir       	:= "" //SuperGetMV('MV_RELT',,"\SPOOL\")
 Local cNomeArquivo  := ""
+Local lRet 
 
 Private cPegaXml   := ""  //Obtido dentro da rotina da Danfe. tem que existir uma variavel Private nestga função
 Private cXMensagem := ""
@@ -380,103 +347,27 @@ Begin Sequence
 		_lRet := .F.
         Break
     EndIf
-    MemoWrit(_cPasta + cNomeArquivo + ".xml", cPegaXml)
+	//Grava arquivo XML
+    MemoWrit(cDir + cNomeArquivo + ".xml", cPegaXml)
     lRet := __CopyFile(cDir + cNomeArquivo + ".pdf", _cPasta+cNomeArquivo+".pdf",,,.F.)
 	If !lRet
 		MsgInfo("Não foi possivel copiar arquivo "+cDir + cNomeArquivo + ".pdf !", "Atenção")
 		Break 
 	Endif
+    lRet := __CopyFile(cDir + cNomeArquivo + ".xml", _cPasta+cNomeArquivo+".xml",,,.F.)
+	If !lRet
+		MsgInfo("Não foi possivel copiar arquivo "+cDir + cNomeArquivo + ".xml !", "Atenção")
+		Break 
+	Endif
 	//Para enviar e-mai tem que estar informado um destes processos
 	If 	!Empty(_cEmailEsp) .Or. _lCheckCli 	.Or. _lCheckTra .Or. _lCheckAll  
-		ZFIS09Email(_cPasta+cNomeArquivo+".pdf", _cPasta+cNomeArquivo+".xml")
+		_oSay:SetText("Enviando e-mail nota fisca: "+SF2->F2_DOC)
+		ProcessMessage()
+		ZFIS09Email({cDir+cNomeArquivo+".pdf", cDir+cNomeArquivo+".xml"})
 	Endif 
     //MEnviarEMail(cDir + cNomeArquivo + ".pdf", cDir + cNomeArquivo + ".xml", @cMensagem)
 End Sequence
 Return cMensagem
-
-//Função para preparar envio de e-mail
-Static Function ZFIS09Email( _cArqPdf, _cArqXml)
-Local _cAssunto		:= ""
-Local _cEmails		:= ""
-Local _cEMailCopia	:= ""
-Local _aAnexos 		:= {}
-Local _aMens		:= {}
-Local _aErro		:= {}
-Local _lRet 		:= .T.
-Local _cEmailAcp    := AllTrim(SuperGetMV( "CMV_FIS000" , ,"denilso.carvalho@caoa.com.br" ))
-Local _nPos
-
-Default _cArqPdf := ""
-Default _cArqXml := ""
-"
-	_cAssunto := "Envio Danfe e XML Nota Fiscal "+SF2->F2_DOC+ "  SERIE "+ SF2->F2_SERIE 
-	//Incluir arquivos
-	If !Empty(_cArqPdf)
-		Aadd(_aAnexos,_cArqPdf)
-	Endif		
-	If !Empty(_cArqXml)
-		Aadd(_aAnexos,_cArqXml)
-	Endif		
-
-	Aadd( _aMens, "Danfe referente a envio cliente "+SF2->F2_CLIENTE+"-"+SF2->F2_LOJA+ "  "+AllTrim(SA1->A1_NOME) )
-	//Verifica se envia e-mail para cliente
-	If 	_lCheckCli 	.Or. _lCheckAll
-		//Locallizar Cliente
-		SA1->(DbSeek(FwXFilial("SA1")+SF2->F2_CLIENTE+SF2->F2_LOJA))
-		If Empty(SA1->A1_EMAIL) .Or. SA1->(Eof())
-			Aadd(_aErro,"Não esta cadastrado Email do Cliente codigo "+SF2->F2_CLIENTE+ " Loja "+SF2->F2_LOJA)
-		Else
-			_cEmails += AllTrim(SA1->A1_EMAIL) +","
-		Endif	 
-	Endif
-	//Verifica se envia E-mai para Transportador
-	If 	_lCheckTra 	.Or. _lCheckAll
-		SA4->(DbSeek(FwXFilial("SA4")+SF2->A2_TRANSP))
- 		If Empty(SA4->A4_EMAIL) .Or. SA4->(Eof())
-			Aadd(_aErro,"Não esta cadastrado e-mail do Transportador codigo "+SF2->A2_TRANSP+ " nota "+SF2->F2_DOC+ " serie "+SF2->F2_SERIE)
-		Else
-			_cEmails += AllTrim(SA4->A4_EMAIL) +"," 
-		Endif 	
-	Endif
-	//Verifica se existem e-mail's informado cliente fornecedor caso não exista ainda sim vai enviar especifico
-	If !Empty(_cEmails)
-		_cEMailCopia += AllTrim(_cEmailEsp) +","
-	Else 
-		_cEmails += AllTrim(_cEmailEsp) +","
-	Endif 
-	//Se não tiver e-mail para enviar 
-	If Empty(_cEmails) 
-		Aadd(_aErro,"Não foram localizados e-mails para envio do Cliente codigo "+SF2->F2_CLIENTE+ " Loja "+SF2->F2_LOJA+ " nota "+SF2->F2_DOC+ " serie "+SF2->F2_SERIE)
-    Else  
-		_cEmails := SubsTr(_cEmails,1,Len(_cEmails)-1)
-		If !Empty(_cEMailCopia)
-			_cEMailCopia := SubsTr(_cEMailCopia,1,Len(_cEMailCopia)-1)
-		Endif
-		_lRet := ZFISF009EM(_aMens, _cAssunto, _cEmails, _cEMailCopia, _aAnexos,  /*_cRotina*/, /*lSchedule*/)
-		//ocorreu problemas no envio de Email
-		If !_lRet
-			Aadd(_aErro,"Ocorreram erros nos envio de e-mails para envio do Cliente codigo "+SF2->F2_CLIENTE+ " Loja "+SF2->F2_LOJA+ " nota "+SF2->F2_DOC+ " serie "+SF2->F2_SERIE)
-		Endif 
-	Endif 
-	//caso ocorra erro tentar enviar para e-mail de acompanhamento 
-	If Len(_aErro) > 0
-		_lRet = .F.
-		_cAssunto := "ZFIS09Email Problemas ocorrido no Envio Danfe e XML Nota Fiscal "+SF2->F2_DOC+ "  SERIE "+ SF2->F2_SERIE 
-		Conout(_cAssunto)	
-		//acrescento no processo ja gerado os erros a serem enviados
-		For _nPos := 1 To Len(_aErro)
-			Aadd(_aMens,_aErro[_nPos])
-			Conout("Ocorrencia: "+_aErro[_nPos])
-		Next	
-		_cEmails  		:= _cEmailAcp
-		_cEMailCopia	:= AllTrim(_cEmailEsp)
-		ZFISF009EM(_aMens, _cAssunto, _cEmails, _cEMailCopia, _aAnexos,  /*_cRotina*/, /*lSchedule*/,/*_lMsgTela*/)
-		Conout("Email:"+_cEmails)
-		Conout("Email cópia"+_cEMailCopia)
-	Endif 
-Return _lRet
-
-
 
 
 //-------------------------------------------------------------------
@@ -644,6 +535,86 @@ oSetup := Nil
 Return .T.
 
 
+//Função para preparar envio de e-mail
+Static Function ZFIS09Email( _aArqEnvio )
+Local _cAssunto		:= ""
+Local _cEmails		:= ""
+Local _cEMailCopia	:= ""
+Local _aAnexos 		:= {}
+Local _aMens		:= {}
+Local _aErro		:= {}
+Local _lRet 		:= .T.
+Local _cEmailAcp    := AllTrim(SuperGetMV( "CMV_FIS000" , ,"denilso.carvalho@caoa.com.br" ))
+Local _nPos
+
+Default _cArqPdf := ""
+Default _cArqXml := ""
+	_cAssunto := "Envio Danfe e XML Nota Fiscal "+SF2->F2_DOC+ "  SERIE "+ SF2->F2_SERIE 
+	//Incluir arquivos para envio
+	If Len(_aArqEnvio) > 0
+		_aAnexos := _aArqEnvio
+	Endif
+
+	Aadd( _aMens, "Danfe referente a envio cliente "+SF2->F2_CLIENTE+"-"+SF2->F2_LOJA+ "  "+AllTrim(SA1->A1_NOME) )
+	//Verifica se envia e-mail para cliente
+	If 	_lCheckCli 	.Or. _lCheckAll
+		//Locallizar Cliente
+		SA1->(DbSeek(FwXFilial("SA1")+SF2->F2_CLIENTE+SF2->F2_LOJA))
+		If Empty(SA1->A1_EMAIL) .Or. SA1->(Eof())
+			Aadd(_aErro,"Não esta cadastrado Email do Cliente codigo "+SF2->F2_CLIENTE+ " Loja "+SF2->F2_LOJA)
+		Else
+			_cEmails += AllTrim(SA1->A1_EMAIL) +","
+		Endif	 
+	Endif
+	//Verifica se envia E-mai para Transportador
+	If 	_lCheckTra 	.Or. _lCheckAll
+		SA4->(DbSeek(FwXFilial("SA4")+SF2->F2_TRANSP))
+ 		If Empty(SA4->A4_EMAIL) .Or. SA4->(Eof())
+			Aadd(_aErro,"Não esta cadastrado e-mail do Transportador codigo "+SF2->A2_TRANSP+ " nota "+SF2->F2_DOC+ " serie "+SF2->F2_SERIE)
+		Else
+			_cEmails += AllTrim(SA4->A4_EMAIL) +"," 
+		Endif 	
+	Endif
+	//Verifica se existem e-mail's informado cliente fornecedor caso não exista ainda sim vai enviar especifico
+	If !Empty(_cEmails)
+		_cEMailCopia += AllTrim(_cEmailEsp) +","
+	Else 
+		_cEmails += AllTrim(_cEmailEsp) +","
+	Endif 
+	//Se não tiver e-mail para enviar 
+	If Empty(_cEmails) 
+		Aadd(_aErro,"Não foram localizados e-mails para envio do Cliente codigo "+SF2->F2_CLIENTE+ " Loja "+SF2->F2_LOJA+ " nota "+SF2->F2_DOC+ " serie "+SF2->F2_SERIE)
+    Else  
+		_cEmails := SubsTr(_cEmails,1,Len(_cEmails)-1)
+		If !Empty(_cEMailCopia)
+			_cEMailCopia := SubsTr(_cEMailCopia,1,Len(_cEMailCopia)-1)
+		Endif
+		_lRet := ZFISF009EM(SF2->F2_DOC, SF2->F2_SERIE, _aMens, _cAssunto, _cEmails, _cEMailCopia, _aAnexos,  /*_cRotina*/, /*lSchedule*/,/*_lMsgTela*/)
+		//ocorreu problemas no envio de Email
+		If !_lRet
+			Aadd(_aErro,"Ocorreram erros nos envio de e-mails para envio do Cliente codigo "+SF2->F2_CLIENTE+ " Loja "+SF2->F2_LOJA+ " nota "+SF2->F2_DOC+ " serie "+SF2->F2_SERIE)
+		Endif 
+	Endif 
+	//caso ocorra erro tentar enviar para e-mail de acompanhamento 
+	If Len(_aErro) > 0 .And. !Empty(_cEmailAcp)
+		_lRet = .F.
+		_cAssunto := "ZFIS09Email Problemas ocorrido no Envio Danfe e XML Nota Fiscal "+SF2->F2_DOC+ "  SERIE "+ SF2->F2_SERIE 
+		Conout(_cAssunto)	
+		//acrescento no processo ja gerado os erros a serem enviados
+		For _nPos := 1 To Len(_aErro)
+			Aadd(_aMens,_aErro[_nPos])
+			Aadd(_aMsgPrcEmail,_aErro[_nPos])  //guardar para mostrar no final assim não impedira o processamento das demais notas caso existam
+			Conout("Ocorrencia: "+_aErro[_nPos])
+		Next	
+		_cEmails  		:= _cEmailAcp
+		_cEMailCopia	:= AllTrim(_cEmailEsp)
+		ZFISF009EM(SF2->F2_DOC, SF2->F2_SERIE, _aMens, _cAssunto, _cEmails, _cEMailCopia, _aAnexos,  /*_cRotina*/, /*lSchedule*/,/*_lMsgTela*/)
+		Conout("Email:"+_cEmails)
+		Conout("Email cópia"+_cEMailCopia)
+	Endif 
+Return _lRet
+
+
 
 /*
 =====================================================================================
@@ -666,120 +637,148 @@ Obs......:
 
 =====================================================================================
 */
-Static Function ZFISF009EM(_aMens, _cAssunto, _cEmails, _cEMailCopia, _aAnexos,  _cRotina, lSchedule, _lMsgTela)
+Static Function ZFISF009EM(	_cNota, _cSerie, _aMens, _cAssunto, _cEmails, _cEMailCopia, _aAnexos,  _cRotina, lSchedule, _lMsgTela)
 Local _cTexto   		:= ""
 Local _cEmailDest 		:= ""
 Local _lMsgOK			:= .T.
 Local _lMsgErro			:= .F.
 Local _cObsMail			:= ""
 Local _cReplyTo			:= ""
-Local _cCorItem			:= "FFFFFF"
+//Local _cCorItem			:= "FFFFFF"
 Local _lEnvia			:= .T.
 Local _cLogo  			:= "lg_caoa.png"
-Local _cCodUsu			:= RetCodUsr()
+//Local _cCodUsu			:= RetCodUsr()
 Local _cNomeUsu 		:= Upper(FwGetUserName(RetCodUsr())) //Retorna o nome completo do usuário  __cUserId
-Local _nPos
+//Local _nPos
 
 Default _lSchedule   	:= .T.
-Default _cAssunto		:= "Informações importação MES"
-Default _cEmails 		:= AllTrim(SuperGetMV("CMV_PCP002",.F.,"evandro.mariano@caoa.com.br;denilso.carvalho@caoa.com.br"))  //E-mail para envio problemas integração TOTVS x MES 
+Default _cAssunto		:= "Envio arquivos"
+Default _cEmails 		:= AllTrim(SuperGetMV("CMV_PCP002",.F.,""))  //E-mail para envio problemas integração TOTVS x MES 
 Default _aAnexos		:= {}
 Default _aChave			:= {}
 Default _cEMailCopia	:= ""
 Default _cRotina		:= "ZFISF009"
 Default _lMsgTela		:= .F.
 
-_lMsgErro			:= IF( _lSchedule == .F., .T. , .F. )
-If Empty(_cEmails)
-	_cTexto := "**** Erros referente ao processo de importação MES função ZPCP007 não possui e-mail cadastrado no parâmetro CMV_PCP002****"
-	_cTexto += "     Os mesmos serão gravados no log do Sistema conforme informações abaixo" 
-	Return .F.
-EndIf	
-
-
-
-_cEmailDest := _cEmails
-_cHtml := ""
-_cHtml += "<html>"+ CRLF
-_cHtml += "	<head>"+ CRLF
-_cHtml += "		<title>Processo de importação MES Informações/Erros</title>"+ CRLF
-_cHtml += "	</head>"+ CRLF
-_cHtml += "	<body leftmargin='0' topmargin='0' rightmargin='0' bottommargin='0'>"+ CRLF
-_cHtml += "		<table width='100%' height='100%' border='0' cellpadding='0' cellspacing='0'>"+ CRLF
-_cHtml += "			<tr>"+ CRLF
-_cHtml += "				<th width='1200' height='100%' align='center' valign='top' scope='col'>"+ CRLF
-_cHtml += "					<table width='90%' height='50%' border='0' cellpadding='0' cellspacing='0'>"+ CRLF
-_cHtml += "						<tr>"+ CRLF
-_cHtml += "							<th width='100%' height='100' scope='col'>"+ CRLF
-_cHtml += "								<table width='100%' height='60%' border='3' cellpadding='0' cellspacing='0' >"+ CRLF
-_cHtml += "									<tr>"+ CRLF
-_cHtml += "										<th width='12%' height='0' scope='col'><img src='" + _cLogo + "' width='118' height='40'></th>"+ CRLF
-_cHtml += "										<td width='67%' align='center' valign='middle' scope='col'><font face='Arial' size='+1'><b>Envio Danfe / XML</b></font></td>"+ CRLF
-_cHtml += "									</tr>"+ CRLF
-_cHtml += "								</table>"+ CRLF
-_cHtml += "							</th>"+ CRLF
-_cHtml += "						</tr>"+ CRLF
-_cHtml += "						<tr>"+ CRLF
-_cHtml += "							<th width='100' height='100' scope='col'>"+ CRLF
-_cHtml += "								<table width='100%' height='100%' border='2' cellpadding='2' cellspacing='1' >"+ CRLF
-_cHtml += "									<tr>"+ CRLF
-_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Empresa:	</b></font></td>"+ CRLF
-_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>"+AllTrim(FWFilialName(,SM0->M0_CODFIL))+"</font></td>"+ CRLF
-_cHtml += "									</tr>"+ CRLF
-_cHtml += "									<tr>"+ CRLF
-_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Responsável(is):	</b></font></td>"+ CRLF
-_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>" + _cCodUsu+"-"+_cNomeUsu + "</font></td>"+ CRLF
-_cHtml += "									</tr>"+ CRLF
-_cHtml += "									</tr>"+ CRLF
-
-_cHtml += "								</table>"+ CRLF
-_cHtml += "							</th>"+ CRLF
-_cHtml += "						</tr>"+ CRLF
-_cHtml += "						<tr >"+ CRLF
-_cHtml += "							<td height='25' style='padding-top:1em;'>"+ CRLF
-_cHtml += "								<table width='100%' height='100%' border='2' cellpadding='2' cellspacing='0' >"+ CRLF
-_cHtml += "									<tr bgcolor='#4682B4'>"+ CRLF
-_cHtml += "										<th width='10%' height='100%' align='center' valign='middle' scope='col'><font face='Arial' size='2'><b>Histórico		</b></font></th>"+ CRLF
-_cHtml += "									</tr>"+ CRLF
-
-ConOut(_cAssunto)
-For _nPos := 1 To Len(_aMens)
-	_cHtml += "									<tr> <!--while advpl-->"+ CRLF
-	_cMsgErro := _aMens[_nPos]
-	_cHtml += "						<td width='10%' height='16' align='left'	valign='middle' bgcolor='#"+_cCorItem+"' scope='col'><font size='1' face='Arial'>"+_cMsgErro+"</font></td>"+ CRLF
-	_cHtml += "									</tr>"+ CRLF
-	ConOut(_aMens[_nPos])
-Next
-_cHtml +=    "<br/> <br/> <br/> <br/>" 
-	
-/*
-cMailDestino	- E-mail de Destino
-cMailCopia		- E-mail de cópia
-cAssunto		- Assunto do E-mail
-cHtml			- Corpo do E-mail
-aAnexos			- Anexos que será enviado
-lMsgErro		- .T. Exige msgn na tela - .F. Exibe somente por Conout
-cReplyTo		- Responder para outra pessoa.
-cRotina			- Rotina que está sendo executada.
-cObsMail		- Observação para Gravação do Log.
-*/
-If _lSchedule
-	_lEnvia := U_ZGENMAIL(_cEmailDest,_cEMailCopia,_cAssunto,_cHtml,_aAnexos,_lMsgErro,_lMsgOK,_cRotina,_cObsMail,_cReplyTo)
-Else
-	MsgRun("Enviando e-mail de notificação. Aguarde!!!","CAOA",{|| _lEnvia := U_ZGENMAIL(_cEmailDest,_cEMailCopia,_cAssunto,_cHtml,_aAnexos,_lMsgErro,_lMsgOK,_cRotina,_cObsMail,_cReplyTo) })
-EndIf
-
-If !_lEnvia
-	If lSchedule
-		ConOut("**** [ ZFISF009EM ] - E-mail não cadastrado para envio - Solicitar apoio do administrador! (Totvs Integração MES) ****"+ CRLF)
-	ElseIf _lMsgTela
-		ApMsgInfo("E-mail não cadastrado para envio - Solicitar apoio do administrador!! (Totvs Integração MES)","Cadastro")
-	Else 
-		ConOut("**** [ ZFISF009EM ] - E-mail não cadastrado para envio - Solicitar apoio do administrador! (Totvs Integração MES) ****"+ CRLF)
+	_lMsgErro			:= IF( _lSchedule == .F., .T. , .F. )
+	If Empty(_cEmails)
+		_cTexto := "**** Erros referente ao processo de envio arquivos não possui e-mail cadastrado no parâmetro CMV_PCP002****"
+		_cTexto += "     Os mesmos serão gravados no log do Sistema conforme informações abaixo" 
+		Aadd(_aMsgPrcEmail, _cTexto)
+		Return .F.
+	EndIf	
+	_cEmailDest := _cEmails
+	//Carregar informações corpo e-mail
+	_cHtml := ZFISF009HTML( _cLogo, _cNota, _cSerie, _cNomeUsu, _aMens)
+	//ConOut(_cAssunto)
+	//ConOut(_cAssunto)
+	/*
+	cMailDestino	- E-mail de Destino
+	cMailCopia		- E-mail de cópia
+	cAssunto		- Assunto do E-mail
+	cHtml			- Corpo do E-mail
+	aAnexos			- Anexos que será enviado
+	lMsgErro		- .T. Exige msgn na tela - .F. Exibe somente por Conout
+	cReplyTo		- Responder para outra pessoa.
+	cRotina			- Rotina que está sendo executada.
+	cObsMail		- Observação para Gravação do Log.
+	*/
+	If _lSchedule
+		_lEnvia := U_ZGENMAIL(_cEmailDest,_cEMailCopia,_cAssunto,_cHtml,_aAnexos,_lMsgErro,_lMsgOK,_cRotina,_cObsMail,_cReplyTo)
+	Else
+		MsgRun("Enviando e-mail de notificação. Aguarde!!!","CAOA",{|| _lEnvia := U_ZGENMAIL(_cEmailDest,_cEMailCopia,_cAssunto,_cHtml,_aAnexos,_lMsgErro,_lMsgOK,_cRotina,_cObsMail,_cReplyTo) })
 	EndIf
-EndIf
 
+	//lEnvioOK := GPEMail(cAssunto, cCorpo, cPara, aAnexos)
+	//lEnvioOK := GPEMail(_cAssunto, _cHtml, _cEmailDest, _aAnexos)
+
+	If !_lEnvia
+		If lSchedule
+			ConOut("**** [ ZFISF009EM ] - E-mail não cadastrado para envio - Solicitar apoio do administrador! (Totvs Integração MES) ****"+ CRLF)
+			Return .F.
+		ElseIf _lMsgTela
+			ApMsgInfo("E-mail não cadastrado para envio - Solicitar apoio do administrador!! (Totvs Integração MES)","Cadastro")
+			Return .F.
+		Else 
+			ConOut("**** [ ZFISF009EM ] - E-mail não cadastrado para envio - Solicitar apoio do administrador! (Totvs Integração MES) ****"+ CRLF)
+			Return .F.
+		EndIf
+	EndIf
 Return .T.
+
+
+
+Static Function ZFISF009HTML( _cLogo, _cNota, _cSerie, _cUserName, _aMens)
+Local _cHtml := ""
+Local _nPos
+
+	_cHtml += '<!DOCTYPE html>'+ CRLF
+    _cHtml += "<head>"+ CRLF
+    //_cHtml += "     <img src='img/beneficios.jpg' class='imagembeneficios'>"+ CRLF
+	_cHtml += "	<th width='12%' height='0' scope='col'><img src='" + _cLogo + "' width='118' height='40'></th>"+ CRLF
+    _cHtml += "    <meta charset='UTF-8'>"+ CRLF
+    _cHtml += "    <title>CAOA - Envio arquivo </title>"+ CRLF
+    _cHtml += "    <link rel='stylesheet' href='style.css'>"+ CRLF
+    _cHtml += "</head>"+ CRLF
+
+    _cHtml += "<body>"+ CRLF
+    _cHtml += "    <header>"+ CRLF
+    _cHtml += "        <h1 class='titulo-principal'>CAOA - Envio arquivo</h1>"+ CRLF
+    _cHtml += "    </header>"+ CRLF
+    _cHtml += "    <div class='principal'>"+ CRLF
+    _cHtml += "        <h2 class='titulo-centralizado'>Envio DANFE / XML </h2>"+ CRLF
+    _cHtml += "        <p>Estamos enviando anexo DANFE e XML referente a nota Fiscal <strong>"+_cNota+" </strong> Serie <strong>"+_cSerie+" </strong>.</p> "+ CRLF
+    _cHtml += "        </div>"
+
+	If Len(_aMens) > 0
+	    _cHtml += "     <div class='Referencia'>"+ CRLF
+    	_cHtml += "     <h3 class='titulo-centralizado'>Referência</h3> "+ CRLF   
+    	_cHtml += "     <ul>"+ CRLF
+		For _nPos := 1 to Len(_aMens)
+    		_cHtml += "         <li class='itens'>"+_aMens[_nPos]+"</li>"+ CRLF
+		Next
+    	_cHtml += "     </ul>    "+ CRLF
+    	_cHtml += "     </div>   "+ CRLF
+    Endif
+	_cHtml += "        <p id='cuser'><em>Enviado por : <strong>"+_cUserName+"</strong>.</em></p>"+ CRLF
+    _cHtml += "</body>"+ CRLF
+    _cHtml += "</html>"+ CRLF
+	_cHtml +=    "<br/> <br/> <br/> <br/>"+ CRLF 
+
+Return _cHtml
+
+
+//Valida se foi informado e-mail
+Static Function ZFIS09VldEmail(_cEmail)
+Local _lRet := .T.
+	If Empty(_cEmail)
+		//_lRet := .F. 
+	ElseIf 	At("@",_cEmail) == 0 .Or. At(".COM",Upper(_cEmail)) == 0
+		_lRet := .F.
+		MsgInfo("Informar e-mail correto !","Atenção")
+	Endif 
+Return _lRet		
+
+
+//Validação Cliente
+Static Function ZFIS09ClilVld(_cCod, _cLoja, _cCnpj)
+Local _lRet 	:= .T.
+Local _cChave	:= ""
+	If ValType(_cCod) == "C" .And. ValType(_cLoja) == "C" .And. !Empty(_cCod)
+		SA1->(DbSetOrder(1))
+		_cChave := XFilial("SA1")+_cCod+_cLoja		
+	ElseIf ValType(_cCnpj) == "C"  .And. !Empty(_cCnpj)
+		SA1->(DbSetOrder(3))
+		_cChave := XFilial("SA1")+_cCnpj		
+	Endif
+	If !Empty(_cChave)
+		_lRet := SA1->(DbSeek(_cChave))
+		If !_lRet
+			MsgInfo("Cliente Não localizado !", "Atenção")
+		Endif 
+	Endif	
+Return _lRet 
+
 
 
 //Menudef
@@ -791,3 +790,37 @@ Return _aRotina
 
 
 
+
+
+/*/{Protheus.doc} SetMarkAll
+Marca/Desmarca todos os itens da markbrowse
+@author Leandro Drumond
+@since 16/05/2016
+@version 1.0
+/*/
+/*
+Static Function SetMarkAll(_cMarca, _lMarcar )
+Local _aAreaMark  := SF2->( GetArea() )
+	SF2->( dbGoTop() )
+	While SF2->( !Eof() )
+		RecLock( "SF2", .F. )
+		SF2->F2_OK := IIf( _lMarcar, _cMarca, '  ' )
+		SF2->(MsUnLock())
+		SF2->( dbSkip() )
+	EndDo
+	RestArea( _aAreaMark )
+Return .T.
+*/
+
+
+Static Function ZFIS09Check(_nCheck, _oCheck)
+	If ValType(_oCheck) <> "U"
+		If _nCheck == 1 
+			_lCheckCli 		:= !_oCheck:lModified
+		ElseIf _nCheck == 2 
+			_lCheckTra  	:= !_oCheck:lModified
+		ElseIf _nCheck == 2 
+			_lCheckAll		:= !_oCheck:lModified
+		Endif 
+	Endif
+Return .T.
