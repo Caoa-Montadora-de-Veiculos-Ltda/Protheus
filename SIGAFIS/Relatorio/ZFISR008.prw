@@ -163,7 +163,20 @@ Static Function zRel001B(cArquivo)
 	cQuery += " FT_BASEINS, FT_ALIQINS, D1_ABATINS, D1_AVLINSS, FT_VALINS, C7_NUM, FT_FORMUL, "										+ CRLF
 	cQuery += " D1_BASEISS, D1_ALIQISS, D1_ABATISS, D1_ABATMAT, D1_VALISS, FT_CODBCC, FT_INDNTFR, "									+ CRLF
 	cQuery += " D1_VALFRE, D1_DESPESA, D1_CUSTO, D1_SEGURO, D1_VALACRS, D1_II, FT_ICMSCOM, D1_TNATREC, D1_CONHEC, "					+ CRLF
-	cQuery += " D1_PESO, FT_MVALPIS, FT_MVALCOF, W6_DTREG_D, W6_DI_NUM, YD_PER_II, VRK_OPCION, W9_TX_FOB, D1_CHASSI "							+ CRLF
+	cQuery += " D1_PESO, FT_MVALPIS, FT_MVALCOF, W6_DTREG_D, W6_DI_NUM, 
+	
+	
+	cQuery += "( Select SYD.YD_PER_II from " + RetSqlName("SYD") + " SYD " + CRLF
+ 	cQuery += "	  where SYD.YD_FILIAL  = '" +  FWxFilial('SYD') + "' " + CRLF
+	cQuery += "		AND SYD.YD_TEC     = SB1.B1_POSIPI " + CRLF
+	cQuery += "		AND SYD.YD_EX_NCM  = SB1.B1_EX_NCM " + CRLF
+	cQuery += "		AND SYD.YD_EX_NBM  = SB1.B1_EX_NBM " + CRLF
+    cQuery += "		AND SYD.D_E_L_E_T_ = ' ' " + CRLF
+    cQuery += "		AND     ROWNUM     = 1 " + CRLF
+ 
+    cQuery += "		) as YD_PER_II,  " + CRLF
+
+	cQuery += " VRK_OPCION, W9_TX_FOB, D1_CHASSI "							+ CRLF
 
 	cQuery += " FROM " + RetSQLName('SD1') + " SD1 "																				+ CRLF
 
@@ -207,14 +220,14 @@ Static Function zRel001B(cArquivo)
 	cQuery += " 	ON SW9.W9_FILIAL = '" + FWxFilial('SW9') + "' "																	+ CRLF
 	cQuery += "		AND SW9.W9_HAWB = SD1.D1_CONHEC  "	 																			+ CRLF
 	cQuery += "     AND SW9.D_E_L_E_T_ = ' '   " 																					+ CRLF
-
+/*
 	cQuery += " LEFT JOIN " + RetSQLName("SYD") + " SYD  " 																			+ CRLF
 	cQuery += " 	ON SYD.YD_FILIAL = '" + FWxFilial('SYD') + "' "																	+ CRLF
 	cQuery += "		AND SYD.YD_TEC = SB1.B1_POSIPI "	 																			+ CRLF
 	cQuery += "		AND SYD.YD_EX_NCM = SB1.B1_EX_NCM  "	 																		+ CRLF
 	cQuery += "		AND SYD.YD_EX_NBM = SB1.B1_EX_NBM  "	 																		+ CRLF
 	cQuery += "     AND SYD.D_E_L_E_T_ = ' '   " 																					+ CRLF
-
+*/
 	cQuery += " LEFT JOIN " + RetSQLName("VVF") + " VVF "																			+ CRLF
 	cQuery += "		ON VVF.VVF_FILIAL = '" + FWxFilial('VVF') + "' "																+ CRLF
 	cQuery += " 	AND VVF.VVF_NUMNFI = SF1.F1_DOC "																				+ CRLF
@@ -278,7 +291,7 @@ Static Function zRel001B(cArquivo)
 
 	cQuery += " GROUP BY 	D1_FILIAL, D1_COD, D1_DOC, D1_SERIE, D1_TES, D1_CF, D1_FORNECE, D1_LOJA, D1_EMISSAO, D1_DTDIGIT, " 		+ CRLF
 	cQuery += " D1_ITEM, F4_FINALID, F4_TEXTO, FT_CTIPI, FT_CSTPIS, FT_CSTCOF,  F4_ICM, F4_IPI, F4_CREDICM, F4_CREDIPI, F4_DUPLIC, "+ CRLF
-	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, "											+ CRLF
+	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM,  B1_EX_NBM,"											+ CRLF
 	cQuery += "	F1_ESPECIE, F1_CODNFE, F1_MENNOTA, F1_DOC, F1_SERIE, F1_STATUS, F1_TIPO, FT_CHVNFE,"								+ CRLF
 	cQuery += " FT_VALCONT, D1_CONTA, D1_ITEMCTA, D1_NFORI, D1_SERIORI, D1_VUNIT, D1_TOTAL, "										+ CRLF
 	cQuery += " D1_DESC, FT_CLASFIS, FT_BASERET, FT_ICMSRET, D1_DESCZFP, D1_DESCZFC,  "												+ CRLF
@@ -294,7 +307,7 @@ Static Function zRel001B(cArquivo)
 	cQuery += " FT_BASEINS, FT_ALIQINS, D1_ABATINS, D1_AVLINSS, FT_VALINS, C7_NUM, FT_FORMUL, "										+ CRLF
 	cQuery += " D1_BASEISS, D1_ALIQISS, D1_ABATISS, D1_ABATMAT, D1_VALISS, FT_CODBCC, FT_INDNTFR, "									+ CRLF
 	cQuery += " D1_VALFRE, D1_DESPESA, D1_CUSTO, D1_SEGURO, D1_VALACRS, D1_II, FT_ICMSCOM, D1_TNATREC, D1_CONHEC,  "				+ CRLF
-	cQuery += " D1_PESO, FT_MVALPIS, FT_MVALCOF, W6_DTREG_D, W6_DI_NUM, YD_PER_II, VRK_OPCION, W9_TX_FOB, D1_CHASSI "							+ CRLF
+	cQuery += " D1_PESO, FT_MVALPIS, FT_MVALCOF, W6_DTREG_D, W6_DI_NUM,  VRK_OPCION, W9_TX_FOB, D1_CHASSI "							+ CRLF
 
 	cQuery += " ORDER BY SD1.D1_FILIAL, SD1.D1_EMISSAO, SD1.D1_DOC, SD1.D1_SERIE, SD1.D1_TES, SD1.D1_ITEM, SD1.D1_FORNECE, SD1.D1_LOJA "+ CRLF
 
