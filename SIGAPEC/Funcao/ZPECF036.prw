@@ -460,7 +460,10 @@ Static Function ZPECF036PV(_aOrcs, _cPicking, _cPedido, _aRegVS1, _aPicking, _aV
 			Endif
 		Next
 
-		_cTipPag := RetCondVei()  //Condição de Pagamento
+		//Nic Lima 05/02/2024 - GAP098 - Alinhado com Juarez e DAC.
+		//Deve ser mantida a condição de pagamento original do orçamento.
+		//_cTipPag := RetCondVei()   //Condição de Pagamento
+		_cTipPag := VS1->VS1_FORPAG  //Condição de Pagamento
 
 		aAdd(_aCabPV,{"C5_TIPO"   , "N"					,Nil})
 		aAdd(_aCabPV,{"C5_CLIENTE", VS1->VS1_CLIFAT  	,Nil})
