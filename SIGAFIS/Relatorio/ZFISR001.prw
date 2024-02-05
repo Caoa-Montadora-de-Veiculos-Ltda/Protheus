@@ -1577,9 +1577,9 @@ Static Function zRel0002(cArquivo)
 														nTotal,;    //--Valor Total Item
 														(cAliasTRB)->D2_CF,;         //--Cfop
 														(cAliasTRB)->FT_VALCONT,;    //--Valor Contábil
-														iif( Alltrim((cAliasTRB)->F2_ESPECIE) <> "RPS", (cAliasTRB)->FT_BASEICM , 0),;    //--Base ICMS
-														iif( Alltrim((cAliasTRB)->F2_ESPECIE) <> "RPS", (cAliasTRB)->FT_ALIQICM , 0),;    //--Aliq. ICMS
-														iif( Alltrim((cAliasTRB)->F2_ESPECIE) <> "RPS", (cAliasTRB)->FT_VALICM  , 0), ;     //--Valor ICMS
+														iif( Alltrim((cAliasTRB)->F2_ESPECIE) <> "RPS", (cAliasTRB)->FT_BASEICM , 0 ),;    //--Base ICMS
+														iif( Alltrim((cAliasTRB)->F2_ESPECIE) <> "RPS", (cAliasTRB)->FT_ALIQICM , 0 ),;    //--Aliq. ICMS
+														iif( Alltrim((cAliasTRB)->F2_ESPECIE) <> "RPS", (cAliasTRB)->FT_VALICM  , 0 ),;     //--Valor ICMS
 														(cAliasTRB)->C6_XVLCOM,;     //--Comissão
 														(cAliasTRB)->FT_BASEIPI,;    //--Base IPI
 														(cAliasTRB)->FT_ALIQIPI,;    //--Aliq. IPI
