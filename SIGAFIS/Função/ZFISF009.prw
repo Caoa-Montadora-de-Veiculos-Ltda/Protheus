@@ -288,6 +288,7 @@ Local _lRet 	:= .T.
 Local _cType 	:= OemToAnsi("Todos") + "(*.*) |*.*|"
 Local _nSelLimite 	:= SuperGetMV('CMV_ZFI9RS',,30)  //Controle de registros selecionados permite seleção até a quantidade informada neste parâmetro
 Local _nPos
+Local _nRegSelect
 
 Begin Sequence
 	//verificar se foram selecionados os registros para envio
@@ -300,8 +301,7 @@ Begin Sequence
     //Define o nome do alias temporário
 	BeginSql Alias _cAlias  
         %NoParser%
-       	SELECT 	COUNT(*) AS NTOTREGISTROS 
-				, SF2.R_E_C_N_O_    AS  NREGSF2
+       	SELECT SF2.R_E_C_N_O_    AS  NREGSF2
 		FROM %Table:SF2% SF2
 		WHERE SF2.%notDel%
 			AND SF2.F2_FILIAL 	= %xFilial:SF2%
@@ -312,13 +312,16 @@ Begin Sequence
 		_lRet := .F.
 		Break
     Endif
+
+	(_cAlias)->(DbGotop())
+	Count To _nRegSelect	
+	(_cAlias)->(DbGotop())
 	//Não permitir selecionar muitos registros
-	If _nSelLimite < (_cAlias)->NTOTREGISTROS
+	If _nSelLimite < _nRegSelect
 		MSGInfo("Limite "+AllTrim(Str(_nSelLimite))+" de Seleção Registros atingido, não será gerado processo de envio  !","ATENCAO")
 		_lRet := .F.
 		Break
 	Endif
-
 
 	//Selecionar pasta para geração
 	_cPasta := cGetFile(_cType, OemToAnsi("Selecione a Pasta "), 0,, .T.,GETF_LOCALFLOPPY + GETF_LOCALHARD + GETF_NETWORKDRIVE + GETF_RETDIRECTORY,)
@@ -756,7 +759,7 @@ Local _cNomeUsu 		:= Upper(FwGetUserName(RetCodUsr())) //Retorna o nome completo
 
 Default _lSchedule   	:= .T.
 Default _cAssunto		:= "Envio arquivos"
-Default _cEmails 		:= AllTrim(SuperGetMV("CMV_PCP002",.F.,""))  //E-mail para envio problemas integração TOTVS x MES 
+Default _cEmails 		:= AllTrim(SuperGetMV("CMV_ZFIS09",.F.,""))  //E-mail para envio problemas integração TOTVS x MES 
 Default _aAnexos		:= {}
 Default _aChave			:= {}
 Default _cEMailCopia	:= ""
@@ -765,8 +768,8 @@ Default _lMsgTela		:= .F.
 
 	_lMsgErro			:= IF( _lSchedule == .F., .T. , .F. )
 	If Empty(_cEmails)
-		_cTexto := "**** Erros referente ao processo de envio arquivos não possui e-mail cadastrado no parâmetro CMV_PCP002****"
-		_cTexto += "     Os mesmos serão gravados no log do Sistema conforme informações abaixo" 
+		_cTexto := "**** Erros referente ao processo de envio arquivos não possui e-mail cadastrado no parâmetro CMV_ZFIS09****"
+		_cTexto += "     Os mesmos serão gravados no log do Sistema conforme informações abaixo: " 
 		Aadd(_aMsgPrcEmail, _cTexto)
 		Return .F.
 	EndIf	
