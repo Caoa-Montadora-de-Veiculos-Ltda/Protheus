@@ -34,7 +34,12 @@ User Function ZPECF036(_aOrcs, _cPicking, _cEmpresa, _cFilial, _lEnviaEmail, _lT
 	//Default _cFilial		:= ""
 
 	Private aParcBRNF  	:= {}
-
+	//Variáveis utilizadas no fonte padrão TOTVS OX100VS9E1 - Nicolas GAP098
+	Private nCntSE1     := 0 
+	Private cE1TIPOorig := "" 
+	Private aVS9SE1     := {}   // Contem os registros da VS9 quando for condicao negociada
+	Private aTitSE1 	:= {}
+ 
 	Begin Sequence
 		//Tratar abertura da empresa conforme enviado no parametro
 		If _lJob
@@ -102,7 +107,6 @@ User Function ZPECF036(_aOrcs, _cPicking, _cEmpresa, _cFilial, _lEnviaEmail, _lT
 		Endif
 	Endif
 
-	MsgInfo("Rotina Encerrada", "Teste")
 Return _aMsg
 
 
@@ -763,7 +767,7 @@ Static Function ZPECF036FT(_cPedido, _cPicking, _cNota, _cSerie, _cTitulo, _aReg
 
 		SC5->(DbSetOrder(1))
 		SC6->(DbSetOrder(1))
-		SE4->(DbSetOrder(1))
+		SE4->(DbSetOrder(1)) //E4_FILIAL
 		SB1->(DbSetOrder(1))
 		SB2->(DbSetOrder(1))
 		SF4->(DbSetOrder(1))
@@ -932,8 +936,6 @@ Static Function ZPECF036FT(_cPedido, _cPicking, _cNota, _cSerie, _cTitulo, _aReg
 		,;          		//14
 		,;          		//15
 		,)          		//16
-
-
 
 		If lMsErroauto
 			_cErro := "[ZPECFTORC] Problemas no execauto MaPvlNfs" + CRLF
