@@ -11,5 +11,5 @@
 */ 
  
 User Function FISTRFNFE()
-    aadd(aRotina,{OemToAnsi("Envio DANFE/XML"),"U_ZFISF009"     ,0,2,0 ,NIL})
+    aadd(aRotina,{OemToAnsi("Envio DANFE/XML"),"U_ZFISF009"     ,0,2,0 ,NIL}) 
 Return Nil

@@ -14,10 +14,17 @@ Static _oDlgMark	As Object
 Static _oCheckCli	As Object
 Static _oCheckTra	As Object
 Static _oCheckAll	As Object
+Static _oCheckPDF	As Object
+Static _oCheckXML	As Object
 Static _lCheckCli   AS Logical
 Static _lCheckTra 	AS Logical
 Static _lCheckAll	AS Logical
+Static _lCheckPDF	AS Logical
+Static _lCheckXML	AS Logical
 
+
+Static _dDataIni	:= CtoD(Space(08))
+Static _dDataFim 	:= CtoD(Space(08))
 
 Static _cNotaDe	 	:= Space(Len(SF2->F2_DOC))
 Static _cNotaAte 	:= Space(Len(SF2->F2_DOC))
@@ -30,6 +37,17 @@ Static _aMsgPrcEmail:= {}
 //Static _oOk       	:= LoadBitmap( GetResources(), "CHECKED" )   //CHECKED    //LBOK  //LBTIK
 //Static _oNo       	:= LoadBitmap( GetResources(), "UNCHECKED" ) //UNCHECKED  //LBNO
 
+/*/{Protheus.doc} ZFISF009
+Gerar arquivo DANFE e XML
+@param  	
+@author 	DAC - Denilso
+@version  	P12.1.25
+@since  	01/02/2024
+@return  	NIL
+@obs
+@project    GAP117.-.Exportacao.da.Danfe.e.XML.individualmente
+@history    
+/*/
 User Function ZFISF009()
 Local _cIdCab
 Local _cIdGrid
@@ -43,8 +61,6 @@ Local _aAdvSize		:= {}
 Local _aInfoAdvSize	:= {}
 Local _aObjSize		:= {}
 Local _aObjCoords	:= {}
-//Local _bProcessa 	:= {||If (ZFISF09Processa(),_oDlgMark:End(),Nil) }
-//Local _bFiltro 		:= {||ZFISF009Filtro() }
 Local _aArea 		:= GetArea()
 Local _aRotina   	:= {}
 Local _aColumns
@@ -53,6 +69,9 @@ Local _aCampos
 	_lCheckCli	:= .F.
 	_lCheckTra 	:= .F.
 	_lCheckAll	:= .F.
+	_lCheckPDF	:= .F.
+	_lCheckXML	:= .T.
+	_lTodos     := .F.
 
 	DbSelectArea("SF2")
 	//_aColsMark:= fMntColsMark()
@@ -91,11 +110,14 @@ Local _aCampos
 	_nCol   := _aObjSize[1,2] + 10  
 	//_oGroup:oFont:= _oFont
 
-	@ _nLinha	, _nCol+1 	SAY   OemToAnsi("Nota Fiscal De") SIZE 038,007 		OF _oPanelUp PIXEL
-	@ _nLinha+6	, _nCol+1 	MSGET _cNotaDe SIZE 010,007		OF _oPanelUp F3 'SF2' PIXEL WHEN .T. VALID .T.
-	@ _nLinha	, _nCol+80 	SAY   OemToAnsi("Nota Fiscal Ate") SIZE 038,007 	OF _oPanelUp PIXEL
-	@ _nLinha+6	, _nCol+80	MSGET _cNotaAte SIZE 010,007	OF _oPanelUp F3 'SF2' PIXEL WHEN .T. VALID .T.
-	 
+	@ _nLinha	, _nCol+1 	SAY   OemToAnsi("Emissão Inicial") SIZE 038,007 		OF _oPanelUp PIXEL
+	@ _nLinha+6	, _nCol+1 	MSGET _dDataIni SIZE 040,007	OF _oPanelUp 		PIXEL WHEN .T. VALID .T.
+	@ _nLinha	, _nCol+80 	SAY   OemToAnsi("Emissão Final") SIZE 038,007 			OF _oPanelUp PIXEL
+	@ _nLinha+6	, _nCol+80	MSGET _dDataFim SIZE 040,007	OF _oPanelUp  		PIXEL WHEN .T. VALID !Empty(_dDataFim) .And. _dDataFim >= _dDataIni
+	@ _nLinha	, _nCol+160 SAY   OemToAnsi("Nota Fiscal De") SIZE 038,007 		OF _oPanelUp PIXEL
+	@ _nLinha+6	, _nCol+160 MSGET _cNotaDe SIZE 010,007		OF _oPanelUp F3 'SF2' PIXEL WHEN .T. VALID .T.
+	@ _nLinha	, _nCol+240 SAY   OemToAnsi("Nota Fiscal Ate") SIZE 038,007 	OF _oPanelUp PIXEL
+	@ _nLinha+6	, _nCol+240	MSGET _cNotaAte SIZE 010,007	OF _oPanelUp F3 'SF2' PIXEL WHEN .T. VALID .T.
    	_oCheckCli := TCheckBox():New(_nLinha, _nCol+500, "Envia e-mail para Clientes", /*{||_lCheckCli }*/, _oPanelUp, 100, 210,,,,,,,,.T.,,,)
 	//_oCheckCli := TCheckBox():Create( _oDlgMark,{||_lCheckCli},_nLinha, _nCol+500,'Envia e-mail para Clientes',100,210,,,,,,,,.T.,'Envia e-mail para Clientes',,)
 	_oCheckCli:bLClicked := {|| _lCheckCli:=!_lCheckCli}
@@ -106,16 +128,20 @@ Local _aCampos
 	@ _nLinha+6 , _nCol+80	MSGET _cLojaCli SIZE 050,007	OF _oPanelUp  				PIXEL WHEN .T. VALID ZFIS09ClilVld(_cCodCli, _cLojaCli)
 	@ _nLinha	, _nCol+160 SAY   OemToAnsi("CNPJ Cliente") SIZE 038,007 	OF _oPanelUp PIXEL
 	@ _nLinha+6 , _nCol+160	MSGET _cCNPJCli SIZE 050,007	OF _oPanelUp  				PIXEL WHEN .T. VALID ZFIS09ClilVld(/*_cCodCli*/, /*_cLojaCli*/, _cCNPJCli)
+
+   	_oCheckPDF := TCheckBox():New(_nLinha+6, _nCol+240, "Gerar DANFE",/* {||_lCheckPDF }*/, _oPanelUp, 100, 210,,,,,,,,.T.,,,)
+	_oCheckPDF:bLClicked := {|| _lCheckPDF:=!_lCheckPDF}
+
+   	_oCheckXML := TCheckBox():New(_nLinha+6, _nCol+320, "Gerar XML", /*{||_lCheckXML }*/, _oPanelUp, 100, 210,,,,,,,,.T.,,,)
+	_oCheckXML:bLClicked := {|| _lCheckXML:=!_lCheckPDF}
+
    	_oCheckTra := TCheckBox():New(_nLinha, _nCol+500, "Envia e-mail para Transportador", /*{||_lCheckTra }*/, _oPanelUp, 100, 210,,,,,,,,.T.,,,)
-	//_oCheckTra := TCheckBox():Create( _oDlgMark,{||_lCheckTra},_nLinha, _nCol+500,'Envia e-mail para Transportador',100,210,,,,,,,,.T.,'Envia e-mail para Transportador',,)
 	_oCheckTra:bLClicked := {|| _lCheckTra:=!_lCheckTra}
 	
 	_nLinha += 20
 	@ _nLinha	, _nCol+1 	SAY   OemToAnsi("E-mail Especifico") SIZE 038,007 	OF _oPanelUp PIXEL
 	@ _nLinha+6 , _nCol+1	MSGET _cEmailEsp SIZE 350,007	OF _oPanelUp  		PIXEL WHEN .T. VALID ZFIS09VldEmail(_cEmailEsp)
    	_oCheckAll := TCheckBox():New(_nLinha, _nCol+500, "Envia e-mail para Todos", /*{||_lCheckAll }*/, _oPanelUp, 100, 210,,,,,,,,.T.,,,)
-	//_oCheckAll := TCheckBox():Create( _oDlgMark,{||_lCheckAll},_nLinha, _nCol+500,'Envia e-mail para Todos',100,210,,,,,,,,.T.,'Envia e-mail para Todos',,)
- 	//oCheck1 := TCheckBox():New(_nLinha,_nCol,'Item 1',{||lCheck},_oPanelUp,180,210,,,oFont,,,,,.T.,,,{oCheck1:Refresh()})
 	_oCheckAll:bLClicked := {|| _lCheckAll:=!_lCheckAll}
 
     //Preparar visualização de colunas   
@@ -146,24 +172,23 @@ Local _aCampos
     _oMark:AddLegend( "F2_FIMP=='T'"                                    , "BR_AZUL" , OemToAnsi("NF Transmitida")  )  
     _oMark:AddLegend( "F2_FIMP=='D'"                                    , "BR_CINZA" , OemToAnsi("NF Uso Denegado")  )  
     _oMark:AddLegend( "F2_FIMP=='N'"                                    , "BR_PRETO" , OemToAnsi("NF nao autorizada")  )  
-	//_oMark:AddButton("Envia Docto."		, _bProcessa,,,, .F., 2 )  //Envia  
-	//_oMark:AddButton("Sel Parametros"	, _bFiltro 	,,,, .F., 2 )  //Filtra 
     _oMark:AddButton("Envia Docto" 	    , { || FwMsgRun(,{ | _oSay | If(ZFISF09Processa( @_oSay), _oDlgMark:End(),_oMark:Refresh(.T.)) }    , "Processando Arquivo "       , "Aguarde...")  },,,, .F., 2 )  
     _oMark:AddButton("Sel Parametros"   , { || FwMsgRun(,{ | _oSay | ZFISF009Filtro( @_oSay), _oMark:Refresh(.T.) } , "Processando Arquivo "       , "Aguarde...")  },,,, .F., 2 )  
 
+    //_oMark:bAllMark := { || MsgInfo("Opção desabilitada", "Atenção")  }
+	//_oMark:bAllMark := { || SetMarkAll(_oMark:Mark(),_lTodos := !_lTodos ), _oMark:Refresh(.T.)  }
+	_oMark:bAllMark := { || FwMsgRun(,{ |_oSay| SetMarkAll( @_oSay, _oMark:Mark(),_lTodos := !_lTodos ) }, "Selecionando Registros", "Aguarde..."), _oMark:Refresh(.T.)  }
+
+	_oMark:DisableReport()
+	_oMark:SetInvert(.F.)
+	_oMark:SetValid({||ZFISF09MRK()})
     //_oMark:SetDoubleClick({||ZFISF09MRK()})   
 	//Indica o Code-Block executado no clique do header da coluna de marca/desmarca
   	//_lMarcar := .T.
-    _oMark:bAllMark := { || MsgInfo("Opção desabilitada", "Atenção")  }
-	_oMark:SetInvert(.F.)
-	_oMark:SetValid({||ZFISF09MRK()})
 	//   (Marca somente linhas que houveram itens selecionados na função 
 	//_oMark:SetCustomMarkRec({||ZFISF09MRK()})  
-
-
     //Função para Validar registro selecionado 
     //_oMark:SetSemaphore(.T.)     
-
     //_oMark:Valid(U_???MRK())
     //_oMark:SetValid({||U_???MRK()})
     //_oMark:SetDoubleClick({||U_???MRK() })
@@ -175,12 +200,11 @@ Local _aCampos
     //Montar legenda 
     //BOTOES
 	//MARCAR TODOS
-	//_oMark:bAllMark := { || SetMarkAll(_oMark:Mark(),_lMarcar := !_lMarcar ), _oMark:Refresh(.T.)  }
 	//_oMark:SetMark( _cMarca, "SF2", "F2_OK" )
-
 	_oMark:Activate()
+	//_oMark:oBrowse:SetFocus() //Seta o foco na grade
 	ACTIVATE MSDIALOG _oDlgMark CENTERED
-
+	
 //Voltar menu anterior
 If Len(_aRotina) > 0
 	aRotina := _aRotina
@@ -190,38 +214,14 @@ RestArea(_aArea)
 Return Nil
 
 
-
-
-Static Function ZFISF009Filtro(_oSay)
-Local _cFiltro := ""
-
-	DbSelectAre("SF2")
-
-	_cFiltro  +=  " 	F2_FILIAL = '"+xFilial('SF2')+"'"
-	If ! Empty(_cNotaAte)
-		_cFiltro  +=  "	AND F2_DOC BETWEEN '" + _cNotaDe + "' AND '" + _cNotaAte + "' "+ CRLF 
-	Endif
-	If !Empty(_cCodCli) .And. Empty(_cCNPJCli)
-		_cFiltro  +=  "	AND F2_CLIENTE = '" + _cCodCli + "' "+ CRLF 
-		If !Empty(_cLojaCli)
-			_cFiltro  +=  "	AND F2_LOJA = '" + _cLojaCli + "' "+ CRLF 
-		Endif 
-	Endif
-	If !Empty(_cCNPJCli)
-		SA1->(DbSetOrder(3))
-		If SA1->(DbSeek(FWxFilial("SA1")+_cCNPJCli))
-			_cFiltro  +=  "	AND F2_CLIENTE = '" + SA1->A1_COD + "' AND F2_LOJA = '"+SA1->A1_LOJA+"' "+ CRLF 
-		Endif 
-	Endif
-	_oMark:SetFilterDefault("@"+_cFiltro)
-    _oMark:Refresh(.T.)
-
-Return _cFiltro
-
-
-//========================================================
-//Validação quando da seleção do registro no objeto mark
-//========================================================
+/*/{Protheus.doc} ZFISF09MRK
+Validação quando da seleção do registro no objeto mark
+@author 
+@since 
+@version 1.0
+@Obs
+@History
+/*/
 Static Function ZFISF09MRK(_lTodos)
 Local _lRet 	:= .T.
 Local _cMarca 	:= _oMark:Mark()
@@ -231,42 +231,95 @@ Default _lTodos := .F.  //indica que foi selecionado todos
 
 Begin Sequence               
 	If SF2->F2_FIMP <> 'S'
-		MsgInfo("Somente selecionar as notas com Status Autorizado", "Atenção")
-		_lRet := .F.	
+		If !_lTodos
+			MsgInfo("Somente selecionar as notas com Status Autorizado", "Atenção")
+		Endif				
+		_lRet := .F.
 		Break
 	Endif 
-    //Caso esteja desmarcando não validar
+    //Caso esteja marcando irá desmarcar
     If _oMark:IsMark(_cMarca)  
       Break
     Endif
+	//Verificar se existe email caso seja selecionado cliente ou transportador
+	If _lCheckCli .Or. _lCheckTra .Or. _lCheckAll
+		_lRet := ZFISF09VCTEmail( )
+	Endif 
 	//Montar validação em relação aos relacionamentos verificar se ja esta selecionado pois outro usuário pode acessar
 End Sequence
 Return _lRet 
 
+//Marcar Todos
+Static Function  SetMarkAll( _oSay, _cMarca, _lMarcar )
+Local _nSelLimite 	:= SuperGetMV('CMV_ZFI9RS',,30)  //Controle de registros selecionados permite seleção até a quantidade informada neste parâmetro
+Local _nPocessado 	:= 0
+Local _nSelecionado	:= 0
+	SF2->(DbGotop())
+	While SF2->(!Eof())
+		_nPocessado ++	
+		If SF2->F2_FIMP == 'S' .And. RecLock( "SF2", .F. )
+			_nSelecionado ++
+			SF2->F2_OK	:= IIf( _lMarcar, _cMarca, '  ' )
+			SF2->(MsUnlock())
+		Endif
+		_oSay:SetText("Registros Lidos: "+StrZero(_nPocessado,6)+" Registros Selecionados: "+ StrZero(_nSelecionado,6))
+		ProcessMessage()
+		If _nSelLimite < _nSelecionado
+			MSGInfo("Limite "+AllTrim(Str(_nSelLimite))+" de Seleção Registros atingido, não selecionara mais registros  !","ATENCAO")
+			Exit
+		Endif
+		SF2->(DbSkip())
+	Enddo
 
-//Processa a geração e envio de e-mail caso existam
+Return Nil
+
+/*/{Protheus.doc} ZFISF09Processa
+Processa a geração e envio de e-mail caso existam@author 
+@since 
+@version 1.0
+@Obs
+@History
+/*/
 Static Function ZFISF09Processa( _oSay) 
 Local _cMarca   := _oMark:Mark()
 Local _cPasta   := ""
 Local _cAlias 	:= GetNextAlias()
 Local _lRet 	:= .T.
-Local _cType 		:= OemToAnsi("Todos") + "(*.*) |*.*|"
+Local _cType 	:= OemToAnsi("Todos") + "(*.*) |*.*|"
+Local _nSelLimite 	:= SuperGetMV('CMV_ZFI9RS',,30)  //Controle de registros selecionados permite seleção até a quantidade informada neste parâmetro
 Local _nPos
 
 Begin Sequence
+	//verificar se foram selecionados os registros para envio
+	If !_lCheckPDF .And. !_lCheckXML 
+		MSGInfo("Informar se envia DANFE e XML  !","ATENCAO")
+		_lRet := .F.
+		Break
+	Endif
+ 
     //Define o nome do alias temporário
 	BeginSql Alias _cAlias  
         %NoParser%
-       	SELECT SF2.R_E_C_N_O_    AS  NREGSF2
+       	SELECT 	COUNT(*) AS NTOTREGISTROS 
+				, SF2.R_E_C_N_O_    AS  NREGSF2
 		FROM %Table:SF2% SF2
 		WHERE SF2.%notDel%
 			AND SF2.F2_FILIAL 	= %xFilial:SF2%
             AND SF2.F2_OK 		= %Exp:_cMarca%
+		GROUP BY(SF2.R_E_C_N_O_)	
     EndSQL
     If  (_cAlias)->(Eof()) .Or. (_cAlias)->NREGSF2 == 0
 		_lRet := .F.
 		Break
     Endif
+	//Não permitir selecionar muitos registros
+	If _nSelLimite < (_cAlias)->NTOTREGISTROS
+		MSGInfo("Limite "+AllTrim(Str(_nSelLimite))+" de Seleção Registros atingido, não será gerado processo de envio  !","ATENCAO")
+		_lRet := .F.
+		Break
+	Endif
+
+
 	//Selecionar pasta para geração
 	_cPasta := cGetFile(_cType, OemToAnsi("Selecione a Pasta "), 0,, .T.,GETF_LOCALFLOPPY + GETF_LOCALHARD + GETF_NETWORKDRIVE + GETF_RETDIRECTORY,)
 	//³ Parametro: GETF_LOCALFLOPPY - Inclui o floppy drive local.   ³
@@ -280,7 +333,6 @@ Begin Sequence
 	_aMsgPrcEmail := {}  //Serão gravados todas as atividades e erros nesta matriz
     While (_cAlias)->(!Eof())
 		SF2->(DbGoto((_cAlias)->NREGSF2))
-
         If SF2->F2_OK == _cMarca
 			_oSay:SetText("Processando nota fisca: "+SF2->F2_DOC)
 			ProcessMessage()
@@ -310,22 +362,23 @@ Endif
 Return _lRet
 
 
-//-------------------------------------------------------------------
 /*/{Protheus.doc} MProcDanfe
 Processar a Danfe e enviar e-mail
 @author 
 @since 
 @version 1.0
+@Obs
+@History
 /*/
-//-------------------------------------------------------------------
 STATIC Function MProcDanfe( _cPasta, _oSay )
 Local nA         	:= 0
 Local cMensagem  	:= ""
 Local cDir       	:= "" //SuperGetMV('MV_RELT',,"\SPOOL\")
 Local cNomeArquivo  := ""
+Local _aEnvia		:= {}
 Local lRet 
 
-Private cPegaXml   := ""  //Obtido dentro da rotina da Danfe. tem que existir uma variavel Private nestga função
+Private cPegaXml   := ""  //Obtido dentro da rotina da Danfe (danfeii.prw - PrtNfeSef). tem que existir uma variavel Private nestga função
 Private cXMensagem := ""
 
 Begin Sequence
@@ -363,21 +416,27 @@ Begin Sequence
 	If 	!Empty(_cEmailEsp) .Or. _lCheckCli 	.Or. _lCheckTra .Or. _lCheckAll  
 		_oSay:SetText("Enviando e-mail nota fisca: "+SF2->F2_DOC)
 		ProcessMessage()
-		ZFIS09Email({cDir+cNomeArquivo+".pdf", cDir+cNomeArquivo+".xml"})
+		If _lCheckPDF
+			Aadd(_aEnvia,cDir+cNomeArquivo+".pdf") 
+		Endif 
+		If _lCheckxmlXML
+			Aadd(_aEnvia,cDir+cNomeArquivo+".xml")
+		Endif 
+		ZFIS09Email(_aEnvia)
 	Endif 
     //MEnviarEMail(cDir + cNomeArquivo + ".pdf", cDir + cNomeArquivo + ".xml", @cMensagem)
 End Sequence
 Return cMensagem
 
 
-//-------------------------------------------------------------------
 /*/{Protheus.doc} XSpedDanfe
 Adaptado para gerar o pdf da Danfe via job.
 @author Antonio C Ferreira
 @since 24/06/2021
 @version 1.0
+Obs
+History
 /*/
-//-------------------------------------------------------------------
 STATIC Function XSpedDanfe(nTipo, nPar, cFilePrint, cDir, _cPasta)
 Local cIdEnt 		:= ""
 Local aIndArq   	:= {}
@@ -535,7 +594,53 @@ oSetup := Nil
 Return .T.
 
 
-//Função para preparar envio de e-mail
+/*/{Protheus.doc} ZFISF009Filtro
+Executa Filtro
+@since 
+@version 1.0
+@Obs
+@History
+/*/
+Static Function ZFISF009Filtro(_oSay)
+Local _cFiltro := ""
+
+	DbSelectAre("SF2")
+
+	_cFiltro  +=  " 	F2_FILIAL = '"+xFilial('SF2')+"'"
+	If ! Empty(_cNotaAte)
+		_cFiltro  +=  "	AND F2_DOC BETWEEN '" + _cNotaDe + "' AND '" + _cNotaAte + "' "+ CRLF 
+	Endif
+	If !Empty(_cCodCli) .And. Empty(_cCNPJCli)
+		_cFiltro  +=  "	AND F2_CLIENTE = '" + _cCodCli + "' "+ CRLF 
+		If !Empty(_cLojaCli)
+			_cFiltro  +=  "	AND F2_LOJA = '" + _cLojaCli + "' "+ CRLF 
+		Endif 
+	Endif
+	If !Empty(_cCNPJCli)
+		SA1->(DbSetOrder(3))
+		If SA1->(DbSeek(FWxFilial("SA1")+_cCNPJCli))
+			_cFiltro  +=  "	AND F2_CLIENTE = '" + SA1->A1_COD + "' AND F2_LOJA = '"+SA1->A1_LOJA+"' "+ CRLF 
+		Endif 
+	Endif
+
+	If !Empty(_dDataFim)
+		_cFiltro  +=  "	AND F2_EMISSAO BETWEEN '" + DtoS(_dDataIni) + "' AND   '"+DtoS(_dDataFim)+"' "+ CRLF 
+	Endif
+
+	_oMark:SetFilterDefault("@"+_cFiltro)
+    _oMark:Refresh(.T.)
+
+Return _cFiltro
+
+
+
+/*/{Protheus.doc} ZFIS09Email
+Função para preparar envio de e-mail
+@since 
+@version 1.0
+@Obs
+@History
+/*/
 Static Function ZFIS09Email( _aArqEnvio )
 Local _cAssunto		:= ""
 Local _cEmails		:= ""
@@ -544,7 +649,7 @@ Local _aAnexos 		:= {}
 Local _aMens		:= {}
 Local _aErro		:= {}
 Local _lRet 		:= .T.
-Local _cEmailAcp    := AllTrim(SuperGetMV( "CMV_FIS000" , ,"denilso.carvalho@caoa.com.br" ))
+Local _cEmailAcp    := AllTrim(SuperGetMV( "CMV_ZFIS09" , ,"" ))
 Local _nPos
 
 Default _cArqPdf := ""
@@ -567,10 +672,11 @@ Default _cArqXml := ""
 		Endif	 
 	Endif
 	//Verifica se envia E-mai para Transportador
-	If 	_lCheckTra 	.Or. _lCheckAll
+	If 	!Empty(SF2->F2_TRANSP) .And. (_lCheckTra .Or. _lCheckAll)
+		SA4->(DbSetOrder(1))
 		SA4->(DbSeek(FwXFilial("SA4")+SF2->F2_TRANSP))
  		If Empty(SA4->A4_EMAIL) .Or. SA4->(Eof())
-			Aadd(_aErro,"Não esta cadastrado e-mail do Transportador codigo "+SF2->A2_TRANSP+ " nota "+SF2->F2_DOC+ " serie "+SF2->F2_SERIE)
+			Aadd(_aErro,"Não esta cadastrado e-mail do Transportador codigo "+SF2->F2_TRANSP+ " nota "+SF2->F2_DOC+ " serie "+SF2->F2_SERIE)
 		Else
 			_cEmails += AllTrim(SA4->A4_EMAIL) +"," 
 		Endif 	
@@ -619,8 +725,9 @@ Return _lRet
 /*
 =====================================================================================
 Programa.:              ZFISF009EM
-@param 					_aMens   	= Mensagens de erro 
-						_aChave		= Campos relativos a pesquisa com seu conteudo se vazio pesquisara baseado na tabela posicionada
+@param 					_cNota		= Numero da nota 
+						_cSerie		= Serie da nota
+						_aMens   	= Mensagens de erro 
 						_cAssunto   = Assunto do e-mail 
 						_cEmails    = Destinatário do e-mail 
 						_cEMailCopia= Destinatarios em cópia 
@@ -628,13 +735,9 @@ Programa.:              ZFISF009EM
 						_cRotina    = Rotina que chamou o processo
 						lSchedule	= Esta rodando em job se verdadeiro não emitira msg em tela
 Autor....:              CAOA - DAC Denilso 
-Data.....:              10/07/2020
+Data.....:              02/02/2024
 Descricao / Objetivo:   Funcao para processar o envio das notificacoes
-Doc. Origem:            GAP COM027
-Solicitante:            Compras
-Uso......:              ZCOLF001
 Obs......:
-
 =====================================================================================
 */
 Static Function ZFISF009EM(	_cNota, _cSerie, _aMens, _cAssunto, _cEmails, _cEMailCopia, _aAnexos,  _cRotina, lSchedule, _lMsgTela)
@@ -707,7 +810,13 @@ Default _lMsgTela		:= .F.
 Return .T.
 
 
-
+/*/{Protheus.doc} ZFISF009HTML
+Prepara HTML para envio de E-mail
+@since 
+@version 1.0
+@Obs
+@History
+/*/
 Static Function ZFISF009HTML( _cLogo, _cNota, _cSerie, _cUserName, _aMens)
 Local _cHtml := ""
 Local _nPos
@@ -748,7 +857,14 @@ Local _nPos
 Return _cHtml
 
 
-//Valida se foi informado e-mail
+
+/*/{Protheus.doc} ZFIS09VldEmail
+Valida se foi informado e-mail
+@since 
+@version 1.0
+@Obs
+@History
+/*/
 Static Function ZFIS09VldEmail(_cEmail)
 Local _lRet := .T.
 	If Empty(_cEmail)
@@ -780,47 +896,54 @@ Local _cChave	:= ""
 Return _lRet 
 
 
+/*/{Protheus.doc} ZFISF09VCTEmail
+Verificar se existe e-mail para clientes e transportadora
+@since 
+@version 1.0
+@Obs
+@History
+/*/
+Static Function ZFISF09VCTEmail( )
+Local _lRet 	:= .T.
+Local _cCodCli 	:= SF2->F2_CLIENTE 
+Local _cLoja	:= SF2->F2_LOJA 
+Local _cCodTrans:= SF2->F2_TRANSP
 
-//Menudef
+	If _lCheckCli .Or. _lCheckAll
+		SA1->(DbSetOrder(1))
+		If !SA1->(DbSeek(FWxFilial("SA1")+_cCodCli+_cLoja))
+			MsgInfo("Cliente "+_cCodCli+"-"+_cLoja+" não cadastrado !","Atenção")
+			_lRet := .F.
+		Endif 
+		If Empty(SA1->A1_EMAIL) 
+			MsgInfo("Não esta cadastrado Email do Cliente codigo "+SF2->F2_CLIENTE+ " Loja "+SF2->F2_LOJA, "Atenção")
+			_lRet := .F.
+		Endif 
+	Endif 
+
+	If !Empty(_cCodTrans) .And. (_lCheckTra .Or. _lCheckAll)
+		SA4->(DbSetOrder(1))
+		If !SA4->(DbSeek(FwXFilial("SA4")+_cCodTrans))
+			MsgInfo("Transportador código "+_cCodTrans+" não cadastrado !","Atenção")
+			_lRet := .F.
+		Endif 
+ 		If Empty(SA4->A4_EMAIL) 
+			MsgInfo("Não esta cadastrado e-mail do Transportador codigo "+SF2->F2_TRANSP+ " nota "+SF2->F2_DOC+ " serie "+SF2->F2_SERIE, "Atenção" )
+			_lRet := .F.
+		Endif 
+	Endif 
+Return _lRet
+
+
+
+/*/{Protheus.doc} ZFISF09VCTEmail
+Menudef
+@since 
+@version 1.0
+@Obs
+@History
+/*/
 Static Function MenuDef()
 Local _aRotina := {} 
 Return _aRotina
 
-
-
-
-
-
-
-/*/{Protheus.doc} SetMarkAll
-Marca/Desmarca todos os itens da markbrowse
-@author Leandro Drumond
-@since 16/05/2016
-@version 1.0
-/*/
-/*
-Static Function SetMarkAll(_cMarca, _lMarcar )
-Local _aAreaMark  := SF2->( GetArea() )
-	SF2->( dbGoTop() )
-	While SF2->( !Eof() )
-		RecLock( "SF2", .F. )
-		SF2->F2_OK := IIf( _lMarcar, _cMarca, '  ' )
-		SF2->(MsUnLock())
-		SF2->( dbSkip() )
-	EndDo
-	RestArea( _aAreaMark )
-Return .T.
-*/
-
-
-Static Function ZFIS09Check(_nCheck, _oCheck)
-	If ValType(_oCheck) <> "U"
-		If _nCheck == 1 
-			_lCheckCli 		:= !_oCheck:lModified
-		ElseIf _nCheck == 2 
-			_lCheckTra  	:= !_oCheck:lModified
-		ElseIf _nCheck == 2 
-			_lCheckAll		:= !_oCheck:lModified
-		Endif 
-	Endif
-Return .T.

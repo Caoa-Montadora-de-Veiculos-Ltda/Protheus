@@ -24,7 +24,7 @@
 #DEFINE MAXVALORC  015					// M·ximo de caracteres por linha de valores numÈricos
 //#DEFINE MAXCODPRD  050					// M·ximo de caracteres do codigo de produtos/servicos conforme o tamanho do quadro "Cod. prod"
 #DEFINE MAXCODPRD  075					// M·ximo de caracteres do codigo de produtos/servicos conforme o tamanho do quadro "Cod. prod"
-
+ 
 
 /*/
 ‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
