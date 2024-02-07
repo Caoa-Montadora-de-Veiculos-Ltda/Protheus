@@ -70,7 +70,7 @@ Local _aCampos
 	_lCheckTra 	:= .F.
 	_lCheckAll	:= .F.
 	_lCheckPDF	:= .F.
-	_lCheckXML	:= .T.
+	_lCheckXML	:= .F.
 	_lTodos     := .F.
 
 	DbSelectArea("SF2")
@@ -133,7 +133,7 @@ Local _aCampos
 	_oCheckPDF:bLClicked := {|| _lCheckPDF:=!_lCheckPDF}
 
    	_oCheckXML := TCheckBox():New(_nLinha+6, _nCol+320, "Gerar XML", /*{||_lCheckXML }*/, _oPanelUp, 100, 210,,,,,,,,.T.,,,)
-	_oCheckXML:bLClicked := {|| _lCheckXML:=!_lCheckPDF}
+	_oCheckXML:bLClicked := {|| _lCheckXML:=!_lCheckXML}
 
    	_oCheckTra := TCheckBox():New(_nLinha, _nCol+500, "Envia e-mail para Transportador", /*{||_lCheckTra }*/, _oPanelUp, 100, 210,,,,,,,,.T.,,,)
 	_oCheckTra:bLClicked := {|| _lCheckTra:=!_lCheckTra}
@@ -379,7 +379,7 @@ Local cMensagem  	:= ""
 Local cDir       	:= "" //SuperGetMV('MV_RELT',,"\SPOOL\")
 Local cNomeArquivo  := ""
 Local _aEnvia		:= {}
-Local lRet 
+Local _lRet 
 
 Private cPegaXml   := ""  //Obtido dentro da rotina da Danfe (danfeii.prw - PrtNfeSef). tem que existir uma variavel Private nestga função
 Private cXMensagem := ""
@@ -403,18 +403,23 @@ Begin Sequence
 		_lRet := .F.
         Break
     EndIf
+	//Grava arquivo PDF
+	If _lCheckPDF
+    	_lRet := __CopyFile(cDir + cNomeArquivo + ".pdf", _cPasta+cNomeArquivo+".pdf",,,.F.)
+		If !_lRet
+			MsgInfo("Não foi possivel copiar arquivo "+cDir + cNomeArquivo + ".pdf !", "Atenção")
+			Break 
+		Endif
+	Endif 	
 	//Grava arquivo XML
-    MemoWrit(cDir + cNomeArquivo + ".xml", cPegaXml)
-    lRet := __CopyFile(cDir + cNomeArquivo + ".pdf", _cPasta+cNomeArquivo+".pdf",,,.F.)
-	If !lRet
-		MsgInfo("Não foi possivel copiar arquivo "+cDir + cNomeArquivo + ".pdf !", "Atenção")
-		Break 
-	Endif
-    lRet := __CopyFile(cDir + cNomeArquivo + ".xml", _cPasta+cNomeArquivo+".xml",,,.F.)
-	If !lRet
-		MsgInfo("Não foi possivel copiar arquivo "+cDir + cNomeArquivo + ".xml !", "Atenção")
-		Break 
-	Endif
+	If _lCheckXML 
+    	MemoWrit(cDir + cNomeArquivo + ".xml", cPegaXml)
+	    _lRet := __CopyFile(cDir + cNomeArquivo + ".xml", _cPasta+cNomeArquivo+".xml",,,.F.)
+		If !_lRet
+			MsgInfo("Não foi possivel copiar arquivo "+cDir + cNomeArquivo + ".xml !", "Atenção")
+			Break 
+		Endif
+	Endif	
 	//Para enviar e-mai tem que estar informado um destes processos
 	If 	!Empty(_cEmailEsp) .Or. _lCheckCli 	.Or. _lCheckTra .Or. _lCheckAll  
 		_oSay:SetText("Enviando e-mail nota fisca: "+SF2->F2_DOC)
