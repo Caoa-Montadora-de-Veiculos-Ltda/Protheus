@@ -1044,8 +1044,16 @@ Static Function zImpAux()
 	oPrint:SayAlign( ( nLinIni + 028 )	,( nColIni )	,"ANÁLISE PRELIMINAR DE RISCOS"	,oFont16N	,( nColFim )	,( nLinIni + 25 )	,CLR_BLACK	,2	,2	)
 
 	//Nome da Empresa
-	oPrint:Say( (nLinIni + 032)	,(nColIni + 472)	,Substr( AllTrim( cFilName ),1	,At( " ",cFilName )-1)						,oFont18N	)
-	oPrint:Say( (nLinIni + 049)	,(nColIni + 482)	,Substr( AllTrim( cFilName ), 	At( " ",cFilName )+1 , LEN( cFilName ) )		,oFont18N	)
+	nLa  := 32
+	nLb  := 42
+	nCoA := 449
+	nCoB := 420
+	//Nome da Empresa
+	oPrint:Say( ( nLinIni + nLa )	,( nColIni + nCoA )	,PadC(Substr( AllTrim( cFilName ),1 ,At( " ",cFilName )-1 )                 ,30 ) ,oFont10N )
+	oPrint:Say( ( nLinIni + nLb )	,( nColIni + nCoB )	,PadC(Substr( AllTrim( cFilName ),	At( " ",cFilName )+1 , Len( cFilName ) ),30 ) ,oFont10N )
+
+	//oPrint:Say( (nLinIni + 032)	,(nColIni + 472)	,Substr( AllTrim( cFilName ),1	,At( " ",cFilName )-1)						,oFont18N	)
+	//oPrint:Say( (nLinIni + 049)	,(nColIni + 482)	,Substr( AllTrim( cFilName ), 	At( " ",cFilName )+1 , LEN( cFilName ) )		,oFont18N	)
 
 	oPrint:Say( (nLinIni + 062)	,(nColIni + 005)	,"PREPARANDO-SE PARA O TRABALHO:"											,oFont07n	)
 
