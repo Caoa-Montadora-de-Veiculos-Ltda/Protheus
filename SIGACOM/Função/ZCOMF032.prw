@@ -179,7 +179,7 @@ Private _cRot       := "ZCOMF032"
             oBrowse:SetColumns(ZCOMF032T("TR_SOLICIT"     ,"Solicitante" ,07 ,"@!"   ,1,025,0))
           
             oBrowse:AddButton("Recusar Item..."	        , { || ZCOMF032G()},,,, .F., 2 )
-            oBrowse:AddButton("Alterar Comprador..."	, { || ZCOMF032C()},,,, .F., 2 )
+            //oBrowse:AddButton("Alterar Comprador..."	, { || ZCOMF032C()},,,, .F., 2 ) - LFT 07/02/2024 - retirado a funcionalidade conforme chamado INC0106792
                      
             oBrowse:bAllMark := { || ZCOMF032I(oBrowse:Mark(),lMarcar := !lMarcar ), oBrowse:Refresh(.T.)  }
             oBrowse:Activate()
@@ -392,7 +392,8 @@ Local OObs
 Local cMotivo       := ""
 Local aMotivo       := {}
 Local oMotivo   
-Local y 
+Local y
+Local i 
 Local aSizeAut      := MsAdvSize(,.F.,400)
 Private aRadio      := {}
 Private _aObsQ      := {}
