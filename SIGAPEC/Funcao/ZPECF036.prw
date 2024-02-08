@@ -1121,6 +1121,7 @@ Static Function ZPEFF036FN(_cNota, _cSerie,  _nRegSC5, _nRegSF2, _nRegSE4, _aReg
 
 	Local _nPos
 
+	Local _nPicki 			:= 0 //GAP098
 	Private lMsErroAuto 	:= .F.	//variável que define que o help deve ser gravado no arquivo de log e que as informações estão vindo à partir da rotina automática.
 	Private lAutoErrNoFile 	:= .T.  //variavel de Controle do GetAutoGRLog
 
@@ -1135,11 +1136,12 @@ Static Function ZPEFF036FN(_cNota, _cSerie,  _nRegSC5, _nRegSF2, _nRegSE4, _aReg
 		Endif
 
 		VS1->(DbGoto(_aRegVS1[1]))  //posicionar no Primeiro orçamento
+		_nPicki := (VS1->VS1_XPICKI) //Obter número de picking para usar na query da VS9 GAP098
 		// Orcamento integrado com o Loja / Faturamento Direto, neste caso o controle de titulos no financeiro será do BackOffice
 		If !Empty(VS1->VS1_PESQLJ)
 			Break
 		EndIf
-		_cNumOrc := VS1->VS1_NUMORC
+		_cNumOrc := VS1->VS1_NUMORC 
 
 		If  _nRegSC5  == 0
 			Aadd(_aMsg,"Não informado numero do pedido para o orçamento")
@@ -1177,11 +1179,30 @@ Static Function ZPEFF036FN(_cNota, _cSerie,  _nRegSC5, _nRegSF2, _nRegSE4, _aReg
 			BeginSql Alias _cAliasPesq //Define o nome do alias temporário
 			SELECT 	  ISNULL(VS9.R_E_C_N_O_,0) NREGVS9
 			FROM %Table:VS9% VS9
-			WHERE 	VS9.VS9_FILIAL 	= %xFilial:VS9% 
-				AND VS9.VS9_NUMIDE	= %Exp:_cNumOrc%
+			LEFT JOIN %table:VS1% VS1
+				ON VS1.%NOTDEL%
+				AND VS1.VS1_FILIAL = %xFilial:VS1%
+				AND VS1.VS1_NUMORC = VS9.VS9_NUMIDE
+			WHERE 	VS9.VS9_FILIAL = %xFilial:VS9% 
+				//AND VS9.VS9_NUMIDE = %Exp:_cNumOrc%
+				AND VS1.VS1_XPICKI = %Exp:_nPicki%
 				AND VS9.%notDel%
 			EndSql
+				/* Informações VS9
+			VS9->VS9_FILIAL := xFilial("VS9")
+			VS9->VS9_NUMIDE := VS1->VS1_NUMORC
+			VS9->VS9_SEQUEN := STRZERO(1,TamSX3("VS9_SEQUEN")[1]) -> Controle de seq de parcelas
+			VS9->VS9_DATPAG := dDataBase -> Data do pagamento
+				dDataBase -> Variavel publica que contém a data logada no sistema
+			VS9->VS9_VALPAG := _nValDup -> Valor do pagamento
+				_nValDup 	+= VS1->VS1_VALDUP - Acredito que seja o valor somado dos itens do orçamento
+			VS9->VS9_TIPPAG := _cTipo -> Forma de pagamento para particionar os valores da entrada
+				_cTipo := "DP"
+			VS9->VS9_ENTRAD := "N" -> Informar se tem entrada
 
+			VS9->VS9_NATURE - Natureza financeira de peças -> Todos os registros vazios no BD.
+			VS9->VS9_PORTAD - Código do portador deste título
+		*/
 			If (_cAliasPesq)->(Eof()) .or. (_cAliasPesq)->NREGVS9 == 0
 				Aadd(_aMsg,"Não localizado Liberação de Pedidos para nota "+_cNota+" série "+_cSerie+" com orçamento "+VS1->VS1_NUMORC+" para a geração do Financeiro")
 				Break
@@ -1285,23 +1306,6 @@ Static Function ZPEFF036FN(_cNota, _cSerie,  _nRegSC5, _nRegSF2, _nRegSE4, _aReg
 				Break
 			EndIf
 		Endif
-
-		/* Informações VS9
-			VS9->VS9_FILIAL := xFilial("VS9")
-			VS9->VS9_NUMIDE := VS1->VS1_NUMORC
-			VS9->VS9_SEQUEN := STRZERO(1,TamSX3("VS9_SEQUEN")[1]) -> Controle de seq de parcelas
-			VS9->VS9_DATPAG := dDataBase -> Data do pagamento
-				dDataBase -> Variavel publica que contém a data logada no sistema
-			VS9->VS9_VALPAG := _nValDup -> Valor do pagamento
-				_nValDup 	+= VS1->VS1_VALDUP - Acredito que seja o valor somado dos itens do orçamento
-			VS9->VS9_TIPPAG := _cTipo -> Forma de pagamento para particionar os valores da entrada
-				_cTipo := "DP"
-			VS9->VS9_ENTRAD := "N" -> Informar se tem entrada
-
-			VS9->VS9_NATURE - Natureza financeira de peças -> Todos os registros vazios no BD.
-			VS9->VS9_PORTAD - Código do portador deste título
-		
-		*/
 
 		// Gravar o F2_VALFAT com a soma de todos os titulos referente a NF //
 		SF2->(DbGoto(_nRegSF2))
@@ -1575,6 +1579,7 @@ Static Function ZPECFTONEG(_aCabPV)
 	Local _cParcela		:= ""
 	Local _nPos
 	Local _nPosSC5
+	Local _nPicki 		:= _aCabPV[41][2] //Número do Picking utilizado na query da VS9 - GAP098 
 
 	Begin Sequence
 		//If SE4->E4_TIPO == "9" .OR. SE4->E4_TIPO == "A"
@@ -1585,11 +1590,16 @@ Static Function ZPECFTONEG(_aCabPV)
 		BeginSql Alias _cAliasPesq
 		SELECT VS9_TIPPAG, VS9_DATPAG , VS9_VALPAG , VS9_TIPPAG 
 		FROM %table:VS9% VS9
-		WHERE VS9.VS9_FILIAL 	= %XFilial:VS9%
-			AND VS9.VS9_TIPOPE 	= ' '
-			AND VS9.VS9_NUMIDE = %Exp:VS1->VS1_NUMORC% 
+		LEFT JOIN %table:VS1% VS1
+			ON VS1.%NOTDEL%
+			AND VS1.VS1_FILIAL = %xFilial:VS1%
+			AND VS1.VS1_NUMORC = VS9.VS9_NUMIDE
+		WHERE VS9.VS9_FILIAL   = %XFilial:VS9%
+			AND VS9.VS9_TIPOPE = ' '
+			AND VS1.VS1_XPICKI = %Exp:_nPicki%
+			//AND VS9.VS9_NUMIDE = %Exp:VS1->VS1_NUMORC% 
 			AND VS9.%notDel%	
-		ORDER BY VS9_NUMIDE , VS9_DATPAG , VS9_SEQUEN"
+		ORDER BY VS9_NUMIDE , VS9_DATPAG , VS9_SEQUEN
 		EndSql
 		//não tendo dados posso sair
 		If (_cAliasPesq)->(Eof())

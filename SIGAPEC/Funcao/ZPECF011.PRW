@@ -225,6 +225,9 @@ Static Function ZPEC11GPIK(_oJson, _cTipo, _aRegVS1, _lDivergencia )
 
 	Local _nPos
 
+	Local _lProcessa := .F.
+	Local _cChave		:= AllTrim(FWCodEmp()) + "ZPECF036"
+
 	Begin Sequence
 		//_nPos := _oJson["nu_pedidoorigem"][1]:GetJsonText("nu_pedido")
 		// numero do pedido
@@ -310,17 +313,34 @@ Static Function ZPEC11GPIK(_oJson, _cTipo, _aRegVS1, _lDivergencia )
 			Endif
 		End Transaction 
 
-		//Após receber tenho que tentar faturar, porém caso ocorra problemas os mesmos não retornarão para RGLOG pois ja foi recebido o picking
-		If _lRet  .And. _lFatAutomaTico
-			_aOrc := {}
-			//a funcionalidade de faturamento somente recebe dados relativos ao numero de orçamento
-			For _nPos := 1 To Len(_aRegVS1)
-				VS1->(DbGoto(_aRegVS1[_nPos]))
-				Aadd(_aOrc,VS1->VS1_NUMORC)
-			Next 
-			StartJob("U_ZPECF036",GetEnvServer(),.F.,_aOrc, _cPicking, cEmpAnt, cFilAnt, /*ENVIA EMAIL*/, /*Indica transaction*/,/*indica job*/)
-			//U_ZPECF036(_aOrc, _cPicking, /*ENVIA EMAIL*/, /*Indica para não utilizar transaction*/)
-		Endif
+		//_cChave += alltrim(VS1->VS1_XPICKI) //Chave utilizada para lockar a execução do Job.
+
+		While !_lProcessa
+            
+			If ! LockByName(_cChave ,.T.,.T.)
+				_lProcessa := .F. //Se entrar aqui, rotina já lockada
+			else			
+				_lProcessa := .T. //Se entrar aqui, rotina locka a 1ª vez
+			EndIf
+
+			If _lProcessa
+				//Após receber tenho que tentar faturar, porém caso ocorra problemas os mesmos não retornarão para RGLOG pois ja foi recebido o picking
+				If _lRet  .And. _lFatAutomaTico
+					_aOrc := {}
+					//a funcionalidade de faturamento somente recebe dados relativos ao numero de orçamento
+					For _nPos := 1 To Len(_aRegVS1)
+						VS1->(DbGoto(_aRegVS1[_nPos]))
+						Aadd(_aOrc,VS1->VS1_NUMORC)
+					Next 
+					StartJob("U_ZPECF036",GetEnvServer(),.F.,_aOrc, _cPicking, cEmpAnt, cFilAnt, /*ENVIA EMAIL*/, /*Indica transaction*/,/*indica job*/)
+					//U_ZPECF036(_aOrc, _cPicking, /*ENVIA EMAIL*/, /*Indica para não utilizar transaction*/)
+				Endif
+				
+				UnLockByName(_cChave ,.T.,.T.)
+			EndIf
+
+			Sleep( 10000 )//alterar para 10.000 // Para o processamento por 10 segundos
+        EndDo  
 
 	End Sequence
 
