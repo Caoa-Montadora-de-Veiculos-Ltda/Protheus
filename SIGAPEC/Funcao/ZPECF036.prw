@@ -33,6 +33,7 @@ User Function ZPECF036(_aOrcs, _cPicking, _cEmpresa, _cFilial, _lEnviaEmail, _lT
 	//Default _cEmpresa       := ""  
 	//Default _cFilial		:= ""
 
+
 	Private aParcBRNF  	:= {}
 	//Variáveis utilizadas no fonte padrão TOTVS OX100VS9E1 - Nicolas GAP098
 	Private nCntSE1     := 0 

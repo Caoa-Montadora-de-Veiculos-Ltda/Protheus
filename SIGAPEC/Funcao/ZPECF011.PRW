@@ -312,9 +312,7 @@ Static Function ZPEC11GPIK(_oJson, _cTipo, _aRegVS1, _lDivergencia )
 				Disarmtransaction()
 			Endif
 		End Transaction 
-
-		//_cChave += alltrim(VS1->VS1_XPICKI) //Chave utilizada para lockar a execução do Job.
-
+		
 		While !_lProcessa
             
 			If ! LockByName(_cChave ,.T.,.T.)
@@ -339,7 +337,7 @@ Static Function ZPEC11GPIK(_oJson, _cTipo, _aRegVS1, _lDivergencia )
 				UnLockByName(_cChave ,.T.,.T.)
 			EndIf
 
-			Sleep( 10000 )//alterar para 10.000 // Para o processamento por 10 segundos
+			Sleep( 10000 )//Para o processamento por 10 segundos
         EndDo  
 
 	End Sequence
