@@ -24,7 +24,7 @@ Static _lCheckXML	AS Logical
 
 
 Static _dDataIni	:= CtoD(Space(08))
-Static _dDataFim 	:= CtoD(Space(08))
+Static _dDataFim 	:= Date() //CtoD(Space(08))
 
 Static _cNotaDe	 	:= Space(Len(SF2->F2_DOC))
 Static _cNotaAte 	:= Space(Len(SF2->F2_DOC))
@@ -317,8 +317,8 @@ Begin Sequence
 	Count To _nRegSelect	
 	(_cAlias)->(DbGotop())
 	//Não permitir selecionar muitos registros
-	If _nSelLimite < _nRegSelect
-		MSGInfo("Limite "+AllTrim(Str(_nSelLimite))+" de Seleção Registros atingido, não será gerado processo de envio  !","ATENCAO")
+	If _nRegSelect > _nSelLimite  
+		MSGInfo("Limite "+AllTrim(Str(_nSelLimite))+" de Seleção Registros atingido conforme parâmetro, não será gerado processo de envio  !","ATENCAO")
 		_lRet := .F.
 		Break
 	Endif
@@ -376,7 +376,7 @@ Processar a Danfe e enviar e-mail
 STATIC Function MProcDanfe( _cPasta, _oSay )
 Local nA         	:= 0
 Local cMensagem  	:= ""
-Local cDir       	:= "" //SuperGetMV('MV_RELT',,"\SPOOL\")
+Local cDir       	:= SuperGetMV('MV_RELT',,"\SPOOL\")
 Local cNomeArquivo  := ""
 Local _aEnvia		:= {}
 Local _lRet 
@@ -399,7 +399,7 @@ Begin Sequence
     	EndDo
 	Endif
     If  !( File(cDir + cNomeArquivo + ".pdf") )
-		MsgInfo(If(!Empty(cXMensagem), cXMensagem, "Problema para gerar o arquivo pdf! "), "Atenção")
+		MsgInfo(If(!Empty(cXMensagem), cXMensagem, "Problemas para gerar o arquivo pdf "+cNomeArquivo+" na pasta "+cDir+" ref. a NF/SERIE  "+SF2->F2_DOC+"/"+SF2->F2_SERIE+ " ! "), "Atenção")
 		_lRet := .F.
         Break
     EndIf
@@ -662,7 +662,7 @@ Local _nPos
 
 Default _cArqPdf := ""
 Default _cArqXml := ""
-	_cAssunto := "Envio Danfe e XML Nota Fiscal "+SF2->F2_DOC+ "  SERIE "+ SF2->F2_SERIE 
+	_cAssunto := "Envio "+If(_lCheckPDF,"DANFE","")+If(_lCheckPDF .And. _lCheckXML," e ","")+If(_lCheckXML,"XML","")+" Nota Fiscal "+SF2->F2_DOC+ "  SERIE "+ SF2->F2_SERIE 
 	//Incluir arquivos para envio
 	If Len(_aArqEnvio) > 0
 		_aAnexos := _aArqEnvio
@@ -712,7 +712,7 @@ Default _cArqXml := ""
 	//caso ocorra erro tentar enviar para e-mail de acompanhamento 
 	If Len(_aErro) > 0 .And. !Empty(_cEmailAcp)
 		_lRet = .F.
-		_cAssunto := "ZFIS09Email Problemas ocorrido no Envio Danfe e XML Nota Fiscal "+SF2->F2_DOC+ "  SERIE "+ SF2->F2_SERIE 
+		_cAssunto := "ZFIS09Email Problemas ocorrido no "+If(_lCheckPDF,"DANFE","")+If(_lCheckPDF .And. _lCheckXML," e ","")+If(_lCheckXML,"XML","")+" Nota Fiscal "+SF2->F2_DOC+ "  SERIE "+ SF2->F2_SERIE 
 		Conout(_cAssunto)	
 		//acrescento no processo ja gerado os erros a serem enviados
 		For _nPos := 1 To Len(_aErro)
@@ -843,8 +843,8 @@ Local _nPos
     _cHtml += "        <h1 class='titulo-principal'>CAOA - Envio arquivo</h1>"+ CRLF
     _cHtml += "    </header>"+ CRLF
     _cHtml += "    <div class='principal'>"+ CRLF
-    _cHtml += "        <h2 class='titulo-centralizado'>Envio DANFE / XML </h2>"+ CRLF
-    _cHtml += "        <p>Estamos enviando anexo DANFE e XML referente a nota Fiscal <strong>"+_cNota+" </strong> Serie <strong>"+_cSerie+" </strong>.</p> "+ CRLF
+    _cHtml += "        <h2 class='titulo-centralizado'>Envio "+If(_lCheckPDF,"DANFE","")+If(_lCheckPDF .And. _lCheckXML, " / ","")+If(_lCheckXML,"XML","")+" </h2>"+ CRLF
+    _cHtml += "        <p>Estamos enviando anexo "+If(_lCheckPDF,"DANFE","")+If(_lCheckPDF .And. _lCheckXML," e ","")+If(_lCheckXML,"XML","")+" referente a nota Fiscal <strong>"+_cNota+" </strong> Serie <strong>"+_cSerie+" </strong>.</p> "+ CRLF
     _cHtml += "        </div>"
 
 	If Len(_aMens) > 0
