@@ -163,6 +163,7 @@ Static Function ZPECF036PV(_aOrcs, _cPicking, _cPedido, _aRegVS1, _aPicking, _aV
 	Local _lEstoque
 	Local _lLiber
 	Local _lTransf
+	Local _cProduto := ""
 
 	Default _aRegVS1	:= {}
 	Default _aPicking 	:= {}
@@ -232,6 +233,13 @@ Static Function ZPECF036PV(_aOrcs, _cPicking, _cPedido, _aRegVS1, _aPicking, _aV
 			_nPosItem := 1
 			U_XFUNIPOSTO(VS3->VS3_NUMORC, cEmpAnt, cFilAnt, .T. /*_lJob*/)
 
+			//Abrindo a tabela de Produtos e posicionando no topo
+			DbSelectArea("SB1")
+			SB1->(DbSetOrder(1)) //B1_FILIAL+B1_COD
+			SB1->(DbGoTop())
+			
+			
+			
 			While VS3->(!Eof()) .And. FwXFilial("VS3")+VS1->VS1_NUMORC == VS3->VS3_FILIAL+VS3->VS3_NUMORC
 				/*
 					OX001PecFis()
@@ -260,6 +268,7 @@ Static Function ZPECF036PV(_aOrcs, _cPicking, _cPedido, _aRegVS1, _aPicking, _aV
 					Endif
 				*/
 				//Preparar carga para gravar Pedido
+				
 				_cNumSeq 	:= Soma1(_cNumSeq)
 				If  VS1->(FieldPos("VS1_VLBRNF")) > 0 .and. VS1->VS1_VLBRNF == "0" // Nao passar o Valor Bruto para NF/Loja
 					_nVALPEC 	:= VS3->VS3_VALPEC - ( VS3->VS3_VALDES / VS3->VS3_QTDITE )
@@ -276,6 +285,9 @@ Static Function ZPECF036PV(_aOrcs, _cPicking, _cPedido, _aRegVS1, _aPicking, _aV
 				_nValCof := VS3->VS3_VALCOF
 				_nValICM := VS3->VS3_ICMCAL
 				_nValDes := _nItVLDESC
+
+				_cProduto := alltrim(VS3->VS3_CODITE)
+				SB1->(MsSeek(FWxFilial("SB1") + _cProduto  )) //Posicionar item a ser inserido no PV (B1_FILIAL+B1_COD)
 
 				aAdd(_aIteTempPV,{"C6_ITEM"   ,	_cNumSeq			,Nil})
 				aAdd(_aIteTempPV,{"C6_PRODUTO",	SB1->B1_COD  		,Nil})

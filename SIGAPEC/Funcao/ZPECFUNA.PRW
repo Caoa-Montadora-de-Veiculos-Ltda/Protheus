@@ -540,7 +540,7 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 				_nRegVS3 := VS3->(Recno())
 			Endif
 			If _nRegVS3 == 0
-				Aadd(_aObs, "Não Localizado tegistro do item "+_cGrupoItem+"-"+AllTrim(_cCodItem)+" do orçamento "+_cNumOrc+" para clonagem  entrar em contato ADM Sistemas !")
+				Aadd(_aObs, "Não Localizado registro do item "+_cGrupoItem+"-"+AllTrim(_cCodItem)+" do orçamento "+_cNumOrc+" para clonagem  entrar em contato ADM Sistemas !")
 				_lRet := .F.
 				Break
 			Endif	
@@ -564,7 +564,10 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 				_nTotal		:= 0
 			Endif	
 			//para garantir que seja passado somente de um orçamento (ainda não esta para multiplos orçamentos)
-			If VS3->VS3_NUMORC <> _cNumOrc
+			//Nicolas 19/02/2024 - GAP098.
+			//Conforme alinhado com Juarez - Itens para gerar BO, de orç diferentes, entram na validação e não geram BO.
+			//If VS3->VS3_NUMORC <> _cNumOrc 
+			If VS1->VS1_NUMORC <> _cNumOrc
 				Aadd(_aObs, "Orçamento para o item "+AllTrim(_cCodItem)+" esta com numeração diferente, orçamento inicial "+_cNumOrc+" orçamento item "+VS3->VS3_NUMORC+" !")
 				_lRet := .F.
 				Break
