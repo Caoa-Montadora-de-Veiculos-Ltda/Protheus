@@ -10,7 +10,7 @@ Função para alterar o Lote na Entrada do Produto
  @obs 
 /*/
 User Function ZESTF015()
-Local aColunas  := {} //Colunas da Grid.
+Local aColunas := {} //Colunas da Grid.
 
  //Cria o objeto de apresentação do browse
  Local oBrowse
