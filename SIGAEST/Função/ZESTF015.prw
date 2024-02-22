@@ -51,8 +51,8 @@ User Function ZESTF015()
      Return Nil
  Endif
 
- //Adiciona as colunas que serão exibidas no FWBrowse
- aColunas := fCriaCols()
+    //Adiciona as colunas que serão exibidas no FWBrowse
+    aColunas := fCriaCols()
 
     TRE->(DbGoTop())
     
@@ -296,15 +296,15 @@ Local cEndDes	  := Space(30)
 
         D14->( DbSetOrder(3) )
         D14->( DbGoTop() )        
-	    IF D14->( DbSeek( xFilial("D14") + TRE->TRE_ARM + TRE->TRE_PROD ) )
+	    IF D14->( DbSeek( xFilial("D14") + TRE->TRE_ARM + TRE->TRE_PROD + 'DCE01          '  ) )
 
-            IF D14->D14_ENDER = 'DCE01' .OR. Empty(D14->D14_IDUNIT)
+            IF D14->D14_ENDER = 'DCE01' .AND. Empty(D14->D14_IDUNIT) .AND. Substr(D14->D14_LOTECT,1,4) = 'AUTO' 
 
                 RecLock("D14", .F.)
                 D14->D14_LOTECT := cEndDes 
                 D14->( MsUnLock() ) 
-            
-                SB8->(DbGoto(TRE->B8REG))
+
+                SB8->(DbGoto(TRE->TRE_B8REG))             
                 RecLock("SB8", .F.)
                 SB8->B8_LOTECTL := cEndDes 
                 SB8->( MsUnLock() ) 
@@ -328,7 +328,7 @@ Local cEndDes	  := Space(30)
             ENDIF
 
         ELSE
-            MSGINFO( "Entrada não localizada na D14. Local: " + SB8->B8_LOCAL + " Produto: " + SB8->B8_PRODUTO,"Atenção" )
+            MSGINFO( "Entrada não localizada na D14. Local: " + TRE->TRE_ARM + " Produto: " + TRE->TRE_PROD,"Atenção" )
         ENDIF
 		
     EndIf
