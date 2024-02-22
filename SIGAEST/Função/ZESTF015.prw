@@ -10,8 +10,9 @@ Função para alterar o Lote na Entrada do Produto
  @obs 
 /*/
 User Function ZESTF015()
- Local aColunas := {} //Colunas da Grid.
-
+ Local aColunas   := {} //Colunas da Grid.
+ Local aSeek      := {}
+ Local aFieFilter := {}
  //Cria o objeto de apresentação do browse
  Local oBrowse
 
@@ -61,6 +62,8 @@ User Function ZESTF015()
 
     //Cria a tabela utilizada no processo
     ChkFile(cTabela)
+    //Irei criar a pesquisa que será apresentada na tela
+    aAdd(aSeek,{"Prod",{{ ""    ,"C"    ,023    ,000    ,"Produto"    ,"@!"   }} } )
     //Instânciando FWMBrowse - Somente com dicionário de dados
     oBrowse:= FWMBrowse():New()
 	oBrowse:SetTemporary(.T.)
@@ -69,8 +72,12 @@ User Function ZESTF015()
     oBrowse:SetAlias("TRE")
     //Setando a descrição da rotina
     oBrowse:SetDescription(cTitulo)
-
 	oBrowse:SetFields(aColunas)
+    oBrowse:SetUseFilter(.T.) //Habilita a utilização do filtro no Browse
+    oBrowse:SetFixedBrowse(.T.)
+    oBrowse:SetSeek(.T.,aSeek) //Habilita a utilização da pesquisa de registros no Browse
+    oBrowse:SetFilterDefault("") //Indica o filtro padrão do Browse
+    oBrowse:SetFieldFilter(aFieFilter)
     //Adicionar Botões
     //oBrowse:AddButton("Altera Lote" , {|| ZEST015A() },'Alterar...', , , .F. , 2 )
     oBrowse:AddButton("Visualizar"   , { || FwMsgRun(,{ | _oSay | ZEST015D(_oSay) }, "Visualizar", "Aguarde...")  },,,, .F., 2 )  
@@ -111,7 +118,8 @@ Local aRot := {}
 //Adicionando opções
  //ADD OPTION aRot TITLE 'Visualizar' ACTION 'VIEWDEF.ZESTF015' OPERATION MODEL_OPERATION_VIEW   ACCESS 0 //OPERATION 2
  //ADD OPTION aRot TITLE 'Alterar'    ACTION 'VIEWDEF.ZESTF015' OPERATION MODEL_OPERATION_UPDATE ACCESS 0
-
+ //ADD OPTION aRot TITLE "Pesquisar" ACTION 'AxPesqui' OPERATION 1 ACCESS 0
+	
 Return aRot
 
 
@@ -164,7 +172,7 @@ Local aCampos1:= {}
  //Seta a descrição do formulário
  oModel:GetModel("FORMTRE"):SetDescription(cTitulo)
 
- oModel:SetPrimaryKey({'TRE_FILIAL','TRE_PROD','TRE_ARM','TRE_LOTE'})
+ oModel:SetPrimaryKey({'TRE_PROD','TRE_ARM','TRE_LOTE'})
  //oModel:SetPrimaryKey({})
 
 Return oModel
@@ -309,7 +317,7 @@ Local cEndDes	  := Space(30)
                 SB8->B8_LOTECTL := cEndDes 
                 SB8->( MsUnLock() ) 
 
-                SD1->( DbSetOrder(B) )
+                SD1->( DbSetOrder(11) )
                 IF SD1->( DbSeek( xFilial("SD1") + SB8->B8_DOC + SB8->B8_SERIE + SB8->B8_CLIFOR + SB8->B8_LOJA + SB8->B8_PRODUTO + cEndOri ) )
                     RecLock("SD1", .F.)
                     SD1->D1_LOTECTL := cEndDes 
@@ -380,6 +388,14 @@ Local _lRet     := .T.
  	cQuery  +=  "      AND SB8.B8_LOJA = SD1.D1_LOJA "                 + CRLF 
 	cQuery  +=  "	   AND SB8.B8_SALDO <> 0 "                         + CRLF 
     cQuery  +=  "	   AND SB8.D_E_L_E_T_  = ' ' "                     + CRLF
+	cQuery  +=  "  JOIN " +	RetSqlName("D14") + " D14 "                + CRLF
+	cQuery  +=  "      ON D14.D14_FILIAL   = SD1.D1_FILIAL  "          + CRLF
+	cQuery  +=  "      AND D14.D14_LOCAL   = SD1.D1_LOCAL   "          + CRLF 
+	cQuery  +=  "      AND D14.D14_PRODUT  = SD1.D1_COD     "          + CRLF     
+	cQuery  +=  "      AND D14.D14_ENDER   = 'DCE01'        "          + CRLF
+	cQuery  +=  "      AND D14.D14_LOTECT  = SD1.D1_LOTECTL "          + CRLF 
+	cQuery  +=  "      AND D14.D14_IDUNIT  = ' ' "                     + CRLF
+    cQuery  +=  "	   AND D14.D_E_L_E_T_  = ' ' "                     + CRLF
     cQuery  +=  "	WHERE SD1.D_E_L_E_T_   = ' ' "                     + CRLF
     cQuery  +=  "	    AND SD1.D1_FILIAL  =  '"+xFilial('SD1')+"'"    + CRLF
     cQuery  +=  "	    AND SD1.D1_TES <> '   ' "                      + CRLF
@@ -423,7 +439,7 @@ Local _lRet     := .T.
         EndIf
                     
         dbUseArea(.T.,,cArqTRE,"TRE",Nil,.F.)
-        IndRegua("TRE", cIndice1, "TRE_FILIAL+TRE_PROD+TRE_ARM+TRE_LOTE" ,,, "Indice Produto...")
+        IndRegua("TRE", cIndice1, "TRE_PROD+TRE_ARM+TRE_LOTE" ,,, "Indice Produto...")
         
         //Fecha todos os índices da área de trabalho corrente.
         dbClearIndex()
