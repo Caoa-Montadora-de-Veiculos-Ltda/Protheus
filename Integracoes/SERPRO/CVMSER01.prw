@@ -90,7 +90,7 @@ User Function CVMSER01()
 	dbSelectArea("SX3")
 	dbSetOrder(2)
 	For nI := 1 To Len(aCpos)
-	   dbSeek(aCpos[nI])
+	   SX3->(dbSeek(aCpos[nI]))
 	   aAdd(aCampos,{X3_CAMPO,"",Iif(nI==1,"",Trim(X3_TITULO)),Trim(X3_PICTURE)})
 	Next
 
@@ -119,8 +119,8 @@ User Function CVMSER01()
 	nIndex := RetIndex("SZ4")
 	nIndex := nIndex + 1
 	DbSelectArea("SZ4")
-	DbSetOrder(nIndex)
-	DbGoTop()
+	SZ4->(DbSetOrder(nIndex))
+	SZ4->(DbGoTop())
 	
 	// Apresenta o MarkBrowse
 	MarkBrow("SZ4","Z4_MARKBR","SZ4->Z4_CODRET",aCampos,/*lInverte*/,cMarca,/*marcatodos*/,,,,"U_CVMSER1M()",,,,aColors,)
@@ -147,12 +147,12 @@ User Function CVMSER1M()
 
 	If IsMark("Z4_MARKBR", cMarca )
 		RecLock("SZ4",.F.)
-			SZ4->Z4_MARKBR := Space(2)
+		SZ4->Z4_MARKBR := Space(2)
 		MsUnLock()
 	Else
 		If SZ4->Z4_CODRET <> "OK"
 			RecLock("SZ4",.F.)
-				SZ4->Z4_MARKBR := cMarca
+			SZ4->Z4_MARKBR := cMarca
 			MsUnLock()
 		EndIf
 	EndIf
@@ -168,18 +168,17 @@ Return .T.
 @version 	P12
 /*/
 User Function CVMSER1P()
-
-	Local aArea 			:= GetArea()
-	Local cSql001 			:= ""
-	Local cAliasZ4 			:= ""
-	//Local cSql002 			:= ""
-	//Local cAlD1D2 			:= ""
+Local aArea 	:= GetArea()
+Local cSql001 	:= ""
+Local cAliasZ4 	:= ""
+Local _lNovo 	:= .T.
+//Local cSql002 			:= ""
+//Local cAlD1D2 			:= ""
 	
 	//alert(mv_par03)
 	// Consulta principal
 	cAliasZ4 := GetNextAlias()
 	cSql001 := " "
-		
 	cSql001 += "  SELECT  SD2.D2_DOC, "
     cSql001 += "      	  SD2.D2_SERIE, "
     cSql001 += "      	  NVL(VV0.VV0_NUMPED,SD2.D2_PEDIDO) AS VV0_NUMPED, "
@@ -194,46 +193,41 @@ User Function CVMSER1P()
     cSql001 += "      	  VE1.VE1_DESMAR, "
     cSql001 += "      	  VV2.VV2_DESMOD, "
     cSql001 += "      	  SA1.A1_NOME "
-    
 	cSql001 += "  FROM " + RetSqlName( "SD2" ) + " SD2  "
-    
 	cSql001 += "  JOIN " + RetSqlName( "VV1" ) + " VV1  "
-    cSql001 += "      ON  VV1.VV1_CHASSI = SD2.D2_NUMSERI "
+    cSql001 += "      ON  VV1.VV1_FILIAL = '"+FwXFilial("VV1")+"' "
+    cSql001 += "      AND VV1.VV1_CHASSI = SD2.D2_NUMSERI "
     cSql001 += "      AND VV1.D_E_L_E_T_ = ' ' "
-    
 	cSql001 += "  JOIN " + RetSqlName( "VE1" ) + " VE1  "
-    cSql001 += "      ON  VE1.VE1_CODMAR = VV1.VV1_CODMAR  "
+    cSql001 += "      ON  VE1.VE1_FILIAL = '"+FwXFilial("VE1")+"' "
+    cSql001 += "      AND VE1.VE1_CODMAR = VV1.VV1_CODMAR  "
     cSql001 += "      AND VE1.D_E_L_E_T_ = ' ' "
-    
 	cSql001 += "  JOIN " + RetSqlName( "VV2" ) + " VV2  "
-    cSql001 += "      ON  VV2.VV2_CODMAR = VV1.VV1_CODMAR  "
+    cSql001 += "      ON  VV2.VV2_FILIAL = '"+FwXFilial("VV2")+"' "
+    cSql001 += "      AND VV2.VV2_CODMAR = VV1.VV1_CODMAR  "
     cSql001 += "      AND VV2.VV2_MODVEI = VV1.VV1_MODVEI  "
     cSql001 += "      AND VV2.VV2_SEGMOD = VV1.VV1_SEGMOD  "
     cSql001 += "      AND VV2.D_E_L_E_T_ = ' ' "
-    
 	cSql001 += "  JOIN " + RetSqlName( "SA1" ) + " SA1  "
-    cSql001 += "      ON  SA1.A1_COD     = SD2.D2_CLIENTE  "
+    cSql001 += "      ON  SA1.A1_FILIAL  = '"+FwXFilial("SA1")+"' "
+    cSql001 += "      AND SA1.A1_COD     = SD2.D2_CLIENTE  "
     cSql001 += "      AND SA1.A1_LOJA    = SD2.D2_LOJA  "
     cSql001 += "      AND SA1.D_E_L_E_T_ = ' ' "
-    
 	cSql001 += "  LEFT JOIN " + RetSqlName( "VV0" ) + " VV0  "
-    cSql001 += "      ON  VV0.VV0_FILIAL = SD2.D2_FILIAL "
+    cSql001 += "      ON  VV0.VV0_FILIAL = '"+FwXFilial("VV0")+"' "
     cSql001 += "      AND VV0.VV0_NUMPED = SD2.D2_PEDIDO "
     cSql001 += "      AND VV0.D_E_L_E_T_ = ' ' "
-    
 	cSql001 += "  LEFT JOIN " + RetSqlName( "VVA" ) + " VVA  "
-    cSql001 += "      ON  VVA.VVA_FILIAL  = VV0.VV0_FILIAL  "
+    cSql001 += "      ON  VVA.VVA_FILIAL  = '"+FwXFilial("VVA")+"' "
     cSql001 += "      AND VVA.VVA_NUMTRA  = VV0.VV0_NUMTRA  "
     cSql001 += "      AND VVA.D_E_L_E_T_ = ' ' "
-    
-	cSql001 += "  WHERE SD2.D_E_L_E_T_ <> '*'  "
-    cSql001 += "      AND SD2.D2_GRUPO = 'VEIA'   "
+	cSql001 += "  WHERE SD2.D_E_L_E_T_ 	= ' '  "
+    cSql001 += "      AND  SD2.D2_FILIAL = '"+FwXFilial("SD2")+"' "
+    cSql001 += "      AND SD2.D2_GRUPO 	= 'VEIA'   "
     cSql001 += "      AND SD2.D2_EMISSAO BETWEEN '" + DToS( MV_PAR01 ) + "' AND '" + DToS( MV_PAR02 ) + "'   "
-    
 	If !Empty(MV_PAR03)     
         cSql001 += "      AND VV1.VV1_CODMAR = '" + AllTrim( MV_PAR03 ) + "' "
 	EndIf
-	
 	memowrite('C:\temp\consulta.sql',cSql001)
 
     //cSql001 := ChangeQuery(cSql001)
@@ -243,57 +237,40 @@ User Function CVMSER1P()
 	
 	If (cAliasZ4)->(EoF())
 		MsgInfo("Não foram encontradas informações com os filtros informados. Por favor, revise os filtros.", "Sem novas informações")
-		Return
+		Return nIL
 	EndIf
 	
 	DbSelectArea("SZ4")
-	dbSetOrder(2) // Z4_FILIAL + Z4_CHASSI + Z4_LOTE + Z4_ANOLOTE
+	SZ4->(dbSetOrder(2)) // Z4_FILIAL + Z4_CHASSI + Z4_LOTE + Z4_ANOLOTE
 	DbSelectArea(cAliasZ4)
 	(cAliasZ4)->(DbGoTop())
 
 	While (cAliasZ4)->(!Eof())
-	
 		cChassi := " "
 		cChassi := PadR( (cAliasZ4)->VVA_CHASSI, TamSx3("Z4_CHASSI")[1] )
-		
 		If	AllTrim( cChassi ) == " "
 			(cAliasZ4)->( DbSkip() )
 			Loop
 		EndIf
-		
 		If SZ4->( DbSeek( xFilial("SZ4") + cChassi ) ) .And. SZ4->Z4_CODRET == "OK"
 			(cAliasZ4)->( DbSkip() )
 			Loop
 		EndIf
-
-		If SZ4->( DbSeek( xFilial("SZ4") + cChassi ) ) .And. SZ4->Z4_CODRET <> "OK"
-			RecLock("SZ4", .F.)
-				Replace Z4_FILIAL With xFilial("SZ4")
-				Replace Z4_CHASSI With (cAliasZ4)->VVA_CHASSI
-				Replace Z4_OPEMOV With Iif( (cAliasZ4)->VV0_OPEMOV == "2", "4", "0" )
-				Replace Z4_VEIC   With (cAliasZ4)->VE1_DESMAR    //(cAliasZ4)->VV0_DESMAR
-				Replace Z4_MODELO With (cAliasZ4)->VV0_MODVEI
-				Replace Z4_DESCRI With (cAliasZ4)->VV2_DESMOD    //(cAliasZ4)->VV0_DESMOD
-				Replace Z4_CODMAR With (cAliasZ4)->VVA_CODMAR
-				Replace Z4_ANOFAB With SubStr( (cAliasZ4)->VV1_FABMOD, 1, 4)   //SubStr( (cAliasZ4)->VV0_FABMOD, 1, 4) 
-				Replace Z4_ANOMOD With SubStr( (cAliasZ4)->VV1_FABMOD, 1, 4)   //SubStr( (cAliasZ4)->VV0_FABMOD, 5, 4)
-			MsUnlock()
+		_lNovo := SZ4->( !DbSeek( xFilial("SZ4") + cChassi ) )
+		//para alteração validar se esta com referencia OK
+		If If(!_lNovo,AllTrim(SZ4->Z4_CODRET) <> "OK",.T.)
+			RecLock("SZ4", _lNovo)
+			SZ4->Z4_FILIAL := xFilial("SZ4")
+			SZ4->Z4_CHASSI := (cAliasZ4)->VVA_CHASSI
+			SZ4->Z4_OPEMOV := Iif( (cAliasZ4)->VV0_OPEMOV == "2", "4", "0" )
+			SZ4->Z4_VEIC   := (cAliasZ4)->VE1_DESMAR    //(cAliasZ4)->VV0_DESMAR
+			SZ4->Z4_MODELO := (cAliasZ4)->VV0_MODVEI
+			SZ4->Z4_DESCRI := (cAliasZ4)->VV2_DESMOD    //(cAliasZ4)->VV0_DESMOD
+			SZ4->Z4_CODMAR := (cAliasZ4)->VVA_CODMAR
+			SZ4->Z4_ANOFAB := SubStr( (cAliasZ4)->VV1_FABMOD, 1, 4)   //SubStr( (cAliasZ4)->VV0_FABMOD, 1, 4) 
+			SZ4->Z4_ANOMOD := SubStr( (cAliasZ4)->VV1_FABMOD, 1, 4)   //SubStr( (cAliasZ4)->VV0_FABMOD, 5, 4)
+			SZ4->(MsUnlock())
 		EndIf
-		
-		If SZ4->( !DbSeek( xFilial("SZ4") + cChassi ) )
-			RecLock("SZ4", .T.)
-				Replace Z4_FILIAL With xFilial("SZ4")
-				Replace Z4_CHASSI With (cAliasZ4)->VVA_CHASSI
-				Replace Z4_OPEMOV With Iif( (cAliasZ4)->VV0_OPEMOV == "2", "4", "0" )
-				Replace Z4_VEIC   With (cAliasZ4)->VE1_DESMAR
-				Replace Z4_MODELO With (cAliasZ4)->VV0_MODVEI
-				Replace Z4_DESCRI With (cAliasZ4)->VV2_DESMOD
-				Replace Z4_CODMAR With (cAliasZ4)->VVA_CODMAR
-				Replace Z4_ANOFAB With SubStr( (cAliasZ4)->VV1_FABMOD, 1, 4) 
-				Replace Z4_ANOMOD With SubStr( (cAliasZ4)->VV1_FABMOD, 5, 4)
-			MsUnlock()
-		EndIf
-
 	    (cAliasZ4)->(DbSkip())
 	EndDo
 	
@@ -313,28 +290,21 @@ Return
 @version 	P12
 /*/
 User Function CVMSER1G()
+Local aArea 	:= GetArea()
+Local lRet 		:= .F.
 
-	Local aArea 		:= GetArea()
-	Local lRet 			:= .F.
-	Private aRegs 		:= {}
+Private aRegs 	:= {}
 	
 	DbSelectArea("SZ4")
-	DbSetOrder(2)
-	DbGoTop()
-	While !Eof()
-	   If SZ4->Z4_MARKBR <> cMarca 
-	      dbSkip()
+	SZ4->(DbSetOrder(2))
+	SZ4->(DbGoTop())
+	While SZ4->(!Eof())
+	   If SZ4->Z4_MARKBR <> cMarca .Or. SZ4->Z4_CODRET == "OK"
+	      SZ4->(dbSkip())
 	      Loop
 	   Endif
-	
-	   If SZ4->Z4_CODRET == "OK" 
-	      dbSkip()
-	      Loop
-	   Endif
-	
 	   aAdd( aRegs, {SZ4->Z4_FILIAL, SZ4->Z4_CHASSI, SZ4->Z4_LOTE, SZ4->Z4_OPEMOV} )
-	
-	   dbSkip()
+	   SZ4->(dbSkip())
 	EndDo
 	
 	If Len(aRegs) == 0
@@ -351,10 +321,8 @@ User Function CVMSER1G()
 	Else
 		MsgInfo("Falha na geração do arquivo de envio.","Geração do arquivo")
 	EndIf
-	
 	RestArea(aArea)
-
-Return 
+Return Nil
 
 
 /*/{Protheus.doc} fGeraAux
@@ -367,37 +335,41 @@ Return
 @type 		function
 /*/
 Static Function fGeraAux( aRegs )
-
-	Local aArea 			:= GetArea()
-	Local cRegITP 			:= " "
-	Local cRegVF1 			:= " "
-	Local cRegVF2 			:= " "
-	Local cRegFTP 			:= " "
-	Local cNumLot 			:= " "
-	//Local cMesFab 			:= " "	
-	Local cModVei           := " "
-	Local cArqDir 			:= cGetFile("Documentos LS|*.LS|LE|*.LE",OemToAnsi("Selecionar o diretório para geração..."),0,"C:\",.T.,GETF_LOCALHARD+GETF_RETDIRECTORY, .F.)
-	Local cArqName 			:= ""
-	Local cArqAmb 			:= SuperGetMv("CAOA_VEI01", .F., "HO", "")
-	Local nXi 				:= 0
-	Local nContReg 			:= 0
-	Local nHandle 			:= 0
-	Local lRet 				:= .F.
-	Local lBuild 			:= .F.
-	Local cQuery 			:=	""
-	Local cTmpAlias			:= GetNextAlias()
-	Local aOriArea			:= {}
-	Local lVV0 				:= .T.
-	Local lVVA 				:= .T.
-		// Verifica a Build
+Local aArea 			:= GetArea()
+Local cRegITP 			:= " "
+Local cRegVF1 			:= " "
+Local cRegVF2 			:= " "
+Local cRegFTP 			:= " "
+Local cNumLot 			:= " "
+//Local cMesFab 			:= " "	
+Local cModVei           := " "
+Local cArqDir 			:= cGetFile("Documentos LS|*.LS|LE|*.LE",OemToAnsi("Selecionar o diretório para geração..."),0,"C:\",.T.,GETF_LOCALHARD+GETF_RETDIRECTORY, .F.)
+Local cArqName 			:= ""
+Local cArqAmb 			:= SuperGetMv("CAOA_VEI01", .F., "HO", "")
+Local nXi 				:= 0
+Local nContReg 			:= 0
+Local nHandle 			:= 0
+Local lRet 				:= .F.
+//Local lBuild 			:= .F.
+Local cQuery 			:=	""
+Local cTmpAlias			:= GetNextAlias()
+Local aOriArea			:= {}
+Local lVV0 				:= .T.
+Local lVVA 				:= .T.
+Local _cTpVeiculo     	:= AllTrim(SuperGetMV( "CAOA_VEI02" , ,"23" ))   //Tipo de Veículos que são conjugados    GAP131  Tratamento no arquivo SERPRO para caminhões HR e HD    
+Local _cTipoCarroc     	:= AllTrim(SuperGetMV( "CAOA_VEI03" , ,"194" ))   //Tipo de carrocerias     GAP131  Tratamento no arquivo SERPRO para caminhões HR e HD    
+Local _cTipoMontgem		:= ""
+	/*
+	// Verifica a Build
 	lBuild := GetBuild( .T. ) >= "7.00.131227A-20141119"
-	
 	If lBuild
 		OpenSm0( cEmpAnt, .T.)
 	Else
 		DbSelectArea("SM0")
 	EndIf
-	
+	*/
+
+	OpenSm0( cEmpAnt, .T.)
 	cNumLot := GetSxeNum("SZ4", "Z4_LOTE", "Z4_LOTE" + Str( Year(dDataBase) ), 3 )
 	cArqName += "K3244.K29822" 		// K3244.K29822 = Constante indicando DSN de entrada
 	cArqName += cArqAmb 			// aa = ambiente de processamento: PR (produção) ou HO (homologação)
@@ -437,86 +409,75 @@ Static Function fGeraAux( aRegs )
 	
 	SF2->(dbSetOrder(1))
 	DbSelectArea("SZ4")
-	DbSetOrder(2) // Z4_FILIAL + Z4_CHASSI + Z4_LOTE + Z4_ANOLOTE
+	SZ4->(DbSetOrder(2)) // Z4_FILIAL + Z4_CHASSI + Z4_LOTE + Z4_ANOLOTE
 	
 	DbSelectArea("VVA")
-	DbSetOrder(2) // VVA_FILIAL + VVA_CHASSI + VVA_NUMTRA
+	VVA->(DbSetOrder(2)) // VVA_FILIAL + VVA_CHASSI + VVA_NUMTRA
 	
 	DbSelectArea("VV0")
-	DbSetOrder(1) // VV0_FILIAL + VV0_NUMTRA
+	VV0->(DbSetOrder(1)) // VV0_FILIAL + VV0_NUMTRA
 
 	DbSelectArea("VV1")
-	DbSetOrder(2) // VV1_FILIAL + VV1_CHASSI
+	VV1->(DbSetOrder(2)) // VV1_FILIAL + VV1_CHASSI
 	
 	DbSelectArea("VV2")
-	DbSetOrder(1) // VV2_FILIAL + VV2_CODMAR + VV2_MODVEI + VV2_SEGMOD
+	VV2->(DbSetOrder(1)) // VV2_FILIAL + VV2_CODMAR + VV2_MODVEI + VV2_SEGMOD
 
 	DbSelectArea("VVC")
-	DbSetOrder(1) // VVC_FILIAL + VVC_CODMAR + VVC_CORVEI
+	VVC->(DbSetOrder(1)) // VVC_FILIAL + VVC_CODMAR + VVC_CORVEI
 
 	DbSelectArea("VVE")
-	DbSetOrder(1) // VVE_FILIAL + VVE_ESPVEI
+	VVE->(DbSetOrder(1)) // VVE_FILIAL + VVE_ESPVEI
 
 	DbSelectArea("VE1")
-	DbSetOrder(1) // VE1_FILIAL + VE1_CODMAR
+	VE1->(DbSetOrder(1)) // VE1_FILIAL + VE1_CODMAR
 	
 	DbSelectArea("VVF")
-	DbSetOrder(1) // VVF_FILIAL + VVF_TRACPA
+	VVF->(DbSetOrder(1)) // VVF_FILIAL + VVF_TRACPA
 
 	DbSelectArea("SA1")
-	DbSetOrder(1) // A1_FILIAL + A1_COD + A1_LOJA
+	SA1->(DbSetOrder(1)) // A1_FILIAL + A1_COD + A1_LOJA
 
 	DbSelectArea("SD1")
-	DbSetOrder(1) // D1_FILIAL + D1_DOC + D1_SERIE + D1_FORNECE + D1_LOJA
+	SD1->(DbSetOrder(1)) // D1_FILIAL + D1_DOC + D1_SERIE + D1_FORNECE + D1_LOJA
 		
 	DbSelectArea("SA2")
-	DbSetOrder(1) // A2_FILIAL + A2_COD + A2_LOJA
+	SA2->(DbSetOrder(1)) // A2_FILIAL + A2_COD + A2_LOJA
 
 	DbSelectArea("SW6")
-	DbSetOrder(1) // W2_FILIAL + W6_HAWB   
+	SW6->(DbSetOrder(1)) // W2_FILIAL + W6_HAWB   
 	
 	// VF1 - DETALHES DO VEÍCULO (PARTE 1)
 	For nXi := 1 To Len(aRegs)
-		
 		cQuery :=  " SELECT * FROM " + RetSqlName("SD2") 
         cQuery +=  " WHERE D_E_L_E_T_ = ' '
-        cQuery +=  "   AND D2_NUMSERI = '" + aRegs[nXi][02] + "' "
-        cQuery +=  "   AND D2_FILIAL = '" + xFilial("SD2") + "' "
-		
-				
+        cQuery +=  "   AND D2_FILIAL = '" 	+ xFilial("SD2") + "' "
+        cQuery +=  "   AND D2_NUMSERI = '" 	+ aRegs[nXi][02] + "' "
 		If Select( cTmpAlias ) <> 0 ; ( cTmpAlias )->( DbCloseArea() ) ; EndIf
-		
 		DbUseArea(.T. , "TOPCONN" , TcGenQry( ,,cQuery ) , cTmpAlias , .F. , .T. )
-		
 		If ( cTmpAlias )->(Eof())
 			Loop
 		EndIf
-		
 		If !VVA->( DbSeek( xFilial("VVA") + aRegs[nXi][02] ) )
 			//Loop
 			lVVA := .F.
 		else
 			lVVA := .T.
 		EndIf
-	
 		If !VV1->( DbSeek( xFilial("VV1") + aRegs[nXi][02] ) )
 			Loop
 		EndIf
-
 		If !VV0->( DbSeek( xFilial("VV0") + VV1->VV1_NUMTRA ) )
 			lVV0 := .F.
 			//Loop
 		else
 			lVV0 := .T.
 		EndIf
-
 		If !VV2->( DbSeek( xFilial("VV2") + VV1->( VV1_CODMAR + VV1_MODVEI + VV1_SEGMOD) ) )
 			Loop
 		EndIf                                   
-		
 		//If VVF->( DbSeek( xFilial("VVF") + VV1->VV1_TRACPA ) ) 
 			//cMesFab := SUBSTR(DTOS(VVF->VVF_DATFAB),5,2)
-		   
 		//EndIf                                   
 		if lVV0
 			cCliente := VV0->(VV0_CODCLI + VV0_LOJA)
@@ -527,23 +488,14 @@ Static Function fGeraAux( aRegs )
 			cFornece := (cTmpAlias )->( D2_CLIENTE + D2_LOJA ) 
 			cNf := (cTmpAlias )->( D2_DOC + D2_SERIE + D2_CLIENTE + D2_LOJA ) 
 		Endif                                                                 
-		
 		SD1->( DbSeek( xFilial("SD1") + VVF->VVF_NUMNFI + VVF->VVF_SERNFI + VVF->VVF_CODFOR + VVF->VVF_LOJA ) ) 
-		
 		SW6->( DbSeek( xFilial("SW6") + SD1->D1_CONHEC ) )   //VVF->(VVF_CODCLI + VV0_LOJA) ) )
-
 		SA1->( DbSeek( xFilial("SA1") + cCliente ) )
-
 		SA2->( DbSeek( xFilial("SA2") + cCliente ) )
-
 		VVC->( DbSeek( xFilial("VVC") + VV1->(VV1_CODMAR + VV1_CORVEI) ) )
-		
 		VVE->( DbSeek( xFilial("VVE") + VV2->VV2_ESPVEI ) )
-		
 		VE1->( DbSeek( xFilial("VV1") + VV2->VV2_CODMAR ) )
-
 		SF2->(dbSeek(xFilial("SF2")+cNF ))
-  
 		cRegVF1 := ""
 		cRegVF1 += "VF1" 										// 001 a 003: IDENTIFICAÇÃO DO REGISTRO <VF1>
 		cRegVF1 += PadR(VV1->VV1_CHASSI,17) 					// 004 a 020: IDENTIFICAÇÃO DO VEÍCULO <VIN (Número do Chassi)>
@@ -554,11 +506,17 @@ Static Function fGeraAux( aRegs )
 		/*Quando é alteração ou exclusão*/
 		cRegVF1 += PadR(cAltera,01)								// 022 a 022: CÓDIGO DE ATUALIZAÇÃO <1 – Inclusão/ 2 – Alteração/ 3 – Exclusão>
 		/*O que seria?*/
-		cRegVF1 += "1" 											// 023 a 023: TIPO DE MONTAGEM <1 – Completa/ 2 – Incompleta>
+		//GAP131  Tratamento no arquivo SERPRO para caminhões HR e HD
+		If !Empty(VV2->VV2_TIPVEI)  .And. AllTrim(VV2->VV2_TIPVEI) $ _cTpVeiculo 
+			_cTipoMontgem := "2"
+		Else
+			_cTipoMontgem := "1"
+		Endif	
+		//cRegVF1 += "1" 											// 023 a 023: TIPO DE MONTAGEM <1 – Completa/ 2 – Incompleta>
+		cRegVF1 += _cTipoMontgem 								// 023 a 023: TIPO DE MONTAGEM <1 – Completa/ 2 – Incompleta>
 		cRegVF1 += PadR(VVC->VVC_GRUCOR,02) 					// 024 a 025: CÓDIGO DA COR PREDOMINANTE <Código de Cor conforme Tabela DENATRAN>
 		cRegVF1 += PadR(VV2->VV2_TIPVEI,02) 					// 026 a 027: CÓDIGO DO TIPO DE VEÍCULO <Código de Tipo de Veículo conforme Tabela DENATRAN>
 		cRegVF1 += StrZero(Val(VVE->VVE_ESPREN),02) 			// 028 a 029: CÓDIGO DA ESPECIE DO VEÍCULO <Código da Espécie de Veículo conforme Tabela DENATRAN>
-
 		cModVei := " "
 		cModVei := VV2->VV2_MODFAB
 		//cModVei := Str( Val(VV2->VV2_TIPREN))
@@ -599,10 +557,8 @@ Static Function fGeraAux( aRegs )
 		cRegVF1 += PadR(SubStr(VV1->VV1_FABMOD,5,4),04) 		// 084 a 087: ANO/MODELO DO VEÍCULO <Ano/Modelo do veículo>
 		cRegVF1 += StrZero(VV2->VV2_POTMOT,03) 					// 088 a 090: QUANTIDADE DE POTÊNCIA <Potência do Motor>
 		cRegVF1 += PadR("C",01) 								// 091 a 091: UNIDADE DE POTÊNCIA <Unidade em que potência do veículo foi expressa (Hp/Cv)>
-		
 		//cRegVF1 += StrZero(VV1->VV1_CILMOT,04) 					// 092 a 095: NÚMERO DE CILINDRADAS DO VEÍCULO <Número de Cilindradas de Ciclomotores, Motonetas, Motocicletas, Triciclos e Quadriciclos (Tipos de Veículo = 02, 03, 04, 05 e 21)
 		cRegVF1 += StrZero(VV2->VV2_CILMOT,04) 					// 092 a 095: NÚMERO DE CILINDRADAS DO VEÍCULO <Número de Cilindradas de Ciclomotores, Motonetas, Motocicletas, Triciclos e Quadriciclos (Tipos de Veículo = 02, 03, 04, 05 e 21)
-
 		aOriArea := GetArea()
 		cQuery := ""
 		cQuery += " SELECT	VV1_CHASSI	,														"+(Chr(13)+Chr(10))
@@ -623,7 +579,6 @@ Static Function fGeraAux( aRegs )
 
 		If Select(cTmpAlias) <> 0 ; (cTmpAlias)->(DbCloseArea()) ; EndIf
 		DbUseArea(.T.,"TOPCONN",TcGenQry(,,cQuery),cTmpAlias,.F.,.T.)
-
         //IF !Empty(VV1->VV1_DI)
 		IF (cTmpAlias)->(!Eof()) .And. !Empty(Alltrim((cTmpAlias)->W6_DI_NUM))
 			//cRegVF1 += StrZero(VAL(VV1->VV1_DI),10)				// 096 a 105: NÚMERO DA DI <Número da Declaração de Importação>
@@ -640,7 +595,6 @@ Static Function fGeraAux( aRegs )
         EndIF
 		If Select(cTmpAlias) <> 0 ; (cTmpAlias)->(DbCloseArea()) ; EndIf
 		RestArea(aOriArea)
-
 		cRegVF1 += '7276001'// Fixo conforme orientação CAOA Substr(W6_LOCALN,1,7)// 114 a 120: CÓDIGO DA UNIDADE LOCAL DA SRF <Código da Unidade Local do Desembaraço Aduaneiro>
 		cRegVF1 += IIF(VV1->VV1_DISCAT=='0','N','S')             // 121 a 121: DISPENSA DE CAT <Indica se o veículo tem dispensa de Certificação de Adequação à Legislação de Trânsito. Em caso de dispensa, preencher com ‘S’. Caso contrario, preencher ‘ N’. > 
 		cRegVF1 += SPACE(20) //VV1->VV1_SIMRAV								// 122 a 141: SIMRAV ID <Código de Identificação SIMRAV> 
@@ -658,7 +612,14 @@ Static Function fGeraAux( aRegs )
 		cRegVF2 += PadL(StrTran(Alltrim(Transform(VV2->VV2_CAPTRA * 0.001, "@E 999.99")), ",", "" ), 5, "0")
 		/* falta definição de onde vem este campo*/
 		cRegVF2 += PadR(VV1->VV1_NUMCMO,21)						// 009 a 029: NÚMERO DA CARROCERIA/CABINE <Número gravado na Caixa de Carroceria ou Cabine do Veículo.>
-		cRegVF2 += PadR(VV2->VV2_CARREN,03) 					// 030 a 032: CÓDIGO DO TIPO DE CARROCERIA <Código de tipo de Carroceria conforme Tabela DENATRAN>
+		//GAP131  Tratamento no arquivo SERPRO para caminhões HR e HD
+		//cRegVF2 += PadR(VV2->VV2_CARREN,03) 					// 030 a 032: CÓDIGO DO TIPO DE CARROCERIA <Código de tipo de Carroceria conforme Tabela DENATRAN>
+		If !Empty(VV2->VV2_TIPVEI)  .And. AllTrim(VV2->VV2_TIPVEI) $ _cTpVeiculo 
+			cRegVF2 += _cTipoCarroc 								// 030 a 032: CÓDIGO DO TIPO DE CARROCERIA <Código de tipo de Carroceria conforme Tabela DENATRAN>
+		Else 
+			cRegVF2 += PadR(VV2->VV2_CARREN,03) 								// 030 a 032: CÓDIGO DO TIPO DE CARROCERIA <Código de tipo de Carroceria conforme Tabela DENATRAN>
+		Endif
+		
 		cRegVF2 += PadR(VV1->VV1_CAMBIO,21)						// 033 a 053: NÚMERO DA CAIXA DE CAMBIO <Número gravado na Caixa de Câmbio do veículo>
 		cRegVF2 += PadR(VV1->VV1_NUMDIF,21)						// 054 a 074: NÚMERO DO EIXO TRASEIRO/DIFERENCIAL <Número gravado no Eixo Traseiro/Diferencial do veículo>
 		cRegVF2 += PadR(VV1->VV1_3EIXO,21)						// 075 a 095: NÚMERO DO TERCEIRO EIXO <Número gravado no Terceiro Eixo do veículo>
@@ -707,39 +668,29 @@ Static Function fGeraAux( aRegs )
 		lRet := .F.
 	EndIf
 
-	
+	/*
 	DbSelectArea("SZ4")
 	SZ4->(DbCloseArea())
-	
 	DbSelectArea("VVA")
 	VVA->(DbCloseArea())
-	
 	DbSelectArea("VV0")
 	VV0->(DbCloseArea())
-
 	DbSelectArea("VV1")
 	VV1->(DbCloseArea())
-	
 	DbSelectArea("VV2")
 	VV2->(DbCloseArea())
-	
 	DbSelectArea("VVC")
 	VVC->(DbCloseArea())
-
 	DbSelectArea("VVE")
 	VVE->(DbCloseArea())
-
 	DbSelectArea("VE1")
 	VE1->(DbCloseArea())
-
 	DbSelectArea("SA1")
 	SA1->(DbCloseArea())
-
 	DbSelectArea("SA2")
 	SA2->(DbCloseArea())
-	
+	*/
 	RestArea(aArea)
-
 Return lRet
 
 
@@ -753,16 +704,15 @@ Return lRet
 @history 	08/11/2018, Alex Lima, Desenvolvimento inicial efetuado sem o documento de leiaute, apenas com a regra passada pelo analista TOTVS.
 /*/
 User Function CVMSER1R()
-
-	Local aArea 			:= GetArea()
-	Local cLine 			:= ""
-	Local cChassi 			:= ""
-	Local cMsgRet 			:= ""
-	Local cCodRet 			:= ""
-	Local cArq 				:= cGetFile("Documentos LS|*.LS|",OemToAnsi("Selecionar o arquivo de retorno..."),0,"C:\",.T.,GETF_LOCALHARD, .F.)
-	Local nHandle 			:= 0
-	Local nCountOk 			:= 0
-	Local nCountEr 			:= 0
+Local aArea 			:= GetArea()
+Local cLine 			:= ""
+Local cChassi 			:= ""
+Local cMsgRet 			:= ""
+Local cCodRet 			:= ""
+Local cArq 				:= cGetFile("Documentos LS|*.LS|",OemToAnsi("Selecionar o arquivo de retorno..."),0,"C:\",.T.,GETF_LOCALHARD, .F.)
+Local nHandle 			:= 0
+Local nCountOk 			:= 0
+Local nCountEr 			:= 0
 	
 	nHandle := FT_FUse(cArq)
 	If nHandle = -1
@@ -771,7 +721,7 @@ User Function CVMSER1R()
 	EndIf
 	
 	DbSelectArea("SZ4")
-	DbSetOrder(2) // Z4_FILIAL + Z4_CHASSI + Z4_LOTE + Z4_ANOLOTE
+	SZ4->(DbSetOrder(2)) // Z4_FILIAL + Z4_CHASSI + Z4_LOTE + Z4_ANOLOTE
 	FT_FGoTop()
 	While !FT_FEOF()
 		cLine := ""
@@ -794,18 +744,17 @@ User Function CVMSER1R()
 		cCodRet := Iif( AllTrim(cMsgRet) == "INCLUIDO", "OK", "ER")
 		
 		RecLock("SZ4", .F.)
-			Replace Z4_ARQRET 	With Right(AllTrim(cArq), 30)
-			Replace Z4_DTARET 	With dDataBase
-			Replace Z4_CODRET 	With cCodRet
-			Replace Z4_DESCRET 	With SubString(cMsgRet, 1, 100)
-		MsUnLock()
+		SZ4->Z4_ARQRET 	:= Right(AllTrim(cArq), 30)
+		SZ4->Z4_DTARET 	:= dDataBase
+		SZ4->Z4_CODRET 	:= cCodRet
+		SZ4->Z4_DESCRET := SubString(cMsgRet, 1, 100)
+		SZ4->(MsUnLock())
 
 		If cCodRet == "OK"
 			nCountOK++
 		ElseIf cCodRet == "ER"
 			nCountEr++
 		EndIf
-
 		FT_FSKIP()
 	EndDo
 	
@@ -818,8 +767,7 @@ User Function CVMSER1R()
 			"Foram processados "+ cValToChar(nCountOk) +" com <font color='blue'><b>sucesso</b></font>." ,"Processamento de retorno do arquivo")
 	
 	RestArea(aArea)
-
-Return
+Return Nil 
  
  
  /*/{Protheus.doc} CVMSER1L
@@ -831,8 +779,7 @@ Return
 @type 		function
 /*/
 User Function CVMSER1L()
-
-	Local aCor := {}
+Local aCor := {}
 	
 	aAdd(aCor,{"BR_BRANCO", 	"Nenhuma ação tomada"})
 	aAdd(aCor,{"BR_AZUL", 		"Arquivos Gerados"})
@@ -840,8 +787,7 @@ User Function CVMSER1L()
 	aAdd(aCor,{"BR_VERMELHO", 	"Retorno com Falha"})
 	
 	BrwLegenda(cCadastro,OemToAnsi("Registros de processamentos"),aCor)
-
-Return
+Return Nil 
 
 
 /*/{Protheus.doc} CriaSx1
@@ -853,12 +799,11 @@ Return
 @type 		function
 /*/
 Static Function CriaSx1()
-
-	Local aAreaAnt 	:= GetArea()
-	Local aAreaSX1 	:= SX1->(GetArea())
-	Local nY 		:= 0
-	Local nJ 		:= 0
-	Local aReg 		:= {}
+Local aAreaAnt 	:= GetArea()
+Local aAreaSX1 	:= SX1->(GetArea())
+Local nY 		:= 0
+Local nJ 		:= 0
+Local aReg 		:= {}
 	
 	aAdd(aReg,{cPerg,"01","Data Inicial  ","mv_ch1","D", 08,0,0,"G","","mv_par01","","","","","","","","","","","","","","",""})
 	aAdd(aReg,{cPerg,"02","Data Final    ","mv_ch2","D", 08,0,0,"G","(mv_par02>=mv_par01)","mv_par02","","","","","","","","","","","","","","",""})
@@ -883,4 +828,4 @@ Static Function CriaSx1()
 	RestArea(aAreaSX1)
 	RestArea(aAreaAnt)
 
-Return
+Return Nil
