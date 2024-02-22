@@ -1,16 +1,13 @@
-
-#include 'protheus.CH'
+#include "Protheus.CH"
 #include "TOTVS.CH"
-
-#include 'TOPCONN.CH'
+#include "TOPCONN.CH"
 #include "REPORT.CH"
-
 
 /*===================================================================================
 Programa.:              ZMNTR002
 Autor....:              CAOA - Valter Carvalho
 Data.....:              11/09/2020
-Descricao / Objetivo:   Relatorio de minimo Max montagem, 19 - Manutenção de Ativo\MNT103 - Relatório Follow Up Sintetico
+Descricao / Objetivo:   Relatorio de minimo Max montagem, 19 - Manutenï¿½ï¿½o de Ativo\MNT103 - Relatï¿½rio Follow Up Sintetico
 Solicitante:            Julia Alcantara
 ===================================================================================== */
 User Function ZMNTR002() // u_ZMNTR002()   e  GRAEXCEL
@@ -38,13 +35,13 @@ User Function ZMNTR002() // u_ZMNTR002()   e  GRAEXCEL
     Aadd(aPergs, {1, GetSx3Cache("B1_GRUPO", "X3_TITULO") + " Ate:", cGrpF, "@!", "", "SBM", "", 50, .F.	})
     Aadd(aPergs, {1, GetSx3Cache("B1_LOCPAD", "X3_TITULO") + " De: ", cLPadI, "@!", "", "NNR", "", 50, .F.	})
     Aadd(aPergs, {1, GetSx3Cache("B1_LOCPAD", "X3_TITULO") + " Ate:", cLPadF, "@!", "", "NNR", "", 50, .F.	})
-    Aadd(aPergs, {1, "Cod produto contém:", cCod, "@!", "","SB1","", 100, .F.	})
-    Aadd(aPergs, {5,"Somente itens com Saldo menor Est.mínimo? ", .F. , 150, "" , .F.}) //8
+    Aadd(aPergs, {1, "Cod produto contï¿½m:", cCod, "@!", "","SB1","", 100, .F.	})
+    Aadd(aPergs, {5,"Somente itens com Saldo menor Est.mï¿½nimo? ", .F. , 150, "" , .F.}) //8
 
-    Aadd(aPergs,{3,"Destino",1,{"Exporta Excel","Impressão"},90, "", .F.})
+    Aadd(aPergs,{3,"Destino",1,{"Exporta Excel","Impressï¿½o"},90, "", .F.})
 
-//    If ParamBox(aPergs, "Relatório sintético de estoque/compras (Min/Máx)", aRt, {|| .T.},,,,,,, .T., .T.)
-    If ParamBox(aPergs, "Relatório sintético de estoque/compras (Min/Máx)", aRt) = .T.
+//    If ParamBox(aPergs, "Relatï¿½rio sintï¿½tico de estoque/compras (Min/Mï¿½x)", aRt, {|| .T.},,,,,,, .T., .T.)
+    If ParamBox(aPergs, "Relatï¿½rio sintï¿½tico de estoque/compras (Min/Mï¿½x)", aRt) = .T.
         zRelfup()
     EndIf
 
@@ -66,10 +63,10 @@ Static Function zRelfup()
     EndIf
 
     // Obter os dados custo solicitacao e pedido
-    FWMsgRun(, {|| zListaDados() },"", "Obtendo dados solicitação e pedido..." )
+    FWMsgRun(, {|| zListaDados() },"", "Obtendo dados solicitaï¿½ï¿½o e pedido..." )
 
     //remove os espacos dos codigos    
-    FWMsgRun(, {|| zAjCodProd() },"", "Formatando códigos..." )
+    FWMsgRun(, {|| zAjCodProd() },"", "Formatando cï¿½digos..." )
   
     If aRt[9] = 1
         zExpXlsx()
@@ -105,18 +102,19 @@ Return
 Programa.:              zCriaTb
 Autor....:              CAOA - Valter Carvalho
 Data.....:              11/09/2020
-Descricao / Objetivo:   Cria a tabela temporaria do erlatorio
+Descricao / Objetivo:   Cria a tabela temporaria do relatorio
 ===================================================================================== */
 Static Function zCriaTb()
     Local aFields := {}
     Local oTempTb := Nil
 
-    aadd(aFields,{"B1_COD",  TamSx3("B1_COD")[3],   TamSx3("B1_COD")[1], TamSx3("B1_COD")[2] })
-    aadd(aFields,{"B1_DESC", TamSx3("B1_DESC")[3],                400,                   0 })
+    aadd(aFields,{"B1_COD",  TamSx3("B1_COD")[3],   TamSx3("B1_COD")[1], TamSx3("B1_COD")[2]  })
+    aadd(aFields,{"B1_DESC", TamSx3("B1_DESC")[3],                  400,                   0  })
     aadd(aFields,{"B1_EMIN", TamSx3("B1_EMIN")[3], TamSx3("B1_EMIN")[1], TamSx3("B1_EMIN")[2] })
     aadd(aFields,{"B1_EMAX", TamSx3("B1_EMAX")[3], TamSx3("B1_EMAX")[1], TamSx3("B1_EMAX")[2] })
     aadd(aFields,{"B2_QATU", TamSx3("B2_QATU")[3], TamSx3("B2_QATU")[1], TamSx3("B2_QATU")[2] })
-    aadd(aFields,{"B2_CM1", TamSx3("B2_CM1")[3],   TamSx3("B2_CM1")[1],  TamSx3("B2_CM1")[2] })
+    aadd(aFields,{"B2_CM1",  TamSx3("B2_CM1")[3],  TamSx3("B2_CM1")[1],  TamSx3("B2_CM1")[2]  })
+    aadd(aFields,{"CM_COM",  TamSx3("C7_PRECO")[3],TamSx3("C7_PRECO")[1],TamSx3("C7_PRECO")[2]})
     aadd(aFields,{"B2_CMT", TamSx3("B2_CM1")[3],   TamSx3("B2_CM1")[1], TamSx3("B2_CM1")[2] })
     aadd(aFields,{"QT_SOL", TamSx3("C1_QUANT")[3], TamSx3("C1_QUANT")[1], TamSx3("C1_QUANT")[2] })
     aadd(aFields,{"QT_PED", TamSx3("C7_QUANT")[3], TamSx3("C7_QUANT")[1], TamSx3("C7_QUANT")[2] })
@@ -177,11 +175,11 @@ Static Function zGetSc7(cProd)
     Local cmd   := ""
 
     cmd += CRLF + " SELECT "
-    cmd += CRLF + "    SUM(C7_QUANT) AS C7_QUANT , SUM(C7_QUJE) AS C7_QUJE "
+    cmd += CRLF + "    SUM(C7_QUANT) AS C7_QUANT , SUM(C7_QUJE) AS C7_QUJE , MAX(C7_PRECO) C7_PRECO "
     cmd += CRLF + " FROM " + RetSqlName("SC7") + " SC7 "
     cmd += CRLF + " WHERE "
     cmd += CRLF + "     D_E_L_E_T_ = ' ' "
-    cmd += CRLF + " AND c7_produto =  '" + cProd + "' "
+    cmd += CRLF + " AND C7_PRODUTO =  '" + cProd + "' "
     cmd += CRLF + " AND C7_QUJE <> C7_QUANT "
     cmd += CRLF + " AND C7_RESIDUO = ' ' "
     cmd += CRLF + " AND C7_CONTRA  = ' ' "
@@ -189,8 +187,17 @@ Static Function zGetSc7(cProd)
 
     Tcquery cmd new Alias (cAlias)
 
-    aRes[1] :=  (cAlias)->C7_QUANT
-    aRes[2] :=  (cAlias)->C7_QUJE
+    DbSelectArea(cAlias)
+	(cAlias)->(DBGOTOP())
+
+	while !(cAlias)->(eof())
+
+        aRes[1] :=  (cAlias)->C7_QUANT
+        aRes[2] :=  (cAlias)->C7_QUJE
+        aRes[3] :=  (cAlias)->C7_PRECO
+
+    	(cAlias)->(DbSkip())
+	EndDo    
 
     (cAlias)->(DbCloseArea())
 
@@ -206,45 +213,35 @@ Descricao / Objetivo:   Obtem a o custo do produto
 Static Function zGetCusto(cProd)
     Local aRes  := {0,""}
     Local cAlias:= GetNextAlias()
-    Local cmd   := ""
+    Local cmu   := ""
 
-    cmd := CRLF + " SELECT "
-    cmd += CRLF + "    CASE WHEN D1_QUANT > 0 THEN ROUND(D1_CUSTO/D1_QUANT, 2) ELSE D1_CUSTO END AS CUSTO"
-    cmd += CRLF + " FROM " + RetSqlName("SD1") + " SD1"
-    cmd += CRLF + " WHERE "
-    cmd += CRLF + "     D_E_L_E_T_ = ' ' "
-    cmd += CRLF + " AND D1_COD = '" + cProd + "' "
-    cmd += CRLF + " AND ROWNUM = 1 "
-    cmd += CRLF + " ORDER BY D1_EMISSAO DESC "
-
-    Tcquery cmd new Alias (cAlias)
-
-    aRes[1] :=  (cAlias)->CUSTO
-
-    (cAlias)->(DbCloseArea())
-
-    If aRes[1] > 0
-        aRes[2] := "SD1"
-    Else
-        cmd := CRLF + " SELECT "
-        //cmd += CRLF + " ROUND(B2_VATU1/B2_QATU, 2) AS CUSTO"
-//        cmd += CRLF + " CASE WHEN B2_QATU <> 0 THEN ROUND(B2_VATU1/B2_QATU, 2) else B2_VATU1 end AS CUSTO"
-        cmd += CRLF + " B2_CM1 AS CUSTO"
-        cmd += CRLF + " FROM " + RetSqlName("SB2") + " SB2"
-        cmd += CRLF + " WHERE "
-        cmd += CRLF + " D_E_L_E_T_ = ' ' "
-        cmd += CRLF + " AND B2_COD = '" + cProd + "' "
-        cmd += CRLF + " AND ROWNUM = 1 "
-
-        Tcquery cmd new Alias (cAlias)
-        aRes[1] :=  (cAlias)->CUSTO
-
+    If Select( cAlias )  > 0
         (cAlias)->(DbCloseArea())
-
-        If aRes[1] > 0
-            aRes[2] := "SB2"
-        EndIf
     EndIf
+
+    cmu := "  SELECT B9_CM1 AS CUSTO "
+    cmu += "  FROM " + RetSqlName("SB9") + " SB9"
+    cmu += "  WHERE D_E_L_E_T_  = ' '"
+    cmu += "  AND SB9.B9_FILIAL = '" + FwXFilial("SB9") + "' " 	
+    cmu += "  AND SB9.B9_COD    = '" + cProd + "' "
+    cmu += "  ORDER BY B9_DATA DESC "
+
+	cmu := ChangeQuery(cmu)
+
+	TCQUERY cmu NEW ALIAS (cALIAS)
+
+	If (cALIAS)->(EOF())
+		(cALIAS)->(dbCloseArea())
+	Else
+
+        aRes := {CUSTO,"SB9"}
+
+    EndIf
+
+    If Select( cAlias )  > 0
+        (cAlias)->(DbCloseArea())
+    EndIf
+
 Return aRes
 
 
@@ -349,8 +346,8 @@ Descricao / Objetivo:   Prepara o relatorio
 Static Function RptDef()
     Local lUmaLinha := .F.
 	Local oSection 	:= Nil
-    Local cTitulo   := "Relatório sintético de estoque/compras (Min/Máx)" 
-    Local cDescricao:= "Rel sintético de est/compras comparativo com o est mínimo/máximo (Itens de Manutenção)"
+    Local cTitulo   := "Relatï¿½rio sintï¿½tico de estoque/compras (Min/Mï¿½x)" 
+    Local cDescricao:= "Rel sintï¿½tico de est/compras comparativo com o est mï¿½nimo/mï¿½ximo (Itens de Manutenï¿½ï¿½o)"
     Local aStru     := (cTb)->(DbStruct())
 
 	oRep := TReport():New(cTitulo, cDescricao , "", {|oRep| ReportPrint() }, cDescricao)
@@ -366,18 +363,18 @@ Static Function RptDef()
 
     oSection:= TRSection():New(oRep, "CABECA", {cTb}, {"Codigo", "Descricao"} , .F., .T.)
 
-    TRCell():New(oSection, aStru[1 ,1], cTb, "Codigo"   , "@!"           ,                  40, , , "LEFT", lUmaLinha)
-    TRCell():New(oSection, aStru[2 ,1], cTb, "Descrição", "@!"           ,                 150, , , "LEFT", !lUmaLinha)
-    TRCell():New(oSection, aStru[3 ,1], cTb, "Est Min"  , "@E 999,999.99",                  30, , , "RIGHT", lUmaLinha)
-    TRCell():New(oSection, aStru[4 ,1], cTb, "Est Max"  , "@E 999,999.99",                  30, , , "RIGHT", lUmaLinha)
+    TRCell():New(oSection, aStru[1 ,1], cTb, "Codigo"     , "@!"           ,                  40, , , "LEFT", lUmaLinha)
+    TRCell():New(oSection, aStru[2 ,1], cTb, "Descriï¿½ï¿½o", "@!"           ,                 150, , , "LEFT", !lUmaLinha)
+    TRCell():New(oSection, aStru[3 ,1], cTb, "Est Min"    , "@E 999,999.99",                  30, , , "RIGHT", lUmaLinha)
+    TRCell():New(oSection, aStru[4 ,1], cTb, "Est Max"    , "@E 999,999.99",                  30, , , "RIGHT", lUmaLinha)
     TRCell():New(oSection, aStru[5 ,1], cTb, "Sld Est Atu", "@E 999,999.99",                  30, , , "RIGHT", lUmaLinha)
-    TRCell():New(oSection, aStru[6 ,1], cTb, "Custo Und", "@E 999,999.99",                  20, , , "RIGHT", lUmaLinha)
-    TRCell():New(oSection, aStru[7 ,1], cTb, "Custo Tot", "@E 999,999.99",                  30, , , "RIGHT", lUmaLinha)
-    TRCell():New(oSection, aStru[8 ,1], cTb, "Qtd solic", "@E 999,999.99",                  30, , , "RIGHT", lUmaLinha)
-    TRCell():New(oSection, aStru[9 ,1], cTb, "Qtd Pedid", "@E 999,999.99",                  30, , , "RIGHT", lUmaLinha)
-    TRCell():New(oSection, aStru[10,1], cTb, "Qtd Entre", "@E 999,999.99",                  30, , , "RIGHT", lUmaLinha)
-    TRCell():New(oSection, aStru[11,1], cTb, "Orig"     , "@!",                             10, , , "LEFT", lUmaLinha)
-
+    TRCell():New(oSection, aStru[6 ,1], cTb, "Custo Und"  , "@E 999,999.99",                  20, , , "RIGHT", lUmaLinha)
+    TRCell():New(oSection, aStru[7 ,1], cTb, "Compra"     , "@E 999,999.99",                  20, , , "RIGHT", lUmaLinha)
+    TRCell():New(oSection, aStru[8 ,1], cTb, "Custo Tot"  , "@E 999,999.99",                  30, , , "RIGHT", lUmaLinha)
+    TRCell():New(oSection, aStru[9 ,1], cTb, "Qtd solic"  , "@E 999,999.99",                  30, , , "RIGHT", lUmaLinha)
+    TRCell():New(oSection, aStru[10,1], cTb, "Qtd Pedid"  , "@E 999,999.99",                  30, , , "RIGHT", lUmaLinha)
+    TRCell():New(oSection, aStru[11,1], cTb, "Qtd Entre"  , "@E 999,999.99",                  30, , , "RIGHT", lUmaLinha)
+    TRCell():New(oSection, aStru[12,1], cTb, "Orig"       , "@!",                             10, , , "LEFT", lUmaLinha)
 
 Return oRep    
 
@@ -428,11 +425,12 @@ Static Function zExpXlsx()
     Local aStru   := (cTb)->(DbStruct())
 
     Aadd(aTitles,"Codigo produto")
-    Aadd(aTitles,"Descrição completa")
+    Aadd(aTitles,"Descriï¿½ï¿½o completa")
     Aadd(aTitles,"Est Minimo"  )
     Aadd(aTitles,"Est Maximo"  )
     Aadd(aTitles,"Sld Est Atual")
     Aadd(aTitles,"Custo Unitario")
+    Aadd(aTitles,"Compra")
     Aadd(aTitles,"Custo Total")
     Aadd(aTitles,"Qtd solicitado")
     Aadd(aTitles,"Qtd Pedido")
@@ -460,6 +458,6 @@ Static Function zExpXlsx()
         (cTb)->(DbSkip())
     Enddo
 
-    u_ZGENEXCEL(aTitles, aCols, "Planilha", "Relatório sintético de estoque/compras (Min/Máx)")
+    u_ZGENEXCEL(aTitles, aCols, "Planilha", "Relatï¿½rio sintï¿½tico de estoque/compras (Min/Mï¿½x)")
 Return
 
