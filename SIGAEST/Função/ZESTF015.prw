@@ -10,7 +10,7 @@ Função para alterar o Lote na Entrada do Produto
  @obs 
 /*/
 User Function ZESTF015()
-Local aColunas := {} //Colunas da Grid.
+ Local aColunas := {} //Colunas da Grid.
 
  //Cria o objeto de apresentação do browse
  Local oBrowse
@@ -20,7 +20,7 @@ Local aColunas := {} //Colunas da Grid.
 
  //Declara a variável para o título
  Private cTitulo := "Alterar Lote"
-
+ Private cCadastro := "Dados Lotes AUTO**** "
  //Declara a variável cTabela como private para manter seu valor durante toda execução da rotina
  Private cTabela := ""
 
@@ -73,8 +73,8 @@ Endif
 	oBrowse:SetFields(aColunas)
     //Adicionar Botões
     //oBrowse:AddButton("Altera Lote" , {|| ZEST015A() },'Alterar...', , , .F. , 2 )
-    //oBrowse:AddButton("Visualizar"  , { || FwMsgRun(,{ | _oSay | ZEST015E(_oSay) }, "Gerar Excel Curva ABC", "Aguarde...")  },,,, .F., 2 )  
-	oBrowse:AddButton("Altera  Lote" , { || FwMsgRun(,{ | _oSay | ZEST015A(_oSay) }, "Alterar", "Aguarde...")  },,,, .F., 2 )  
+    oBrowse:AddButton("Visualizar"   , { || FwMsgRun(,{ | _oSay | ZEST015D(_oSay) }, "Visualizar", "Aguarde...")  },,,, .F., 2 )  
+	oBrowse:AddButton("Altera  Lote" , { || FwMsgRun(,{ | _oSay | ZEST015A(_oSay) }, "Alterar",    "Aguarde...")  },,,, .F., 2 )  
     oBrowse:AddButton("Sair" , { || ZEST015B() }, , , , .F. , 2 )  
     
     //Ativa a Browse
@@ -281,16 +281,14 @@ Local aPergs 	  := {}
 Local aRet		  := {}
 Local cEndOri     := ALLTRIM(TRE->TRE_LOTE)
 Local cEndDes	  := Space(30)
-Private cCadastro := "Dados Lotes AUTO**** "
 
-    aAdd(aPergs, {9 ,"Lote Origem: " + cEndOri,200, 40,.T.})  
+    aAdd(aPergs, {9 ,"Lote Origem: " + cEndOri + " Produto: " + ALLTRIM(TRE->TRE_PROD),200, 40,.T.})  
     aAdd(aPergs, {1 ,"Lote Destino" ,Space( TamSX3('B8_LOTECTL')[1] ) ,"@!" ,"" ,"" ,"" ,60 ,.T. })
 
     //-- Salva estado dos parâmetros porque o parambox ira sobrescrever e isso afeta o browse da rotina
 	SaveInter() 
 
     DbSelectArea("SB8")
-    AxVisual("SB8",SB8->( RecNo() ),2)
 
 	If ParamBox( aPergs ,"" ,@aRet )
 
@@ -298,7 +296,7 @@ Private cCadastro := "Dados Lotes AUTO**** "
 
         D14->( DbSetOrder(3) )
         D14->( DbGoTop() )        
-	    IF D14->( DbSeek( xFilial("D14") + SB8->B8_LOCAL + SB8->B8_PRODUTO ) )
+	    IF D14->( DbSeek( xFilial("D14") + TRE->TRE_ARM + TRE->TRE_PROD ) )
 
             IF D14->D14_ENDER = 'DCE01' .OR. Empty(D14->D14_IDUNIT)
 
@@ -319,7 +317,7 @@ Private cCadastro := "Dados Lotes AUTO**** "
                 ENDIF
 
                 SD5->( DbSetOrder(2) )
-                IF SD5->( DbSeek( xFilial("SD5") + SB8->B8_PRODUTO + SB8->B8_LOCAL + cEndOri ) )
+                IF SD5->( DbSeek( xFilial("SD5") + TRE->TRE_PROD + TRE->TRE_ARM + cEndOri ) )
                     RecLock("SD5", .F.)
                     SD5->D5_LOTECTL := cEndDes 
                     SD5->( MsUnLock() )          
@@ -408,6 +406,7 @@ Local _lRet     := .T.
         AAdd(aCampos,{"TRE_PROD"       ,"C",023,0})
         AAdd(aCampos,{"TRE_ARM"        ,"C",003,0})
         AAdd(aCampos,{"TRE_LOTE"       ,"C",030,0})
+        AAdd(aCampos,{"TRE_B8REG"      ,"N",010,0})        
 
         //Se o alias estiver aberto, fechar para evitar erros com alias aberto
         If (Select("TRE") <> 0)
@@ -439,6 +438,7 @@ Local _lRet     := .T.
                 TRE->TRE_PROD	 := (cAliasSQL)->D1_COD
                 TRE->TRE_ARM     := (cAliasSQL)->D1_LOCAL   
                 TRE->TRE_LOTE    := (cAliasSQL)->D1_LOTECTL
+                TRE->TRE_B8REG   := (cAliasSQL)->B8REG
                 TRE->(MsUnLock())
             Endif
         (cAliasSQL)->(DbSkip())
@@ -471,3 +471,19 @@ Static Function fCriaCols()
     Next                      
 
 Return aColunas   //aColunas
+
+
+/*/{Protheus.doc} ZEST015D
+//Encerramento do Browse
+@author A. Carlos
+@since 16/02/24
+@version  
+@type function
+/*/
+Static Function ZEST015D(_oSay)
+
+    DbSelectArea("SB8")
+    SB8->(DbGoto(TRE->TRE_B8REG))    
+    AxVisual("SB8",SB8->(Recno()),2)
+
+Return()
