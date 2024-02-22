@@ -46,10 +46,10 @@ User Function ZESTF015()
  //Define o vetor aLeg com um valor Default
  Default cOpc    := ""
 
-//Popular Tabela Temporária
-If !ZEST015C()
-    Return Nil
-Endif
+ //Popular Tabela Temporária
+ If !ZEST015C()
+     Return Nil
+ Endif
 
  //Adiciona as colunas que serão exibidas no FWBrowse
  aColunas := fCriaCols()
