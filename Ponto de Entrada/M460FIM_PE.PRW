@@ -86,7 +86,7 @@ User Function M460FIM()
                     
                     //emissão de Boleto
                     IF SE1->E1_XFORMA $ 'BOL_VFP_TED' 
-                        IF SE1->E1_XFORMA <> 'TED'
+                        IF SE1->E1_XFORMA <> 'TED' .AND. SE1->E1_XFORMA <> 'VFP'
                             U_RF01B062(E1_PORTADO,E1_AGEDEP,E1_CONTA,'001',/*lSetup*/,/*cNotIni*/,/*cNotFim*/,/*cSerie*/,_cChave)
                         ENDIF
                     	_nRecBol := SE1->(Recno()) 
