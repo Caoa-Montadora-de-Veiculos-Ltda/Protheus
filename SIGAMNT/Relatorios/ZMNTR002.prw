@@ -9,6 +9,7 @@ Autor....:              CAOA - Valter Carvalho
 Data.....:              11/09/2020
 Descricao / Objetivo:   Relatorio de minimo Max montagem, 19 - Manutenï¿½ï¿½o de Ativo\MNT103 - Relatï¿½rio Follow Up Sintetico
 Solicitante:            Julia Alcantara
+Obs........:            Incluído compo com valor última compra
 ===================================================================================== */
 User Function ZMNTR002() // u_ZMNTR002()   e  GRAEXCEL
     Local aPergs   := {}
@@ -114,7 +115,7 @@ Static Function zCriaTb()
     aadd(aFields,{"B1_EMAX", TamSx3("B1_EMAX")[3], TamSx3("B1_EMAX")[1], TamSx3("B1_EMAX")[2] })
     aadd(aFields,{"B2_QATU", TamSx3("B2_QATU")[3], TamSx3("B2_QATU")[1], TamSx3("B2_QATU")[2] })
     aadd(aFields,{"B2_CM1",  TamSx3("B2_CM1")[3],  TamSx3("B2_CM1")[1],  TamSx3("B2_CM1")[2]  })
-    aadd(aFields,{"CM_COM",  TamSx3("C7_PRECO")[3],TamSx3("C7_PRECO")[1],TamSx3("C7_PRECO")[2]})
+    aadd(aFields,{"QT_PRC",  TamSx3("C7_PRECO")[3],TamSx3("C7_PRECO")[1],TamSx3("C7_PRECO")[2]})
     aadd(aFields,{"B2_CMT", TamSx3("B2_CM1")[3],   TamSx3("B2_CM1")[1], TamSx3("B2_CM1")[2] })
     aadd(aFields,{"QT_SOL", TamSx3("C1_QUANT")[3], TamSx3("C1_QUANT")[1], TamSx3("C1_QUANT")[2] })
     aadd(aFields,{"QT_PED", TamSx3("C7_QUANT")[3], TamSx3("C7_QUANT")[1], TamSx3("C7_QUANT")[2] })
@@ -155,6 +156,7 @@ Static Function zListaDados(aItens)
         aAux := zGetSc7((cTb)->B1_COD)
         (cTb)->QT_PED := aAux[1]  //pedido
         (cTb)->QT_ENT := aAux[2]  //enregue
+        (cTb)->QT_PRC := aAux[3]  //preço
 
         // calcula o custo total, custo x saldo
         (cTb)->B2_CMT := (cTb)->B2_QATU * (cTb)->B2_CM1
@@ -170,9 +172,9 @@ Data.....:              11/09/2020
 Descricao / Objetivo:   Obtem a listagem dos produtos
 ===================================================================================== */
 Static Function zGetSc7(cProd)
-    Local aRes  := {0, ""}
+    Local aRes  := {0, "",0}
     Local cAlias:= GetNextAlias()
-    Local cmd   := ""
+    Local cmd   := " "
 
     cmd += CRLF + " SELECT "
     cmd += CRLF + "    SUM(C7_QUANT) AS C7_QUANT , SUM(C7_QUJE) AS C7_QUJE , MAX(C7_PRECO) C7_PRECO "
@@ -180,24 +182,27 @@ Static Function zGetSc7(cProd)
     cmd += CRLF + " WHERE "
     cmd += CRLF + "     D_E_L_E_T_ = ' ' "
     cmd += CRLF + " AND C7_PRODUTO =  '" + cProd + "' "
-    cmd += CRLF + " AND C7_QUJE <> C7_QUANT "
+    //cmd += CRLF + " AND C7_QUJE <> C7_QUANT "
     cmd += CRLF + " AND C7_RESIDUO = ' ' "
     cmd += CRLF + " AND C7_CONTRA  = ' ' "
     cmd += CRLF + " AND C7_CONAPRO NOT IN ('B', 'R') "
+	//MemoWrite("C:\TEMP\"+FunName()+".SQL",cQuery)
+	cmd := ChangeQuery(cmd)
 
     Tcquery cmd new Alias (cAlias)
 
     DbSelectArea(cAlias)
 	(cAlias)->(DBGOTOP())
 
-	while !(cAlias)->(eof())
-
+	If (cAlias)->(eof())
+		cAlias->(dbCloseArea())
+		MsgStop("Dados não encontrados! ")
+		Return
+    Else
         aRes[1] :=  (cAlias)->C7_QUANT
         aRes[2] :=  (cAlias)->C7_QUJE
         aRes[3] :=  (cAlias)->C7_PRECO
-
-    	(cAlias)->(DbSkip())
-	EndDo    
+	EndIf
 
     (cAlias)->(DbCloseArea())
 
