@@ -290,11 +290,37 @@ Return
 @version 	P12
 /*/
 User Function CVMSER1G()
-Local aArea 	:= GetArea()
-Local lRet 		:= .F.
+Local aArea 		:= GetArea()
+Local lRet 			:= .F.
+Local _cAliasPesq	:= GetNextAlias()   
 
 Private aRegs 	:= {}
-	
+
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT 	SZ4.R_E_C_N_O_ NREGSZ4
+		FROM  %Table:SZ4% SZ4 
+		WHERE 	SZ4.Z4_FILIAL 	=  %xFilial:SZ4% 
+			AND SZ4.Z4_MARKBR	= %Exp:cMarca% 
+			AND SZ4.Z4_CODRET 	<> 'OK'
+			AND SZ4.%notDel%
+	EndSql
+	(_cAliasPesq)->(DbGoTop())
+	If (_cAliasPesq)->(Eof())
+		MsgInfo("Não existem itens selecionados para gerar o arquivo. Por favor selecione algum item.", "Selecionar itens")
+		Return Nil
+	Endif 
+
+	aRegs 	:= {}
+	While (_cAliasPesq)->(!Eof())
+		SZ4->(DbGoto((_cAliasPesq)->NREGSZ4))
+	   	aAdd( aRegs, {	SZ4->Z4_FILIAL,; 
+						SZ4->Z4_CHASSI,;
+						SZ4->Z4_LOTE,;
+						SZ4->Z4_OPEMOV,;
+						(_cAliasPesq)->NREGSZ4}) 
+		(_cAliasPesq)->(DbSkip())
+	EndDo
+	/*
 	DbSelectArea("SZ4")
 	SZ4->(DbSetOrder(2))
 	SZ4->(DbGoTop())
@@ -309,18 +335,23 @@ Private aRegs 	:= {}
 	
 	If Len(aRegs) == 0
 		MsgInfo("Não existem itens selecionados para gerar o arquivo. Por favor selecione algum item.", "Selecionar itens")
-		Return
+		Return Nil
 	EndIf
-	
+	*/
+
 	If MsgYesNo("Confirma a geração do arquivo?", "Confirma geração")
 		lRet := fGeraAux( aRegs )
+		If lRet
+			MsgInfo("Arquivo de envio gerado com sucesso.","Geração do arquivo")
+		Else
+			MsgInfo("Falha na geração do arquivo de envio.","Geração do arquivo")
+		EndIf
 	Endif
-	
-	If lRet
-		MsgInfo("Arquivo de envio gerado com sucesso.","Geração do arquivo")
-	Else
-		MsgInfo("Falha na geração do arquivo de envio.","Geração do arquivo")
-	EndIf
+
+	If Select(_cAliasPesq) <> 0
+		(_cAliasPesq)->(DbCloseArea())
+		Ferase(_cAliasPesq+GetDBExtension())
+	Endif  
 	RestArea(aArea)
 Return Nil
 
@@ -455,7 +486,14 @@ Local _cTipoMontgem		:= ""
         cQuery +=  "   AND D2_NUMSERI = '" 	+ aRegs[nXi][02] + "' "
 		If Select( cTmpAlias ) <> 0 ; ( cTmpAlias )->( DbCloseArea() ) ; EndIf
 		DbUseArea(.T. , "TOPCONN" , TcGenQry( ,,cQuery ) , cTmpAlias , .F. , .T. )
+		//Atualizar status mesno que não achou para não retornar na proxima seleção DAC 23/02/2024
 		If ( cTmpAlias )->(Eof())
+			If 	aRegs[nXi,05] > 0
+				SZ4->( DbGoto(aRegs[nXi,05]) )
+				RecLock("SZ4", .F.)
+				SZ4->Z4_MARKBR 	:= "  "
+				SZ4->(MsUnLock())
+			EndIf
 			Loop
 		EndIf
 		If !VVA->( DbSeek( xFilial("VVA") + aRegs[nXi][02] ) )
@@ -636,15 +674,16 @@ Local _cTipoMontgem		:= ""
 		nContReg += 1
 		FWrite(nHandle, cRegVF2 )
 	
-		If SZ4->( DbSeek( xFilial("SZ4") + aRegs[nXi][02] ) )
+		//If SZ4->( DbSeek( xFilial("SZ4") + aRegs[nXi][02] ) )
+		If 	aRegs[nXi,05] > 0
+			SZ4->( DbGoto(aRegs[nXi,05]) )
 			RecLock("SZ4", .F.)
-				Replace Z4_ANOLOTE 	With cValToChar( Year(dDataBase) )
-				Replace Z4_LOTE 	With cNumLot
-				Replace Z4_ARQENV 	With cArqName
-				Replace Z4_DTAENV 	With dDataBase
-				Replace Z4_MARKBR 	With "  "
-			MsUnLock()
-			
+			SZ4->Z4_ANOLOTE 	:= cValToChar( Year(dDataBase) )
+			SZ4->Z4_LOTE 		:= cNumLot
+			SZ4->Z4_ARQENV 		:= cArqName
+			SZ4->Z4_DTAENV 		:= dDataBase
+			SZ4->Z4_MARKBR 		:= "  "
+			SZ4->(MsUnLock())
 		EndIf
 	
 	Next nXi
