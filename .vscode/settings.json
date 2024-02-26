@@ -1,4 +1,4 @@
 {
     "totvsLanguageServer.welcomePage": false,
-    "totvsLanguageServer.editor.linter.includes": "C:\\_Dac\\TOTVS\\Includes_P12"
+    "totvsLanguageServer.editor.linter.includes": "C:\\_Dac\\TOTVS\\CAOA_PRD;C:\\_Dac\\TOTVS\\Includes_P12"
 }
