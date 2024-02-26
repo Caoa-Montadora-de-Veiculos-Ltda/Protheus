@@ -182,7 +182,7 @@ Static Function zGetSc7(cProd)
     cmd += CRLF + " WHERE "
     cmd += CRLF + "     D_E_L_E_T_ = ' ' "
     cmd += CRLF + " AND C7_PRODUTO =  '" + cProd + "' "
-    //cmd += CRLF + " AND C7_QUJE <> C7_QUANT "
+    cmd += CRLF + " AND C7_QUJE <> C7_QUANT 
     cmd += CRLF + " AND C7_RESIDUO = ' ' "
     cmd += CRLF + " AND C7_CONTRA  = ' ' "
     cmd += CRLF + " AND C7_CONAPRO NOT IN ('B', 'R') "
@@ -374,7 +374,7 @@ Static Function RptDef()
     TRCell():New(oSection, aStru[4 ,1], cTb, "Est Max"    , "@E 999,999.99",                  30, , , "RIGHT", lUmaLinha)
     TRCell():New(oSection, aStru[5 ,1], cTb, "Sld Est Atu", "@E 999,999.99",                  30, , , "RIGHT", lUmaLinha)
     TRCell():New(oSection, aStru[6 ,1], cTb, "Custo Und"  , "@E 999,999.99",                  20, , , "RIGHT", lUmaLinha)
-    TRCell():New(oSection, aStru[7 ,1], cTb, "Compra"     , "@E 999,999.99",                  20, , , "RIGHT", lUmaLinha)
+    TRCell():New(oSection, aStru[7 ,1], cTb, "VLU. Pedido", "@E 999,999.99",                  20, , , "RIGHT", lUmaLinha)
     TRCell():New(oSection, aStru[8 ,1], cTb, "Custo Tot"  , "@E 999,999.99",                  30, , , "RIGHT", lUmaLinha)
     TRCell():New(oSection, aStru[9 ,1], cTb, "Qtd solic"  , "@E 999,999.99",                  30, , , "RIGHT", lUmaLinha)
     TRCell():New(oSection, aStru[10,1], cTb, "Qtd Pedid"  , "@E 999,999.99",                  30, , , "RIGHT", lUmaLinha)
