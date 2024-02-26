@@ -387,7 +387,7 @@ Local cTmpAlias			:= GetNextAlias()
 Local aOriArea			:= {}
 Local lVV0 				:= .T.
 Local lVVA 				:= .T.
-Local _cTpVeiculo     	:= AllTrim(SuperGetMV( "CAOA_VEI02" , ,"23" ))   //Tipo de Veículos que são conjugados    GAP131  Tratamento no arquivo SERPRO para caminhões HR e HD    
+Local _cTpVeiculo     	:= AllTrim(SuperGetMV( "CAOA_VEI02" , ,"23;14" ))   //Tipo de Veículos que são conjugados    GAP131  Tratamento no arquivo SERPRO para caminhões HR e HD    
 Local _cTipoCarroc     	:= AllTrim(SuperGetMV( "CAOA_VEI03" , ,"194" ))   //Tipo de carrocerias     GAP131  Tratamento no arquivo SERPRO para caminhões HR e HD    
 Local _cTipoMontgem		:= ""
 	/*
