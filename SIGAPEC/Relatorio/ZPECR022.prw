@@ -16,7 +16,7 @@ Obs......:
 
 User Function ZPECR022()
 
-	Processa({|| U_RZPECR022()}	,"Aguarde... GeraÁ„o do RelatÛrio")
+	Processa({|| U_RZPECR022()}	,"Aguarde... Gera√ß√£o do Relat√≥rio")
 
 Return
 
@@ -42,11 +42,11 @@ User Function RZPECR022()
 	aAdd(aParamBox, {1 ,"Invoice:"		,Space(TamSX3("W9_INVOICE")[1])	,"@!","","SW9","", 80	,.F.}) // Tipo caractere
 	aAdd(aParamBox, {1 ,"Caixa:"		,Space(TamSX3("ZD1_XCASE" )[1])	,"@!","",""   ,"", 80	,.F.}) // Tipo caractere
 	aAdd(aParamBox, {1 ,"Container:"	,Space(TamSX3("D1_XCONT"  )[1])	,"@!","",""   ,"", 80	,.F.}) // Tipo caractere
-	AAdd(aParamBox, {2, "SituaÁ„o"	    , aSituacao[1], aSituacao                        , 70, , .T.})
+	AAdd(aParamBox, {2, "Situa√ß√£o"	    , aSituacao[1], aSituacao                        , 70, , .T.})
 
-	If ParamBox(aParamBox,"Parametros para geraÁ„o do Arquivo...",@aRet)
+	If ParamBox(aParamBox,"Parametros para gera√ß√£o do Arquivo...",@aRet)
 
-		//Criando o objeto que ir· gerar o conte˙do do Excel
+		//Criando o objeto que ir√° gerar o conte√∫do do Excel
 		oFWMsExcel := FWMSExcel():New()
 
 		//Aba - Gympass
@@ -112,7 +112,7 @@ User Function RZPECR022()
 		//cQuery += "   AND ZD1.ZD1_SLDIT  > 0 "
 		cQuery += "   AND  B2.B2_QATU    > 0 "
 		cQuery += "   AND  D1.D1_DTDIGIT BETWEEN '" + DTos(aRet[1]) + "' AND '" + DToS(aRet[2]) + "' "
-		
+
 		If !Empty(aRet[3])
 			cQuery += " AND ZD1.ZD1_COD = '" + aRet[3] + " ' "
 		EndIf
@@ -151,9 +151,9 @@ User Function RZPECR022()
    
 		While !(cAliasTRB)->(EoF())
 			cDescri := Posicione("SB1",1,FWxFilial('SB1') + (cAliasTRB)->COD,"B1_DESC")
-			// Incrementa a mensagem na rÈgua.
+			// Incrementa a mensagem na r√©gua.
 			nRegAtual++
-			IncProc("Exportando informaÁıes para Excel... Registo:" + alltrim(Str(nRegAtual)) + " de "+ alltrim(Str(nTotReg)) )
+			IncProc("Exportando informa√ß√µes para Excel... Registo:" + alltrim(Str(nRegAtual)) + " de "+ alltrim(Str(nTotReg)) )
 
 			oFWMsExcel:AddRow(	"Relatorio","Planilha01",{;
 								(cAliasTRB)->COD,;
@@ -179,7 +179,7 @@ User Function RZPECR022()
 		oFWMsExcel:GetXMLFile(cArquivo)
 		
 		//Abrindo o excel e abrindo o arquivo xml
-		oExcel := MsExcel():New() 			    //Abre uma nova conex„o com Excel
+		oExcel := MsExcel():New() 			    //Abre uma nova conex√£o com Excel
 		oExcel:WorkBooks:Open(cArquivo) 	    //Abre uma planilha
 		oExcel:SetVisible(.T.) 				    //Visualiza a planilha
 		oExcel:Destroy()						//Encerra o processo do gerenciador de tarefas
