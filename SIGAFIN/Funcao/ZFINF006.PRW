@@ -22,7 +22,26 @@ Local   _cNum    := " "
 Local   _cNumbco := " "
 Local   _cPedido := SPACE(TamSX3("E1_NUM")[1])  
 
-IF SE4->E4_CTRADT <> '1' 
+IF SE4->E4_CTRADT == '1' .AND. SE1->E1_TIPO == 'RA '  
+
+    IF Empty(SE1->E1_PORTADO) .AND. Empty(SE1->E1_AGEDEP) .AND. Empty(SE1->E1_CONTA)
+        _cBanco := SA6->A6_COD 
+        _cAge   := SA6->A6_AGENCIA
+        _cConta := SA6->A6_NUMCON
+    ELSE 
+        _cBanco := SE1->E1_PORTADO
+        _cAge   := SE1->E1_AGEDEP
+        _cConta := SE1->E1_CONTA 
+    ENDIF
+
+    RecLock("SE1",.F.)
+    SE1->E1_PORTADO := _cBanco 
+    SE1->E1_AGEDEP  := _cAge
+    SE1->E1_CONTA   := _cConta
+    
+    MsUnlock()
+
+ELSE
 
     _cNum    := SE1->E1_NUM
     _cNumbco := SE1->E1_NUMBCO
