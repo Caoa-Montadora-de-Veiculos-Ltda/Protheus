@@ -60,8 +60,8 @@ User Function ZESTF015()
     cTabela := cTab
     cOpcoes := cOpc
 
-    //Cria a tabela utilizada no processo
-    ChkFile(cTabela)
+    //Cria a tabela utilizada no processo (força o refresh na execução)
+    //ChkFile(cTabela)
     //Irei criar a pesquisa que será apresentada na tela
     aAdd(aSeek,{"Prod",{{ ""    ,"C"    ,023    ,000    ,"Produto"    ,"@!"   }} } )
     //Instânciando FWMBrowse - Somente com dicionário de dados
