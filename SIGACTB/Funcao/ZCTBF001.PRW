@@ -395,7 +395,7 @@ If empty(_cAliasPesq)
 	Return _aTabRet 
 Endif
 
-Begin Sequence
+//Begin Sequence
 	//necessário selecionar novamente o VVP devido o mesmo ter que gerar os dois ultimos registros
   	BeginSql Alias _cAliasTab
    		SELECT 	VVP.VVP_VALTAB,
@@ -408,39 +408,33 @@ Begin Sequence
 			AND VVP.VVP_SEGMOD = %Exp:(_cAliasPesq)->VVP_SEGMOD%
 			AND VVP.VVP_FABMOD = %Exp:(_cAliasPesq)->VVP_FABMOD%
 			AND VVP.%NotDel%			
-		ORDER BY VVP.VVP_DATPRC DESC
+		ORDER BY VVP.VVP_FILIAL,VVP.VVP_CODMAR,VVP.VVP_MODVEI,VVP.VVP_SEGMOD,VVP.VVP_DATPRC
    	EndSql
 
-    If (_cAliasTab)->(Eof())
-		AAdd(_aTabRet,{0, CtoD("")})
-		AAdd(_aTabRet,{0, CtoD("")})
-		Break
-	Endif
-
-	While (_cAliasTab)->(!Eof())
+    While (_cAliasTab)->(!Eof())
 		//AAdd(_aTab,{(_cAliasTab)->VVP_VALTAB, StoD((_cAliasTab)->VVP_DATPRC)})
-		AAdd(_aTab,{(_cAliasTab)->VVP_BASEST, StoD((_cAliasTab)->VVP_DATPRC)})
+		AAdd(_aTabRet,{(_cAliasTab)->VVP_BASEST, StoD((_cAliasTab)->VVP_DATPRC)})
 		(_cAliasTab)->(DbSkip())
-		//somente gravar as duas ultimas posições
-		If Len(_aTab) >= 2
-			Exit
-		EndIf
 	EndDo
 
 	//Se não for localizado devolver zerado
-	If Len(_aTab) == 0
-		AAdd(_aTabRet,{0, CtoD("")})
-		AAdd(_aTabRet,{0, CtoD("")})
-	ElseIf Len(_aTab) == 1
-		AAdd(_aTabRet,{0, CtoD("")})
-		AAdd(_aTabRet,{_aTab[1,1], _aTab[1,2]})
-	Else
-		For _nPos := 1 To Len(_aTab)
-			AAdd(_aTabRet,{_aTab[_nPos,1], _aTab[_nPos,2]})
-		Next
-	Endif
+	Do Case 
+	 	Case Len(_aTabRet) == 0
+		
+			AAdd(_aTabRet,{ 0, CtoD("") } )
+			AAdd(_aTabRet,{ 0, CtoD("") } )
+		
+		Case Len(_aTabRet) == 1
+			
+			AAdd(_aTabRet , { 0, CtoD("") } )
+			_aTabRet[2,1] := _aTabRet[1,1]
+			_aTabRet[2,2] := _aTabRet[1,2]
+			_aTabRet[1,1] := 0
+			_aTabRet[1,2] := CtoD("")
 
-End Begin
+	EndCase
+
+//End Sequence//Begin
 
 If Select(_cAliasTab) <> 0
 	(_cAliasTab)->(DbCloseArea())
