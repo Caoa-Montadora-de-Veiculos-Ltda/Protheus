@@ -399,7 +399,7 @@ Local _lRet     := .T.
     cQuery  +=  "	WHERE SD1.D_E_L_E_T_   = ' ' "                     + CRLF
     cQuery  +=  "	    AND SD1.D1_FILIAL  =  '"+xFilial('SD1')+"'"    + CRLF
     cQuery  +=  "	    AND SD1.D1_TES <> '   ' "                      + CRLF
-    cQuery  +=  "       AND SUBSTR(SD1.D1_LOTECTL,1,4) = 'AUTO' "      + CRLF 
+    cQuery  +=  "       AND SUBSTR(SD1.D1_LOTECTL,1,4) <> ' ' "        + CRLF 
     cQuery  +=  "   ORDER BY D1_FILIAL,D1_COD,D1_LOCAL,D1_LOTECTL"     + CRLF
 
     cQuery := ChangeQuery(cQuery)
