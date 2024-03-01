@@ -11,7 +11,7 @@
 	@param 		
     @example
     @see
-    @history    
+    @history     
 /*/
 User Function ZFING006()
     Local _nMaxParc := SUPERGETMV("CMV_FIN001",.T.,4) //Qtde de parcelas para o PV Futuro  

@@ -10,7 +10,7 @@
 Ponto de Entrada Depois da Gravacao da Nota Fiscal
 @author    Leonardo Miranda
 @version   12.1.27
-@since     07/06/2022
+@since     07/06/2022 
 @History   Incluído a chamda da função para emissão de Boleto qdo RA 
 */ //    U_RF01B062(E1_PORTADO,E1_AGEDEP,E1_CONTA,'001',/*lSetup*/,/*cNotIni*/,/*cNotFim*/,/*cSerie*///,SE1->(E1_FILIAL+E1_PREFIXO+E1_NUM))
 //------------------------------------------------------------------------------------------
