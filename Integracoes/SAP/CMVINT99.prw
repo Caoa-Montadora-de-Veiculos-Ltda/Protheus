@@ -7,7 +7,7 @@
 Programa............: CMVINT99
 Autor...............: Joni Lima
 Data................:
-Descricao / Objetivo: Rotina para Monitoramento de Envios de Integração SAP
+Descricao / Objetivo: Rotina para Monitoramento de Envios de Integração SAP incluido marca
 Doc. Origem.........: Rotina onde podemos verificar a tabela de Integração de envio para o SAP
 Solicitante.........: Cliente
 Uso.................: CAOA
@@ -644,7 +644,7 @@ User Function xCMVREP()
     Local cAlias 		:= oBrowse:Alias()
     Local nRec			:= (cAlias)->RECSZ7
     Local _cEmp         := FWCodEmp()
-	Local cMarca        := oBrowse:Mark()
+	//Local cMarca        := oBrowse:Mark()
 
     While !Eof() 
 
