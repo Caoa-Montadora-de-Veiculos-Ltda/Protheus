@@ -57,7 +57,7 @@ Begin Sequence
 	_cPass 	:= AllTrim( superGetMv( "CAOAINTP"	, , "@Intcaoa2024!"		) )	// Senha para autenticao no WS SAP
 	//_cChave := encode64( allTrim( cUser ) + ":" + allTrim( cPass ) )    
 
-	 _cChave := "Basic "+_cUser+":"+_cPass
+	 _cChave := _cUser+":"+_cPass
 	If _cChave == Decode64(_cAuthorization)
 		_oJson := JsonObject():new()
     	_oJson:fromJson(DecodeUTF8(Self:GetContent(,.T.)))  //Correto

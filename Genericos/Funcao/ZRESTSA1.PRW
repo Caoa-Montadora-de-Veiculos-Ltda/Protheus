@@ -109,9 +109,125 @@ Gravar dados do oJson no Cliente
 @type function
 /*/
 Static Function ZRESTSA1GR(_oJson)
-_lRet := .T.
+Local _cAliasPesq	:= GetNextAlias()
+Local _lRet 		:= .T.
+Local _aCli 		:= {}
+Local _lNovo    	:= .T.
+Local _cCodSegmento := AllTrim(SuperGetMV("CMV_RESTI01",.F.,"06"))  //"06 - PADRÃO"
+Local _cConta 		:= AllTrim(SuperGetMV("CMV_RESTI02",.F.,""))  	//
+Local _cGrpTrib     := AllTrim(SuperGetMV("CMV_RESTI02",.F.,""))  	//
+
+Local _cLoja
+Local _cCnPjCpf
+Local _cIERG
+Local _cEndereco
+Local _cMunicipio
+Local _cCodMun
+Local _cBloqueio
+Local _cCodPais
+Local _cContrib
+
+Begin Sequence 
+	_cCnPjCpf	:= AllTrim(_oJson:GetJsonText("cnpjcpf"))  
+	BeginSql Alias _cAliasPesq
+		SELECT 	SA1.R_E_C_N_O_ NREGSA1
+       	FROM %table:SA1% SA1
+       	WHERE SA1.A1_FILIAL  	= %XFilial:SA1%
+			AND SA1.A1_CGC 		= %Exp:_cCnPjCpf%
+		  	AND SA1.%notDel%		  
+	EndSql      
+	If (_cAliasPesq)->(Eof()) 	
+    	_cCodCli    := GetSxeNum("SA1","A1_COD")
+		_cLoja   	:= StrZero(1,Len(SA1->A1_LOJA))
+		_cBloqueio  := "2"
+		_lNovo      := .T.
+		_cContrib   := "1"   //Verificar se é exportação testar quem é contribuinte 
+	Else 
+		_SA1->(DbGoto((_cAliasPesq)->NREGSA1))
+    	_cCodCli    := SA1->A1_COD
+		_cLoja   	:= SA1->A1_LOJA		
+		_cBloqueio  := SA1->A1_MSBLQL
+		_lNovo      := .F.
+		_cConta 	:= SA1->A1_CONTA
+		_cGrpTrib   := SA1->A1_GRPTRIB
+		_cContrib   := "1"   //Verificar se é exportação testar quem é contribuinte 
+	Endif
+	_cCnPjCpf	:= AllTrim(_oJson:GetJsonText("cnpjcpf"))  
+	_cIERG 		:= AllTrim(_oJson:GetJsonText("ierg"))
+	_cEndereco	:= AllTrim(_oJson:GetJsonText("endereco"))  + ;
+					If(_oJson:GetJsonText("endnum") > 0, ", "+ AllTrim(Str(_oJson:GetJsonText("endnum"))),"" )
+	_cMunicipio	:= AllTrim(_oJson:GetJsonText("municipio"))
+	
+	//Função para retorno de códigos
+	ZRESTSA1Localiza(_oJson, @_cCodMun, @_cCodPais)
+	_cCodMun 	:= ""  //Função para localizar codigo municipo pelo nome
+
+
+   	aAdd( _aCli, { 'A1_FILIAL' 	,  FWxFilial('SA1')  } )   
+    aAdd( _aCli, { 'A1_COD'    	,  cCodCli } )
+    aAdd( _aCli, { 'A1_LOJA'   	,  cLoja } )
+    aAdd( _aCli, { 'A1_NOME'   	,  AllTrim(_oJson:GetJsonText("nome")) } )
+  	aAdd( _aCli, { 'A1_NREDUZ' 	,  AllTrim(_oJson:GetJsonText("reduzido")) } ) 
+    aAdd( _aCli, { 'A1_TIPO'   	,  AllTrim(_oJson:GetJsonText("tipocli")) } )   //F=Cons.Final;L=Produtor Rural;R=Revendedor;S=Solidario;X=Exportacao      
+ 	aAdd( _aCli, { 'A1_END'  	,  _cEndereco} )
+   	aAdd( _aCli, { 'A1_BAIRRO' 	,  AllTrim(_oJson:GetJsonText("bairro")) } )
+ 	aAdd( _aCli, { 'A1_COMPLEM' ,  AllTrim(_oJson:GetJsonText("complemento")) } )
+ 	aAdd( _aCli, { 'A1_CEP'  	,  AllTrim(_oJson:GetJsonText("cep")) } )
+
+
+    aAdd( _aCli, { 'A1_EST'    	,  AllTrim(_oJson:GetJsonText("estado")) } )
+    aAdd( _aCli, { 'A1_COD_MUN'	,  _cCodMun })
+    aAdd( _aCli, { 'A1_MUN'    	,  _cMunicipio } )
+    aAdd( _aCli, { 'A1_PAIS' 	,  AllTrim(_oJson:GetJsonText("pais")) } )
+
+    aAdd( _aCli, { 'A1_CGC'    	,  _cCnPjCpf  } )
+    aAdd( _aCli, { 'A1_MSBLQL'  ,  _cBloqueio  } )
+    aAdd( _aCli, { 'A1_CODSEG'  ,  _cCodSegmento  } )
+
+    aAdd( _aCli, { 'A1_DDD'  	,  AllTrim(_oJson:GetJsonText("ddd")) } )
+    aAdd( _aCli, { 'A1_TEL'  	,  AllTrim(_oJson:GetJsonText("fone")) } )
+    aAdd( _aCli, { 'A1_EMAIL'  	,  AllTrim(_oJson:GetJsonText("email")) } )
+
+
+    aAdd( _aCli, { 'A1_CONTA'  	,  _cConta  } )
+    aAdd( _aCli, { 'A1_GRPTRIB' ,  _cGrpTrib  } )
+
+    aAdd( _aCli, { 'A1_CODPAIS' ,  _cCodPais  } )
+    aAdd( _aCli, { 'A1_CONTRIB' ,  _cContrib  } )  
+
+
+
+
+
+
+End Sequence
 
 Return _lRet 
+
+
+Static Function ZRESTSA1Localiza(_oJson, _cCodMun, _cCodPais)
+Local _lRet := .T.
+Local _cMunicipio	:= AllTrim(_oJson:GetJsonText("municipio"))
+Local _cPais		:= AllTrim(_oJson:GetJsonText("pais"))
+
+	BeginSql Alias _cAliasPesq
+		SELECT A1_PAIS,YA_DESCR, A1_CODPAIS  
+		FROM SA1020
+		LEFT JOIN SYA020
+			ON YA_CODGI = A1_PAIS
+		GROUP BY A1_PAIS, YA_DESCR, A1_CODPAIS
+
+
+
+		SELECT 	SYA.R_E_C_N_O_ NREGSYA
+				, 
+       	FROM %table:SA1% SA1
+       	WHERE SA1.A1_FILIAL  	= %XFilial:SA1%
+			AND SA1.A1_CGC 		= %Exp:_cCnPjCpf%
+		  	AND SA1.%notDel%		  
+	EndSql      
+
+Return _lRet
 
 /*/{Protheus.doc} ValidOJson
 Valida os dados do oJson
@@ -162,5 +278,25 @@ Return _aRet
 
 
 
+/*
 
+{
+    "nome" : "Jose Aparecido Silva", 
+    "reduzido" : "Jose", 
+    "cnpjcpf" : "00000000000000",
+    "ierg" : "",
+    "cep" : "00000000",
+    "endereco" : "Rua da logoa",
+    "endnum" :  30,
+    "complemento" : "",
+    "bairro" : "barrinha",
+    "municipio" : "Sao Paulo",
+    "estado" : "SP"
+    "pais" : "BRA",
+    "ddd" : "011",
+    "fone" : "9999999999",
+    "email" : "jasiva@teste.com.br",
+    "tipocli" : "F",
+}
 
+*/
