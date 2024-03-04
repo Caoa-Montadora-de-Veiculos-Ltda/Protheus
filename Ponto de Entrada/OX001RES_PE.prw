@@ -13,8 +13,8 @@ Ponto de Entrada para calculo da reserva função OX001RESITE desvio para calcular
 
 User Function OX001RES
 Local _aArea        := GetArea()
-Local _aRegVS3      := {}
-Local _cDocto       := ""
+Local _aRegVS3      := {} //O que vem nesta variável?
+Local _cDocto       := "" //Número da transação na SD3 (transferênica múltipla).
 //Local _cArmazem     := "01"
 Local _lTela        := .F.
 Local _cNumOrc      
@@ -42,22 +42,22 @@ Begin Sequence
             _lTela := _aReservaCAOA[6]
         Endif 
     /*
-    //Caso não seja enviado a matriz com dados para a reserva deverá ser realizado validações para verificar o tipo de reserva, isto se deve pelo motivo do PE não tr parâmetros    
-    //pode ser avalidado realizar todas as reservas por aqui caso não tenha sido chamado pela validação CAOA  poderá utilizar o else mas tem que estar posicionado no VS1
-    Else
-        _cNumOrc        := VS1->VS1_NUMORC
-        If VS1->VS1_STARES  == "3"  //Não reservado
-            _lReserva   := .T.  //inclui reserva
-            _cOrigem    := _cArmazem
-            _cDestino     := AllTrim(GETMV("MV_RESITE"))
-        ElseIf VS1->VS1_STARES  == "1"  //Reservado    
-            _lReserva   := .F.  //Retira reserva
-            _cOrigem    := AllTrim(GETMV("MV_RESITE"))
-            _cDestino   := _cArmazem
-        ElseIf VS1->VS1_STARES  == "2"  //PARCIAL    
-            Break
-            //Inicialmente deixar fazer o processo antigo
-        EndIf
+        //Caso não seja enviado a matriz com dados para a reserva deverá ser realizado validações para verificar o tipo de reserva, isto se deve pelo motivo do PE não tr parâmetros    
+        //pode ser avalidado realizar todas as reservas por aqui caso não tenha sido chamado pela validação CAOA  poderá utilizar o else mas tem que estar posicionado no VS1
+        Else
+            _cNumOrc        := VS1->VS1_NUMORC
+            If VS1->VS1_STARES  == "3"  //Não reservado
+                _lReserva   := .T.  //inclui reserva
+                _cOrigem    := _cArmazem
+                _cDestino     := AllTrim(GETMV("MV_RESITE"))
+            ElseIf VS1->VS1_STARES  == "1"  //Reservado    
+                _lReserva   := .F.  //Retira reserva
+                _cOrigem    := AllTrim(GETMV("MV_RESITE"))
+                _cDestino   := _cArmazem
+            ElseIf VS1->VS1_STARES  == "2"  //PARCIAL    
+                Break
+                //Inicialmente deixar fazer o processo antigo
+            EndIf
     */    
     EndIf
   

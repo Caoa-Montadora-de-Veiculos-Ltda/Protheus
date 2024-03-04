@@ -157,7 +157,7 @@ Static Function ZPECF036PV(_aOrcs, _cPicking, _cPedido, _aRegVS1, _aPicking, _aV
 	Local _nPos
 	Local _nCount
 	Local _lReserva
-	Local _lExisteReserva
+	Local _lExisteReserva 
 	Local _nQtdLib
 	Local _lCredito
 	Local _lEstoque
@@ -372,7 +372,9 @@ Static Function ZPECF036PV(_aOrcs, _cPicking, _cPedido, _aRegVS1, _aPicking, _aV
 
 				VS3->(DBSkip())
 			Enddo
-
+			//VS1_RESERV -> Reserva peça?
+			//VS1_RESERV == "0" -> Não
+			//VS1_RESERV == "1" -> Sim
 			Reclock("VS1",.f.)
 			If _lExisteReserva .And. VS1->VS1_RESERV <> "1"
 				VS1->VS1_RESERV := "1"
@@ -403,9 +405,9 @@ Static Function ZPECF036PV(_aOrcs, _cPicking, _cPedido, _aRegVS1, _aPicking, _aV
 
 			If _lReserva .And. _lExisteReserva
 				if VS1->(FieldPos("VS1_RESERV")) > 0 .and. VS1->VS1_RESERV == "1"
-					HeaderP    	:= {} 							// Variavel ultilizada na OX001RESITE
+					HeaderP    		:= {} 						// Variavel utilizada na OX001RESITE
 					_aReservaCAOA 	:= {VS1->VS1_NUMORC,.F.}	// Variavel utilizada no PE OX001RES
-					_cDocto := VS1->(OX001RESITE(VS1->VS1_NUMORC, .F.))
+					_cDocto 		:= VS1->(OX001RESITE(VS1->VS1_NUMORC, .F.))
 					if Empty(_cDocto) .Or. _cDocto == "NA"
 						Aadd(_aMsg,"Orçamento "+AllTrim(VS1->VS1_NUMORC)+" não foi possivel retirar a reserva")
 						Break

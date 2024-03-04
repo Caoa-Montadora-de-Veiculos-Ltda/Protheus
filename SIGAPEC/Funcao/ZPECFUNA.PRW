@@ -3267,8 +3267,8 @@ User Function XMOVA261(_cNumOrc, _cCodProd, _cArmorig, _cArmdes, _nQtde, _nRegvs
 
 	Default _cCodProd	:= ""
 	Default _cNumOrc	:= ""
-	Default _cArmorig  	:= AllTrim(GETMV("MV_RESITE"))    //'61'
-	Default _cArmdes   	:= AllTrim(GETMV("MV_DIVITE"))    //'65'
+	Default _cArmorig  	:= AllTrim(GETMV("MV_RESITE"))    //'61' //ARMAZÉM PARA PEÇAS RESERVADAS
+	Default _cArmdes   	:= AllTrim(GETMV("MV_DIVITE"))    //'68' //ARMAZÉM PARA PEÇAS COM DIVERGÊNCIA
 	Default _nQtde 		:= 0
 	Default _cFunc		:= ""
 	//Private cCodMov     := '501'
@@ -4184,7 +4184,7 @@ User Function XRESCAOAPEC(_cNumOrc, _lReserva, _aRegVS3, _cArmOrig, _cArmDes, _l
 			//incluir itens VS3
 			//montar por numero de registro	
 			//_cDocumento := GetSxeNum("SD3","D3_DOC")  //não pode ser pelo SX
-			//Implementado pois em alguns casos não esta conseguindo localizar numeraçãp
+			//Implementado pois em alguns casos não esta conseguindo localizar numeração
 			_cDocumento := ""
 			For _nPos := 1 To 10
 				_cDocumento  := Criavar("D3_DOC")
