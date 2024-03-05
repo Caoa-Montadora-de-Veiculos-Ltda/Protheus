@@ -10,7 +10,7 @@ Descricao / Objetivo:   Ajusta os limites de Crédito
 Doc. Origem:            
 Solicitante:            Faturamento/Pecas
 Uso......:              
-Obs......:              TESTE DE COMMIT
+Obs......:              
 @history    DAC Denilso - 06/04/2023	        
             GRUPO CAOA GAP FIN108 - Revitalizção Credito [ Montadora ]
             Unificação Peças com Montadora
@@ -94,11 +94,6 @@ User Function ZFATF014(_cCliFat, _cTpCred, _cLoja, _lZera)
 				ZF014ZERLC( _cCliFat , _cLoja, _cTpCred)
 			EndIf
 		End Sequence
-
-		//If FunName() == "MATA030"
-		//If !_lJob
-		MsgInfo("ROTINA LOCKADA 2","TESTE 2")
-		//EndIF
 		
 		AADD(_aRet, _cRet)
 		AADD(_aRet, _nValAtr)

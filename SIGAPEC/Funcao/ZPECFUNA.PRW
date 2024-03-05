@@ -4229,7 +4229,7 @@ User Function XRESCAOAPEC(_cNumOrc, _lReserva, _aRegVS3, _cArmOrig, _cArmDes, _l
 					Disarmtransaction()
 				EndIf
 			Endif	
-		End Transaction		 
+		//End Transaction //Teste Nicolas 05/03
 	End Sequence	
 	If !_lRet
 		AAdd(_aMsg, "Ocorreram problemas na movimentação de armazem  para o orçamento "+_cNumOrc )

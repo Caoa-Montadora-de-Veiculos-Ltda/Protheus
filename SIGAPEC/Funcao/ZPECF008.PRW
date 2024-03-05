@@ -634,8 +634,8 @@ Begin Sequence
 								EndIf
 							EndIf	
 						EndIf	
-					Endif   //Fim tratamento por tipo pedido transferencia FDR
-				
+					Endif   //Fim tratamento por tipo pedido transferencia FDR				
+					
 					//Atualiza fase para Separação e se necessário gera Backorder
 					//Retorno para o registro VS1 pode ter sido disposicionado DAC 20/06/2022
 					//Mesmo que esta bloqueado por limite de crédito deixo fazer o carregamento devido os arquivos em bakorder
@@ -643,8 +643,7 @@ Begin Sequence
 					If _lRet .and. !ZPECF08CAR(VS1->VS1_NUMORC, @_aBackOrder, @_aSeqVS3,(_cAliasTRB)->NREGVS1, @_aVS3Reg, _cLocal)
 						_lRet := .F.
            				Disarmtransaction()
-					EndIf	
-					End Transaction //TESTE NICOLAS 04/03	
+					EndIf			
 					//Cria separação e faz reserva
 					If _lRet  .And. VS1->VS1_STATUS <> "3"  //somente deixar criar se não for bloqueio de credito
 						_lRet := U_XOFUNLIB(VS1->VS1_NUMORC, _aSeqVS3, _aVS3Reg) 
@@ -656,7 +655,7 @@ Begin Sequence
 					//	_lRet	:= .F._cObs
            			//	Disarmtransaction()
 					//EndIf
-				//End Transaction //TESTE NICOLAS 04/03
+				End Transaction //TESTE NICOLAS 04/03
 			EndIf	
 			//Retorno para o registro VS1 pode ter sido disposicionado DAC 20/06/2022
 			VS1->(DbGoto((_cAliasTRB)->NREGVS1))
@@ -1666,8 +1665,8 @@ Return _lRet
 Static Function ZPECF08CAR(_cNumOrc, _aBackOrder, _aSeqVS3, _nRegVS1, _aVS3Reg, _cLocal)
 	Local _lRet 		:= .T.
 	Local _cNumSeq
-	Local _lExisteReserva := .F.
-	Local _lReserva
+	//Local _lExisteReserva := .F.
+	//Local _lReserva
 	
 	//Local _nPos
 	//Garantir que esta posicionado no VS1 DAC 20/06/2022
@@ -1696,31 +1695,7 @@ Static Function ZPECF08CAR(_cNumOrc, _aBackOrder, _aSeqVS3, _nRegVS1, _aVS3Reg, 
 			Aadd(_aMensAglu,"Não localizado itens do orçamento "+_cNumOrc+" para ajuste parcial (ZPECF08PARC) do produto principal !")
 			Break
 		EndIF	
-		
-		//GAP098 Nicolas Lima -- Retorna a reserva dos itens (para o amazém do orçamento) que haviam sido feitas antes de gerar o BO.	
-		
-		Reclock("VS1",.f.)
-		If _lExisteReserva .And. VS1->VS1_RESERV <> "1"
-			VS1->VS1_RESERV := "1"
-		ElseIf !_lExisteReserva .And. VS1->VS1_RESERV <> "0"
-			VS1->VS1_RESERV := "0"
-		Endif
-		VS1->(MsUnlock())
-		
-		_lReserva   := VS3->(FieldPos("VS3_RESERV")) > 0 .and. VS1->(FieldPos("VS1_RESERV")) > 0
-		//VS3_RESERV -> Reserva peça?
-		//VS3_RESERV == "0" -> Não
-		//VS3_RESERV == "1" -> Sim	
 
-		If _lRet .and. !_lExisteReserva .and. _lReserva	
-				//Fazer loop por orçamento, precisa?
-				//For _nPos := 1 to Len(_aBackOrder[1]) //Confirmar posição
-				_aReservaCAOA := {VS1->VS1_NUMORC,.F.}	// Variavel utilizada no PE OX001RES
-				_cDocto := VS1->(OX001RESITE(VS1->VS1_NUMORC, .F.))
-				Aadd(_aMensAglu, "Retirado a reserva de itens do orçamento " + VS1->VS1_NUMORC + " e documento: " + _cDocto + " . <ZPECF08CAR> !")
-				//Next
-		EndIf
-		
 		//organizar a sequencia
 		_cNumSeq := StrZero(0,Len(VS3->VS3_SEQUEN))
 		_aSeqVS3 := Aclone({})
