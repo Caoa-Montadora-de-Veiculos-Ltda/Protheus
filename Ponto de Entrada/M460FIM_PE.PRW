@@ -23,7 +23,6 @@ User Function M460FIM()
     Local _nRecSE1      := 0    
     Local _nRecBol      := 0  
     Local _nParc1       := 0 
-    Local _cxForma      := 'BOL'
     Local aArea         := GetArea()
     Local aAreaSF2      := SF2->(GetArea())
     Local aAreaVV0      := VV0->(GetArea())
@@ -89,15 +88,27 @@ User Function M460FIM()
                     //emissão de Boleto
                     IF SE1->E1_XFORMA $ 'BOL_VFP_TED' 
                         IF SC5->C5_XNPG = 'BOL' .AND. _nParc1 == 0 //Emissão de boleto na segunda condição de pagamento
-                           _nParc1++
-                           _cxForma := 'BOL'  //Atualiza forma de pagamento no titulo
+                           _nParc1++                               //Apenas parcela 01 
+                                                        
                             RecLock("SE1",.F.)
-                            SE1->E1_XFORMA := _cxForma
+                            SE1->E1_XFORMA := SC5->C5_XNPG         //Atualiza forma de pagamento no titulo
                             MsUnlock()                           
-                           U_RF01B062(E1_PORTADO,E1_AGEDEP,E1_CONTA,'001',/*lSetup*/,/*cNotIni*/,/*cNotFim*/,/*cSerie*/,_cChave)
-                        ELSEIF SE1->E1_XFORMA <> 'TED' .AND. SE1->E1_XFORMA <> 'VFP' 
+                           
+                            //Emissão do Boleto 
+                            U_RF01B062(E1_PORTADO,E1_AGEDEP,E1_CONTA,'001',/*lSetup*/,/*cNotIni*/,/*cNotFim*/,/*cSerie*/,_cChave)
+                           
+                            IF SE1->E1_PARCELA = '2 ' .AND. !Empty(SE1->E1_NUMBCO)
+                                RecLock("SE1",.F.)
+                                SE1->E1_NUMBCO := " "
+                                MsUnlock()  
+                            ENDIF
+
+                        ENDIF
+
+                        IF !(SE1->E1_XFORMA $ 'TED_VFP') 
                             U_RF01B062(E1_PORTADO,E1_AGEDEP,E1_CONTA,'001',/*lSetup*/,/*cNotIni*/,/*cNotFim*/,/*cSerie*/,_cChave)
                         ENDIF
+
                     	_nRecBol := SE1->(Recno()) 
 
                         SE1->(dbGoTo(_nRecSE1))
