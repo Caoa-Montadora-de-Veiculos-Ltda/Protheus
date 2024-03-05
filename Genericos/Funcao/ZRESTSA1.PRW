@@ -113,9 +113,9 @@ Local _cAliasPesq	:= GetNextAlias()
 Local _lRet 		:= .T.
 Local _aCli 		:= {}
 Local _lNovo    	:= .T.
-Local _cCodSegmento := AllTrim(SuperGetMV("CMV_RESTI01",.F.,"06"))  //"06 - PADRÃO"
-Local _cConta 		:= AllTrim(SuperGetMV("CMV_RESTI02",.F.,""))  	//
-Local _cGrpTrib     := AllTrim(SuperGetMV("CMV_RESTI02",.F.,""))  	//
+Local _cCodSegmento := AllTrim(SuperGetMV("CMV_JSA101",.F.,"06"))  //"06 - PADRÃO"  //Código do Segmento Cliente
+Local _cConta 		:= AllTrim(SuperGetMV("CMV_JSA102",.F.,"1120101001"))  	//Conta Contabil Padrão
+Local _cGrpTrib     := AllTrim(SuperGetMV("CMV_JSA103",.F.,"FID"))  	//Grupo de Tributação Padrão
 
 Local _cLoja
 Local _cCnPjCpf
@@ -125,9 +125,17 @@ Local _cMunicipio
 Local _cCodMun
 Local _cBloqueio
 Local _cCodPais
+Local _cCodBancen
 Local _cContrib
 
 Begin Sequence 
+
+	//Função para retorno de códigos, verificar se existem pais estado e municipio, indiferente do cliente ser ou não cadastrdos estas informações tem que estar fornecidas corretamente
+	If !ZRESTSA1Localiza(_oJson, @_cCodMun, @_cCodPais, @_cCodBancen)
+		_lRet := .F.
+		Break
+	Endif
+	//Verifica se existe cliente cadastrado
 	_cCnPjCpf	:= AllTrim(_oJson:GetJsonText("cnpjcpf"))  
 	BeginSql Alias _cAliasPesq
 		SELECT 	SA1.R_E_C_N_O_ NREGSA1
@@ -143,7 +151,7 @@ Begin Sequence
 		_lNovo      := .T.
 		_cContrib   := "1"   //Verificar se é exportação testar quem é contribuinte 
 	Else 
-		_SA1->(DbGoto((_cAliasPesq)->NREGSA1))
+		SA1->(DbGoto((_cAliasPesq)->NREGSA1))
     	_cCodCli    := SA1->A1_COD
 		_cLoja   	:= SA1->A1_LOJA		
 		_cBloqueio  := SA1->A1_MSBLQL
@@ -158,11 +166,6 @@ Begin Sequence
 					If(_oJson:GetJsonText("endnum") > 0, ", "+ AllTrim(Str(_oJson:GetJsonText("endnum"))),"" )
 	_cMunicipio	:= AllTrim(_oJson:GetJsonText("municipio"))
 	
-	//Função para retorno de códigos
-	ZRESTSA1Localiza(_oJson, @_cCodMun, @_cCodPais)
-	_cCodMun 	:= ""  //Função para localizar codigo municipo pelo nome
-
-
    	aAdd( _aCli, { 'A1_FILIAL' 	,  FWxFilial('SA1')  } )   
     aAdd( _aCli, { 'A1_COD'    	,  cCodCli } )
     aAdd( _aCli, { 'A1_LOJA'   	,  cLoja } )
@@ -174,11 +177,10 @@ Begin Sequence
  	aAdd( _aCli, { 'A1_COMPLEM' ,  AllTrim(_oJson:GetJsonText("complemento")) } )
  	aAdd( _aCli, { 'A1_CEP'  	,  AllTrim(_oJson:GetJsonText("cep")) } )
 
-
     aAdd( _aCli, { 'A1_EST'    	,  AllTrim(_oJson:GetJsonText("estado")) } )
     aAdd( _aCli, { 'A1_COD_MUN'	,  _cCodMun })
     aAdd( _aCli, { 'A1_MUN'    	,  _cMunicipio } )
-    aAdd( _aCli, { 'A1_PAIS' 	,  AllTrim(_oJson:GetJsonText("pais")) } )
+    aAdd( _aCli, { 'A1_PAIS' 	,  _cCodPais } )
 
     aAdd( _aCli, { 'A1_CGC'    	,  _cCnPjCpf  } )
     aAdd( _aCli, { 'A1_MSBLQL'  ,  _cBloqueio  } )
@@ -188,44 +190,59 @@ Begin Sequence
     aAdd( _aCli, { 'A1_TEL'  	,  AllTrim(_oJson:GetJsonText("fone")) } )
     aAdd( _aCli, { 'A1_EMAIL'  	,  AllTrim(_oJson:GetJsonText("email")) } )
 
-
     aAdd( _aCli, { 'A1_CONTA'  	,  _cConta  } )
     aAdd( _aCli, { 'A1_GRPTRIB' ,  _cGrpTrib  } )
 
-    aAdd( _aCli, { 'A1_CODPAIS' ,  _cCodPais  } )
+    aAdd( _aCli, { 'A1_CODPAIS' ,  _cCodBancen  } )
     aAdd( _aCli, { 'A1_CONTRIB' ,  _cContrib  } )  
-
-
-
-
-
 
 End Sequence
 
 Return _lRet 
 
 
-Static Function ZRESTSA1Localiza(_oJson, _cCodMun, _cCodPais)
+Static Function ZRESTSA1Localiza(_oJson, _cCodMun, _cCodPais, _cCodBancen)
 Local _lRet := .T.
 Local _cMunicipio	:= AllTrim(_oJson:GetJsonText("municipio"))
+Local _cUf			:= AllTrim(_oJson:GetJsonText("estado"))
 Local _cPais		:= AllTrim(_oJson:GetJsonText("pais"))
+Local _cAliasPesq   := GetNextAlias()
 
+Begin Sequence 
 	BeginSql Alias _cAliasPesq
-		SELECT A1_PAIS,YA_DESCR, A1_CODPAIS  
-		FROM SA1020
-		LEFT JOIN SYA020
-			ON YA_CODGI = A1_PAIS
-		GROUP BY A1_PAIS, YA_DESCR, A1_CODPAIS
-
-
-
-		SELECT 	SYA.R_E_C_N_O_ NREGSYA
-				, 
-       	FROM %table:SA1% SA1
-       	WHERE SA1.A1_FILIAL  	= %XFilial:SA1%
-			AND SA1.A1_CGC 		= %Exp:_cCnPjCpf%
-		  	AND SA1.%notDel%		  
+		SELECT CC2.CC2_CODMUN  
+		FROM %Table:CC2% CC2
+       	WHERE CC2.CC2_FILIAL  	= %XFilial:CC2%
+			AND CC2.CC2_MUN 	= %Exp:_cMunicipio%
+			AND CC2.CC2_EST 	= %Exp:_cUf%
+		  	AND CC2.%notDel%		  
 	EndSql      
+	If (_cAliasPesq)->(Eof())
+		_lRet := .F.
+		Break
+	Endif
+	_cCodMun := (_cAliasPesq)->CC2_CODMUN
+
+	(_cAliasPesq)->(DbCloseArea())
+	BeginSql Alias _cAliasPesq
+		SELECT 	SYA.YA_CODGI, SYA.YA_SISEXP
+       	FROM %table:SYA% SYA
+       	WHERE SYA.YA_FILIAL  	= %XFilial:SYA%
+			AND SYA.YA_DESCR 	= %Exp:_cPais%
+		  	AND SYA.%notDel%		  
+	EndSql      
+	If (_cAliasPesq)->(Eof())
+		_lRet := .F.
+		Break
+	Endif
+	_cCodPais 	:= (_cAliasPesq)->YA_CODGI
+	_cCodBancen	:= (_cAliasPesq)->YA_SISEXP
+End Sequence 
+
+If Select((_cAliasPesq)) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif 
 
 Return _lRet
 
@@ -281,21 +298,21 @@ Return _aRet
 /*
 
 {
-    "nome" : "Jose Aparecido Silva", 
+    "cnpjcpf" : "99999999999999",
+    "nome" : "Jose Aparecido da Silva", 
     "reduzido" : "Jose", 
-    "cnpjcpf" : "00000000000000",
-    "ierg" : "",
+    "ierg" : "999999999999999000",
     "cep" : "00000000",
-    "endereco" : "Rua da logoa",
-    "endnum" :  30,
-    "complemento" : "",
-    "bairro" : "barrinha",
-    "municipio" : "Sao Paulo",
+    "endereco" : "Rua Logradouro",
+    "endnum" :  2034,
+    "complemento" : "Apto 32",
+    "bairro" : "Lagoa",
+    "municipio" : "Ribeirao Preto",
     "estado" : "SP"
     "pais" : "BRA",
     "ddd" : "011",
     "fone" : "9999999999",
-    "email" : "jasiva@teste.com.br",
+    "email" : "joseaparecido@email.com.br",
     "tipocli" : "F",
 }
 
