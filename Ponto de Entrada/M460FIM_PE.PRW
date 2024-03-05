@@ -21,7 +21,9 @@ User Function M460FIM()
     Local _cChave       := xFilial("SE1") + "5  " + SC5->C5_NOTA
     Local _cTmpAlias    := GetNextAlias()
     Local _nRecSE1      := 0    
-    Local _nRecBol      := 0   
+    Local _nRecBol      := 0  
+    Local _nParc1       := 0 
+    Local _cxForma      := 'BOL'
     Local aArea         := GetArea()
     Local aAreaSF2      := SF2->(GetArea())
     Local aAreaVV0      := VV0->(GetArea())
@@ -86,7 +88,14 @@ User Function M460FIM()
                     
                     //emissão de Boleto
                     IF SE1->E1_XFORMA $ 'BOL_VFP_TED' 
-                        IF SE1->E1_XFORMA <> 'TED' .AND. SE1->E1_XFORMA <> 'VFP'
+                        IF SC5->C5_XNPG = 'BOL' .AND. _nParc1 == 0 //Emissão de boleto na segunda condição de pagamento
+                           _nParc1++
+                           _cxForma := 'BOL'  //Atualiza forma de pagamento no titulo
+                            RecLock("SE1",.F.)
+                            SE1->E1_XFORMA := _cxForma
+                            MsUnlock()                           
+                           U_RF01B062(E1_PORTADO,E1_AGEDEP,E1_CONTA,'001',/*lSetup*/,/*cNotIni*/,/*cNotFim*/,/*cSerie*/,_cChave)
+                        ELSEIF SE1->E1_XFORMA <> 'TED' .AND. SE1->E1_XFORMA <> 'VFP' 
                             U_RF01B062(E1_PORTADO,E1_AGEDEP,E1_CONTA,'001',/*lSetup*/,/*cNotIni*/,/*cNotFim*/,/*cSerie*/,_cChave)
                         ENDIF
                     	_nRecBol := SE1->(Recno()) 
@@ -99,7 +108,7 @@ User Function M460FIM()
                     ENDIF
 
                     SE1->(DbSkip())
-                END
+                ENDDO
             EndIf
 
         ENDIF
