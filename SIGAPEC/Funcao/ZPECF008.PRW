@@ -635,7 +635,7 @@ Begin Sequence
 							EndIf	
 						EndIf	
 					Endif   //Fim tratamento por tipo pedido transferencia FDR
-					
+				
 					//Atualiza fase para Separação e se necessário gera Backorder
 					//Retorno para o registro VS1 pode ter sido disposicionado DAC 20/06/2022
 					//Mesmo que esta bloqueado por limite de crédito deixo fazer o carregamento devido os arquivos em bakorder
@@ -644,6 +644,7 @@ Begin Sequence
 						_lRet := .F.
            				Disarmtransaction()
 					EndIf	
+					End Transaction //TESTE NICOLAS 04/03	
 					//Cria separação e faz reserva
 					If _lRet  .And. VS1->VS1_STATUS <> "3"  //somente deixar criar se não for bloqueio de credito
 						_lRet := U_XOFUNLIB(VS1->VS1_NUMORC, _aSeqVS3, _aVS3Reg) 
@@ -655,7 +656,7 @@ Begin Sequence
 					//	_lRet	:= .F._cObs
            			//	Disarmtransaction()
 					//EndIf
-				End Transaction
+				//End Transaction //TESTE NICOLAS 04/03
 			EndIf	
 			//Retorno para o registro VS1 pode ter sido disposicionado DAC 20/06/2022
 			VS1->(DbGoto((_cAliasTRB)->NREGVS1))
