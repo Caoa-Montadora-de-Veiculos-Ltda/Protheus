@@ -168,7 +168,7 @@ Return NIL
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Uso       ³ Generico                                                   ³±±
 ±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±Obs        ³ Incluído regra na leitura ".OR. SE1->E1_XFORMA <> "BOL""    ±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 /*/
 
@@ -246,7 +246,7 @@ User Function RF01B062(xBanco,xAgencia,xConta,xSubCt,lSetup,cNotIni,cNotFim,cSer
 	While !EOF()
 
 		If IsInCallStack("U_M460FIM")
-			If !(SE1->(E1_FILIAL + E1_PREFIXO + E1_NUM) == cChvTit)
+			If !(SE1->(E1_FILIAL + E1_PREFIXO + E1_NUM) == cChvTit) .OR. SE1->E1_XFORMA <> "BOL"
 				SE1->(dbSkip())
 				Loop	
 			EndIf

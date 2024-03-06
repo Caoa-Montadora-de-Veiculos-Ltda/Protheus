@@ -21,7 +21,6 @@ User Function M460FIM()
     Local _cChave       := xFilial("SE1") + "5  " + SC5->C5_NOTA
     Local _cTmpAlias    := GetNextAlias()
     Local _nRecSE1      := 0    
-    Local _nRecBol      := 0  
     Local _nParc1       := 0 
     Local aArea         := GetArea()
     Local aAreaSF2      := SF2->(GetArea())
@@ -85,7 +84,6 @@ User Function M460FIM()
                     SE1->E1_CONTA   := _cConta
                     MsUnlock()
                     
-                    //emissão de Boleto
                     IF SE1->E1_XFORMA $ 'BOL_VFP_TED' 
                         IF SC5->C5_XNPG = 'BOL' .AND. _nParc1 == 0 //Emissão de boleto na segunda condição de pagamento
                            _nParc1++                               //Apenas parcela 01 
@@ -97,25 +95,27 @@ User Function M460FIM()
                             //Emissão do Boleto 
                             U_RF01B062(E1_PORTADO,E1_AGEDEP,E1_CONTA,'001',/*lSetup*/,/*cNotIni*/,/*cNotFim*/,/*cSerie*/,_cChave)
                            
-                            IF SE1->E1_PARCELA = '2 ' .AND. !Empty(SE1->E1_NUMBCO)
+                            SE1->(dbGoTo(_nRecSE1))   
+                            
+                            /*IF SE1->E1_PARCELA = '2 ' .AND. !Empty(SE1->E1_NUMBCO)
                                 RecLock("SE1",.F.)
                                 SE1->E1_NUMBCO := " "
                                 MsUnlock()  
-                            ENDIF
+                            ENDIF*/
 
                         ENDIF
 
-                        IF !(SE1->E1_XFORMA $ 'TED_VFP') 
-                            U_RF01B062(E1_PORTADO,E1_AGEDEP,E1_CONTA,'001',/*lSetup*/,/*cNotIni*/,/*cNotFim*/,/*cSerie*/,_cChave)
-                        ENDIF
+                        //IF !(SE1->E1_XFORMA $ 'TED_VFP') .AND. SE1->(!EOF())
+                        //    U_RF01B062(E1_PORTADO,E1_AGEDEP,E1_CONTA,'001',/*lSetup*/,/*cNotIni*/,/*cNotFim*/,/*cSerie*/,_cChave)
+                        //ENDIF
 
-                    	_nRecBol := SE1->(Recno()) 
+                    	//_nRecBol := SE1->(Recno()) 
 
-                        SE1->(dbGoTo(_nRecSE1))
+                        //SE1->(dbGoTo(_nRecSE1))
                         If Findfunction("U_ZFINF006") .AND. SE1->E1_PARCELA ='1 ' .AND. SE1->E1_TIPO = 'NF '
                             U_ZFINF006()
                         EndIf
-                        SE1->(dbGoTo(_nRecBol))
+                        //SE1->(dbGoTo(_nRecBol))
                     ENDIF
 
                     SE1->(DbSkip())
