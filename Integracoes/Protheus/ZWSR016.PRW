@@ -25,17 +25,25 @@ R  - resT OU W WebServer
 /*/
 
 WSRESTFUL ZWSR016 DESCRIPTION "Integração RG LOG Separação" FORMAT APPLICATION_JSON 
+	WSMETHOD POST ; 
+	        DESCRIPTION "Incluir Cadastro de Clientes";
+	        WSSYNTAX "/ZWSR016"
+END WSRESTFUL
+/*
+WSRESTFUL ZWSR016 DESCRIPTION "Integração RG LOG Separação" FORMAT APPLICATION_JSON 
 	WSMETHOD GET ; 
 	        DESCRIPTION "";
 	        WSSYNTAX "/ZWSR016"
 END WSRESTFUL
+*/
 
 //WSMETHOD POST;
 //WSRECEIVE empresa, filial, token, cnpj, doc, serie;
 //WSSERVICE ZWSR016
 
 
-WSMETHOD GET WSSERVICE ZWSR016
+WSMETHOD POST WSSERVICE ZWSR016
+//WSMETHOD GET WSSERVICE ZWSR016
 Local _aRet				:= {}
 Local _oJsonRet 		:= Nil
 Local _oJson
@@ -48,7 +56,6 @@ Local _cPass
 Begin Sequence
     Conout("ZWSR016 - Integraçao Recebimento Cadastro de Clientes GET REST - Inicio "+DtoC(date())+" "+Time())
     ::SetContentType('application/json')
-
 	_cAuthorization := Self:GetHeader('Authorization')
 	_cEmpFil 		:= Self:GetHeader("tenantid", .F.)
 	_cResp			:= Self:GetHeader("Responsavel", .F.)
@@ -59,13 +66,14 @@ Begin Sequence
 
 	 _cChave := _cUser+":"+_cPass
 	If _cChave == Decode64(_cAuthorization)
+
 		_oJson := JsonObject():new()
     	_oJson:fromJson(DecodeUTF8(Self:GetContent(,.T.)))  //Correto
 		//    _cJson       := Self:GetContent(,.T.)
 		_aRet := U_ZRESTSA1(@_oJson, _cEmpFil, _cResp)
 		//Erro no programa
   	Else 
-		_aRet := {998,"Nao Autorizado"}
+		_aRet := {302,"Nao Autorizado"}
 	Endif
 	
 	If ValType(_aRet) <> "A" .Or. Len(_aRet) == 0 
@@ -103,6 +111,7 @@ Begin Sequence
 	*/
 End Sequence
 FreeObj(_oJson)
+FreeObj(_oJsonRet)
 Conout("ZWSR016 - Integraçao Recebimento Cadastro de Clientes GET REST - Final "+DtoC(date())+" "+Time())
 Return .T.
 
