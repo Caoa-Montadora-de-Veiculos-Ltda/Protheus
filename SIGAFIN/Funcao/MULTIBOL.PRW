@@ -1,6 +1,6 @@
-#INCLUDE "rwMake.ch"
-#INCLUDE "PROTHEUS.CH"
-
+#Include "rwMake.ch"
+#Include "PROTHEUS.CH"
+#Include "TopConn.Ch" 
 /*/
 ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
 ±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
@@ -20,7 +20,6 @@
 /*/
 
 User Function MULTIBOL()
-
 	Local	aPergs     := {}
 	Private lExec      := .F.
 	Private cIndexName := ''
@@ -178,11 +177,11 @@ User Function RF01B062(xBanco,xAgencia,xConta,xSubCt,lSetup,cNotIni,cNotFim,cSer
 	Local oPrint
 	Local nX := 0
 	Local cQueryA1  :=  " "
-    Local TRBA1     := GetNextAlias() 
-	Local nRes	    := .T. 
+    Local cAliasA1  := GetNextAlias() 
 	Local cQy	    := " "
 	Local cAliasB   := GetNextAlias()
 	Local cContaB   := " "
+	Local cQyee	    := " "
 	Local cAliasEE  := GetNextAlias()
 	Local cContaEE  := " "	
 	Local cNroDoc 	:= " "
@@ -275,14 +274,19 @@ User Function RF01B062(xBanco,xAgencia,xConta,xSubCt,lSetup,cNotIni,cNotFim,cSer
 		cQueryA1 += " AND A1_COD = '" + SE1->E1_CLIENTE + "' "
 		cQueryA1 += " AND A1_LOJA = '"+ SE1->E1_LOJA + "' "	
 		cQueryA1 += " AND SA1.D_E_L_E_T_ <> '*' "
+		
+        If Select(cAliasA1) <> 0
+            (cAliasA1)->(DbCloseArea())
+        EndIf
 
-		U_MONTAQRY(cQueryA1,"cAliasB")
+        DbUseArea(.T.,"TOPCONN",TcGenQry(,,cQueryA1),cAliasA1,.F.,.T.)
 
-		If Select(cAliasB) = 0
-
+		If Select(cAliasA1) = 0
 			Aviso(OemToAnsi("ATENÇÃO"),OemToAnsi("Cliente não localizado"),{"OK"})
-			(cAliasB) -> (DbCloseArea())
-
+			(cAliasA1) -> (DbCloseArea())
+			DbSelectArea("SE1")
+			dbSkip()
+			Loop
 		EndIf
 
 //		dbSelectArea("SA1")
@@ -291,7 +295,7 @@ User Function RF01B062(xBanco,xAgencia,xConta,xSubCt,lSetup,cNotIni,cNotFim,cSer
 
 		If (!IsInCallStack("U_xGBolVei") .AND. !IsInCallStack("U_M460FIM"))
 
-			xBanco   := (TRBA1)->A1_BCO1
+			xBanco   := (cAliasA1)->A1_BCO1
 			aBco	 := VerBco(Alltrim(xBanco))
 //			xBanco   := SA1->A1_BCO1
 //			aBco	 := VerBco(Alltrim(SA1->A1_BCO1))
@@ -304,7 +308,6 @@ User Function RF01B062(xBanco,xAgencia,xConta,xSubCt,lSetup,cNotIni,cNotFim,cSer
 			Else
 				xSubct   := MV_PAR19
 			EndIf
-
 
 			If !Empty(MV_PAR20) .and. Empty(xBanco)
 				xBanco := MV_PAR20
@@ -336,22 +339,20 @@ User Function RF01B062(xBanco,xAgencia,xConta,xSubCt,lSetup,cNotIni,cNotFim,cSer
 		cQy += " AND A6_AGENCIA = '" + cAgencia + "' " + CRLF 
 		cQy += " AND A6_NUMCON  = '" + cConta + "' " + CRLF 
 
-		U_MONTAQRY(cQy,"TRBA1")
+        If Select(cAliasB) <> 0
+            (cAliasB)->(DbCloseArea())
+        EndIf
 
-		If Select(TRBA1) = 0
+        DbUseArea(.T.,"TOPCONN",TcGenQry(,,cQy),cAliasB,.F.,.T.)
 
-			Aviso(OemToAnsi("ATENÇÃO"),OemToAnsi("Cliente não localizado"),{"OK"})
-			(TRBA1) -> (DbCloseArea())
-
-		EndIf
-
-	    IF Empty(cContaB)
+		If Select(cAliasB) = 0
 			Aviso(OemToAnsi("ATENÇÃO"),OemToAnsi("Banco não localizado."),{"OK"})
+			(cAliasB) -> (DbCloseArea())
 			DbSelectArea("SE1")
 			dbSkip()
-			Loop
-		ENDIF
-		
+			Loop			
+		EndIf
+
 //		DbSelectArea("SA6")
 //		DbSetOrder(1)
 //		If !DbSeek(xFilial("SA6")+cBanco+cAgencia+cConta)
@@ -361,31 +362,29 @@ User Function RF01B062(xBanco,xAgencia,xConta,xSubCt,lSetup,cNotIni,cNotFim,cSer
 //			Loop
 //		EndIf
 
-		cQy := " SELECT * " + CRLF 
-		cQy += "  FROM " + RetSQLName("SEE") + CRLF 
-		cQy += " WHERE " + CRLF 
-		cQy += " 	D_E_L_E_T_ <> '*' " + CRLF 
-		cQy += " AND EE_FILIAL  = '" + xfilial('SEE') + "' " + CRLF 
-		cQy += " AND EE_CODIGO  = '" + cBanco + "' " + CRLF 
-		cQy += " AND EE_AGENCIA = '" + cAgencia + "' " + CRLF 
-		cQy += " AND EE_CONTA   = '" + cConta + "' " + CRLF 
-		cQy += " AND EE_SUBCTA  = '" + cSubCt + "' " + CRLF 
+		cQyee := " SELECT * " + CRLF 
+		cQyee += "  FROM " + RetSQLName("SEE") + CRLF 
+		cQyee += " WHERE " + CRLF 
+		cQyee += " 	D_E_L_E_T_ <> '*' " + CRLF 
+		cQyee += " AND EE_FILIAL  = '" + xfilial('SEE') + "' " + CRLF 
+		cQyee += " AND EE_CODIGO  = '" + cBanco + "' " + CRLF 
+		cQyee += " AND EE_AGENCIA = '" + cAgencia + "' " + CRLF 
+		cQyee += " AND EE_CONTA   = '" + cConta + "' " + CRLF 
+		cQyee += " AND EE_SUBCTA  = '" + cSubCt + "' " + CRLF 
 
-		U_MONTAQRY(cQy,"cAliasEE")
+        If Select(cAliasEE) <> 0
+            (cAliasEE)->(DbCloseArea())
+        EndIf
+
+        DbUseArea(.T.,"TOPCONN",TcGenQry(,,cQyee),cAliasEE,.F.,.T.)
 
 		If Select(cAliasEE) = 0
-
-			Aviso(OemToAnsi("ATENÇÃO"),OemToAnsi("Cliente não localizado"),{"OK"})
+            Aviso(OemToAnsi("ATENÇÃO"),OemToAnsi("Não localizado banco no cadastro de parâmetros para envio."),{"OK"})
 			(cAliasEE) -> (DbCloseArea())
-
-		EndIf
-
-	    IF Empty(cContaEE)
-			Aviso(OemToAnsi("ATENÇÃO"),OemToAnsi("Não localizado banco no cadastro de parâmetros para envio."),{"OK"})
 			DbSelectArea("SE1")
 			dbSkip()
 			Loop
-		ENDIF
+		EndIf
 
 		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 		//³ Posiciona na Arq de Parametros CNAB   ³
@@ -518,26 +517,26 @@ User Function RF01B062(xBanco,xAgencia,xConta,xSubCt,lSetup,cNotIni,cNotFim,cSer
 		Endif
 */
 
-		If Empty((TRBA1)->A1_ENDCOB)
-			aDatSacado   := {AllTrim((TRBA1)->A1_NOME)				         ,;	//	[1]	Razão Social
-			AllTrim((TRBA1)->A1_COD )+"-"+(TRBA1)->A1_LOJA				         ,;	//	[2]	Código
-			AllTrim((TRBA1)->A1_END )+"-"+AllTrim((TRBA1)->A1_BAIRRO)	         ,;	//	[3]	Endereço
-			AllTrim((TRBA1)->A1_MUN )								         ,;	//	[4]	Cidade
-			(TRBA1)->A1_EST											         ,;	//	[5]	Estado
-			(TRBA1)->A1_CEP											         ,;	//	[6]	CEP
-			(TRBA1)->A1_CGC											         ,;	//	[7]	CGC
-			(TRBA1)->A1_PESSOA										         ,;	//	[8]	PESSOA
-			(TRBA1)->A1_EMAIL								          		}	//	[9]	E-mail
+		If Empty((cAliasA1)->A1_ENDCOB)
+			aDatSacado   := {AllTrim((cAliasA1)->A1_NOME)				         ,;	//	[1]	Razão Social
+			AllTrim((cAliasA1)->A1_COD )+"-"+(cAliasA1)->A1_LOJA				         ,;	//	[2]	Código
+			AllTrim((cAliasA1)->A1_END )+"-"+AllTrim((cAliasA1)->A1_BAIRRO)	         ,;	//	[3]	Endereço
+			AllTrim((cAliasA1)->A1_MUN )								         ,;	//	[4]	Cidade
+			(cAliasA1)->A1_EST											         ,;	//	[5]	Estado
+			(cAliasA1)->A1_CEP											         ,;	//	[6]	CEP
+			(cAliasA1)->A1_CGC											         ,;	//	[7]	CGC
+			(cAliasA1)->A1_PESSOA										         ,;	//	[8]	PESSOA
+			(cAliasA1)->A1_EMAIL								          		}	//	[9]	E-mail
 		Else
-			aDatSacado   := {AllTrim((TRBA1)->A1_NOME)				        ,;	//	[1]	Razão Social
-			AllTrim((TRBA1)->A1_COD )+"-"+(TRBA1)->A1_LOJA				        ,;	//	[2]	Código
-			AllTrim((TRBA1)->A1_ENDCOB)+"-"+AllTrim((TRBA1)->A1_BAIRROC)        ,;	//	[3]	Endereço
-			AllTrim((TRBA1)->A1_MUNC)						        		,;	//	[4]	Cidade
-			(TRBA1)->A1_ESTC										        ,;	//	[5]	Estado
-			(TRBA1)->A1_CEPC						         				,;	//	[6]	CEP
-			(TRBA1)->A1_CGC										         	,;	//	[7]	CGC
-			(TRBA1)->A1_PESSOA										        ,;	//	[8]	PESSOA
-			(TRBA1)->A1_EMAIL									         	}	//	[9]	E-mail
+			aDatSacado   := {AllTrim((cAliasA1)->A1_NOME)				        ,;	//	[1]	Razão Social
+			AllTrim((cAliasA1)->A1_COD )+"-"+(cAliasA1)->A1_LOJA				        ,;	//	[2]	Código
+			AllTrim((cAliasA1)->A1_ENDCOB)+"-"+AllTrim((cAliasA1)->A1_BAIRROC)        ,;	//	[3]	Endereço
+			AllTrim((cAliasA1)->A1_MUNC)						        		,;	//	[4]	Cidade
+			(cAliasA1)->A1_ESTC										        ,;	//	[5]	Estado
+			(cAliasA1)->A1_CEPC						         				,;	//	[6]	CEP
+			(cAliasA1)->A1_CGC										         	,;	//	[7]	CGC
+			(cAliasA1)->A1_PESSOA										        ,;	//	[8]	PESSOA
+			(cAliasA1)->A1_EMAIL									         	}	//	[9]	E-mail
 		Endif
 
 		nVlrAbat := SomaAbat(SE1->E1_PREFIXO,SE1->E1_NUM,SE1->E1_PARCELA,"R",1,,SE1->E1_CLIENTE,SE1->E1_LOJA)
@@ -1943,59 +1942,6 @@ Static Function VerBco(cBanco)
 
 Return({cAg,cCta,cSubCta})
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Fun‡„o    ³MontaQry  ³ Autor ³       TOTVS           ³ Data ³ Abr/2009  ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descrição ³Cria tabela temporaria com Select via query.                 ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Parametros³ ExpA1: Varivel com a query desejada.                        ³±±
-±±³          ³ ExpA2: Nome da tabela temporaria a ser criada.              ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Retorno   ³ Numeros de registros retornados pela Select.                ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-Exemplo da chamada da funcao
-
-cQuery := "SELECT COUNT(*) "
-cQuery += " FROM "+RetSqlName("SA1")+" SA1 (NOLOCK) "
-cQuery += " WHERE SA1.A1_FILIAL = '"+xFilial("SA1")+"' AND "
-cQuery += " SA1.D_E_L_E_T_ <> '*' "
-cQuery += " ORDER BY A1_COD DESC "
-
-U_MONTAQRY(cQuery,"TRB")
-*/
-User Function MontaQry(cSql,cAliasTRB)
-
-	Local nCnt := 0
-	Local bSql := ChangeQuery( cSql )
-
-	// Verificar se o Alias ja esta aberto.
-	If Select(cAliasTRB) > 0
-
-		DbSelectArea(cAliasTRB)
-		//DbCloseArea(cAliasTRB)
-		(cAliasTRB) -> (DbCloseArea())
-
-	EndIf
-
-	//Grava o script da query no system
-	//MemoWrit(Alltrim(FunName())+Alltrim(cAliasTRB)+".SQL",cSql)
-
-	DbUseArea( .T., "TOPCONN", TcGenQry(,,bSql), cAliasTRB, .T., .F. )
-	DbSelectArea(cAliasTRB)
-	DbGoTop()
-
-	// Conta quantos sao os registros retornados pelo Select.
-	DbEval( {|| nCnt++ })
-
-	DbSelectArea(cAliasTRB)
-	DbGoTop()
-
-Return(nCnt)
 
 Static Function xChasTit(cxFil,cNum)
 
