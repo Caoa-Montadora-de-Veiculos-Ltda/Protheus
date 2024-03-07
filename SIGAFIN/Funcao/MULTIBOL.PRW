@@ -177,7 +177,15 @@ User Function RF01B062(xBanco,xAgencia,xConta,xSubCt,lSetup,cNotIni,cNotFim,cSer
 
 	Local oPrint
 	Local nX := 0
-	Local cNroDoc 	   :=  " "
+	Local cQueryA1  :=  " "
+    Local TRBA1     := GetNextAlias() 
+	Local nRes	    := .T. 
+	Local cQy	    := " "
+	Local cAliasB   := GetNextAlias()
+	Local cContaB   := " "
+	Local cAliasEE  := GetNextAlias()
+	Local cContaEE  := " "	
+	Local cNroDoc 	:= " "
 	Local aDadosEmp
 
 	Local aDadosTit
@@ -261,14 +269,32 @@ User Function RF01B062(xBanco,xAgencia,xConta,xSubCt,lSetup,cNotIni,cNotFim,cSer
 			EndIf
 		Endif
 
-		dbSelectArea("SA1")
-		dbSetOrder(1)
-		dbSeek(xFilial("SA1")+SE1->E1_CLIENTE+SE1->E1_LOJA)
+		cQueryA1 := "SELECT * "
+		cQueryA1 += " FROM "+RetSqlName("SA1")+" SA1 "
+		cQueryA1 += " WHERE A1_FILIAL = '"+xFilial("SA1")+"' "
+		cQueryA1 += " AND A1_COD = '" + SE1->E1_CLIENTE + "' "
+		cQueryA1 += " AND A1_LOJA = '"+ SE1->E1_LOJA + "' "	
+		cQueryA1 += " AND SA1.D_E_L_E_T_ <> '*' "
+
+		U_MONTAQRY(cQueryA1,"cAliasB")
+
+		If Select(cAliasB) = 0
+
+			Aviso(OemToAnsi("ATENÇÃO"),OemToAnsi("Cliente não localizado"),{"OK"})
+			(cAliasB) -> (DbCloseArea())
+
+		EndIf
+
+//		dbSelectArea("SA1")
+//		dbSetOrder(1)
+//		dbSeek(xFilial("SA1")+SE1->E1_CLIENTE+SE1->E1_LOJA)
 
 		If (!IsInCallStack("U_xGBolVei") .AND. !IsInCallStack("U_M460FIM"))
 
-			xBanco   := SA1->A1_BCO1
-			aBco	 := VerBco(Alltrim(SA1->A1_BCO1))
+			xBanco   := (TRBA1)->A1_BCO1
+			aBco	 := VerBco(Alltrim(xBanco))
+//			xBanco   := SA1->A1_BCO1
+//			aBco	 := VerBco(Alltrim(SA1->A1_BCO1))
 
 			xAgencia := aBco[1]
 			xConta   := aBco[2]
@@ -293,50 +319,101 @@ User Function RF01B062(xBanco,xAgencia,xConta,xSubCt,lSetup,cNotIni,cNotFim,cSer
 			EndIf
 		EndIF
 
-		cBanco   := iif(xBanco	==nil,SE1->E1_PORTADO,xBanco)
-		cAgencia := iif(xAgencia	==nil,SE1->E1_AGEDEP,xAgencia)
-		cConta   := iif(xConta	==nil,SE1->E1_CONTA,xConta)
-		cSubct   := iif(xSubCt	==nil,MV_PAR19,xSubCt)
+		cBanco   := iif(xBanco	 ==nil,SE1->E1_PORTADO,xBanco)
+		cAgencia := iif(xAgencia ==nil,SE1->E1_AGEDEP,xAgencia)
+		cConta   := iif(xConta	 ==nil,SE1->E1_CONTA,xConta)
+		cSubct   := iif(xSubCt	 ==nil,MV_PAR19,xSubCt) 
 
 		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 		//³ Posiciona o SA6 (Bancos)    ³
 		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-		DbSelectArea("SA6")
-		DbSetOrder(1)
-		If !DbSeek(xFilial("SA6")+cBanco+cAgencia+cConta)
-			Aviso(OemToAnsi("ATENÇÃO"),OemToAnsi("Banco não localizado"),{"OK"})
+		cQy := " SELECT * " + CRLF 
+		cQy += "  FROM " + RetSQLName("SA6") + CRLF 
+		cQy += " WHERE " + CRLF 
+		cQy += " 	D_E_L_E_T_ <> '*' " + CRLF 
+		cQy += " AND A6_FILIAL  = '" + xfilial('SA6') + "' " + CRLF 
+		cQy += " AND A6_COD     = '" + cBanco + "' " + CRLF 
+		cQy += " AND A6_AGENCIA = '" + cAgencia + "' " + CRLF 
+		cQy += " AND A6_NUMCON  = '" + cConta + "' " + CRLF 
+
+		U_MONTAQRY(cQy,"TRBA1")
+
+		If Select(TRBA1) = 0
+
+			Aviso(OemToAnsi("ATENÇÃO"),OemToAnsi("Cliente não localizado"),{"OK"})
+			(TRBA1) -> (DbCloseArea())
+
+		EndIf
+
+	    IF Empty(cContaB)
+			Aviso(OemToAnsi("ATENÇÃO"),OemToAnsi("Banco não localizado."),{"OK"})
 			DbSelectArea("SE1")
 			dbSkip()
 			Loop
+		ENDIF
+		
+//		DbSelectArea("SA6")
+//		DbSetOrder(1)
+//		If !DbSeek(xFilial("SA6")+cBanco+cAgencia+cConta)
+//			Aviso(OemToAnsi("ATENÇÃO"),OemToAnsi("Banco não localizado"),{"OK"})
+//			DbSelectArea("SE1")
+//			dbSkip()
+//			Loop
+//		EndIf
+
+		cQy := " SELECT * " + CRLF 
+		cQy += "  FROM " + RetSQLName("SEE") + CRLF 
+		cQy += " WHERE " + CRLF 
+		cQy += " 	D_E_L_E_T_ <> '*' " + CRLF 
+		cQy += " AND EE_FILIAL  = '" + xfilial('SEE') + "' " + CRLF 
+		cQy += " AND EE_CODIGO  = '" + cBanco + "' " + CRLF 
+		cQy += " AND EE_AGENCIA = '" + cAgencia + "' " + CRLF 
+		cQy += " AND EE_CONTA   = '" + cConta + "' " + CRLF 
+		cQy += " AND EE_SUBCTA  = '" + cSubCt + "' " + CRLF 
+
+		U_MONTAQRY(cQy,"cAliasEE")
+
+		If Select(cAliasEE) = 0
+
+			Aviso(OemToAnsi("ATENÇÃO"),OemToAnsi("Cliente não localizado"),{"OK"})
+			(cAliasEE) -> (DbCloseArea())
+
 		EndIf
+
+	    IF Empty(cContaEE)
+			Aviso(OemToAnsi("ATENÇÃO"),OemToAnsi("Não localizado banco no cadastro de parâmetros para envio."),{"OK"})
+			DbSelectArea("SE1")
+			dbSkip()
+			Loop
+		ENDIF
 
 		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 		//³ Posiciona na Arq de Parametros CNAB   ³
 		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-		DbSelectArea("SEE")
-		DbSetOrder(1)
-		If !DbSeek(xFilial("SEE")+cBanco+cAgencia+cConta+cSubCt)
-			Aviso(OemToAnsi("ATENÇÃO"),OemToAnsi("Não localizado banco no cadastro de parâmetros para envio"),{"OK"})
-			DbSelectArea("SE1")
-			dbSkip()
-			Loop
-		EndIf
+//		DbSelectArea("SEE")
+//		DbSetOrder(1)
+//		If !DbSeek(xFilial("SEE")+cBanco+cAgencia+cConta+cSubCt)
+//			Aviso(OemToAnsi("ATENÇÃO"),OemToAnsi("Não localizado banco no cadastro de parâmetros para envio"),{"OK"})
+//			DbSelectArea("SE1")
+//			dbSkip()
+//			Loop
+//		EndIf
 
 		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 		//³ Posiciona o SA1 (Cliente)             ³
 		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-		DbSelectArea("SA1")
-		SA1->(DbSetOrder(1))
-		SA1->(DbSeek(xFilial()+SE1->E1_CLIENTE+SE1->E1_LOJA,.T.))
+//		DbSelectArea("SA1")
+//		SA1->(DbSetOrder(1))
+//		SA1->(DbSeek(xFilial()+SE1->E1_CLIENTE+SE1->E1_LOJA,.T.))
 
 		DbSelectArea("SE1")
 
-		if alltrim(see->ee_codigo) $'341'
-			_cconta :=  StrZero(Val(Subs(SA6->A6_NUMCON,1,Len(AllTrim(SA6->A6_NUMCON))-1)),5)
+		if alltrim((cAliasEE)->ee_codigo) $'341'
+			_cconta :=  StrZero(Val(Subs(cContaB,1,Len(AllTrim(cContaB))-1)),5)
 		elseif alltrim(see->ee_codigo) $'033'
-			_cconta := StrZero(Val(Subs(SA6->A6_NUMCON,1,Len(AllTrim(SA6->A6_NUMCON))-1)),Len(AllTrim(SA6->A6_NUMCON))-1)
+			_cconta := StrZero(Val(Subs(cContaB,1,Len(AllTrim(cContaB))-1)),Len(AllTrim(cContaB))-1)
 		else
-			_cconta := StrZero(Val(Subs(SA6->A6_NUMCON,1,Len(AllTrim(SA6->A6_NUMCON))-1)),7)
+			_cconta := StrZero(Val(Subs(cContaB,1,Len(AllTrim(cContaB))-1)),7)
 		endif
 		/*
 		aDadosBanco  := {SEE->EE_CODIGO  										                      ,;	//	[1]	Numero do Banco
@@ -349,14 +426,14 @@ User Function RF01B062(xBanco,xAgencia,xConta,xSubCt,lSetup,cNotIni,cNotFim,cSer
 		AllTrim(SA6->A6_NUMCON)}
 		*/
 
-		aDadosBanco  := {SEE->EE_CODIGO  						 ,;	//	[1]	Numero do Banco
-		SUBSTR(Alltrim(SA6->A6_NOME),1,15)	,;	//	[2]	Nome do Banco
-		SUBSTR(SEE->EE_AGENCIA, 1, 4)		,;	//	[3]	Agência
-		SUBSTR(SA6->A6_NUMCON,1,6)	        ,;	//	[4]	Conta Corrente
-		SUBSTR(SA6->A6_DVCTA,1,1)        	,;	//	[5]	Dígito da conta corrente
-		SUBSTR(SEE->EE_CODCART,1,3)         ,;
-		SUBSTR(SEE->EE_DVAGE,1,1)           ,;
-		AllTrim(SA6->A6_NUMCON)}
+		aDadosBanco  := {(cAliasEE)->EE_CODIGO  				 ,;	//	[1]	Numero do Banco
+		                 SUBSTR(Alltrim((cAliasB)->A6_NOME),1,15),;	//	[2]	Nome do Banco
+		                 SUBSTR((cAliasEE)->EE_AGENCIA, 1, 4)	 ,;	//	[3]	Agência
+		                 SUBSTR(cContaB,1,6)	                 ,;	//	[4]	Conta Corrente
+		                 SUBSTR((cAliasB)->A6_DVCTA,1,1)         ,;	//	[5]	Dígito da conta corrente
+		                 SUBSTR((cAliasEE)->EE_CODCART,1,3)      ,;
+		                 SUBSTR((cAliasEE)->EE_DVAGE,1,1)        ,;
+		                 AllTrim(cContaB)}
 
 		//IIF(ALLTRIM(SEE->EE_CODIGO)$'001','018/019',SUBSTR(SEE->EE_X_CART,1,3))     ,;   //	[6]	Codigo da Carteira
 		/*
@@ -369,7 +446,6 @@ User Function RF01B062(xBanco,xAgencia,xConta,xSubCt,lSetup,cNotIni,cNotFim,cSer
 		Iif(Len(AllTrim(SA6->A6_AGENCIA)) > 4 , Right(Alltrim(SA6->A6_AGENCIA),1),"7") 	,;  // [7]Digito da Agência
 		AllTrim(SA6->A6_NUMCON)}
 		*/
-
 
 		cmsg1 := " "
 		cmsg2 := " "
@@ -386,23 +462,23 @@ User Function RF01B062(xBanco,xAgencia,xConta,xSubCt,lSetup,cNotIni,cNotFim,cSer
 		EndIf
 		*/
 
-		If !Empty(SEE->EE_FORMEN1)
-			cmsg1 := SEE->EE_FORMEN1
+		If !Empty((cAliasEE)->EE_FORMEN1)
+			cmsg1 := (cAliasEE)->EE_FORMEN1
 		EndIf
 
-		If !Empty(SEE->EE_FORMEN2)
-			cmsg2 := SEE->EE_FORMEN2
+		If !Empty((cAliasEE)->EE_FORMEN2)
+			cmsg2 := (cAliasEE)->EE_FORMEN2
 		EndIf
 
-		If !Empty(SEE->EE_FOREXT1)
-			cmsg3 := SEE->EE_FOREXT1
+		If !Empty((cAliasEE)->EE_FOREXT1)
+			cmsg3 := (cAliasEE)->EE_FOREXT1
 		EndIf
 
-		If !Empty(SEE->EE_FOREXT2)
-			cmsg4 := SEE->EE_FOREXT2
+		If !Empty((cAliasEE)->EE_FOREXT2)
+			cmsg4 := (cAliasEE)->EE_FOREXT2
 		EndIf
 
-		aBolText     := {   cmsg1                                                   ,; //[1] TEXTO 1
+		aBolText     := {   cmsg1                               ,; //[1] TEXTO 1
 		cmsg2                                               	,; //[2] TEXTO 1
 		cmsg3													,; //[3] TEXTO 1
 		cmsg4													}  //[4] TEXTO 1
@@ -419,7 +495,7 @@ User Function RF01B062(xBanco,xAgencia,xConta,xSubCt,lSetup,cNotIni,cNotFim,cSer
 		Subs(SM0->M0_INSC,7,3)+"."+Subs(SM0->M0_INSC,10,3)							   }	        //	[7]	I.E
 
 
-		If Empty(SA1->A1_ENDCOB)
+/*  	If Empty(SA1->A1_ENDCOB)
 			aDatSacado   := {AllTrim(SA1->A1_NOME)				         ,;	//	[1]	Razão Social
 			AllTrim(SA1->A1_COD )+"-"+SA1->A1_LOJA				         ,;	//	[2]	Código
 			AllTrim(SA1->A1_END )+"-"+AllTrim(SA1->A1_BAIRRO)	         ,;	//	[3]	Endereço
@@ -439,6 +515,29 @@ User Function RF01B062(xBanco,xAgencia,xConta,xSubCt,lSetup,cNotIni,cNotFim,cSer
 			SA1->A1_CGC										         	,;	//	[7]	CGC
 			SA1->A1_PESSOA										        ,;	//	[8]	PESSOA
 			SA1->A1_EMAIL									         	}	//	[9]	E-mail
+		Endif
+*/
+
+		If Empty((TRBA1)->A1_ENDCOB)
+			aDatSacado   := {AllTrim((TRBA1)->A1_NOME)				         ,;	//	[1]	Razão Social
+			AllTrim((TRBA1)->A1_COD )+"-"+(TRBA1)->A1_LOJA				         ,;	//	[2]	Código
+			AllTrim((TRBA1)->A1_END )+"-"+AllTrim((TRBA1)->A1_BAIRRO)	         ,;	//	[3]	Endereço
+			AllTrim((TRBA1)->A1_MUN )								         ,;	//	[4]	Cidade
+			(TRBA1)->A1_EST											         ,;	//	[5]	Estado
+			(TRBA1)->A1_CEP											         ,;	//	[6]	CEP
+			(TRBA1)->A1_CGC											         ,;	//	[7]	CGC
+			(TRBA1)->A1_PESSOA										         ,;	//	[8]	PESSOA
+			(TRBA1)->A1_EMAIL								          		}	//	[9]	E-mail
+		Else
+			aDatSacado   := {AllTrim((TRBA1)->A1_NOME)				        ,;	//	[1]	Razão Social
+			AllTrim((TRBA1)->A1_COD )+"-"+(TRBA1)->A1_LOJA				        ,;	//	[2]	Código
+			AllTrim((TRBA1)->A1_ENDCOB)+"-"+AllTrim((TRBA1)->A1_BAIRROC)        ,;	//	[3]	Endereço
+			AllTrim((TRBA1)->A1_MUNC)						        		,;	//	[4]	Cidade
+			(TRBA1)->A1_ESTC										        ,;	//	[5]	Estado
+			(TRBA1)->A1_CEPC						         				,;	//	[6]	CEP
+			(TRBA1)->A1_CGC										         	,;	//	[7]	CGC
+			(TRBA1)->A1_PESSOA										        ,;	//	[8]	PESSOA
+			(TRBA1)->A1_EMAIL									         	}	//	[9]	E-mail
 		Endif
 
 		nVlrAbat := SomaAbat(SE1->E1_PREFIXO,SE1->E1_NUM,SE1->E1_PARCELA,"R",1,,SE1->E1_CLIENTE,SE1->E1_LOJA)
@@ -461,16 +560,16 @@ User Function RF01B062(xBanco,xAgencia,xConta,xSubCt,lSetup,cNotIni,cNotFim,cSer
 			EndIf
 			//cNroDoc := AllTrim(SE1->E1_NUMBCO)
 
-		ElseIf !Empty(SEE->EE_FAXATU)   // a partir da 2 vez vez
+		ElseIf !Empty((cAliasEE)->EE_FAXATU)   // a partir da 2 vez vez
 
 			If aDadosBanco[1] == "001"
-				cNroDoc	:= StrZero(Val(SEE->EE_FAXATU),5)
+				cNroDoc	:= StrZero(Val((cAliasEE)->EE_FAXATU),5)
 			ElseIf aDadosBanco[1] = "237"
-				cNroDoc := StrZero(Val(SEE->EE_FAXATU),11)
+				cNroDoc := StrZero(Val((cAliasEE)->EE_FAXATU),11)
 			ElseIf aDadosBanco[1] == "341"
-				cNroDoc := StrZero(Val(SEE->EE_FAXATU),8)
+				cNroDoc := StrZero(Val((cAliasEE)->EE_FAXATU),8)
 			ElseIf aDadosBanco[1] == "033"
-				cNroDoc := StrZero(Val(SEE->EE_FAXATU),12)
+				cNroDoc := StrZero(Val((cAliasEE)->EE_FAXATU),12)
 			EndIf
 
 		Else
@@ -528,7 +627,6 @@ User Function RF01B062(xBanco,xAgencia,xConta,xSubCt,lSetup,cNotIni,cNotFim,cSer
 	//If MV_PAR20 == 1 //Nao manda por e-mail
 	oPrint:Preview()// Visualiza antes de imprimir
 	//EndIf
-
 
 Return nil
 
