@@ -87,7 +87,14 @@ Begin Sequence
 		U_ZRETMsgJson("filial","nao informada a filial na tag empresa")
         Break
 	Endif
-
+	//Verifica a existencia empresa, para não ficar retornando erro 5, valida se a tabela esta abertar
+	If Select("SM0") > 0
+		SM0->(DbSetOrder(1))  //M0_CODIGO+M0_CODFIL
+		If !SM0->(DbSeek(_cEmpresa+_cFilAtu))
+			U_ZRETMsgJson("empresa","Dados da empresa inconsistentes")
+        	Break
+		Endif
+	Endif
     //Tratar abertura da empresa conforme enviado no parametro
 	If cEmpAnt <> _cEmpresa .or. cFilAnt <> _cFilAtu
     	RpcClearEnv() 
@@ -103,7 +110,7 @@ Begin Sequence
 		Break
 	EndIf
 	//processa json
-	_lRet := ZRESTSA1GR(_oJson)
+	_lRet := ZRESTSA1GR(_oJson, _cEmpresa, _cFilAtu, _cResp)
 
 End Sequence
 Return _lRet
@@ -117,7 +124,7 @@ Gravar dados do oJson no Cliente
 @param 
 @type function
 /*/
-Static Function ZRESTSA1GR(_oJson)
+Static Function ZRESTSA1GR(_oJson, _cEmpresa, _cFilAtu, _cResp)
 Local _cAliasPesq	:= GetNextAlias()
 Local _lRet 		:= .F.
 Local _lNovo    	:= .T.
@@ -141,20 +148,24 @@ Local _cTipoCli
 Local _oModel
 Local _oSA1Mod
 Local _aErro
+Local _cStatus
+Local _nPos
+Local _aMsg
 
 
 Begin Sequence 
+	//Verifica se existe cliente cadastrado
+	_cCnPjCpf	:= AllTrim(_oJson:GetJsonText("cnpjcpf"))  
+
 	//Função para retorno de códigos, verificar se existem pais estado e municipio, indiferente do cliente ser ou nao cadastrdos estas informações tem que estar fornecidas corretamente
 	If !ZRESTSA1Valida(_oJson, @_cCodMun, @_cCodPais, @_cCodBancen)
 		Break
 	Endif
-	//Verifica se existe cliente cadastrado
-	_cCnPjCpf	:= AllTrim(_oJson:GetJsonText("cnpjcpf"))  
+
 	If Empty(_cCnPjCpf)
 		U_ZRETMsgJson("cnpjcpf","CNPJ e CPF do Cliente nao informado")
 		Break
 	Endif
-
 
 	BeginSql Alias _cAliasPesq
 		SELECT 	SA1.R_E_C_N_O_ NREGSA1
@@ -197,8 +208,8 @@ Begin Sequence
 	//Pegando o model dos campos da SA1
 	_oSA1Mod:= _oModel:getModel("SA1MASTER") //"MATA030_SA1" na antiga MATA030
 	_oSA1Mod:setValue("A1_FILIAL"	, FWxFilial('SA1')  								) // Filial 
-	_oSA1Mod:setValue("A1_COD"		, _cCodCli        									) // Codigo 
-	_oSA1Mod:setValue("A1_LOJA"		, _cLoja       										) // Loja
+	//_oSA1Mod:setValue("A1_COD"		, _cCodCli        									) // Codigo 
+	//_oSA1Mod:setValue("A1_LOJA"		, _cLoja       										) // Loja
 	_oSA1Mod:setValue("A1_NOME"		, Upper(AllTrim(_oJson:GetJsonText("nome"))) 		) // Nome             
 	_oSA1Mod:setValue("A1_NREDUZ"	, _cReduzido   										) // Nome reduz. 
 	_oSA1Mod:setValue("A1_END"		, _cEndereco   										) // Endereco
@@ -268,6 +279,37 @@ Begin Sequence
 	//Desativa o modelo de dados
 	_oModel:DeActivate()
 End Sequence
+
+_aMsg := {}
+If _lRet 
+	_cStatus 	:=	"1"
+	_aMsg 		:=  {"Cliente Recebido com Sucesso"}
+Else 
+	_cStatus 	:=	"2"
+	For _nPos := 1 To Len(_aMsgRet)
+		Aadd(_aMsg,_aMsgRet[_nPos,2])
+	Next
+Endif 
+For _nPos := 1 To Len(_aMsg)
+	U_CAOA_GRVMONITOR(	FWxFilial("SA1"), ;   //Filial arquivo gravado
+						_cStatus, ;         //Status
+						"100",;				//Código do Processo  REST IMPORTACAO CLIENTES
+						/*cCodtpint*/,;		//Código do tipo
+						Upper(_aMsg[_nPos] +" Empresa "+_cEmpresa+" Filial "+_cFilAtu) ,;  //Mensagem de retorno
+						_cCnPjCpf,;			//Documento
+						 Date(),;			//Data Inicio
+						 Time(),;			//Hora Final
+						_oJson,;			//Json
+						/*_nRecnoDoc*/,;        //Recno do documento
+						_cResp,; 			//Nome do Usuário na inclusão
+						/*_xHTTP*/,;			//Retorno código
+						/*_aCampos*/)					//Campos pré definidos para gravar no SZ1 
+Next
+
+
+Return Nil
+
+//ZRESTSA1Monitor( _cStatus,"SA1", _cCnPjCpf, _oJson, _cErro,  /*_dDataIni*/, /*_cHsIni*/, 100 /*_nErro*/ )	
 
 Return _lRet 
 
@@ -423,134 +465,51 @@ Return _aRet
 
 
 
+/*
+=====================================================================================
+Programa.:              ZPECAJ01Monitor
+@param 					_cStatus   	= Status que será gerado no SZ1 1-OK 2-Divergência 
+						_cTab		= Tabela principal que esta sendo gravada na integração
+						_cDoc   	= Numero do Documento a ser gravado, ja contém a série 
+						_cErro    	= mensagem a ser gravada podendo ser de erro e ou exito 
+						_dDataIni	= data inicial da importação 
+						_cHsIni 	= hora inicial da importação 
+						_cJson    	= Json para importação
+						_nErro		= numero de retorno que ocasionou erro e ou exito
+Autor....:              CAOA - DAC Denilso 
+Data		            14/11/2022
+Descricao / Objetivo	Funcionalidade que efetuara a gravação de dados no monitor 
+Doc. Origem            	PEC020 - Monitor de Integrações WIS
+Solicitante            	CAOA
+Uso              		ZWSR012
+Obs
+@menu       			Nao Informado
+@return					_lRet 		- Verdadeiro ou falso
+@history 				DAC - 	15/02/2023 
+								Implementação de envio de campos a serem gravados para SZ1	
+=====================================================================================
+*/
+Static Function	ZRESTSA1Monitor(_cStatus, _cTab, _cDoc, _cMens, _cErro, _dDataIni, _cHsIni, _nErro, _nReg )	
+Local _cUserName := "REST ZRESTSA1"   
+Local _aCampos	 := {}  //Adicionar campos a serem gravador na tabela DAC  15/02/2023 
 
+Default _cTab 		:= "SA1"
+Default _dDataIni	:= Date()
+Default _cHsIni		:= Time()
 
+	//AAdd(_aCampos,{"Z1_NTPINTG"	, "ZRESTSA1" 	})
+	U_CAOAGRVM(XFilial(_cTab),;		//Filail
+				_cStatus,;				//Status
+				"100",;					//Código do Processo  REST IMPORTACAO CLIENTES                          
+				/*cCodtpint*/,;			//Código do tipo
+				Upper(_cErro),;			//Mensagem de retorno
+				_cDoc,;					//Documento
+				_dDataIni,;				//Data Inicio
+				_cHsIni,;				//Hora Final
+				Upper(_cMens),;			//Json
+				If(_cStatus=="1", (_cTab)->(Recno()),0),; //Numero do Registro
+				_cUserName,;			//Nome do Usuário na inclusão
+				_nErro,;				//Retorno código
+				_aCampos)				//Campos pré definidos para gravar no SZ1 
+Return Nil
 
-
-//Pegando o modelo de dados, setando a operação de inclusão
-oModel := FWLoadModel("CRMA980") //"MATA030" na antiga MATA030
-oModel:SetOperation(3)
-oModel:Activate()
-  
-//Pegando o model dos campos da SA1
-oSA1Mod:= oModel:getModel("SA1MASTER") //"MATA030_SA1" na antiga MATA030
-oSA1Mod:setValue("A1_COD",       cCod        ) // Codigo 
-oSA1Mod:setValue("A1_LOJA",      cLoja       ) // Loja
-oSA1Mod:setValue("A1_NOME",      cNome       ) // Nome             
-oSA1Mod:setValue("A1_NREDUZ",    cNomeFant   ) // Nome reduz. 
-oSA1Mod:setValue("A1_END",       cEndereco   ) // Endereco
-oSA1Mod:setValue("A1_BAIRRO",    cBairro     ) // Bairro
-oSA1Mod:setValue("A1_TIPO",      cTp         ) // Tipo 
-oSA1Mod:setValue("A1_EST",       cEST        ) // Estado
-oSA1Mod:setValue("A1_COD_MUN",   cCodMun     ) // Codigo Municipio                
-oSA1Mod:setValue("A1_MUN",       cDescMun    ) // Municipio
-oSA1Mod:setValue("A1_CEP",       cCep        ) // CEP
-oSA1Mod:setValue("A1_INSCR",     cIE         ) // Inscricao Estadual
-oSA1Mod:setValue("A1_CGC",       cCNPJ       ) // CNPJ/CPF            
-oSA1Mod:setValue("A1_PAIS",      cCodPais    ) // Pais            
-oSA1Mod:setValue("A1_EMAIL",     cEMail      ) // E-Mail
-oSA1Mod:setValue("A1_DDD",       cDDD        ) // DDD            
-oSA1Mod:setValue("A1_TEL",       cTelefone   ) // Fone                 
-oSA1Mod:setValue("A1_PESSOA",    cTipPessoa  ) // Tipo Pessoa
-  
-//Se conseguir validar as informações
-If oModel:VldData()
-      
-    //Tenta realizar o Commit
-    If oModel:CommitData()
-        lDeuCerto := .T.
-          
-    //Se não deu certo, altera a variável para false
-    Else
-        lDeuCerto := .F.
-    EndIf
-      
-//Se não conseguir validar as informações, altera a variável para false
-Else
-    lDeuCerto := .F.
-EndIf
-  
-//Se não deu certo a inclusão, mostra a mensagem de erro
-If ! lDeuCerto
-    //Busca o Erro do Modelo de Dados
-    _aErro := oModel:GetErrorMessage()
-      
-    //Monta o Texto que será mostrado na tela
-    AutoGrLog("Id do formulário de origem:"  + ' [' + AllToChar(_aErro[01]) + ']')
-    AutoGrLog("Id do campo de origem: "      + ' [' + AllToChar(_aErro[02]) + ']')
-    AutoGrLog("Id do formulário de erro: "   + ' [' + AllToChar(_aErro[03]) + ']')
-    AutoGrLog("Id do campo de erro: "        + ' [' + AllToChar(_aErro[04]) + ']')
-    AutoGrLog("Id do erro: "                 + ' [' + AllToChar(_aErro[05]) + ']')
-    AutoGrLog("Mensagem do erro: "           + ' [' + AllToChar(_aErro[06]) + ']')
-    AutoGrLog("Mensagem da solução: "        + ' [' + AllToChar(_aErro[07]) + ']')
-    AutoGrLog("Valor atribuído: "            + ' [' + AllToChar(_aErro[08]) + ']')
-    AutoGrLog("Valor anterior: "             + ' [' + AllToChar(_aErro[09]) + ']')
-      
-    //Mostra a mensagem de Erro
-    Mostr_aErro()
-EndIf
-  
-//Desativa o modelo de dados
-oModel:DeActivate()
-
-
-
-//https://tdn.totvs.com/display/public/PROT/DT+Novo+Fonte+de+Cadastro+de+Clientes+em+MVC
-
-//-------------------------------------------------------------------
-/*/{Protheus.doc} MyCRMA980
-Função de exemplo para utilização da rotina automática de Clientes.
-@param      Nenhum
-@return Nenhum
-@author     Squad CRM / FAT
-@version    12.1.17 / Superior
-@since      24/05/2017
-/*/
-//-------------------------------------------------------------------
-User Function MyCRMA980()
- 
-Local aSA1Auto  := {}
-Local aAI0Auto  := {}
-Local nOpcAuto  := MODEL_OPERATION_INSERT
-Local lRet      := .T.
- 
-Private lMsErroAuto := .F.
- 
-lRet := RpcSetEnv("T1","D MG 01","Admin")
- 
-If lRet
-     
-    //----------------------------------
-    // Dados do Cliente
-    //----------------------------------
-    aAdd(aSA1Auto,{"A1_COD"     ,"XBX139"               ,Nil})
-    aAdd(aSA1Auto,{"A1_LOJA"    ,"01"                   ,Nil})
-    aAdd(aSA1Auto,{"A1_NOME"    ,"ROTINA AUTOMATICA"    ,Nil})
-    aAdd(aSA1Auto,{"A1_NREDUZ"  ,"ROTAUTO"              ,Nil}) 
-    aAdd(aSA1Auto,{"A1_TIPO"    ,"F"                    ,Nil})
-    aAdd(aSA1Auto,{"A1_END"     ,"BRAZ LEME"            ,Nil}) 
-    aAdd(aSA1Auto,{"A1_BAIRRO"  ,"CASA VERDE"           ,Nil}) 
-    aAdd(aSA1Auto,{"A1_EST"     ,"SP"                   ,Nil})
-    aAdd(aSA1Auto,{"A1_MUN"     ,"SAO PAULO"            ,Nil})
-     
-    //---------------------------------------------------------
-    // Dados do Complemento do Cliente
-    //---------------------------------------------------------
-    aAdd(aAI0Auto,{"AI0_SALDO"  ,30                     ,Nil})
-     
-    //------------------------------------
-    // Chamada para cadastrar o cliente.
-    //------------------------------------
-    MSExecAuto({|a,b,c| CRMA980(a,b,c)}, aSA1Auto, nOpcAuto, aAI0Auto)
-      
-    If lMsErroAuto  
-        lRet := lMsErroAuto
-    Else
-        Conout("Cliente incluído com sucesso!")
-    EndIf
-     
-EndIf
- 
-RpcClearEnv()
-              
-Return lRet

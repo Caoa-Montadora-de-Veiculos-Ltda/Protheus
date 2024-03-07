@@ -307,6 +307,7 @@ Solicitante:            CAOA
 Uso......:              
 Obs......:				Esta funcionalidade Substitui a funcionalidade CAOA_MONITOR
 =====================================================================================
+
 */
 User Function CAOA_GRVMONITOR(_cFil, _cStatus, _cCodint, _cCodtpint, _cErro, _cDocori, _dDataIni, _cHoraIni, _cJSON, _nRecnoDoc, _cUserName, _xHTTP, _aCampos)
 Local _aArea    := GetArea()
@@ -336,7 +337,7 @@ Default _cErro		:= ""
 Default _cDocori	:= ""
 Default _cTempo		:= ""
 Default _cJSON 		:= ""
-Default _nRecnoDoc 	:= RetCodUsr()                                                                   
+Default _nRecnoDoc 	:= 0  //RetCodUsr()                                                                   
 Default _dDataIni	:= CtoD(Space(08))
 Default _cHoraIni	:= ""
 Default _cUserName	:= UsrRetName(RetCodUsr())
@@ -392,7 +393,7 @@ Begin Sequence
  		_cSerie	:= ""
 	Endif
 	RecLock("SZ1", .T.)
-	SZ1->Z1_FILIAL   := xFilial("SZ1")
+	SZ1->Z1_FILIAL   := FWxFilial("SZ1")
 	SZ1->Z1_ID       := _cID
 	SZ1->Z1_STATUS   := _cStatus
 	SZ1->Z1_INTEGRA  := _cCodint
@@ -440,6 +441,11 @@ RestArea(_aArea)
 Conout("[CAOA_GRVMONITOR] Final "+DtoC(Date())+" "+Time())
 
 Return SZ1->( Recno() )
+
+User Function CAOAGRVM(_cFil, _cStatus, _cCodint, _cCodtpint, _cErro, _cDocori, _dDataIni, _cHoraIni, _cJSON, _nRecnoDoc, _cUserName, _xHTTP, _aCampos)
+Local _nReg
+_nReg :=  U_CAOA_GRVMONITOR(_cFil, _cStatus, _cCodint, _cCodtpint, _cErro, _cDocori, _dDataIni, _cHoraIni, _cJSON, _nRecnoDoc, _cUserName, _xHTTP, _aCampos)
+Return _nReg
 
 
 //Retornar a chave de Pesquisa conforme a tabela de dados DAC 17/10/2022
