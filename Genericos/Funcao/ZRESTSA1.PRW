@@ -151,6 +151,7 @@ Local _aErro
 Local _cStatus
 Local _nPos
 Local _aMsg
+Local _aAlterado
 
 
 Begin Sequence 
@@ -201,55 +202,53 @@ Begin Sequence
 		_cReduzido 	:= Upper(AllTrim(_oJson:GetJsonText("nome")))
 	Endif
   
+	_aAlterado := {}  //indicação de alteração do campo
 	_oModel := FWLoadModel("CRMA980") //"MATA030" na antiga MATA030
 	_oModel:SetOperation(If(_lNovo,MODEL_OPERATION_INSERT, MODEL_OPERATION_UPDATE))
 	_oModel:Activate()
   
 	//Pegando o model dos campos da SA1
 	_oSA1Mod:= _oModel:getModel("SA1MASTER") //"MATA030_SA1" na antiga MATA030
-	_oSA1Mod:setValue("A1_FILIAL"	, FWxFilial('SA1')  								) // Filial 
 	//_oSA1Mod:setValue("A1_COD"		, _cCodCli        									) // Codigo 
 	//_oSA1Mod:setValue("A1_LOJA"		, _cLoja       										) // Loja
-	_oSA1Mod:setValue("A1_NOME"		, Upper(AllTrim(_oJson:GetJsonText("nome"))) 		) // Nome             
-	_oSA1Mod:setValue("A1_NREDUZ"	, _cReduzido   										) // Nome reduz. 
-	_oSA1Mod:setValue("A1_END"		, _cEndereco   										) // Endereco
-	_oSA1Mod:setValue("A1_BAIRRO"	, Upper(AllTrim(_oJson:GetJsonText("bairro"))) 		) // Bairro
-	_oSA1Mod:setValue("A1_COMPLEM"	, Upper(AllTrim(_oJson:GetJsonText("complemento")))	) // Endereco
-	_oSA1Mod:setValue("A1_CEP"		, AllTrim(_oJson:GetJsonText("cep"))        		) // CEP
-	_oSA1Mod:setValue("A1_TIPO"		, _cTipoCli    										) // Tipo 
-	_oSA1Mod:setValue("A1_EST"		, Upper(AllTrim(_oJson:GetJsonText("estado")))   	) // Estado
-	_oSA1Mod:setValue("A1_COD_MUN"	, _cCodMun     										) // Codigo Municipio                
-	_oSA1Mod:setValue("A1_MUN"		, _cMunicipio    									) // Municipio
-	_oSA1Mod:setValue("A1_PAIS"		, _cCodPais    										) // Pais            
-	_oSA1Mod:setValue("A1_CODPAIS"	, _cCodBancen        								) // Código Bacen            
-	_oSA1Mod:setValue("A1_CGC"		, _cCnPjCpf 										) // CNPJ/CPF            
-	_oSA1Mod:setValue("A1_MSBLQL"	, _cBloqueio 										) // Bloqueio Sim / Não            
-	_oSA1Mod:setValue("A1_CODSEG"	, _cCodSegmento 									) // Segmento            
+
+	ZRESTSA1Alterados(	"A1_FILIAL"		, FWxFilial('SA1')									, @_oSA1Mod, @_aAlterado, _lNovo )   // Nome
+	ZRESTSA1Alterados(	"A1_NOME"		, Upper(AllTrim(_oJson:GetJsonText("nome")))		, @_oSA1Mod, @_aAlterado, _lNovo )   // Nome
+	ZRESTSA1Alterados(	"A1_NREDUZ" 	, _cReduzido   										, @_oSA1Mod, @_aAlterado, _lNovo )   //  Nome reduz.
+	ZRESTSA1Alterados(  "A1_END"	 	, _cEndereco   										, @_oSA1Mod, @_aAlterado, _lNovo )   // Endereco
+	ZRESTSA1Alterados(  "A1_BAIRRO" 	, Upper(AllTrim(_oJson:GetJsonText("bairro"))) 		, @_oSA1Mod, @_aAlterado, _lNovo )   // Bairro
+	ZRESTSA1Alterados(  "A1_COMPLEM" 	, Upper(AllTrim(_oJson:GetJsonText("complemento")))	, @_oSA1Mod, @_aAlterado, _lNovo )   // Complemento
+	ZRESTSA1Alterados(  "A1_CEP"		, AllTrim(_oJson:GetJsonText("cep"))        		, @_oSA1Mod, @_aAlterado, _lNovo )   // CEP
+	ZRESTSA1Alterados(  "A1_TIPO"		, _cTipoCli    										, @_oSA1Mod, @_aAlterado, _lNovo )   // Tipo 
+	ZRESTSA1Alterados(  "A1_EST"		, Upper(AllTrim(_oJson:GetJsonText("estado")))   	, @_oSA1Mod, @_aAlterado, _lNovo )   // Estado
+	ZRESTSA1Alterados(  "A1_COD_MUN"	, _cCodMun     										, @_oSA1Mod, @_aAlterado, _lNovo )   // Codigo Municipio
+	ZRESTSA1Alterados(  "A1_MUN"		, _cMunicipio    									, @_oSA1Mod, @_aAlterado, _lNovo )   // Municipio
+	ZRESTSA1Alterados(  "A1_PAIS"		, _cCodPais    										, @_oSA1Mod, @_aAlterado, _lNovo )   // Pais         
+	ZRESTSA1Alterados(  "A1_CODPAIS"	, _cCodBancen        								, @_oSA1Mod, @_aAlterado, _lNovo )   // Código Bacen 
+	ZRESTSA1Alterados(  "A1_CGC"		, _cCnPjCpf 										, @_oSA1Mod, @_aAlterado, _lNovo )   // CNPJ/CPF            
+	ZRESTSA1Alterados(  "A1_MSBLQL"	 	, _cBloqueio 										, @_oSA1Mod, @_aAlterado, _lNovo )   // Bloqueio Sim / Não   
+	ZRESTSA1Alterados(  "A1_CODSEG"	 	, _cCodSegmento 									, @_oSA1Mod, @_aAlterado, _lNovo )   // Segmento            
 	If Len(_cCnPjCpf) >= 14 .And. !Empty(_cIERG)
-		_oSA1Mod:setValue("A1_INSCR"	, _cIERG         								) // Inscricao Estadual
+		ZRESTSA1Alterados(  "A1_INSCR"	, _cIERG 											, @_oSA1Mod, @_aAlterado, _lNovo )   // Inscricao Estadual            
 	ElseIf !Empty(_cIERG) 
-		_oSA1Mod:setValue("A1_RG"	, _cIERG         								) // Inscricao Estadual
+		ZRESTSA1Alterados(  "A1_RG"	 	, _cIERG 											, @_oSA1Mod, @_aAlterado, _lNovo )   // Registro Geral            
 	Endif
 
 	If Len(_cCnPjCpf) >= 14 .And. _cTipoCli <> "X"
-		_oSA1Mod:setValue("A1_PESSOA"	, "J"  											) // Tipo Pessoa
+		ZRESTSA1Alterados(  "A1_PESSOA"	, "J" 												, @_oSA1Mod, @_aAlterado, _lNovo )   // Tipo Pessoa Juridica            
 	ElseIf _cTipoCli <> "X"
-		_oSA1Mod:setValue("A1_PESSOA"	, "F"  											) // Tipo Pessoa
+		ZRESTSA1Alterados(  "A1_PESSOA"	, "F" 												, @_oSA1Mod, @_aAlterado, _lNovo )   // Tipo Pessoa Fisica            
 	Else   //POR ENQUANTO COLOCANDO COMO JURIDICA
-		_oSA1Mod:setValue("A1_PESSOA"	, "J"  											) // Tipo Pessoa
-	Endif									) // Tipo Pessoa
-
-	_oSA1Mod:setValue("A1_EMAIL"	, AllTrim(_oJson:GetJsonText("email"))       		) // E-Mail
-	_oSA1Mod:setValue("A1_DDD"		, AllTrim(_oJson:GetJsonText("ddd"))        		) // DDD            
-	_oSA1Mod:setValue("A1_TEL"		, AllTrim(_oJson:GetJsonText("fone"))   			) // Fone                 
-	_oSA1Mod:setValue("A1_CONTATO"	, Upper(AllTrim(_oJson:GetJsonText("contato")))		) // Contato                
-
-	_oSA1Mod:setValue("A1_CONTA"	, _cConta   										) // Conta contabil                 
-	_oSA1Mod:setValue("A1_GRPTRIB"	, _cGrpTrib        									) // Grupo de tributação            
-	_oSA1Mod:setValue("A1_CONTRIB"	, _cContrib        									) // Contribuinte Sim Não            
-	_oSA1Mod:setValue("A1_XINTEG"	, "S"	        									) // Contribuinte Sim Não            
-  
-
+		ZRESTSA1Alterados(  "A1_PESSOA"	, "J" 												, @_oSA1Mod, @_aAlterado, _lNovo )   // Tipo Pessoa Exterior            
+	Endif									
+	ZRESTSA1Alterados(  "A1_EMAIL"		, AllTrim(_oJson:GetJsonText("email"))       		, @_oSA1Mod, @_aAlterado, _lNovo )   // E-Mail       
+	ZRESTSA1Alterados(  "A1_DDD"		, AllTrim(_oJson:GetJsonText("ddd"))        		, @_oSA1Mod, @_aAlterado, _lNovo )   // DDD               
+	ZRESTSA1Alterados(  "A1_TEL"		, AllTrim(_oJson:GetJsonText("fone"))   			, @_oSA1Mod, @_aAlterado, _lNovo )   // Fone              
+	ZRESTSA1Alterados(  "A1_CONTATO"	, Upper(AllTrim(_oJson:GetJsonText("contato")))		, @_oSA1Mod, @_aAlterado, _lNovo )   // Contato           
+	ZRESTSA1Alterados(  "A1_CONTA"		,_cConta   											, @_oSA1Mod, @_aAlterado, _lNovo )   // Conta contabil               
+	ZRESTSA1Alterados(  "A1_GRPTRIB"	,_cGrpTrib    										, @_oSA1Mod, @_aAlterado, _lNovo )   // Grupo de tributação          
+	ZRESTSA1Alterados(  "A1_CONTRIB"	,_cContrib    										, @_oSA1Mod, @_aAlterado, _lNovo )   // Contribuinte Sim Não         
+	ZRESTSA1Alterados(  "A1_XINTEG"		,"S"	        									, @_oSA1Mod, @_aAlterado, _lNovo )   // Contribuinte Sim Não         
   
 	//Se conseguir validar as informações
 	_lRet := _oModel:VldData()
@@ -306,14 +305,11 @@ For _nPos := 1 To Len(_aMsg)
 						/*_aCampos*/)					//Campos pré definidos para gravar no SZ1 
 Next
 
-
-Return Nil
-
 //ZRESTSA1Monitor( _cStatus,"SA1", _cCnPjCpf, _oJson, _cErro,  /*_dDataIni*/, /*_cHsIni*/, 100 /*_nErro*/ )	
 
 Return _lRet 
 
-
+//Valida campos enviados no REST
 Static Function ZRESTSA1Valida(_oJson, _cCodMun, _cCodPais, _cCodBancen)
 Local _cAliasPesq   := GetNextAlias()
 Local _lRet := .T.
@@ -380,6 +376,51 @@ If Select((_cAliasPesq)) <> 0
 Endif 
 
 Return _lRet
+
+
+//Verifica campos alterados no REST caso seja alteração
+Static Function ZRESTSA1Alterados( _cCampo, _xConteudo, _oSA1Mod, _aAlterado, _lNovo )
+Local _lRet 		:= .T.
+Local _cConteudo	:= ""
+//Local _nTam 	:= _oSA1Mod:adatamodel[1]  //_oSA1Mod:GetFields()
+Begin Sequence 
+	_oSA1Mod:setValue(_cCampo	, _xConteudo )              
+    //Registro novo não guardar alterações
+	If _lNovo
+		Break 
+	Endif
+	//Retiro os espaços quando caracter para não ocorrerem diferenças em relação ao tamanho
+	//_oSA1Mod:GetValue(_aField[_nPos,3])
+	If ValType(_xConteudo) == "N"
+		_xConteudo := AllTrim(Str(_xConteudo))
+		_cConteudo := AllTrim(Str(SA1->(FieldGet(FieldPos(_cCampo)))))
+	ElseIf ValType(_xConteudo) == "D"
+		_xConteudo := AllTrim(DtoC(_xConteudo))
+		_cConteudo := AllTrim(DtoC(SA1->(FieldGet(FieldPos(_cCampo)))))
+	ElseIf ValType(_xConteudo) == "L"
+		If _xConteudo
+			_xConteudo := "VERDADEIRO"
+		Else	
+			_xConteudo := "VERDADEIRO"
+		Endif 
+		If SA1->(FieldGet(FieldPos(_cCampo)))
+			_cConteudo := "VERDADEIRO"
+		Else	
+			_xConteudo := "FALSO"
+		Endif 
+	Else 
+		_xConteudo := AllTrim(_xConteudo)
+		_cConteudo := SA1->(AllTrim(FieldGet(FieldPos(_cCampo))))
+	Endif 	 
+	If _xConteudo <> _cConteudo
+		Aadd(_aAlterado,"REGEISTRO "+_cCampo+" ALTERADO ANTES : "+_cConteudo+" ALTERADO PARA : "+_xConteudo) 
+	Endif 
+End Sequence
+
+Return _lRet
+
+
+
 
 /*/{Protheus.doc} ValidOJson
 Valida os dados do oJson
