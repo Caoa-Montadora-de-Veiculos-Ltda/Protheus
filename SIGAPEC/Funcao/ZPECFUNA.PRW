@@ -4201,6 +4201,7 @@ User Function XRESCAOAPEC(_cNumOrc, _lReserva, _aRegVS3, _cArmOrig, _cArmDes, _l
 			Else
 				_cDocumento	:= A261RetINV(_cDocumento)
 			Endif 
+
 			If _lRet 		
 				_aItens 	:= XRESCAOATR(_cNumOrc, _lReserva, @_aRegVS3, _cArmorig, _cArmdes, _cDocumento, @_aMsg)
 				If Len(_aItens) == 0
@@ -4229,7 +4230,7 @@ User Function XRESCAOAPEC(_cNumOrc, _lReserva, _aRegVS3, _cArmOrig, _cArmDes, _l
 					Disarmtransaction()
 				EndIf
 			Endif	
-		//End Transaction //Teste Nicolas 05/03
+		
 	End Sequence	
 	If !_lRet
 		AAdd(_aMsg, "Ocorreram problemas na movimentação de armazem  para o orçamento "+_cNumOrc )
@@ -4304,7 +4305,6 @@ Static Function XRESCAOATR(_cNumOrc, _lReserva, _aRegVS3, _cArmorig, _cArmdes, _
 				AND	VS3.%notDel%
 				%Exp:_cWhere%
 		EndSql
-
 		If (_cAliasPesq)->(Eof()) .or. (_cAliasPesq)->NREGVS3 == 0
 			Break
 		EndIf	
@@ -4405,7 +4405,7 @@ Static Function XRESCAOATR(_cNumOrc, _lReserva, _aRegVS3, _cArmorig, _cArmdes, _
 				aadd(_aItem,{"D3_OBSERVA"	,_cObs					, Nil})	//Item Grade 
 			EndIf
 
-		/*
+			/*
 			aadd(_aItem,{"D3_NUMLOTE"	, ""						, Nil}) //sublote destino
 			aadd(_aItem,{"D3_NUMSEQ"	, ""						, Nil}) // Numero sequencia D3_NUMSEQ
 			aadd(_aItem,{"D3_GRUPO"		, SB1->B1_GRUPO				, Nil}) //grupod produto
@@ -4419,7 +4419,7 @@ Static Function XRESCAOATR(_cNumOrc, _lReserva, _aRegVS3, _cArmorig, _cArmdes, _
 			aadd(_aItem,{"D3_CLVL"		, SB1->B1_CLVL				, Nil}) //classe valor produto 
 			aadd(_aItem,{"D3_CC"		, cCC						, Nil}) //centro custo produto 
 			aadd(_aItem,{"D3_STATUS"	,"SERVICO NAO EXECUTADO"	, Nil}) //SATATUS registro
-		*/
+			*/
 			aAdd(_aRet, _aItem)
 			//Gravar e ou retirar  VS6 com informações de reserva 
 			//Gravar dados no VS3

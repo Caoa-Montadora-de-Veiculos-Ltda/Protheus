@@ -424,7 +424,7 @@ Static Function ZPECF036PV(_aOrcs, _cPicking, _cPedido, _aRegVS1, _aPicking, _aV
 					//Aadd(_aMsg,"Orçamento "+AllTrim(VS1->VS1_NUMORC)+" não foi possivel retirar a reserva para documentos com fase R ou T")
 					//Break  //neste caso não vou deixar abortar pois pode não existir a reserva
 				Else
-					_cObs := "Retirado Reserva para faturamento dos produtos referente orçamento "+VS1->VS1_NUMORC+" documento "+_cDocto+" com orçamentos com Status [R|T]"
+					_cObs := "[ZPECF036] Retirado Reserva para faturamento dos produtos referente orçamento "+VS1->VS1_NUMORC+" documento "+_cDocto+" com orçamentos com Status [R|T]"
 					Aadd(_aObsVS1, _cObs)
 				Endif
 			Endif
