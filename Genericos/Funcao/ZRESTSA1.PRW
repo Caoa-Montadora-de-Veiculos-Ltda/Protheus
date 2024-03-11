@@ -2,9 +2,6 @@
 #Include "FWMVCDEF.CH"
 #INCLUDE "RESTFUL.CH"
 
-#define CRLF chr(13) + chr(10)
-
-
 /*/{Protheus.doc} ZPECF011
 Serviço de integração RECEBIMENTO SEPARAÇÃO DE PEDIDOS rg log
 Atualização da separação dos orçamentos baixando conforme informaçção recebida
@@ -69,6 +66,8 @@ Static Function ZRESTSA1PR( _oJson, _cEmpFil, _cResp )
 Local _cEmpresa     := ""
 Local _cFilAtu      := ""
 Local _lRet			:= .F.
+Local _cRespLib		:= AllTrim( superGetMv( "CAOA_RES03"	, , "00000000"		) )	
+
 Local _nPos
 Begin Sequence
 	_nPos := At(",", _cEmpFil)
@@ -100,12 +99,24 @@ Begin Sequence
     	RpcClearEnv() 
     	RPCSetType(3) 
     	If !RpcSetEnv(_cEmpresa,_cFilAtu,,,,GetEnvServer(),{ })
-			U_ZRETMsgJson("ambiente","nao foi possivel acessar ambiente")
+			U_ZRETMsgJson("ambiente","Nao foi possivel acessar ambiente")
         	Break
 		Endif
 	EndIf
-	// Valida os dados do oJson
-
+	//Valida se esta cadastrado 
+	If !_cResp	$ _cRespLib
+		U_ZRETMsgJson("responsavel","Não Autorizado")
+        Break
+	Endif
+	//Verificar se existe cadastro Gornecedor
+	If _cResp <> STRZero(0,8)  //Deixar passar com tudo zero para validaçoes
+		SA2->(DnSetOrder(1))
+		// Valida os dados do oJson
+		If !SA2->(DbSeek(FWxFilial("SA2")+_cResp))
+			U_ZRETMsgJson("responsavel","Não Autorizado, Falta Cadastro")
+        	Break
+		Endif
+	Endif 	
 	If !ValidOJson(@_oJson,)
 		Break
 	EndIf
@@ -248,7 +259,7 @@ Begin Sequence
 	ZRESTSA1Alterados(  "A1_CONTA"		,_cConta   											, @_oSA1Mod, @_aAlterado, _lNovo )   // Conta contabil               
 	ZRESTSA1Alterados(  "A1_GRPTRIB"	,_cGrpTrib    										, @_oSA1Mod, @_aAlterado, _lNovo )   // Grupo de tributação          
 	ZRESTSA1Alterados(  "A1_CONTRIB"	,_cContrib    										, @_oSA1Mod, @_aAlterado, _lNovo )   // Contribuinte Sim Não         
-	ZRESTSA1Alterados(  "A1_XINTEG"		,"S"	        									, @_oSA1Mod, @_aAlterado, _lNovo )   // Contribuinte Sim Não         
+	ZRESTSA1Alterados(  "A1_XINTEG"		,"S"	        									, @_oSA1Mod, @_aAlterado, _lNovo )   // Registro Integrado S=Integra RgLog;N=Nao Integra RgLog;X=Integrado RgLog                                                                                    
   
 	//Se conseguir validar as informações
 	_lRet := _oModel:VldData()
@@ -279,10 +290,26 @@ Begin Sequence
 	_oModel:DeActivate()
 End Sequence
 
-_aMsg := {}
+_aMsg 		:= {}
+_aCampos	:= {}
 If _lRet 
 	_cStatus 	:=	"1"
-	_aMsg 		:=  {"Cliente Recebido com Sucesso"}
+	_aMsg 		:=  {"Cliente "+If(_lNovo,"Recebido","Alterado")+" com Sucesso"}
+	//Indica que alterou campos
+	If Len(_aAlterado) > 0 
+		_cMsg 	:= "Alteracoes cadastro de Clientes Recponsavel "+_cResp+" em "+DtOC(Date())+" - "+Time()
+		For _nPos := 1 To Len(_aAlterado)
+			_cMsg += _aAlterado[_nPos] +CRLF
+		Next 
+		//Adiciono para gravar msgem de alteração
+		AAdd(_aCampos,{"Z1_MSGLOG"	, Upper(_cMsg)	})
+	Endif 
+	//Devido estar retornando como X que é o identificador para RGLOG SIGAPEC
+	If SA1->A1_XINTEG  == "X" .And. RecLock("SA1",.F.)
+		SA1->A1_XINTEG := "S"
+		SA1->(MsUnlock())
+	Endif 
+
 Else 
 	_cStatus 	:=	"2"
 	For _nPos := 1 To Len(_aMsgRet)
@@ -302,7 +329,7 @@ For _nPos := 1 To Len(_aMsg)
 						/*_nRecnoDoc*/,;        //Recno do documento
 						_cResp,; 			//Nome do Usuário na inclusão
 						/*_xHTTP*/,;			//Retorno código
-						/*_aCampos*/)					//Campos pré definidos para gravar no SZ1 
+						_aCampos)			//Campos pré definidos para gravar no SZ1 
 Next
 
 //ZRESTSA1Monitor( _cStatus,"SA1", _cCnPjCpf, _oJson, _cErro,  /*_dDataIni*/, /*_cHsIni*/, 100 /*_nErro*/ )	
@@ -413,7 +440,7 @@ Begin Sequence
 		_cConteudo := SA1->(AllTrim(FieldGet(FieldPos(_cCampo))))
 	Endif 	 
 	If _xConteudo <> _cConteudo
-		Aadd(_aAlterado,"REGEISTRO "+_cCampo+" ALTERADO ANTES : "+_cConteudo+" ALTERADO PARA : "+_xConteudo) 
+		Aadd(_aAlterado,"REGISTRO "+_cCampo+" ALTERADO ANTES : "+_cConteudo+" ALTERADO PARA : "+_xConteudo) 
 	Endif 
 End Sequence
 
@@ -461,7 +488,8 @@ Begin Sequence
 	Aadd(_aRet, {300,	"empresa"			, .F.	, .F., 	"Empresa nao informada"})
 	Aadd(_aRet, {301,	"filial"			, .F.	, .F., 	"Filial nao informada"})
 	Aadd(_aRet, {302,	"token"				, .F.	, .F., 	"Token Invalido"})
-	Aadd(_aRet, {303,	"ambiente"			, .F.	, .F., 	"nao foi possivel acessar ambiente"})
+	Aadd(_aRet, {303,	"ambiente"			, .F.	, .F., 	"Nao foi possivel acessar ambiente"})
+	Aadd(_aRet, {304,	"responsavel"		, .F.	, .F., 	"Não Autorizado"})
 
 	Aadd(_aRet, {400,	"cnpjcpf"			, .F.	, .T., 	"CNPJ e OU cpf COM problemas"})
 	Aadd(_aRet, {401,	"nome"				, .F.	, .T., 	"Nome do Cliente com problemas"})

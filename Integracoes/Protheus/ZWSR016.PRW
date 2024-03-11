@@ -63,7 +63,6 @@ Begin Sequence
 	_cUser 	:= AllTrim( superGetMv( "CAOA_RES01"	, , "USER_TOTVS"		) )	// Usuario para autenticacao no WS 
 	_cPass 	:= AllTrim( superGetMv( "CAOA_RES02"	, , "@Intcaoa2024!"		) )	// Senha para autenticao no WS 
 	//_cChave := encode64( allTrim( cUser ) + ":" + allTrim( cPass ) )    
-
 	 _cChave := _cUser+":"+_cPass
 	If _cChave == Decode64(_cAuthorization)
 
