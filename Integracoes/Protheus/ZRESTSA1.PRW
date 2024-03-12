@@ -104,18 +104,16 @@ Begin Sequence
 		Endif
 	EndIf
 	//Valida se esta cadastrado 
-	If !_cResp	$ _cRespLib
-		U_ZRETMsgJson("responsavel","Não Autorizado")
+	If !_cResp	$ _cRespLib //.Or. ("_PRD" $ AllTrim(GetEnvServer()) .And. _cResp == STRZero(0,8))
+		U_ZRETMsgJson("responsavel","Nao Autorizado")
         Break
 	Endif
-	//Verificar se existe cadastro Gornecedor
-	If _cResp <> STRZero(0,8)  //Deixar passar com tudo zero para validaçoes
-		SA2->(DnSetOrder(1))
-		// Valida os dados do oJson
-		If !SA2->(DbSeek(FWxFilial("SA2")+_cResp))
-			U_ZRETMsgJson("responsavel","Não Autorizado, Falta Cadastro")
-        	Break
-		Endif
+	//Verificar se existe cadastro Gornecedor , o Genérico não sendo 
+	SA2->(DbSetOrder(1))
+	// Valida os dados do oJson
+	If !SA2->(DbSeek(FWxFilial("SA2")+_cResp))  //.And. _cResp <> STRZero(0,8)  //Deixar passar com tudo zero para validaçoes
+		U_ZRETMsgJson("responsavel","Nao Autorizado, Falta Cadastro")
+        Break
 	Endif 	
 	If !ValidOJson(@_oJson,)
 		Break
@@ -298,6 +296,7 @@ If _lRet
 	//Indica que alterou campos
 	If Len(_aAlterado) > 0 
 		_cMsg 	:= "Alteracoes cadastro de Clientes Recponsavel "+_cResp+" em "+DtOC(Date())+" - "+Time()
+		_cMsg 	+= CRLF
 		For _nPos := 1 To Len(_aAlterado)
 			_cMsg += _aAlterado[_nPos] +CRLF
 		Next 
