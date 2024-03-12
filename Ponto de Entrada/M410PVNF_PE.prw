@@ -22,6 +22,7 @@ Local _aArea		:= GetArea()
 Local _lJob			:= IsBlind()
 Local _oSay
 
+	Conout( "Início PE M410PVNF" )
 	If !_lJob
 		FwMsgRun(,{ |_oSay| _lRet := M410PVNFLC(@_oSay) }, 'Limite Crédito','Avaliando limite de crédito, aguarde...')  //Separação Orçamentos / Aguarde
 	Else
