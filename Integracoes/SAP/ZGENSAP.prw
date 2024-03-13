@@ -211,7 +211,7 @@ Local lSF1 := IIf(CT2->CT2_LP $ "650/655",.T.,.F.)
 Local lSF2 := IIf(CT2->CT2_LP $ "610/630",.T.,.F.)
 Local lCT2 := IIf(!CT2->CT2_LP $ "610/650/630/655/510/515/513/514/511/512",.T.,.F.) .and. !Subs(CT2->CT2_LP,1,1) == "5"
 Local lSE2 := IIf(CT2->CT2_LP $ "510/515/513/514/511/512",.T.,.F.)
-Local lSE1 := IIf(CT2->CT2_LP $ "501/502",.T.,.F.)
+Local lSE1 := IIf(CT2->CT2_LP $ "501/502/610",.T.,.F.)
 Local cAliasTrb := GetNextAlias()
 Local lValidGnre := .T.
 Local cChaveGnre := ""
@@ -247,7 +247,7 @@ Endif
 
 // excessoes da regra
 // PA com moeda 1, gera como SE2
-If Subs(CT2->CT2_ORIGEM,1,7) $ "501-001/501-002"
+If Subs(CT2->CT2_ORIGEM,1,7) $ "501-001/501-002/610-001/610-002"   //Incluído 610
 	lSE1 := .T.
 	lCT2 := .F.
 	lValidGnre := .F.
