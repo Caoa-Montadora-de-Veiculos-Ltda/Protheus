@@ -69,7 +69,6 @@ Static Function fReportDef() //Definições do relatório
     oReport:HideFooter()        		//--Define que não será impresso o rodapé padrão da página
 	oReport:SetPreview(.T.)   			//--Define se será apresentada a visualização do relatório antes da impressão física
     oReport:SetEnvironment(2)   		//--Define o ambiente para impressão 	Ambiente: 1-Server e 2-Client
-	
 	oReport:SetRightAlignPrinter(.T.)   //--Parametriza o TReport para alinhamento a direita
 	
 	oReport:oPage:SetPaperSize(9)		//--Define impressão no papel A4
