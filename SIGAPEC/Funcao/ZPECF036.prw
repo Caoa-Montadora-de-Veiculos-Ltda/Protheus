@@ -239,7 +239,7 @@ Static Function ZPECF036PV(_aOrcs, _cPicking, _cPedido, _aRegVS1, _aPicking, _aV
 			SB1->(DbGoTop())
 			
 			
-			
+			//Prepara itens para execauto
 			While VS3->(!Eof()) .And. FwXFilial("VS3")+VS1->VS1_NUMORC == VS3->VS3_FILIAL+VS3->VS3_NUMORC
 				/*
 					OX001PecFis()

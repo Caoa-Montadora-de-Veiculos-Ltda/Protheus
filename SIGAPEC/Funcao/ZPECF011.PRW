@@ -1014,8 +1014,8 @@ Begin Sequence
 	//Gravar BackOrder, necessário fazer isto pois pode ser varios orçamentos
 	//Organizo por numero de orçamento
 	Asort(_aBak,,, { |x, y| x[7] > y[7] } )
-	_cNumOrc 	:= _aBak[1,7]   //numero do orçamento
-	_aRegVS3 	:= {}    		 //registros para reserva
+	_cNumOrc 	:= _aBak[1,7]   //numero do orçamento --> ((_cAliasPesq)->VS3_NUMORC })
+	_aRegVS3 	:= {}    		//registros para reserva
 	_aBackOrder	:= {}
 	For _nPos := 1 To Len(_aBak)
 		Aadd(_aBackOrder,{_aBak[_nPos,1], _aBak[_nPos,2], _aBak[_nPos,3], _aBak[_nPos,4],_aBak[_nPos,5],_aBak[_nPos,6]})
@@ -1098,6 +1098,7 @@ Begin Sequence
 		Next
 	Endif	 
 	_aReservaCAOA 	:= Aclone({ _cNumOrc, _lReserva, _aRegVS3 })	// Variavel utilizada no PE OX001RES
+	//PE faz a reserva e desreserva
 	_cDocto := OX001RESITE(_cNumOrc,_lReserva,_aSeqVS3 )
 	if Empty(_cDocto) .or. _cDocto == "NA"
 		If _lReserva

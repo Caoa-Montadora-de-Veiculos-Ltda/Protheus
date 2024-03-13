@@ -4203,6 +4203,7 @@ User Function XRESCAOAPEC(_cNumOrc, _lReserva, _aRegVS3, _cArmOrig, _cArmDes, _l
 			Endif 
 
 			If _lRet 		
+				//Prepara itens para ExecAuto MATA261
 				_aItens 	:= XRESCAOATR(_cNumOrc, _lReserva, @_aRegVS3, _cArmorig, _cArmdes, _cDocumento, @_aMsg)
 				If Len(_aItens) == 0
 					AAdd(_aMsg,"Não foi possivel fazer transferências ref  orçamento " +_cNumOrc+ ", não será realizada a Reserva comunicar ADM Sistemas!!! ")
