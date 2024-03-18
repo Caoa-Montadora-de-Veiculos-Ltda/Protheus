@@ -10,7 +10,8 @@ User Function GFEA065()
 	Local cIdModel   := ''
 	Local aArea      := GetArea()
 	Local aAreaGU3   := {}
-	Local _cEmp		:= FWCodEmp()
+	Local _cEmp		 := FWCodEmp()
+	Local cTes       := ""	
 
 	If _cEmp == "2020" //Executa CaoaSp.
 		If aParam <> NIL
@@ -18,6 +19,7 @@ User Function GFEA065()
 			cIdPonto := aParam[2]
 			cIdModel := aParam[3]
 			nOpcx := oObj:GetOperation()
+			
 			Do Case
 			Case cIdPonto ==  'MODELCOMMITTTS'
 				If cIdModel == "GFEA065"
@@ -48,6 +50,18 @@ User Function GFEA065()
 						EndIf
 					EndIf
 				EndIf		
+			Case cIdPonto == "FORMCOMMITTTSPOS"
+				
+				If FWIsInCallStack("GFEA065IN")
+					
+					cTes := posicione('SD1',1,GW3->GW3_FILIAL+substr(GW3->GW3_NRDF,1,9)+SUBSTR(GW3->GW3_SERDF,1,3),"D1_TES")
+					if !Empty(cTes)
+						RecLock("GW3",.F.)
+							GW3->GW3_TES := cTes
+						GW3->(MsUnLock())
+					EndIf
+				EndIf
+
 			EndCase
 		EndIf
 	EndIf
