@@ -748,9 +748,6 @@ Begin Sequence
 	_lQtdWIS	:= .F.
 	_lQtdPRT	:= .F.
    	While (_cAliasPesq)->(!Eof())
-		If Alltrim((_cAliasPesq)->PROD) == "R-151000079AA" .or.  Alltrim((_cAliasPesq)->PROD) == "R-151000148AA"
-			(_cAliasPesq)->QT_WIS  := 0
-		EndIf
 		_cErro		:= "" 
 		_lLibera 	:= .F.
 		//Caso a quantidade WIS e Protheus esteja igual a Zero não processar
