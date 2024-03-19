@@ -748,6 +748,9 @@ Begin Sequence
 	_lQtdWIS	:= .F.
 	_lQtdPRT	:= .F.
    	While (_cAliasPesq)->(!Eof())
+		If Alltrim((_cAliasPesq)->PROD) == "R-151000079AA" .or.  Alltrim((_cAliasPesq)->PROD) == "R-151000148AA"
+			(_cAliasPesq)->QT_WIS  := 0
+		EndIf
 		_cErro		:= "" 
 		_lLibera 	:= .F.
 		//Caso a quantidade WIS e Protheus esteja igual a Zero não processar
@@ -924,6 +927,9 @@ Local _cNumOrc
 Local _nQtde
 Local _cMsg
 
+Local _cOrcam := " "
+Local _aBakUnico := {}
+
 Begin Sequence
 	For _nPos := 1 To Len(_aDiverge)
 		_cPicking 		:= _aDiverge[_nPos,1]
@@ -1017,11 +1023,18 @@ Begin Sequence
 	_cNumOrc 	:= _aBak[1,7]   //numero do orçamento --> ((_cAliasPesq)->VS3_NUMORC })
 	_aRegVS3 	:= {}    		//registros para reserva
 	_aBackOrder	:= {}
+	
 	For _nPos := 1 To Len(_aBak)
 		Aadd(_aBackOrder,{_aBak[_nPos,1], _aBak[_nPos,2], _aBak[_nPos,3], _aBak[_nPos,4],_aBak[_nPos,5],_aBak[_nPos,6]})
 		//Sera necessário retirar reserva
 		//mudando orçamento e ou no fim do for  
-		If _cNumOrc <> _aBak[_nPos,7] .Or. _nPos == Len(_aBak)
+
+		_cOrcam := _aBak[_nPos, 7] //Isso pode ser alterado por _cNumOrc ?
+		If !aScan(_aBakUnico, _cOrcam) > 0
+			AADD(_aBakUnico,_aBak[_nPos]) 
+			_cNumOrc := _aBak[_nPos,7]
+	
+			//If _cNumOrc <> _aBak[_nPos,7] .Or. _nPos == Len(_aBak)
 			//primeiro tiro as reservas do produto antes de abater as diferenças
 			_lRet := ZPEC11BKRE( _cNumOrc, _cPicking, .F., /*_aRegVS3*/)  
 			If ! _lRet
@@ -1040,15 +1053,18 @@ Begin Sequence
 			Aadd(_aMsgCAOA, _cMsg)
 			//Ajustar as quantidades após a Clonagem
 			ZPEC11BKAJ(_aBackOrder)
+			//Faz a reserva novamente, apenas dos itens com saldo (itens do BO não são reservados).
 			_lRet := ZPEC11BKRE( _cNumOrc, _cPicking, .T., /*_aRegVS3*/)  
 			If ! _lRet
 				_cMsg :=  "Problemas para criar as reservas orçamento "+_cNumOrc
 				Aadd(_aMsgCAOA, _cMsg)
 				Break	
 			Endif
-			_cNumOrc 	:= _aBak[_nPos,7]
+			_cNumOrc 	:= _aBak[_nPos,7] //--Comentado Nicolas Lima
 			_aBackOrder	:= {}
-		Endif 
+		EndIf 
+			//Conout("ZPECF011")	
+		//Endif 
 	Next	
 	_lRet 	:= .T. 
 End Sequence
