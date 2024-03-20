@@ -102,9 +102,11 @@ If Len(_aMsg) > 0
 		_cMens += Upper(_aMsg[_nPos]) + CRLF
 	Next _nPos
 	Conout(_cMens)
-	If !_lJob
-		MSGINFO( _cMens , "[M410PVNFLC] - Atenção" )
+	
+	If !_lJob .and. !_lRet
+		FWAlertWarning(_cMens, "[M410PVNFLC] - Atenção")
 	EndIf	
+	
 EndIf
 Return _lRet 
 
