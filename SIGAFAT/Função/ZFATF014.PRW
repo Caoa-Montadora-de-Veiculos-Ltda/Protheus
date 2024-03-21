@@ -604,11 +604,16 @@ Local _nSaldo		:= 0
 Local _cAliasPesq 	:= GetNextAlias()
 Local _aGrvLog		:= {}
 //Local _nPos
+Local nValAtr		:= 0
+Local nValAbe		:= 0
+Local nValBo 		:= 0
+Local nValPed		:= 0
+Local nSaldo 		:= 0
 
-Begin Sequence
+//Begin Sequence
 	//No caso de não estar informada a loja
 	If !Empty(_cLoja)
-		_cWhere := "AND SA1.A1_LOJA =  '"+_cLoja+"'" 
+		_cWhere := "AND SA1.A1_LOJA =  '" + _cLoja + "'" 
 	Endif
 	_cWhere := "%"+_cWhere+"%"
 
@@ -620,6 +625,7 @@ Begin Sequence
 			AND SA1.%notDel%
 			%Exp:_cWhere%
 	EndSQL	
+
 	If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGSA1 == 0
 		Break
 	EndIf
@@ -628,9 +634,24 @@ Begin Sequence
 	(_cAliasPesq)->(DbGoTop())
 	While (_cAliasPesq)->(!Eof())
 		SA1->(DbGoto((_cAliasPesq)->NREGSA1))
+		
+		if SA1->A1_XBLQLC $ '0|1|2'
+			If FWCodEmp() == "2010" 
+				_nSaldo := ( SA1->A1_XLC - ( _nValAbe  ) )
+			Else
+				_nSaldo := ( SA1->A1_XLC - ( _nValAbe + _nValBo + _nValPed ) )
+			Endif
+			nValAtr := ZFATF14DIF(SA1->A1_XFPATR, _nValAtr, "A1_XFPATR", @_aGrvLog) //IiF(_nValAtr >= 0, _nValAtr	, 0)
+			nValAbe := ZFATF14DIF(SA1->A1_XLMUSA, _nValAbe, "A1_XLMUSA", @_aGrvLog) //IiF(_nValAbe >= 0, _nValAbe	, 0)
+			nValBo  := ZFATF14DIF(SA1->A1_XVALBO, _nValBo , "A1_XVALBO", @_aGrvLog) //IiF(_nValBo  >= 0, _nValBo	, 0)
+			nValPed := ZFATF14DIF(SA1->A1_XPEDFP, _nValPed, "A1_XPEDFP", @_aGrvLog) //IiF(_nValPed >= 0, _nValPed	, 0)
+			nSaldo  := ZFATF14DIF(SA1->A1_XFPSAL, _nSaldo , "A1_XFPSAL", @_aGrvLog) //IiF(_nSaldo  >= 0, _nSaldo	, 0)
+		EndIf
+		
 		If !SA1->(RecLock("SA1",.F.))
 			Break
 		EndIf
+
 		If SA1->A1_XBLQLC == "1" //1 - Bloqueio Manual
 			SA1->A1_XSTAFP	:= "5"	
 			_cRet := "5"
@@ -656,27 +677,29 @@ Begin Sequence
 			_cRet := "2"
 		
 		Else
-			If FWCodEmp() == "2010" 
-				_nSaldo := ( SA1->A1_XLC - ( _nValAbe  ) )
-			Else
-				_nSaldo := ( SA1->A1_XLC - ( _nValAbe + _nValBo + _nValPed ) )
-			Endif
-			SA1->A1_XFPATR	:= ZFATF14DIF(SA1->A1_XFPATR, _nValAtr, "A1_XFPATR", @_aGrvLog) //IiF(_nValAtr >= 0, _nValAtr	, 0)
-			SA1->A1_XLMUSA	:= ZFATF14DIF(SA1->A1_XLMUSA, _nValAbe, "A1_XLMUSA", @_aGrvLog) //IiF(_nValAbe >= 0, _nValAbe	, 0)
-			SA1->A1_XVALBO	:= ZFATF14DIF(SA1->A1_XVALBO, _nValBo , "A1_XVALBO", @_aGrvLog) //IiF(_nValBo  >= 0, _nValBo	, 0)
-			SA1->A1_XPEDFP	:= ZFATF14DIF(SA1->A1_XPEDFP, _nValPed, "A1_XPEDFP", @_aGrvLog) //IiF(_nValPed >= 0, _nValPed	, 0)
-			SA1->A1_XFPSAL	:= ZFATF14DIF(SA1->A1_XFPSAL, _nSaldo , "A1_XFPSAL", @_aGrvLog) //IiF(_nSaldo  >= 0, _nSaldo	, 0)
-			If _nSaldo <= 0
+			
+			SA1->A1_XFPATR	:= nValAtr
+			SA1->A1_XLMUSA	:= nValAbe
+			SA1->A1_XVALBO	:= nValBo 
+			SA1->A1_XPEDFP	:= nValPed
+			SA1->A1_XFPSAL	:= nSaldo 
+			
+			If nSaldo <= 0
+			
 				If SA1->A1_XSTAFP <> "2"
 					Aadd(_aGrvLog,{ SA1->A1_XSTAFP, "2", "A1_XSTAFP"})
 				EndIf
 				SA1->A1_XSTAFP := "2" //FALTA DE SALDO
+			
 			ElseIf SA1->A1_XDTLC < Date()
+			
 				If SA1->A1_XSTAFP <> "4"
 					Aadd(_aGrvLog,{ SA1->A1_XSTAFP, "4", "A1_XSTAFP"})
 				EndIf
 				SA1->A1_XSTAFP := "4" //CREDITO VENCIDO
+			
 			ElseIf SA1->A1_XFPATR > 0
+				
 				If SA1->A1_XBLQVEN == "1" // BLOQUEIA POR ATRASO SOMENTE SE O Bloq.Vencido = "1-SIM"
 					If SA1->A1_XSTAFP <> "3"
 						Aadd(_aGrvLog,{ SA1->A1_XSTAFP, "3", "A1_XSTAFP"})
@@ -694,23 +717,19 @@ Begin Sequence
 			_cRet := SA1->A1_XSTAFP
 		EndIf
 		SA1->(MsUnlock())
-		//caso exista log para gravar
-		//Não gravar alinhado com Evandro e Aline - DAC 17/05/2023
-		//If Len(_aGrvLog) > 0
-		//	For _nPos := 1 To Len(_aGrvLog)
-		//		U_ZGENLZA2(_aGrvLog[_nPos,1], _aGrvLog[_nPos,2], _aGrvLog[_nPos,3], /*_cTitulo*/, "AVALIACAO L.C.",/*_cUserSol*/)
-		//	Next
-		//Endif		
+		
 		(_cAliasPesq)->(DbSkip())
-	EndDo	
-End Sequence
+	EndDo
+
+//End Sequence
+
 If Select(_cAliasPesq) <> 0
 	(_cAliasPesq)->(DbCloseArea())
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif  
 
 Return(_cRet)
-
+//----------------------------------------------------------------------------------------------------------
 //DAC - 13/04/2023
 //Retornar o valor a ser gravado ref L.C. e separar para gravação do Log
 Static Function ZFATF14DIF(_nValSa1, _nValCalc,_cCampo, _aGrvLog)
