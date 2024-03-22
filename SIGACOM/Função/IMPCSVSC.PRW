@@ -109,6 +109,7 @@ USER FUNCTION IMPCSV()
 	@ 080,275 MSGET cCC PICTURE cPICTI WHEN .F.  SIZE 40,08  PIXEL OF oDlg
 	*
 	@ 090,007 SAY "Selecione o arquivo a importar:" PIXEL OF oDLG
+	*
 	Define SButton FROM 100, 007 Type 14 Action (ApMsgInfo(cMsg, "IMPCSV"),  cFile := cGetFile( cMask, 'Selecione o arquivo a ser importado',1,,.T. ), If( cFile == "", .T., ATULIST()), oListBox:Refresh()  ) Enable Of oDlg Pixel
 	*
 	@ 110,150 SAY "Lista de arquivos a importar:" PIXEL OF oDLG

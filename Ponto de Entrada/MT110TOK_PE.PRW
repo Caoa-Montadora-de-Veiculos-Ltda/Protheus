@@ -68,7 +68,7 @@ User Function MT110TOK()
 
 		//Ajuste referente ao GAP009 -------------------------------------------
 		If _cEmp == "2020" .and. FindFunction("U_ZCOMF057")//Empresa Barueri
-			_lret := U_ZCOMF057()
+			_lRet := U_ZCOMF057()
 		EndIf
 		//Fim dos ajustes referente ao GAP009 ----------------------------------	
 	

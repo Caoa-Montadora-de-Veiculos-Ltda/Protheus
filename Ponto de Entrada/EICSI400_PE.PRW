@@ -39,7 +39,7 @@ User Function EICSI400()
 		If FindFunction("U_ZCOMF57B")//Empresa Barueri
 			_lRet := U_zCOMF57B(nW1_SALDO, nW1_QTDE, cCodProd)	
 		End If
-	//Fim dos ajustes referente ao GAP009
+		//Fim dos ajustes referente ao GAP009
 	
 	EndIf 
 

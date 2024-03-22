@@ -18,7 +18,7 @@ User function MTA103OK()
     
     //Início dos ajustes referentes ao GAP009
     If _cEmp == "2020" .and. FindFunction("U_zPedComp()")//Empresa Barueri
-		_lret := U_zPedComp()
+		_lRet := U_zPedComp()
     EndIf
     //Fim dos ajustes referentes ao GAP009
 
