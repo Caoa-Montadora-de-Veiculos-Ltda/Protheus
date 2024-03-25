@@ -82,6 +82,8 @@ Local _cAlias
         Endif
     Next
     If Len(_cObs) > 0
+        //Gravar data alteração e Uusuário
+        _cObs += "ALTERADO USUARIO : "+Upper(AllTrim(UsrRetName(RetCodUsr())))+" EM "+DtoC(Date())+" AS "+SubsTr(Time(),1,5)+ CRLF
         M->VS1_OBSAGL := _cObs +CRLF+ M->VS1_OBSAGL
     Endif
 Return Nil 
