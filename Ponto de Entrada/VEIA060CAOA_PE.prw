@@ -1,13 +1,25 @@
 #Include "totvs.ch"
-// ======================================================================= //
+/*/{Protheus.doc} VEIA060
+@param  	
+@author 	A.Carlos
+@version  	P12.1.23
+@since  	29/08/2022
+@return  	NIL
+@obs        Ponto de entrada VEIA060_CAOA chamado pelo VEIA060
+@project
+@history    25/03/2024 - Incluído cinco campos de comissão de vendas 
+*/
+ 
 User Function VEIA060()
-// ======================================================================= //
-
 Local aParam     := PARAMIXB
 Local xRet       := .T.
 Local oObj 
 Local cIdPonto   := "" 
 Local cIdModel   := "" 
+
+//Local _cForest   := superGetMv( "CMV_PEC044", ,"SJGALK8/SJ5CLBC/SJ5EL7C/SKEDLFL/SK7ALEL/SK7AL8L/SK7BLEL/SK7BLFL/SK7CLEL/SK7CLFL")
+
+Local _nPerc     := 0
 
 Local cTpVdNaoPe := "" 
 Local _cPgNF     := AllTrim( GetMV('CMV_FAT011') )
@@ -126,6 +138,7 @@ If aParam <> Nil
 			EndIf 
 		EndIf 
 
+
 // --> Incluso  CRISTIANO  14/12/2021   (*INICIO*) ----------------------- //
 /*
    Mensagem alerta impeditivo ao tentar gravar um pedido de vendas que não possua o "Chassi" (VRK_CHASSI) preenchido  .E.  possua dados 
@@ -166,11 +179,76 @@ If aParam <> Nil
 			//EndIf
 		EndIf
 
+		VRK->(dbSetOrder(1))
+		If VRK->(dbSeek(xFilial("VRK") + VRJ->VRJ_PEDIDO ))
+			WHILE VRK->VRK_FILIAL = VRJ->VRJ_FILIAL .AND. VRK->VRK_PEDIDO = VRJ->VRJ_PEDIDO
+                Do Case
+					Case VRJ->VRJ_TIPVEN = "02"   //Comissão			
+						RecLock("VRK",.F.) 
+							VRK->VRK_XPECOM := VV2->VV2_XCOM2
+							VRK->VRK_XVLCOM := (VV2->VV2_XCOM2 * VRK->VRK_VALVDA) / 100
+						VRK->(MsUnlock())
+						_nPerc := VV2->VV2_XCOM2
+					Case VRJ->VRJ_TIPVEN = "03"   //Comissão			
+						RecLock("VRK",.F.) 
+							VRK->VRK_XPECOM := VV2->VV2_XCOM3
+							VRK->VRK_XVLCOM := (VV2->VV2_XCOM3 * VRK->VRK_VALVDA) / 100
+						VRK->(MsUnlock())
+						_nPerc := VV2->VV2_XCOM3
+					Case VRJ->VRJ_TIPVEN = "05"   //Comissão			
+						RecLock("VRK",.F.) 
+							VRK->VRK_XPECOM := VV2->VV2_XCOM5
+							VRK->VRK_XVLCOM := (VV2->VV2_XCOM5 * VRK->VRK_VALVDA) / 100
+						VRK->(MsUnlock())
+						_nPerc := VV2->VV2_XCOM5
+					Case VRJ->VRJ_TIPVEN = "06"   //Comissão			
+						RecLock("VRK",.F.) 
+							VRK->VRK_XPECOM := VV2->VV2_XCOM6
+							VRK->VRK_XVLCOM := (VV2->VV2_XCOM6 * VRK->VRK_VALVDA) / 100
+						VRK->(MsUnlock())
+						_nPerc := VV2->VV2_XCOM6
+					Case VRJ->VRJ_TIPVEN = "04" .AND. VRK->VRK_CODMAR $ ("HYU/CHE")
+				        //nposModV := At(VV2_DESMOD, _cForest)
+						//IF VRK_CODMAR = "HYU" .OR. VRK_CODMAR = "CHE"
+							_nPerc := VV2->VV2_XCOM4
+						//ELSEIF VRK_CODMAR = "SBR" .AND. nposModV = 0
+						//	_nPerc := _nSBR
+						//ELSEIF VRK_CODMAR = "SBR" .AND. nposModV <> 0
+						//	_nPerc := _nSBRF
+						//ENDIF
+						RecLock("VRK",.F.) 
+							VRK->VRK_XPECOM := VV2->VV2_XCOM4
+							VRK->VRK_XVLCOM := (VV2->VV2_XCOM4 * VRK->VRK_VALVDA) / 100
+						VRK->(MsUnlock())
+                End Case
+
+				RecLock("VV2",.F.) 
+					VV2->VV2_XCOMIS := _nPerc
+				VV2->(MsUnlock())
+				VRK->(DbSkip())
+			End
+
+		EndIf
+
 	EndCase
 
 EndIf
 	
 Return xRet 
+
+
+/*/{Protheus.doc} nomeStaticFunction
+	(long_description)
+	@type  Static Function
+	@author user
+	@since 06/12/2023
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	@example
+	(examples)
+	@see (links_or_references)
+/*/
 
 
 
