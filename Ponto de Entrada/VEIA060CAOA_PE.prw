@@ -1,8 +1,16 @@
 #Include "totvs.ch"
-// ======================================================================= //
+/*/{Protheus.doc} VEIA060
+@param  	
+@author 	A.Carlos
+@version  	P12.1.23
+@since  	29/08/2022
+@return  	NIL
+@obs        Ponto de entrada VEIA060_CAOA chamado pelo VEIA060
+@project
+@history    25/03/2024 - Incluído cinco campos de comissão de vendas 
+*/
+ 
 User Function VEIA060()
-// ======================================================================= //
-
 Local aParam     := PARAMIXB
 Local xRet       := .T.
 Local oObj 
