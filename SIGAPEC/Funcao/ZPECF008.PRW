@@ -141,14 +141,14 @@ User Function ZPECF008()
 		_cObsPrc    := ""
 		//Carregar processo
 		If _lJob
-			ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _cLocal,/*indica FDR*/ , @_cObsPrc )
+			//ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _cLocal,/*indica FDR*/ , @_cObsPrc )
 			//validar armazem Franco da Rocha caso existam saldos manutenção temporária devido mudança,  DAC 02/02/2023
 			If !Empty(_cArmazemFDR)
 				ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _cArmazemFDR, .T., @_cObsPrc )
 			Endif
 			Conout("[ZPECF008]"+CRLF+_cObsPrc)
 		Else
-			FwMsgRun(,{ |_oSay| ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _cLocal ,/*indica FDR*/, @_cObsPrc , @_aOndaRel, @_oSay ) }, "Separação Orçamentos armazém PADRÃO", "Aguarde...")  //Separação Orçamentos / Aguarde
+			//FwMsgRun(,{ |_oSay| ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _cLocal ,/*indica FDR*/, @_cObsPrc , @_aOndaRel, @_oSay ) }, "Separação Orçamentos armazém PADRÃO", "Aguarde...")  //Separação Orçamentos / Aguarde
 			//validar armazem Franco da Rocha caso existam saldos manutenção temporária devido mudança,  DAC 02/02/2023
 			If !Empty(_cArmazemFDR) 
 				FwMsgRun(,{ |_oSay| ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _cArmazemFDR , .T., @_cObsPrc,  @_aOndaRel, @_oSay ) }, "Separação Orçamentos armazém "+_cArmazemFDR, "Aguarde...")  //Separação Orçamentos / Aguarde
