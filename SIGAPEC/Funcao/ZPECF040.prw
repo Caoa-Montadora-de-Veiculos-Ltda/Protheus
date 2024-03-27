@@ -458,11 +458,16 @@ Begin Sequence
 	If Len(_aPontos) == 0
     	_cQuery += "' ' AS  CURVA_PONTOS " + CRLF											//--ZO_CURVQTD
 	Else
+		//Ajustado GAP139 - Não estava calculando status como Novo	
+		//Organizar em sequencia para que traga as validaçoes na fase correta ex N (novo) vem antes de I (sem movimto) 	
+		aSort(_aPontos,,,{|x,y| x[2]+x[1] < y[2]+y[1]})	
     	_cQuery += " 		, (	SELECT CASE " + CRLF
 		For _nPos := 1 To Len(_aPontos)
 			If AllTrim(_aPontos[_nPos,2])  == "P"  	//PONTOS
      			_cQuery += " 	WHEN NVL(SUM(MES_PONTOS.PONTOS),0) BETWEEN " +_aPontos[_nPos,3]+" AND "+_aPontos[_nPos,4]+" 	THEN '"+_aPontos[_nPos,1]+"' " + CRLF
-			ElseIf AllTrim(_aPontos[_nPos,2])  == "N"  //NOVO tem que avaliar se tem menos de um ano
+			//GAP139
+			//ElseIf AllTrim(_aPontos[_nPos,2])  == "N"  //NOVO tem que avaliar se tem menos de um ano
+			ElseIf AllTrim(_aPontos[_nPos,2])  == "R"  //NOVO tem que avaliar se tem menos de um ano
     			_cQuery += "	WHEN SB1.B1_XDTINC <> ' ' " + CRLF 
     			_cQuery += " 		AND TRUNC(MONTHS_BETWEEN(TO_DATE('"+DtOs(_dDataCurva)+"', 'YYYYMMDD'), TO_DATE(SB1.B1_XDTINC, 'YYYYMMDD'))) <= "+StrZero(_nMesRef,3) + " "
     			_cQuery += " 		AND NVL(SUM(MES_PONTOS.PONTOS),0) = 0 THEN '"+_aPontos[_nPos,1]+"' " + CRLF //--No periodo de 1 ano a partir da data de cadastro não possuir nenhuma venda
@@ -490,8 +495,10 @@ Begin Sequence
    				//	_cQuery += " 	WHEN NVL(MIN(MES_PONTOS.MESES),0) >=  "+AllTrim(_aPontos[_nPos,4])+"   THEN '"+AllTrim(_aPontos[_nPos,1])+"' " + CRLF
 				//EndIf 	
 			ElseIf AllTrim(_aPontos[_nPos,2])  == "S"   //ULTIMA POSIÇÃO DA CURVA
- 				_cQuery += " 	WHEN TRUNC(NVL(SB2SQL.SALDO_ESTOQUE,0)) > 0 	THEN 'I' "
-			ElseIf AllTrim(_aPontos[_nPos,2])  == "F"   //ULTIMA POSIÇÃO DA CURVA
+ 				_cQuery += " 	WHEN TRUNC(NVL(SB2SQL.SALDO_ESTOQUE,0)) > 0 	THEN 'I' " + CRLF
+			//GAP139
+			//ElseIf AllTrim(_aPontos[_nPos,2])  == "F"   //ULTIMA POSIÇÃO DA CURVA
+			ElseIf AllTrim(_aPontos[_nPos,2])  == "Z"   //ULTIMA POSIÇÃO DA CURVA
 					_cCurvaFim := _aPontos[_nPos,1]
 			EndIf 
 		Next _nPos 
