@@ -4,7 +4,6 @@
 #INCLUDE "TBICONN.CH"
 #INCLUDE "DBSTRUCT.CH"
 #INCLUDE "MSGRAPHI.CH"
-
 /*/
 {Protheus.doc} ZCOMF051
 @param
