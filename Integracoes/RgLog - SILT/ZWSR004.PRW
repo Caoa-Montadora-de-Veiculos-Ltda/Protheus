@@ -158,7 +158,7 @@ Conout("WSR004 - Integraçao de envio de produto para RGLOG - Inicio "+DtoC(date(
 	WHILE (QRY_PRO->( !Eof() ))
         oJsProd:=JsonObject():New()
 	    oJsProd["cd_empresa"]           := 1
-		oJsProd["cd_produto"]           := Alltrim(SUBSTR(QRY_PRO->B1_COD,1,20))
+		oJsProd["cd_produto"]           := Alltrim(SUBSTR(QRY_PRO->B1_COD,1,23))
 		oJsProd["sg_produto"]           := Alltrim(SUBSTR(QRY_PRO->B1_COD,1,20))
 		oJsProd["ds_produto"]           := ALLTRIM(QRY_PRO->B1_DESC)
 		oJsProd["ds_reduzida"]          := Alltrim(SUBSTR(QRY_PRO->B1_COD,1,20))
