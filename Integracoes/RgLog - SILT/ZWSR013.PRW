@@ -98,9 +98,9 @@ User Function ZWSR013()
                             SubStr( (_cAlias)->F2_EMISSAO ,5 ,2 ) + '-' +;
                             SubStr( (_cAlias)->F2_EMISSAO ,7 ,2 )
 
-			cDataBase := 	Substr(DTOC(dDatabase),7,4) +'-'+;
-							Substr(DTOC(dDatabase),4,2) +'-'+;
-							Substr(DTOC(dDatabase),1,2)
+			cDataBase := 	Substr(DTOS(dDatabase),1,4) +'-'+;
+							Substr(DTOS(dDatabase),5,2) +'-'+;
+							Substr(DTOS(dDatabase),7,2)
             
 			FreeObj(oJsConFat)                     
 			oJsConFat := JsonObject():new()
