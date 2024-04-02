@@ -83,34 +83,34 @@ Return aRotina
 /*/
 Static Function ModelDef()
 
-// Cria a estrutura a ser acrescentada no Modelo de Dados
-Local oStruSZQ		:= FWFormStruct( 1, 'SZQ', { |x| ALLTRIM(x) $ 'ZQ_TABELA,ZQ_DESCTB,ZQ_NMVW01,ZQ_NMVW02,ZQ_NMVW03,ZQ_NMVW04,ZQ_MSBLQL' },/*lViewUsado*/ )   
-Local oStruSZR   	:= FWFormStruct( 1, 'SZR', { |x| ALLTRIM(x) $ 'ZR_ORDEM,ZR_CAMPO,ZR_TIPO,ZR_TAMAN,ZR_DECIMAL,ZR_ORDEM' },/*lViewUsado*/ )   
-Local oModel 
+	// Cria a estrutura a ser acrescentada no Modelo de Dados
+	Local oStruSZQ		:= FWFormStruct( 1, 'SZQ', { |x| ALLTRIM(x) $ 'ZQ_TABELA,ZQ_DESCTB,ZQ_NMVW01,ZQ_NMVW02,ZQ_NMVW03,ZQ_NMVW04,ZQ_MSBLQL' },/*lViewUsado*/ )   
+	Local oStruSZR   	:= FWFormStruct( 1, 'SZR', { |x| ALLTRIM(x) $ 'ZR_ORDEM,ZR_CAMPO,ZR_TIPO,ZR_TAMAN,ZR_DECIMAL,ZR_ORDEM' },/*lViewUsado*/ )   
+	Local oModel 
 
-//SINTAXE MPFORMMODEL():New(< cID >, < bPre >, < bPost >, < bCommit >, < bCancel >)-> NIL
-oModel := MPFormModel():New('VIEWSZR_MVC',/*LinOk*/,/*TudoOk*/, , )
-oModel:SetDescription('Cadastro de Tabelas/Estruturas Mastersaf')
+	//SINTAXE MPFORMMODEL():New(< cID >, < bPre >, < bPost >, < bCommit >, < bCancel >)-> NIL
+	oModel := MPFormModel():New('VIEWSZR_MVC',/*LinOk*/,/*TudoOk*/, , )
+	oModel:SetDescription('Cadastro de Tabelas/Estruturas Mastersaf')
 
-// Adiciona a nova FORMFIELD
-oModel:AddFields( 'SZQMASTER',, oStruSZQ )
-oModel:AddGrid( 'SZRDETAIL', 'SZQMASTER', oStruSZR , , )
-
-
-//Define validação para chave unica no grid
-oModel:GetModel( 'SZRDETAIL' ):SetUniqueLine( { 'ZR_ORDEM' } )
-oModel:GetModel( 'SZRDETAIL' ):SetUniqueLine( { 'ZR_ORDEM' } )
+	// Adiciona a nova FORMFIELD
+	oModel:AddFields( 'SZQMASTER',, oStruSZQ )
+	oModel:AddGrid( 'SZRDETAIL', 'SZQMASTER', oStruSZR , , )
 
 
-// Faz relacionamento entre os compomentes do model
-oModel:SetRelation( 'SZRDETAIL', { { 'ZR_FILIAL', 'xFilial( "SZQ" )' }, { 'ZR_TABELA', 'ZQ_TABELA' } }, SZR->( IndexKey( 1 ) ) )
+	//Define validação para chave unica no grid
+	oModel:GetModel( 'SZRDETAIL' ):SetUniqueLine( { 'ZR_ORDEM' } )
+	oModel:GetModel( 'SZRDETAIL' ):SetUniqueLine( { 'ZR_ORDEM' } )
 
-// Adiciona a descricao do novo componente
-oModel:GetModel( 'SZQMASTER' ):SetDescription( 'Tabela' )
-oModel:GetModel( 'SZRDETAIL' ):SetDescription( 'Estrutura' )
 
-//Define a chave primaria utilizada pelo modelo
-oModel:SetPrimaryKey({'ZQ_FILIAL', 'ZQ_TABELA' })
+	// Faz relacionamento entre os compomentes do model
+	oModel:SetRelation( 'SZRDETAIL', { { 'ZR_FILIAL', 'xFilial( "SZQ" )' }, { 'ZR_TABELA', 'ZQ_TABELA' } }, SZR->( IndexKey( 1 ) ) )
+
+	// Adiciona a descricao do novo componente
+	oModel:GetModel( 'SZQMASTER' ):SetDescription( 'Tabela' )
+	oModel:GetModel( 'SZRDETAIL' ):SetDescription( 'Estrutura' )
+
+	//Define a chave primaria utilizada pelo modelo
+	oModel:SetPrimaryKey({'ZQ_FILIAL', 'ZQ_TABELA' })
 
 Return oModel
 
@@ -130,41 +130,41 @@ Return oModel
 /*/
 Static Function ViewDef()
 
-// Cria um objeto de Modelo de Dados baseado no ModelDef do fonte informado
-Local oModel := ModelDef()
+	// Cria um objeto de Modelo de Dados baseado no ModelDef do fonte informado
+	Local oModel := ModelDef()
 
-// Cria a estrutura a ser acrescentada na View
-Local oStruSZQ		:= FWFormStruct( 2, 'SZQ', { |x| ALLTRIM(x) $ 'ZQ_TABELA,ZQ_DESCTB,ZQ_NMVW01,ZQ_NMVW02,ZQ_NMVW03,ZQ_NMVW04,ZQ_MSBLQL' },/*lViewUsado*/ )   
-Local oStruSZR   	:= FWFormStruct( 2, 'SZR', { |x| ALLTRIM(x) $ 'ZR_ORDEM,ZR_CAMPO,ZR_TIPO,ZR_TAMAN,ZR_DECIMAL,ZR_ORDEM' },/*lViewUsado*/ )   
+	// Cria a estrutura a ser acrescentada na View
+	Local oStruSZQ		:= FWFormStruct( 2, 'SZQ', { |x| ALLTRIM(x) $ 'ZQ_TABELA,ZQ_DESCTB,ZQ_NMVW01,ZQ_NMVW02,ZQ_NMVW03,ZQ_NMVW04,ZQ_MSBLQL' },/*lViewUsado*/ )   
+	Local oStruSZR   	:= FWFormStruct( 2, 'SZR', { |x| ALLTRIM(x) $ 'ZR_ORDEM,ZR_CAMPO,ZR_TIPO,ZR_TAMAN,ZR_DECIMAL,ZR_ORDEM' },/*lViewUsado*/ )   
 
-Local oView := FWFormView():New() 
+	Local oView := FWFormView():New() 
 
-// Altera o Modelo de dados quer será utilizado
-oView:SetModel( oModel )
+	// Altera o Modelo de dados quer será utilizado
+	oView:SetModel( oModel )
 
-// Adiciona na View um controle do tipo FormFields(antiga enchoice)
-oView:AddField( 'VIEW_SZQ', oStruSZQ, 'SZQMASTER' ) 
-oView:AddGrid ( 'VIEW_SZR', oStruSZR, 'SZRDETAIL' )
+	// Adiciona na View um controle do tipo FormFields(antiga enchoice)
+	oView:AddField( 'VIEW_SZQ', oStruSZQ, 'SZQMASTER' ) 
+	oView:AddGrid ( 'VIEW_SZR', oStruSZR, 'SZRDETAIL' )
 
-//CRIA CAMPO INCREMENTARL - SEQ
-oView:AddIncrementField( 'VIEW_SZR', 'ZR_ORDEM' )
+	//CRIA CAMPO INCREMENTARL - SEQ
+	oView:AddIncrementField( 'VIEW_SZR', 'ZR_ORDEM' )
 
-// É preciso criar sempre um box vertical dentro de um horizontal e vice-versa
-// como na VIEWSZ2_MVC o box é horizontal, cria-se um vertical primeiro
-// Box existente na interface original
-oView:CreateVerticallBox( 'TELANOVA' , 100) 
+	// É preciso criar sempre um box vertical dentro de um horizontal e vice-versa
+	// como na VIEWSZ2_MVC o box é horizontal, cria-se um vertical primeiro
+	// Box existente na interface original
+	oView:CreateVerticallBox( 'TELANOVA' , 100) 
 
-// Novos Boxes - define a área de ocupacao de cada box na tela
-oView:CreateHorizontalBox( 'CABEC' , 30, 'TELANOVA' )
-oView:CreateHorizontalBox( 'GRID1' , 70, 'TELANOVA' ) 
+	// Novos Boxes - define a área de ocupacao de cada box na tela
+	oView:CreateHorizontalBox( 'CABEC' , 30, 'TELANOVA' )
+	oView:CreateHorizontalBox( 'GRID1' , 70, 'TELANOVA' ) 
 
-//Habilitando título
-oView:EnableTitleView('VIEW_SZQ','Tabela' )
-oView:EnableTitleView('VIEW_SZR','Estrutura' )
+	//Habilitando título
+	oView:EnableTitleView('VIEW_SZQ','Tabela' )
+	oView:EnableTitleView('VIEW_SZR','Estrutura' )
 
-// Relaciona o identificador (ID) da View com o "box" para exibicao
-oView:SetOwnerView( 'VIEW_SZQ' , 'CABEC' )
-oView:SetOwnerView( 'VIEW_SZR' , 'GRID1' )
+	// Relaciona o identificador (ID) da View com o "box" para exibicao
+	oView:SetOwnerView( 'VIEW_SZQ' , 'CABEC' )
+	oView:SetOwnerView( 'VIEW_SZR' , 'GRID1' )
 
 Return oView                                       
 

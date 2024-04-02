@@ -386,7 +386,7 @@ Static Function fPopula()
     cQuery += " SF2.F2_DOC "                    + CRLF
 	cQuery += " , SF2.F2_SERIE "                + CRLF	
 	cQuery += " , GW8.GW8_SEQ "                 + CRLF
-	cQuery += " , GW8.GW8_ITEM "              + CRLF
+	cQuery += " , GW8.GW8_ITEM "                + CRLF
     cQuery += " , GW8.GW8_DSITEM "              + CRLF
 	cQuery += " , GW8.GW8_QTDE "                + CRLF
 	cQuery += " , SF2.F2_PBRUTO "               + CRLF //--PESO BRUTO
