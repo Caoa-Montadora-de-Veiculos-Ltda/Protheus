@@ -34,13 +34,16 @@ Local _cCodProdDe	:= Space(TamSx3("B1_COD")[1])
 Local _cCodProdAte 	:= Space(TamSx3("B1_COD")[1])
 Local _cGrupoDe		:= Space(TamSx3("BM_GRUPO")[1])
 Local _cGupoAte		:= Space(TamSx3("BM_GRUPO")[1])
-Local _cArmOrigem	:= Space(TamSx3("B1_LOCAL")[1])
-Local _cTipoPed		:= Space(TamSx3("VS1_XTPPED")[1])
+Local _cArmOrigem	:= Space(TamSx3("B1_LOCPAD")[1])
+Local _cTipoOper	:= Space(TamSx3("C6_OPER")[1])
 Local _cCondPag		:= Space(TamSx3("E4_CODIGO")[1])
 Local _cNatureza	:= Space(TamSx3("ED_CODIGO")[1])
 
+Local _cSerie		:= Space(TamSx3("C5_SERIE")[1])
+
 Local _cChave		:= AllTrim(FWCodEmp())+"ZPECAJ02"
 Local _lRet			:= .T.
+Local _lSerieObr	:= If(FWCodEmp() == '2020', .F., .T.)  //indicar para obrigatório quando embpresa for diferente de 020 na serie  
 
 Local _oSay
 Local _nPos
@@ -50,19 +53,12 @@ Begin Sequence
 	If !_lRet
 		Break
 	EndIf
+	/*
 	IF FWCodEmp() <> '2020' //Verificar Empresa Peças, somente rodar em Peças
 		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Esta rotina não é valida para esta empresa"),4,1)   
 	    Break
 	ENDIF
-	If Empty(_cArmazemCAOA)
-		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Não informado parâmetro ref ao armazem CAOA"),4,1)   
-	    Break
-	Endif 
-	If Empty(_cArmazemHYU)
-		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Não informado parâmetro ref ao armazem HYUNDAI"),4,1)   
-	    Break
-	Endif 
-
+	*/
 	//Garantir que o processamento seja unico
 	If !LockByName(_cChave,.T.,.T.)  
 		//tentar locar por 10 segundos caso não consiga não prosseguir
@@ -82,18 +78,19 @@ Begin Sequence
 	aAdd(_aPar,{1,OemToAnsi("Cliente Faturamento  : ") 	,_cCodCli		,"@!"		,".T."	,"SA1" 	,".T."	,100,.T.}) 
 	aAdd(_aPar,{1,OemToAnsi("Loja Faturamento 	  : ")	,_cLoja 		,"@!"		,".T."	,""		,".T."	,100,.T.}) 
 	aAdd(_aPar,{1,OemToAnsi("Marca de   		  : ") 	,_cMarcaDe		,"@!"		,".T."	,"VE1" 	,".T."	,100,.F.}) 
-	aAdd(_aPar,{1,OemToAnsi("Marca ate  		  : ") 	,_cMarcaAte		,"@!"		,".T."	,"VE1"	,".T."	,100,.F.}) 
+	aAdd(_aPar,{1,OemToAnsi("Marca ate  		  : ") 	,_cMarcaAte		,"@!"		,".T."	,"VE1"	,".T."	,100,.T.}) 
 
 	aAdd(_aPar,{1,OemToAnsi("Produto de   		  : ") 	,_cCodProdDe	,"@!"		,".T."	,"SB1" 	,".T."	,100,.F.}) 
 	aAdd(_aPar,{1,OemToAnsi("Produto ate  		  : ") 	,_cCodProdAte	,"@!"		,".T."	,"SB1"	,".T."	,100,.F.}) 
 
 	aAdd(_aPar,{1,OemToAnsi("Grupo de   		  : ") 	,_cGrupoDe		,"@!"		,".T."	,"SBM" 	,".T."	,100,.F.}) 
-	aAdd(_aPar,{1,OemToAnsi("Grupo ate  		  : ") 	,_cGupoAte		,"@!"		,".T."	,"SBM"	,".T."	,100,.F.}) 
+	aAdd(_aPar,{1,OemToAnsi("Grupo ate  		  : ") 	,_cGupoAte		,"@!"		,".T."	,"SBM"	,".T."	,100,.T.}) 
 
 	aAdd(_aPar,{1,OemToAnsi("Armazem de Origem 	  : ") 	,_cArmOrigem	,"@!"		,".T."	,"NNR"	,".T."	,100,.T.}) 
-	aAdd(_aPar,{1,OemToAnsi("Tipo de Pedido  	  : ") 	,_cTipoPed		,"@!"		,".T."	,"VX5_TP"	,".T."	,100,.T.}) 
+	aAdd(_aPar,{1,OemToAnsi("Tipo de Opereração	  : ") 	,_cTipoOper		,"@!"		,".T."	,"DJ"	,".T."	,100,.T.}) 
 	aAdd(_aPar,{1,OemToAnsi("Forma de Pagto 	  : ") 	,_cCondPag		,"@!"		,".T."	,"SE4"	,".T."	,100,.T.}) 
 	aAdd(_aPar,{1,OemToAnsi("Natureza de Operação : ") 	,_cNatureza		,"@!"		,".T."	,"SED"	,".T."	,100,.T.}) 
+	aAdd(_aPar,{1,OemToAnsi("Serie Nota Fiscal 	  : ") 	,_cSerie		,"@!"		,".T."	,		,".T."	,100,_lSerieObr}) 
 
 
 	//aAdd(_aPar,{3,OemToAnsi("Atualiza Base: ") ,2 ,{"SIM","NAO"}	,80,"",.F.})  
@@ -102,9 +99,9 @@ Begin Sequence
 	aAdd(_aSays,OemToAnsi("Este Programa tem  como  Objetivo realizar transferência de Produto")) 
 	aAdd(_aSays,OemToAnsi("da empresa CAOA PEÇAS para empresa HYUNDAI.")) 
 	aAdd(_aSays,OemToAnsi("Será gerado Pedido e nota fiscal de Saída com os Produtos que possuem")) 
-	aAdd(_aSays,OemToAnsi("Saldos no armazém "+_cArmazemCAOA+", da empresa CAOA, e liberada ! ")) 
+	aAdd(_aSays,OemToAnsi("Saldos no armazém e empresa destino indicados por parâmetro, e liberada ! ")) 
 	aAdd(_aSays,OemToAnsi("Será gerado uma nota fiscal de entrada de acordo com a nota de Saida de")) 
-	aAdd(_aSays,OemToAnsi("Peças onde será recepcionada na empresa Hyundai para o armazém "+_cArmazemHYU+" !")) 
+	aAdd(_aSays,OemToAnsi("Peças onde será recepcionada na empresa Hyundai !")) 
 
 	aAdd(_aButtons, { 1,.T.,{|o| FechaBatch(),_nRet:=1											}})
 	aAdd(_aButtons, { 2,.T.,{|o| FechaBatch()													}})
@@ -136,9 +133,10 @@ Local _cCodProdAte 	:= _aRet[06]
 Local _cGrupoDe		:= _aRet[07]
 Local _cGupoAte		:= _aRet[08]
 Local _cArmOrigem	:= _aRet[09]
-Local _cTipoPed		:= _aRet[10]
+Local _cTipoOper	:= _aRet[10]
 Local _cCondPag		:= _aRet[11]
 Local _cNatureza	:= _aRet[12]
+Local _cSerie 		:= _aRet[13]
 
 Local _nLimites 	:= SuperGetMV("CMV_PECX03",,100)   //limite de itens a serem gerados
 Local _nRegistros	:= 0
@@ -148,6 +146,7 @@ Local _aItemAux   	:= {}
 Local _aItemPV 		:= {}
 Local _aCabPV 		:= ()
 Local _cTipoFre  	:= 'C'
+Local _cTipoPed 	:= "N"
 
 Local _cNumPV   	
 Local _cItem		
@@ -157,15 +156,14 @@ Local _nValTot
 
 Local _cCodTes			
 Local _cTipoCli
-Local _cTipoOper
 
 Private lMsErroAuto := .F.
 
 Begin SEQUENCE
 
 	SA1->( DBSetOrder(01) )
-	if !SA1->( MsSeek(FwXFilial("SA1") + _cCliente+_cLoja ))
-		Help( " ", 1, "ZPECAJ01PR", , 'Cliente '+_cCliente+'-'+_cLoja+' não cadastrado não serão gerados o Pedido/NFS ', 1 )  
+	if !SA1->( MsSeek(FwXFilial("SA1") + _cCodCli+_cLoja ))
+		Help( " ", 1, "ZPECAJ01PR", , 'Cliente '+_cCodCli+'-'+_cLoja+' não cadastrado não serão gerados o Pedido/NFS ', 1 )  
 		Break
 	Endif
 	_cTipoCli := SA1->A1_TIPO
@@ -203,11 +201,12 @@ Begin SEQUENCE
 		Break 
 	EndIf	
 
-	If !MsgYesNo( "Confirma gerar nora de Saída para empresa Hyundai ? " )
+	If !MsgYesNo( "Confirma gerar nota de Saída para Cliente "+AllTrim(SA1->A1_NREDUZ)+" ? " )
 		Break 
 	Endif	
-
-	_nRegistros := (_cAliasPesq)->( RecCount() )
+	
+	(_cAliasPesq)->( DbGotop()) 
+	 Count To _nRegistros 	
 	(_cAliasPesq)->(DbGotop()) 
 	_aCabPV		:= {}	
 	_aItemPV	:= {}
@@ -249,15 +248,15 @@ Begin SEQUENCE
 			_nValUnit := 1
 			_nValTot  := SB2->B2_QATU * _nValUnit
 
-			_cTipoOper := U_zTpOper( SA1->A1_COD, SA1->A1_LOJA, _cTipoPed)
-			_cCodTes := MaTesInt(2,_cTipoOper,VS1->VS1_CLIFAT,VS1->VS1_LOJA,"C",SB1->B1_COD,/*"VS3_CODTES"*/)
+			//_cTipoOper := U_zTpOper( SA1->A1_COD, SA1->A1_LOJA, _cTipoPed)
+			_cCodTes := MaTesInt(2,_cTipoOper,_cCodCli,_cLoja,"C",SB1->B1_COD,/*"_CODTES"*/)
 			//para não gerar erro na integração DAC 15/02/2022
 			//mesmo com a validação o precesso aborta  DAC 23/02/2022
 			If Valtype(_cCodTes) <> "C"
 				_cCodTes := ""
 			EndIf
 
-			AAdd( _aItemAux,{{"C6_FILIAL" , FwXFilial("SC6")		,Nil},;
+			AAdd( _aItemAux,{{"C6_FILIAL" , FwXFilial("SC6")	,Nil},;
 							{"C6_NUM"    , _cNumPV				,Nil},;
 							{"C6_ITEM"   , _cItem				,Nil},;
 							{"C6_PRODUTO", SB1->B1_COD			,Nil},;
@@ -270,19 +269,19 @@ Begin SEQUENCE
 							{"C6_UM"     , SB1->B1_UM			,Nil},;
 							{"C6_TES"    , _cCodTes				,Nil},; 
 							{"C6_LOCAL"  , _cArmOrigem			,Nil},;
-							{"C6_CLI"    , _cCliente			,Nil},;
+							{"C6_CLI"    , _cCodCli				,Nil},;
 							{"C6_LOJA"   , _cLoja				,Nil};
 							})
 			_cItem 		:= Soma1(_cItem)
 			_nRegMax 	++
 
-			If _nRegMax >= _nLimites
+			(_cAliasPesq)->(DbSkip())
+
+			If (_nRegMax >= _nLimites .Or. (_cAliasPesq)->(Eof())) .And. Len(_aItemAux) > 0 //Caso atija fim do select
 				_aItemPV := _aItemAux
-				_oSay:SetText("Gravando Pedido ")
+				_oSay:SetText("Gerando Pedido "+AllTrim(_cNumPV)+" de Vendas")
 				ProcessMessage() 
-
     			MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, _aCabPV, _aItemPV, _nOpc, .F.)//Estorno
-
 				If lMsErroAuto
     				Mostraerro()
 					Break	
@@ -302,21 +301,24 @@ Begin SEQUENCE
 				//Gera a Nota funcionalidade apresenta informações e exige interação do usuário
 				//SC5->( Ma410PvNfs(Alias(), Recno()) )
 				//Libera Pedido                  
-				_oSay:SetText("Liberando Pedido ")
+				_oSay:SetText("Liberando Pedido "+AllTrim(_cNumPV))
 				ProcessMessage() 
-
 				_lRet := ZPECAJ02LP(SC5->C5_NUM)  //Avaliar se a Liberação vai ser total ou passara pelos critérios DAC 06/08/2018
-				If _lRet 
-					_oSay:SetText("Gravando nota Fiscal ")
-					ProcessMessage() 
-
-					_cSerie := XVerSerieNF(_cMarca)
-					//Gerar a Nota Fiscal de Saida
-					_lRet := ZPECAJ02NS(SC5->C5_CLIENTE, SC5->C5_LOJACLI, SC5->C5_NUM, _cSerie,.F.)				
+				If !_lRet 
+					Break
+				Endif
+				_oSay:SetText("Gerando Nota Fiscal de Saida para o Pedido de Vendas "+AllTrim(_cNumPV))
+				ProcessMessage() 
+				If Empty(_cSerie)
+					_cSerie := XVerSerieNF(_cCodMarca)
+				Endif	
+				//Gerar a Nota Fiscal de Saida
+				_lRet := ZPECAJ02NS(SC5->C5_CLIENTE, SC5->C5_LOJACLI, SC5->C5_NUM, _cSerie,.F.)				
+				If !_lRet
+					Break
 				Endif
 				_aCabPV	:= {}
 			Endif
-			(_cAliasPesq)->(DbSkip())
 		EndDo 
 		_aCabPV		:= {}	
 	EndDo	
@@ -413,7 +415,7 @@ Responsavel emissao da NF pelo Pedido gerado
 @menu       Nao Informado
 @history    
 ---------------------------------------------------------------------------------------*/
-Static Function ZPECAJ02NS(_cCliente, _cLoja, _cPedido, _cSerie,lAutoGravErro)
+Static Function ZPECAJ02NS(_cCodCli, _cLoja, _cPedido, _cSerie,lAutoGravErro)
 Local _aArea	 	:= GetArea()
 Local _aPvlNfs		:= {}
 Local _nPrcVen    	:= 0
@@ -428,7 +430,7 @@ Local _lRet	 	    := .T.
 Local _cMens  		:= ""
 
 Default _cSerie	  	:= "9"         
-Default _cCliente 	:= ""	
+Default _cCodCli 	:= ""	
 Default _cLoja 	  	:= ""	 	                            
 Default _cPedido  	:= ""	
 Default _lAutoGravErro := .T.
@@ -441,7 +443,7 @@ If _lAutoGravErro
 Endif
 
 Begin Sequence
-	If Empty(_cSerie) .or. Empty(_cCliente) .or. Empty(_cLoja) .or. Empty(_cPedido)
+	If Empty(_cSerie) .or. Empty(_cCodCli) .or. Empty(_cLoja) .or. Empty(_cPedido)
 		_lRet := .F.
 		Break 
 	Endif	
@@ -464,7 +466,7 @@ Begin Sequence
 	DAK->(DbSetOrder(1))  ////FILIAL+COD+SEQCAR   DAC 17/12/2014 
 
 	//Posiciona as tabelas necessaria para emissao da NF
-	If !SC5->( MsSeek(xFilial('SC5') + _cCliente + _cLoja + _cPedido) )
+	If !SC5->( MsSeek(xFilial('SC5') + _cCodCli + _cLoja + _cPedido) )
       	_cMens  := "Pedido nao localizado"
 		_lRet 	:= .F.
       	Break
@@ -475,7 +477,7 @@ Begin Sequence
 	  	Break
 	Endif
     While SC6->( !Eof() ) .AND. SC6->C6_FILIAL + SC6->C6_NUM == xFilial('SC6') + _cPedido
-      	If !SC9->( DbSeek( xFilial('SC9') + _cCliente + _cLoja + SC6->C6_NUM + SC6->C6_ITEM) )
+      	If !SC9->( DbSeek( xFilial('SC9') + _cCodCli + _cLoja + SC6->C6_NUM + SC6->C6_ITEM) )
         	_cMens  := "Pedido não esta Liberados "
 			_lRet := .F.
         	Break
@@ -566,9 +568,9 @@ Begin Sequence
      	_cMens := "Problema ocorrido na gravação da Not Fiscal de Saida verificar tabelas relacionadas com processo "
 		_lRet := .F.
       	Break
-    Else
+    ElseiF (FwXFilial("SF2")+ _cNota + _cSerie + _cCodCli + _cLoja) <> (SF2->F2_FILIAL+SF2->F2_DOC+SF2->F2_SERIE+SF2->F2_CLIENTE+SF2->F2_LOJA) 
     	SF2->(dbSetOrder(1))	//F2_FILIAL+F2_DOC+F2_SERIE+F2_CLIENTE+F2_LOJA+F2_FORMUL+F2_TIPO
-    	If !(SF2->( dbSeek( xFilial("SF2") + _cNota + _cSerie + _cCliente + _cLoja ) ))
+    	If !(SF2->( dbSeek( FwXFilial("SF2") + _cNota + _cSerie + _cCodCli + _cLoja ) ))
    	 		_cMens := "Problema ocorrido na gravação da Not Fiscal de Saida "+_cNota +" serie "+ _cSerie+". Processo retornado OK, mas nao foi gerada a Nota Fiscal"
 			_lRet := .F.
 	      	Break
@@ -584,7 +586,7 @@ If !_lRet .and. !Empty(_cMens)
 	AutoGrLog( "Data.................: " + DtoC(Date()) )
 	AutoGrLog( "Hora.................: " + Time() )
 	AutoGrLog( "Aonde................: JOB BTCJB001 " )
-	AutoGrLog( "Para Depositante Cod.: " + _cCliente+"-"+_cLoja )
+	AutoGrLog( "Para Depositante Cod.: " + _cCodCli+"-"+_cLoja )
 	AutoGrLog( "Pedido...............: " +_cPedido )
 	AutoGrLog( "Não foi possivel gerar nota do Pedido "+_cPedido)
 	AutoGrLog( "Acumulado no CD via JOB, necessário gerar nota do mesmo")
@@ -617,4 +619,12 @@ Local _cSerie 	:= ""
     		_cSerie := AllTrim(_cSerie03)
 		Endif
 	Endif
+	//Caso esteja menor no tamanho ajustar pois será utilizado na pesquisa
+	If Len(SC5->C5_SERIE) > Len(_cSerie)
+		_cSerie := _cSerie+Space(Len(SC5->C5_SERIE)- Len(_cSerie)) 
+	//Não deixar passar se estiver maior no tamanho
+	ElseIf Len(SC5->C5_SERIE) < Len(_cSerie)
+		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Verificar parametros da Serie NF "+_cSerie+" o mesmo esta maior [ZPECAJ02]" ),4,1)   
+	Endif
+
 Return _cSerie
