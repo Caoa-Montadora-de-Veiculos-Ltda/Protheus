@@ -115,14 +115,14 @@ Begin Sequence
 		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Necessário informar os parâmetros"),4,1)   
 		Break 
 	Endif
-	FwMsgRun(,{ |_oSay| ZPECAJ01PR(_aRet, @_oSay ) }, "Transferência de Produtos para Hyundai", "Aguarde...")  //Separação Orçamentos / Aguarde
+	FwMsgRun(,{ |_oSay| ZPECAJ02PR(_aRet, @_oSay ) }, "Transferência de Produtos para Hyundai", "Aguarde...")  //Separação Orçamentos / Aguarde
 	//Libera para utilização de outros usuarios
 	UnLockByName(_cChave,.T.,.T.)
 End Sequence
 Return Nil
 
 
-Static Function ZPECAJ01PR(_aRet, _oSay)
+Static Function ZPECAJ02PR(_aRet, _oSay)
 Local _cAliasPesq   := GetNextAlias()      
 Local _cCodCli		:= _aRet[01]
 Local _cLoja		:= _aRet[02]
@@ -163,7 +163,7 @@ Begin SEQUENCE
 
 	SA1->( DBSetOrder(01) )
 	if !SA1->( MsSeek(FwXFilial("SA1") + _cCodCli+_cLoja ))
-		Help( " ", 1, "ZPECAJ01PR", , 'Cliente '+_cCodCli+'-'+_cLoja+' não cadastrado não serão gerados o Pedido/NFS ', 1 )  
+		Help( " ", 1, "ZPECAJ02PR", , 'Cliente '+_cCodCli+'-'+_cLoja+' não cadastrado não serão gerados o Pedido/NFS ', 1 )  
 		Break
 	Endif
 	_cTipoCli := SA1->A1_TIPO
@@ -242,11 +242,13 @@ Begin SEQUENCE
 							//{"C5_DESC1"  , 0						,Nil},;
 				_cItem := Soma1(_cItem)
 			Endif				 
+			SB2->(DbGoto((_cAliasPesq)->NREGSB2))
+			//Pega o valor de customédio
+			_nValUnit := NoRound(U_ZGENCST(SB2->B2_COD))
+			_nValTot  := SB2->B2_QATU * _nValUnit
 			SB1->(DbGoto((_cAliasPesq)->NREGSB1))
 			SB2->(DbGoto((_cAliasPesq)->NREGSB2))
 			SBM->(DbGoto((_cAliasPesq)->NREGSBM))
-			_nValUnit := 1
-			_nValTot  := SB2->B2_QATU * _nValUnit
 
 			//_cTipoOper := U_zTpOper( SA1->A1_COD, SA1->A1_LOJA, _cTipoPed)
 			_cCodTes := MaTesInt(2,_cTipoOper,_cCodCli,_cLoja,"C",SB1->B1_COD,/*"_CODTES"*/)
@@ -311,6 +313,12 @@ Begin SEQUENCE
 				ProcessMessage() 
 				If Empty(_cSerie)
 					_cSerie := XVerSerieNF(_cCodMarca)
+					If Empty(_cSerie)
+						_lRet := .F.
+						Help( " ", 1, "ZPECAJ02PR", , 'Não localizado Serie, informar a serie no parâmetro inicial', 1 )  
+						Break
+					Endif 
+
 				Endif	
 				//Gerar a Nota Fiscal de Saida
 				_lRet := ZPECAJ02NS(SC5->C5_CLIENTE, SC5->C5_LOJACLI, SC5->C5_NUM, _cSerie,.F.)				
