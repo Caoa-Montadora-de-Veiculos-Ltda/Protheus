@@ -24,7 +24,7 @@
 #DEFINE MAXVALORC  015					// M·ximo de caracteres por linha de valores numÈricos
 //#DEFINE MAXCODPRD  050					// M·ximo de caracteres do codigo de produtos/servicos conforme o tamanho do quadro "Cod. prod"
 #DEFINE MAXCODPRD  075					// M·ximo de caracteres do codigo de produtos/servicos conforme o tamanho do quadro "Cod. prod"
-
+ 
 
 /*/
 ‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
@@ -388,7 +388,7 @@ If !lImpDir .or. MV_PAR04 == 0 /* Caso impress„o de DANFE seja realizada via Aut
 			else
 				aXml := GetXML(cIdEnt,aNotas,@cModalidade, if( valtype(oDanfe) == "O", oDanfe:lInJob, nil ) )
 			endif
-
+			cPegaXml := aXML[1][2]  //GAP117.-.Exportacao.da.Danfe.e.XML.individualmente
 			nLenNotas := Len(aNotas)
 
 			For nX := 1 To nLenNotas
