@@ -8,8 +8,8 @@
 #define CRLF chr(13) + chr(10)  
 
 
-/*/{Protheus.doc} ZPECAJ02
-Transferência de Produto armazém FDR para Empresa Hyunday 
+/*/{Protheus.doc} ZGENFNFT
+Transferência de Produto armazém FDR para Empresa Hyunday, esta transferência esta preparada para realizar para qualquer cliente e armazem 
 @author     DAC - Denilso 
 @since      17/03/2024
 @project    GAP151  OneGate  Hyundai  FaturamentoEntrada
@@ -17,11 +17,11 @@ Transferência de Produto armazém FDR para Empresa Hyunday
 
 /*/
 
-User Function ZPECAJ02()
+User Function ZGENFNFT()
 Local _aSays	    := {}
 Local _aButtons	    := {}
-Local _cCadastro    := OemToAnsi("Transferência de Produto para empresa Hyunday")   
-Local _cTitle  	    := OemToAnsi("Transferência de Produto para empresa Hyunday")   
+Local _cCadastro    := OemToAnsi("Transferência de Produto para empresa (Cliente)")   
+Local _cTitle  	    := OemToAnsi("Transferência de Produto para empresa (Cliente)")   
 Local _aPar    	    := {}
 Local _aRet    	    := {}
 Local _nRet			:= 0
@@ -38,10 +38,10 @@ Local _cArmOrigem	:= Space(TamSx3("B1_LOCPAD")[1])
 Local _cTipoOper	:= Space(TamSx3("C6_OPER")[1])
 Local _cCondPag		:= Space(TamSx3("E4_CODIGO")[1])
 Local _cNatureza	:= Space(TamSx3("ED_CODIGO")[1])
-
 Local _cSerie		:= Space(TamSx3("C5_SERIE")[1])
+Local _cCodTab		:= Space(TamSx3("DA0_CODTAB")[1])
 
-Local _cChave		:= AllTrim(FWCodEmp())+"ZPECAJ02"
+Local _cChave		:= AllTrim(FWCodEmp())+"ZGENFNFT"
 Local _lRet			:= .T.
 Local _lSerieObr	:= If(FWCodEmp() == '2020', .F., .T.)  //indicar para obrigatório quando embpresa for diferente de 020 na serie  
 
@@ -49,7 +49,7 @@ Local _oSay
 Local _nPos
 
 Begin Sequence
-	//_lRet := U_ZGENUSER( RetCodUsr() ,"ZPECAJ02" ,.T.)	
+	//_lRet := U_ZGENUSER( RetCodUsr() ,"ZGENFNFT" ,.T.)	
 	If !_lRet
 		Break
 	EndIf
@@ -70,7 +70,7 @@ Begin Sequence
 			EndIf
 		Next		
 		If !_lRet
-			MSGINFO("Já existe um processamento em execução rotina ZFATJ002, aguarde!", "[ZPECAJ02] - Atenção" )
+			MSGINFO("Já existe um processamento em execução rotina ZGENFNFT, aguarde!", "[ZGENFNFT] - Atenção" )
 			Break
 		EndIf
 	EndIf
@@ -91,21 +91,22 @@ Begin Sequence
 	aAdd(_aPar,{1,OemToAnsi("Forma de Pagto 	  : ") 	,_cCondPag		,"@!"		,".T."	,"SE4"	,".T."	,100,.T.}) 
 	aAdd(_aPar,{1,OemToAnsi("Natureza de Operação : ") 	,_cNatureza		,"@!"		,".T."	,"SED"	,".T."	,100,.T.}) 
 	aAdd(_aPar,{1,OemToAnsi("Serie Nota Fiscal 	  : ") 	,_cSerie		,"@!"		,".T."	,		,".T."	,100,_lSerieObr}) 
+	aAdd(_aPar,{1,OemToAnsi("Cod Tabela Preço 	  : ") 	,_cCodTab		,"@!"		,".T."	,"DA0"	,".T."	,100,.T.}) 
 
 
 	//aAdd(_aPar,{3,OemToAnsi("Atualiza Base: ") ,2 ,{"SIM","NAO"}	,80,"",.F.})  
 
 	// Monta Tela principal
 	aAdd(_aSays,OemToAnsi("Este Programa tem  como  Objetivo realizar transferência de Produto")) 
-	aAdd(_aSays,OemToAnsi("da empresa CAOA PEÇAS para empresa HYUNDAI.")) 
+	aAdd(_aSays,OemToAnsi("da empresa CAOA PEÇAS para um determinado Cliente (empresa) .")) 
 	aAdd(_aSays,OemToAnsi("Será gerado Pedido e nota fiscal de Saída com os Produtos que possuem")) 
 	aAdd(_aSays,OemToAnsi("Saldos no armazém e empresa destino indicados por parâmetro, e liberada ! ")) 
 	aAdd(_aSays,OemToAnsi("Será gerado uma nota fiscal de entrada de acordo com a nota de Saida de")) 
-	aAdd(_aSays,OemToAnsi("Peças onde será recepcionada na empresa Hyundai !")) 
+	aAdd(_aSays,OemToAnsi("Peças onde será recepcionada na empresa conforme definição em parâmetros!")) 
 
 	aAdd(_aButtons, { 1,.T.,{|o| FechaBatch(),_nRet:=1											}})
 	aAdd(_aButtons, { 2,.T.,{|o| FechaBatch()													}})
-	aAdd(_aButtons, { 5,.T.,{|o| ParamBox(_aPar,_cTitle,@_aRet,,,.T.,,,,"ZPECAJ02",.T.,.T.) 			}})
+	aAdd(_aButtons, { 5,.T.,{|o| ParamBox(_aPar,_cTitle,@_aRet,,,.T.,,,,"ZGENFNFT",.T.,.T.) 			}})
 
 	FormBatch( _cCadastro, _aSays, _aButtons )
 	If _nRet <> 1
@@ -115,15 +116,16 @@ Begin Sequence
 		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Necessário informar os parâmetros"),4,1)   
 		Break 
 	Endif
-	FwMsgRun(,{ |_oSay| ZPECAJ02PR(_aRet, @_oSay ) }, "Transferência de Produtos para Hyundai", "Aguarde...")  //Separação Orçamentos / Aguarde
+	FwMsgRun(,{ |_oSay| ZGENFNFTPR(_aRet, @_oSay ) }, "Transferência de Produtos para Cliente", "Aguarde...")  //Separação Orçamentos / Aguarde
 	//Libera para utilização de outros usuarios
 	UnLockByName(_cChave,.T.,.T.)
 End Sequence
 Return Nil
 
 
-Static Function ZPECAJ02PR(_aRet, _oSay)
+Static Function ZGENFNFTPR(_aRet, _oSay)
 Local _cAliasPesq   := GetNextAlias()      
+Local _lRet			:= .T.
 Local _cCodCli		:= _aRet[01]
 Local _cLoja		:= _aRet[02]
 Local _cMarcaDe 	:= _aRet[03]
@@ -137,6 +139,7 @@ Local _cTipoOper	:= _aRet[10]
 Local _cCondPag		:= _aRet[11]
 Local _cNatureza	:= _aRet[12]
 Local _cSerie 		:= _aRet[13]
+Local _cCodTab		:= _aRet[14]
 
 Local _nLimites 	:= SuperGetMV("CMV_PECX03",,100)   //limite de itens a serem gerados
 Local _nRegistros	:= 0
@@ -157,13 +160,11 @@ Local _nValTot
 Local _cCodTes			
 Local _cTipoCli
 
-Private lMsErroAuto := .F.
-
-Begin SEQUENCE
-
+Begin Sequence
 	SA1->( DBSetOrder(01) )
 	if !SA1->( MsSeek(FwXFilial("SA1") + _cCodCli+_cLoja ))
-		Help( " ", 1, "ZPECAJ02PR", , 'Cliente '+_cCodCli+'-'+_cLoja+' não cadastrado não serão gerados o Pedido/NFS ', 1 )  
+		Help( " ", 1, "ZGENFNFTPR", , 'Cliente '+_cCodCli+'-'+_cLoja+' não cadastrado não serão gerados o Pedido/NFS ', 1 )  
+		_lRet := .F.
 		Break
 	Endif
 	_cTipoCli := SA1->A1_TIPO
@@ -184,7 +185,7 @@ Begin SEQUENCE
 			AND SB2.B2_FILIAL 	= %XFilial:SB2%
 			AND SB2.B2_COD 		= SB1.B1_COD
 			AND SB2.B2_LOCAL 	= %Exp:_cArmOrigem% 
-			AND SB2.B2_QATU > 0
+			AND SB2.B2_QATU 	> 0
 		JOIN %table:SBM% SBM
 			ON 	SBM.%notDel%
 			AND SBM.BM_FILIAL	= %XFilial:SBM%
@@ -197,11 +198,12 @@ Begin SEQUENCE
 		ORDER BY SBM.BM_CODMAR, SB1.B1_COD	
 	EndSql
 	If (_cAliasPesq)->(Eof())
-		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Não existem produtos com saldo para envio empresa Hyndai"),4,1)   
+		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Não existem produtos com saldo para envio Cliente"),4,1)   
 		Break 
 	EndIf	
 
 	If !MsgYesNo( "Confirma gerar nota de Saída para Cliente "+AllTrim(SA1->A1_NREDUZ)+" ? " )
+		_lRet := .F.
 		Break 
 	Endif	
 	
@@ -217,6 +219,16 @@ Begin SEQUENCE
 			_nLidos ++
 			_oSay:SetText("Lendo Registro "+StrZero(_nLidos,7)+" de "+StrZero(_nRegistros,7))
 			ProcessMessage() 
+
+			SB2->(DbGoto((_cAliasPesq)->NREGSB2))
+			//Pega o valor de customédio
+			//_nValUnit := NoRound(U_ZGENCST(SB2->B2_COD))
+			_nValUnit := NoRound(ZGENFNFTValorInutario(_cCodTab, SB2->B2_COD))
+			If _nValUnit == 0
+				Help( " ", 1, "ZGENFNFTPR", , "Não localizado valor Unitario para o Produto "+AllTrim(SB2->B2_COD)+", não será faturado este produto Verificar", 1 )  
+				(_cAliasPesq)->(DbSkip())
+				Loop
+			Endif
 
 			If Len(_aCabPV) == 0
  				_cNumPV   	:= CriaVar("C5_NUM")
@@ -242,9 +254,6 @@ Begin SEQUENCE
 							//{"C5_DESC1"  , 0						,Nil},;
 				_cItem := Soma1(_cItem)
 			Endif				 
-			SB2->(DbGoto((_cAliasPesq)->NREGSB2))
-			//Pega o valor de customédio
-			_nValUnit := NoRound(U_ZGENCST(SB2->B2_COD))
 			_nValTot  := SB2->B2_QATU * _nValUnit
 			SB1->(DbGoto((_cAliasPesq)->NREGSB1))
 			SB2->(DbGoto((_cAliasPesq)->NREGSB2))
@@ -280,57 +289,24 @@ Begin SEQUENCE
 			(_cAliasPesq)->(DbSkip())
 
 			If (_nRegMax >= _nLimites .Or. (_cAliasPesq)->(Eof())) .And. Len(_aItemAux) > 0 //Caso atija fim do select
-				_aItemPV := _aItemAux
-				_oSay:SetText("Gerando Pedido "+AllTrim(_cNumPV)+" de Vendas")
-				ProcessMessage() 
-    			MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, _aCabPV, _aItemPV, _nOpc, .F.)//Estorno
-				If lMsErroAuto
-    				Mostraerro()
-					Break	
-				Else
-					ConfirmSX8()
-					//MsgInfo("Pedido de Vendas Nº "+_cNumPV+" criado com sucesso!","Pedido para remessa CD")
-					//Gravar informação no SB1
-					/*
-					For _nPos := 1 To Len(_aRegSB1)
-						SB1->(DbGoto(_aRegSB1[_nPos]))
-						SB1->(Reclock("SB1",.F.))
-						SB1->B1_ 	:= _cNumPV
-						SB1->(MsUnlock())
-					Next
-					*/	
-				EndIf
-				//Gera a Nota funcionalidade apresenta informações e exige interação do usuário
-				//SC5->( Ma410PvNfs(Alias(), Recno()) )
-				//Libera Pedido                  
-				_oSay:SetText("Liberando Pedido "+AllTrim(_cNumPV))
-				ProcessMessage() 
-				_lRet := ZPECAJ02LP(SC5->C5_NUM)  //Avaliar se a Liberação vai ser total ou passara pelos critérios DAC 06/08/2018
-				If !_lRet 
-					Break
-				Endif
-				_oSay:SetText("Gerando Nota Fiscal de Saida para o Pedido de Vendas "+AllTrim(_cNumPV))
-				ProcessMessage() 
-				If Empty(_cSerie)
-					_cSerie := XVerSerieNF(_cCodMarca)
-					If Empty(_cSerie)
-						_lRet := .F.
-						Help( " ", 1, "ZPECAJ02PR", , 'Não localizado Serie, informar a serie no parâmetro inicial', 1 )  
-						Break
-					Endif 
-
-				Endif	
-				//Gerar a Nota Fiscal de Saida
-				_lRet := ZPECAJ02NS(SC5->C5_CLIENTE, SC5->C5_LOJACLI, SC5->C5_NUM, _cSerie,.F.)				
+				_lRet := ZGENFNFTFatura(_aCabPV, _aItemAux, _cSerie, _nOpc, _cCodCli, _cLoja,  _cNumPV, _cCodMarca, @_oSay)
 				If !_lRet
 					Break
-				Endif
+				Endif 
 				_aCabPV	:= {}
 			Endif
 		EndDo 
-		_aCabPV		:= {}	
+		//Caso não valide o final
+		If Len(_aCabPV) > 0
+			_lRet 	:= ZGENFNFTFatura(_aCabPV, _aItemAux, _cSerie, _nOpc, _cCodCli, _cLoja,  _cNumPV, _cCodMarca, @_oSay)
+			_aCabPV	:= {}
+		Endif		
 	EndDo	
 End Sequence
+
+If _lRet
+	Help( " ", 1, "ZGENFNFTPR", , "Termino do Processamento !", 1 )  
+Endif
 
 If Select(_cAliasPesq) <> 0
 	(_cAliasPesq)->(DbCloseArea())
@@ -339,11 +315,80 @@ Endif
 
 Return Nil
 
+//Executa o Faturamento
+Static Function ZGENFNFTFatura(_aCabPV, _aItemPV, _cSerie, _nOpc, _cCliente, _cLoja,  _cNumPV, _cCodMarca, _oSay)
+Local _lRet := .T.
+
+Default _aCabPV		:= {} 
+Default _aItemPV 	:= {}
+Default _cSerie		:= ""
+Default _nOpc 		:= 0
+Default _cCliente 	:= ""
+Default _cLoja		:= ""
+Default _cNumPV 	:= ""
+Default _cCodMarca	:= ""
+
+Private lMsErroAuto := .F.
+
+Begin Sequence
+	If Len(_aCabPV) == 0 .Or. Len(_aItemPV) == 0 .Or. _nOpc == 0 .Or. Empty(_cCliente) .Or. Empty(_cLoja) .Or. Empty(_cCodMarca)
+		Help( " ", 1, "ZGENFNFTFatura", , "Existe Problemas nos parametros para geração de nota do numero de pedido "+_cNumPV+", não será faturado produto Verificar", 1 )  
+		_lRet 	:= .F. 
+		Break
+	Endif
+	_oSay:SetText("Gerando Pedido "+AllTrim(_cNumPV)+" de Vendas")
+	ProcessMessage() 
+	MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, _aCabPV, _aItemPV, _nOpc, .F.)//Estorno
+	If lMsErroAuto
+		Mostraerro()
+		_lRet := .F.
+		Break	
+	Else
+		ConfirmSX8()
+		//MsgInfo("Pedido de Vendas Nº "+_cNumPV+" criado com sucesso!","Pedido para remessa CD")
+		//Gravar informação no SB1
+		/*
+		For _nPos := 1 To Len(_aRegSB1)
+			SB1->(DbGoto(_aRegSB1[_nPos]))
+			SB1->(Reclock("SB1",.F.))
+			SB1->B1_ 	:= _cNumPV
+			SB1->(MsUnlock())
+		Next
+		*/	
+	EndIf
+	//Gera a Nota funcionalidade apresenta informações e exige interação do usuário
+	//SC5->( Ma410PvNfs(Alias(), Recno()) )
+	//Libera Pedido                  
+	_oSay:SetText("Liberando Pedido "+AllTrim(_cNumPV))
+	ProcessMessage() 
+	_lRet := ZGENFNFTLPedido(_cNumPV)  //Avaliar se a Liberação vai ser total ou passara pelos critérios DAC 06/08/2018
+	If ! _lRet 
+		Break
+	Endif
+	_oSay:SetText("Gerando Nota Fiscal de Saida para o Pedido de Vendas "+AllTrim(_cNumPV))
+	ProcessMessage() 
+	If Empty(_cSerie)
+		_cSerie := XVerSerieNF(_cCodMarca)
+		If Empty(_cSerie)
+			_lRet := .F.
+			Help( " ", 1, "ZGENFNFTPR", , 'Não localizado Serie, informar a serie no parâmetro inicial', 1 )  
+			Break
+		Endif 
+	Endif	
+	//Gerar a Nota Fiscal de Saida
+
+	_lRet := ZGENFNFTNSaida(_cCliente, _cLoja, _cNumPV, _cSerie,.F.)				
+
+	If !_lRet
+		Break
+	Endif
+End Sequence
+Return _lRet
 
 
 
 /*---------------------------------------------------------------------------------------
-{Protheus.doc} ZPECAJ02LP
+{Protheus.doc} ZGENFNFTLPedido
 Responsavel Fazer a Liberação de Pedidos
 @author     DAC - Denilso Almeida Carvalho
 @single		27/03/2024
@@ -353,7 +398,7 @@ Responsavel Fazer a Liberação de Pedidos
 @menu       Nao Informado
 @history    
 ---------------------------------------------------------------------------------------*/
-Static Function ZPECAJ02LP(_cPedido, _cFilial)  
+Static Function ZGENFNFTLPedido(_cPedido, _cFilial)  
 Local _aArea		:= GetArea()
 Local _lRetorno		:= .T.
 Local _cAliasPESQ 	:= GetNextAlias()
@@ -413,7 +458,7 @@ Return(_lRetorno)
 
 
 /*---------------------------------------------------------------------------------------
-{Protheus.doc} ZPECAJ02NS
+{Protheus.doc} ZGENFNFTNSaida
 Responsavel emissao da NF pelo Pedido gerado
 @author     DAC - Denilso Almeida Carvalho
 @single		27/03/2024
@@ -423,7 +468,7 @@ Responsavel emissao da NF pelo Pedido gerado
 @menu       Nao Informado
 @history    
 ---------------------------------------------------------------------------------------*/
-Static Function ZPECAJ02NS(_cCodCli, _cLoja, _cPedido, _cSerie,lAutoGravErro)
+Static Function ZGENFNFTNSaida(_cCodCli, _cLoja, _cPedido, _cSerie, lAutoGravErro)
 Local _aArea	 	:= GetArea()
 Local _aPvlNfs		:= {}
 Local _nPrcVen    	:= 0
@@ -632,7 +677,43 @@ Local _cSerie 	:= ""
 		_cSerie := _cSerie+Space(Len(SC5->C5_SERIE)- Len(_cSerie)) 
 	//Não deixar passar se estiver maior no tamanho
 	ElseIf Len(SC5->C5_SERIE) < Len(_cSerie)
-		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Verificar parametros da Serie NF "+_cSerie+" o mesmo esta maior [ZPECAJ02]" ),4,1)   
+		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Verificar parametros da Serie NF "+_cSerie+" o mesmo esta maior [ZGENFNFT]" ),4,1)   
 	Endif
 
 Return _cSerie
+
+
+
+//Localizar o valor unitario
+Static Function ZGENFNFTValorInutario(_cCodTab, _cCodProd)
+Local _cAliasPESQ 	:= GetNextAlias()
+Local _nValUnit   	:= 0 
+Local _cAtivo		:= '1'
+//Local _cData		:= DtOS(dDataBase)  //DtOS(Date()) //06/10/2022 conforme ZÃ© utilizar o database
+ 
+    BeginSql Alias _cAliasPesq
+        SELECT 	DA1_PRCVEN 
+				, DA1_PRCVEN
+				, DA1.R_E_C_N_O_ AS NREGDA1
+        FROM %Table:DA0% DA0
+        INNER JOIN %Table:DA1% DA1
+            ON  DA1.DA1_FILIAL = %xFilial:DA1%
+            AND DA1.DA1_CODTAB = DA0.DA0_CODTAB
+            AND DA1.DA1_CODPRO = %Exp:_cCodProd%
+            AND DA1.%NotDel%
+        WHERE DA0.DA0_FILIAL 	= %xFilial:DA0%
+			AND DA0.DA0_ATIVO	= %Exp:_cAtivo%
+			AND DA0.DA0_CODTAB 	= %Exp:_cCodTab%
+			AND DA0.%notDel%
+    EndSql
+	//retirado expressao de data pois estara cadastrado com data de vigencia anterior e será definido uma unica tabela conforme Wandre 05/04/2024			
+	// AND %Exp:_cData% BETWEEN DA0.DA0_DATDE AND DA0.DA0_DATATE
+
+	If (_cAliasPesq)->(!Eof()) .and. (_cAliasPesq)->NREGDA1 > 0
+		_nValUnit 	:= (_cAliasPesq)->DA1_PRCVEN
+	EndIf
+If Select(_cAliasPesq) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif  
+Return  _nValUnit 
