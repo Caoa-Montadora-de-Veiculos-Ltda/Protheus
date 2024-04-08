@@ -58,6 +58,7 @@ Local _lJob			:= IsBlind()
 Local _cFaseRet
 Local _cMens
 Local _nPos
+Local __cCliLiCred  := AllTrim(SuperGetMV( "CMV_FAT014" ,, "" ) ) //"00057601"
 
 Begin Sequence
   	If !Empty(SC5->C5_NOTA)
@@ -89,8 +90,14 @@ Begin Sequence
 		U_ZGENLZA2(SC5->C5_CONDPAG, _cTpPgtoEsp, "C5_CONDPAG", "LIBERACAO ESPECIAL", _cMens ,/*_cUserSol*/)
         _lRet := .T.
         Break
-    EndIf    
-	_cFaseRet := U_XFASLIMCRE( "SC5", SC5->C5_CLIENTE, SC5->C5_NUM, _nTotPedido, _cTpOperPed, SC5->C5_CONDPAG, "0", @_nLimAvalia, @_aMsg)  //ZPECFUNA
+    EndIf
+	if SC5->C5_CLIENTE + SC5->C5_LOJACLI $ __cCliLiCred    //Byapass da validação de credito
+		_cFaseRet := "0"
+		Sleep(5000)
+	Else
+		_cFaseRet := U_XFASLIMCRE( "SC5", SC5->C5_CLIENTE, SC5->C5_NUM, _nTotPedido, _cTpOperPed, SC5->C5_CONDPAG, "0", @_nLimAvalia, @_aMsg)  //ZPECFUNA
+	EndIf
+
 	If _cFaseRet <> "0"
 		_lRet		:= .F.
 		Break
