@@ -97,11 +97,10 @@ Begin Sequence
 
 	// Monta Tela principal
 	aAdd(_aSays,OemToAnsi("Este Programa tem  como  Objetivo realizar transferência de Produto")) 
-	aAdd(_aSays,OemToAnsi("da empresa CAOA PEÇAS para um determinado Cliente (empresa) .")) 
-	aAdd(_aSays,OemToAnsi("Será gerado Pedido e nota fiscal de Saída com os Produtos que possuem")) 
-	aAdd(_aSays,OemToAnsi("Saldos no armazém e empresa destino indicados por parâmetro, e liberada ! ")) 
-	aAdd(_aSays,OemToAnsi("Será gerado uma nota fiscal de entrada de acordo com a nota de Saida de")) 
-	aAdd(_aSays,OemToAnsi("Peças onde será recepcionada na empresa conforme definição em parâmetros!")) 
+	aAdd(_aSays,OemToAnsi("da empresa CAOA PEÇAS para um determinado Cliente (empresa).")) 
+	aAdd(_aSays,OemToAnsi("Será gerado Pedido de Venda e nota fiscal de Saída com os Produtos")) 
+	aAdd(_aSays,OemToAnsi("que possuem saldos no armazém para empresa destino (Cliente) indicados")) 
+	aAdd(_aSays,OemToAnsi("por parâmetro, e liberada ! ")) 
 
 	aAdd(_aButtons, { 1,.T.,{|o| FechaBatch(),_nRet:=1											}})
 	aAdd(_aButtons, { 2,.T.,{|o| FechaBatch()													}})
