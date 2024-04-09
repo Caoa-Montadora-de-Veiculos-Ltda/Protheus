@@ -23,7 +23,7 @@ User Function GFEA0442()
     // 2. Nome da Rotina associada                                
     // 3. Usado pela rotina                                       
     // 4. Tipo de Operação a ser efetuada
-    aRotina :=  {{"Alterar Peso Cubado", "u_zMsg()", 0, 4}}
+    aRotina :=  {{"Alterar Peso de NF", "u_zMsg()", 0, 4}}
  
 Return aRotina
 
@@ -56,9 +56,10 @@ Static Function zExecView(aDadosGW1)
 
     Default aDadosGW1 := {}
 
-    SetFunName("ZEST02")
+    SetFunName("ZGFEF008")
     
     DbSelectArea('SF2')
+    DbSelectArea('GW8')
     
     If !empty(aDadosGW1) .and. SF2->(DbSeek(FWxFilial("SF2") + Alltrim(aDadosGW1[3]))) 
         //Índice[1] SF2 -> F2_FILIAL+F2_DOC+F2_SERIE+F2_CLIENTE+F2_LOJA+F2_FORMUL+F2_TIPO                                                                                                  
