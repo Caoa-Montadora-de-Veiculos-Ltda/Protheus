@@ -66,7 +66,7 @@ Static Function ZRESTSA1PR( _oJson, _cEmpFil, _cResp )
 Local _cEmpresa     := ""
 Local _cFilAtu      := ""
 Local _lRet			:= .F.
-Local _cRespLib		:= AllTrim( superGetMv( "CAOA_RES03"	, , "00000000"		) )	
+//Local _cRespLib		:= AllTrim( superGetMv( "CAOA_RES03"	, , "00000000"		) )	
 
 Local _nPos
 Begin Sequence
@@ -104,12 +104,14 @@ Begin Sequence
 		Endif
 	EndIf
 	//Valida se esta cadastrado 
+	/*
 	If !_cResp	$ _cRespLib //.Or. ("_PRD" $ AllTrim(GetEnvServer()) .And. _cResp == STRZero(0,8))
-		U_ZRETMsgJson("responsavel","Nao Autorizado")
+		U_ZRETMsgJson("responsavel","Rensponsavel nao Autorizado")
         Break
 	Endif
+	*/
 	//Verificar se existe cadastro Gornecedor , o Genérico não sendo 
-	SA2->(DbSetOrder(1))
+	SA2->(DbSetOrder(3))  //FILIAL + CGC
 	// Valida os dados do oJson
 	If !SA2->(DbSeek(FWxFilial("SA2")+_cResp))  //.And. _cResp <> STRZero(0,8)  //Deixar passar com tudo zero para validaçoes
 		U_ZRETMsgJson("responsavel","Nao Autorizado, Falta Cadastro")
@@ -137,9 +139,9 @@ Static Function ZRESTSA1GR(_oJson, _cEmpresa, _cFilAtu, _cResp)
 Local _cAliasPesq	:= GetNextAlias()
 Local _lRet 		:= .F.
 Local _lNovo    	:= .T.
-Local _cCodSegmento := AllTrim(SuperGetMV("CMV_JSA101",.F.,"06"))  //"06 - PADRÃO"  //Código do Segmento Cliente
+Local _cCodSegmento := AllTrim(SuperGetMV("CMV_JSA101",.F.,"06"))  			//"06 - PADRÃO"  //Código do Segmento Cliente
 Local _cConta 		:= AllTrim(SuperGetMV("CMV_JSA102",.F.,"1120101001"))  	//Conta Contabil Padrão
-Local _cGrpTrib     := AllTrim(SuperGetMV("CMV_JSA103",.F.,"FID"))  	//Grupo de Tributação Padrão
+Local _cGrpTrib     := AllTrim(SuperGetMV("CMV_JSA103",.F.,"FID"))  		//Grupo de Tributação Padrão
 
 Local _cLoja
 Local _cCnPjCpf
@@ -203,7 +205,7 @@ Begin Sequence
 	_cCnPjCpf	:= AllTrim(_oJson:GetJsonText("cnpjcpf"))  
 	_cIERG 		:= AllTrim(_oJson:GetJsonText("ierg"))
 	_cEndereco	:= Upper(AllTrim(_oJson:GetJsonText("endereco")))  + If(!Empty(_oJson:GetJsonText("endnum")) , ", "+ AllTrim(_oJson:GetJsonText("endnum")),"" )
-	_cMunicipio	:= Upper(AllTrim(_oJson:GetJsonText("municipio")))
+	_cMunicipio	:= CC2->CC2_MUN //Upper(AllTrim(_oJson:GetJsonText("municipio")))
 	_cReduzido 	:= Upper(AllTrim(_oJson:GetJsonText("reduzido")))
 	_cTipoCli 	:= Upper(AllTrim(_oJson:GetJsonText("tipocli")))	
 	//Caso nao tenha enviado nome reduzido reproduzo o nome
@@ -219,8 +221,9 @@ Begin Sequence
 	//Pegando o model dos campos da SA1
 	_oSA1Mod:= _oModel:getModel("SA1MASTER") //"MATA030_SA1" na antiga MATA030
 	//_oSA1Mod:setValue("A1_COD"		, _cCodCli        									) // Codigo 
-	//_oSA1Mod:setValue("A1_LOJA"		, _cLoja       										) // Loja
-
+	//_oSA1Mod:setValue("A1_LOJA"		, _cLoja     
+	
+	ZRESTSA1Alterados(	"A1_COD"		, _cCodCli											, @_oSA1Mod, @_aAlterado, _lNovo )   // Nome
 	ZRESTSA1Alterados(	"A1_FILIAL"		, FWxFilial('SA1')									, @_oSA1Mod, @_aAlterado, _lNovo )   // Nome
 	ZRESTSA1Alterados(	"A1_NOME"		, Upper(AllTrim(_oJson:GetJsonText("nome")))		, @_oSA1Mod, @_aAlterado, _lNovo )   // Nome
 	ZRESTSA1Alterados(	"A1_NREDUZ" 	, _cReduzido   										, @_oSA1Mod, @_aAlterado, _lNovo )   //  Nome reduz.
@@ -257,7 +260,7 @@ Begin Sequence
 	ZRESTSA1Alterados(  "A1_CONTA"		,_cConta   											, @_oSA1Mod, @_aAlterado, _lNovo )   // Conta contabil               
 	ZRESTSA1Alterados(  "A1_GRPTRIB"	,_cGrpTrib    										, @_oSA1Mod, @_aAlterado, _lNovo )   // Grupo de tributação          
 	ZRESTSA1Alterados(  "A1_CONTRIB"	,_cContrib    										, @_oSA1Mod, @_aAlterado, _lNovo )   // Contribuinte Sim Não         
-	ZRESTSA1Alterados(  "A1_XINTEG"		,"S"	        									, @_oSA1Mod, @_aAlterado, _lNovo )   // Registro Integrado S=Integra RgLog;N=Nao Integra RgLog;X=Integrado RgLog                                                                                    
+	ZRESTSA1Alterados(  "A1_XINTEG"		,"X"	        									, @_oSA1Mod, @_aAlterado, _lNovo )   // Registro Integrado S=Integra RgLog;N=Nao Integra RgLog;X=Integrado RgLog                                                                                    
   
 	//Se conseguir validar as informações
 	_lRet := _oModel:VldData()
@@ -304,8 +307,17 @@ If _lRet
 		AAdd(_aCampos,{"Z1_MSGLOG"	, Upper(_cMsg)	})
 	Endif 
 	//Devido estar retornando como X que é o identificador para RGLOG SIGAPEC
-	If SA1->A1_XINTEG  == "X" .And. RecLock("SA1",.F.)
-		SA1->A1_XINTEG := "S"
+	//Tem que integrar RGLOG
+	If RecLock("SA1",.F.)
+		If SA1->A1_XINTEG  <> "X"
+			SA1->A1_XINTEG := "X"
+		Endif	
+		If _lNovo
+			SA1->A1_CONTA	:= ""
+			SA1->A1_GRPTRIB	:= ""
+			SA1->A1_CONTRIB	:= ""
+			SA1->A1_MSBLQL	:= "1"	//deixar bloqueado após o recebimento
+		Endif
 		SA1->(MsUnlock())
 	Endif 
 
@@ -339,7 +351,7 @@ Return _lRet
 Static Function ZRESTSA1Valida(_oJson, _cCodMun, _cCodPais, _cCodBancen)
 Local _cAliasPesq   := GetNextAlias()
 Local _lRet := .T.
-Local _cMunicipio	:= Upper(AllTrim(_oJson:GetJsonText("municipio")))
+Local _cMunicipio	:= Upper(AllTrim(_oJson:GetJsonText("codmunicipio")))
 Local _cUf			:= Upper(AllTrim(_oJson:GetJsonText("estado")))
 Local _cPais		:= Upper(AllTrim(_oJson:GetJsonText("pais")))
 Local _cTipoCli 	:= Upper(AllTrim(_oJson:GetJsonText("tipocli")))
@@ -364,36 +376,43 @@ Begin Sequence
 	Endif
 
 	//Verificar municipio estado e pais
+	//1200013
+	_cCodMun := SubsTr(_cMunicipio,3,5)
 	BeginSql Alias _cAliasPesq
-		SELECT CC2.CC2_CODMUN  
+		SELECT CC2.R_E_C_N_O_ AS NREGCC2  
 		FROM %Table:CC2% CC2
        	WHERE CC2.CC2_FILIAL  	= %XFilial:CC2%
-			AND CC2.CC2_MUN 	= %Exp:_cMunicipio%
+			AND CC2.CC2_CODMUN 	= %Exp:_cCodMun%
 			AND CC2.CC2_EST 	= %Exp:_cUf%
 		  	AND CC2.%notDel%		  
 	EndSql      
-	If (_cAliasPesq)->(Eof()) .and. _cTipoCli <> "X"  //para exterior pode estar sem municipio 
+	//CC2.CC2_CODMUN
+	//			AND CC2.CC2_MUN 	= %Exp:_cMunicipio%
+	If ( (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGCC2 == 0 ).and. _cTipoCli <> "X"  //para exterior pode estar sem municipio 
 		U_ZRETMsgJson("municipio","Municipio "+_cMunicipio+" com estado "+_cUf+" nao localizado")
 		_lRet := .F.
 		Break
 	Endif
-	_cCodMun := (_cAliasPesq)->CC2_CODMUN
+	CC2->( DbGoto((_cAliasPesq)->NREGCC2 ))
+	_cCodMun := CC2->CC2_CODMUN
 
 	(_cAliasPesq)->(DbCloseArea())
 	BeginSql Alias _cAliasPesq
-		SELECT 	SYA.YA_CODGI, SYA.YA_SISEXP
+		SELECT 	SYA.R_E_C_N_O_ AS NREGSYA 
        	FROM %table:SYA% SYA
        	WHERE SYA.YA_FILIAL  	= %XFilial:SYA%
 			AND SYA.YA_DESCR 	= %Exp:_cPais%
 		  	AND SYA.%notDel%		  
 	EndSql      
-	If (_cAliasPesq)->(Eof())
+	//SYA.YA_CODGI, SYA.YA_SISEXP,
+	If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGSYA == 0
 		U_ZRETMsgJson("pais","Pais "+_cPais+" nao localizado")
 		_lRet := .F.
 		Break
 	Endif
-	_cCodPais 	:= (_cAliasPesq)->YA_CODGI
-	_cCodBancen	:= "0"+(_cAliasPesq)->YA_SISEXP
+	SYA->( DbGoto((_cAliasPesq)->NREGSYA) )
+	_cCodPais 	:= SYA->YA_CODGI
+	_cCodBancen	:= "0"+SYA->YA_SISEXP
 End Sequence 
 
 If Select((_cAliasPesq)) <> 0
