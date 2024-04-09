@@ -32,6 +32,8 @@ User Function zMsg()
     //Local nPosAtual := aArea[3] //Recno GW1 Posicionado.
     //Local nTipoDoc := ""
     Local aDadosGW1 := {} //[1] - recno, [2] Tipo documento, [3] Número documento
+    Local cQry := " "
+    Local cAliasTemp := GetNextAlias()
 
     AADD(aDadosGW1, aArea[3])
     
@@ -41,12 +43,30 @@ User Function zMsg()
     AADD(aDadosGW1, GW1->GW1_CDTPDC) //[2] Tipo documento
     AADD(aDadosGW1, GW1->GW1_NRDC)   //[3] Número documento
 
-    If Alltrim(aDadosGW1[2]) $ "NFS" .and. FindFunction("ZEXECVIEW")
-        zExecView(aDadosGW1)
+    DBSelectArea("CKQ")
+    CKQ->(DbSetOrder(1)) //CKQ_FILIAL + CKQ_MODELO + CKQ_TP_MOV + CKQ_IDERP
+     
+    cQry  := " SELECT CKQ_MODELO "                               + CRLF
+    cQry  += "  , CKQ_NUMERO "                                   + CRLF
+    cQry  += " FROM " + RetSqlName("CKQ") + " CKQ"                + CRLF
+    cQry  += " WHERE CKQ_FILIAL = '" + FWxFilial('CKQ') + "' "   + CRLF
+    cQry  += "  AND CKQ_MODELO = 'CCE' "                         + CRLF
+    cQry  += "  AND CKQ_NUMERO = '" + aDadosGW1[3] +"' "         + CRLF
+    cQry  += "  AND CKQ.D_E_L_E_T_ = ' ' "                       + CRLF
+ 
+    dbUseArea(.T., "TOPCONN", TCGenQry(,,cQry), cAliasTemp, .F., .T.)
+    dbselectarea(cAliasTemp)
+
+    If !cAliasTemp->(Eof())
+        If Alltrim(aDadosGW1[2]) $ "NFS" .and. FindFunction("ZEXECVIEW")
+            zExecView(aDadosGW1)
+        Else
+            MsgStop("Função não encontrada, contate ADM Sistemas.","Atenção.")
+        EndIf
     Else
-        MsgStop("Função não encontrada, contate ADM Sistemas.","Atenção")
-    EndIf
-    
+        MsgInfo("Carta de correção não enviada.","Atenção.")
+    EndIF
+     
     FwRestArea(aArea)
 Return
  
