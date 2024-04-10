@@ -37,7 +37,7 @@ Begin Sequence
 	_aMsgRet 	:= {}
 
     If ZRESTSA1PR( @_oJson, _cEmpFil, _cResp )
-		U_ZRETMsgJson("ok", "Atualização realizada com Sucesso !")
+		U_ZRETMsgJson("ok", "Atualizacao realizada com Sucesso !")
 		_aMsg := U_ZSetMsgJson()
 	Else
 		_aMsg := U_ZSetMsgJson()
@@ -189,13 +189,13 @@ Begin Sequence
 	If (_cAliasPesq)->(Eof()) 	
     	_cCodCli    := GetSxeNum("SA1","A1_COD")
 		_cLoja   	:= StrZero(1,Len(SA1->A1_LOJA))
-		_cBloqueio  := "2"
+		_cBloqueio  := "1"
 		_lNovo      := .T.
 		_cContrib   := "1"   //Verificar se é exportação testar quem é contribuinte 
 	Else 
 		SA1->(DbGoto((_cAliasPesq)->NREGSA1))
-    	_cCodCli    := SA1->A1_COD
-		_cLoja   	:= SA1->A1_LOJA		
+    	//_cCodCli    := SA1->A1_COD
+		//_cLoja   	:= SA1->A1_LOJA		
 		_cBloqueio  := SA1->A1_MSBLQL
 		_lNovo      := .F.
 		_cConta 	:= SA1->A1_CONTA
@@ -224,6 +224,7 @@ Begin Sequence
 	//_oSA1Mod:setValue("A1_LOJA"		, _cLoja     
 	
 	ZRESTSA1Alterados(	"A1_COD"		, _cCodCli											, @_oSA1Mod, @_aAlterado, _lNovo )   // Nome
+	ZRESTSA1Alterados(	"A1_LOJA"		, _cLoja											, @_oSA1Mod, @_aAlterado, _lNovo )   // Nome
 	ZRESTSA1Alterados(	"A1_FILIAL"		, FWxFilial('SA1')									, @_oSA1Mod, @_aAlterado, _lNovo )   // Nome
 	ZRESTSA1Alterados(	"A1_NOME"		, Upper(AllTrim(_oJson:GetJsonText("nome")))		, @_oSA1Mod, @_aAlterado, _lNovo )   // Nome
 	ZRESTSA1Alterados(	"A1_NREDUZ" 	, _cReduzido   										, @_oSA1Mod, @_aAlterado, _lNovo )   //  Nome reduz.
