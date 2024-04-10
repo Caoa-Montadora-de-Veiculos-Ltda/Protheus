@@ -31,8 +31,9 @@ Local _cMarcaDe 	:= Space(TamSx3("VE1_CODMAR")[1])
 Local _cMarcaAte	:= Space(TamSx3("VE1_CODMAR")[1])
 Local _cCodProdDe	:= Space(TamSx3("B1_COD")[1])
 Local _cCodProdAte 	:= Space(TamSx3("B1_COD")[1])
-Local _cGrupoDe		:= Space(TamSx3("BM_GRUPO")[1])
-Local _cGupoAte		:= Space(TamSx3("BM_GRUPO")[1])
+//Local _cGrupoDe		:= Space(TamSx3("BM_GRUPO")[1])
+//Local _cGupoAte		:= Space(TamSx3("BM_GRUPO")[1])
+Local _cGrupo		:= Space(TamSx3("BM_GRUPO")[1])
 Local _cArmOrigem	:= Space(TamSx3("B1_LOCPAD")[1])
 Local _cTipoOper	:= Space(TamSx3("C6_OPER")[1])
 Local _cCondPag		:= Space(TamSx3("E4_CODIGO")[1])
@@ -58,21 +59,6 @@ Begin Sequence
 	    Break
 	ENDIF
 	*/
-	//Garantir que o processamento seja unico
-	If !LockByName(_cChave,.T.,.T.)  
-		//tentar locar por 10 segundos caso não consiga não prosseguir
-		_lRet := .F.
-		For _nPos := 1 To 10
-			Sleep( 3000 ) // Para o processamento por 3 segundos
-			If LockByName(_cChave,.T.,.T.)
-				_lRet := .T.
-			EndIf
-		Next		
-		If !_lRet
-			MSGINFO("Já existe um processamento em execução rotina ZGENFTSE, aguarde!", "[ZGENFTSE] - Atenção" )
-			Break
-		EndIf
-	EndIf
 
 	aAdd(_aPar,{1,OemToAnsi("Cliente Faturamento  : ") 	,_cCodCli		,"@!"		,".T."	,"SA1" 	,".T."	,100,.T.}) 
 	aAdd(_aPar,{1,OemToAnsi("Loja Faturamento 	  : ")	,_cLoja 		,"@!"		,".T."	,""		,".T."	,100,.T.}) 
@@ -82,8 +68,9 @@ Begin Sequence
 	aAdd(_aPar,{1,OemToAnsi("Produto de   		  : ") 	,_cCodProdDe	,"@!"		,".T."	,"SB1" 	,".T."	,100,.F.}) 
 	aAdd(_aPar,{1,OemToAnsi("Produto ate  		  : ") 	,_cCodProdAte	,"@!"		,".T."	,"SB1"	,".T."	,100,.F.}) 
 
-	aAdd(_aPar,{1,OemToAnsi("Grupo de   		  : ") 	,_cGrupoDe		,"@!"		,".T."	,"SBM" 	,".T."	,100,.F.}) 
-	aAdd(_aPar,{1,OemToAnsi("Grupo ate  		  : ") 	,_cGupoAte		,"@!"		,".T."	,"SBM"	,".T."	,100,.T.}) 
+	//aAdd(_aPar,{1,OemToAnsi("Grupo de   		  : ") 	,_cGrupoDe		,"@!"		,".T."	,"SBM" 	,".T."	,100,.F.}) 
+	//aAdd(_aPar,{1,OemToAnsi("Grupo ate  		  : ") 	,_cGupoAte		,"@!"		,".T."	,"SBM"	,".T."	,100,.T.}) 
+	aAdd(_aPar,{1,OemToAnsi("Grupo    		  	: ") 	,_cGrupo		,"@!"		,".T."	,"SBM" 	,".T."	,100,.T.}) 
 
 	aAdd(_aPar,{1,OemToAnsi("Armazem de Origem 	  : ") 	,_cArmOrigem	,"@!"		,".T."	,"NNR"	,".T."	,100,.T.}) 
 	aAdd(_aPar,{1,OemToAnsi("Tipo de Opereração	  : ") 	,_cTipoOper		,"@!"		,".T."	,"DJ"	,".T."	,100,.T.}) 
@@ -114,6 +101,24 @@ Begin Sequence
 		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Necessário informar os parâmetros"),4,1)   
 		Break 
 	Endif
+
+	//Garantir que o processamento seja unico
+	_cChave		:= AllTrim(FWCodEmp())+"ZGENFTSE"+_cGrupo
+	If !LockByName(_cChave,.T.,.T.)  
+		//tentar locar por 10 segundos caso não consiga não prosseguir
+		_lRet := .F.
+		For _nPos := 1 To 10
+			Sleep( 3000 ) // Para o processamento por 3 segundos
+			If LockByName(_cChave,.T.,.T.)
+				_lRet := .T.
+			EndIf
+		Next		
+		If !_lRet
+			MSGINFO("Já existe um processamento em execução rotina ZGENFTSE com grupo "+_cGrupo+", aguarde o término!", "[ZGENFTSE] - Atenção" )
+			Break
+		EndIf
+	EndIf
+
 	FwMsgRun(,{ |_oSay| ZGENFTSEPR(_aRet, @_oSay ) }, "Transferência de Produtos para Cliente", "Aguarde...")  //Separação Orçamentos / Aguarde
 	//Libera para utilização de outros usuarios
 	UnLockByName(_cChave,.T.,.T.)
@@ -130,14 +135,16 @@ Local _cMarcaDe 	:= _aRet[03]
 Local _cMarcaAte	:= _aRet[04]
 Local _cCodProdDe	:= _aRet[05]
 Local _cCodProdAte 	:= _aRet[06]
-Local _cGrupoDe		:= _aRet[07]
-Local _cGupoAte		:= _aRet[08]
-Local _cArmOrigem	:= _aRet[09]
-Local _cTipoOper	:= _aRet[10]
-Local _cCondPag		:= _aRet[11]
-Local _cNatureza	:= _aRet[12]
-Local _cSerie 		:= _aRet[13]
-Local _cCodTab		:= _aRet[14]
+//Local _cGrupoDe		:= _aRet[07]
+//Local _cGupoAte		:= _aRet[08]
+Local _cGrupo		:= _aRet[07]
+
+Local _cArmOrigem	:= _aRet[08]
+Local _cTipoOper	:= _aRet[09]
+Local _cCondPag		:= _aRet[10]
+Local _cNatureza	:= _aRet[11]
+Local _cSerie 		:= _aRet[12]
+Local _cCodTab		:= _aRet[13]
 
 Local _nLimites 	:= SuperGetMV("CMV_ZGNF01",,100)   //Limite de itens a serem gerados
 Local _nRegistros	:= 0
@@ -161,6 +168,7 @@ Local _cNotas
 Local _nPos
 
 Begin Sequence
+	_aNotas		:= {} 
 	SA1->( DBSetOrder(01) )
 	if !SA1->( MsSeek(FwXFilial("SA1") + _cCodCli+_cLoja ))
 		Help( " ", 1, "ZGENFTSEPR", , 'Cliente '+_cCodCli+'-'+_cLoja+' não cadastrado não serão gerados o Pedido/NFS ', 1 )  
@@ -168,7 +176,6 @@ Begin Sequence
 		Break
 	Endif
 	_cTipoCli 	:= SA1->A1_TIPO
-	_aNotas		:= {} 
 
 	_oSay:SetText("Selecionando dados")
 	ProcessMessage() 
@@ -194,9 +201,11 @@ Begin Sequence
 		WHERE SB1.%notDel%	
 			AND	SB1.B1_FILIAL 	= %XFilial:SB1%
 			AND SB1.B1_COD  	BETWEEN  %Exp:_cCodProdDe% AND %Exp:_cCodProdAte%
-			AND SB1.B1_GRUPO	BETWEEN  %Exp:_cGrupoDe% AND %Exp:_cGupoAte%
+			AND SB1.B1_GRUPO	=  %Exp:_cGrupo% 
 		ORDER BY SBM.BM_CODMAR, SB1.B1_COD	
 	EndSql
+	//			AND SB1.B1_GRUPO	BETWEEN  %Exp:_cGrupoDe% AND %Exp:_cGupoAte%
+
 	If (_cAliasPesq)->(Eof())
 		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Não existem produtos com saldo para envio Cliente"),4,1)   
 		Break 
