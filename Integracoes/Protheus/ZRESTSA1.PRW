@@ -3,24 +3,20 @@
 #INCLUDE "RESTFUL.CH"
 
 /*/{Protheus.doc} ZPECF011
-Serviço de integração RECEBIMENTO SEPARAÇÃO DE PEDIDOS rg log
+Serviço de integração Cadastro de Clientes 
 Atualização da separação dos orçamentos baixando conforme informaçção recebida
 @author 	DAC 
-@since 		17/12/2021
+@since 		20/03/2024
 @version 	undefined
 @param		nao utilizado
 @type 		User Function
 @client   	CAOA BARUERI
 @return   	_aMsg - Array com retorno Json código e ocorrencia
-@project 	Interfaces_PortalV3_v2 x Protheus v2
+@project 	GAP136  API Cadastro de Cliente
 			https://tdn.totvs.com/display/tec/DecodeUTF8
 			https://jsonformatter.curiousconcept.com/  VERIFICAR SE JSON ESTA CORRETO
 			https://jsonlint.com/?code=   //VALIDAR JSON
             https://jsoneditoronline.org/#left=local.sowavu  //estrutura do json
-Z	-Customizado
-PEC	- Modulo
-F 	- Função
-011 - Sequencial
 /*/
 
 User Function ZRESTSA1(_oJson, _cEmpFil, _cResp)
@@ -54,9 +50,9 @@ Return _aMsg
 
 
 /*/{Protheus.doc} ZRESTSA1PR
-Recebe 		Json RG LOG PUT 
+Recebe 		Json CLIENTE PUT 
 @author 	DAC
-@since 		23/07/2021
+@since 		20/03/2024
 @version 	undefined
 @param 		oJson
 @type 		function
@@ -204,7 +200,7 @@ Begin Sequence
 	Endif
 	_cCnPjCpf	:= AllTrim(_oJson:GetJsonText("cnpjcpf"))  
 	_cIERG 		:= AllTrim(_oJson:GetJsonText("ierg"))
-	_cEndereco	:= Upper(AllTrim(_oJson:GetJsonText("endereco")))  + If(!Empty(_oJson:GetJsonText("endnum")) , ", "+ AllTrim(_oJson:GetJsonText("endnum")),"" )
+	_cEndereco	:= Upper(AllTrim(_oJson:GetJsonText("endereco")))  //+ If(!Empty(_oJson:GetJsonText("endnum")) , ", "+ AllTrim(_oJson:GetJsonText("endnum")),"" )
 	_cMunicipio	:= CC2->CC2_MUN //Upper(AllTrim(_oJson:GetJsonText("municipio")))
 	_cReduzido 	:= Upper(AllTrim(_oJson:GetJsonText("reduzido")))
 	_cTipoCli 	:= Upper(AllTrim(_oJson:GetJsonText("tipocli")))	
@@ -222,10 +218,11 @@ Begin Sequence
 	_oSA1Mod:= _oModel:getModel("SA1MASTER") //"MATA030_SA1" na antiga MATA030
 	//_oSA1Mod:setValue("A1_COD"		, _cCodCli        									) // Codigo 
 	//_oSA1Mod:setValue("A1_LOJA"		, _cLoja     
-	
-	ZRESTSA1Alterados(	"A1_COD"		, _cCodCli											, @_oSA1Mod, @_aAlterado, _lNovo )   // Nome
-	ZRESTSA1Alterados(	"A1_LOJA"		, _cLoja											, @_oSA1Mod, @_aAlterado, _lNovo )   // Nome
-	ZRESTSA1Alterados(	"A1_FILIAL"		, FWxFilial('SA1')									, @_oSA1Mod, @_aAlterado, _lNovo )   // Nome
+	If _lNovo
+		ZRESTSA1Alterados(	"A1_FILIAL"		, FWxFilial('SA1')									, @_oSA1Mod, @_aAlterado, _lNovo )   // Nome
+		ZRESTSA1Alterados(	"A1_COD"		, _cCodCli											, @_oSA1Mod, @_aAlterado, _lNovo )   // Nome
+		ZRESTSA1Alterados(	"A1_LOJA"		, _cLoja											, @_oSA1Mod, @_aAlterado, _lNovo )   // Nome
+	Endif
 	ZRESTSA1Alterados(	"A1_NOME"		, Upper(AllTrim(_oJson:GetJsonText("nome")))		, @_oSA1Mod, @_aAlterado, _lNovo )   // Nome
 	ZRESTSA1Alterados(	"A1_NREDUZ" 	, _cReduzido   										, @_oSA1Mod, @_aAlterado, _lNovo )   //  Nome reduz.
 	ZRESTSA1Alterados(  "A1_END"	 	, _cEndereco   										, @_oSA1Mod, @_aAlterado, _lNovo )   // Endereco

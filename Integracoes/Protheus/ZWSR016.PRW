@@ -1,16 +1,16 @@
 #INCLUDE "TOTVS.CH"
 #INCLUDE "RESTFUL.CH"
 
-/*/{Protheus.doc} ZWSR009
-Serviço de integração  Autoware recebimento separação de mercadorias orçamento
-@author 	   DAC 
-@since 		17/12/2021
+/*/{Protheus.doc} ZWSR016
+Serviço de integração  Cadastro de Clientes
+@author 	DAC - Denilso 
+@since 		20/03/2024
 @version 	undefined
 @param		Não utilizado
 @return     lRet			, caracter, JSON com tabelas.
 @type       class
-@client   	CAOA BARUERI
-@project 	Interfaces_PortalV3_v2 x Protheus v2
+@client   	CAOA 
+@project 	GAP136  API Cadastro de Cliente
 			   https://tdn.totvs.com/display/tec/DecodeUTF8
 			   https://jsonformatter.curiousconcept.com/  VERIFICAR SE JSON ESTA CORRETO
 			   https://jsonlint.com/?code=   //VALIDAR JSON
@@ -24,22 +24,11 @@ R  - resT OU W WebServer
 010- Sequencial
 /*/
 
-WSRESTFUL ZWSR016 DESCRIPTION "Integração RG LOG Separação" FORMAT APPLICATION_JSON 
+WSRESTFUL ZWSR016 DESCRIPTION "Integração Cadastro de Clientes" FORMAT APPLICATION_JSON 
 	WSMETHOD POST ; 
 	        DESCRIPTION "Incluir Cadastro de Clientes";
 	        WSSYNTAX "/ZWSR016"
 END WSRESTFUL
-/*
-WSRESTFUL ZWSR016 DESCRIPTION "Integração RG LOG Separação" FORMAT APPLICATION_JSON 
-	WSMETHOD GET ; 
-	        DESCRIPTION "";
-	        WSSYNTAX "/ZWSR016"
-END WSRESTFUL
-*/
-
-//WSMETHOD POST;
-//WSRECEIVE empresa, filial, token, cnpj, doc, serie;
-//WSSERVICE ZWSR016
 
 
 WSMETHOD POST WSSERVICE ZWSR016
