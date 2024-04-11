@@ -49,18 +49,24 @@ Begin Sequence
 	_cEmpFil 		:= Self:GetHeader("tenantid", .F.)
 	_cResp			:= Self:GetHeader("Responsavel", .F.)
 
-	_cUser 	:= AllTrim( superGetMv( "CAOA_RES01"	, , "USER_TOTVS"		) )	// Usuario para autenticacao no WS 
-	_cPass 	:= AllTrim( superGetMv( "CAOA_RES02"	, , "@IntcaoaSA!2024!"	) )	// Senha para autenticao no WS 
+	//_cUser 	:= AllTrim( superGetMv( "CAOA_RES01"	, , "USER_TOTVS"		) )	// Usuario para autenticacao no WS 
+	//_cPass 	:= AllTrim( superGetMv( "CAOA_RES02"	, , "@IntcaoaSA!2024!"	) )	// Senha para autenticao no WS 
 	//_cChave := encode64( allTrim( _cUser ) + ":" + allTrim( _cPass ) )    
-	 _cChave := _cUser+":"+_cPass
-	If _cChave == Decode64(_cAuthorization)
-		_oJson := JsonObject():new()
-    	_oJson:fromJson(DecodeUTF8(Self:GetContent(,.T.)))  //Correto
-		//    _cJson       := Self:GetContent(,.T.)
-		_aRet := U_ZRESTSA1(@_oJson, _cEmpFil, _cResp)
-		//Erro no programa
-  	Else 
-		_aRet := {302,"Nao Autorizado"}
+	_cUser 	:= AllTrim( superGetMv( "CAOA_RES01"	, , ""	) )	// Usuario para autenticacao no WS 
+	_cPass 	:= AllTrim( superGetMv( "CAOA_RES02"	, , ""	) )	// Senha para autenticao no WS 
+	If Empty(_cUser) .Or. Empty(_cPass)
+		_aRet := {302,"Nao Autorizado Parametros"}
+	Else
+		 _cChave := _cUser+":"+_cPass
+		If _cChave == Decode64(_cAuthorization)
+			_oJson := JsonObject():new()
+   	 		_oJson:fromJson(DecodeUTF8(Self:GetContent(,.T.)))  //Correto
+			//    _cJson       := Self:GetContent(,.T.)
+			_aRet := U_ZRESTSA1(@_oJson, _cEmpFil, _cResp)
+			//Erro no programa
+  		Else 
+			_aRet := {302,"Nao Autorizado"}
+		Endif
 	Endif
 	
 	If ValType(_aRet) <> "A" .Or. Len(_aRet) == 0 
