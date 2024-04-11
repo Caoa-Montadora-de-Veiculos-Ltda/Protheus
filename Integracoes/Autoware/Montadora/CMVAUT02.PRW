@@ -39,32 +39,37 @@ IF lIsBlind
 	
 EndIF
 
+cQuery += " SELECT F2.*, F2.R_E_C_N_O_ RECNOF2, A1.A1_CGC, VRJ_PEDCOM, VRJ_TIPVEN, VRK_FILIAL, VRK_PEDIDO "
+cQuery += " FROM "+ RetSQLname("SF2") + " F2 "
+cQuery += "      JOIN "+ RetSQLname("SA1") + " A1 "
+cQuery += "					ON  A1.A1_COD     = F2.F2_CLIENTE "
+cQuery += "					AND A1.A1_LOJA    = F2.F2_LOJA 
+cQuery += "					AND A1.D_E_L_E_T_ = ' '  "
+cQuery += " 				AND A1.A1_FILIAL  = '" + xFilial('SA1') + "'
+cQuery += "      LEFT JOIN "+ RetSQLname("VV0") + "  VV0 "
+cQuery += "					ON  VV0.VV0_FILIAL = '" + xFilial('VV0') + "' "
+cQuery += "                 AND VV0.VV0_CODCLI = F2.F2_CLIENTE "
+cQuery += "                 AND VV0.VV0_LOJA   = F2.F2_LOJA  "
+cQuery += "                 AND VV0.VV0_NUMNFI = F2.F2_DOC  "
+cQuery += "                 AND VV0.VV0_SERNFI = F2.F2_SERIE "
+cQuery += "					AND VV0.D_E_L_E_T_ = ' '  "
 
-cQuery := "SELECT F2.*, F2.R_E_C_N_O_ RECNOF2, A1.A1_CGC, VRJ_PEDCOM, VRJ_TIPVEN, VRK_FILIAL, VRK_PEDIDO"
-cQuery += "FROM "+ RetSQLname("SF2") +" F2,"+ RetSQLname("SA1") +" A1 ,"+ RetSQLname("VV0") +" VV0 ,"+ RetSQLname("VRK") +" VRK ,"+ RetSQLname("VRJ") +" VRJ "      
-cQuery += "WHERE F2.D_E_L_E_T_ = ' '  "
-cQuery += "  AND A1.D_E_L_E_T_ = ' ' "
-cQuery += "  AND VV0.D_E_L_E_T_=' ' "
-cQuery += "  AND VRK.D_E_L_E_T_=' ' "
-cQuery += "  AND VRJ.D_E_L_E_T_=' ' "
-cQuery += "  AND A1.A1_FILIAL  = '"+xFilial('SA1')+"' "
-cQuery += "  AND F2.F2_CLIENTE = A1.A1_COD "
-cQuery += "  AND F2.F2_LOJA    = A1.A1_LOJA "
-cQuery += "  AND VV0_FILIAL    = F2_FILIAL  "
-cQuery += "  AND VV0_CODCLI    = F2_CLIENTE "
-cQuery += "  AND VV0_LOJA      = F2_LOJA "
-cQuery += "  AND VV0_NUMNFI    = F2_DOC "
-cQuery += "  AND VV0_SERNFI    = F2_SERIE "
-cQuery += "  AND VRK_FILIAL    = VV0_FILIAL "
-cQuery += "  AND VRK_NUMTRA    = VV0_NUMTRA "
-cQuery += "  AND VRJ_FILIAL    = VRK_FILIAL "
-cQuery += "  AND VRJ_PEDIDO    = VRK_PEDIDO "
-cQuery += "  AND F2.F2_XINTEG  = ' '  "
-cQuery += "  AND F2_CHVNFE     <> ' ' " 
-cQuery += "  AND F2_FIMP       = 'S'  "
-//cQuery += "  AND F2_DOC        = '000323550' "
-cQuery += "  ORDER BY F2_EMISSAO desc  "
+cQuery += "      JOIN " + RetSQLname("VRK") + " VRK  
+cQuery += "					ON    VRK.VRK_FILIAL  = '" + xFilial('VRK') + "'  "
+cQuery += "                 AND ( VRK.VRK_NUMTRA  = VV0.VV0_NUMTRA OR SUBSTR(VRK.VRK_NUMTRA,2,9) = F2.F2_DOC) "
+cQuery += "                 AND   VRK.D_E_L_E_T_  =' '  "
 
+cQuery += "      JOIN " + RetSQLname("VRJ") + " VRJ 
+cQuery += "					ON  VRJ.VRJ_FILIAL    = '" + xFilial('VRJ') + "'  "
+cQuery += "                 AND VRJ.VRJ_PEDIDO    = VRK.VRK_PEDIDO "
+cQuery += "                 AND VRJ.D_E_L_E_T_=' '  "
+
+cQuery += " 	WHERE   F2.D_E_L_E_T_  = ' '   "
+cQuery += "			AND F2.F2_FILIAL   = '" + xFilial('SF2') + "' "
+cQuery += "			AND F2.F2_XINTEG   = ' '   "
+cQuery += "			AND F2.F2_CHVNFE   <> ' ' "
+cQuery += "			AND F2.F2_FIMP     = 'S' "
+cQuery += " ORDER BY F2.F2_EMISSAO DESC "
 
 cQuery := ChangeQuery(cQuery)
 dbUseArea(.T.,"TOPCONN",TcGenQry(,,cQuery),"qryNF",.T.,.T.)
