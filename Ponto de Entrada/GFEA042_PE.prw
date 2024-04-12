@@ -48,16 +48,19 @@ User Function zMsg()
      
     cQry  := " SELECT CKQ_MODELO "                               + CRLF
     cQry  += "  , CKQ_NUMERO "                                   + CRLF
-    cQry  += " FROM " + RetSqlName("CKQ") + " CKQ"                + CRLF
+    cQry  += " FROM " + RetSqlName("CKQ") + " CKQ"               + CRLF
     cQry  += " WHERE CKQ_FILIAL = '" + FWxFilial('CKQ') + "' "   + CRLF
     cQry  += "  AND CKQ_MODELO = 'CCE' "                         + CRLF
     cQry  += "  AND CKQ_NUMERO = '" + aDadosGW1[3] +"' "         + CRLF
     cQry  += "  AND CKQ.D_E_L_E_T_ = ' ' "                       + CRLF
  
-    dbUseArea(.T., "TOPCONN", TCGenQry(,,cQry), cAliasTemp, .F., .T.)
-    dbselectarea(cAliasTemp)
+    DbUseArea(.T., "TOPCONN", TCGenQry(,,cQry), cAliasTemp, .T., .T.)
 
-    If !cAliasTemp->(Eof())
+	DbSelectArea((cAliasTemp))
+	(cAliasTemp)->(dbGoTop())
+	
+    
+    If !(cAliasTemp)->(Eof())
         If Alltrim(aDadosGW1[2]) $ "NFS" .and. FindFunction("ZEXECVIEW")
             zExecView(aDadosGW1)
         Else
