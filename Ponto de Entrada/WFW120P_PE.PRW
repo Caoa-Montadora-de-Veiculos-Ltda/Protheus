@@ -15,7 +15,6 @@ User Function WFW120P()
 	Local cPedido  :=  PARAMIXB
 	Local aArea	   := GetArea()
 	Local oWsdl      := TWsdlManager():New()
-	Local _cEmp    := FWCodEmp()
 	Private cFUsuario   := GetMV("ES_XFLUIG1",,"integrador")
 	Private cFSenha     := GetMV("ES_XFLUIG2",,"integrador")
 	Private cFEmpresa   := GetMV("ES_XFLUIG4",,"1")
@@ -23,7 +22,7 @@ User Function WFW120P()
 	Private cFNumFluig  := Alltrim(SC7->C7_XFLUIG5)  //Determina o processo se pedido ou solicitacao.
 	Private cFMensagem  := "Pedido cancelado pelo Usuario Protheus"
 
-	If _cEmp == "2010" //Executa o p.e. Anapolis.
+	If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 		If INCLUI //.or. ALTERA
 			Begin Sequence
 

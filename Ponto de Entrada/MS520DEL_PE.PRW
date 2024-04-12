@@ -11,12 +11,11 @@
 
 User Function MS520DEL()
 
-	Local _cEmp		:= FWCodEmp()
 	Local aArea		:= GetArea()
 	Local cQuery	:= ""
 	Local nStatus 	:= 0
 
-	If _cEmp == "2010" //Executa o p.e. Anapolis.
+	If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 		If Findfunction("U_CMVSAP14")
 			U_CMVSAP14("0")
 		EndIf
@@ -63,7 +62,7 @@ User Function MS520DEL()
 				EndIf
             EndIf
         EndIf
-	Else
+	ElseIf ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 		If Findfunction("U_ZSAPF014")
 			U_ZSAPF014("0")
 		EndIf

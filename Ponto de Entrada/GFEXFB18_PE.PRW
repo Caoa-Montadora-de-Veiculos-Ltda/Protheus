@@ -7,9 +7,8 @@ PE p/ chamada da função
 @version 1.0
 /*/
 User Function GFEXFB18()
-	Local _cEmp	   := FWCodEmp()
 
-	If _cEmp == "2020" //Executa o p.e. Barueri
+	If ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 
       If Findfunction("U_ZGFEF007")
 			nValor := U_ZGFEF007()

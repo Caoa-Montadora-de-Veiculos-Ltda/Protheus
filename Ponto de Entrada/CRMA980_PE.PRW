@@ -89,12 +89,14 @@ Begin Sequence
     _cTpCred        := If(Type("M->A1_XTPCRED")	== "C",M->A1_XTPCRED	,SA1->A1_XTPCRED)
     //Indica se processa Log's, caso não somente processar o calculo do L.C. DAC 10/05/2023
     If _lPrcLog  
-        If FWCodEmp() = '2020'
+        //Executa para 02 | Franco da Rocha e 90 | HMB
+        If ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
          //Serviço de integração  para integração clientes, fornecedores e transportadoras com execauto RGLOG
     		U_ZWSR006("C", _cCodCli , _cLoja )
-      //ElseIf FWCodEmp() = '2010'
         EndIf
-        U_ZF10GENSAP("SA1", _cCodCli+_cLoja, "A1_XCDSAP", _nOpcx)    //Lê tabela SZ7 para envio SAP
+        If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Franco da Rocha | Caoa
+            U_ZF10GENSAP("SA1", _cCodCli+_cLoja, "A1_XCDSAP", _nOpcx)    //Lê tabela SZ7 para envio SAP
+        EndIf
     Endif    
     FwMsgRun(,{ || U_ZFATF014(_cCodCli, _cTpCred, _cLoja, .T.) }, 'Limite Crédito','Atualizando Limite de Crédito Caoa, aguarde...')  
 End Sequence

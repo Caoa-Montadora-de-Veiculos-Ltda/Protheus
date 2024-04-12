@@ -15,11 +15,10 @@ Obs......:              o PE EICEV100
 */
 User Function EICSI400()
 
-	Local _cEmp    := FWCodEmp()
 	Local _lRet	   := .T.
 	Local aArea	   := GetArea()
 
-	If _cEmp == "2010" //Executa o p.e. Anapolis.
+	If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 		_lRet := .T.
 	Else
 		_lRet := zCaoaSp() //Executa o p.e. CaoaSp
@@ -43,7 +42,7 @@ Static Function zCaoaSp()
 //Local _cPosicao := Space(04)
 
 	If (cParamIXB = "INCLUI_BOTAO" .AND. ALTERA = .T.) .OR. (cParamIXB = "INCLUI_BOTAO".AND. nOpcSI = 2)
-		IF FWCodEmp() <> '2020' .OR. FWFilial() <> '2001' //Verificar Empresa/Filial Barueri
+		IF !( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 			RETURN Nil
 		ENDIF
 

@@ -14,9 +14,7 @@ Uso......:              EICDI154, ZEICF015
 
 User Function ZEICF018()
    
-   Local _cEmp    := FWCodEmp()
-   
-   If _cEmp == "2010" //Executa o p.e. Anapolis.
+   If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
      zMontadora()
    Else
      zCaoaSp() //Executa o p.e. Barueri

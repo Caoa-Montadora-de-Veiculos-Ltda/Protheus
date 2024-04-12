@@ -63,8 +63,8 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 	DbSelectArea("SA1")
 	DbSelectArea("SA2")
 
-	//--Filtra apenas por Barueri
-	IF !( FWCodEmp() = '2020' .And. FWFilial() = '2001' )
+	//--Filtra apenas por Barueri e hyundai
+	IF !( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 		Return
 	EndIf
 

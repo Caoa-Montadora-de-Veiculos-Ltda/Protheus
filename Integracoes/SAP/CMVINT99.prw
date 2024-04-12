@@ -643,8 +643,6 @@ User Function xCMVREP()
 
     Local cAlias 		:= oBrowse:Alias()
     Local nRec			:= (cAlias)->RECSZ7
-    Local _cEmp         := FWCodEmp()
-	//Local cMarca        := oBrowse:Mark()
 
     While !Eof() 
 
@@ -667,7 +665,7 @@ User Function xCMVREP()
                 (cAlias)->(Z7_OK)	:= iIf( Empty((cAlias)->Z7_OK ) , oBrowse:Mark() , " ")
                 (cAlias)->(MsUnlock())
 
-                If _cEmp == "2010" //Executa o p.e. Anapolis.
+                If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
                     If (cAlias)->Z7_XTABELA == "SA1"
                         //U_CMVSAP02( nil , nil , nRec )
                         U_CMVSAP02( { { cEmpAnt , cFilAnt , nRec } } )
@@ -699,7 +697,7 @@ User Function xCMVREP()
                         Help("",1,"Reprocessamento",,"Tipo não contemplado no reprocessamento",1,0)
                         return nil
                     EndIf
-                Else
+                ElseIf ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Franco da Rocha | Caoa
                     If (cAlias)->Z7_XTABELA == "SA1"
                         //U_ZSAPF002( nil , nil , nRec )
                         U_ZSAPF002( { { cEmpAnt , cFilAnt , nRec } } )

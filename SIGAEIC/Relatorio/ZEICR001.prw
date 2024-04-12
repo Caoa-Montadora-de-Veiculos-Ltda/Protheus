@@ -16,9 +16,7 @@ Obs......:
 
 User Function ZEICR001()
 
-	Local _cEmp    := FWCodEmp()
-
-	If _cEmp == "2010" //Executa o p.e. Anapolis.
+	If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 		Processa({|| zMontadora()}	,"Gerando Relatório..."	)
 	Else
 		Processa({|| zCaoaSp()}	,"Gerando Relatório..."	)

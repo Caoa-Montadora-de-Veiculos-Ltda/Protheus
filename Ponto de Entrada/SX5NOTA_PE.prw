@@ -9,7 +9,6 @@
 User Function SX5NOTA(param_name)
     
 Local _cChave   := Paramixb[3] //Chave da Tabela na SX5
-Local _cEmp     := FWCodEmp()
 Local _lRet     := .F.
 Local _cSerie01 := Alltrim(SuperGetmv("ZCD_FAT001",.F.,"")) //Serie HYU (Barueri)
 Local _cSerie02 := Alltrim(SuperGetmv("ZCD_FAT002",.F.,"")) //Serie Che (Barueri)
@@ -19,8 +18,8 @@ Local _cSerie06 := Alltrim(SuperGetmv("ZCD_FAT006",.F.,"")) //Serie Nota Normal 
 Local _cSerie08 := Alltrim(SuperGetmv("ZCD_FAT008",.F.,"")) //Serie Nota Normal (SCS)
 
 
-If _cEmp == "2020" //Executa o p.e. somente para Anapolis.
-    If FWFilial() == "2001" //Barueri CD
+If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Franco da Rocha | Caoa
+    If AllTrim(FWFilial()) == "2001" //Barueri CD
         If FunName() $ "ZPECF013" //Filtrar somente quando for o MeuFatura
             If VS1->VS1_XMARCA $ "HYU"
                 If Alltrim(_cChave) == AllTrim(_cSerie01)
@@ -38,20 +37,26 @@ If _cEmp == "2020" //Executa o p.e. somente para Anapolis.
         Else
             _lRet  := .T.
         EndIf
-    ElseIf FWFilial() == "2010" //Anhanguera
+    ElseIf AllTrim(FWFilial()) == "2010" //Anhanguera
         If Alltrim(_cChave) == AllTrim(_cSerie04)
             _lRet := .T.
         EndIf
-    ElseIf FWFilial() == "2020" //Raposo
+    ElseIf AllTrim(FWFilial()) == "2020" //Raposo
         If Alltrim(_cChave) == AllTrim(_cSerie06)
             _lRet := .T.
         EndIf
-    ElseIf FWFilial() == "2030" //São Caetano do Sul
+    ElseIf AllTrim(FWFilial()) == "2030" //São Caetano do Sul
         If Alltrim(_cChave) == AllTrim(_cSerie08)
             _lRet := .T.
         EndIf
     Else
         _lRet := .T.
+    EndIf
+ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //Empresa Franco da Rocha | Hyundai
+    If VS1->VS1_XMARCA $ "HYU"
+        If Alltrim(_cChave) == AllTrim(_cSerie01)
+            _lRet := .T.
+        EndIf
     EndIf
 Else
     _lRet := .T.
