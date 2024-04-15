@@ -261,7 +261,9 @@ Begin Sequence
 	ZRESTSA1Alterados(  "A1_CONTA"		,_cConta   											, @_oSA1Mod, @_aAlterado, _lNovo )   // Conta contabil               
 	ZRESTSA1Alterados(  "A1_GRPTRIB"	,_cGrpTrib    										, @_oSA1Mod, @_aAlterado, _lNovo )   // Grupo de tributação          
 	ZRESTSA1Alterados(  "A1_CONTRIB"	,_cContrib    										, @_oSA1Mod, @_aAlterado, _lNovo )   // Contribuinte Sim Não         
-	ZRESTSA1Alterados(  "A1_XINTEG"		,"X"	        									, @_oSA1Mod, @_aAlterado, _lNovo )   // Registro Integrado S=Integra RgLog;N=Nao Integra RgLog;X=Integrado RgLog                                                                                    
+	If ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
+		ZRESTSA1Alterados(  "A1_XINTEG"		,"X"	        									, @_oSA1Mod, @_aAlterado, _lNovo )   // Registro Integrado S=Integra RgLog;N=Nao Integra RgLog;X=Integrado RgLog                                                                                    
+	EndIf
   
 	//Se conseguir validar as informações
 	_lRet := _oModel:VldData()
