@@ -60,16 +60,22 @@ Recebe 		Json RG LOG PUT
 @ Obs		Os paremetros de token, empresa e filial serão enviados no cabeçalho reader Json
 /*/
 Static Function ZPECF011PR( _oJson )
-Local _cEmpresa     := "02"
-Local _cFilAtu      := "2020012001"
+Local _cEmpresa     := Space(02)
+Local _cFilAtu      := Space(04)
+Local _cToken       := Space(08)
 Local _lRet			:= .T.
 Local _aRegVS1		:= {}
 Local _cFaseConf 	:= Alltrim(GetNewPar("MV_MIL0095","4")) // Fase de Conferencia e Separacao
 Local _nPos
 Local _cPedido
 Begin Sequence
+
+    _cEmpresa     := AllTrim(_oJson:GetJsonText("cEmpresa"))
+    _cFilAtu      := _oJson:GetJsonText("cFilAtu")
+	_cToken       := AllTrim(_oJson:GetJsonText("cToken"))
 	_cUsuario	  := AllTrim(_oJson:GetJsonText("usuario"))
 	_cSenha		  := AllTrim(_oJson:GetJsonText("senha"))	 	 
+
     If Empty ( _cEmpresa )
 		ZPEC11RMsg("_cEmpresa", "Campo cEmpresa: Empresa nao pode ser branco, favor verificar !")
 		_lRet := .F.
@@ -80,6 +86,19 @@ Begin Sequence
 		_lRet := .F.
         Break
  	EndIf
+	If "_PRD" $ AllTrim(GetEnvServer()) //CASO SEJA PRD, ENVIAR TOKER REFERENTE A PRD.
+		If Empty ( _cToken ) .or. AllTrim(_cToken) <> "PRD_RGLOGXTOTVS"
+			 ZPEC11RMsg("cToken", "Aplicação Web não está autorizada a acessar os serviços Protheus (Token Failed) !")
+			_lRet := .F.
+         	Break
+ 		EndIf
+	Else
+		If Empty ( _cToken ) .or. AllTrim(_cToken) <> "HOM_RGLOGXTOTVS"
+			 ZPEC11RMsg("cToken", "Aplicação Web não está autorizada a acessar os serviços Protheus (Token Failed) !")
+			_lRet := .F.
+         	Break
+ 		EndIf
+	EndIf
     If Empty ( _cUsuario ) .or. AllTrim(_cUsuario) <> "RGLOG.REST"
  		ZPEC11RMsg("_cUsuario", "Aplicação Web não está autorizada a acessar os serviços Protheus (_cUsuario Failed) !")
 		_lRet := .F.

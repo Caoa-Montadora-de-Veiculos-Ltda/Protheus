@@ -33,6 +33,11 @@ END WSRESTFUL
 WSMETHOD PUT;
 WSRECEIVE empresa, filial, usuario, senha, nota_fiscal, serie_nf, cod_fornecedor, cd_produto, qt_conf,debug;
 WSSERVICE ZWSR012
+Local _cEmpresa     := Space(02)
+Local _cFilAtu      := Space(04)
+Local _cToken       := Space(08)
+Local _cUsuario		:= ""
+Local _cSenha		:= ""
 Local cJSON 		:= Self:GetContent() // –> Pega a string do JSON
 Local oParseJSON 	:= Nil
 Local oJsonRet 		:= JsonObject():New()
@@ -56,10 +61,11 @@ Private _cLoja		:= ""
 Private lDebug 		:= .F.
 Private _aJson		:= {}
 
-//-- Cabeçalho a incluir
-//Private aAuto		:= {}
-//Private _aItem		:= {}
-//Private _atotitem	:= {} 
+	_cEmpresa     := AllTrim(_oJson:GetJsonText("cEmpresa"))
+    _cFilAtu      := _oJson:GetJsonText("cFilAtu")
+	_cToken       := AllTrim(_oJson:GetJsonText("cToken"))
+	_cUsuario	  := AllTrim(_oJson:GetJsonText("usuario"))
+	_cSenha		  := AllTrim(_oJson:GetJsonText("senha"))	
 
 	Conout("ZWSR012 - Integracao Confirmacao de mercadorias recebidas RGLOG PUT - Inicio "+DtoC(date())+" "+Time())
 
@@ -80,59 +86,67 @@ Private _aJson		:= {}
 		_cDoc := oParseJSON:nota_fiscal+";"+oParseJSON:serie_nf
 	EndIf
 
-	If Empty(oParseJSON:empresa) .Or. Empty(oParseJSON:filial)
- 		_cErro := "Necessario informar os parametros empresa e filial, por favor, verifique!"
+	If Empty ( _cEmpresa )
+		_cErro := "Necessario informar os parametros empresa, por favor, verifique!"
 		ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )	
 		SetRestFault(400, _cErro)
 		Return(.T.)
-	EndIf
-	//-- Verificar se tem a tag de debug no Json
-	IF at('debug',cJson) > 0 
-		if UPPER(oParseJSON:debug) == "S" //verifica se é para e executar em modo debug
-			lDebug := .T.
-		ENDIF
-	ENDIF
-	
-	//-- Tratar abertura da empresa conforme enviado no parametro
-    If cEmpAnt <> AllTrim(oParseJSON:empresa) .or. cFilAnt <> AllTrim(oParseJSON:filial)
-    	RpcClearEnv() 
-    	RPCSetType(3) 
-    	RpcSetEnv(AllTrim(oParseJSON:empresa),AllTrim(oParseJSON:filial),,,,GetEnvServer(),{})
     EndIf
 
-    If Empty ( oParseJSON:usuario ) .or. AllTrim(oParseJSON:usuario) <> "RGLOG.REST"
+    If Empty ( _cFilAtu )
+		_cErro := "Necessario informar os parametros da filial, por favor, verifique!"
+		ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )	
+		SetRestFault(400, _cErro)
+		Return(.T.)
+ 	EndIf
+
+	If "_PRD" $ AllTrim(GetEnvServer()) //CASO SEJA PRD, ENVIAR TOKER REFERENTE A PRD.
+		If Empty ( _cToken ) .or. AllTrim(_cToken) <> "PRD_RGLOGXTOTVS"
+			_cErro := "Necessario informar o token correto para o ambiente, por favor, verifique!"
+			ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )	
+			SetRestFault(400, _cErro)
+			Return(.T.)
+ 		EndIf
+	Else
+		If Empty ( _cToken ) .or. AllTrim(_cToken) <> "HOM_RGLOGXTOTVS"
+			_cErro := "Necessario informar o token correto para o ambiente, por favor, verifique!"
+			ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )	
+			SetRestFault(400, _cErro)
+			Return(.T.)
+ 		EndIf
+	EndIf
+
+    If Empty ( _cUsuario ) .or. AllTrim(_cUsuario) <> "RGLOG.REST"
  		_cErro := "Usuario nao esta autorizado a acessar os servicos Protheus!"
 		ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )	
 		SetRestFault(400, _cErro)
 		Return(.T.)
  	EndIf
 
-    If Empty ( oParseJSON:senha ) .or. AllTrim(oParseJSON:senha) <> "CaOa!RgLogRest@2021"
+    If Empty ( _cSenha ) .or. AllTrim(_cSenha) <> "CaOa!RgLogRest@2021"
  		_cErro := "Senha invalida!"
 		ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )	
 		SetRestFault(400, _cErro)
 		Return(.T.)
  	EndIf
 
+	//-- Verificar se tem a tag de debug no Json
+	IF at('debug',cJson) > 0 
+		if UPPER(oParseJSON:debug) == "S" //verifica se é para e executar em modo debug
+			lDebug := .T.
+		ENDIF
+	ENDIF
+
+	If cEmpAnt <> _cEmpresa .or. cFilAnt <> _cFilAtu
+    	RpcClearEnv() 
+    	RPCSetType(3) 
+    	RpcSetEnv(_cEmpresa,_cFilAtu,,,,GetEnvServer(),{ })
+	EndIf
+
 	_cNfFor 	:= AllTrim(StrZero(Val(oParseJSON:nota_fiscal),9))
 	_cSerFor 	:= AllTrim(oParseJSON:serie_nf)
 	_cFornec	:= SubStr(AllTrim(oParseJSON:cod_fornecedor), 2, 6)
 	_cLoja		:= SubStr(AllTrim(oParseJSON:cod_fornecedor), 8, 2)
-		
-	/*If Len(AllTrim(oParseJSON:cod_fornecedor)) == 9  .And. Substr(AllTrim(oParseJSON:cod_fornecedor),1,1) == "9"
-		_cNfFor 	:= AllTrim(StrZero(Val(oParseJSON:nota_fiscal),9))
-		//_cNfFor 	:= AllTrim(oParseJSON:nota_fiscal)
-		_cSerFor 	:= AllTrim(oParseJSON:serie_nf)
-		_cFornec	:= SubStr(AllTrim(oParseJSON:cod_fornecedor), 2, 6)
-		_cLoja		:= SubStr(AllTrim(oParseJSON:cod_fornecedor), 8, 2)
-		_cTpNf		:= "T"
-	Else
-		_cNfFor 	:= AllTrim(oParseJSON:nota_fiscal)
-		_cSerFor 	:= AllTrim(oParseJSON:serie_nf)
-		_cFornec	:= AllTrim(oParseJSON:cod_fornecedor) 
-		_cLoja		:= ""
-		_cTpNf 		:= "S"		
-	EndIf*/
 
 	_cLog := chr(10)
 	_cLog += "Nf ........: " + _cNfFor      + chr(10)
