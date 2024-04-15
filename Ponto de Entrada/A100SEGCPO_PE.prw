@@ -13,6 +13,7 @@ Partida   : MATA122
 Static _C7_NUMSC
 Static _C7_ITEMSC
 static _C7_IPI
+Static _lMata122
 
 User Function A100SEGCPO()
     Local lRet      := .T.
@@ -21,7 +22,9 @@ User Function A100SEGCPO()
     Local cNumCont  
     Local cItemCont 
 
-    If Upper(Alltrim(FunName())) == "MATA122" .And. Upper(Alltrim(ProcName(3))) == "A120PRODUTO"
+    DEFAULT _lMata122 := Upper(Alltrim(FunName())) == "MATA122" 
+
+    If _lMata122 .And. Upper(Alltrim(ProcName(3))) == "A120PRODUTO"
         
 		If _C7_NUMSC == nil 
             _C7_NUMSC :=  aScan(aHeader,{|x| Alltrim(x[2]) == 'C7_NUMSC'})
