@@ -161,6 +161,7 @@ Local _aMsg
 Local _aAlterado
 Local _cComplemento
 
+DbSelectArea("SA1")
 
 Begin Sequence 
 	//Verifica se existe cliente cadastrado
@@ -176,37 +177,59 @@ Begin Sequence
 		Break
 	Endif
 
-	BeginSql Alias _cAliasPesq
-		SELECT 	SA1.R_E_C_N_O_ NREGSA1
-       	FROM %table:SA1% SA1
-       	WHERE SA1.A1_FILIAL  	= %XFilial:SA1%
-			AND SA1.A1_CGC 		= %Exp:_cCnPjCpf%
-		  	AND SA1.%notDel%		  
-	EndSql      
-	If (_cAliasPesq)->(Eof()) 	
-    	_cCodCli    := GetSxeNum("SA1","A1_COD")
-		_cLoja   	:= StrZero(1,Len(SA1->A1_LOJA))
-		_cBloqueio  := "1"
-		_lNovo      := .T.
-		_cContrib   := "1"   //Verificar se é exportação testar quem é contribuinte 
-	Else 
-		SA1->(DbGoto((_cAliasPesq)->NREGSA1))
-    	//_cCodCli    := SA1->A1_COD
-		//_cLoja   	:= SA1->A1_LOJA		
+	SA1->(dbSetOrder(3))
+    If SA1->( dbSeek( xFilial("SA1")+Padr( AllTrim(_cCnPjCpf), TamSX3("A1_CGC")[1] ) ) ) //Já existe o CNPJ cadastrado, somente altera
 		_cBloqueio  := SA1->A1_MSBLQL
 		_lNovo      := .F.
 		_cConta 	:= SA1->A1_CONTA
 		_cGrpTrib   := SA1->A1_GRPTRIB
+		_cContrib   := SA1->A1_CONTRIB
+	Else
+		If Select( (_cAliasPesq) ) > 0
+			(_cAliasPesq)->(DbCloseArea())
+		EndIf
+
+		cQrySA1 := ""
+		cQrySA1 += " SELECT TMP.A1_COD, TMP.A1_LOJA FROM ( 											"
+		cQrySA1 += " 	SELECT * FROM " +  RetSQLName("SA1") +" SA1 								"
+		cQrySA1 += " 	WHERE SA1.A1_FILIAL = '" + FWxFilial('SA1') + "'							"
+		cQrySA1 += " 	AND SUBSTR(SA1.A1_CGC,1,8) = '" + Substring(_cCnPjCpf,1,8) + "' 			"
+		cQrySA1 += " 	AND SA1.D_E_L_E_T_ = ' ' 													"
+		cQrySA1 += " 	ORDER BY SA1.A1_LOJA DESC 													"
+		cQrySA1 += " )TMP 																			"
+		cQrySA1 += " WHERE ROWNUM = 1 																"
+
+		// Executa a consulta.
+		DbUseArea( .T., "TOPCONN", TcGenQry(,,cQrySA1), _cAliasPesq, .T., .T. )
+
+		DbSelectArea((_cAliasPesq))
+		(_cAliasPesq)->(dbGoTop())  
+
+		If (_cAliasPesq)->(Eof()) 	
+			_cCodCli    := GetSxeNum("SA1","A1_COD")
+			_cLoja   	:= StrZero(1,Len(SA1->A1_LOJA))
+		Else 
+			//SA1->(DbGoto((_cAliasPesq)->NREGSA1))
+			_cCodCli	:= (_cAliasPesq)->A1_COD
+			_cLoja		:= Soma1((_cAliasPesq)->A1_LOJA)	
+			_cBloqueio  := "1"
+		Endif
+
+		_cBloqueio  := "1"
+		_lNovo      := .T.
 		_cContrib   := "1"   //Verificar se é exportação testar quem é contribuinte 
-	Endif
+
+		(_cAliasPesq)->(DbCloseArea())
+	EndIf
+
 	_cCnPjCpf	:= AllTrim(_oJson:GetJsonText("cnpjcpf"))  
 	_cIERG 		:= AllTrim(_oJson:GetJsonText("ierg"))
-	_cEndereco	:= Upper(AllTrim(_oJson:GetJsonText("endereco")))  //+ If(!Empty(_oJson:GetJsonText("endnum")) , ", "+ AllTrim(_oJson:GetJsonText("endnum")),"" )
-	_cReduzido 	:= Upper(AllTrim(_oJson:GetJsonText("reduzido")))
+	_cEndereco	:= FwNoAccent(Upper(AllTrim(_oJson:GetJsonText("endereco"))))  //+ If(!Empty(_oJson:GetJsonText("endnum")) , ", "+ AllTrim(_oJson:GetJsonText("endnum")),"" )
+	_cReduzido 	:= FwNoAccent(Upper(AllTrim(_oJson:GetJsonText("reduzido"))))
 	_cTipoCli 	:= Upper(AllTrim(_oJson:GetJsonText("tipocli")))	
 	//Caso nao tenha enviado nome reduzido reproduzo o nome
-	If Empty(_cReduzido)
-		_cReduzido 	:= Upper(AllTrim(_oJson:GetJsonText("nome")))
+	If Empty(_cReduzido) .Or. _cReduzido == "NULL"
+		_cReduzido 	:= FwNoAccent(Substr(Upper(AllTrim(_oJson:GetJsonText("nome"))),1,20))
 	Endif
   
 	_aAlterado := {}  //indicação de alteração do campo
@@ -223,13 +246,13 @@ Begin Sequence
 		ZRESTSA1Alterados(	"A1_COD"		, _cCodCli											, @_oSA1Mod, @_aAlterado, _lNovo )   // Nome
 		ZRESTSA1Alterados(	"A1_LOJA"		, _cLoja											, @_oSA1Mod, @_aAlterado, _lNovo )   // Nome
 	Endif
-	ZRESTSA1Alterados(	"A1_NOME"		, Upper(AllTrim(_oJson:GetJsonText("nome")))		, @_oSA1Mod, @_aAlterado, _lNovo )   // Nome
-	ZRESTSA1Alterados(	"A1_NREDUZ" 	, _cReduzido   										, @_oSA1Mod, @_aAlterado, _lNovo )   //  Nome reduz.
-	ZRESTSA1Alterados(  "A1_END"	 	, _cEndereco   										, @_oSA1Mod, @_aAlterado, _lNovo )   // Endereco
-	ZRESTSA1Alterados(  "A1_BAIRRO" 	, Upper(AllTrim(_oJson:GetJsonText("bairro"))) 		, @_oSA1Mod, @_aAlterado, _lNovo )   // Bairro
-	_cComplemento :=  _oJson:GetJsonText("complemento")
+	ZRESTSA1Alterados(	"A1_NOME"		, FwNoAccent(Upper(AllTrim(_oJson:GetJsonText("nome"))))	, @_oSA1Mod, @_aAlterado, _lNovo )   // Nome
+	ZRESTSA1Alterados(	"A1_NREDUZ" 	, _cReduzido   												, @_oSA1Mod, @_aAlterado, _lNovo )   //  Nome reduz.
+	ZRESTSA1Alterados(  "A1_END"	 	, _cEndereco   												, @_oSA1Mod, @_aAlterado, _lNovo )   // Endereco
+	ZRESTSA1Alterados(  "A1_BAIRRO" 	, FwNoAccent(Upper(AllTrim(_oJson:GetJsonText("bairro"))))	, @_oSA1Mod, @_aAlterado, _lNovo )   // Bairro
+	_cComplemento :=  FwNoAccent(_oJson:GetJsonText("complemento"))
 	If Valtype(_cComplemento) == "C" .Or. _cComplemento <>  'null' .Or. !Empty(_cComplemento)
-		ZRESTSA1Alterados(  "A1_COMPLEM" 	, Upper(AllTrim(_cComplemento))					, @_oSA1Mod, @_aAlterado, _lNovo )   // Complemento
+		ZRESTSA1Alterados(  "A1_COMPLEM" 	, FwNoAccent(Upper(AllTrim(_cComplemento)))					, @_oSA1Mod, @_aAlterado, _lNovo )   // Complemento
 	Endif
 	ZRESTSA1Alterados(  "A1_CEP"		, AllTrim(_oJson:GetJsonText("cep"))        		, @_oSA1Mod, @_aAlterado, _lNovo )   // CEP
 	ZRESTSA1Alterados(  "A1_TIPO"		, _cTipoCli    										, @_oSA1Mod, @_aAlterado, _lNovo )   // Tipo 
@@ -254,10 +277,10 @@ Begin Sequence
 	Else   //POR ENQUANTO COLOCANDO COMO JURIDICA
 		ZRESTSA1Alterados(  "A1_PESSOA"	, "J" 												, @_oSA1Mod, @_aAlterado, _lNovo )   // Tipo Pessoa Exterior            
 	Endif									
-	ZRESTSA1Alterados(  "A1_EMAIL"		, AllTrim(_oJson:GetJsonText("email"))       		, @_oSA1Mod, @_aAlterado, _lNovo )   // E-Mail       
+	ZRESTSA1Alterados(  "A1_EMAIL"		, FwNoAccent(AllTrim(_oJson:GetJsonText("email")))       		, @_oSA1Mod, @_aAlterado, _lNovo )   // E-Mail       
 	ZRESTSA1Alterados(  "A1_DDD"		, AllTrim(_oJson:GetJsonText("ddd"))        		, @_oSA1Mod, @_aAlterado, _lNovo )   // DDD               
 	ZRESTSA1Alterados(  "A1_TEL"		, AllTrim(_oJson:GetJsonText("fone"))   			, @_oSA1Mod, @_aAlterado, _lNovo )   // Fone              
-	ZRESTSA1Alterados(  "A1_CONTATO"	, Upper(AllTrim(_oJson:GetJsonText("contato")))		, @_oSA1Mod, @_aAlterado, _lNovo )   // Contato           
+	ZRESTSA1Alterados(  "A1_CONTATO"	, FwNoAccent(Upper(AllTrim(_oJson:GetJsonText("contato"))))		, @_oSA1Mod, @_aAlterado, _lNovo )   // Contato           
 	ZRESTSA1Alterados(  "A1_CONTA"		,_cConta   											, @_oSA1Mod, @_aAlterado, _lNovo )   // Conta contabil               
 	ZRESTSA1Alterados(  "A1_GRPTRIB"	,_cGrpTrib    										, @_oSA1Mod, @_aAlterado, _lNovo )   // Grupo de tributação          
 	ZRESTSA1Alterados(  "A1_CONTRIB"	,_cContrib    										, @_oSA1Mod, @_aAlterado, _lNovo )   // Contribuinte Sim Não         
@@ -288,7 +311,7 @@ Begin Sequence
     	//Mostra a mensagem de Erro
     	//MostraErro()
 		*/
-		U_ZRETMsgJson("erropad",FwNoAccent( AllToChar(_aErro[06])))
+		U_ZRETMsgJson("erropad",AllTrim(FwNoAccent( AllToChar(_aErro[06])))+" | "+AllTrim(FwNoAccent( AllToChar(_aErro[04]))))
 	Endif
 	//Desativa o modelo de dados
 	_oModel:DeActivate()
@@ -312,9 +335,11 @@ If _lRet
 	//Devido estar retornando como X que é o identificador para RGLOG SIGAPEC
 	//Tem que integrar RGLOG
 	If RecLock("SA1",.F.)
-		If SA1->A1_XINTEG  <> "X"
-			SA1->A1_XINTEG := "X"
-		Endif	
+		If ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
+			If SA1->A1_XINTEG  <> "X"
+				SA1->A1_XINTEG := "X"
+			Endif	
+		EndIf
 		If _lNovo
 			SA1->A1_CONTA	:= ""
 			SA1->A1_GRPTRIB	:= ""
@@ -330,23 +355,6 @@ Else
 		Aadd(_aMsg,_aMsgRet[_nPos,2])
 	Next
 Endif 
-For _nPos := 1 To Len(_aMsg)
-	U_CAOA_GRVMONITOR(	FWxFilial("SA1"), ;   //Filial arquivo gravado
-						_cStatus, ;         //Status
-						"100",;				//Código do Processo  REST IMPORTACAO CLIENTES
-						/*cCodtpint*/,;		//Código do tipo
-						Upper(_aMsg[_nPos] +" Empresa "+_cEmpresa+" Filial "+_cFilAtu) ,;  //Mensagem de retorno
-						_cCnPjCpf,;			//Documento
-						 Date(),;			//Data Inicio
-						 Time(),;			//Hora Final
-						_oJson,;			//Json
-						/*_nRecnoDoc*/,;        //Recno do documento
-						_cResp,; 			//Nome do Usuário na inclusão
-						/*_xHTTP*/,;			//Retorno código
-						_aCampos)			//Campos pré definidos para gravar no SZ1 
-Next
-
-//ZRESTSA1Monitor( _cStatus,"SA1", _cCnPjCpf, _oJson, _cErro,  /*_dDataIni*/, /*_cHsIni*/, 100 /*_nErro*/ )	
 
 Return _lRet 
 
