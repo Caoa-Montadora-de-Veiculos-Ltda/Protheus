@@ -103,7 +103,7 @@ Begin Sequence
 	Endif
 
 	//Garantir que o processamento seja unico
-	_cChave		:= AllTrim(FWCodEmp())+"ZGENFTSE"+_cGrupo
+	_cChave		:= AllTrim(FWCodEmp())+"ZGENFTSE"+_aRet[07]
 	If !LockByName(_cChave,.T.,.T.)  
 		//tentar locar por 10 segundos caso não consiga não prosseguir
 		_lRet := .F.
@@ -114,7 +114,7 @@ Begin Sequence
 			EndIf
 		Next		
 		If !_lRet
-			MSGINFO("Já existe um processamento em execução rotina ZGENFTSE com grupo "+_cGrupo+", aguarde o término!", "[ZGENFTSE] - Atenção" )
+			MSGINFO("Já existe um processamento em execução rotina ZGENFTSE com grupo "+_aRet[07]+", aguarde o término!", "[ZGENFTSE] - Atenção" )
 			Break
 		EndIf
 	EndIf
