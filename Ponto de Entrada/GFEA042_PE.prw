@@ -9,7 +9,7 @@ Data.....:              05/01/24
 Descricao / Objetivo:   Ponto de entrada para Inclusão de Nova Opção no Menu (menudef)
 Doc. Origem:            GAP032
 Solicitante:            Micaellen Leal
-Uso......:              Inserir opçãono menu de outras ações.
+Uso......:              Inserir opção no menu de outras ações.
 Obs......:              https://tdn.totvs.com/pages/releaseview.action?pageId=239034846
 =====================================================================================
 */
