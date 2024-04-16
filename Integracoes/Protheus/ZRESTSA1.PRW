@@ -179,11 +179,13 @@ Begin Sequence
 
 	SA1->(dbSetOrder(3))
     If SA1->( dbSeek( xFilial("SA1")+Padr( AllTrim(_cCnPjCpf), TamSX3("A1_CGC")[1] ) ) ) //Já existe o CNPJ cadastrado, somente altera
+		_cCodCli	:= SA1->A1_COD
+		_cLoja		:= SA1->A1_LOJA
 		_cBloqueio  := SA1->A1_MSBLQL
 		_lNovo      := .F.
-		_cConta 	:= SA1->A1_CONTA
-		_cGrpTrib   := SA1->A1_GRPTRIB
-		_cContrib   := SA1->A1_CONTRIB
+		_cConta 	:= IIf(Empty(SA1->A1_CONTA),AllTrim(SuperGetMV("CMV_JSA102",.F.,"1120101001")), SA1->A1_CONTA)
+		_cGrpTrib   := IIf(Empty(SA1->A1_GRPTRIB),AllTrim(SuperGetMV("CMV_JSA103",.F.,"FID")), SA1->A1_GRPTRIB) 
+		_cContrib   := IIf(Empty(SA1->A1_CONTRIB),"1", SA1->A1_CONTRIB)
 	Else
 		If Select( (_cAliasPesq) ) > 0
 			(_cAliasPesq)->(DbCloseArea())
