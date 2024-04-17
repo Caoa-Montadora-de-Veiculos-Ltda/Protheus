@@ -20,6 +20,7 @@ USER FUNCTION IMPCSV()
 
 	Private _cEmp  	:= FWCodEmp()
 	Private lAtuEst := SuperGetMV('CAOA_C1ES',.F.,.F.) //- PARÂMETRO RESPOSÁVEL POR INDICAR FORÇAR NÃO ATUALIZAR O ESTOQUE DEFAULT .F.
+	Private cMaskL  := "*.txt | *.txt"
 
 	//- força o ajuste de execução do módulo
 	nModulo := 2
@@ -354,7 +355,7 @@ Static Function ImpCsv01(oSay)
 					EndIf
 
 					If Len(aCpLn) < nCp .OR. WmsVlStr(aCpLn[nCp]) = .F.
-						Aadd(aErros,  {"Arquivo: " + AllTrim(aArqArq[nA,2]) + " invoice contem caracteres especiais na linha " + cValTochar(nB)})
+						Aadd(aErros,  {"Arquivo: " + AllTrim(aArqArq[nA,2]) + " invoice contem caracteres especiais na linha " + cValTochar(nB),""})
 						Loop
 					EndIf
 
@@ -380,7 +381,7 @@ Static Function ImpCsv01(oSay)
 						cProforma := aCPLN[9]
 					Else
 						lValid   := .F.
-						Aadd(aErros,  {"Layout incorreto, verifique a quantidade de campos (4-Kits, 9-Veiculos)"})
+						Aadd(aErros,  {"Layout incorreto, verifique a quantidade de campos (4-Kits, 9-Veiculos)",""})
 					EndIf
 					cLErro   := STRZERO(nCont,5)+" "
 					If lValid
@@ -389,9 +390,9 @@ Static Function ImpCsv01(oSay)
 						BEGINSQL ALIAS cQRYA
 				    SELECT B1_COD,
 					       B1_LOCREC,
-					       A5_FABR,
-						   A5_FALOJA,
-						   VV2_CORINT
+					       ISNULL(A5_FABR, ' ') A5_FABR,
+						   ISNULL(A5_FALOJA, ' ') A5_FALOJA,
+						   ISNULL(VV2_CORINT, ' ') VV2_CORINT
 					  FROM %TABLE:SB1% SB1
 					 LEFT JOIN %TABLE:SA5% SA5
 					        ON SA5.%NOTDEL%
@@ -401,33 +402,33 @@ Static Function ImpCsv01(oSay)
 						   AND SA5.A5_LOJA = %Exp:cLojaC1%
 						   AND SA5.A5_FABR <> ' '
 						   AND SA5.A5_MSBLQL <> '1'
-					 LEFT JOIN %TABLE:VV2% VV2 "
+					 LEFT JOIN %TABLE:VV2% VV2 
 					        ON VV2.%NOTDEL%
 						   AND VV2.VV2_FILIAL = %xFilial:VV2%
 						   AND VV2.VV2_PRODUT = SB1.B1_COD
 					 WHERE SB1.%NOTDEL%
 					   AND SB1.B1_FILIAL = %xFilial:SB1%
 					   AND SB1.B1_COD = %Exp:cProduto%
-					   AND SB1.B1_IMPORT = 'S'"
+					   AND SB1.B1_IMPORT = 'S'
 						ENDSQL
 						IF (cQRYA)->(EOF())
 							lValid := .F.
-							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Produto nao cadastrado ou nao esta como importado !"})
+							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Produto nao cadastrado ou nao esta como importado !",AllTrim(cProduto)})
 						ENDIF
-						If ! Empty((cQRYA)->A5_FABR)
+						If !Empty((cQRYA)->A5_FABR)
 							cFabr	 := (cQRYA)->A5_FABR
 							cFabrLoj   := (cQRYA)->A5_FALOJA
 						Else
 							lValid := .F.
-							Aadd(aErros,  {cLErro + AllTrim(cProduto) + " - Nao existe amarracao de fabricante ou o Produto esta Bloqueado . Fornecedor: " + cFornC1 +" - Loja: " + cLojaC1})
+							Aadd(aErros,  {cLErro + AllTrim(cProduto) + " - Nao existe amarracao de fabricante ou o Produto esta Bloqueado . Fornecedor: " + cFornC1 +" - Loja: " + cLojaC1,AllTrim(cProduto)})
 						EndIf
 						If nQuant <= 0
 							lValid := .F.
-							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Quantidade invalida"})
+							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Quantidade invalida",AllTrim(cProduto)})
 						EndIf
 						If nVlUnit <= 0
 							lValid := .F.
-							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Preco unitario invalido"})
+							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Preco unitario invalido",AllTrim(cProduto)})
 						EndIf
 						If !lKit
 							If lValid
@@ -441,28 +442,28 @@ Static Function ImpCsv01(oSay)
 								EndDo
 								IF ! lVALID
 									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Modelo de Veiculo nao cadastrado ou "+;
-										"cor interna ("+cCORINT+") invalida para este veiculo !"})
+										"cor interna ("+cCORINT+") invalida para este veiculo !",AllTrim(cProduto)})
 								ENDIF
 							EndIf
 							If !Empty(cCorInt)
 								VX5->(dbSetOrder(1))
 								If ! (VX5->(dbSeek(cFILVX5+"066"+cCorInt)))
 									lValid := .F.
-									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Cor interna nao cadastrada: "+AllTrim(cCorInt)})
+									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Cor interna nao cadastrada: "+AllTrim(cCorInt),AllTrim(cProduto)})
 								EndIf
 							EndIf
 							If !Empty(cCorExt)
 								VX5->(dbSetOrder(1))
 								If ! (VX5->(dbSeek(cFILVX5+"067"+cCorExt)))
 									lValid := .F.
-									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Cor externa nao cadastrada: "+AllTrim(cCorExt)})
+									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Cor externa nao cadastrada: "+AllTrim(cCorExt),AllTrim(cProduto)})
 								EndIf
 							EndIf
 							If !Empty(cOpcion)
 								VX5->(dbSetOrder(1))
 								If ! (VX5->(dbSeek(cFILVX5+"068"+cOpcion)))
 									lValid := .F.
-									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Opcional nao cadastrado: "+AllTrim(cOpcion)})
+									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Opcional nao cadastrado: "+AllTrim(cOpcion),AllTrim(cProduto)})
 								EndIf
 							EndIf
 						EndIf
@@ -559,7 +560,7 @@ Static Function ImpCsv01(oSay)
 					If lMsErroAuto
 						MostraErro()
 						RollBackSx8()
-						Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Inconsistencias na inclusao da solicitacao "})
+						Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Inconsistencias na inclusao da solicitacao ",""})
 						// DisarmTransaction()
 						// BREAK
 					Else
@@ -591,6 +592,9 @@ Static Function ImpCsv01(oSay)
 				EndIf
 			EndIf
 		ElseIf Len(aErros) > 0
+			
+			aSort(aErros, ,,{|x,y| x[2]<y[2]})
+			
 			cTextoE := ""
 			cTextoE += "Linha Produto"+chr(13)+chr(10)
 			cTextoE += "----- -------"+chr(13)+chr(10)
@@ -603,7 +607,7 @@ Static Function ImpCsv01(oSay)
 			@ 5,5 Get oMemo Var cTextoE Memo Size 200, 145 Of oDlgMEMO Pixel
 			oMemo:oFont := oFont
 			Define SButton From 153, 175 Type  1 Action oDlgMemo:End() Enable Of oDlgMemo Pixel // Apaga
-			Define SButton From 153, 145 Type 13 Action (cFileL := cGetFile(cMaskL, ""), If(cFileL == "", .T., MemoWrite(cFileL, cTextoE))) Enable Of oDlgMemo Pixel
+			Define SButton From 153, 145 Type 13 Action (cFileL := cGetFile(cMaskL, "",,,.F.,,.F.), If(cFileL == "", .T., MemoWrite(cFileL, cTextoE))) Enable Of oDlgMemo Pixel
 			ACTIVATE MSDIALOG oDlgMemo CENTERED
 		EndIf
 	NEXT
@@ -682,12 +686,12 @@ Static Function ImpCsv02(oSay)
 						cProforma := aCPLN[7]
 					Else
 						lValid   := .F.
-						Aadd(aErros,  {"Layout incorreto na linha " + PadL(nB, 5, "0") + " Verifique a quantidade de campos (4-Kits, 9-Veiculos, 7-Peças)"})
+						Aadd(aErros,  {"Layout incorreto na linha " + PadL(nB, 5, "0") + " Verifique a quantidade de campos (4-Kits, 9-Veiculos, 7-Peças)", ""})
 						Loop
 					EndIf
 
 					If WmsVlStr(cProforma) = .F.
-						Aadd(aErros,  {"Arq: " + AllTrim(aArqArq[nA,2]) + ", proforma: " + Alltrim(cProforma) + " contêm caracteres especiais, linha " + cValTochar(nB)})
+						Aadd(aErros,  {"Arq: " + AllTrim(aArqArq[nA,2]) + ", proforma: " + Alltrim(cProforma) + " contêm caracteres especiais, linha " + cValTochar(nB),""})
 						Loop
 					EndIf
 
@@ -701,9 +705,9 @@ Static Function ImpCsv02(oSay)
 							SELECT
 								B1_COD,
 								B1_LOCREC,
-								A5_FABR,
-								A5_FALOJA,
-								VV2_CORINT
+								ISNULL(A5_FABR, '  ') A5_FABR,
+								ISNULL(A5_FALOJA,' ') A5_FALOJA,
+								ISNULL(VV2_CORINT,' ') VV2_CORINT
 							FROM
 								%TABLE:SB1% SB1
 							LEFT JOIN %TABLE:SA5% SA5
@@ -725,22 +729,22 @@ Static Function ImpCsv02(oSay)
 						ENDSQL
 						IF (cQRYA)->(EOF())
 							lValid := .F.
-							Aadd(aErros,  {cLErro+AllTrim(cProduto) + " - Produto não cadastrado ou nao esta como importado !"})
+							Aadd(aErros,  {cLErro+AllTrim(cProduto) + " - Produto não cadastrado ou nao esta como importado !",AllTrim(cProduto)})
 						ENDIF
 						If ! Empty((cQRYA)->A5_FABR)
 							cFabr	 := (cQRYA)->A5_FABR
-							cFabrLoj   := (cQRYA)->A5_FALOJA
+							cFabrLoj := (cQRYA)->A5_FALOJA
 						Else
 							lValid := .F.
-							Aadd(aErros,  {cLErro + AllTrim(cProduto) + " - Não existe amarracao de fabricante ou Produto esta Bloqueado. Fornecedor: " + cFornC1 + " - Loja: " + cLojaC1})
+							Aadd(aErros,  {cLErro + AllTrim(cProduto) + " - Não existe amarracao de fabricante ou Produto esta Bloqueado. Fornecedor: " + cFornC1 + " - Loja: " + cLojaC1, AllTrim(cProduto) })
 						EndIf
 						If nQuant <= 0
 							lValid := .F.
-							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Quantidade inválida"})
+							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Quantidade inválida",AllTrim(cProduto)})
 						EndIf
 						If nVlUnit <= 0
 							lValid := .F.
-							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Preço unitário inválido"})
+							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Preço unitário inválido",AllTrim(cProduto)})
 						EndIf
 						If !lKit
 							If lValid
@@ -753,28 +757,28 @@ Static Function ImpCsv02(oSay)
 									(cQRYA)->(dbSkip())
 								EndDo
 								IF ! lVALID
-									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Modelo de Veiculo nao cadastrado ou cor interna (" + cCORINT + ") invalida para este veiculo !"})
+									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Modelo de Veiculo nao cadastrado ou cor interna (" + cCORINT + ") invalida para este veiculo !",AllTrim(cProduto)})
 								ENDIF
 							EndIf
 							If !Empty(cCorInt)
 								VX5->(dbSetOrder(1))
 								If ! (VX5->(dbSeek(cFILVX5+"066"+cCorInt)))
 									lValid := .F.
-									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Cor interna nao cadastrada: "+AllTrim(cCorInt)})
+									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Cor interna nao cadastrada: "+AllTrim(cCorInt),AllTrim(cProduto)})
 								EndIf
 							EndIf
 							If !Empty(cCorExt)
 								VX5->(dbSetOrder(1))
 								If ! (VX5->(dbSeek(cFILVX5+"067"+cCorExt)))
 									lValid := .F.
-									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Cor externa nao cadastrada: "+AllTrim(cCorExt)})
+									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Cor externa nao cadastrada: "+AllTrim(cCorExt) , AllTrim(cProduto)})
 								EndIf
 							EndIf
 							If !Empty(cOpcion)
 								VX5->(dbSetOrder(1))
 								If ! (VX5->(dbSeek(cFILVX5+"068"+cOpcion)))
 									lValid := .F.
-									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Opcional nao cadastrado: "+AllTrim(cOpcion)})
+									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Opcional nao cadastrado: " + AllTrim(cOpcion) , AllTrim(cProduto)})
 								EndIf
 							EndIf
 						EndIf
@@ -878,7 +882,7 @@ Static Function ImpCsv02(oSay)
 					If lMsErroAuto
 						MostraErro()
 						RollBackSx8()
-						Aadd(aErros,  { cLErro + AllTrim(cProduto)+" - Inconsistencias na inclusao da solicitacao "})
+						Aadd(aErros,  { cLErro + AllTrim(cProduto)+" - Inconsistencias na inclusao da solicitacao "," "})
 						// DisarmTransaction()
 						// BREAK
 					Else
@@ -909,9 +913,13 @@ Static Function ImpCsv02(oSay)
 				EndIf
 			EndIf
 		ElseIf Len(aErros) > 0
+			
+			aSort(aErros, ,,{|x,y| x[2]<y[2]})
+
 			cTextoE := ""
 			cTextoE += "Linha Produto"+chr(13)+chr(10)
 			cTextoE += "----- -------"+chr(13)+chr(10)
+			
 			For nX:=1 to Len(aErros)
 				cTextoE += aErros[nX,1]+chr(13)+chr(10)
 			Next
@@ -921,7 +929,7 @@ Static Function ImpCsv02(oSay)
 			@ 5,5 Get oMemo Var cTextoE Memo Size 200, 145 Of oDlgMEMO Pixel
 			oMemo:oFont := oFont
 			Define SButton From 153, 175 Type  1 Action oDlgMemo:End() Enable Of oDlgMemo Pixel // Apaga
-			Define SButton From 153, 145 Type 13 Action (cFileL := cGetFile(cMaskL, ""), If(cFileL == "", .T., MemoWrite(cFileL, cTextoE))) Enable Of oDlgMemo Pixel
+			Define SButton From 153, 145 Type 13 Action (cFileL := cGetFile(cMaskL, "",,,.F.,,.F.), If(cFileL == "", .T., MemoWrite(cFileL, cTextoE))) Enable Of oDlgMemo Pixel
 			ACTIVATE MSDIALOG oDlgMemo CENTERED
 		EndIf
 	NEXT
