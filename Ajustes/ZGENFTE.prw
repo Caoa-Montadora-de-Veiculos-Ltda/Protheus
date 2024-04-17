@@ -29,7 +29,11 @@ Local _cDocumDe    	:= Space(TamSx3("D1_DOC")[1])
 Local _cDocumAte   	:= Space(TamSx3("D1_DOC")[1])
 Local _cSerieori   	:= Space(TamSx3("D1_SERIE")[1])
 Local _cTES     	:= Space(TamSx3("D1_TES")[1])
-
+Local _cArmazem		:= Space(TamSx3("D1_LOCAL")[1]) 
+Local _cCCusto		:= Space(TamSx3("D1_CC")[1]) 
+Local _cCCond		:= Space(TamSx3("F2_COND")[1])  
+Local _cCodFor		:= Space(TamSx3("F2_CLIENTE")[1])  
+Local _cLojaFor		:= Space(TamSx3("F2_LOJA")[1])  
 Local _cChave		:= AllTrim(FWCodEmp())+"ZGENFTSE"
 Local _lRet			:= .T.
 Local _lSerieObr	:= If(FWCodEmp() == '2020', .F., .T.)  //indicar para obrigatório quando embpresa for diferente de 020 na serie  
@@ -37,7 +41,7 @@ Local _lSerieObr	:= If(FWCodEmp() == '2020', .F., .T.)  //indicar para obrigatór
 Local _oSay
 Local _nPos
 
-Private _cFilial  	:= cFilant
+Private lMsErroAuto := .F.
 
 Begin Sequence
 	//_lRet := U_ZGENUSER( RetCodUsr() ,"ZGENFTSE" ,.T.)	
@@ -51,11 +55,17 @@ Begin Sequence
 	ENDIF
 	*/
 
-	aAdd(_aPar,{1,OemToAnsi("Cliente  : ") 	,_cCodCli	, "@!"	,".T."	,"SA1", ".T.", 100,.T.}) 
-	aAdd(_aPar,{1,OemToAnsi("Loja  	  : ")	,_cLoja 	, "@!"	,".T."	,""	  , ".T.", 100,.T.}) 
-	aAdd(_aPar,{1,OemToAnsi("Nota  de : ") 	,_cDocumDe	, "@!"	,".T."	,"SF2", ".T.", 100,.F.}) 
-	aAdd(_aPar,{1,OemToAnsi("Nota ate : ") 	,_cDocumAte	, "@!"	,".T."	,"SF2", ".T.", 100,.T.}) 
-    aAdd(_aPar,{1,OemToAnsi("Série 	  : ") 	,_cSerieori	, "@!"	,".T."	,""   , ".T.", 100,.T.}) 
+	aAdd(_aPar,{1,OemToAnsi("Cliente Origem  : ") 	,_cCodCli	, "@!"	,".T."	,""   , ".T.", 100,.T.}) 
+	aAdd(_aPar,{1,OemToAnsi("Loja Origem     : ")	,_cLoja 	, "@!"	,".T."	,""	  , ".T.", 100,.T.}) 
+	aAdd(_aPar,{1,OemToAnsi("Nota Origem de  : ") 	,_cDocumDe	, "@!"	,".T."	,""   , ".T.", 100,.F.}) 
+	aAdd(_aPar,{1,OemToAnsi("Nota Origem ate : ") 	,_cDocumAte	, "@!"	,".T."	,""   , ".T.", 100,.T.}) 
+    aAdd(_aPar,{1,OemToAnsi("Série Origem	 : ") 	,_cSerieori	, "@!"	,".T."	,""   , ".T.", 100,.T.}) 
+    aAdd(_aPar,{1,OemToAnsi("TES Entrada     : ") 	,_cTes   	, "@!"	,".T."	,"SF4", ".T.", 100,.T.}) 
+    aAdd(_aPar,{1,OemToAnsi("CCusto Entrada  : ") 	,_cCCusto	, "@!"	,".T."	,"CTT", ".T.", 100,.T.}) 
+    aAdd(_aPar,{1,OemToAnsi("Cond.Pagto Entrada: ") ,_cCCond	, "@!"	,".T."	,"SE4", ".T.", 100,.T.}) 
+    aAdd(_aPar,{1,OemToAnsi("Local Entrada   : ")   ,_cArmazem	, "@!"	,".T."	,"NNR", ".T.", 100,.T.})
+	aAdd(_aPar,{1,OemToAnsi("Fornecedor Entrada : "),_cCodFor	, "@!"	,".T."	,"SA2", ".T.", 100,.T.}) 
+	aAdd(_aPar,{1,OemToAnsi("Loja Entrada    : ")	,_cLojaFor 	, "@!"	,".T."	,"SA2", ".T.", 100,.T.}) 
 
 	// Monta Tela principal
 	aAdd(_aSays,OemToAnsi("Este Programa tem  como  Objetivo realizar a integração de Produto")) 
@@ -77,7 +87,7 @@ Begin Sequence
 	Endif
 
 	//Garantir que o processamento seja unico
-	//_cChave		:= AllTrim(FWCodEmp())+"ZGENFTE"+_cGrupo
+	_cChave	:= AllTrim(FWCodEmp())+"ZGENFTE"
 	If !LockByName(_cChave,.T.,.T.)  
 		//tentar locar por 10 segundos caso não consiga não prosseguir
 		_lRet := .F.
@@ -108,7 +118,12 @@ Local _cLoja		:= _aRet[02]
 Local _cDocumDe 	:= _aRet[03]
 Local _cDocumAte	:= _aRet[04]
 Local _cSerieori   	:= _aRet[05]
-//Local _cTES     	:= _aRet[06]
+Local _cTES     	:= _aRet[06]
+Local _cCCusto     	:= _aRet[07]
+Local _cCPgto     	:= _aRet[08]
+Local _cLocal     	:= _aRet[09]
+Local _cCodFor     	:= _aRet[10]
+Local _cLojaFor    	:= _aRet[11]
 
 Local _cNumNFE   	:= CriaVar("F1_DOC")
 Local _aCabNFE		:= {}
@@ -118,29 +133,21 @@ Local _cDoc         := Space(TamSx3("D1_DOC")[1])
 Local _cSerie       := Space(TamSx3("D1_SERIE")[1])
 Local _nLidos       := 0
 Local _nI           := 0
-Local _cTesClas		:= Alltrim(SuperGetMV("ES_TESNE90",,"001")) //TES a ser utilizada para a geração do Doc.Entrada
 Local _cTipo 		:= Alltrim(SuperGetMV("ES_CTPNE90",,"N")) //Tipo da Nota Fiscal Entrada 
-Local _cArmazem		:= Alltrim(SuperGetMV("ES_ARMNE90",,'90')) //verificar se sera paremetrizado 
 
 Local _cTipoCli
 Local _nPos
-Local _nRegNFOri
+Local _nCont
+Local _cUpdate
 
 DbSelectArea("SA1")
 DbSelectArea("SA2")
 
 Begin Sequence
 
-	SA1->( DBSetOrder(01) )
-	if !SA1->( MsSeek(FwXFilial("SA1") + _cCodCli+_cLoja ))
-		Help( " ", 1,"ZGENFTEPR", ,'Cliente '+_cCodCli+'-'+_cLoja+' não cadastrado não será gerado o Doc.Entrada. ',1)  
-		_lRet := .F.
-		Break
-	Endif
-
-	SA2->( DBSetOrder(03) )
-	if !SA2->( MsSeek(FwXFilial("SA2") + SA1->A1_CGC ))
-		Help( " ", 1,"ZGENFTEPR", ,'Fornecedor '+_cCodCli+'-'+_cLoja+' não cadastrado não será gerado o Doc.Entrada. ',1)  
+	SA2->( DBSetOrder(01) )
+	if !SA2->( MsSeek(FwXFilial("SA2") + _cCodFor + _cLojaFor ))
+		Help( " ", 1,"ZGENFTEPR", ,'Fornecedor '+_cCodFor+'-'+_cLojaFor+' não cadastrado não será gerado o Doc.Entrada. ',1)  
 		_lRet := .F.
 		Break
 	Endif
@@ -164,16 +171,16 @@ Begin Sequence
 				,SD2.D2_TOTAL
 				,SF2.R_E_C_N_O_ NREGSF2
 				,SD2.R_E_C_N_O_ NREGSD2
-		FROM %table:SF2% SF2 
-		INNER JOIN %table:SD2% SD2
-		ON SD2.D2_FILIAL   = %xFilial:SD2%	
+		FROM abdhdu_prot.SF2020 SF2 
+		INNER JOIN abdhdu_prot.SD2020 SD2
+		ON SD2.D2_FILIAL   = '2020012001'	
 		AND SD2.D2_DOC     = SF2.F2_DOC 
 		AND SD2.D2_SERIE   = SF2.F2_SERIE
 		AND SD2.D2_CLIENTE = SF2.F2_CLIENTE
 		AND SD2.D2_LOJA    = SF2.F2_LOJA
 		AND SD2.%notDel%
 		WHERE 
-		SF2.F2_FILIAL  = %xFilial:SF2%
+		SF2.F2_FILIAL  = '2020012001'
 		AND SF2.F2_DOC BETWEEN %Exp:_cDocumDe% AND %Exp:_cDocumAte%
 		AND SF2.F2_SERIE   = %Exp:_cSerieori%
 		AND SF2.F2_CLIENTE = %Exp:_cCodCli%
@@ -189,7 +196,7 @@ Begin Sequence
 		Break 
 	EndIf	
 
-	If !MsgYesNo( "Confirma gerar nota de Entrada para o Fornecdor "+AllTrim(SA2->A2_NREDUZ)+" ? " )
+	If !MsgYesNo( "Confirma gerar nota de Entrada para: "+AllTrim(SA2->A2_NREDUZ)+" ? " )
 		_lRet := .F.
 		Break 
 	Endif	
@@ -208,37 +215,27 @@ Begin Sequence
 		_aCabNFE	:= {}	
 		_aItemNFE	:= {}
 		_aItens     := {}
+		_nCont++
         _cDoc    := (_cAliasPesq)->F2_DOC
-		_cNumNFE := GetSxeNum("SF1","F1_DOC") 
-		ConfirmSX8()
-       // _nRegNFOri   := (_cAliasPesq)->NREGSF2
+		_cNumNFE := (_cAliasPesq)->F2_DOC
+        _nRecSF2 := (_cAliasPesq)->NREGSF2		
 
-		/*SF1->(dbSetOrder(1)) 
-		While SF1->(dbSeek(xFilial("SF1")+_cNumNFE)) 
-			ConfirmSX8() 
-			_cNumNFE := GetSxeNum("SF1","F1_DOC") 
-		EndDo*/
-
-		aadd(_aCabNFE,{"F1_TIPO"   	, _cTipo                   ,  nil })    
+		Aadd(_aCabNFE,{"F1_FILIAL"  , xFilial('SF1')           ,  nil })
+		aadd(_aCabNFE,{"F1_TIPO"   	, "N"                      ,  nil })    
 		aadd(_aCabNFE,{"F1_FORMUL" 	, "N"                      ,  nil })
 		aadd(_aCabNFE,{"F1_DOC"    	, _cNumNFE                 ,  nil })    
 		aadd(_aCabNFE,{"F1_SERIE"  	, (_cAliasPesq)->F2_SERIE  ,  nil })    
 		aadd(_aCabNFE,{"F1_EMISSAO"	, dDataBase                ,  nil })
 		aadd(_aCabNFE,{"F1_FORNECE"	, SA2->A2_COD              ,  nil })    
 		aadd(_aCabNFE,{"F1_LOJA"   	, SA2->A2_LOJA             ,  nil })     
-		aadd(_aCabNFE,{"F1_ESPECIE"	, (_cAliasPesq)->F2_ESPECIE,  nil })    
-		aadd(_aCabNFE,{"F1_COND"	, '003'                    ,  nil })
+		aadd(_aCabNFE,{"F1_ESPECIE"	, "NF"                     ,  nil })    
+		aadd(_aCabNFE,{"F1_COND"	, _cCPgto                  ,  nil })
 		aadd(_aCabNFE,{"F1_EST"		, SA2->A2_EST              ,  nil })    
 		aadd(_aCabNFE,{"F1_DESCONT" , 0				           ,  nil })
 		aadd(_aCabNFE,{"F1_DESPESA" , 0				           ,  nil })
 		aadd(_aCabNFE,{"F1_SEGURO"  , (_cAliasPesq)->F2_SEGURO ,  nil })    
 		aadd(_aCabNFE,{"F1_FRETE"   , (_cAliasPesq)->F2_FRETE  ,  nil })    
-		//aadd(_aCabNFE,{"F1_VALICM"	, (_cAliasPesq)->F2_VALICM,  nil })
-		//aadd(_aCabNFE,{"F1_VALIPI"	, (_cAliasPesq)->F2_VALIPI,  nil })
-		//aadd(_aCabNFE,{"F1_BRICMS"	, (_cAliasPesq)->F2_BRICMS,  nil })
-		//aadd(_aCabNFE,{"F1_ICMSRET"	, (_cAliasPesq)->F2_ICMSRET, nil })
-		//aadd(_aCabNFE,{"F1_RECBMTO"	, dDataBase, nil })
-		aadd(_aCabNFE,{"F1_XINTEG"	, 'X'                      , nil })		
+		aadd(_aCabNFE,{"F1_XINTEG"	, 'X'                      ,  nil })		
 
 		//Carregar Itens
 		While (_cAliasPesq)->(!Eof()) .AND. (_cAliasPesq)->F2_CLIENTE = _cCodCli .AND. (_cAliasPesq)->F2_LOJA = _cLoja;
@@ -249,24 +246,22 @@ Begin Sequence
 			_oSay:SetText("Lendo Registro "+StrZero(_nLidos,7)+" de "+StrZero(_nRegistros,7))
 			ProcessMessage() 
 
-			Aadd(_aItemNFE, {"D1_FILIAL"    , xFilial("SF1")            ,Nil})
+			Aadd(_aItemNFE, {"D1_FILIAL"    , xFilial('SD1')            ,Nil})
 			Aadd(_aItemNFE, {"D1_TIPO"      , "N"    	                ,NIL})
-			Aadd(_aItemNFE, {"D1_PEDIDO"    , "000090"	                ,NIL})
-			Aadd(_aItemNFE,	{"D1_FORMUL"	, 'S'                   	,NIL})
+			Aadd(_aItemNFE,	{"D1_FORMUL"	, 'N'                   	,NIL})
 			Aadd(_aItemNFE,	{"D1_COD"		, (_cAliasPesq)->D2_COD   	,NIL})
-			Aadd(_aItemNFE,	{"D1_ITEM"		, (_cAliasPesq)->D2_ITEM   	,NIL})   
-			Aadd(_aItemNFE,	{"D1_UM"    	, (_cAliasPesq)->D2_UM    	,NIL})
-			Aadd(_aItemNFE,	{"D1_CC"        , "53020509MA "				,Nil})    //_cCusto
-			Aadd(_aItemNFE,	{"D1_LOCAL"		, _cArmazem      	        ,NIL})
+//			Aadd(_aItemNFE,	{"D1_UM"    	, (_cAliasPesq)->D2_UM    	,NIL})
+			Aadd(_aItemNFE,	{"D1_CC"        , _cCCusto   				,Nil})    //_cCusto
+			Aadd(_aItemNFE,	{"D1_LOCAL"		, _cLocal        	        ,NIL})
 			Aadd(_aItemNFE,	{"D1_QUANT"		, (_cAliasPesq)->D2_QUANT	,NIL})
 			Aadd(_aItemNFE,	{"D1_VUNIT"		, (_cAliasPesq)->D2_PRCVEN	,NIL})
 			Aadd(_aItemNFE,	{"D1_TOTAL"		, (_cAliasPesq)->D2_TOTAL	,NIL})
-			Aadd(_aItemNFE,	{"D1_TES"	   	, _cTesClas             	,NIL})
-			Aadd(_aItemNFE,	{"D1_DOC"       , _cNumNFE	                ,NIL})	
-			Aadd(_aItemNFE,	{"D1_SERIE"     , (_cAliasPesq)->F2_SERIE   ,NIL})	
-			Aadd(_aItemNFE,	{"D1_FORNECE"	, SA2->A2_COD               ,NIL})    
-			Aadd(_aItemNFE,	{"D1_LOJA"   	, SA2->A2_LOJA              ,NIL})      
-            Aadd(_aItemNFE, {"D1_EMISSAO"   , Date()    		        ,Nil})
+			Aadd(_aItemNFE,	{"D1_TES"	   	, _cTes                  	,NIL})
+//			Aadd(_aItemNFE,	{"D1_DOC"       , _cNumNFE	                ,NIL})	
+//			Aadd(_aItemNFE,	{"D1_SERIE"     , (_cAliasPesq)->F2_SERIE   ,NIL})	
+//			Aadd(_aItemNFE,	{"D1_FORNECE"	, SA2->A2_COD               ,NIL})    
+//			Aadd(_aItemNFE,	{"D1_LOJA"   	, SA2->A2_LOJA              ,NIL})      
+//          Aadd(_aItemNFE, {"D1_EMISSAO"   , Date()    		        ,Nil})
             Aadd(_aItemNFE, {"D1_DTDIGIT"   , dDataBase					,Nil})
 
 			Aadd(_aItens,_aItemNFE)
@@ -280,31 +275,25 @@ Begin Sequence
 		//Gravar os dados
 	    GrvDEntr(_oSay, _aCabNFE, _aItens, _nLidos)
 
-		//(_cAliasPesq)->(DbGoto(_nRegNFOri))
+        If !lMsErroAuto
+
+			_cUpdate := " UPDATE ABDHDU_PROT.SF2020 "                        
+			_cUpdate += " SET F2_XINT90 = 'S' "                    
+			_cUpdate += " WHERE d_e_l_e_t_ = ' '"                      
+			_cUpdate += "    AND r_e_c_n_o_ = " + AllTrim( Str( _nRecSF2 ))+" "
+
+			If TcSqlExec(_cUpdate) < 0
+				Conout("Falha na execução do UPD de NF integrada, erro :" + TcSqlError() )
+			EndIf
+
+	    EndIf
 		
 		IF _nPasso = 0
 		    (_cAliasPesq)->(Dbskip())
         ENDIF
 	EndDo
 
-
-
-	//lMsErroAuto := .F.
-
-	//_oSay:SetText("Gravando os " + StrZero(_nRegistros,7) + " Registros. ")
-	//ProcessMessage() 
-
-//MSExecAuto( {|a,b,c|MATA103(a,b,c)}, _aCabNFE, _aItens, 3,/*lWhenGet*/,/*xAutoImp*/,/*xAutoAFN*/,/*_aParamAuto*/,/*xRateioCC*/,;
-//*lGravaAuto*/,/*xCodRSef*/,/*xCodRet*/,/*xAposEsp*/,/*xNatRend*/,/*xAutoPFS*/,/*xCompDKD*/,/*lGrvGF*/,/*xAutoCSD*/)
-
-	//If !lMsErroAuto
-	//    MSGInfo(" Incluido Doc.Entrada com sucesso. ","ATENCAO!")
-	//Else
-	//	DisarmTransaction()
-    //	Mostraerro()
-	//	_lRet := .F.
-	//	Break	
-	//EndIf
+	MSGInfo(" Doc.Entrada incluido com sucesso. ","ATENCAO!")
 
 End Begin
 
@@ -317,7 +306,6 @@ Return _lRet
 
 
 Static Function GrvDEntr(_oSay, _aCabNFE, _aItens, _nLidos)
-Local lMsErroAuto := .F.
 
 	_oSay:SetText("Gravando os " + StrZero(_nLidos,7) + " Registros. ")
 	ProcessMessage() 
@@ -326,7 +314,7 @@ MSExecAuto( {|a,b,c|MATA103(a,b,c)}, _aCabNFE, _aItens, 3,/*lWhenGet*/,/*xAutoIm
 /*lGravaAuto*/,/*xCodRSef*/,/*xCodRet*/,/*xAposEsp*/,/*xNatRend*/,/*xAutoPFS*/,/*xCompDKD*/,/*lGrvGF*/,/*xAutoCSD*/)
 
 	If !lMsErroAuto
-	    MSGInfo(" Doc.Entrada incluido com sucesso. ","ATENCAO!")
+	    //MSGInfo(" Doc.Entrada incluido com sucesso. ","ATENCAO!")
 	Else
 		DisarmTransaction()
     	Mostraerro()
