@@ -91,7 +91,6 @@ User Function ZESTF015()
 	//_oSay:SetText("Aguarde preparando informações - Hora: "+Time())
 	//ProcessMessage()
 
-
 //Limpar o arquivo temporário
 If File(cArqTRE)
     If !Empty(cArqTRE)
@@ -197,10 +196,10 @@ Static Function ViewDef()
     Local aCampos2 := {}
     Local nX       := 0
 
-AAdd(aCampos2,{"Filial"  ,"01","Filial"   ,"Filial"  ,Nil,"C","@!" ,Nil,Nil,.F.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil})
-AAdd(aCampos2,{"Produto" ,"02","Produto"  ,"Produto" ,Nil,"C","@!" ,Nil,Nil,.F.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil})
-AAdd(aCampos2,{"Armazem" ,"03","Armazem"  ,"Armazem" ,Nil,"C","@!" ,Nil,Nil,.F.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil})
-AAdd(aCampos2,{"Lote"    ,"04","Lote"     ,"Lote"    ,Nil,"C","@!" ,Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil})   
+    AAdd(aCampos2,{"Filial"  ,"01","Filial"   ,"Filial"  ,Nil,"C","@!" ,Nil,Nil,.F.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil})
+    AAdd(aCampos2,{"Produto" ,"02","Produto"  ,"Produto" ,Nil,"C","@!" ,Nil,Nil,.F.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil})
+    AAdd(aCampos2,{"Armazem" ,"03","Armazem"  ,"Armazem" ,Nil,"C","@!" ,Nil,Nil,.F.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil})
+    AAdd(aCampos2,{"Lote"    ,"04","Lote"     ,"Lote"    ,Nil,"C","@!" ,Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil})   
    
    For nX := 1 to Len(aCampos2)
         oStTmp:AddField(;
