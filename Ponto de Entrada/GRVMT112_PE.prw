@@ -17,7 +17,6 @@ User Function GRVMT112()
 	Local aAreaSW1	:= SW1->(GetArea())
 	Local aAreaSC1	:= SC1->(GetArea())
 
-
 	SA5->(DbSetOrder(1))
 	SA5->(DbSeek(xFilial("SA5") + SC1->(C1_FORNECE + C1_LOJA + C1_PRODUTO)))
 

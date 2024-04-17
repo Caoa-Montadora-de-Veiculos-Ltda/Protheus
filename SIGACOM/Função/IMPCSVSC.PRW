@@ -83,6 +83,7 @@ USER FUNCTION IMPCSV()
 
 	cFabr := cFabrLoj := cxSCDe := cxSCAte := ""
 	Aadd(aArqArq,{.F.,""})
+	
 	DEFINE MSDIALOG oDLG TITLE "Importacao de Arquivos CSV" FROM 0,0 TO 430, 680 OF oMainWnd PIXEL
 	@ 040,007 SAY "Tipo Importação" PIXEL OF oDLG
 	@ 050,007 MSGET cTipoImp PICTURE cPICTA VALID(FVAL("TIPOIMP")) F3 "ZZ8" SIZE 035,08 PIXEL OF oDLG
