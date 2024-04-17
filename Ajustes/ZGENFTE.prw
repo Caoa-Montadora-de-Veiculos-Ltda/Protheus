@@ -17,8 +17,8 @@ Geração de Doc.Entrada na Empresa Hyunday
 User Function ZGENFTE()
 Local _aSays	    := {}
 Local _aButtons	    := {}
-Local _cCadastro    := OemToAnsi("Recebimento de Produto na empresa (HD)")   
-Local _cTitle  	    := OemToAnsi("Recebimento de Produto na empresa (HD)")   
+Local _cCadastro    := OemToAnsi("Nota Fiscal de Entrada")   
+Local _cTitle  	    := OemToAnsi("NF Caoa >> HMB")   
 Local _aPar    	    := {}
 Local _aRet    	    := {}
 Local _nRet			:= 0
@@ -36,7 +36,6 @@ Local _cCodFor		:= Space(TamSx3("F2_CLIENTE")[1])
 Local _cLojaFor		:= Space(TamSx3("F2_LOJA")[1])  
 Local _cChave		:= AllTrim(FWCodEmp())+"ZGENFTSE"
 Local _lRet			:= .T.
-Local _lSerieObr	:= If(FWCodEmp() == '2020', .F., .T.)  //indicar para obrigatório quando embpresa for diferente de 020 na serie  
 
 Local _oSay
 Local _nPos
@@ -44,16 +43,6 @@ Local _nPos
 Private lMsErroAuto := .F.
 
 Begin Sequence
-	//_lRet := U_ZGENUSER( RetCodUsr() ,"ZGENFTSE" ,.T.)	
-	If !_lRet
-		Break
-	EndIf
-	/*
-	IF FWCodEmp() <> '2020' //Verificar Empresa Peças, somente rodar em Peças
-		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Esta rotina não é valida para esta empresa"),4,1)   
-	    Break
-	ENDIF
-	*/
 
 	aAdd(_aPar,{1,OemToAnsi("Cliente Origem  : ") 	,_cCodCli	, "@!"	,".T."	,""   , ".T.", 100,.T.}) 
 	aAdd(_aPar,{1,OemToAnsi("Loja Origem     : ")	,_cLoja 	, "@!"	,".T."	,""	  , ".T.", 100,.T.}) 
@@ -103,7 +92,7 @@ Begin Sequence
 		EndIf
 	EndIf
 
-	FwMsgRun(,{ |_oSay| ZGENFTEPR(_aRet, @_oSay ) }, "Integração de Produtos para Cliente 90", "Aguarde...")  //Integração / Aguarde
+	FwMsgRun(,{ |_oSay| ZGENFTEPR(_aRet, @_oSay ) }, "Gerando Notas Fiscais de Entada", "Aguarde...")  //Integração / Aguarde
 	//Libera para utilização de outros usuarios
 	UnLockByName(_cChave,.T.,.T.)
 End Sequence
@@ -130,13 +119,9 @@ Local _aCabNFE		:= {}
 Local _aItemNFE		:= {}
 Local _aItens       := {}
 Local _cDoc         := Space(TamSx3("D1_DOC")[1])
-Local _cSerie       := Space(TamSx3("D1_SERIE")[1])
 Local _nLidos       := 0
-Local _nI           := 0
-Local _cTipo 		:= Alltrim(SuperGetMV("ES_CTPNE90",,"N")) //Tipo da Nota Fiscal Entrada 
 
 Local _cTipoCli
-Local _nPos
 Local _nCont
 Local _cUpdate
 
@@ -243,25 +228,25 @@ Begin Sequence
 
 			_aItemNFE := {}
 			_nLidos ++
-			_oSay:SetText("Lendo Registro "+StrZero(_nLidos,7)+" de "+StrZero(_nRegistros,7))
+			_oSay:SetText("Processando "+StrZero(_nLidos,7)+" de "+StrZero(_nRegistros,7))
 			ProcessMessage() 
 
 			Aadd(_aItemNFE, {"D1_FILIAL"    , xFilial('SD1')            ,Nil})
 			Aadd(_aItemNFE, {"D1_TIPO"      , "N"    	                ,NIL})
 			Aadd(_aItemNFE,	{"D1_FORMUL"	, 'N'                   	,NIL})
 			Aadd(_aItemNFE,	{"D1_COD"		, (_cAliasPesq)->D2_COD   	,NIL})
-//			Aadd(_aItemNFE,	{"D1_UM"    	, (_cAliasPesq)->D2_UM    	,NIL})
+			Aadd(_aItemNFE,	{"D1_UM"    	, (_cAliasPesq)->D2_UM    	,NIL})
 			Aadd(_aItemNFE,	{"D1_CC"        , _cCCusto   				,Nil})    //_cCusto
 			Aadd(_aItemNFE,	{"D1_LOCAL"		, _cLocal        	        ,NIL})
 			Aadd(_aItemNFE,	{"D1_QUANT"		, (_cAliasPesq)->D2_QUANT	,NIL})
 			Aadd(_aItemNFE,	{"D1_VUNIT"		, (_cAliasPesq)->D2_PRCVEN	,NIL})
 			Aadd(_aItemNFE,	{"D1_TOTAL"		, (_cAliasPesq)->D2_TOTAL	,NIL})
 			Aadd(_aItemNFE,	{"D1_TES"	   	, _cTes                  	,NIL})
-//			Aadd(_aItemNFE,	{"D1_DOC"       , _cNumNFE	                ,NIL})	
-//			Aadd(_aItemNFE,	{"D1_SERIE"     , (_cAliasPesq)->F2_SERIE   ,NIL})	
-//			Aadd(_aItemNFE,	{"D1_FORNECE"	, SA2->A2_COD               ,NIL})    
-//			Aadd(_aItemNFE,	{"D1_LOJA"   	, SA2->A2_LOJA              ,NIL})      
-//          Aadd(_aItemNFE, {"D1_EMISSAO"   , Date()    		        ,Nil})
+			Aadd(_aItemNFE,	{"D1_DOC"       , _cNumNFE	                ,NIL})	
+			Aadd(_aItemNFE,	{"D1_SERIE"     , (_cAliasPesq)->F2_SERIE   ,NIL})	
+			Aadd(_aItemNFE,	{"D1_FORNECE"	, SA2->A2_COD               ,NIL})    
+			Aadd(_aItemNFE,	{"D1_LOJA"   	, SA2->A2_LOJA              ,NIL})      
+	        Aadd(_aItemNFE, {"D1_EMISSAO"   , dDataBase    		        ,Nil})
             Aadd(_aItemNFE, {"D1_DTDIGIT"   , dDataBase					,Nil})
 
 			Aadd(_aItens,_aItemNFE)
@@ -272,10 +257,14 @@ Begin Sequence
 		
 		End
 
-		//Gravar os dados
-	    GrvDEntr(_oSay, _aCabNFE, _aItens, _nLidos)
+		MSExecAuto( {|a,b,c|MATA103(a,b,c)}, _aCabNFE, _aItens, 3,/*lWhenGet*/,/*xAutoImp*/,/*xAutoAFN*/,/*_aParamAuto*/,/*xRateioCC*/,/*lGravaAuto*/,/*xCodRSef*/,/*xCodRet*/,/*xAposEsp*/,/*xNatRend*/,/*xAutoPFS*/,/*xCompDKD*/,/*lGrvGF*/,/*xAutoCSD*/)
 
-        If !lMsErroAuto
+		If lMsErroAuto
+			DisarmTransaction()
+			Mostraerro()
+			_lRet := .F.
+			Break	
+		Else
 
 			_cUpdate := " UPDATE ABDHDU_PROT.SF2020 "                        
 			_cUpdate += " SET F2_XINT90 = 'S' "                    
@@ -303,23 +292,3 @@ If Select(_cAliasPesq) <> 0
 Endif 
 
 Return _lRet
-
-
-Static Function GrvDEntr(_oSay, _aCabNFE, _aItens, _nLidos)
-
-	_oSay:SetText("Gravando os " + StrZero(_nLidos,7) + " Registros. ")
-	ProcessMessage() 
-
-MSExecAuto( {|a,b,c|MATA103(a,b,c)}, _aCabNFE, _aItens, 3,/*lWhenGet*/,/*xAutoImp*/,/*xAutoAFN*/,/*_aParamAuto*/,/*xRateioCC*/,;
-/*lGravaAuto*/,/*xCodRSef*/,/*xCodRet*/,/*xAposEsp*/,/*xNatRend*/,/*xAutoPFS*/,/*xCompDKD*/,/*lGrvGF*/,/*xAutoCSD*/)
-
-	If !lMsErroAuto
-	    //MSGInfo(" Doc.Entrada incluido com sucesso. ","ATENCAO!")
-	Else
-		DisarmTransaction()
-    	Mostraerro()
-		_lRet := .F.
-		Break	
-	EndIf
-
-Return()
