@@ -17,11 +17,20 @@ User Function GRVMT112()
 	Local aAreaSW1	:= SW1->(GetArea())
 	Local aAreaSC1	:= SC1->(GetArea())
 
+
 	SA5->(DbSetOrder(1))
 	SA5->(DbSeek(xFilial("SA5") + SC1->(C1_FORNECE + C1_LOJA + C1_PRODUTO)))
-
-	lAchouSA5 := SA5->(A5_FILIAL + A5_FORNECE + A5_LOJA + A5_PRODUTO) = (xFilial("SA5") + SC1->(C1_FORNECE + C1_LOJA) + C1_PRODUTO)
-
+	
+	While !SA5->(EOF()).and. SA5->(A5_FILIAL + A5_FORNECE + A5_LOJA + A5_PRODUTO) == (xFilial("SA5") + SC1->(C1_FORNECE + C1_LOJA) + C1_PRODUTO) 
+		if SA5->A5_MSBLQL <> '1'
+			lAchouSA5 := SA5->(A5_FILIAL + A5_FORNECE + A5_LOJA + A5_PRODUTO) == (xFilial("SA5") + SC1->(C1_FORNECE + C1_LOJA) + C1_PRODUTO)
+			Exit
+		Else
+			lAchouSA5 := .F.
+		EndIf
+		SA5->(dbSkip())
+	EndDo
+	
 	aTpImp  := zChkTpImp()
 	cImpTp  := aTpImp[1]
 	cImpCla := aTpImp[2]
@@ -51,7 +60,7 @@ User Function GRVMT112()
 
 	If lAchouSA5
 		RecLock("SC1",.F.)
-		SC1->C1_FABR		:= SA5->A5_FABR
+		SC1->C1_FABR	:= SA5->A5_FABR
 		SC1->C1_FABRLOJ	:= SA5->A5_FALOJA
 		SC1->(MsUnLock())
 	EndIf
