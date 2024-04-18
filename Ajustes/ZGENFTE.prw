@@ -34,11 +34,8 @@ Local _cCCusto		:= Space(TamSx3("D1_CC")[1])
 Local _cCCond		:= Space(TamSx3("F2_COND")[1])  
 Local _cCodFor		:= Space(TamSx3("F2_CLIENTE")[1])  
 Local _cLojaFor		:= Space(TamSx3("F2_LOJA")[1])  
-Local _cChave		:= AllTrim(FWCodEmp())+"ZGENFTSE"
-Local _lRet			:= .T.
 
 Local _oSay
-Local _nPos
 
 Private lMsErroAuto := .F.
 
@@ -75,26 +72,8 @@ Begin Sequence
 		Break 
 	Endif
 
-	//Garantir que o processamento seja unico
-	_cChave	:= AllTrim(FWCodEmp())+"ZGENFTE"
-	If !LockByName(_cChave,.T.,.T.)  
-		//tentar locar por 10 segundos caso não consiga não prosseguir
-		_lRet := .F.
-		For _nPos := 1 To 10
-			Sleep( 3000 ) // Para o processamento por 3 segundos
-			If LockByName(_cChave,.T.,.T.)
-				_lRet := .T.
-			EndIf
-		Next		
-		If !_lRet
-			MSGINFO("Já existe um processamento em execução rotina ZGENFTE, aguarde o término!", "[ZGENFTE] - Atenção" )
-			Break
-		EndIf
-	EndIf
-
 	FwMsgRun(,{ |_oSay| ZGENFTEPR(_aRet, @_oSay ) }, "Gerando Notas Fiscais de Entada", "Aguarde...")  //Integração / Aguarde
-	//Libera para utilização de outros usuarios
-	UnLockByName(_cChave,.T.,.T.)
+	
 End Sequence
 Return Nil
 
@@ -181,7 +160,7 @@ Begin Sequence
 		Break 
 	EndIf	
 
-	If !MsgYesNo( "Confirma gerar nota de Entrada para: "+AllTrim(SA2->A2_NREDUZ)+" ? " )
+	If !MsgYesNo( "Confirma Entrada das Notas ?" )
 		_lRet := .F.
 		Break 
 	Endif	
