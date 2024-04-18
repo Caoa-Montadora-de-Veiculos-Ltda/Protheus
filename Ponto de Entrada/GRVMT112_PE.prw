@@ -1,6 +1,5 @@
 #Include "Protheus.Ch"
 #Include "TOTVS.Ch"
-
 /*/{Protheus.doc} GRVMT112
 Função para Gravar informações complementares da SC para SI.
 @author FSW - DWC Consult
