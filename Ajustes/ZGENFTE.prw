@@ -89,9 +89,12 @@ Local _cSerieori   	:= _aRet[05]
 Local _cTES     	:= _aRet[06]
 Local _cCCusto     	:= _aRet[07]
 Local _cCPgto     	:= _aRet[08]
-Local _cLocal     	:= _aRet[09]
+//Local _cLocal     	:= _aRet[09]
 Local _cCodFor     	:= _aRet[10]
 Local _cLojaFor    	:= _aRet[11]
+Local _cSerie		:= ""
+Local _cCliente		:= ""
+Local _cLojaCli		:= ""
 
 Local _cNumNFE   	:= CriaVar("F1_DOC")
 Local _aCabNFE		:= {}
@@ -103,6 +106,9 @@ Local _nLidos       := 0
 Local _cTipoCli
 Local _nCont
 Local _cUpdate
+
+Local cUpdSB1P01	:= ""
+Local cUpdSB1P02	:= ""
 
 DbSelectArea("SA1")
 DbSelectArea("SA2")
@@ -116,7 +122,7 @@ Begin Sequence
 		Break
 	Endif
 	_cTipoCli := SA2->A2_TIPO
-
+	
 	BeginSql Alias _cAliasPesq
 		SELECT SF2.F2_CLIENTE
 				,SF2.F2_LOJA
@@ -180,9 +186,12 @@ Begin Sequence
 		_aItemNFE	:= {}
 		_aItens     := {}
 		_nCont++
-        _cDoc    := (_cAliasPesq)->F2_DOC
-		_cNumNFE := (_cAliasPesq)->F2_DOC
-        _nRecSF2 := (_cAliasPesq)->NREGSF2		
+        _cDoc    	:= (_cAliasPesq)->F2_DOC
+		_cNumNFE 	:= (_cAliasPesq)->F2_DOC
+		_cSerie		:= (_cAliasPesq)->F2_SERIE
+		_cCliente	:= (_cAliasPesq)->F2_CLIENTE
+		_cLojaCli	:= (_cAliasPesq)->F2_LOJA
+        _nRecSF2 	:= (_cAliasPesq)->NREGSF2	
 
 		Aadd(_aCabNFE,{"F1_FILIAL"  , xFilial('SF1')           ,  nil })
 		aadd(_aCabNFE,{"F1_TIPO"   	, "N"                      ,  nil })    
@@ -199,7 +208,24 @@ Begin Sequence
 		aadd(_aCabNFE,{"F1_DESPESA" , 0				           ,  nil })
 		aadd(_aCabNFE,{"F1_SEGURO"  , (_cAliasPesq)->F2_SEGURO ,  nil })    
 		aadd(_aCabNFE,{"F1_FRETE"   , (_cAliasPesq)->F2_FRETE  ,  nil })    
-		aadd(_aCabNFE,{"F1_XINTEG"	, 'X'                      ,  nil })		
+		aadd(_aCabNFE,{"F1_XINTEG"	, 'X'                      ,  nil })	
+
+		//Faz update na SB1 para trocar o local de recebimento.
+		cUpdSB1P01 := ""
+		cUpdSB1P01 := "UPDATE " + RetSQLName('SB1') + " SB1 SET B1_LOCREC = '11' "
+		cUpdSB1P01 += "WHERE SB1.B1_FILIAL = '" + FWxFilial("SB1") + "' "
+		cUpdSB1P01 += "AND SB1.B1_COD IN ( SELECT D2_COD FROM ABDHDU_PROT.SD2020 SD2 "
+		cUpdSB1P01 += "						WHERE SD2.D2_FILIAL = '2020012001' "
+		cUpdSB1P01 += "						AND SD2.D2_DOC = '" + (_cAliasPesq)->F2_DOC + "' "
+		cUpdSB1P01 += "						AND SD2.D2_SERIE = '" + (_cAliasPesq)->F2_SERIE + "'  "
+		cUpdSB1P01 += "						AND SD2.D2_CLIENTE = '" + (_cAliasPesq)->F2_CLIENTE + "'  "
+		cUpdSB1P01 += "						AND SD2.D2_LOJA = '" + (_cAliasPesq)->F2_LOJA + "'  "
+		cUpdSB1P01 += "						AND SD2.D_E_L_E_T_ = ' ') "
+		cUpdSB1P01 += "AND SB1.D_E_L_E_T_ = ' ' "
+
+		If TcSqlExec(cUpdSB1P01) < 0
+			Conout("Falha na execução do UPD de NF integrada, erro :" + TcSqlError() )
+		EndIf		
 
 		//Carregar Itens
 		While (_cAliasPesq)->(!Eof()) .AND. (_cAliasPesq)->F2_CLIENTE = _cCodCli .AND. (_cAliasPesq)->F2_LOJA = _cLoja;
@@ -216,7 +242,7 @@ Begin Sequence
 			Aadd(_aItemNFE,	{"D1_COD"		, (_cAliasPesq)->D2_COD   	,NIL})
 			Aadd(_aItemNFE,	{"D1_UM"    	, (_cAliasPesq)->D2_UM    	,NIL})
 			Aadd(_aItemNFE,	{"D1_CC"        , _cCCusto   				,Nil})    //_cCusto
-			Aadd(_aItemNFE,	{"D1_LOCAL"		, _cLocal        	        ,NIL})
+			Aadd(_aItemNFE,	{"D1_LOCAL"		, "11"	        	        ,NIL})
 			Aadd(_aItemNFE,	{"D1_QUANT"		, (_cAliasPesq)->D2_QUANT	,NIL})
 			Aadd(_aItemNFE,	{"D1_VUNIT"		, (_cAliasPesq)->D2_PRCVEN	,NIL})
 			Aadd(_aItemNFE,	{"D1_TOTAL"		, (_cAliasPesq)->D2_TOTAL	,NIL})
@@ -253,6 +279,24 @@ Begin Sequence
 			If TcSqlExec(_cUpdate) < 0
 				Conout("Falha na execução do UPD de NF integrada, erro :" + TcSqlError() )
 			EndIf
+
+			//Volta o local de recebimento para 90
+			cUpdSB1P02 := ""
+			cUpdSB1P02 := "UPDATE " + RetSQLName('SB1') + " SB1 SET B1_LOCREC = '90' "
+			cUpdSB1P02 += "WHERE SB1.B1_FILIAL = '" + FWxFilial("SB1") + "' "
+			cUpdSB1P02 += "AND SB1.B1_COD IN ( SELECT D2_COD FROM ABDHDU_PROT.SD2020 SD2 "
+			cUpdSB1P02 += "						WHERE SD2.D2_FILIAL = '2020012001' "
+			cUpdSB1P02 += "						AND SD2.D2_DOC = '" + _cDoc + "' "
+			cUpdSB1P02 += "						AND SD2.D2_SERIE = '" + _cSerie + "' "
+			cUpdSB1P02 += "						AND SD2.D2_CLIENTE = '" + _cCliente + "'  "
+			cUpdSB1P02 += "						AND SD2.D2_LOJA = '" + _cLojaCli + "'  "
+			cUpdSB1P02 += "						AND SD2.D_E_L_E_T_ = ' ') "
+			cUpdSB1P02 += "AND SB1.D_E_L_E_T_ = ' ' "
+
+			If TcSqlExec(cUpdSB1P02) < 0
+				Conout("Falha na execução do UPD de NF integrada, erro :" + TcSqlError() )
+			EndIf
+	
 
 	    EndIf
 		
