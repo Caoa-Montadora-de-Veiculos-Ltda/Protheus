@@ -63,4 +63,3 @@ User Function ZCOMF053()
     FErase(cArquivo+OrdBagExt())
 
 Return lRet
-
