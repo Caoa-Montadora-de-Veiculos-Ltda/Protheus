@@ -16,21 +16,22 @@ Obs......:              https://tdn.totvs.com/pages/releaseview.action?pageId=23
 
 User Function GFEA0442()
  
-    Local aRotina
+    Local aRotina := {}
+    Local cEmpresa := FWCodEmp()
     
-    // Posições do Array
-    // 1. Nome da opção no menu   
-    // 2. Nome da Rotina associada                                
-    // 3. Usado pela rotina                                       
-    // 4. Tipo de Operação a ser efetuada
-    aRotina :=  {{"Alterar Peso de NF", "u_zMsg()", 0, 4}}
- 
+    If cEmpresa == "2020"
+        // Posições do Array
+        // 1. Nome da opção no menu   
+        // 2. Nome da Rotina associada                                
+        // 3. Usado pela rotina                                       
+        // 4. Tipo de Operação a ser efetuada
+        aRotina :=  {{"Alterar Peso de NF", "u_zValid()", 0, 4}}
+    EndIf
+
 Return aRotina
 
-User Function zMsg()
+User Function zValid()
     Local aArea := FWGetArea()
-    //Local nPosAtual := aArea[3] //Recno GW1 Posicionado.
-    //Local nTipoDoc := ""
     Local aDadosGW1 := {} //[1] - recno, [2] Tipo documento, [3] Número documento
     Local cQry := " "
     Local cAliasTemp := GetNextAlias()

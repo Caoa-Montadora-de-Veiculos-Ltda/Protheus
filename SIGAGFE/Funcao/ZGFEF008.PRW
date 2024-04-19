@@ -8,6 +8,18 @@ Static cTitulo      := "Ajuste de Peso - Notas Fiscas"
 Static cTabPai      := "SF2" //Cabeçalho de NF.
 Static cTabFilho    := "GW8" //Itens do documento de carga.
 
+/*
+=====================================================================================
+Programa.:              ZGFEF008.PRW
+Autor....:              CAOA - Nicolas C Lima Santos 
+Data.....:              05/01/24
+Descricao / Objetivo:   Tela para alterar peso cubado e peso bruto de NF emitida.
+Doc. Origem:            GAP032
+Solicitante:            Micaellen Leal
+Uso......:              
+Obs......:              
+=====================================================================================
+*/
 User function ZGFEF008()
 
 	Local aArea     := GetArea()
@@ -118,6 +130,8 @@ Static Function ViewDef()
 
 Return oView
 
+//PE executado ao clicar no botão confirmar. 
+//Valida as informações inseridas e chama rotina de rateiro de peso bruto e cubado. 
 User Function fCommit()
 	Local aArea := GetArea()
 
