@@ -279,7 +279,7 @@ Begin Sequence
 	Else   //POR ENQUANTO COLOCANDO COMO JURIDICA
 		ZRESTSA1Alterados(  "A1_PESSOA"	, "J" 												, @_oSA1Mod, @_aAlterado, _lNovo )   // Tipo Pessoa Exterior            
 	Endif									
-	ZRESTSA1Alterados(  "A1_EMAIL"		, FwNoAccent(AllTrim(_oJson:GetJsonText("email")))       		, @_oSA1Mod, @_aAlterado, _lNovo )   // E-Mail       
+	ZRESTSA1Alterados(  "A1_EMAIL"		, Lower(FwNoAccent(AllTrim(_oJson:GetJsonText("email"))))       		, @_oSA1Mod, @_aAlterado, _lNovo )   // E-Mail       
 	ZRESTSA1Alterados(  "A1_DDD"		, AllTrim(_oJson:GetJsonText("ddd"))        		, @_oSA1Mod, @_aAlterado, _lNovo )   // DDD               
 	ZRESTSA1Alterados(  "A1_TEL"		, AllTrim(_oJson:GetJsonText("fone"))   			, @_oSA1Mod, @_aAlterado, _lNovo )   // Fone              
 	ZRESTSA1Alterados(  "A1_CONTATO"	, FwNoAccent(Upper(AllTrim(_oJson:GetJsonText("contato"))))		, @_oSA1Mod, @_aAlterado, _lNovo )   // Contato           
@@ -297,6 +297,9 @@ Begin Sequence
     	_lRet := _oModel:CommitData()
 	Endif	
     If !_lRet
+
+		RollBackSX8()	
+
 		//Busca o Erro do Modelo de Dados
     	_aErro := _oModel:GetErrorMessage()
 		/*
@@ -314,6 +317,8 @@ Begin Sequence
     	//MostraErro()
 		*/
 		U_ZRETMsgJson("erropad",AllTrim(FwNoAccent( AllToChar(_aErro[06])))+" | "+AllTrim(FwNoAccent( AllToChar(_aErro[04]))))
+	Else 
+		ConfirmSX8()
 	Endif
 	//Desativa o modelo de dados
 	_oModel:DeActivate()
@@ -367,7 +372,7 @@ Local _lRet := .T.
 Local _cUf			:= Upper(AllTrim(_oJson:GetJsonText("estado")))
 Local _cTipoCli 	:= Upper(AllTrim(_oJson:GetJsonText("tipocli")))
 Local _aRetX3 		:= RetSX3Box(GetSX3Cache("A1_TIPO", "X3_CBOX"),,,1)  //trazer opções de tipo de clientes
-Local _cEmail 		:= AllTrim(_oJson:GetJsonText("email"))
+Local _cEmail 		:= FwNoAccent(Lower(AllTrim(_oJson:GetJsonText("email"))))
 
 Default _cMunicipio	:= ""
 Default _cCodBancen	:= ""
