@@ -28,6 +28,8 @@ User Function ZWSR013()
 	Default cForn	 := ""
 	Default cLoja	 := ""
 
+	Private _nEmpWis		:= 0
+	Private _cDepWis		:= ""
 	Private oJsRet    := JsonObject():New()
 	Private __cArqTxt   := "\spool\JSON_ZWSR013_" + cValToChar(ThreadID()) + ".txt"
 
@@ -101,6 +103,26 @@ User Function ZWSR013()
 			cDataBase := 	Substr(DTOS(dDatabase),1,4) +'-'+;
 							Substr(DTOS(dDatabase),5,2) +'-'+;
 							Substr(DTOS(dDatabase),7,2)
+
+			_nEmpWis := 0
+			_cDepWis := ""
+			If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+				If AllTrim(VS1->VS1_XMARCA) =="CHE"
+					_nEmpWis := 1002
+					_cDepWis := "PREP"
+				ElseIf AllTrim(VS1->VS1_XMARCA) =="SBR"
+					_nEmpWis := 1006
+					_cDepWis := "RGLOG"
+				ElseIf AllTrim(VS1->VS1_XMARCA) =="HYU"
+					_nEmpWis := 1006
+					_cDepWis := "RGLOG"
+				EndIf
+			ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
+				If AllTrim(VS1->VS1_XMARCA) =="HYU"
+					_nEmpWis := 1008
+					_cDepWis := "RGLOG"
+				EndIf
+			EndIf
             
 			FreeObj(oJsConFat)                     
 			oJsConFat := JsonObject():new()
@@ -109,9 +131,9 @@ User Function ZWSR013()
             oJsConFat['faturamento']:=JsonObject():New()
             oJsConFat['faturamento']['nu_pedido']           := AllTrim( (_cAlias)->VS1_XPICKI )
             oJsConFat['faturamento']['cd_cliente']          := (_cAlias)->A1_CGC 
-			oJsConFat['faturamento']['cd_empresa']          := 1	//SM0->M0_CGC Sidnei ira verificar e retornar será código fixo
+			oJsConFat['faturamento']['cd_empresa']          := _nEmpWis
             oJsConFat['faturamento']['cd_roteiro']          := ""  
-            oJsConFat['faturamento']['cd_deposito']         := IiF( (_cAlias)->VS1_XMARCA == "CHE", "002", "006" )
+            oJsConFat['faturamento']['cd_deposito']         := _cDepWis
             oJsConFat['faturamento']['nu_serie_nota'] 	    := ""
             oJsConFat['faturamento']['nu_serie_nf'] 	    := AllTrim( (_cAlias)->F2_SERIE )
             oJsConFat['faturamento']['nu_documento']        := ""

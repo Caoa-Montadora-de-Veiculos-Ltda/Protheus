@@ -58,6 +58,7 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 	Default lBotao	 	:= .F.
 
 	Private cXTipo		:= ""
+	Private _nEmpWis	:= 0
 	Private oJsRet    	:= JsonObject():New()
 
 	DbSelectArea("SA1")
@@ -68,26 +69,34 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 		Return
 	EndIf
 
-	cQry := " SELECT"									+ CRLF
-	cQry += " 	 D1_DOC		"							+ CRLF
-	cQry += " 	,D1_SERIE 	"							+ CRLF
-	cQry += " 	,D1_COD   	"							+ CRLF
-	cQry += " 	,D1_CONHEC 	"							+ CRLF
-	cQry += " 	,D1_XCASE	"							+ CRLF
-	cQry += " 	,F1_FORNECE	"							+ CRLF
-	cQry += " 	,F1_LOJA	"							+ CRLF
-	cQry += " 	,F1_EMISSAO "							+ CRLF
-	cQry += " 	,SUBSTR(F1_HORA,1,4)||'0:00' F1_HORA "	+ CRLF
-	cQry += " 	,F1_TIPO "								+ CRLF
-	cQry += " 	,F1_EST  "								+ CRLF
-	cQry += " 	,F1.R_E_C_N_O_   NREGSF1 "				+ CRLF  //PEC025
-	cQry += " 	,D1_LOCAL " 							+ CRLF
-	cQry += " 	,CASE "									+ CRLF	
-	cQry += " 		WHEN TRIM(SBM.BM_CODMAR) = 'CHE' "	+ CRLF	
-	cQry += " 		THEN 'PREP' "						+ CRLF
-	cQry += " 		ELSE 'RGLOG' "						+ CRLF
-	cQry += " 	END	 AS DEPOSITO " 					 	+ CRLF  //PEC069
-	cQry += " 	,SUM(D1_QUANT)     	AS D1_QUANT "		+ CRLF
+	cQry := " SELECT"													+ CRLF
+	cQry += " 	 D1_DOC		"											+ CRLF
+	cQry += " 	,D1_SERIE 	"											+ CRLF
+	cQry += " 	,D1_COD   	"											+ CRLF
+	cQry += " 	,D1_CONHEC 	"											+ CRLF
+	cQry += " 	,D1_XCASE	"											+ CRLF
+	cQry += " 	,F1_FORNECE	"											+ CRLF
+	cQry += " 	,F1_LOJA	"											+ CRLF
+	cQry += " 	,F1_EMISSAO "											+ CRLF
+	cQry += " 	,SUBSTR(F1_HORA,1,4)||'0:00' F1_HORA "					+ CRLF
+	cQry += " 	,F1_TIPO "												+ CRLF
+	cQry += " 	,F1_EST  "												+ CRLF
+	cQry += " 	,F1.R_E_C_N_O_   NREGSF1 "								+ CRLF 
+	cQry += " 	,D1_LOCAL " 											+ CRLF
+	If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+		cQry += " 	,CASE "												+ CRLF	
+		cQry += " 		WHEN TRIM(SBM.BM_CODMAR) = 'CHE' "				+ CRLF	
+		cQry += " 		THEN 'PREP' "									+ CRLF
+		cQry += " 		ELSE 'RGLOG' "									+ CRLF
+		cQry += " 	END	 AS DEPWIS " 					 				+ CRLF  //PEC069
+	ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
+		cQry += " 	,CASE "												+ CRLF	
+		cQry += " 		WHEN TRIM(SBM.BM_CODMAR) = 'HYU' "				+ CRLF	
+		cQry += " 		THEN 'RGLOG' "									+ CRLF
+		cQry += " 		ELSE ' ' "										+ CRLF
+		cQry += " 	END	 AS DEPWIS " 					 				+ CRLF  //PEC069
+	EndIf
+	cQry += " 	,SUM(D1_QUANT)     	AS D1_QUANT "						+ CRLF
 	cQry += " FROM "       + retSQLName("SF1") + " F1"					+ CRLF
     cQry += " 	INNER JOIN " + RetSqlName("SD1") + " SD1 "              + CRLF
 	cQry += "		ON SD1.D1_FILIAL = '" + FWxFilial("SD1") + "' " 	+ CRLF
@@ -121,7 +130,7 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 	cQry += " AND F1.F1_ESPECIE NOT IN('CTE','NFST') "					+ CRLF
     cQry += " AND F1.D_E_L_E_T_ =	' '"                                + CRLF
 	cQry += " GROUP BY D1_DOC, D1_SERIE, D1_COD, D1_CONHEC, D1_XCASE, F1_FORNECE, F1_LOJA, F1_EMISSAO, SUBSTR(F1_HORA,1,4), F1_TIPO,F1_EST, D1_LOCAL, BM_CODMAR, F1.R_E_C_N_O_ "+ CRLF //, D1_PEDIDO"		+ CRLF
-	cQry += " ORDER BY DEPOSITO, D1_DOC, D1_SERIE, D1_COD "+ CRLF 
+	cQry += " ORDER BY DEPWIS, D1_DOC, D1_SERIE, D1_COD "+ CRLF 
     If Select(_cAlias) > 0
 		(_cAlias)->(dbCloseArea())
 	EndIf
@@ -161,14 +170,29 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 				cXTipo := "OUT"
 			EndIf	
 		EndIf
-		_cDeposito  := alltrim((_cAlias)->DEPOSITO)
+		_cDeposito  := alltrim((_cAlias)->DEPWIS)
 		If _lRet
 			_lError := .F.  //controle para que não se marque como integrado
 			While ((_cAlias)->( !Eof() ))
 				SF1->(DbGoto((_cAlias)->NREGSF1))  //PEC023
 				_nRegSF1 := (_cAlias)->NREGSF1
 				_cDocOri := cNota+";"+cSerie
-				_cDeposito  := alltrim((_cAlias)->DEPOSITO)
+				_cDeposito  := alltrim((_cAlias)->DEPWIS)
+
+				 _nEmpWis := 0
+				If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+					If AllTrim((_cAlsSB1)->BM_CODMAR) =="CHE"
+						_nEmpWis := 1002
+					ElseIf AllTrim((_cAlsSB1)->BM_CODMAR) =="SBR"
+						_nEmpWis := 1006
+					ElseIf AllTrim((_cAlsSB1)->BM_CODMAR) =="HYU"
+						_nEmpWis := 1006
+					EndIf
+				ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
+					If AllTrim((_cAlsSB1)->BM_CODMAR) =="HYU"
+						_nEmpWis := 1008
+					EndIf
+				EndIf
 
 				_nItem		:= 1
 
@@ -183,7 +207,7 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 				oJsEnt['recebimento']['nu_agenda'] 	          := ""   
 				oJsEnt['recebimento']['dt_emissao']           := Substr((_cAlias)->F1_EMISSAO,7,2)+"/"+Substr((_cAlias)->F1_EMISSAO,5,2)+"/"+Substr((_cAlias)->F1_EMISSAO,1,4)+" "+(_cAlias)->F1_HORA
 				oJsEnt['recebimento']['cd_situacao'] 	      := "3"       //Fixo pelo exemplo RgLog
-				oJsEnt['recebimento']['cd_empresa'] 	      := If(AllTrim((_cAlias)->DEPOSITO)=="PREP",1002,1006)   //PEC069   //"1"       //Fixo pelo exemplo RgLog
+				oJsEnt['recebimento']['cd_empresa'] 	      := _nEmpWis
 				oJsEnt['recebimento']['importe_nf']           := ""
 				oJsEnt['recebimento']['id_autorizacao']       := ""       //Fixo pelo exemplo RgLog
 				oJsEnt['recebimento']['cd_func_autorizacion'] := ""
@@ -201,7 +225,7 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 				oJsEnt['recebimento']['cd_registro'] 	  	  := ""
 				oJsEnt['recebimento']['qt_itens']   	  	  := "" //--Fixo Cirilo
 				//oJsEnt['recebimento']['cd_deposito'] 	  	  := //zBuscaCd( (_cAlias)->D1_COD )  
-				oJsEnt['recebimento']['cd_deposito'] 	  	  := alltrim((_cAlias)->DEPOSITO)   //PEC069
+				oJsEnt['recebimento']['cd_deposito'] 	  	  := alltrim((_cAlias)->DEPWIS)   //PEC069
 				oJsEnt['recebimento']['cd_motorista'] 	  	  := ""
 				oJsEnt['recebimento']['dt_agenda'] 	          := ""
 				oJsEnt['recebimento']['ds_transportadora']    := ""       //Fixo pelo exemplo RgLog
@@ -304,7 +328,7 @@ Static Function ZWSR007ITE( _oJsEnt, cNota, cSerie, cForn, cLoja , _cDeposito, _
 
 		ZD1->( DbSetOrder(1) )
 		//no caso de exitir mais de uma marca devrá processar marca separada PEC069 DAC 10/07/2023
-		While (_cAlias)->(!Eof()) .And.  alltrim(_cDeposito) ==  alltrim((_cAlias)->DEPOSITO)
+		While (_cAlias)->(!Eof()) .And.  alltrim(_cDeposito) ==  alltrim((_cAlias)->DEPWIS)
 			cNota    := PadR( Alltrim((_cAlias)->D1_DOC), TamSX3("ZD1_DOC")[1] )
 			cSerie 	 := PadR( Alltrim((_cAlias)->D1_SERIE), TamSX3("ZD1_SERIE")[1] )
 			cCodFor  := PadR( cForn, TamSX3("ZD1_FORNEC")[1] )
@@ -314,7 +338,7 @@ Static Function ZWSR007ITE( _oJsEnt, cNota, cSerie, cForn, cLoja , _cDeposito, _
 			Aadd(_aItens,JsonObject():new())
 			_nPos := Len(_aItens)
 			//_aItens[_nPos]['nu_nota_fiscal']  :=  cNota
-			_aItens[_nPos]['cd_empresa'] 	  	:= If(AllTrim((_cAlias)->DEPOSITO)=="PREP",1002,1006)   //PEC069  //"1"      //Fixo pelo exemplo RgLog
+			_aItens[_nPos]['cd_empresa'] 	  	:= _nEmpWis
 			_aItens[_nPos]['cd_fornecedor'] 	:= "9"+cForn+cLoja
 			_aItens[_nPos]['nu_nota_fiscal'] 	:= Alltrim((_cAlias)->D1_DOC)
 			_aItens[_nPos]['nu_serie_nf'] 	    := Alltrim((_cAlias)->D1_SERIE)
@@ -346,7 +370,7 @@ Static Function ZWSR007ITE( _oJsEnt, cNota, cSerie, cForn, cLoja , _cDeposito, _
 			_aItens[_nPos]['ds_loja']    	    := ""
 			_aItens[_nPos]['nu_pedido']    	    := ""
 			//_aItens[_nPos]['cd_deposito']    	:= zBuscaCd( Alltrim((_cAlias)->D1_COD) )
-			_aItens[_nPos]['cd_deposito'] 		:= alltrim((_cAlias)->DEPOSITO)   //PEC069
+			_aItens[_nPos]['cd_deposito'] 		:= alltrim((_cAlias)->DEPWIS)   //PEC069
 			_aItens[_nPos]['qt_transferencia']  := ""
 			_aItens[_nPos]['loja']    	        := ""
 			_aItens[_nPos]['qt_cross_docking']  := ""

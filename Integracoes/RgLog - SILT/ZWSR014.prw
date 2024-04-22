@@ -40,8 +40,13 @@ Default _cLoja      := ""
         Conout("ZWSR014 - Integraçao de envio do fornecedor para RGLOG - Inicio: "+DtoC(date())+" "+Time())
     EndIf
 
-    AADD(_aEmpWis, "1002" )
-    AADD(_aEmpWis, "1006" )
+
+    If !( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+        AADD(_aEmpWis, "1002" )
+        AADD(_aEmpWis, "1006" )
+    ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
+        AADD(_aEmpWis, "1008" )
+    EndIf
     
     _aMsgRet 	:= {}
 
@@ -105,7 +110,13 @@ Default _cLoja      := ""
                     oJson['dt_procesado'        ] := ""
                     oJson['cd_registro'         ] := ""
                     oJson['id_procesado'        ] := "N"
-                    oJson['cd_deposito'         ] := IiF( _aEmpWis[01] == "1002" ,"PREP" ,"RGLOG" )
+                    
+	                If !( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+		                oJson['cd_deposito'         ] := IiF( _aEmpWis[01] == "1002" ,"PREP" ,"RGLOG" )
+                    ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
+                        oJson['cd_deposito'         ] := "RGLOG"
+                    EndIf
+                    
                     oJson['cd_fornecedor_erp'   ] := "9" + AllTrim( (_cAlsSA2)->A2_COD ) + AllTrim( (_cAlsSA2)->A2_LOJA )
                     oJson['id_nacional'         ] := ""
                     oJson['cd_placa'            ] := ""

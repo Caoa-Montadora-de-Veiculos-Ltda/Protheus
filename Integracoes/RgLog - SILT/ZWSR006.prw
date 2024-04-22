@@ -56,68 +56,35 @@ Else
 
 EndIF
 
-If  _xTipo = 'F' .or. _xTipo = 'C'     //_xTipo = 'T' .or.
+If _xTipo = 'C'
    
-   If _xTipo = 'F'       //Fornecedor
-      cQuery := "SELECT"															      + CRLF
-      cQuery += " A2_CGC        AS cCGC,"										   + CRLF
-      cQuery += " A2_COD        AS cCod,"										   + CRLF
-      cQuery += " A2_LOJA       AS cLoja,"										   + CRLF
-      cQuery += " A2_NOME       AS cNome,"										   + CRLF
-      cQuery += " A2_NREDUZ     AS cFantas,"   								   + CRLF
-      cQuery += " A2_END        AS cEnder,"   								      + CRLF
-      cQuery += " A2_BAIRRO     AS cBai,"	    								   + CRLF
-      cQuery += " A2_MUN        AS cMun,"	    								   + CRLF
-      cQuery += " A2_EST        AS cEst,"	    								   + CRLF
-      cQuery += " A2_TEL        AS cTel,"	    								   + CRLF
-      cQuery += " A2_CEP        AS cCep,"	    								   + CRLF
-      cQuery += " A2_CODPAIS    AS cdPais,"	    							      + CRLF
-      cQuery += " A2_INSCR      AS cInsc,"										   + CRLF
-      cQuery += " A2_NREDUZ     AS cNRedz,"										   + CRLF
-      cQuery += " A2_TIPO       AS cTipo,"										   + CRLF
-      cQuery += " A2_COD_MUN    AS cCodMun, "                               + CRLF
-      cQuery += " R_E_C_N_O_  AS cRecno"										      + CRLF
-      cQuery += " FROM "	+ retSQLName("SA2") + " SA2"					      + CRLF
-      cQuery += " WHERE SA2.A2_FILIAL = '" + xFilial("SA2") + "'" 	      + CRLF
-      cQuery += " 	AND	SA2.A2_XINTEG <> 'N'"	       				         + CRLF
-      cQuery += " 	AND	SA2.D_E_L_E_T_ = ' '"						      	+ CRLF
-      
-      If !Empty(cCodigo)
-         cQuery += " 	AND	SA2.A2_COD = '"  + alltrim(cCodigo )  + "'"   	+ CRLF
-         cQuery += " 	AND	SA2.A2_LOJA = '"  + alltrim(cLoja )  + "'"   	+ CRLF
-      EndIf
 
-   Endif
+   cQuery := "SELECT"															      + CRLF
+   cQuery += " A1_CGC      AS cCGC ,"										      + CRLF
+   cQuery += " A1_COD      AS cCod ,"										      + CRLF
+   cQuery += " A1_LOJA     AS cLoja,"										      + CRLF
+   cQuery += " A1_NOME     AS cNome,"										      + CRLF
+   cQuery += " A1_NREDUZ   AS cFantas,"   								      + CRLF
+   cQuery += " A1_END      AS cEnder,"   								      + CRLF
+   cQuery += " A1_BAIRRO   AS cBai,"	    								      + CRLF
+   cQuery += " A1_MUN      AS cMun,"	    								      + CRLF
+   cQuery += " A1_EST      AS cEst,"	    								      + CRLF
+   cQuery += " A1_TEL      AS cTel,"	    								      + CRLF
+   cQuery += " A1_CEP      AS cCep,"	    								      + CRLF
+   cQuery += " A1_CODPAIS  AS cdPais,"	    							      + CRLF
+   cQuery += " A1_INSCR    AS cInsc,"										      + CRLF
+   cQuery += " A1_NREDUZ   AS cNRedz,"										   + CRLF
+   cQuery += " R_E_C_N_O_  AS cRecno,"										      + CRLF
+   cQuery += " A1_COD_MUN    AS cCodMun "                               + CRLF
+   cQuery += " FROM "	+ retSQLName("SA1") + " SA1"					      + CRLF
+   cQuery += " WHERE SA1.A1_FILIAL = '" + xFilial("SA1") + "'" 	      + CRLF
+   cQuery += " 	AND	SA1.A1_XINTEG <> 'N'"	       				         + CRLF
+   cQuery += " 	AND	SA1.D_E_L_E_T_ = ' '"						      	+ CRLF
 
-   If _xTipo = 'C'       //Cliente
-      cQuery := "SELECT"															      + CRLF
-      cQuery += " A1_CGC      AS cCGC ,"										      + CRLF
-      cQuery += " A1_COD      AS cCod ,"										      + CRLF
-      cQuery += " A1_LOJA     AS cLoja,"										      + CRLF
-      cQuery += " A1_NOME     AS cNome,"										      + CRLF
-      cQuery += " A1_NREDUZ   AS cFantas,"   								      + CRLF
-      cQuery += " A1_END      AS cEnder,"   								      + CRLF
-      cQuery += " A1_BAIRRO   AS cBai,"	    								      + CRLF
-      cQuery += " A1_MUN      AS cMun,"	    								      + CRLF
-      cQuery += " A1_EST      AS cEst,"	    								      + CRLF
-      cQuery += " A1_TEL      AS cTel,"	    								      + CRLF
-      cQuery += " A1_CEP      AS cCep,"	    								      + CRLF
-      cQuery += " A1_CODPAIS  AS cdPais,"	    							      + CRLF
-      cQuery += " A1_INSCR    AS cInsc,"										      + CRLF
-      cQuery += " A1_NREDUZ   AS cNRedz,"										   + CRLF
-      cQuery += " R_E_C_N_O_  AS cRecno,"										      + CRLF
-      cQuery += " A1_COD_MUN    AS cCodMun "                               + CRLF
-      cQuery += " FROM "	+ retSQLName("SA1") + " SA1"					      + CRLF
-      cQuery += " WHERE SA1.A1_FILIAL = '" + xFilial("SA1") + "'" 	      + CRLF
-      cQuery += " 	AND	SA1.A1_XINTEG <> 'N'"	       				         + CRLF
-      cQuery += " 	AND	SA1.D_E_L_E_T_ = ' '"						      	+ CRLF
-
-      If !Empty(cCodigo)
-         cQuery += " 	AND	SA1.A1_COD = '"  + alltrim(cCodigo )  + "'"	   + CRLF
-         cQuery += " 	AND	SA1.A1_LOJA = '"  + alltrim(cLoja )  + "'"	   + CRLF
-      EndIf
-
-   Endif
+   If !Empty(cCodigo)
+      cQuery += " 	AND	SA1.A1_COD = '"  + alltrim(cCodigo )  + "'"	   + CRLF
+      cQuery += " 	AND	SA1.A1_LOJA = '"  + alltrim(cLoja )  + "'"	   + CRLF
+   EndIf
 
    If Select(cAlsQry) > 0
 		(cAlsQry)->(dbCloseArea())
@@ -169,45 +136,6 @@ If  _xTipo = 'F' .or. _xTipo = 'C'     //_xTipo = 'T' .or.
             oJsEnt['cd_cliente_erp'] 	:= (cAlsQry)->cCGC// Alterado: ZWSR007 busca CNPJ nesta TAG -> Alltrim((cAlsQry)->cCod)+Alltrim((cAlsQry)->cLoja)
             oJsEnt['nm_municipio'] 	  	:= Alltrim((cAlsQry)->cMun)
          
-         elseIf _xTipo = 'F'       //Fortnecedor
-            If (cAlsQry)->CTIPO == 'X'
-               lPause := .T.
-            EndIf
-            oJsEnt['cd_empresa'] 	   := "1"
-            oJsEnt['cd_fornecedor']    := "9"+Alltrim((cAlsQry)->cCod)+Alltrim((cAlsQry)->cLoja)
-            oJsEnt['cd_uf'] 	  	      := (cAlsQry)->cEst
-            oJsEnt['cd_municipio'] 	  	:= AllTrim(U_zGENIBGEUF(AllTrim((cAlsQry)->cEst))+(cAlsQry)->cCodMun)       //08 CARACTERES buscar tabela de municipios IBGE   35001 SP
-            oJsEnt['ds_municipio']     := Alltrim((cAlsQry)->cMun)
-            oJsEnt['nm_municipio'] 	  	:= Alltrim((cAlsQry)->cMun)
-            oJsEnt['cd_cgc_fornecedor']:= IiF(AllTrim((cAlsQry)->CTIPO) == 'X', "9"+Alltrim((cAlsQry)->cCod)+Alltrim((cAlsQry)->cLoja), (cAlsQry)->cCGC)
-            oJsEnt['ds_razao_social']  := Alltrim((cAlsQry)->cNome)
-            oJsEnt['ds_endereco'] 	  	:= Alltrim((cAlsQry)->cEnder)
-            oJsEnt['ds_bairro'] 	  	   := Alltrim((cAlsQry)->cBai)
-            oJsEnt['nu_telefone'] 	  	:= ""
-            oJsEnt['nm_gerente'] 	  	:= ""         //Buscar no cadastro de gerentes
-            oJsEnt['nu_inscricao'] 	  	:= Alltrim((cAlsQry)->cInsc)
-            oJsEnt['fg_devolucao'] 	  	:= ""
-            oJsEnt['cd_situacao'] 	  	:= cSitua    //15-Ativo   16-Não
-            oJsEnt['dt_situacao'] 	  	:= ""
-            oJsEnt['cd_postal'] 	  	   := ""
-            oJsEnt['cd_pais']      	   := ""
-            oJsEnt['cd_empresa_sap']   := ""
-            oJsEnt['nm_fantasia'] 	  	:= Alltrim((cAlsQry)->cFantas)
-            oJsEnt['cd_cep'] 	  	      := Alltrim((cAlsQry)->cCep)
-            oJsEnt['nu_fax'] 	  	      := ""
-            oJsEnt['nu_telefone2']     := ""
-            oJsEnt['tp_fornecedor']    := ""
-            oJsEnt['dt_addrow'] 	  	   := DtoC(dDatabase)+' '+Time()
-            oJsEnt['nu_interface'] 	  	:= ""
-            oJsEnt['dt_procesado']  	:= ""          //dToC(date()) + Space(1) + Time()
-            oJsEnt['cd_registro'] 	  	:= ""
-            oJsEnt['id_procesado']   	:= "N"
-            oJsEnt['cd_deposito'] 	  	:= "RGLOG"
-            oJsEnt['cd_fornecedor_erp']:= "9"+Alltrim((cAlsQry)->cCod)+Alltrim((cAlsQry)->cLoja)
-            oJsEnt['id_nacional']    	:= ""
-            oJsEnt['cd_placa'] 	  	   := ""
-            oJsEnt['cd_tipo_veiculo'] 	:= ""
-            oJsEnt['id_proprio']      	:= ""
          endif
          
          If IsBlind()
@@ -231,23 +159,6 @@ If  _xTipo = 'F' .or. _xTipo = 'C'     //_xTipo = 'T' .or.
                   If FlagLoc
                      SA1->A1_XINTEG := "X"   //-- X = Integrado RgLog
                      SA1->( MsUnLock() )
-                  ELSE
-                     SLEEP(10000)
-                  EndIf
-
-               ENDDO
-
-            ELSEIF _xTipo == 'F'
-
-               SA2->(DbGoTo((cAlsQry)->cRecno))
-               
-               WHILE !FlagLoc
-
-                  FlagLoc := RecLock("SA2",.F.) 
-                  
-                  If FlagLoc
-                     SA2->A2_XINTEG := "X"   //-- X = Integrado RgLog
-                     SA2->( MsUnLock() )
                   ELSE
                      SLEEP(10000)
                   EndIf
@@ -282,7 +193,6 @@ Static Function zPostRg(oJsEnt,_xTipo)
 Local cUrl      := Alltrim(Getmv("CMV_WSR011"))  
 Local cUsua     := Alltrim(Getmv("CMV_WSR009")) // Usuário
 Local cSenha    := Alltrim(Getmv("CMV_WSR010")) // Senha encodada no Postman com o tipo Basic
-Local cPathUrF  := Alltrim(Getmv("CMV_WSR008")) 
 Local cPathUrC  := Alltrim(Getmv("CMV_WSR012")) 
 Local aHeader   := {"Content-Type: application/json; charset=utf-8"} //"Content-Type: application/json" 
 Local cRes      := Nil
@@ -293,10 +203,7 @@ Local nCont		 := 0
 
 Private _cErrPost:=""
 
-IF _xTipo = 'F'
-   cUrl := cUrl+cPathUrF
-   cEntidade := "fornecedor"
-ELSEIF _xTipo = 'C'
+IF _xTipo = 'C'
    cUrl := cUrl+cPathUrC
    cEntidade := "cliente"
 ENDIF
