@@ -32,9 +32,10 @@ WSMETHOD GET WSRECEIVE ccNpJcpf, xTipo, cSearchKey, page, pageSize WSSERVICE ZWS
 USER FUNCTION ZWSR006(_xTipo  ,cCodigo ,cLoja   ,cCGCClifor)        //_xTipo C/F o código pode ser Cliente/Fornecedor
 Local cQuery     := ""
 Local cAlsQry    := GetNextAlias()
+Local _aEmpWis   := {}
+Local _nX        := 0
 Local cSitua     := ""
 Local FlagLoc    := .F.
-Local aErrRg     := {}
 Local aResRg     := { .F. } 
 
 Default cCodigo      := ""
@@ -58,6 +59,12 @@ EndIF
 
 If _xTipo = 'C'
    
+   If !( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+      AADD(_aEmpWis, "1002" )
+      AADD(_aEmpWis, "1006" )
+   ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
+      AADD(_aEmpWis, "1008" )
+   EndIf
 
    cQuery := "SELECT"															      + CRLF
    cQuery += " A1_CGC      AS cCGC ,"										      + CRLF
@@ -98,11 +105,11 @@ If _xTipo = 'C'
 
    If (cAlsQry)->(!EOF())
 
-      WHILE (cAlsQry)->( !Eof() )
-         oJsEnt:=JsonObject():New()
+      While (cAlsQry)->( !Eof() )
 
-         If _xTipo = 'C'       //Cliente
-            oJsEnt['cd_empresa'] 	   := "1"
+         For _nX := 1 to Len(_aEmpWis)
+            
+            oJsEnt['cd_empresa'] 	   := _aEmpWis[_nX]
             oJsEnt['cd_cliente']       := "92"       //Fixo pelo exemplo RgLog
             oJsEnt['ds_cliente']       := Alltrim( (cAlsQry)->cNome)
             oJsEnt['id_filial_cliente']:= "S"       //(cAlsQry)->cLoja   Fixo pelo exemplo RgLog
@@ -132,27 +139,29 @@ If _xTipo = 'C'
             oJsEnt['dt_procesado']  	:= ""               //dToC(date()) + Time()
             oJsEnt['cd_registro'] 	  	:= ""
             oJsEnt['id_procesado'] 	   := ""
-            oJsEnt['cd_deposito'] 	  	:= "RGLOG"
+            
+            If !( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+		         oJson['cd_deposito'         ] := IiF( _aEmpWis[01] == "1002" ,"PREP" ,"RGLOG" )
+            ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
+               oJson['cd_deposito'         ] := "RGLOG"
+            EndIf
+
             oJsEnt['cd_cliente_erp'] 	:= (cAlsQry)->cCGC// Alterado: ZWSR007 busca CNPJ nesta TAG -> Alltrim((cAlsQry)->cCod)+Alltrim((cAlsQry)->cLoja)
             oJsEnt['nm_municipio'] 	  	:= Alltrim((cAlsQry)->cMun)
          
-         endif
-         
-         If IsBlind()
-            aResRg := zPostRg(oJsEnt,_xTipo)
-         Else
-            FWMsgRun(, {|| aResRg := zPostRg(oJsEnt,_xTipo) }, "Envio de entidades", "Por favor aguarde...")
-         EndIf
+            If IsBlind()
+               aResRg := zPostRg(oJsEnt,_xTipo)
+            Else
+               FWMsgRun(, {|| aResRg := zPostRg(oJsEnt,_xTipo) }, "Envio de entidades", "Por favor aguarde...")
+            EndIf
 
-        FlagLoc := .F.  //--Reinicializa variavel
+            FlagLoc := .F.  //--Reinicializa variavel
         
-         If aResRg[1]
-            
-            IF _xTipo == 'C'
+            If aResRg[1]
 
                SA1->(DbGoTo((cAlsQry)->cRecno))
                
-               WHILE !FlagLoc
+               While !FlagLoc
 
                   FlagLoc := RecLock("SA1",.F.) 
 
@@ -163,16 +172,11 @@ If _xTipo = 'C'
                      SLEEP(10000)
                   EndIf
 
-               ENDDO
+               EndDo
 
-            ENDIF
+            EndIf
 
-         Else
-            
-            Aadd(aErrRg, aResRg[2]) 
-            NotificaFalha(aResRg[2])
-
-         EndIf
+         Next _nX
 
       	(cAlsQry)->(DbSkip())
 
