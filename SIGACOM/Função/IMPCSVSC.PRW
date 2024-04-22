@@ -314,7 +314,15 @@ Static Function ImpCsv01(oSay)
 	Local aRec := {}
 	Local nRec := 0
 	Local lLock := .F.
-
+	Local cA5Bloq := ""
+	local aA5     := aClone(FWSX3Util():GetFieldStruct( "A5_MSBLQL" ) )
+	
+	IF len(aA5) <> 0
+		cA5Bloq	:= "AND SA5.A5_MSBLQL <> '1'"
+	EndIf
+	
+	cA5Bloq := "%" + cA5Bloq + "%"
+	
 	If Vazio(cTipoImp) = .T. .OR. Vazio(cClaImp) = .T.
 		ApMsgInfo("Tipo de importacao não informado.", "IMPCSV")
 		Return
@@ -389,28 +397,28 @@ Static Function ImpCsv01(oSay)
 						cProduto := Alltrim(STRTRAN(cProduto, "-", "" ))
 						cQRYA := "QRYA"
 						BEGINSQL ALIAS cQRYA
-				    SELECT B1_COD,
-					       B1_LOCREC,
-					       ISNULL(A5_FABR, ' ') A5_FABR,
-						   ISNULL(A5_FALOJA, ' ') A5_FALOJA,
-						   ISNULL(VV2_CORINT, ' ') VV2_CORINT
-					  FROM %TABLE:SB1% SB1
-					 LEFT JOIN %TABLE:SA5% SA5
-					        ON SA5.%NOTDEL%
-						   AND SA5.A5_FILIAL = %xFilial:SA5%
-						   AND SA5.A5_PRODUTO = SB1.B1_COD
-					       AND SA5.A5_FORNECE = %Exp:cFornC1%
-						   AND SA5.A5_LOJA = %Exp:cLojaC1%
-						   AND SA5.A5_FABR <> ' '
-						   AND SA5.A5_MSBLQL <> '1'
-					 LEFT JOIN %TABLE:VV2% VV2 
-					        ON VV2.%NOTDEL%
-						   AND VV2.VV2_FILIAL = %xFilial:VV2%
-						   AND VV2.VV2_PRODUT = SB1.B1_COD
-					 WHERE SB1.%NOTDEL%
-					   AND SB1.B1_FILIAL = %xFilial:SB1%
-					   AND SB1.B1_COD = %Exp:cProduto%
-					   AND SB1.B1_IMPORT = 'S'
+							SELECT B1_COD,
+								B1_LOCREC,
+								ISNULL(A5_FABR, ' ') A5_FABR,
+								ISNULL(A5_FALOJA, ' ') A5_FALOJA,
+								ISNULL(VV2_CORINT, ' ') VV2_CORINT
+							FROM %TABLE:SB1% SB1
+							LEFT JOIN %TABLE:SA5% SA5
+									ON SA5.%NOTDEL%
+								AND SA5.A5_FILIAL = %xFilial:SA5%
+								AND SA5.A5_PRODUTO = SB1.B1_COD
+								AND SA5.A5_FORNECE = %Exp:cFornC1%
+								AND SA5.A5_LOJA = %Exp:cLojaC1%
+								AND SA5.A5_FABR <> ' '
+								%Exp:cA5Bloq%
+							LEFT JOIN %TABLE:VV2% VV2 
+									ON VV2.%NOTDEL%
+								AND VV2.VV2_FILIAL = %xFilial:VV2%
+								AND VV2.VV2_PRODUT = SB1.B1_COD
+							WHERE SB1.%NOTDEL%
+								AND SB1.B1_FILIAL = %xFilial:SB1%
+								AND SB1.B1_COD = %Exp:cProduto%
+								AND SB1.B1_IMPORT = 'S'
 						ENDSQL
 						IF (cQRYA)->(EOF())
 							lValid := .F.
@@ -617,10 +625,17 @@ RETURN(NIL)
 Static Function ImpCsv02(oSay)
 	LOCAL nX,nA,nB,aCPLN,cSEP,oFile,cARQ,aLINHAS,aERROS,nCONT,aCAB,aITEM,cNumSc,lVALID,lKIT,cPRODUTO,cAnoFab,cAnoMod,cOpcion,cCorInt,cCorExt,nQuant,nVlUnit
 	LOCAL cProforma,cLErro,cQRYA,nTOTAL,nI,nQtdMsg,nTotMsg,cNumIt,aCpImp,cNewSc,cSimb,cTextoE, dDtEntr
-	Local aRec := {}
-	Local nRec := 0
-	Local lLock := .F.
-
+	Local aRec    := {}
+	Local nRec    := 0
+	Local cA5Bloq := ""
+	local aA5     := aClone(FWSX3Util():GetFieldStruct( "A5_MSBLQL" ) )
+	
+	IF len(aA5) <> 0
+		cA5Bloq	:= "AND SA5.A5_MSBLQL <> '1'"
+	EndIf
+	
+	cA5Bloq := "%" + cA5Bloq + "%"
+	
 	If Vazio(cTipoImp) = .T. .OR. Vazio(cClaImp) = .T.
 		ApMsgInfo("Tipo de importacao não informado.", "IMPCSV")
 		Return
@@ -712,21 +727,21 @@ Static Function ImpCsv02(oSay)
 							FROM
 								%TABLE:SB1% SB1
 							LEFT JOIN %TABLE:SA5% SA5
-							ON SA5.%NOTDEL%
+								ON  SA5.%NOTDEL%
 								AND SA5.A5_FILIAL = %xFilial:SA5%
 								AND SA5.A5_PRODUTO = SB1.B1_COD
 								AND SA5.A5_FORNECE = %Exp:cFornC1%
 								AND SA5.A5_LOJA = %Exp:cLojaC1%
 								AND SA5.A5_FABR <> ' '
-								AND SA5.A5_MSBLQL <> '1'
-							LEFT JOIN %TABLE:VV2% VV2 "
-						 ON VV2.%NOTDEL%
-							 AND VV2.VV2_FILIAL = %xFilial:VV2%
-							 AND VV2.VV2_PRODUT = SB1.B1_COD
+								%Exp:cA5Bloq%
+							LEFT JOIN %TABLE:VV2% VV2
+						 		ON  VV2.%NOTDEL%
+							 	AND VV2.VV2_FILIAL = %xFilial:VV2%
+							 	AND VV2.VV2_PRODUT = SB1.B1_COD
 							 WHERE SB1.%NOTDEL%
-							 AND SB1.B1_FILIAL = %xFilial:SB1%
-							 AND SB1.B1_COD = %Exp:cProduto%
-							 AND SB1.B1_IMPORT = 'S'"
+							 	AND SB1.B1_FILIAL = %xFilial:SB1%
+							 	AND SB1.B1_COD = %Exp:cProduto%
+							 	AND SB1.B1_IMPORT = 'S'
 						ENDSQL
 						IF (cQRYA)->(EOF())
 							lValid := .F.
