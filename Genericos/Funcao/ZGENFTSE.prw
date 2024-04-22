@@ -623,18 +623,19 @@ Begin Sequence
 	If !Empty(SC5->C5_SERIE)
 		_cSerie := SC5->C5_SERIE
 	Endif
-    _cNota := MaPvlNfs(	_aPvlNfs,;            			//aPvlNfs
-               		   	_cSerie       ,;           		//cSerie,
-                   		_lMostraCtb    ,;           	//lMostraCtb
-                   		_lAglutCtb    ,;            	//lAglutCtb
-                   		_lCtbOnLine   ,;           		//lCtbOnLine
-                   		_lCtbCusto    ,;           		//lCtbCusto
-                   		_lReajuste    ,;            	//lReajusta
-                   		0       		,;         		//nCalAcrs
-                   		0       		,;        		//nArredPrcLis
-                   		.F.     		,;          	//lAtuSA7
-                   		.F.     		,;            	//lECF
-                   		'' )							//Gera Nota           //cembexp
+
+    _cNota := MaPvlNfs(	_aPvlNfs		,;  //aPvlNfs
+               		   	_cSerie       	,;  //cSerie,
+                   		.F.    			,;  //lMostraCtb
+                   		.F.    			,;  //lAglutCtb
+                   		.T.   			,;  //lCtbOnLine
+                   		.F.    			,;  //lCtbCusto
+                   		.F.    			,; 	//lReajusta
+                   		0       		,;	//nCalAcrs
+                   		0       		,;	//nArredPrcLis
+                   		.F.     		,; 	//lAtuSA7
+                   		.F.     		,; 	//lECF
+                   		'' )				//cembexp
 
     //旼컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴커
     //쿣alida a inclusao da Nota Fiscal. �
