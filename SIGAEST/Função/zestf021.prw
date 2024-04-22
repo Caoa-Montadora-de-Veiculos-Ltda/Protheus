@@ -1,17 +1,18 @@
 #INCLUDE 'PROTHEUS.CH'
 #INCLUDE 'FWMVCDEF.CH'
-/*/{Protheus.doc} ZESTF015
+/*/{Protheus.doc} ZESTF021
 Função para alterar o Lote na Entrada do Produto
 @author Antonio Carlos Pires de Oliveira
 @since 31/01/2024
 @version 1.0
  @return Nil, Função não tem retorno
  @example
- @obs 
+ @obs gi
 /*/
-User Function ZESTF015()
+User Function ZESTF021()
  Local aColunas   := {} //Colunas da Grid.
  Local aSeek      := {}
+
  Local aFieFilter := {}
  //Cria o objeto de apresentação do browse
  Local oBrowse
@@ -48,7 +49,7 @@ User Function ZESTF015()
  Default cOpc    := ""
 
  //Popular Tabela Temporária
- If !ZEST015C()
+ If !ZEST021C()
      Return Nil
  Endif
 
@@ -67,7 +68,7 @@ User Function ZESTF015()
     //Instânciando FWMBrowse - Somente com dicionário de dados
     oBrowse:= FWMBrowse():New()
 	oBrowse:SetTemporary(.T.)
-	oBrowse:SetMenuDef('ZESTF015')
+	oBrowse:SetMenuDef('ZESTF021')
     //Setando a tabela de cadastro de Autor/Interprete
     oBrowse:SetAlias("TRE")
     //Setando a descrição da rotina
@@ -79,10 +80,10 @@ User Function ZESTF015()
     oBrowse:SetFilterDefault("") //Indica o filtro padrão do Browse
     oBrowse:SetFieldFilter(aFieFilter)
     //Adicionar Botões
-    //oBrowse:AddButton("Altera Lote" , {|| ZEST015A() },'Alterar...', , , .F. , 2 )
-    oBrowse:AddButton("Visualizar"   , { || FwMsgRun(,{ | _oSay | ZEST015D(_oSay) }, "Visualizar", "Aguarde...")  },,,, .F., 2 )  
-	oBrowse:AddButton("Altera  Lote" , { || FwMsgRun(,{ | _oSay | ZEST015A(_oSay) }, "Alterar",    "Aguarde...")  },,,, .F., 2 )  
-    oBrowse:AddButton("Sair" , { || ZEST015B() }, , , , .F. , 2 )  
+    //oBrowse:AddButton("Altera Lote" , {|| ZEST021A() },'Alterar...', , , .F. , 2 )
+    oBrowse:AddButton("Visualizar"   , { || FwMsgRun(,{ | _oSay | ZEST021D(_oSay) }, "Visualizar", "Aguarde...")  },,,, .F., 2 )  
+	oBrowse:AddButton("Altera  Lote" , { || FwMsgRun(,{ | _oSay | ZEST021A(_oSay) }, "Alterar",    "Aguarde...")  },,,, .F., 2 )  
+    oBrowse:AddButton("Sair" , { || ZEST021B() }, , , , .F. , 2 )  
     
     //Ativa a Browse
     oBrowse:Activate()
@@ -115,8 +116,8 @@ Static Function MenuDef()
 Local aRot := {}
 
 //Adicionando opções
- //ADD OPTION aRot TITLE 'Visualizar' ACTION 'VIEWDEF.ZESTF015' OPERATION MODEL_OPERATION_VIEW   ACCESS 0 //OPERATION 2
- //ADD OPTION aRot TITLE 'Alterar'    ACTION 'VIEWDEF.ZESTF015' OPERATION MODEL_OPERATION_UPDATE ACCESS 0
+ //ADD OPTION aRot TITLE 'Visualizar' ACTION 'VIEWDEF.ZESTF021' OPERATION MODEL_OPERATION_VIEW   ACCESS 0 //OPERATION 2
+ //ADD OPTION aRot TITLE 'Alterar'    ACTION 'VIEWDEF.ZESTF021' OPERATION MODEL_OPERATION_UPDATE ACCESS 0
  //ADD OPTION aRot TITLE "Pesquisar" ACTION 'AxPesqui' OPERATION 1 ACCESS 0
 	
 Return aRot
@@ -164,7 +165,7 @@ Local aCampos1:= {}
             aCampos1[nX ,14 ])                                             // [14]  L   Indica se o campo é virtual
     Next nX
 
- oModel := MPFormModel():New("ZEF15MDL",/*bPre*/, /*bPos*/,/*bCommit*/,/*bCancel*/)
+ oModel := MPFormModel():New("ZEF21MDL",/*bPre*/, /*bPos*/,/*bCommit*/,/*bCancel*/)
 
  oModel:AddFields( "FORMTRE", /*cOwner*/, oStTmp, /*bPreValidacao*/, /*bPosValidacao*/, /*bCarga*/ )
 
@@ -190,7 +191,7 @@ Static Function ViewDef()
  //Local oView  := Nil
 
     //Local aStruTMP := TRE->(DbStruct())
-    Local oModel   := FWLoadModel("ZESTF015")
+    Local oModel   := FWLoadModel("ZESTF021")
     Local oStTMP   := FWFormViewStruct():New()
     Local oView    := Nil
     Local aCampos2 := {}
@@ -276,14 +277,14 @@ Static Function PrmKeyDef(cTab)
 Return aPrmKey
 
 
-/*/{Protheus.doc} ZEST015A
+/*/{Protheus.doc} ZEST021A
 //Visualiza dados e incluir o Lote Destino
 @author A. Carlos
 @since 16/02/24
 @version  
 @type function   incluir o Lote Destino   
 /*/
-Static Function ZEST015A(_oSay)
+Static Function ZEST021A(_oSay)
 Local aPergs 	  := {}
 Local aRet		  := {}
 Local cEndOri     := ALLTRIM(TRE->TRE_LOTE)
@@ -343,14 +344,14 @@ Local cEndDes	  := Space(30)
 Return Nil
 
 
-/*/{Protheus.doc} ZEST015B
+/*/{Protheus.doc} ZEST021B
 //Encerramento do Browse
 @author A. Carlos
 @since 16/02/24
 @version  
 @type function
 /*/
-Static Function ZEST015B()
+Static Function ZEST021B()
 
 	if Type("aRotina")<>"U"
 		aRotina := aOldRot
@@ -363,14 +364,14 @@ Static Function ZEST015B()
 Return()
 
 
-/*/{Protheus.doc} ZEST015B
+/*/{Protheus.doc} ZEST021B
 //Encerramento do Browse
 @author A. Carlos
 @since 16/02/24
 @version  
 @type function    Filtro do browse da rotina Lote = AUTO e SALDO > 0 
 /*/
-Static Function ZEST015C()
+Static Function ZEST021C()
 Local cQuery	:= ""
 Local cIndice1  := ""
 Local cAliasSQL := GetNextAlias()
@@ -488,14 +489,14 @@ Static Function fCriaCols()
 Return aColunas   //aColunas
 
 
-/*/{Protheus.doc} ZEST015D
+/*/{Protheus.doc} ZEST021D
 //Encerramento do Browse
 @author A. Carlos
 @since 16/02/24
 @version  
 @type function
 /*/
-Static Function ZEST015D(_oSay)
+Static Function ZEST021D(_oSay)
 
     DbSelectArea("SB8")
     SB8->(DbGoto(TRE->TRE_B8REG))    
