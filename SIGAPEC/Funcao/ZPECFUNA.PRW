@@ -3741,12 +3741,6 @@ User Function zSaldoWis(_cProduto, _cMarca, _cArmazem)
 	cQryWis += " FROM " + _cConectWis + " ESTWIS "
     cQryWis += " WHERE RTRIM(LTRIM(ESTWIS.CD_PRODUTO)) = '" + AllTrim(_cProduto) + "' "
 
-	If AllTrim(_cMarca) $ "HYU_SBR"
-    	cQryWis += " AND CD_EMPRESA = 1006 " //-- HYU SBR
-	ElseIf AllTrim(_cMarca) $ "CHE"  
-    	cQryWis += " AND CD_EMPRESA = 1002 " //-- CHE
-	EndIf
-
     If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
    		If AllTrim(_cMarca) =="CHE"
 			cQryWis += " AND CD_EMPRESA = 1002 "
