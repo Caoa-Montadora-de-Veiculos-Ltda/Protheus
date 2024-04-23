@@ -3743,23 +3743,23 @@ User Function zSaldoWis(_cProduto, _cMarca, _cArmazem)
 
     If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
    		If AllTrim(_cMarca) =="CHE"
-			cQryWis += " AND CD_EMPRESA = 1002 "
+			cQryWis += " AND ESTWIS.CD_EMPRESA = 1002 "
         ElseIf AllTrim(_cMarca) == "SBR"
-			cQryWis += " AND CD_EMPRESA = 1006 "
+			cQryWis += " AND ESTWIS.CD_EMPRESA = 1006 "
         ElseIf AllTrim(_cMarca) =="HYU"
-            cQryWis += " AND CD_EMPRESA = 1006 "
+            cQryWis += " AND ESTWIS.CD_EMPRESA = 1006 "
         EndIf
     ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
     	If AllTrim((_cAlsSB1)->BM_CODMAR) =="HYU"
-        	cQryWis += " AND CD_EMPRESA = 1008 "
+        	cQryWis += " AND ESTWIS.CD_EMPRESA = 1008 "
         EndIf
 	EndIf
  	
 	If _lVlLocWis	
 		If _cArmazem == "01" //BARUERI
-			cQryWis += " AND ARMAZEM = 'BAR' " //-- Armazenagem BARUERI.
+			cQryWis += " AND ESTWIS.ARMAZEM = 'BAR' " //-- Armazenagem BARUERI.
 		ElseIf _cArmazem == "11" //FRANCO DA ROCHA
-			cQryWis += " AND ARMAZEM = 'FDR' " //-- Armazenagem FRANCO DA ROCHA
+			cQryWis += " AND ESTWIS.ARMAZEM = 'FDR' " //-- Armazenagem FRANCO DA ROCHA
 		EndIf
 	Endif
  
