@@ -102,11 +102,10 @@ http://abdhdu-des-protheus.totvscloud.com.br:45486/rest_des01/ZWSR004?cCodProd=8
 User Function ZWSR004(cCodProd,_lVisual)     //cEndPoint, oJson
 Local cQrySB1    := ""
 Local _cAlsSB1 	 := GetNextAlias()   
-Local cSitua     := "" 
 Local FlagLoc    := .F.
 Local aErrRg     := {}
 Local aResRg     := { .F. } 
-Private _nEmpWis := 1006
+Private _cEmpWis := ""
 Private _cDepWis := "RGLOG"
 
 Default cCodProd    := ""
@@ -115,33 +114,17 @@ Conout("WSR004 - Integraçao de envio de produto para RGLOG - Inicio "+DtoC(date(
 
     SB1->( DbSetOrder(1) )
 
-    If Empty(cCodProd) //-- Chamada via schedule
-        cSitua := '15' 
-    Else
-
-        If _lVisual == .T.
-            cSitua := '15'    
-        Else
-            IF nOpcx == 5
-                cSitua := '16'
-            ELSE
-                cSitua := '15'    
-            ENDIF
-        EndIf
- 
-    EndIf
-
     If Select(_cAlsSB1) > 0
 		(_cAlsSB1)->(dbCloseArea())
 	EndIf
 
 	cQrySB1 := "SELECT SB1.B1_FILIAL, SB1.B1_COD, SB1.B1_DESC, SB1.B1_TIPO, SB1.B1_UM, SB1.B1_PESO, SB1.B1_PESBRU, SB1.B1_FAMILIA"      + CRLF
-	cQrySB1 += ", SB1.B1_CLASSE, SB1.B1_SITPROD, SB1.B1_GRUPO, SB1.B1_XNUMINM, SB1.R_E_C_N_O_ RECNO, SBM.BM_CODMAR "                    + CRLF 
+	cQrySB1 += ", SB1.B1_CLASSE, SB1.B1_SITPROD, SB1.B1_GRUPO, SB1.B1_XNUMINM, SB1.B1_MSBLQL, SB1.R_E_C_N_O_ RECNO, SBM.BM_CODMAR "     + CRLF 
+    cQrySB1 += " FROM "	+ RetSqlName("SB1") + " SB1 "					                                                                + CRLF
     cQrySB1 += " LEFT JOIN "+RetSqlName("SBM")+" SBM "						                                                            + CRLF
 	cQrySB1 += " 		ON SBM.BM_FILIAL = SB1.B1_FILIAL "					                                                            + CRLF
 	cQrySB1 += " 		AND SBM.BM_GRUPO = SB1.B1_GRUPO "					                                                            + CRLF
-	cQrySB1 += " 		AND SBM.D_E_L_E_T_ = ' ' "
-	cQrySB1 += " FROM "	+ RetSqlName("SB1") + " SB1"					                                                                + CRLF
+	cQrySB1 += " 		AND SBM.D_E_L_E_T_ = ' ' "                                                                                      + CRLF
 	cQrySB1 += " WHERE SB1.B1_FILIAL = '" + xFilial("SB1") + "'" 		                                                                + CRLF										
 	cQrySB1 += " 	AND	SB1.D_E_L_E_T_ = ' '"						                                                                    + CRLF
     cQrySB1 += " 	AND	SB1.B1_XINTEG = 'S'"	       				                                                                    + CRLF
@@ -153,34 +136,34 @@ Conout("WSR004 - Integraçao de envio de produto para RGLOG - Inicio "+DtoC(date(
         cQrySB1 += " 	AND	SB1.B1_COD   = '" + alltrim(cCodProd) + "'"		        + CRLF
     EndIf
 
-	DbUseArea(.T.,"TOPCONN",TcGenQry(,,cQry),_cAlsSB1,.T.,.F.)
+	DbUseArea(.T.,"TOPCONN",TcGenQry(,,cQrySB1),_cAlsSB1,.T.,.F.)
 	DbSelectArea(_cAlsSB1)
 	(_cAlsSB1)->(dbGoTop())
 
 	While ((_cAlsSB1)->( !Eof() ))
 
-        _nEmpWis := 0
+        _cEmpWis := ""
 		_cDepWis := ""
         If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
             If AllTrim((_cAlsSB1)->BM_CODMAR) =="CHE"
-                _nEmpWis := 1002
+                _cEmpWis := "1002"
 			    _cDepWis := "PREP"
             ElseIf AllTrim((_cAlsSB1)->BM_CODMAR) =="SBR"
-                _nEmpWis := 1006
+                _cEmpWis := "1006"
 			    _cDepWis := "RGLOG"
             ElseIf AllTrim((_cAlsSB1)->BM_CODMAR) =="HYU"
-                _nEmpWis := 1006
+                _cEmpWis := "1006"
 			    _cDepWis := "RGLOG"
             EndIf
         ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
             If AllTrim((_cAlsSB1)->BM_CODMAR) =="HYU"
-                _nEmpWis := 1008
+                _cEmpWis := "1008"
 			    _cDepWis := "RGLOG"
             EndIf
 		EndIf
 
         oJsProd:=JsonObject():New()
-	    oJsProd["cd_empresa"]           := _nEmpWis
+	    oJsProd["cd_empresa"]           := _cEmpWis
 		oJsProd["cd_produto"]           := Alltrim(SUBSTR((_cAlsSB1)->B1_COD,1,23))
 		oJsProd["sg_produto"]           := Alltrim(SUBSTR((_cAlsSB1)->B1_COD,1,20))
 		oJsProd["ds_produto"]           := ALLTRIM((_cAlsSB1)->B1_DESC)
@@ -200,7 +183,7 @@ Conout("WSR004 - Integraçao de envio de produto para RGLOG - Inicio "+DtoC(date(
         oJsProd["vl_cubagem"]           := "0"                //Fixo pelo exemplo da RgLog
         oJsProd["pr_venta"]             := "0"                //Fixo pelo exemplo da RgLog
         oJsProd["pr_costo"]             := "0"                //Fixo pelo exemplo da RgLog
-        oJsProd["cd_situacao"]          := cSitua 
+        oJsProd["cd_situacao"]          := IiF( (_cAlsSB1)->B1_MSBLQL == "1", "16" , "15" )
         oJsProd["dt_situacao"]          := "" 
         oJsProd["qt_dias_validade"]     := "" 
         oJsProd["qt_dias_duracao"]      := "" 

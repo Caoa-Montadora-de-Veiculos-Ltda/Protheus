@@ -80,7 +80,7 @@ Local _oJson
 Local _cObs
 Local _lProcessou
 Local _nPos
-Private _nEmpWis		:= 0
+Private _cEmpWis		:= ""
 Private _cDepWis		:= ""
 
 Default _cAglutina	:= ""
@@ -194,22 +194,22 @@ Begin Sequence
 			StartJob("U_XFUNIPOSTO",GetEnvServer(),.F.,VS1->VS1_NUMORC, cEmpAnt, cFilAnt, /*_nReprocessado*/, /*_oSay*/)
 		Endif
 
-		_nEmpWis := 0
+		_cEmpWis := ""
 		_cDepWis := ""
         If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
             If AllTrim(VS1->VS1_XMARCA) =="CHE"
-                _nEmpWis := 1002
+                _cEmpWis := "1002"
 			    _cDepWis := "PREP"
             ElseIf AllTrim(VS1->VS1_XMARCA) =="SBR"
-                _nEmpWis := 1006
+                _cEmpWis := "1006"
 			    _cDepWis := "RGLOG"
             ElseIf AllTrim(VS1->VS1_XMARCA) =="HYU"
-                _nEmpWis := 1006
+                _cEmpWis := "1006"
 			    _cDepWis := "RGLOG"
             EndIf
         ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
             If AllTrim(VS1->VS1_XMARCA) =="HYU"
-                _nEmpWis := 1008
+                _cEmpWis := "1008"
 			    _cDepWis := "RGLOG"
             EndIf
 		EndIf
@@ -221,7 +221,7 @@ Begin Sequence
     	_oJson['pedido'] 	:= JSonObject():New()
 		_oJson['pedido'] ['nu_pedido']			:= _cPicking
 		_oJson['pedido'] ['cd_cliente']			:= Val(SA1->A1_CGC) //Conversão para inteiro - Alteração solicitada por Sidney em 31/01/2022
-		_oJson['pedido'] ['cd_empresa']			:= _nEmpWis
+		_oJson['pedido'] ['cd_empresa']			:= _cEmpWis
 		_oJson['pedido'] ['cd_situacao']		:= _nSituacao
 		_oJson['pedido'] ['dt_addrow']			:= ""  	//DtoC(Date())+" "+SubsTr(time(),1,8)
 		_oJson['pedido'] ['id_processado']		:= "N"
@@ -383,7 +383,7 @@ Begin Sequence
     	_nSeq := _nPos //Val((_cAliasPesq)->VS3_SEQUEN) //Len(_aItens)
     	_aItens[_nPos] ['nu_pedido'] 			:= _cPicking
     	_aItens[_nPos] ['cd_cliente'] 			:= Val(SA1->A1_CGC) //Conversão para inteiro - Alteração solicitada por Sidney em 31/01/2022
-    	_aItens[_nPos] ['cd_empresa'] 			:= _nEmpWis
+    	_aItens[_nPos] ['cd_empresa'] 			:= _cEmpWis
 		_aItens[_nPos] ['cd_produto'] 			:= AllTrim((_cAliasPesq)->VS3_CODITE)
 		_aItens[_nPos] ['cd_faixa'] 			:= ""
 		_aItens[_nPos] ['nu_seq_pedido'] 		:= _nSeq

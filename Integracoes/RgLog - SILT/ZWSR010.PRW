@@ -58,7 +58,7 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 	Default lBotao	 	:= .F.
 
 	Private cXTipo		:= ""
-	Private _nEmpWis	:= 0
+	Private _cEmpWis	:= ""
 	Private oJsRet    	:= JsonObject():New()
 
 	DbSelectArea("SA1")
@@ -179,18 +179,18 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 				_cDocOri := cNota+";"+cSerie
 				_cDeposito  := alltrim((_cAlias)->DEPWIS)
 
-				 _nEmpWis := 0
+				 _cEmpWis := ""
 				If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
 					If AllTrim((_cAlsSB1)->BM_CODMAR) =="CHE"
-						_nEmpWis := 1002
+						_cEmpWis := "1002"
 					ElseIf AllTrim((_cAlsSB1)->BM_CODMAR) =="SBR"
-						_nEmpWis := 1006
+						_cEmpWis := "1006"
 					ElseIf AllTrim((_cAlsSB1)->BM_CODMAR) =="HYU"
-						_nEmpWis := 1006
+						_cEmpWis := "1006"
 					EndIf
 				ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
 					If AllTrim((_cAlsSB1)->BM_CODMAR) =="HYU"
-						_nEmpWis := 1008
+						_cEmpWis := "1008"
 					EndIf
 				EndIf
 
@@ -207,7 +207,7 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 				oJsEnt['recebimento']['nu_agenda'] 	          := ""   
 				oJsEnt['recebimento']['dt_emissao']           := Substr((_cAlias)->F1_EMISSAO,7,2)+"/"+Substr((_cAlias)->F1_EMISSAO,5,2)+"/"+Substr((_cAlias)->F1_EMISSAO,1,4)+" "+(_cAlias)->F1_HORA
 				oJsEnt['recebimento']['cd_situacao'] 	      := "3"       //Fixo pelo exemplo RgLog
-				oJsEnt['recebimento']['cd_empresa'] 	      := _nEmpWis
+				oJsEnt['recebimento']['cd_empresa'] 	      := _cEmpWis
 				oJsEnt['recebimento']['importe_nf']           := ""
 				oJsEnt['recebimento']['id_autorizacao']       := ""       //Fixo pelo exemplo RgLog
 				oJsEnt['recebimento']['cd_func_autorizacion'] := ""
@@ -338,7 +338,7 @@ Static Function ZWSR007ITE( _oJsEnt, cNota, cSerie, cForn, cLoja , _cDeposito, _
 			Aadd(_aItens,JsonObject():new())
 			_nPos := Len(_aItens)
 			//_aItens[_nPos]['nu_nota_fiscal']  :=  cNota
-			_aItens[_nPos]['cd_empresa'] 	  	:= _nEmpWis
+			_aItens[_nPos]['cd_empresa'] 	  	:= _cEmpWis
 			_aItens[_nPos]['cd_fornecedor'] 	:= "9"+cForn+cLoja
 			_aItens[_nPos]['nu_nota_fiscal'] 	:= Alltrim((_cAlias)->D1_DOC)
 			_aItens[_nPos]['nu_serie_nf'] 	    := Alltrim((_cAlias)->D1_SERIE)

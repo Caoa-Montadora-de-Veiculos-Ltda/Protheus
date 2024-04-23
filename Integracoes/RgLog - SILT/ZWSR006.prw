@@ -34,7 +34,6 @@ Local cQuery     := ""
 Local cAlsQry    := GetNextAlias()
 Local _aEmpWis   := {}
 Local _nX        := 0
-Local cSitua     := ""
 Local FlagLoc    := .F.
 Local aResRg     := { .F. } 
 
@@ -44,22 +43,9 @@ Default cCGCClifor   := ""
 
 Conout("ZWSR006 - Integraçao de envio de entidades para RGLOG - Inicio "+DtoC(date())+" "+Time())
 
-If Empty(cCodigo) //-- Chamada via schedule
-   cSitua := '15'
-  // _xTipo := 'F'
-Else
-
-   IF nOpcx == 5
-      cSitua := '16'
-   ELSE
-      cSitua := '15'    
-   ENDIF
-
-EndIF
-
 If _xTipo = 'C'
    
-   If !( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+   If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
       AADD(_aEmpWis, "1002" )
       AADD(_aEmpWis, "1006" )
    ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
@@ -82,7 +68,8 @@ If _xTipo = 'C'
    cQuery += " A1_INSCR    AS cInsc,"										      + CRLF
    cQuery += " A1_NREDUZ   AS cNRedz,"										   + CRLF
    cQuery += " R_E_C_N_O_  AS cRecno,"										      + CRLF
-   cQuery += " A1_COD_MUN    AS cCodMun "                               + CRLF
+   cQuery += " A1_COD_MUN    AS cCodMun, "                               + CRLF
+   cQuery += " A1_MSBLQL    AS MSBLQL "                               + CRLF
    cQuery += " FROM "	+ retSQLName("SA1") + " SA1"					      + CRLF
    cQuery += " WHERE SA1.A1_FILIAL = '" + xFilial("SA1") + "'" 	      + CRLF
    cQuery += " 	AND	SA1.A1_XINTEG <> 'N'"	       				         + CRLF
@@ -129,7 +116,7 @@ If _xTipo = 'C'
             oJsEnt['ds_fax'] 	  	      := ""
             oJsEnt['cd_cgc_cliente'] 	:= (cAlsQry)->cCGC
             oJsEnt['nu_inscricao'] 	  	:= Alltrim((cAlsQry)->cInsc)
-            oJsEnt['cd_situacao'] 	  	:= cSitua          //15-Ativo   16-Não
+            oJsEnt['cd_situacao'] 	  	:= IiF( (_cAlsSB1)->MSBLQL == "1", "16" , "15" )
             oJsEnt['dt_situacao'] 	  	:= ""
             oJsEnt['cd_uf'] 	  	      := (cAlsQry)->cEst
             oJsEnt['cd_municipio'] 	  	:= AllTrim(U_zGENIBGEUF(AllTrim((cAlsQry)->cEst))+(cAlsQry)->cCodMun)       //08 CARACTERES buscar tabela de municipios IBGE   35001 SP
@@ -140,8 +127,8 @@ If _xTipo = 'C'
             oJsEnt['cd_registro'] 	  	:= ""
             oJsEnt['id_procesado'] 	   := ""
             
-            If !( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
-		         oJson['cd_deposito'         ] := IiF( _aEmpWis[01] == "1002" ,"PREP" ,"RGLOG" )
+            If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+		         oJson['cd_deposito'         ] := IiF( _aEmpWis[_nX] == "1002" ,"PREP" ,"RGLOG" )
             ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
                oJson['cd_deposito'         ] := "RGLOG"
             EndIf

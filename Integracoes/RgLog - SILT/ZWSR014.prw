@@ -18,7 +18,6 @@ Local _cQrySA2      := ""
 Local _cAlsSA2      := GetNextAlias()
 Local _aEmpWis      := {}
 Local _nX           := 0
-Local _cSituacao    := ""
 Local _lJob         := IsBlind()
 Local _aRetJson     := { .F. } 
 Private oJson       := JsonObject():New()
@@ -28,20 +27,12 @@ Default _cLoja      := ""
 
     DbSelectArea("SA2")
 
-    If _lJob //-- Chamada via schedule
-        _cSituacao := '15'
-    ElseIf nOpcx == 5
-        _cSituacao := '16'
-    Else
-        _cSituacao := '15'    
-    EndIf
-
     If _lJob
         Conout("ZWSR014 - Integraçao de envio do fornecedor para RGLOG - Inicio: "+DtoC(date())+" "+Time())
     EndIf
 
 
-    If !( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+    If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
         AADD(_aEmpWis, "1002" )
         AADD(_aEmpWis, "1006" )
     ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
@@ -95,7 +86,7 @@ Default _cLoja      := ""
                     oJson['nm_gerente'          ] := ""         //Buscar no cadastro de gerentes
                     oJson['nu_inscricao'        ] := AllTrim( (_cAlsSA2)->A2_INSCR )
                     oJson['fg_devolucao'        ] := ""
-                    oJson['cd_situacao'         ] := IiF( (_cAlsSA2)->A2_MSBLQL == "1", "16" , _cSituacao )
+                    oJson['cd_situacao'         ] := IiF( (_cAlsSA2)->A2_MSBLQL == "1", "16" , "15" )
                     oJson['dt_situacao'         ] := ""
                     oJson['cd_postal'           ] := ""
                     oJson['cd_pais'             ] := ""
@@ -111,8 +102,8 @@ Default _cLoja      := ""
                     oJson['cd_registro'         ] := ""
                     oJson['id_procesado'        ] := "N"
                     
-	                If !( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
-		                oJson['cd_deposito'         ] := IiF( _aEmpWis[01] == "1002" ,"PREP" ,"RGLOG" )
+	                If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+		                oJson['cd_deposito'         ] := IiF( _aEmpWis[_nX] == "1002" ,"PREP" ,"RGLOG" )
                     ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
                         oJson['cd_deposito'         ] := "RGLOG"
                     EndIf
