@@ -53,31 +53,31 @@ If _xTipo = 'C'
    EndIf
 
    cQuery := "SELECT"															      + CRLF
-   cQuery += " A1_CGC      AS cCGC ,"										      + CRLF
-   cQuery += " A1_COD      AS cCod ,"										      + CRLF
-   cQuery += " A1_LOJA     AS cLoja,"										      + CRLF
-   cQuery += " A1_NOME     AS cNome,"										      + CRLF
-   cQuery += " A1_NREDUZ   AS cFantas,"   								      + CRLF
-   cQuery += " A1_END      AS cEnder,"   								      + CRLF
-   cQuery += " A1_BAIRRO   AS cBai,"	    								      + CRLF
-   cQuery += " A1_MUN      AS cMun,"	    								      + CRLF
-   cQuery += " A1_EST      AS cEst,"	    								      + CRLF
-   cQuery += " A1_TEL      AS cTel,"	    								      + CRLF
-   cQuery += " A1_CEP      AS cCep,"	    								      + CRLF
-   cQuery += " A1_CODPAIS  AS cdPais,"	    							      + CRLF
-   cQuery += " A1_INSCR    AS cInsc,"										      + CRLF
-   cQuery += " A1_NREDUZ   AS cNRedz,"										   + CRLF
-   cQuery += " R_E_C_N_O_  AS cRecno,"										      + CRLF
-   cQuery += " A1_COD_MUN    AS cCodMun, "                               + CRLF
-   cQuery += " A1_MSBLQL    AS MSBLQL "                               + CRLF
+   cQuery += " A1_CGC         AS cCGC ,"										   + CRLF
+   cQuery += " A1_COD         AS cCod ,"										   + CRLF
+   cQuery += " A1_LOJA        AS cLoja,"										   + CRLF
+   cQuery += " A1_NOME        AS cNome,"										   + CRLF
+   cQuery += " A1_NREDUZ      AS cFantas,"   								   + CRLF
+   cQuery += " A1_END         AS cEnder,"   								      + CRLF
+   cQuery += " A1_BAIRRO      AS cBai,"	    								   + CRLF
+   cQuery += " A1_MUN         AS cMun,"	    								   + CRLF
+   cQuery += " A1_EST         AS cEst,"	    								   + CRLF
+   cQuery += " A1_TEL         AS cTel,"	    								   + CRLF
+   cQuery += " A1_CEP         AS cCep,"	    								   + CRLF
+   cQuery += " A1_CODPAIS     AS cdPais,"	    							      + CRLF
+   cQuery += " A1_INSCR       AS cInsc,"										   + CRLF
+   cQuery += " A1_NREDUZ      AS cNRedz,"										   + CRLF
+   cQuery += " SA1.R_E_C_N_O_ AS cRecno,"										   + CRLF
+   cQuery += " A1_COD_MUN     AS cCodMun, "                             + CRLF
+   cQuery += " A1_MSBLQL      AS MSBLQL "                               + CRLF
    cQuery += " FROM "	+ retSQLName("SA1") + " SA1"					      + CRLF
    cQuery += " WHERE SA1.A1_FILIAL = '" + xFilial("SA1") + "'" 	      + CRLF
-   cQuery += " 	AND	SA1.A1_XINTEG <> 'N'"	       				         + CRLF
+   cQuery += " 	AND	SA1.A1_XINTEG <> 'N'"	       				      + CRLF
    cQuery += " 	AND	SA1.D_E_L_E_T_ = ' '"						      	+ CRLF
 
    If !Empty(cCodigo)
-      cQuery += " 	AND	SA1.A1_COD = '"  + alltrim(cCodigo )  + "'"	   + CRLF
-      cQuery += " 	AND	SA1.A1_LOJA = '"  + alltrim(cLoja )  + "'"	   + CRLF
+      cQuery += " 	AND	SA1.A1_COD = '"  + alltrim(cCodigo )  + "'"	+ CRLF
+      cQuery += " 	AND	SA1.A1_LOJA = '"  + alltrim(cLoja )  + "'"	+ CRLF
    EndIf
 
    If Select(cAlsQry) > 0
@@ -95,6 +95,8 @@ If _xTipo = 'C'
       While (cAlsQry)->( !Eof() )
 
          For _nX := 1 to Len(_aEmpWis)
+
+            oJsEnt := JsonObject():New()
             
             oJsEnt['cd_empresa'] 	   := _aEmpWis[_nX]
             oJsEnt['cd_cliente']       := "92"       //Fixo pelo exemplo RgLog
@@ -116,7 +118,7 @@ If _xTipo = 'C'
             oJsEnt['ds_fax'] 	  	      := ""
             oJsEnt['cd_cgc_cliente'] 	:= (cAlsQry)->cCGC
             oJsEnt['nu_inscricao'] 	  	:= Alltrim((cAlsQry)->cInsc)
-            oJsEnt['cd_situacao'] 	  	:= IiF( (_cAlsSB1)->MSBLQL == "1", "16" , "15" )
+            oJsEnt['cd_situacao'] 	  	:= IiF( (cAlsQry)->MSBLQL == "1", "16" , "15" )
             oJsEnt['dt_situacao'] 	  	:= ""
             oJsEnt['cd_uf'] 	  	      := (cAlsQry)->cEst
             oJsEnt['cd_municipio'] 	  	:= AllTrim(U_zGENIBGEUF(AllTrim((cAlsQry)->cEst))+(cAlsQry)->cCodMun)       //08 CARACTERES buscar tabela de municipios IBGE   35001 SP
@@ -128,9 +130,9 @@ If _xTipo = 'C'
             oJsEnt['id_procesado'] 	   := ""
             
             If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
-		         oJson['cd_deposito'         ] := IiF( _aEmpWis[_nX] == "1002" ,"PREP" ,"RGLOG" )
+		         oJsEnt['cd_deposito'         ] := IiF( _aEmpWis[_nX] == "1002" ,"PREP" ,"RGLOG" )
             ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
-               oJson['cd_deposito'         ] := "RGLOG"
+               oJsEnt['cd_deposito'         ] := "RGLOG"
             EndIf
 
             oJsEnt['cd_cliente_erp'] 	:= (cAlsQry)->cCGC// Alterado: ZWSR007 busca CNPJ nesta TAG -> Alltrim((cAlsQry)->cCod)+Alltrim((cAlsQry)->cLoja)

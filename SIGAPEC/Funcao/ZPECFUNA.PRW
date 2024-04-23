@@ -3750,7 +3750,7 @@ User Function zSaldoWis(_cProduto, _cMarca, _cArmazem)
             cQryWis += " AND ESTWIS.CD_EMPRESA = 1006 "
         EndIf
     ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
-    	If AllTrim((_cAlsSB1)->BM_CODMAR) =="HYU"
+    	If AllTrim(_cMarca) =="HYU"
         	cQryWis += " AND ESTWIS.CD_EMPRESA = 1008 "
         EndIf
 	EndIf

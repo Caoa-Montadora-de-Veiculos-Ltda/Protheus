@@ -15,7 +15,8 @@ Historico: 				DAC -Denilso 16/05/2023
 */
 WSRESTFUL ZWSR012 DESCRIPTION "Integração RGLOG Confirmacao de mercadorias recebidas" FORMAT APPLICATION_JSON 
     WSDATA empresa 			As String
-	WSDATA filial 			As String
+	WSDATA filatu 			As String
+	WSDATA token			As STring
 	WSDATA usuario 			As String
 	WSDATA senha 			As String
 	WSDATA nota_fiscal 		As String
@@ -31,7 +32,7 @@ WSRESTFUL ZWSR012 DESCRIPTION "Integração RGLOG Confirmacao de mercadorias receb
 END WSRESTFUL
 
 WSMETHOD PUT;
-WSRECEIVE empresa, filial, usuario, senha, nota_fiscal, serie_nf, cod_fornecedor, cd_produto, qt_conf,debug;
+WSRECEIVE empresa, filatu, token, usuario, senha, nota_fiscal, serie_nf, cod_fornecedor, cd_produto, qt_conf,debug;
 WSSERVICE ZWSR012
 Local _cEmpresa     := Space(02)
 Local _cFilAtu      := Space(04)
@@ -61,17 +62,17 @@ Private _cLoja		:= ""
 Private lDebug 		:= .F.
 Private _aJson		:= {}
 
-	_cEmpresa     := AllTrim(_oJson:GetJsonText("cEmpresa"))
-    _cFilAtu      := _oJson:GetJsonText("cFilAtu")
-	_cToken       := AllTrim(_oJson:GetJsonText("cToken"))
-	_cUsuario	  := AllTrim(_oJson:GetJsonText("usuario"))
-	_cSenha		  := AllTrim(_oJson:GetJsonText("senha"))	
-
 	Conout("ZWSR012 - Integracao Confirmacao de mercadorias recebidas RGLOG PUT - Inicio "+DtoC(date())+" "+Time())
 
 	::SetContentType("application/json")
 	// –> Deserializa a string JSON
 	FWJsonDeserialize(cJson, @oParseJSON)
+
+	_cEmpresa     := AllTrim(oParseJSON:empresa)
+    _cFilAtu      := AllTrim(oParseJSON:filatu)
+	_cToken       := AllTrim(oParseJSON:token)
+	_cUsuario	  := AllTrim(oParseJSON:usuario)
+	_cSenha		  := AllTrim(oParseJSON:senha)
 
 	_cDoc := ""
 	If ValType(cJson) == "J"

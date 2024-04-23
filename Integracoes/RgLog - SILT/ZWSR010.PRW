@@ -96,6 +96,7 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 		cQry += " 		ELSE ' ' "										+ CRLF
 		cQry += " 	END	 AS DEPWIS " 					 				+ CRLF  //PEC069
 	EndIf
+	cQry += " 	,SBM.BM_CODMAR  "										+ CRLF
 	cQry += " 	,SUM(D1_QUANT)     	AS D1_QUANT "						+ CRLF
 	cQry += " FROM "       + retSQLName("SF1") + " F1"					+ CRLF
     cQry += " 	INNER JOIN " + RetSqlName("SD1") + " SD1 "              + CRLF
@@ -181,15 +182,15 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 
 				 _cEmpWis := ""
 				If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
-					If AllTrim((_cAlsSB1)->BM_CODMAR) =="CHE"
+					If AllTrim((_cAlias)->BM_CODMAR) =="CHE"
 						_cEmpWis := "1002"
-					ElseIf AllTrim((_cAlsSB1)->BM_CODMAR) =="SBR"
+					ElseIf AllTrim((_cAlias)->BM_CODMAR) =="SBR"
 						_cEmpWis := "1006"
-					ElseIf AllTrim((_cAlsSB1)->BM_CODMAR) =="HYU"
+					ElseIf AllTrim((_cAlias)->BM_CODMAR) =="HYU"
 						_cEmpWis := "1006"
 					EndIf
 				ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
-					If AllTrim((_cAlsSB1)->BM_CODMAR) =="HYU"
+					If AllTrim((_cAlias)->BM_CODMAR) =="HYU"
 						_cEmpWis := "1008"
 					EndIf
 				EndIf

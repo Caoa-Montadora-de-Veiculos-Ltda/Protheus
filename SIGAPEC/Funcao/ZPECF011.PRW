@@ -70,9 +70,9 @@ Local _nPos
 Local _cPedido
 Begin Sequence
 
-    _cEmpresa     := AllTrim(_oJson:GetJsonText("cEmpresa"))
-    _cFilAtu      := _oJson:GetJsonText("cFilAtu")
-	_cToken       := AllTrim(_oJson:GetJsonText("cToken"))
+    _cEmpresa     := AllTrim(_oJson:GetJsonText("empresa"))
+    _cFilAtu      := AllTrim(_oJson:GetJsonText("filatu"))
+	_cToken       := AllTrim(_oJson:GetJsonText("token"))
 	_cUsuario	  := AllTrim(_oJson:GetJsonText("usuario"))
 	_cSenha		  := AllTrim(_oJson:GetJsonText("senha"))	 	 
 
