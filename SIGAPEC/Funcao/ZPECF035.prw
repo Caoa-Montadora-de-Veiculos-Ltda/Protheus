@@ -143,7 +143,11 @@ Begin Sequence
     _cQuery += " )"+ CRLF
  
     _cQuery += " SELECT  ESTWIS.CD_EMPRESA AS EMPRESA "+ CRLF 
-    _cQuery += "        ,CASE ESTWIS.CD_EMPRESA WHEN 1006 THEN 'HYU/SBR' ELSE 'CHE' END    AS DESCRICAO_EMPRESA "+ CRLF 
+    If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+        _cQuery += "        ,CASE ESTWIS.CD_EMPRESA WHEN 1006 THEN 'HYU/SBR' ELSE 'CHE' END    AS DESCRICAO_EMPRESA "+ CRLF 
+    ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
+        _cQuery += "        ,CASE ESTWIS.CD_EMPRESA WHEN 1008 THEN 'HYU' ELSE 'CHE' END    AS DESCRICAO_EMPRESA "+ CRLF 
+    EndIf
     _cQuery += "        ,ESTWIS.ARMAZEM	AS ARMAZEM "+ CRLF 
     _cQuery += "        ,CASE ESTWIS.ARMAZEM WHEN 'BAR' THEN 'BARUERI' ELSE 'FRANCO DA ROCHA' END    AS DESCRICAO_ARMAZEM "+ CRLF 
     _cQuery += "        ,ESTWIS.CD_ENDERECO	AS ENDERECO "+ CRLF 
@@ -155,8 +159,14 @@ Begin Sequence
     _cQuery += "        ,ROW_NUMBER() OVER (ORDER BY ESTWIS.CD_EMPRESA, ESTWIS.ARMAZEM, ESTWIS.CD_ENDERECO)     AS  R_E_C_N_O_ "+ CRLF    
 	_cQuery += " FROM " + _cConectWis + " ESTWIS "+ CRLF
 	_cQuery += " WHERE RTRIM(LTRIM(ESTWIS.CD_PRODUTO)) BETWEEN '"+AllTrim(_cCodProdDe)+"'  AND '"+AllTrim(_cCodProdAte)+"' "+ CRLF
+    If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+            _cQuery += " AND ESTWIS.CD_EMPRESA IN (1002,1006) "
+    ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
+            _cQuery += " AND ESTWIS.CD_EMPRESA = 1008 "
+    EndIf
 	_cQuery += " ORDER BY ESTWIS.CD_EMPRESA, ESTWIS.ARMAZEM, ESTWIS.CD_ENDERECO "+ CRLF
 
+    
 	nStatus := TCSqlExec(_cQuery)
     If (nStatus < 0)
         MsgStop("TCSQLError() " + TCSQLError(), "Registros Cabeçalho")
@@ -238,56 +248,65 @@ Begin Sequence
     _cQuery += " D_E_L_E_T_, R_E_C_N_O_ "  
     _cQuery += " )"+ CRLF
 
-    _cQuery += " SELECT * FROM ( "										+ CRLF
-    _cQuery += " 				SELECT   ZD1.ZD1_FILIAL "				+ CRLF
-    _cQuery += " 						,ZD1.ZD1_DOC "					+ CRLF
-    _cQuery += " 						,ZD1.ZD1_SERIE "				+ CRLF
-    _cQuery += " 						,ZD1.ZD1_FORNEC "				+ CRLF
-    _cQuery += " 						,ZD1.ZD1_LOJA  "				+ CRLF
-    _cQuery += " 						,SA2.A2_NREDUZ "				+ CRLF
-    _cQuery += " 						,ZD1.ZD1_COD "					+ CRLF
-    _cQuery += " 						,ZD1.ZD1_QUANT "				+ CRLF
-    _cQuery += " 						,ZD1.ZD1_QTCONF "				+ CRLF
-    _cQuery += " 						,ZD1.ZD1_SLDIT  "				+ CRLF
-    _cQuery += " 						,NVL(WIS.QT_ARMAZENADA,0) 	AS QT_ARMAZENADA "+ CRLF
-    _cQuery += " 						,WIS.EMPRESA "					+ CRLF
-    _cQuery += " 						,WIS.DESCRICAO "				+ CRLF
-    _cQuery += " 						,WIS.NOTA "						+ CRLF
-    _cQuery += " 						,WIS.SERIE "					+ CRLF
-    _cQuery += " 						,WIS.FORNCECEDOR "				+ CRLF
-    _cQuery += " 						,WIS.LOJA "						+ CRLF
-    _cQuery += " 						,WIS.PRODUTO "					+ CRLF
-    _cQuery += " 						,' '                AS  D_E_L_E_T_ "+ CRLF
-    _cQuery += " 						, ZD1.R_E_C_N_O_    AS  R_E_C_N_O_ "+ CRLF    
-    _cQuery += " 				FROM  "+RetSqlName("ZD1")+" ZD1 "+ CRLF
-    _cQuery += " 					FULL JOIN	(	SELECT 	 ARMWIS.CD_EMPRESA			AS EMPRESA "						+ CRLF
-    _cQuery += " 											,CASE ARMWIS.CD_EMPRESA WHEN 1006 THEN 'HYU/SBR' ELSE 'CHE' END    AS DESCRICAO "+ CRLF
-    _cQuery += " 											,LPAD(ARMWIS.NU_NOTA_FISCAL, 9, '0')	AS NOTA "							+ CRLF
-    _cQuery += " 											,ARMWIS.NU_SERIE_NF					AS SERIE "							+ CRLF
-    _cQuery += " 											,SUBSTR(ARMWIS.CD_FORNECEDOR,2,6) 		AS FORNCECEDOR "					+ CRLF
-    _cQuery += " 											,SUBSTR(ARMWIS.CD_FORNECEDOR,8,2) 		AS LOJA "							+ CRLF
-    _cQuery += " 											,ARMWIS.CD_PRODUTO						AS PRODUTO "						+ CRLF
-    _cQuery += " 											,SUM(ARMWIS.QT_ARMAZENADA) 			AS QT_ARMAZENADA "					+ CRLF
-	_cQuery += " 									FROM " + _cConectArmWis + " ARMWIS "+ CRLF
-    _cQuery += " 									WHERE ARMWIS.CD_FORNECEDOR IS NOT NULL "											+ CRLF
-    _cQuery += " 									GROUP BY ARMWIS.CD_EMPRESA, ARMWIS.NU_NOTA_FISCAL, ARMWIS.NU_SERIE_NF, ARMWIS.CD_FORNECEDOR, ARMWIS.CD_PRODUTO "+ CRLF
-    _cQuery += " 									ORDER BY ARMWIS.CD_EMPRESA, ARMWIS.NU_NOTA_FISCAL, ARMWIS.NU_SERIE_NF, ARMWIS.CD_FORNECEDOR, ARMWIS.CD_PRODUTO "+ CRLF
-    _cQuery += " 				 			) WIS  "											+ CRLF
-    _cQuery += " 				 	ON 	RTRIM(ZD1.ZD1_DOC) 		=  RTRIM(WIS.NOTA) "			+ CRLF
-    _cQuery += " 					AND RTRIM(ZD1.ZD1_SERIE) 	= RTRIM(WIS.SERIE) "			+ CRLF
-    _cQuery += " 					AND RTRIM(ZD1.ZD1_FORNEC) 	= RTRIM(WIS.FORNCECEDOR)	"	+ CRLF
-    _cQuery += " 					AND RTRIM(ZD1.ZD1_LOJA) 	= RTRIM(WIS.LOJA) "				+ CRLF
-    _cQuery += " 					AND RTRIM(ZD1.ZD1_COD) 		= RTRIM(WIS.PRODUTO) "			+ CRLF
-    _cQuery += " 				LEFT JOIN "+RetSqlName("SA2")+" SA2 "+ CRLF 
-    _cQuery += " 					ON ZD1.D_E_L_E_T_ 	= ' ' " + CRLF
-    _cQuery += " 					AND SA2.A2_FILIAL 	= '"+FwXFilial("SA2")+"' "			+ CRLF
-    _cQuery += " 					AND SA2.A2_COD 		= ZD1.ZD1_FORNEC
-    _cQuery += " 					AND SA2.A2_LOJA 	= ZD1.ZD1_LOJA
-    _cQuery += " 				WHERE ZD1.D_E_L_E_T_ = ' ' " + CRLF
-    _cQuery += " 					AND ZD1.ZD1_FILIAL = '"+FwXFilial("ZD1")+"' "			+ CRLF
-    _cQuery += " 					AND ZD1.ZD1_COD BETWEEN '"+_cCodProdDe+"'  AND '"+_cCodProdAte+"' "+ CRLF
-    _cQuery += " 				) TMP "														+ CRLF
-    _cQuery += " WHERE TMP.QT_ARMAZENADA < TMP.ZD1_QUANT "									+ CRLF
+    _cQuery += " SELECT * FROM ( "										                                                                                                + CRLF
+    _cQuery += " 				SELECT   ZD1.ZD1_FILIAL "				                                                                                                + CRLF
+    _cQuery += " 						,ZD1.ZD1_DOC "					                                                                                                + CRLF
+    _cQuery += " 						,ZD1.ZD1_SERIE "				                                                                                                + CRLF
+    _cQuery += " 						,ZD1.ZD1_FORNEC "				                                                                                                + CRLF
+    _cQuery += " 						,ZD1.ZD1_LOJA  "				                                                                                                + CRLF
+    _cQuery += " 						,SA2.A2_NREDUZ "				                                                                                                + CRLF
+    _cQuery += " 						,ZD1.ZD1_COD "					                                                                                                + CRLF
+    _cQuery += " 						,ZD1.ZD1_QUANT "				                                                                                                + CRLF
+    _cQuery += " 						,ZD1.ZD1_QTCONF "				                                                                                                + CRLF
+    _cQuery += " 						,ZD1.ZD1_SLDIT  "				                                                                                                + CRLF
+    _cQuery += " 						,NVL(WIS.QT_ARMAZENADA,0) 	AS QT_ARMAZENADA "                                                                                  + CRLF
+    _cQuery += " 						,WIS.EMPRESA "					                                                                                                + CRLF
+    _cQuery += " 						,WIS.DESCRICAO "				                                                                                                + CRLF
+    _cQuery += " 						,WIS.NOTA "						                                                                                                + CRLF
+    _cQuery += " 						,WIS.SERIE "					                                                                                                + CRLF
+    _cQuery += " 						,WIS.FORNCECEDOR "				                                                                                                + CRLF
+    _cQuery += " 						,WIS.LOJA "						                                                                                                + CRLF
+    _cQuery += " 						,WIS.PRODUTO "					                                                                                                + CRLF
+    _cQuery += " 						,' '                AS  D_E_L_E_T_ "                                                                                            + CRLF
+    _cQuery += " 						, ZD1.R_E_C_N_O_    AS  R_E_C_N_O_ "                                                                                            + CRLF    
+    _cQuery += " 				FROM  "+RetSqlName("ZD1")+" ZD1 "                                                                                                       + CRLF
+    _cQuery += " 					FULL JOIN	(	SELECT 	 ARMWIS.CD_EMPRESA			AS EMPRESA "						                                            + CRLF
+    If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha           
+        _cQuery += " 											,CASE ARMWIS.CD_EMPRESA WHEN 1006 THEN 'HYU/SBR' ELSE 'CHE' END    AS DESCRICAO "                       + CRLF
+    ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB           
+        _cQuery += " 											,CASE ARMWIS.CD_EMPRESA WHEN 1008 THEN 'HYU' ELSE 'CHE' END    AS DESCRICAO "                           + CRLF
+    EndIf           
+    _cQuery += " 											,LPAD(ARMWIS.NU_NOTA_FISCAL, 9, '0')	AS NOTA "							                                + CRLF
+    _cQuery += " 											,ARMWIS.NU_SERIE_NF					AS SERIE "							                                    + CRLF
+    _cQuery += " 											,SUBSTR(ARMWIS.CD_FORNECEDOR,2,6) 		AS FORNCECEDOR "					                                + CRLF
+    _cQuery += " 											,SUBSTR(ARMWIS.CD_FORNECEDOR,8,2) 		AS LOJA "							                                + CRLF
+    _cQuery += " 											,ARMWIS.CD_PRODUTO						AS PRODUTO "						                                + CRLF
+    _cQuery += " 											,SUM(ARMWIS.QT_ARMAZENADA) 			AS QT_ARMAZENADA "					                                    + CRLF
+	_cQuery += " 									FROM " + _cConectArmWis + " ARMWIS "                                                                                + CRLF
+    _cQuery += " 									WHERE ARMWIS.CD_FORNECEDOR IS NOT NULL "											                                + CRLF
+    If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha           
+            _cQuery += "                            AND ARMWIS.CD_EMPRESA IN (1002,1006) "                                                                              + CRLF
+    ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB          
+            _cQuery += "                            AND ARMWIS.CD_EMPRESA = 1008 "                                                                                      + CRLF
+    EndIf
+    _cQuery += " 									GROUP BY ARMWIS.CD_EMPRESA, ARMWIS.NU_NOTA_FISCAL, ARMWIS.NU_SERIE_NF, ARMWIS.CD_FORNECEDOR, ARMWIS.CD_PRODUTO "    + CRLF
+    _cQuery += " 									ORDER BY ARMWIS.CD_EMPRESA, ARMWIS.NU_NOTA_FISCAL, ARMWIS.NU_SERIE_NF, ARMWIS.CD_FORNECEDOR, ARMWIS.CD_PRODUTO "    + CRLF
+    _cQuery += " 				 			) WIS  "											                                                                        + CRLF
+    _cQuery += " 				 	ON 	RTRIM(ZD1.ZD1_DOC) 		=  RTRIM(WIS.NOTA) "			                                                                        + CRLF
+    _cQuery += " 					AND RTRIM(ZD1.ZD1_SERIE) 	= RTRIM(WIS.SERIE) "			                                                                        + CRLF
+    _cQuery += " 					AND RTRIM(ZD1.ZD1_FORNEC) 	= RTRIM(WIS.FORNCECEDOR)	"	                                                                        + CRLF
+    _cQuery += " 					AND RTRIM(ZD1.ZD1_LOJA) 	= RTRIM(WIS.LOJA) "				                                                                        + CRLF
+    _cQuery += " 					AND RTRIM(ZD1.ZD1_COD) 		= RTRIM(WIS.PRODUTO) "			                                                                        + CRLF
+    _cQuery += " 				LEFT JOIN "+RetSqlName("SA2")+" SA2 "                                                                                                   + CRLF 
+    _cQuery += " 					ON ZD1.D_E_L_E_T_ 	= ' ' "                                                                                                         + CRLF
+    _cQuery += " 					AND SA2.A2_FILIAL 	= '"+FwXFilial("SA2")+"' "			                                                                            + CRLF
+    _cQuery += " 					AND SA2.A2_COD 		= ZD1.ZD1_FORNEC "                                                                                              + CRLF
+    _cQuery += " 					AND SA2.A2_LOJA 	= ZD1.ZD1_LOJA "                                                                                                + CRLF
+    _cQuery += " 				WHERE ZD1.D_E_L_E_T_ = ' ' "                                                                                                            + CRLF
+    _cQuery += " 					AND ZD1.ZD1_FILIAL = '"+FwXFilial("ZD1")+"' "			                                                                            + CRLF
+    _cQuery += " 					AND ZD1.ZD1_COD BETWEEN '"+_cCodProdDe+"'  AND '"+_cCodProdAte+"' "                                                                 + CRLF
+    _cQuery += " 				) TMP "														                                                                            + CRLF
+    _cQuery += " WHERE TMP.QT_ARMAZENADA < TMP.ZD1_QUANT "									                                                                            + CRLF
 
 	nStatus := TCSqlExec(_cQuery)
     If (nStatus < 0)
