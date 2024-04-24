@@ -52,12 +52,6 @@ If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empre
     Else
         _lRet := .T.
     EndIf
-ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //Empresa Franco da Rocha | Hyundai
-    If VS1->VS1_XMARCA $ "HYU"
-        If Alltrim(_cChave) == AllTrim(_cSerie01)
-            _lRet := .T.
-        EndIf
-    EndIf
 Else
     _lRet := .T.
 EndIf
