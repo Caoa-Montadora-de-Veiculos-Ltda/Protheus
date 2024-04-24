@@ -107,20 +107,20 @@ User Function ZWSR013()
 			_cEmpWis := ""
 			_cDepWis := ""
 			If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
-				If AllTrim(VS1->VS1_XMARCA) =="CHE"
+				If AllTrim((_cAlias)->VS1_XMARCA) =="CHE"
 					_cEmpWis := "1002"
-					_cDepWis := "PREP"
-				ElseIf AllTrim(VS1->VS1_XMARCA) =="SBR"
+					_cDepWis := "002"
+				ElseIf AllTrim((_cAlias)->VS1_XMARCA) =="SBR"
 					_cEmpWis := "1006"
-					_cDepWis := "RGLOG"
-				ElseIf AllTrim(VS1->VS1_XMARCA) =="HYU"
+					_cDepWis := "006"
+				ElseIf AllTrim((_cAlias)->VS1_XMARCA) =="HYU"
 					_cEmpWis := "1006"
-					_cDepWis := "RGLOG"
+					_cDepWis := "006"
 				EndIf
 			ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
-				If AllTrim(VS1->VS1_XMARCA) =="HYU"
+				If AllTrim((_cAlias)->VS1_XMARCA) =="HYU"
 					_cEmpWis := "1008"
-					_cDepWis := "RGLOG"
+					_cDepWis := "006"
 				EndIf
 			EndIf
             
