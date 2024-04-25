@@ -139,6 +139,18 @@ User Function ZPECF008()
 		_cAglutina 	:= ""
 		_aMensAglu	:= {}
 		_cObsPrc    := ""
+
+		If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+			If AllTrim(_aRet[10]) == "HYU" //Não Pode Hyundai
+				Help( , ,OemToAnsi(STR0028),,"Marca HYU bloqueada na empresa 02 | Franco da Rocha",4,1) //Atenção / Necessário informar os parâmetros 
+				Break 
+			EndIf
+		ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
+			If ( _AllTrim(aRet[10]) == "CHE" .Or. AllTrim(_aRet[10]) == "SBR" )
+				Help( , ,OemToAnsi(STR0028),,"Marca HYU bloqueada na empresa 02 | Franco da Rocha",4,1) //Atenção / Necessário informar os parâmetros 
+				Break 
+			EndIf
+		EndIf
 		//Carregar processo
 		If _lJob
 			ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _cLocal,/*indica FDR*/ , @_cObsPrc )
