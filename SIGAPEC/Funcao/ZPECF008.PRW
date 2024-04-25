@@ -147,7 +147,7 @@ User Function ZPECF008()
 			EndIf
 		ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
 			If ( _AllTrim(aRet[10]) == "CHE" .Or. AllTrim(_aRet[10]) == "SBR" )
-				Help( , ,OemToAnsi(STR0028),,"Marca HYU bloqueada na empresa 02 | Franco da Rocha",4,1) //Atenção / Necessário informar os parâmetros 
+				Help( , ,OemToAnsi(STR0028),,"Marca CHE/SBR bloqueada na empresa 90 | HMB",4,1) //Atenção / Necessário informar os parâmetros 
 				Break 
 			EndIf
 		EndIf
