@@ -1167,7 +1167,7 @@ if nStatuHttp >= 200 .and. nStatuHttp <= 299
 
 			nPos := aScan( aSimple, {|aVet| aVet[2] == "montanteMoedaPagamento" .and. aVet[5] == "ContasAReceberRequest#1.documentos#1.AccountReceivable#" + Alltrim(Str(nz))} )
 
-			If ( SE1->E1_CLIENTE == "000387" .And. SE1->E1_LOJA == "02" ) .And. AllTrim(SE1->E1_TIPO) == "NF"
+			If ( AllTrim(SE1->E1_CLIENTE) == "000387" .And. AllTrim(SE1->E1_LOJA) == "02" ) .And. AllTrim(SE1->E1_TIPO) == "NF"
 				xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR(IIf(lInvSinal,SE1->E1_VALOR - (SE1->E1_PIS + SE1->E1_COFINS) * -1, SE1->E1_VALOR - (SE1->E1_PIS + SE1->E1_COFINS))))) //###LINHA ORIGINAL
 			Else
 				xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR(IIf(lInvSinal,SE1->E1_VALOR * -1,SE1->E1_VALOR)))) //###LINHA ORIGINAL
