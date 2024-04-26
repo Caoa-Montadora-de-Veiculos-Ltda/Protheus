@@ -74,8 +74,8 @@ Static Function ZEICF025AP(_cUrl, _cChave, _lToken, _lJob)
 Local _aMsg		:= {}
 Local _lRet 	:= .T.
 
-Private cUserName   := GETMV("CMV_EIC004")     // type here user name              
-Private cPassword   := GETMV("CMV_EIC005")     // type here user password    "bRTxqzUyJwN5BnT" 
+Private cUserName   := SuperGetMV("CMV_EIC004",,"Caoa")     // type here user name     "Caoa"         
+Private cPassword   := SuperGetMV("CMV_EIC005",,"bRTxqzUyJwN5BnT")     // type here user password    "bRTxqzUyJwN5BnT" 
 
 Default _cChave := " "                    ///"SHA23090924"          //informações como numero da House
 Default _cUrlFH	:= GETMV("CMV_EIC001")   ///"https://api.asiashipping.com.br/followup/House"
@@ -106,8 +106,8 @@ Chamado pela função ZEICF025AP gera Token
 @ Obs		Os paremetros de token, usuário e senha serão enviados no cabeçalho 
 /*/
 Static Function ZEICF025PR( _cUrl, _cChave, _lToken, _aMsg, _lJob )
-Local _cUserAut     := GETMV("CMV_EIC006")    //"Authorization"
-Local _cPassAut     := GETMV("CMV_EIC007")    //"Bearer eyJhbGciOiJlUzl1Nils"  
+Local _cUserAut     := SuperGetMV("CMV_EIC006",,"Authorization")    //"Authorization"
+Local _cPassAut     := SuperGetMV("CMV_EIC007",,"Bearer eyJhbGciOiJlUzl1Nils")    //"Bearer eyJhbGciOiJlUzl1Nils"  
 Local _lRet			:= .T.
 Local _cAlias 		:= GetNextAlias()
 Local _cAliasJ 		:= GetNextAlias()
@@ -133,7 +133,7 @@ Private _aHeader    := {}
 		_cToken := U_getToke1()
 		
 		if Valtype(_cToken) = "U"
-			Aadd(_aMsg,"Não existe retorno do Host Token, excedido o numero de tentativas de conexão "+_cUrlToken)
+			Aadd(_aMsg,"Não existe retorno do Host Token, excedido o numero de tentativas de conexão "+_cToken)
 			Return .F.
 		else
 			Aadd(_aHeader,'Authorization:' + _cToken )
@@ -327,7 +327,7 @@ Local mXANOTA  := ' '                  //W6_XANOTA    //Anotações do Agente
 Local cXCSTAT  := ' '                  //W6_XCSTAT    //Status da carga
 Local cXCHOUSE := ' '                  //W6_XCHOUSE   //Conhecimento de House recebido (Sim/Não)
 Local cXEUROPA := ' '                  //W6_XEUROPA   //Se carga é Via Europa
-
+Local cLegVes  := ' '                  //             //LegVessel do navio
     SW6->(dbGoto(NREGSW6))
 
     cXSHIPME   := _oJSRet:GetJsonText("ShipmentNum")
@@ -358,6 +358,7 @@ Local cXEUROPA := ' '                  //W6_XEUROPA   //Se carga é Via Europa
 	cXCSTAT    := _oJSRet:GetJsonText("CargoStatus")
 	cXCHOUSE   := _oJSRet:GetJsonText("IsHBLReceived")
 	cXEUROPA   := _oJSRet:GetJsonText("IsEuropeRoute")
+	cLegVes    := _oJSRet:GetJsonText("LegVessel")
 		
 	cPortOri  := Posicione("SY9",4,xFilial("SY9")+AllTrim(_oJSRet:GetJsonText("PortofLoading")),"Y9_SIGLA")
 	cPortDes  := Posicione("SY9",4,xFilial("SY9")+AllTrim(_oJSRet:GetJsonText("PortofDischarge")),"Y9_SIGLA")
@@ -505,8 +506,8 @@ User Function getToke1()
     Local aHeader    As Array     // request header
     Local jBody      As Character // corpo
 
-    cGrantType := GETMV("CMV_EIC003")     //type here grant type to request "password"       
-    cBaseURL   := GETMV("CMV_EIC002")     //"https://api.asiashipping.com.br/account/token/"   // type here your base URL
+    cBaseURL   := SuperGetMV("CMV_EIC002",,"https://api.asiashipping.com.br/account/token/" )     //"https://api.asiashipping.com.br/account/token/"   // type here your base URL
+    cGrantType := SuperGetMV("CMV_EIC003",,"password" )     //type here grant type to request "password"   
 
     cPath      := "?grant_type=" + cGrantType + "&username=" + cUserName + "&password=" + cPassword // type here token endpoint
     aHeader    := {} 
@@ -537,6 +538,7 @@ User Function getToke1()
     Else
         cError  := oRest:GetLastError()
         cStatus := oRest:GetHTTPCode()
+        _cToken := cError
     EndIf
 Return _cToken
 
