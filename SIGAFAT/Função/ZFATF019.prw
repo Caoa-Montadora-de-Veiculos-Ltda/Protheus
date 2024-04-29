@@ -36,7 +36,8 @@ oBtn04 := TButton():New( 020,171,"Devolver Notas Fiscais",oGrp01,{|| fDevNotas()
 oBtn04 := TButton():New( 020,248,"Transmissão de Notas"  ,oGrp01,{|| SPEDNFe()}                                                                           ,068,032,,,,.T.,,"",,,,.F. )
 //oBtn04 := TButton():New( 020,325,"Incluir Pedido Venda"  ,oGrp01,{|| fVisuPed("SC5",aRotina,3,Nil,Nil,Nil)}                                               ,068,032,,,,.T.,,"",,,,.F. )
 oBtn04 := TButton():New( 020,325,"Pedidos Venda"         ,oGrp01,{|| MATA410()}                                                                           ,068,032,,,,.T.,,"",,,,.F. )
-
+//GAP167  Previsao de Faturamento
+oBtn06 := TButton():New( 020,405,"Previsao Venda"        ,oGrp01,{|| FWMsgRun(, {|oSay| U_ZFATF025( oSay )  }, "Previsao Faturamento"  , "Selecionando Previsao"     )} ,068,032,,,,.T.,,"",,,,.F. )  
 oDlg01:Activate(,,,.T.)
 
 StartJob("U_CMVAUT04", GetEnvServer(), .F.)//, cEmpAnt, cFilAnt)
@@ -78,8 +79,8 @@ Local nY            As Numeric
 Local nStatus       As Numeric
 Local aTamSx3       As Array
 Local aValidCmp     As Array
-Local dDatIni       := Date()
-Local dDatfin       := Date()
+//Local dDatIni       := Date()
+//Local dDatfin       := Date()
 
 Private cCabAlias   As Character
 Private cIteAlias   As Character
@@ -116,6 +117,7 @@ nColuna     := 1
 nLinha      := 1
 aCamBkp     := {}
 
+/*//GAP167  Previsao de Faturamento
 Aadd(aParamBox, {1, "Cliente De"          ,Space(TamSx3("C5_CLIENTE")[01]), "@!",,"SA1"   ,, 050	, .F.	})
 Aadd(aParamBox, {1, "Loja De"             ,Space(TamSx3("C5_LOJACLI")[01]), "@!",,        ,, 020	, .F.	})
 Aadd(aParamBox, {1, "Cliente Ate"         ,Space(TamSx3("C5_CLIENTE")[01]), "@!",,"SA1"   ,, 050	, .F.	})
@@ -142,11 +144,15 @@ Aadd(aParamBox, {1, "Cor Externa Ate"     ,Space(TamSx3("C6_XCOREXT")[01]), "@!"
 Aadd(aParamBox, {1, "Data De"             ,dDatIni                        , "@D",,        ,, 060	, .F.	})
 Aadd(aParamBox, {1, "Data Ate"            ,dDatfin                        , "@D",,        ,, 060	, .F.	})
 
-bRet := ParamBox(aParambox, "Parametros para seleção dos dados"	, @aRet, , , .T. /*lCentered*/, 0, 0, , , .T. /*lCanSave*/, .T. /*lUserSave*/)
+bRet := ParamBox(aParambox, "Parametros para seleção dos dados"	, @aRet, , , .T. /lCentered/, 0, 0, , , .T. /lCanSave/, .T. /lUserSave/)
 If !bRet
     ApMsgStop("Rotina cancelada!", "Pedidos Título")
     Return(.F.)
 EndIf
+*/
+If !U_ZFATF09M(@aRet)
+    Return(.F.)
+Endif 
 
 /*********************************************************************************************************************************************/
 //Cabeçalho
@@ -264,6 +270,16 @@ cQuery += CrLf + " 	      VRJ.VRJ_STATUS as VRJ_STATUS  ,'F' as LUPD , "
 cQuery += CrLf + "        ROW_NUMBER() OVER (ORDER BY " + cOrderTab + " )  LINHA, "
 cQuery += CrLf + "        ' ' as  D_E_L_E_T_  , "
 cQuery += CrLf + "        ROW_NUMBER() OVER (ORDER BY " + cOrderTab + " )  R_E_C_N_O_ "
+
+//GAP167  Previsao de Faturamento
+_cCargaQry := U_ZFATF09Q(cQuery, cOrderTab, aRet, /*_cWhere*/, /*_cJoin*/)
+If Empty(_cCargaQry)
+    ApMsgStop("Problemas na montagem do Select", "Previsão Faturamento")
+    Return(.F.)
+Endif
+
+cQuery := _cCargaQry
+/* GAP167  Previsao de Faturamento 
 cQuery += CrLf + " FROM " + RetSqlName("SC6") + " SC6 "
 
 cQuery += CrLf + "      INNER JOIN " + RetSqlName("SC5") + " SC5 
@@ -332,6 +348,7 @@ cQuery += CrLf + "     AND SC6.C6_NOTA      = '" + Space(9) + "' "
 cQuery += CrLf + "     AND SC6.C6_BLQ       = ' ' "
 cQuery += CrLf + " 	   AND SC6.D_E_L_E_T_   = ' ' "
 cQuery += CrLf + " ORDER BY " + cOrderTab 
+*/
 
 nStatus := TCSqlExec(cQuery)
  
@@ -1217,424 +1234,424 @@ While (cCabAlias)->(!Eof())
     
     oSay:SetText("Preparando pedido: " + (cCabAlias)->C6_NUM+" ...")
     if (cCabAlias)->LUPD <> "T"
-    cNumSerie := ""
-    SC5->(DbSetOrder(1))        
-    SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
+        cNumSerie := ""
+        SC5->(DbSetOrder(1))        
+        SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
     
-    SC6->(DbSetOrder(1))        
-    SC6->(DbSeek(xFilial("SC6") + (cCabAlias)->C6_NUM + (cCabAlias)->C6_ITEM))
+        SC6->(DbSetOrder(1))        
+        SC6->(DbSeek(xFilial("SC6") + (cCabAlias)->C6_NUM + (cCabAlias)->C6_ITEM))
 
-    If !Empty(Alltrim(cNumPed)) .and. (cCabAlias)->LUPD == "T"
-        //Begin Transaction
-            cNumSerie := If(ValType(cChassi) <> "U" , cChassi, SC6->C6_CHASSI)
+        If !Empty(Alltrim(cNumPed)) .and. (cCabAlias)->LUPD == "T"
+            //Begin Transaction
+                cNumSerie := If(ValType(cChassi) <> "U" , cChassi, SC6->C6_CHASSI)
 
-            SC5->(DbSetOrder(1))        
-            SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
-            aCabPed := {}
+                SC5->(DbSetOrder(1))        
+                SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
+                aCabPed := {}
 
-            For nY := 1 To SC5->(FCount())
-                cCampo   := SC5->(FieldName(nY))
-                nPosicao := (cCabAlias)->(FieldPos(cCampo))
+                For nY := 1 To SC5->(FCount())
+                    cCampo   := SC5->(FieldName(nY))
+                    nPosicao := (cCabAlias)->(FieldPos(cCampo))
 
-                If nPosicao <> 0
-                    cConteudo := (cCabAlias)->(FieldGet(nPosicao))
+                    If nPosicao <> 0
+                        cConteudo := (cCabAlias)->(FieldGet(nPosicao))
+                    Else
+                        cConteudo := &("SC5->"+cCampo)
+                    EndIf
+
+                    Aadd(aCabPed, {cCampo,cConteudo, Nil})
+
+                Next nY
+                aadd(aCabPed,{"C5_STATUS","XX",Nil})
+                SC6->(DbSetOrder(1))        
+                SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
+
+                aItePed := {}
+                aLinha  := {}
+
+                Aadd( aLinha , { "LINPOS"     , "C6_ITEM"               , SC6->C6_ITEM } )
+                Aadd( aLinha , { "AUTDELETA"  , "N"                     , Nil          } )
+                Aadd( aLinha , { "C6_PRODUTO" , SC6->C6_PRODUTO         , Nil          } )
+                Aadd( aLinha , { "C6_QTDVEN"  , SC6->C6_QTDVEN          , Nil          } )
+                Aadd( aLinha , { "C6_PRCVEN"  , (cCabAlias)->C6_PRCVEN  , Nil          } )
+                Aadd( aLinha , { "C6_VALOR"   , (cCabAlias)->C6_VALOR   , Nil          } )
+                Aadd( aLinha , { "C6_PRUNIT"  , SC6->C6_PRUNIT          , Nil          } )
+                Aadd( aLinha , { "C6_OPER"    , (cCabAlias)->C6_OPER    , Nil          } )
+                Aadd( aLinha , { "C6_TES"     , (cCabAlias)->C6_TES     , Nil          } )
+                Aadd( aLinha , { "C6_QTDLIB"  , SC6->C6_QTDVEN          , Nil          } )
+                Aadd( aLinha , { "C6_CHASSI"  , (cCabAlias)->C6_CHASSI  , Nil          } )
+                Aadd( aLinha , { "C6_LOCALIZ" , (cCabAlias)->C6_LOCALIZ , Nil          } )
+                Aadd( aLinha , { "C6_NUMSERI" , (cCabAlias)->C6_NUMSERI , Nil          } )
+                Aadd( aLinha , { "C6_XVLRMVT" , (cCabAlias)->C6_XVLRMVT , Nil          } )
+                Aadd( aLinha , { "C6_XVLRVDA" , (cCabAlias)->C6_XVLRVDA , Nil          } )
+                Aadd( aLinha , { "C6_XVLRPRD" , (cCabAlias)->C6_XVLRVDA , Nil          } )
+                Aadd(aItePed, aLinha)
+
+                lMsHelpAuto := .T.
+                lMsErroAuto := .F.
+
+                MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, aCabPed, aItePed, nOPc, .F.) // Atu campo
+
+                If lMsErroAuto
+                    MostraErro()
+                    lRetorno := .F.
+                    //DisarmTransaction()
                 Else
-                    cConteudo := &("SC5->"+cCampo)
+                    RecLock(cCabAlias,.F.)
+                    (cCabAlias)->LUPD := "F"
+                    (cCabAlias)->(MsUnLock())
+                    DBCommitAll()
                 EndIf
+            //End Transaction
+        Else
 
-                Aadd(aCabPed, {cCampo,cConteudo, Nil})
+            RecLock(cCabAlias,.F.)
+            (cCabAlias)->C5_XMENSER := If(!Empty(Alltrim(SC5->C5_XMENSER)),SC5->C5_XMENSER,Space(8000))
+            (cCabAlias)->(MsUnLock())        
 
-            Next nY
-            aadd(aCabPed,{"C5_STATUS","XX",Nil})
-            SC6->(DbSetOrder(1))        
-            SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
+        EndIf
 
-            aItePed := {}
-            aLinha  := {}
+        If !Empty(Alltrim(SC6->C6_NUMSERI)) .And. !Empty(Alltrim(SC6->C6_CHASSI )) .And.  !Empty(Alltrim(SC6->C6_LOCALIZ))
 
-            Aadd( aLinha , { "LINPOS"     , "C6_ITEM"               , SC6->C6_ITEM } )
-            Aadd( aLinha , { "AUTDELETA"  , "N"                     , Nil          } )
-            Aadd( aLinha , { "C6_PRODUTO" , SC6->C6_PRODUTO         , Nil          } )
-            Aadd( aLinha , { "C6_QTDVEN"  , SC6->C6_QTDVEN          , Nil          } )
-            Aadd( aLinha , { "C6_PRCVEN"  , (cCabAlias)->C6_PRCVEN  , Nil          } )
-            Aadd( aLinha , { "C6_VALOR"   , (cCabAlias)->C6_VALOR   , Nil          } )
-            Aadd( aLinha , { "C6_PRUNIT"  , SC6->C6_PRUNIT          , Nil          } )
-            Aadd( aLinha , { "C6_OPER"    , (cCabAlias)->C6_OPER    , Nil          } )
-            Aadd( aLinha , { "C6_TES"     , (cCabAlias)->C6_TES     , Nil          } )
-            Aadd( aLinha , { "C6_QTDLIB"  , SC6->C6_QTDVEN          , Nil          } )
-            Aadd( aLinha , { "C6_CHASSI"  , (cCabAlias)->C6_CHASSI  , Nil          } )
-            Aadd( aLinha , { "C6_LOCALIZ" , (cCabAlias)->C6_LOCALIZ , Nil          } )
-            Aadd( aLinha , { "C6_NUMSERI" , (cCabAlias)->C6_NUMSERI , Nil          } )
-            Aadd( aLinha , { "C6_XVLRMVT" , (cCabAlias)->C6_XVLRMVT , Nil          } )
-            Aadd( aLinha , { "C6_XVLRVDA" , (cCabAlias)->C6_XVLRVDA , Nil          } )
-            Aadd( aLinha , { "C6_XVLRPRD" , (cCabAlias)->C6_XVLRVDA , Nil          } )
-            Aadd(aItePed, aLinha)
-            
-            lMsHelpAuto := .T.
-            lMsErroAuto := .F.
-            
-            MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, aCabPed, aItePed, nOPc, .F.) // Atu campo
-            
-            If lMsErroAuto
-                MostraErro()
-                lRetorno := .F.
-                //DisarmTransaction()
-            Else
-                RecLock(cCabAlias,.F.)
-                (cCabAlias)->LUPD := "F"
+            SDC->(DbSetOrder(3))
+
+            If SDC->(DbSeek(xFilial("SDC")+SC6->C6_PRODUTO+SC6->C6_LOCAL+SC6->C6_LOTECTL+SC6->C6_NUMLOTE+SC6->C6_LOCALIZ+SC6->C6_NUMSERI+"SC6"))
+                (cCabAlias)->(RecLock(cCabAlias,.F.))
+                (cCabAlias)->C9_SEQUEN  := SDC->DC_SEQ
                 (cCabAlias)->(MsUnLock())
-                DBCommitAll()
             EndIf
-        //End Transaction
-    Else
-        
-        RecLock(cCabAlias,.F.)
-        (cCabAlias)->C5_XMENSER := If(!Empty(Alltrim(SC5->C5_XMENSER)),SC5->C5_XMENSER,Space(8000))
-        (cCabAlias)->(MsUnLock())        
-    
-    EndIf
 
-    If !Empty(Alltrim(SC6->C6_NUMSERI)) .And. !Empty(Alltrim(SC6->C6_CHASSI )) .And.  !Empty(Alltrim(SC6->C6_LOCALIZ))
-    
-        SDC->(DbSetOrder(3))
-    
-        If SDC->(DbSeek(xFilial("SDC")+SC6->C6_PRODUTO+SC6->C6_LOCAL+SC6->C6_LOTECTL+SC6->C6_NUMLOTE+SC6->C6_LOCALIZ+SC6->C6_NUMSERI+"SC6"))
-            (cCabAlias)->(RecLock(cCabAlias,.F.))
-            (cCabAlias)->C9_SEQUEN  := SDC->DC_SEQ
-            (cCabAlias)->(MsUnLock())
+            cQuery := ""
+            cQuery += CrLf + " UPDATE "+RetSqlName("VRK")                                                                           
+            cQuery += CrLf + " SET VRK_CHASSI = '"+SC6->C6_NUMSERI+"' "
+            cQuery += CrLf + " WHERE VRK_FILIAL = '"+xFilial("VRK")+"' "
+            cQuery += CrLf + " AND VRK_PEDIDO||VRK_ITEPED = (SELECT VRK.VRK_PEDIDO||VRK.VRK_ITEPED "
+            cQuery += CrLf + "                               FROM "+RetSqlName("VRJ")+" VRJ "
+            cQuery += CrLf + "                               INNER JOIN  " + RetSqlName("VRK") + " VRK " 
+            cQuery += CrLf + "                                      ON  VRK.VRK_FILIAL = '"+xFilial("VRK")+"' "
+            cQuery += CrLf + "                                      AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
+            cQuery += CrLf + "                                      AND VRK.D_E_L_E_T_ = VRJ.D_E_L_E_T_ "
+            cQuery += CrLf + "                                      AND VRK.VRK_ITEPED  = '" + StrZero(Val(Alltrim(SC6->C6_ITEM)),3)  +"' "
+
+            cQuery += CrLf + "                               WHERE VRJ.VRJ_FILIAL  = '" + xFilial("VRJ") + "' "
+            cQuery += CrLf + "                                 AND VRJ.VRJ_CODCLI  = '" + SC5->C5_CLIENTE + "' "
+            cQuery += CrLf + "                                 AND VRJ.VRJ_LOJA    = '" + SC5->C5_LOJACLI + "' "
+            cQuery += CrLf + "                                 AND VRJ.VRJ_PEDCOM  = '" + SC6->C6_PEDCLI  + "' "
+            cQuery += CrLf + "                                 AND VRJ.D_E_L_E_T_  = ' ') "
+            nStatus := TCSqlExec(cQuery)
+
+            If (nStatus < 0)
+                MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Chasi VRK")
+            EndIf
+
+            (cCabAlias)->(DbSkip())
+            Loop
+
         EndIf
-
-        cQuery := ""
-        cQuery += CrLf + " UPDATE "+RetSqlName("VRK")                                                                           
-        cQuery += CrLf + " SET VRK_CHASSI = '"+SC6->C6_NUMSERI+"' "
-        cQuery += CrLf + " WHERE VRK_FILIAL = '"+xFilial("VRK")+"' "
-        cQuery += CrLf + " AND VRK_PEDIDO||VRK_ITEPED = (SELECT VRK.VRK_PEDIDO||VRK.VRK_ITEPED "
-        cQuery += CrLf + "                               FROM "+RetSqlName("VRJ")+" VRJ "
-        cQuery += CrLf + "                               INNER JOIN  " + RetSqlName("VRK") + " VRK " 
-        cQuery += CrLf + "                                      ON  VRK.VRK_FILIAL = '"+xFilial("VRK")+"' "
-        cQuery += CrLf + "                                      AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
-        cQuery += CrLf + "                                      AND VRK.D_E_L_E_T_ = VRJ.D_E_L_E_T_ "
-        cQuery += CrLf + "                                      AND VRK.VRK_ITEPED  = '" + StrZero(Val(Alltrim(SC6->C6_ITEM)),3)  +"' "
-        
-        cQuery += CrLf + "                               WHERE VRJ.VRJ_FILIAL  = '" + xFilial("VRJ") + "' "
-        cQuery += CrLf + "                                 AND VRJ.VRJ_CODCLI  = '" + SC5->C5_CLIENTE + "' "
-        cQuery += CrLf + "                                 AND VRJ.VRJ_LOJA    = '" + SC5->C5_LOJACLI + "' "
-        cQuery += CrLf + "                                 AND VRJ.VRJ_PEDCOM  = '" + SC6->C6_PEDCLI  + "' "
-        cQuery += CrLf + "                                 AND VRJ.D_E_L_E_T_  = ' ') "
-        nStatus := TCSqlExec(cQuery)
-
-        If (nStatus < 0)
-            MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Chasi VRK")
-        EndIf
-
-        (cCabAlias)->(DbSkip())
-        Loop
-    
-    EndIf
  
-    cQuery := ""
-    cQuery += CrLf + " SELECT A.* "
-    cQuery += CrLf + "  FROM (  "
-    cQuery += CrLf + "      SELECT "
-    
-    For nY := 1 To Len(aCampos)
-        cQuery += CrLf + aCampos[nY]
-    Next
-    
-    cQuery += CrLf + "         (SELECT MAX(SDB.DB_NUMSEQ) "
-    cQuery += CrLf + "          FROM " + RetSqlName("SDB") + " SDB"
-    cQuery += CrLf + "          WHERE  SDB.DB_FILIAL       = '"+xFilial("SDB")+"'"
-    cQuery += CrLf + "             AND SDB.DB_ESTORNO      = ' '"
-    cQuery += CrLf + "             AND SDB.DB_ATUEST       = 'S'"
-    cQuery += CrLf + "             AND SDB.DB_LOCAL        = SBF.BF_LOCAL"
-    cQuery += CrLf + "             AND SDB.DB_LOCALIZ      = SBF.BF_LOCALIZ"
-    cQuery += CrLf + "             AND SDB.DB_NUMSERI      = SBF.BF_NUMSERI"
-    cQuery += CrLf + "             AND SDB.DB_PRODUTO      = SBF.BF_PRODUTO"
-    cQuery += CrLf + "             AND SDB.D_E_L_E_T_      = ' ') DB_NUMSEQ,"
-
-    cQuery += CrLf + "             NVL((SELECT VB0_DATDES FROM " + RetSqlName("VB0") + "  VB0 "
-    cQuery += CrLf + "                  WHERE VB0.VB0_DATBLO||VB0.VB0_HORBLO =( "
-    cQuery += CrLf + "                                                     SELECT max(VB0A.VB0_DATBLO||VB0A.VB0_HORBLO) as DATBLOQ "
-    cQuery += CrLf + "                                                     FROM " + RetSqlName("VB0") + "  VB0A "
-    cQuery += CrLf + "                                                        WHERE VB0A.VB0_FILIAL = VB0.VB0_FILIAL "
-    cQuery += CrLf + "                                                          AND VB0A.vb0_chaint = VB0.VB0_CHAINT "
-    cQuery += CrLf + "                                                          AND VB0A.D_E_L_E_T_ = ' ') "
-    cQuery += CrLf + "                 AND VB0.VB0_FILIAL = '" + xFilial("VB0") + "' "
-    cQuery += CrLf + "                 AND VB0.VB0_CHAINT = VV1.VV1_CHAINT "
-    cQuery += CrLf + "                 AND VB0.D_E_L_E_T_ = ' '),'99999999') AS VB0_DATDES "
-
-    cQuery += CrLf + " FROM " + RetSqlName("VV1") + " VV1 "
-    
-    cQuery += CrLf + "      INNER JOIN " + RetSqlName("SBF") + " SBF "
-    cQuery += CrLf + "          ON  SBF.BF_FILIAL  = '" + xFilial("SBF") + "'"
-    cQuery += CrLf + "          AND SBF.BF_NUMSERI = VV1.VV1_CHASSI "
-    cQuery += CrLf + "          AND SBF.D_E_L_E_T_ = VV1.D_E_L_E_T_ "
-    cQuery += CrLf + "          AND SBF.BF_QUANT   > 0 "
-    cQuery += CrLf + "          AND SBF.BF_EMPENHO = 0 "
-    cQuery += CrLf + "          AND SBF.BF_PRODUTO = '" + (cCabAlias)->C6_PRODUTO + "' "
-    cQuery += CrLf + "          AND SBF.BF_LOCAL   = '" + (cCabAlias)->C6_LOCAL   + "' "
-    
-    If !Empty(Alltrim(cNumSerie))
-        cQuery += CrLf + " AND SBF.BF_NUMSERI      = '" + cNumSerie + "' "
-    EndIf
+        cQuery := ""
+        cQuery += CrLf + " SELECT A.* "
+        cQuery += CrLf + "  FROM (  "
+        cQuery += CrLf + "      SELECT "
         
-    cQuery += CrLf + " WHERE   VV1.VV1_FILIAL      = '" + xFilial("VV1") + "' "
-    cQuery += CrLf + "     AND VV1.VV1_SITVEI      = '0' "
-    cQuery += CrLf + "     AND VV1.VV1_IMOBI       = '0' "
-    cQuery += CrLf + "     AND VV1.D_E_L_E_T_      = ' ') A "
-    cQuery += CrLf + "     WHERE A.VB0_DATDES > '        ' "
-    cQuery += CrLf + " ORDER BY A.VV1_FILIAL,A.BF_PRODUTO,A.DB_NUMSEQ,A.VV1_CHASSI "
+        For nY := 1 To Len(aCampos)
+            cQuery += CrLf + aCampos[nY]
+        Next
+        
+        cQuery += CrLf + "         (SELECT MAX(SDB.DB_NUMSEQ) "
+        cQuery += CrLf + "          FROM " + RetSqlName("SDB") + " SDB"
+        cQuery += CrLf + "          WHERE  SDB.DB_FILIAL       = '"+xFilial("SDB")+"'"
+        cQuery += CrLf + "             AND SDB.DB_ESTORNO      = ' '"
+        cQuery += CrLf + "             AND SDB.DB_ATUEST       = 'S'"
+        cQuery += CrLf + "             AND SDB.DB_LOCAL        = SBF.BF_LOCAL"
+        cQuery += CrLf + "             AND SDB.DB_LOCALIZ      = SBF.BF_LOCALIZ"
+        cQuery += CrLf + "             AND SDB.DB_NUMSERI      = SBF.BF_NUMSERI"
+        cQuery += CrLf + "             AND SDB.DB_PRODUTO      = SBF.BF_PRODUTO"
+        cQuery += CrLf + "             AND SDB.D_E_L_E_T_      = ' ') DB_NUMSEQ,"
     
-    If Select(cTmpAlias) <> 0 ; (cTmpAlias)->(DbCloseArea()) ; EndIf
+        cQuery += CrLf + "             NVL((SELECT VB0_DATDES FROM " + RetSqlName("VB0") + "  VB0 "
+        cQuery += CrLf + "                  WHERE VB0.VB0_DATBLO||VB0.VB0_HORBLO =( "
+        cQuery += CrLf + "                                                     SELECT max(VB0A.VB0_DATBLO||VB0A.VB0_HORBLO) as DATBLOQ "
+        cQuery += CrLf + "                                                     FROM " + RetSqlName("VB0") + "  VB0A "
+        cQuery += CrLf + "                                                        WHERE VB0A.VB0_FILIAL = VB0.VB0_FILIAL "
+        cQuery += CrLf + "                                                          AND VB0A.vb0_chaint = VB0.VB0_CHAINT "
+        cQuery += CrLf + "                                                          AND VB0A.D_E_L_E_T_ = ' ') "
+        cQuery += CrLf + "                 AND VB0.VB0_FILIAL = '" + xFilial("VB0") + "' "
+        cQuery += CrLf + "                 AND VB0.VB0_CHAINT = VV1.VV1_CHAINT "
+        cQuery += CrLf + "                 AND VB0.D_E_L_E_T_ = ' '),'99999999') AS VB0_DATDES "
     
-    DbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cTmpAlias, .F., .T. )
-
-    If (cTmpAlias)->(!Eof())
-
-        /*/
-        ****************************************
-        * Define Variaveis usados pelo MATA440 *
-        ****************************************
-        /*/
-        lLiber   := .T.
-        lParcial := .T.
-        lTrans   := .F.
-        lCredito := .T.
-        lEstoque := .T.
-        lAvCred  := .T.
-        lAvEst   := .T.
-        lItLib   := .T.
-        lLibPed  := .F.
-
-        //Begin Transaction 
-            /*/
-            ************************************************
-            * Posiciona registros para efetuar a liberacao *
-            ************************************************
-            /*/
-            SC5->(DbSetOrder(1))        
-            SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
-            If Empty(SC5->C5_STATUS)
-                RecLock("SC5",.F.)
-                    SC5->C5_STATUS := "XX"
-                SC5->(MsUnlock())
-            EndIf
-
-            SC6->(DbSetOrder(1))        
-            SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
+        cQuery += CrLf + " FROM " + RetSqlName("VV1") + " VV1 "
+        
+        cQuery += CrLf + "      INNER JOIN " + RetSqlName("SBF") + " SBF "
+        cQuery += CrLf + "          ON  SBF.BF_FILIAL  = '" + xFilial("SBF") + "'"
+        cQuery += CrLf + "          AND SBF.BF_NUMSERI = VV1.VV1_CHASSI "
+        cQuery += CrLf + "          AND SBF.D_E_L_E_T_ = VV1.D_E_L_E_T_ "
+        cQuery += CrLf + "          AND SBF.BF_QUANT   > 0 "
+        cQuery += CrLf + "          AND SBF.BF_EMPENHO = 0 "
+        cQuery += CrLf + "          AND SBF.BF_PRODUTO = '" + (cCabAlias)->C6_PRODUTO + "' "
+        cQuery += CrLf + "          AND SBF.BF_LOCAL   = '" + (cCabAlias)->C6_LOCAL   + "' "
+        
+        If !Empty(Alltrim(cNumSerie))
+            cQuery += CrLf + " AND SBF.BF_NUMSERI      = '" + cNumSerie + "' "
+        EndIf
             
+        cQuery += CrLf + " WHERE   VV1.VV1_FILIAL      = '" + xFilial("VV1") + "' "
+        cQuery += CrLf + "     AND VV1.VV1_SITVEI      = '0' "
+        cQuery += CrLf + "     AND VV1.VV1_IMOBI       = '0' "
+        cQuery += CrLf + "     AND VV1.D_E_L_E_T_      = ' ') A "
+        cQuery += CrLf + "     WHERE A.VB0_DATDES > '        ' "
+        cQuery += CrLf + " ORDER BY A.VV1_FILIAL,A.BF_PRODUTO,A.DB_NUMSEQ,A.VV1_CHASSI "
+        
+        If Select(cTmpAlias) <> 0 ; (cTmpAlias)->(DbCloseArea()) ; EndIf
+        
+        DbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cTmpAlias, .F., .T. )
+    
+        If (cTmpAlias)->(!Eof())
+    
+            /*/
+            ****************************************
+            * Define Variaveis usados pelo MATA440 *
+            ****************************************
+            /*/
+            lLiber   := .T.
+            lParcial := .T.
+            lTrans   := .F.
+            lCredito := .T.
+            lEstoque := .T.
+            lAvCred  := .T.
+            lAvEst   := .T.
+            lItLib   := .T.
+            lLibPed  := .F.
+    
+            //Begin Transaction 
+                /*/
+                ************************************************
+                * Posiciona registros para efetuar a liberacao *
+                ************************************************
+                /*/
+                SC5->(DbSetOrder(1))        
+                SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
+                If Empty(SC5->C5_STATUS)
+                    RecLock("SC5",.F.)
+                        SC5->C5_STATUS := "XX"
+                    SC5->(MsUnlock())
+                EndIf
+    
+                SC6->(DbSetOrder(1))        
+                SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
+                
+                SC6->(RecLock("SC6",.F.))
+                    SC6->C6_QTDLIB  := 1
+                    SC6->C6_LOTECTL := CriaVar("C6_LOTECTL")
+                    SC6->C6_DTVALID := CriaVar("C6_DTVALID")
+                    SC6->C6_NUMSERI := Alltrim((cTmpAlias)->VV1_CHASSI)
+                    SC6->C6_CHASSI  := Alltrim((cTmpAlias)->VV1_CHASSI)
+                    SC6->C6_LOCALIZ := Alltrim((cTmpAlias)->BF_LOCALIZ)
+                SC6->(MsUnLock())
+                
+                n_RecnoSc6 := SC6->(Recno())
+    
+                SB1->(DbSeek(xFilial("SB1")+SC6->C6_PRODUTO))
+    
+                /*/
+                *******************************
+                * Efetua a Liberacao por item *
+                *******************************
+                /*/
+                nQtdLib   := SC6->C6_QTDLIB
+                nQtdLib   := MaLibDoFat(SC6->(RecNo()),nQtdLib,@lCredito,@lEstoque,lAvCred,lAvEst,lLiber,lTrans)
+    
+                SDC->(DbSetOrder(1))
+                SDC->(DbGoTop())
+                If SDC->(DbSeek(xFilial("SDC")+(cCabAlias)->C6_PRODUTO;
+                                              +(cCabAlias)->C6_LOCAL  ;
+                                              +"SC6"                  ;
+                                              +(cCabAlias)->C6_NUM    ;
+                                              +(cCabAlias)->C6_ITEM   ;
+                                              +SC9->C9_SEQUEN         ;
+                                              +CriaVar("DC_LOTECTL")  ;
+                                              +CriaVar("DC_NUMLOTE")  ;
+                                              +(cTmpAlias)->BF_LOCALIZ;
+                                              +(cTmpAlias)->VV1_CHASSI))
+        
+                    cQuery := ""
+                    cQuery += CrLf + " SELECT  VV1.VV1_FILIAL          AS FILIAL   , "
+                    cQuery += CrLf + "         VV1.VV1_CHASSI          AS CHASSI   , "
+                    cQuery += CrLf + "         VV1.VV1_CHAINT          AS CHASSIINT, "
+                    cQuery += CrLf + "         VV1.VV1_MODVEI          AS MODVEI   , "
+                    cQuery += CrLf + "         TRIM(VV2.VV2_DESMOD)    AS DESCMOD  , "
+                    cQuery += CrLf + "         VV1.VV1_CODMAR          AS MARCA    , "
+                    cQuery += CrLf + "         TRIM(VE1.VE1_DESMAR)    AS DESCMAR  , "
+                    cQuery += CrLf + "         VV1.VV1_SEGMOD          AS SEGMOD   , "
+                    cQuery += CrLf + "         TRIM(VVX.VVX_DESSEG)    AS DESCSEG  , "
+                    cQuery += CrLf + "         VV1.VV1_FABMOD          AS FABMOD   , "
+                    cQuery += CrLf + "         VV2.VV2_COREXT          AS COREXT   , "
+                    cQuery += CrLf + "         TRIM(VX1.VX5_DESCRI)    AS DESCEXT  , "
+                    cQuery += CrLf + "         VV2.VV2_CORINT          AS CORINT   , "
+                    cQuery += CrLf + "         TRIM(VX2.VX5_DESCRI)    AS DESCINT    "
+                    cQuery += CrLf + " FROM    "+RetSqlName("VV1")+" VV1 "
+                    
+                    cQuery += CrLf + "         INNER JOIN " + RetSqlName("VV2") + " VV2  "
+                    cQuery += CrLf + "              ON  VV2.VV2_FILIAL  = '" + xFilial("VV2") + "' "
+                    cQuery += CrLf + "              AND VV2.VV2_CODMAR  = VV1.VV1_CODMAR   "
+                    cQuery += CrLf + "              AND VV2.VV2_MODVEI  = VV1.VV1_MODVEI   "
+                    cQuery += CrLf + "              AND VV2.VV2_SEGMOD  = VV1.VV1_SEGMOD   "
+                    cQuery += CrLf + "              AND VV2.D_E_L_E_T_  = ' ' "
+                    
+                    cQuery += CrLf + "         LEFT JOIN " + RetSqlName("VX5") + " VX1 "
+                    cQuery += CrLf + "              ON  VX1.VX5_FILIAL  = '" + xFilial("VX5") + "' "
+                    cQuery += CrLf + "              AND VX1.VX5_CHAVE   = '067'   "
+                    cQuery += CrLf + "              AND VX1.VX5_CODIGO  = VV2.VV2_COREXT "
+                    cQuery += CrLf + "              AND VX1.D_E_L_E_T_  = ' ' "
+                    
+                    cQuery += CrLf + "         LEFT JOIN " + RetSqlName("VX5") + " VX2 "
+                    cQuery += CrLf + "              ON  VX2.VX5_FILIAL  = '" + xFilial("VX5") + "' "
+                    cQuery += CrLf + "              AND VX2.VX5_CHAVE   = '066' "
+                    cQuery += CrLf + "              AND VX2.VX5_CODIGO  = VV2.VV2_CORINT "
+                    cQuery += CrLf + "              AND VX2.D_E_L_E_T_  =  ' '   "
+                    
+                    cQuery += CrLf + "         LEFT JOIN " + RetSqlName("VE1") + " VE1  "
+                    cQuery += CrLf + "              ON  VE1.VE1_FILIAL  = '" + xFilial("VE1") + "'  "
+                    cQuery += CrLf + "              AND VE1.VE1_CODMAR  = VV1.VV1_CODMAR   "
+                    cQuery += CrLf + "              AND VE1.D_E_L_E_T_  = ' ' "
+                    
+                    cQuery += CrLf + "         LEFT JOIN " + RetSqlName("VVX") + " VVX  "
+                    cQuery += CrLf + "              ON  VVX.VVX_FILIAL  = '" + xFilial("VVX") + "' "
+                    cQuery += CrLf + "              AND VVX.VVX_CODMAR  = VV1.VV1_CODMAR "
+                    cQuery += CrLf + "              AND VVX.VVX_SEGMOD  = VV1.VV1_SEGMOD "
+                    cQuery += CrLf + "              AND VVX.D_E_L_E_T_  = ' ' "
+                    
+                    cQuery += CrLf + " WHERE   VV1.VV1_FILIAL = '" + xFilial("VV1") + "' "
+                    cQuery += CrLf + "     AND VV1.VV1_CHASSI = '" + Alltrim((cTmpAlias)->VV1_CHASSI) + "'   "
+                    cQuery += CrLf + "     AND VV1.D_E_L_E_T_ = ' ' "
+                    
+                    If Select(cTrbAlias) <> 0 ; (cTrbAlias)->(DbCloseArea()) ; EndIf
+                    DbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cTrbAlias, .F., .T. )
+    
+                    lLibPed  := .T.
+                    (cCabAlias)->(RecLock(cCabAlias,.F.))
+        
+                    If Empty(Alltrim(SC9->C9_BLCRED)) .And. Empty(Alltrim(SC9->C9_BLEST )) .And. Empty(Alltrim(SC9->C9_BLWMS ))
+            
+                        (cCabAlias)->CC_STATUS  := "1"
+            
+                        ElseIf SC9->C9_BLCRED == "01" ; (cCabAlias)->CC_STATUS  := "2"
+                        ElseIf SC9->C9_BLCRED == "04" ; (cCabAlias)->CC_STATUS  := "3"
+                        ElseIf SC9->C9_BLCRED == "05" ; (cCabAlias)->CC_STATUS  := "4"
+                        ElseIf SC9->C9_BLCRED == "06" ; (cCabAlias)->CC_STATUS  := "5"
+                        ElseIf SC9->C9_BLCRED == "09" ; (cCabAlias)->CC_STATUS  := "6"
+                        ElseIf SC9->C9_BLEST  == "02" ; (cCabAlias)->CC_STATUS  := "7"
+                        ElseIf SC9->C9_BLEST  == "03" ; (cCabAlias)->CC_STATUS  := "8"
+                        ElseIf SC9->C9_BLWMS  == "01" ; (cCabAlias)->CC_STATUS  := "9"
+                        ElseIf SC9->C9_BLWMS  == "02" ; (cCabAlias)->CC_STATUS  := "A"
+                        ElseIf SC9->C9_BLWMS  == "03" ; (cCabAlias)->CC_STATUS  := "B"
+                        ElseIf SC9->C9_BLWMS  == "05" ; (cCabAlias)->CC_STATUS  := "C"
+                        ElseIf SC9->C9_BLWMS  == "06" ; (cCabAlias)->CC_STATUS  := "D"
+                        ElseIf SC9->C9_BLWMS  == "07" ; (cCabAlias)->CC_STATUS  := "E"
+                        EndIf
+                    
+                        (cCabAlias)->C6_CHASSI  := (cTmpAlias)->VV1_CHASSI 
+                        (cCabAlias)->C6_NUMSERI := (cTmpAlias)->VV1_CHASSI
+                        (cCabAlias)->C6_LOCALIZ := (cTmpAlias)->BF_LOCALIZ 
+                        (cCabAlias)->C9_SEQUEN  := SC9->C9_SEQUEN
+                        (cCabAlias)->C6_XCODMAR	:= (cTrbAlias)->MARCA      
+                        (cCabAlias)->C6_XDESMAR := (cTrbAlias)->DESCMAR 
+                        (cCabAlias)->C6_XCORINT	:= (cTrbAlias)->CORINT     
+                        (cCabAlias)->C6_XCOREXT := (cTrbAlias)->COREXT 
+                        (cCabAlias)->C6_XMODVEI := (cTrbAlias)->MODVEI     
+                        (cCabAlias)->C6_XDESMOD := (cTrbAlias)->DESCMOD
+                        (cCabAlias)->C6_XSEGMOD	:= (cTrbAlias)->SEGMOD     
+                        (cCabAlias)->C6_XDESSEG := (cTrbAlias)->DESCSEG
+                        (cCabAlias)->C6_XFABMOD	:= (cTrbAlias)->FABMOD     
+                        (cCabAlias)->C6_XGRPMOD := ""
+                        (cCabAlias)->C6_XDGRMOD := ""                      
+                        (cCabAlias)->C9_NFISCAL := CriaVar("C9_NFISCAL")
+                        (cCabAlias)->C9_SERIENF := CriaVar("C9_SERIENF")
+                    (cCabAlias)->(MsUnLock())
+    
+                    SC6->(RecLock("SC6",.F.))
+                        SC6->C6_XCODMAR	:= (cTrbAlias)->MARCA  
+                        SC6->C6_XDESMAR	:= (cTrbAlias)->DESCMAR
+                        SC6->C6_XCORINT	:= (cTrbAlias)->CORINT
+                        SC6->C6_XCOREXT	:= (cTrbAlias)->COREXT 
+                        SC6->C6_XMODVEI	:= (cTrbAlias)->MODVEI
+                        SC6->C6_XDESMOD	:= (cTrbAlias)->DESCMOD
+                        SC6->C6_XSEGMOD	:= (cTrbAlias)->SEGMOD 
+                        SC6->C6_XDESSEG	:= (cTrbAlias)->DESCSEG
+                        SC6->C6_XFABMOD	:= (cTrbAlias)->FABMOD
+                        SC6->C6_XGRPMOD	:= ""
+                        SC6->C6_XDGRMOD	:= ""
+                    SC6->(MsUnLock())
+    
+                    SC9->(RecLock("SC9",.F.))
+                        SC9->C9_XCODMAR := (cTrbAlias)->MARCA 
+                        SC9->C9_XMODVEI := (cTrbAlias)->MODVEI
+                        SC9->C9_XSEGMOD := (cTrbAlias)->SEGMOD
+                        SC9->C9_XFABMOD := (cTrbAlias)->FABMOD
+                        SC9->C9_XCORINT := (cTrbAlias)->CORINT
+                        SC9->C9_XCOREXT := (cTrbAlias)->COREXT
+                        SC9->C9_XGRPMOD := ""
+                    SC9->(MsUnLock())
+    
+                    cQuery := "" 
+                    cQuery +=  CrLf +  " UPDATE " + RetSqlName("VRK")
+                    cQuery +=  CrLf +  " SET VRK_CHASSI = '"+(cTmpAlias)->VV1_CHASSI+"' "
+                    cQuery +=  CrLf +  " WHERE VRK_FILIAL = '"+xFilial("VRK")+"' "
+                    cQuery +=  CrLf +  " AND VRK_PEDIDO||VRK_ITEPED = (SELECT VRK.VRK_PEDIDO||VRK.VRK_ITEPED "
+                    cQuery +=  CrLf +  "                               FROM "+RetSqlName("VRJ")+" VRJ "
+                    cQuery +=  CrLf +  "                               INNER JOIN " + RetSqlName("VRK") + " VRK"
+                    cQuery +=  CrLf +  "                                    ON  VRK.VRK_FILIAL = '" + xFilial("VRK") + "' "
+                    cQuery +=  CrLf +  "                                    AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
+                    cQuery +=  CrLf +  "                                    AND VRK.D_E_L_E_T_ = VRJ.D_E_L_E_T_ "
+                    cQuery +=  CrLf +  "                               WHERE VRJ.VRJ_FILIAL  = '" + xFilial("VRJ")  + "' "
+                    cQuery +=  CrLf +  "                                 AND VRJ.VRJ_CODCLI  = '" + SC5->C5_CLIENTE + "' "
+                    cQuery +=  CrLf +  "                                 AND VRJ.VRJ_LOJA    = '" + SC5->C5_LOJACLI + "' "
+                    cQuery +=  CrLf +  "                                 AND VRJ.VRJ_PEDCOM  = '" + SC6->C6_PEDCLI  + "' "
+                    cQuery +=  CrLf +  "                                 AND VRK.VRK_ITEPED  = '" + StrZero(Val(Alltrim(SC6->C6_ITEM)),3) + "' "
+                    cQuery +=  CrLf +  "                                 AND VRJ.D_E_L_E_T_  = ' ') "
+                    nStatus := TCSqlExec(cQuery)
+    
+                    If (nStatus < 0)
+                        MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Chassi VRK")
+                    EndIf
+    
+                    DBCommitAll()
+                Else
+                    //DisarmTransaction()
+                EndIf
+            //End Transaction
+        EndIf
+    
+        If !lLibPed
+        
             SC6->(RecLock("SC6",.F.))
-                SC6->C6_QTDLIB  := 1
                 SC6->C6_LOTECTL := CriaVar("C6_LOTECTL")
                 SC6->C6_DTVALID := CriaVar("C6_DTVALID")
-                SC6->C6_NUMSERI := Alltrim((cTmpAlias)->VV1_CHASSI)
-                SC6->C6_CHASSI  := Alltrim((cTmpAlias)->VV1_CHASSI)
-                SC6->C6_LOCALIZ := Alltrim((cTmpAlias)->BF_LOCALIZ)
+                SC6->C6_NUMSERI := CriaVar("C6_NUMSERI")
+                SC6->C6_CHASSI  := CriaVar("C6_CHASSI" )
+                SC6->C6_LOCALIZ := CriaVar("C6_LOCALIZ")
+                SC6->C6_XCODMAR := CriaVar("C6_XCODMAR")
+                SC6->C6_XDESMAR	:= CriaVar("C6_XDESMAR")
+                SC6->C6_XGRPMOD := CriaVar("C6_XGRPMOD")
+                SC6->C6_XDGRMOD := CriaVar("C6_XDGRMOD")
+                SC6->C6_XMODVEI	:= CriaVar("C6_XMODVEI")
+                SC6->C6_XDESMOD	:= CriaVar("C6_XDESMOD")
+                SC6->C6_XSEGMOD	:= CriaVar("C6_XSEGMOD")
+                SC6->C6_XDESSEG	:= CriaVar("C6_XDESSEG")
+                SC6->C6_XFABMOD	:= CriaVar("C6_XFABMOD")
+                SC6->C6_XCORINT	:= CriaVar("C6_XCORINT")
+                SC6->C6_XCOREXT	:= CriaVar("C6_XCOREXT")
             SC6->(MsUnLock())
-            
-            n_RecnoSc6 := SC6->(Recno())
-
-            SB1->(DbSeek(xFilial("SB1")+SC6->C6_PRODUTO))
-
-            /*/
-            *******************************
-            * Efetua a Liberacao por item *
-            *******************************
-            /*/
-            nQtdLib   := SC6->C6_QTDLIB
-            nQtdLib   := MaLibDoFat(SC6->(RecNo()),nQtdLib,@lCredito,@lEstoque,lAvCred,lAvEst,lLiber,lTrans)
-
-            SDC->(DbSetOrder(1))
-            SDC->(DbGoTop())
-            If SDC->(DbSeek(xFilial("SDC")+(cCabAlias)->C6_PRODUTO;
-                                          +(cCabAlias)->C6_LOCAL  ;
-                                          +"SC6"                  ;
-                                          +(cCabAlias)->C6_NUM    ;
-                                          +(cCabAlias)->C6_ITEM   ;
-                                          +SC9->C9_SEQUEN         ;
-                                          +CriaVar("DC_LOTECTL")  ;
-                                          +CriaVar("DC_NUMLOTE")  ;
-                                          +(cTmpAlias)->BF_LOCALIZ;
-                                          +(cTmpAlias)->VV1_CHASSI))
     
-                cQuery := ""
-                cQuery += CrLf + " SELECT  VV1.VV1_FILIAL          AS FILIAL   , "
-                cQuery += CrLf + "         VV1.VV1_CHASSI          AS CHASSI   , "
-                cQuery += CrLf + "         VV1.VV1_CHAINT          AS CHASSIINT, "
-                cQuery += CrLf + "         VV1.VV1_MODVEI          AS MODVEI   , "
-                cQuery += CrLf + "         TRIM(VV2.VV2_DESMOD)    AS DESCMOD  , "
-                cQuery += CrLf + "         VV1.VV1_CODMAR          AS MARCA    , "
-                cQuery += CrLf + "         TRIM(VE1.VE1_DESMAR)    AS DESCMAR  , "
-                cQuery += CrLf + "         VV1.VV1_SEGMOD          AS SEGMOD   , "
-                cQuery += CrLf + "         TRIM(VVX.VVX_DESSEG)    AS DESCSEG  , "
-                cQuery += CrLf + "         VV1.VV1_FABMOD          AS FABMOD   , "
-                cQuery += CrLf + "         VV2.VV2_COREXT          AS COREXT   , "
-                cQuery += CrLf + "         TRIM(VX1.VX5_DESCRI)    AS DESCEXT  , "
-                cQuery += CrLf + "         VV2.VV2_CORINT          AS CORINT   , "
-                cQuery += CrLf + "         TRIM(VX2.VX5_DESCRI)    AS DESCINT    "
-                cQuery += CrLf + " FROM    "+RetSqlName("VV1")+" VV1 "
-                
-                cQuery += CrLf + "         INNER JOIN " + RetSqlName("VV2") + " VV2  "
-                cQuery += CrLf + "              ON  VV2.VV2_FILIAL  = '" + xFilial("VV2") + "' "
-                cQuery += CrLf + "              AND VV2.VV2_CODMAR  = VV1.VV1_CODMAR   "
-                cQuery += CrLf + "              AND VV2.VV2_MODVEI  = VV1.VV1_MODVEI   "
-                cQuery += CrLf + "              AND VV2.VV2_SEGMOD  = VV1.VV1_SEGMOD   "
-                cQuery += CrLf + "              AND VV2.D_E_L_E_T_  = ' ' "
-                
-                cQuery += CrLf + "         LEFT JOIN " + RetSqlName("VX5") + " VX1 "
-                cQuery += CrLf + "              ON  VX1.VX5_FILIAL  = '" + xFilial("VX5") + "' "
-                cQuery += CrLf + "              AND VX1.VX5_CHAVE   = '067'   "
-                cQuery += CrLf + "              AND VX1.VX5_CODIGO  = VV2.VV2_COREXT "
-                cQuery += CrLf + "              AND VX1.D_E_L_E_T_  = ' ' "
-                
-                cQuery += CrLf + "         LEFT JOIN " + RetSqlName("VX5") + " VX2 "
-                cQuery += CrLf + "              ON  VX2.VX5_FILIAL  = '" + xFilial("VX5") + "' "
-                cQuery += CrLf + "              AND VX2.VX5_CHAVE   = '066' "
-                cQuery += CrLf + "              AND VX2.VX5_CODIGO  = VV2.VV2_CORINT "
-                cQuery += CrLf + "              AND VX2.D_E_L_E_T_  =  ' '   "
-                
-                cQuery += CrLf + "         LEFT JOIN " + RetSqlName("VE1") + " VE1  "
-                cQuery += CrLf + "              ON  VE1.VE1_FILIAL  = '" + xFilial("VE1") + "'  "
-                cQuery += CrLf + "              AND VE1.VE1_CODMAR  = VV1.VV1_CODMAR   "
-                cQuery += CrLf + "              AND VE1.D_E_L_E_T_  = ' ' "
-                
-                cQuery += CrLf + "         LEFT JOIN " + RetSqlName("VVX") + " VVX  "
-                cQuery += CrLf + "              ON  VVX.VVX_FILIAL  = '" + xFilial("VVX") + "' "
-                cQuery += CrLf + "              AND VVX.VVX_CODMAR  = VV1.VV1_CODMAR "
-                cQuery += CrLf + "              AND VVX.VVX_SEGMOD  = VV1.VV1_SEGMOD "
-                cQuery += CrLf + "              AND VVX.D_E_L_E_T_  = ' ' "
-                
-                cQuery += CrLf + " WHERE   VV1.VV1_FILIAL = '" + xFilial("VV1") + "' "
-                cQuery += CrLf + "     AND VV1.VV1_CHASSI = '" + Alltrim((cTmpAlias)->VV1_CHASSI) + "'   "
-                cQuery += CrLf + "     AND VV1.D_E_L_E_T_ = ' ' "
-                
-                If Select(cTrbAlias) <> 0 ; (cTrbAlias)->(DbCloseArea()) ; EndIf
-                DbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cTrbAlias, .F., .T. )
-
-                lLibPed  := .T.
-                (cCabAlias)->(RecLock(cCabAlias,.F.))
-    
-                If Empty(Alltrim(SC9->C9_BLCRED)) .And. Empty(Alltrim(SC9->C9_BLEST )) .And. Empty(Alltrim(SC9->C9_BLWMS ))
+            (cCabAlias)->(RecLock(cCabAlias,.F.))
+                (cCabAlias)->C6_CHASSI  := CriaVar("C6_CHASSI" )
+                (cCabAlias)->C6_NUMSERI := CriaVar("C6_NUMSERI")
+                (cCabAlias)->C6_LOCALIZ := CriaVar("C6_LOCALIZ")
+            (cCabAlias)->(MsUnLock())
         
-                    (cCabAlias)->CC_STATUS  := "1"
+            DBCommitAll()
         
-                    ElseIf SC9->C9_BLCRED == "01" ; (cCabAlias)->CC_STATUS  := "2"
-                    ElseIf SC9->C9_BLCRED == "04" ; (cCabAlias)->CC_STATUS  := "3"
-                    ElseIf SC9->C9_BLCRED == "05" ; (cCabAlias)->CC_STATUS  := "4"
-                    ElseIf SC9->C9_BLCRED == "06" ; (cCabAlias)->CC_STATUS  := "5"
-                    ElseIf SC9->C9_BLCRED == "09" ; (cCabAlias)->CC_STATUS  := "6"
-                    ElseIf SC9->C9_BLEST  == "02" ; (cCabAlias)->CC_STATUS  := "7"
-                    ElseIf SC9->C9_BLEST  == "03" ; (cCabAlias)->CC_STATUS  := "8"
-                    ElseIf SC9->C9_BLWMS  == "01" ; (cCabAlias)->CC_STATUS  := "9"
-                    ElseIf SC9->C9_BLWMS  == "02" ; (cCabAlias)->CC_STATUS  := "A"
-                    ElseIf SC9->C9_BLWMS  == "03" ; (cCabAlias)->CC_STATUS  := "B"
-                    ElseIf SC9->C9_BLWMS  == "05" ; (cCabAlias)->CC_STATUS  := "C"
-                    ElseIf SC9->C9_BLWMS  == "06" ; (cCabAlias)->CC_STATUS  := "D"
-                    ElseIf SC9->C9_BLWMS  == "07" ; (cCabAlias)->CC_STATUS  := "E"
-                    EndIf
-                
-                    (cCabAlias)->C6_CHASSI  := (cTmpAlias)->VV1_CHASSI 
-                    (cCabAlias)->C6_NUMSERI := (cTmpAlias)->VV1_CHASSI
-                    (cCabAlias)->C6_LOCALIZ := (cTmpAlias)->BF_LOCALIZ 
-                    (cCabAlias)->C9_SEQUEN  := SC9->C9_SEQUEN
-                    (cCabAlias)->C6_XCODMAR	:= (cTrbAlias)->MARCA      
-                    (cCabAlias)->C6_XDESMAR := (cTrbAlias)->DESCMAR 
-                    (cCabAlias)->C6_XCORINT	:= (cTrbAlias)->CORINT     
-                    (cCabAlias)->C6_XCOREXT := (cTrbAlias)->COREXT 
-                    (cCabAlias)->C6_XMODVEI := (cTrbAlias)->MODVEI     
-                    (cCabAlias)->C6_XDESMOD := (cTrbAlias)->DESCMOD
-                    (cCabAlias)->C6_XSEGMOD	:= (cTrbAlias)->SEGMOD     
-                    (cCabAlias)->C6_XDESSEG := (cTrbAlias)->DESCSEG
-                    (cCabAlias)->C6_XFABMOD	:= (cTrbAlias)->FABMOD     
-                    (cCabAlias)->C6_XGRPMOD := ""
-                    (cCabAlias)->C6_XDGRMOD := ""                      
-                    (cCabAlias)->C9_NFISCAL := CriaVar("C9_NFISCAL")
-                    (cCabAlias)->C9_SERIENF := CriaVar("C9_SERIENF")
-                (cCabAlias)->(MsUnLock())
-
-                SC6->(RecLock("SC6",.F.))
-                    SC6->C6_XCODMAR	:= (cTrbAlias)->MARCA  
-                    SC6->C6_XDESMAR	:= (cTrbAlias)->DESCMAR
-                    SC6->C6_XCORINT	:= (cTrbAlias)->CORINT
-                    SC6->C6_XCOREXT	:= (cTrbAlias)->COREXT 
-                    SC6->C6_XMODVEI	:= (cTrbAlias)->MODVEI
-                    SC6->C6_XDESMOD	:= (cTrbAlias)->DESCMOD
-                    SC6->C6_XSEGMOD	:= (cTrbAlias)->SEGMOD 
-                    SC6->C6_XDESSEG	:= (cTrbAlias)->DESCSEG
-                    SC6->C6_XFABMOD	:= (cTrbAlias)->FABMOD
-                    SC6->C6_XGRPMOD	:= ""
-                    SC6->C6_XDGRMOD	:= ""
-                SC6->(MsUnLock())
-
-                SC9->(RecLock("SC9",.F.))
-                    SC9->C9_XCODMAR := (cTrbAlias)->MARCA 
-                    SC9->C9_XMODVEI := (cTrbAlias)->MODVEI
-                    SC9->C9_XSEGMOD := (cTrbAlias)->SEGMOD
-                    SC9->C9_XFABMOD := (cTrbAlias)->FABMOD
-                    SC9->C9_XCORINT := (cTrbAlias)->CORINT
-                    SC9->C9_XCOREXT := (cTrbAlias)->COREXT
-                    SC9->C9_XGRPMOD := ""
-                SC9->(MsUnLock())
-
-                cQuery := "" 
-                cQuery +=  CrLf +  " UPDATE " + RetSqlName("VRK")
-                cQuery +=  CrLf +  " SET VRK_CHASSI = '"+(cTmpAlias)->VV1_CHASSI+"' "
-                cQuery +=  CrLf +  " WHERE VRK_FILIAL = '"+xFilial("VRK")+"' "
-                cQuery +=  CrLf +  " AND VRK_PEDIDO||VRK_ITEPED = (SELECT VRK.VRK_PEDIDO||VRK.VRK_ITEPED "
-                cQuery +=  CrLf +  "                               FROM "+RetSqlName("VRJ")+" VRJ "
-                cQuery +=  CrLf +  "                               INNER JOIN " + RetSqlName("VRK") + " VRK"
-                cQuery +=  CrLf +  "                                    ON  VRK.VRK_FILIAL = '" + xFilial("VRK") + "' "
-                cQuery +=  CrLf +  "                                    AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
-                cQuery +=  CrLf +  "                                    AND VRK.D_E_L_E_T_ = VRJ.D_E_L_E_T_ "
-                cQuery +=  CrLf +  "                               WHERE VRJ.VRJ_FILIAL  = '" + xFilial("VRJ")  + "' "
-                cQuery +=  CrLf +  "                                 AND VRJ.VRJ_CODCLI  = '" + SC5->C5_CLIENTE + "' "
-                cQuery +=  CrLf +  "                                 AND VRJ.VRJ_LOJA    = '" + SC5->C5_LOJACLI + "' "
-                cQuery +=  CrLf +  "                                 AND VRJ.VRJ_PEDCOM  = '" + SC6->C6_PEDCLI  + "' "
-                cQuery +=  CrLf +  "                                 AND VRK.VRK_ITEPED  = '" + StrZero(Val(Alltrim(SC6->C6_ITEM)),3) + "' "
-                cQuery +=  CrLf +  "                                 AND VRJ.D_E_L_E_T_  = ' ') "
-                nStatus := TCSqlExec(cQuery)
-
-                If (nStatus < 0)
-                    MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Chassi VRK")
-                EndIf
-
-                DBCommitAll()
-            Else
-                //DisarmTransaction()
-            EndIf
-        //End Transaction
-    EndIf
-
-    If !lLibPed
-    
-        SC6->(RecLock("SC6",.F.))
-            SC6->C6_LOTECTL := CriaVar("C6_LOTECTL")
-            SC6->C6_DTVALID := CriaVar("C6_DTVALID")
-            SC6->C6_NUMSERI := CriaVar("C6_NUMSERI")
-            SC6->C6_CHASSI  := CriaVar("C6_CHASSI" )
-            SC6->C6_LOCALIZ := CriaVar("C6_LOCALIZ")
-            SC6->C6_XCODMAR := CriaVar("C6_XCODMAR")
-            SC6->C6_XDESMAR	:= CriaVar("C6_XDESMAR")
-            SC6->C6_XGRPMOD := CriaVar("C6_XGRPMOD")
-            SC6->C6_XDGRMOD := CriaVar("C6_XDGRMOD")
-            SC6->C6_XMODVEI	:= CriaVar("C6_XMODVEI")
-            SC6->C6_XDESMOD	:= CriaVar("C6_XDESMOD")
-            SC6->C6_XSEGMOD	:= CriaVar("C6_XSEGMOD")
-            SC6->C6_XDESSEG	:= CriaVar("C6_XDESSEG")
-            SC6->C6_XFABMOD	:= CriaVar("C6_XFABMOD")
-            SC6->C6_XCORINT	:= CriaVar("C6_XCORINT")
-            SC6->C6_XCOREXT	:= CriaVar("C6_XCOREXT")
-        SC6->(MsUnLock())
-
-        (cCabAlias)->(RecLock(cCabAlias,.F.))
-            (cCabAlias)->C6_CHASSI  := CriaVar("C6_CHASSI" )
-            (cCabAlias)->C6_NUMSERI := CriaVar("C6_NUMSERI")
-            (cCabAlias)->C6_LOCALIZ := CriaVar("C6_LOCALIZ")
-        (cCabAlias)->(MsUnLock())
-    
-        DBCommitAll()
-    
-    EndIf
+        EndIf
     EndIf
     (cCabAlias)->(DbSkip())
 EndDo
@@ -3270,125 +3287,132 @@ Descricao / Objetivo:  Realiza o estorno do chassi após a exclusão da NF
 =======================================================================================
 */
 
-Static Function Estor(oSay)
-
+Static Function Estor( oSay, _cWhere )
 Local cQuery  :=  ""
 Local cTabela := GetNextAlias()
 Local lRet    := .F. 
 
-cQuery += CrLf + " SELECT  '  ' C6_OK    , "
-cQuery += CrLf + "        ' '   C6_STATUS,  "
-cQuery += CrLf + "        SC6.C6_FILIAL,  "
-cQuery += CrLf + "        SC6.C6_NUM,  "
-cQuery += CrLf + "        SC6.C6_PEDCLI,  "
-cQuery += CrLf + "        SC5.C5_EMISSAO,  "
-cQuery += CrLf + "        SC5.C5_CLIENTE,  "
-cQuery += CrLf + "        SC5.C5_LOJACLI,  "
-cQuery += CrLf + "        SA1.A1_NOME,  "
-cQuery += CrLf + "        SC5.C5_CONDPAG,  "
-cQuery += CrLf + "        SC5.C5_NATUREZ,  "
-cQuery += CrLf + "        SC6.C6_ITEM,  "
-cQuery += CrLf + "        SC6.C6_PRODUTO,  "
-cQuery += CrLf + "        SB1.B1_DESC,  "
-cQuery += CrLf + "        SC6.C6_LOCAL,  "
-cQuery += CrLf + "        SC6.C6_CHASSI, "
-cQuery += CrLf + "        VRK.VRK_CHASSI,  "
-cQuery += CrLf + "        SC6.C6_NUMSERI,  "
-cQuery += CrLf + "        SC6.C6_LOCALIZ,  "
-cQuery += CrLf + "        SC6.C6_XCODMAR,  "
-cQuery += CrLf + "        SC6.C6_XDESMAR,  "
-cQuery += CrLf + "        SC6.C6_XGRPMOD,  "
-cQuery += CrLf + "        SC6.C6_XDGRMOD,  "
-cQuery += CrLf + "        SC6.C6_XMODVEI,  "
-cQuery += CrLf + "        SC6.C6_XDESMOD,  "
-cQuery += CrLf + "        SC6.C6_XSEGMOD,  "
-cQuery += CrLf + "        SC6.C6_XDESSEG,  "
-cQuery += CrLf + "        SC6.C6_XFABMOD,  "
-cQuery += CrLf + "        SC6.C6_XCORINT,  "
-cQuery += CrLf + "        SC6.C6_XCOREXT,  "
-cQuery += CrLf + "        SC6.C6_QTDVEN,  "
-cQuery += CrLf + "        SC6.C6_PRCVEN,  "
-cQuery += CrLf + "        SC6.C6_VALOR,  "
-cQuery += CrLf + "        SC6.C6_OPER,  "
-cQuery += CrLf + "        SC6.C6_TES,  "
-cQuery += CrLf + "        SC6.C6_XVLRVDA,  "
-cQuery += CrLf + "        SC6.C6_PRUNIT,  "
-cQuery += CrLf + "        SC6.C6_XPRCTAB,  "
-cQuery += CrLf + "        SC6.C6_XVLRPRD,  "
-cQuery += CrLf + "        SC6.C6_XVLRMVT,  "
-cQuery += CrLf + "        SC6.C6_XBASST,  "
-cQuery += CrLf + "        SC5.C5_XTIPVEN,
-cQuery += CrLf +"         VRJ.VRJ_PEDIDO, "
-cQuery += CrLf +"         'F'  as lupd, "
-cQuery += CrLf + " 	      VRJ.VRJ_STATUS as VRJ_STATUS  ,  "
-cQuery += CrLf + "        ' ' as  D_E_L_E_T_  ,  "
-cQuery += CrLf + "        ROW_NUMBER() OVER (ORDER BY SC6.C6_FILIAL,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO)  R_E_C_N_O_  "
-cQuery += CrLf + " FROM " + RetSqlName("SC6") + " SC6  "
+    //GAP167  Previsao de Faturamento
+    Default _cWhere := ""
+    //Quando for chamado pela função ZFAT025 e não estiver preenchido o Where não permitir que apague registros com previsão
+    If !FWIsInCallStack("ZFAT025") .And. Empty(_cWhere)
+        _cWhere := " AND SC6.C6_XCODPVR = ' ' "   //somente tratar registros que não sao previsão
+    Endif
 
-cQuery += CrLf + "      INNER JOIN " + RetSqlName("SC5") + " SC5  "
-cQuery += CrLf + "              ON  SC5.C5_FILIAL  = '" + xFilial("SC5") + "'  "
-cQuery += CrLf + "              AND SC5.C5_NUM     = SC6.C6_NUM  "
-cQuery += CrLf + "              AND SC5.C5_CLIENTE = SC6.C6_CLI  "
-cQuery += CrLf + "              AND SC5.C5_LOJACLI = SC6.C6_LOJA  "
-cQuery += CrLf + "              AND SC5.D_E_L_E_T_ = ' '  "
+    cQuery += CrLf + " SELECT  '  ' C6_OK    , "
+    cQuery += CrLf + "        ' '   C6_STATUS,  "
+    cQuery += CrLf + "        SC6.C6_FILIAL,  "
+    cQuery += CrLf + "        SC6.C6_NUM,  "
+    cQuery += CrLf + "        SC6.C6_PEDCLI,  "
+    cQuery += CrLf + "        SC5.C5_EMISSAO,  "
+    cQuery += CrLf + "        SC5.C5_CLIENTE,  "
+    cQuery += CrLf + "        SC5.C5_LOJACLI,  "
+    cQuery += CrLf + "        SA1.A1_NOME,  "
+    cQuery += CrLf + "        SC5.C5_CONDPAG,  "
+    cQuery += CrLf + "        SC5.C5_NATUREZ,  "
+    cQuery += CrLf + "        SC6.C6_ITEM,  "
+    cQuery += CrLf + "        SC6.C6_PRODUTO,  "
+    cQuery += CrLf + "        SB1.B1_DESC,  "
+    cQuery += CrLf + "        SC6.C6_LOCAL,  "
+    cQuery += CrLf + "        SC6.C6_CHASSI, "
+    cQuery += CrLf + "        VRK.VRK_CHASSI,  "
+    cQuery += CrLf + "        SC6.C6_NUMSERI,  "
+    cQuery += CrLf + "        SC6.C6_LOCALIZ,  "
+    cQuery += CrLf + "        SC6.C6_XCODMAR,  "
+    cQuery += CrLf + "        SC6.C6_XDESMAR,  "
+    cQuery += CrLf + "        SC6.C6_XGRPMOD,  "
+    cQuery += CrLf + "        SC6.C6_XDGRMOD,  "
+    cQuery += CrLf + "        SC6.C6_XMODVEI,  "
+    cQuery += CrLf + "        SC6.C6_XDESMOD,  "
+    cQuery += CrLf + "        SC6.C6_XSEGMOD,  "
+    cQuery += CrLf + "        SC6.C6_XDESSEG,  "
+    cQuery += CrLf + "        SC6.C6_XFABMOD,  "
+    cQuery += CrLf + "        SC6.C6_XCORINT,  "
+    cQuery += CrLf + "        SC6.C6_XCOREXT,  "
+    cQuery += CrLf + "        SC6.C6_QTDVEN,  "
+    cQuery += CrLf + "        SC6.C6_PRCVEN,  "
+    cQuery += CrLf + "        SC6.C6_VALOR,  "
+    cQuery += CrLf + "        SC6.C6_OPER,  "
+    cQuery += CrLf + "        SC6.C6_TES,  "
+    cQuery += CrLf + "        SC6.C6_XVLRVDA,  "
+    cQuery += CrLf + "        SC6.C6_PRUNIT,  "
+    cQuery += CrLf + "        SC6.C6_XPRCTAB,  "
+    cQuery += CrLf + "        SC6.C6_XVLRPRD,  "
+    cQuery += CrLf + "        SC6.C6_XVLRMVT,  "
+    cQuery += CrLf + "        SC6.C6_XBASST,  "
+    cQuery += CrLf + "        SC5.C5_XTIPVEN,
+    cQuery += CrLf +"         VRJ.VRJ_PEDIDO, "
+    cQuery += CrLf +"         'F'  as lupd, "
+    cQuery += CrLf + " 	      VRJ.VRJ_STATUS as VRJ_STATUS  ,  "
+    cQuery += CrLf + "        ' ' as  D_E_L_E_T_  ,  "
+    cQuery += CrLf + "        ROW_NUMBER() OVER (ORDER BY SC6.C6_FILIAL,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO)  R_E_C_N_O_  "
+    cQuery += CrLf + " FROM " + RetSqlName("SC6") + " SC6  "
 
-cQuery += CrLf + "       INNER JOIN " + RetSqlName("VRJ") + " VRJ  "
-cQuery += CrLf + "              ON  VRJ.VRJ_FILIAL = '" + xFilial("VRJ") + "'  "
-cQuery += CrLf + "              AND VRJ.VRJ_PEDCOM = SC6.C6_PEDCLI  "
-cQuery += CrLf + "              AND VRJ.VRJ_STATUS in ('A','F')  "
-cQuery += CrLf + "              AND VRJ.D_E_L_E_T_ = ' '  "
+    cQuery += CrLf + "      INNER JOIN " + RetSqlName("SC5") + " SC5  "
+    cQuery += CrLf + "              ON  SC5.C5_FILIAL  = '" + xFilial("SC5") + "'  "
+    cQuery += CrLf + "              AND SC5.C5_NUM     = SC6.C6_NUM  "
+    cQuery += CrLf + "              AND SC5.C5_CLIENTE = SC6.C6_CLI  "
+    cQuery += CrLf + "              AND SC5.C5_LOJACLI = SC6.C6_LOJA  "
+    cQuery += CrLf + "              AND SC5.D_E_L_E_T_ = ' '  "
 
-cQuery += CrLf + "      INNER JOIN " + RetSqlName("VRK") + " VRK  "
-cQuery += CrLf + "              ON  VRK.VRK_FILIAL = '" + xFilial("VRK") + "'  "
-cQuery += CrLf + "              AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO     "
-cQuery += CrLf + "              AND VRK.VRK_ITEPED = LPad(SC6.C6_ITEM,3,'0') "
-cQuery += CrLf + "              AND VRK.VRK_NUMTRA = ' ' "
-cQuery += CrLf + "              AND VRK.D_E_L_E_T_ = ' '  "
+    cQuery += CrLf + "       INNER JOIN " + RetSqlName("VRJ") + " VRJ  "
+    cQuery += CrLf + "              ON  VRJ.VRJ_FILIAL = '" + xFilial("VRJ") + "'  "
+    cQuery += CrLf + "              AND VRJ.VRJ_PEDCOM = SC6.C6_PEDCLI  "
+    cQuery += CrLf + "              AND VRJ.VRJ_STATUS in ('A','F')  "
+    cQuery += CrLf + "              AND VRJ.D_E_L_E_T_ = ' '  "
 
-cQuery += CrLf + "      INNER JOIN " + RetSqlName("SA1") + " SA1  "
-cQuery += CrLf + "              ON  SA1.A1_FILIAL  = '" + xFilial("SA1") + "'  "
-cQuery += CrLf + "              AND SA1.A1_COD     = SC6.C6_CLI  "
-cQuery += CrLf + "              AND SA1.A1_LOJA    = SC6.C6_LOJA  "
-cQuery += CrLf + "              AND SA1.D_E_L_E_T_ = ' '  "
+    cQuery += CrLf + "      INNER JOIN " + RetSqlName("VRK") + " VRK  "
+    cQuery += CrLf + "              ON  VRK.VRK_FILIAL = '" + xFilial("VRK") + "'  "
+    cQuery += CrLf + "              AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO     "
+    cQuery += CrLf + "              AND VRK.VRK_ITEPED = LPad(SC6.C6_ITEM,3,'0') "
+    cQuery += CrLf + "              AND VRK.VRK_NUMTRA = ' ' "
+    cQuery += CrLf + "              AND VRK.D_E_L_E_T_ = ' '  "
 
-cQuery += CrLf + "      INNER JOIN " + RetSqlName("SB1") + " SB1  "
-cQuery += CrLf + "              ON  SB1.B1_FILIAL  = '" + xFilial("SB1") + "'  "
-cQuery += CrLf + "              AND SB1.B1_COD     = SC6.C6_PRODUTO  "
-cQuery += CrLf + "              AND SB1.B1_GRUPO   = 'VEIA'  "
-cQuery += CrLf + "              AND SB1.D_E_L_E_T_ = ' '  "
+    cQuery += CrLf + "      INNER JOIN " + RetSqlName("SA1") + " SA1  "
+    cQuery += CrLf + "              ON  SA1.A1_FILIAL  = '" + xFilial("SA1") + "'  "
+    cQuery += CrLf + "              AND SA1.A1_COD     = SC6.C6_CLI  "
+    cQuery += CrLf + "              AND SA1.A1_LOJA    = SC6.C6_LOJA  "
+    cQuery += CrLf + "              AND SA1.D_E_L_E_T_ = ' '  "
 
-cQuery += CrLf + "      INNER JOIN " + RetSqlName("SF4") + " SF4  "
-cQuery += CrLf + "              ON  SF4.F4_FILIAL  =  '" + xFilial("SF4") + "'  "
-cQuery += CrLf + "              AND SF4.F4_CODIGO  = SC6.C6_TES  "
-cQuery += CrLf + "              AND SF4.F4_DUPLIC  = 'S'  "
-cQuery += CrLf + "              AND SF4.D_E_L_E_T_ = ' '  "
+    cQuery += CrLf + "      INNER JOIN " + RetSqlName("SB1") + " SB1  "
+    cQuery += CrLf + "              ON  SB1.B1_FILIAL  = '" + xFilial("SB1") + "'  "
+    cQuery += CrLf + "              AND SB1.B1_COD     = SC6.C6_PRODUTO  "
+    cQuery += CrLf + "              AND SB1.B1_GRUPO   = 'VEIA'  "
+    cQuery += CrLf + "              AND SB1.D_E_L_E_T_ = ' '  "
 
-cQuery += CrLf + " WHERE   SC6.C6_FILIAL    =  '" + xFilial("SC6") + "'  "
-cQuery += CrLf + "     AND SC5.C5_TIPO      =  'N' "
-cQuery += CrLf + "     AND SC6.C6_PEDCLI    <> ' ' "
-cQuery += CrLf + "     AND SC6.C6_NOTA      =  ' ' "
-cQuery += CrLf + "     AND SC6.C6_BLQ       =  ' ' "
-cQuery += CrLf + "     AND SC6.D_E_L_E_T_   =  ' ' "
-cQuery += CrLf + "     AND SC6.C6_CHASSI    <> ' ' "
-cQuery += CrLf + " ORDER BY SC6.C6_FILIAL,SC6.C6_PEDCLI,SC6.C6_ITEM,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO "
+    cQuery += CrLf + "      INNER JOIN " + RetSqlName("SF4") + " SF4  "
+    cQuery += CrLf + "              ON  SF4.F4_FILIAL  =  '" + xFilial("SF4") + "'  "
+    cQuery += CrLf + "              AND SF4.F4_CODIGO  = SC6.C6_TES  "
+    cQuery += CrLf + "              AND SF4.F4_DUPLIC  = 'S'  "
+    cQuery += CrLf + "              AND SF4.D_E_L_E_T_ = ' '  "
 
-cQuery := ChangeQuery(cQuery)
-DbUseArea(.T.,"TOPCONN",TCGENQRY(,,cQuery),cTabela,.T.,.T.)
+    cQuery += CrLf + " WHERE   SC6.C6_FILIAL    =  '" + xFilial("SC6") + "'  "
+    cQuery += CrLf + "     AND SC5.C5_TIPO      =  'N' "
+    cQuery += CrLf + "     AND SC6.C6_PEDCLI    <> ' ' "
+    cQuery += CrLf + "     AND SC6.C6_NOTA      =  ' ' "
+    cQuery += CrLf + "     AND SC6.C6_BLQ       =  ' ' "
+    cQuery += CrLf + "     AND SC6.D_E_L_E_T_   =  ' ' "
+    cQuery += CrLf + "     AND SC6.C6_CHASSI    <> ' ' "
+    cQuery += CrLf + _cWhere
+    cQuery += CrLf + " ORDER BY SC6.C6_FILIAL,SC6.C6_PEDCLI,SC6.C6_ITEM,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO "
 
-While (cTabela)->(!EOF())
-    
-    if Empty((cTabela)->VRK_CHASSI)
+    cQuery := ChangeQuery(cQuery)
+    DbUseArea(.T.,"TOPCONN",TCGENQRY(,,cQuery),cTabela,.T.,.T.)
 
-        fLimpaChassi(cTabela) // Limpa campo de Chassi da Tabela SC6, pois a casos do chassi ser estornado e ficar não apagar o campo C6_CHASSI
-        lRet := .T.
-    EndIf
+    While (cTabela)->(!EOF())
 
-    (cTabela)->(DbSkip())
-EndDo
+        if Empty((cTabela)->VRK_CHASSI)
 
-if  lRet ; lRet := Estor(oSay)      ; endif
-if !lRet ; fAtuEmp(oSay,cTabela,nil); endif
-if Select(cTabela) > 0; (cTabela)->(DbCloseArea()); endif
+            fLimpaChassi(cTabela) // Limpa campo de Chassi da Tabela SC6, pois a casos do chassi ser estornado e ficar não apagar o campo C6_CHASSI
+            lRet := .T.
+        EndIf
+
+        (cTabela)->(DbSkip())
+    EndDo
+
+    if  lRet ; lRet := Estor(oSay)      ; endif
+    if !lRet ; fAtuEmp(oSay,cTabela,nil); endif
+    if Select(cTabela) > 0; (cTabela)->(DbCloseArea()); endif
 
 Return lRet
 /*
@@ -3873,6 +3897,161 @@ EndDo
 (cCabAlias)->(DbGotop())
 
 Return 
+
+
+
+//GAP167  Previsao de Faturamento
+//Separado parametro para que possa ser utilizado por outras funcionalidades
+User Function ZFATF09M(_aRet)
+Local _aParamBox    := {}
+Local _dDatIni       := Date()
+Local _dDatfin       := Date()
+Local _bRet         := {||.T.}
+
+    Aadd(_aParamBox, {1, "Cliente De"          ,Space(TamSx3("C5_CLIENTE")[01]), "@!",,"SA1"   ,, 050	, .F.	})
+    Aadd(_aParamBox, {1, "Loja De"             ,Space(TamSx3("C5_LOJACLI")[01]), "@!",,        ,, 020	, .F.	})
+    Aadd(_aParamBox, {1, "Cliente Ate"         ,Space(TamSx3("C5_CLIENTE")[01]), "@!",,"SA1"   ,, 050	, .F.	})
+    Aadd(_aParamBox, {1, "Loja Ate"            ,Space(TamSx3("C5_LOJACLI")[01]), "@!",,        ,, 020	, .F.	})
+    Aadd(_aParamBox, {1, "Produto De"          ,Space(TamSx3("C6_PRODUTO")[01]), "@!",,"SB1"   ,, 090	, .F.	})
+    Aadd(_aParamBox, {1, "Produto Ate"         ,Space(TamSx3("C6_PRODUTO")[01]), "@!",,"SB1"   ,, 090	, .F.	})
+    Aadd(_aParamBox, {1, "Tipo de Cliente"     ,Space(TamSx3("C5_CLIENTE")[01]), "@!",,        ,, 020	, .F.	})
+    Aadd(_aParamBox, {1, "Pedido Autoware De"  ,Space(TamSx3("C6_PEDCLI" )[01]), "@!",,        ,, 050	, .F.	})
+    Aadd(_aParamBox, {1, "Pedido Autoware Ate" ,Space(TamSx3("C6_PEDCLI" )[01]), "@!",,        ,, 050	, .F.	})
+    Aadd(_aParamBox, {1, "Marca De"            ,Space(TamSx3("C6_XCODMAR")[01]), "@!",,"VE1"   ,, 040	, .F.	})
+    Aadd(_aParamBox, {1, "Marca Ate"           ,Space(TamSx3("C6_XCODMAR")[01]), "@!",,"VE1"   ,, 040	, .F.	})
+    Aadd(_aParamBox, {1, "Grupo do Modelo De"  ,Space(TamSx3("C6_XGRPMOD")[01]), "@!",,"VVR"   ,, 040	, .F.	})
+    Aadd(_aParamBox, {1, "Grupo do Modelo Ate" ,Space(TamSx3("C6_XGRPMOD")[01]), "@!",,"VVR"   ,, 040	, .F.	})
+    Aadd(_aParamBox, {1, "Modelo De"           ,Space(TamSx3("C6_XMODVEI")[01]), "@!",,"VV2"   ,, 040	, .F.	})
+    Aadd(_aParamBox, {1, "Modelo Ate"          ,Space(TamSx3("C6_XMODVEI")[01]), "@!",,"VV2"   ,, 040	, .F.	})
+    Aadd(_aParamBox, {1, "Segmento De"         ,Space(TamSx3("C6_XSEGMOD")[01]), "@!",,"VX5AUX",, 040	, .F.	})
+    Aadd(_aParamBox, {1, "Segmento Ate"        ,Space(TamSx3("C6_XSEGMOD")[01]), "@!",,"VX5AUX",, 040	, .F.	})
+    Aadd(_aParamBox, {1, "Ano Fabr/Modelo De"  ,Space(TamSx3("C6_XFABMOD")[01]), "@!",,        ,, 050	, .F.	})
+    Aadd(_aParamBox, {1, "Ano Fabr/Modelo Ate" ,Space(TamSx3("C6_XFABMOD")[01]), "@!",,        ,, 050	, .F.	})
+    Aadd(_aParamBox, {1, "Cor Interna De"      ,Space(TamSx3("C6_XCORINT")[01]), "@!",,        ,, 040	, .F.	})
+    Aadd(_aParamBox, {1, "Cor Interna Ate"     ,Space(TamSx3("C6_XCORINT")[01]), "@!",,        ,, 040	, .F.	})
+    Aadd(_aParamBox, {1, "Cor Externa De"      ,Space(TamSx3("C6_XCOREXT")[01]), "@!",,        ,, 040	, .F.	})
+    Aadd(_aParamBox, {1, "Cor Externa Ate"     ,Space(TamSx3("C6_XCOREXT")[01]), "@!",,        ,, 040	, .F.	})
+    Aadd(_aParamBox, {1, "Data De"             ,_dDatIni                       , "@D",,        ,, 060	, .F.	})
+    Aadd(_aParamBox, {1, "Data Ate"            ,_dDatfin                       , "@D",,        ,, 060	, .F.	})
+
+    _bRet := ParamBox(_aParamBox, "Parametros para seleção dos dados"	, @_aRet, , , .T. /*lCentered*/, 0, 0, , , .T. /*lCanSave*/, .T. /*lUserSave*/)
+    If !_bRet
+        ApMsgStop("Rotina cancelada!", "Atencao")
+        Return(.F.)
+    EndIf
+Return _bRet
+
+//GAP167  Previsao de Faturamento
+//Funcionalidade Responsavel por retornar dados da Query podendo ser utilizada por outros fontes
+//Utilizado no ZFAT025
+User Function ZFATF09Q(_cSelect, _cOrderTab, _aRet, _cWhere, _cJoin, _cGroup)
+Local _cQuery := ""
+
+Default _cSelect    := "*"
+Default _cOrderTab  := "" 
+Default _aRet       := {} 
+Default _cWhere     := ""
+Default _cJoin      := ""
+
+    //Tem que existir parametro
+    If Len(_aRet) == 0 
+        Return _cQuery
+    Endif
+
+	_cQuery := CrLf +_cSelect 
+    _cQuery += CrLf + " FROM " + RetSqlName("SC6") + " SC6 "
+    _cQuery += CrLf + " JOIN " + RetSqlName("SC5") + " SC5 
+    _cQuery += CrLf + "     ON  SC5.C5_FILIAL  = '" + xFilial("SC5") + "' "
+    _cQuery += CrLf + "     AND SC5.C5_NUM     = SC6.C6_NUM "
+    _cQuery += CrLf + "     AND SC5.C5_CLIENTE = SC6.C6_CLI "
+    _cQuery += CrLf + "     AND SC5.C5_LOJACLI = SC6.C6_LOJA "
+    _cQuery += CrLf + "     AND SC5.D_E_L_E_T_ = ' ' "
+
+    _cQuery += CrLf + " JOIN " + RetSqlName("VRJ") + " VRJ "
+    _cQuery += CrLf + "     ON  VRJ.VRJ_FILIAL = '" + xFilial("VRJ") + "' "
+    _cQuery += CrLf + "     AND VRJ.VRJ_PEDCOM = SC6.C6_PEDCLI "
+    _cQuery += CrLf + "     AND VRJ.VRJ_STATUS in ('A','F') "
+    _cQuery += CrLf + "     AND VRJ.D_E_L_E_T_ = ' ' "
+
+    _cQuery += CrLf + " JOIN " + RetSqlName("VRK") + " VRK "
+    _cQuery += CrLf + "     ON  VRK.VRK_FILIAL = '" + xFilial("VRK") + "' "
+    _cQuery += CrLf + "     AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
+    _cQuery += CrLf + "     AND VRK.VRK_ITEPED = LPad(SC6.C6_ITEM,3,'0') "
+    _cQuery += CrLf + "     AND VRK.VRK_ITETRA = ' ' "
+    _cQuery += CrLf + "     AND VRK.D_E_L_E_T_ = ' ' "
+
+    _cQuery += CrLf + " JOIN " + RetSqlName("SA1") + " SA1 "
+    _cQuery += CrLf + "     ON  SA1.A1_FILIAL  = '" + xFilial("SA1") + "' "
+    _cQuery += CrLf + "     AND SA1.A1_COD     = SC6.C6_CLI "
+    _cQuery += CrLf + "     AND SA1.A1_LOJA    = SC6.C6_LOJA "
+    _cQuery += CrLf + "     AND SA1.D_E_L_E_T_ = ' ' "
+
+    _cQuery += CrLf + " JOIN " + RetSqlName("SB1") + " SB1 "
+    _cQuery += CrLf + "     ON  SB1.B1_FILIAL  = '" + xFilial("SB1") + "' "
+    _cQuery += CrLf + "     AND SB1.B1_COD     = SC6.C6_PRODUTO "
+    _cQuery += CrLf + "     AND SB1.B1_GRUPO   = 'VEIA' "
+    _cQuery += CrLf + "     AND SB1.D_E_L_E_T_ = ' ' "
+
+    _cQuery += CrLf + " JOIN " + RetSqlName("SF4") + " SF4 "
+    _cQuery += CrLf + "     ON  SF4.F4_FILIAL  =  '" + xFilial("SF4") + "' "
+    _cQuery += CrLf + "     AND SF4.F4_CODIGO  = SC6.C6_TES "
+    _cQuery += CrLf + "     AND SF4.F4_DUPLIC  = 'S' "
+    _cQuery += CrLf + "     AND SF4.D_E_L_E_T_ = ' ' "
+
+    _cQuery += CrLf + " JOIN " + RetSqlName("VV2") + "  VV2 "
+    _cQuery += CrLf + "     ON  VV2.VV2_FILIAL  = '" + xFilial("VV2") + "' "
+    _cQuery += CrLf + "     AND VV2.VV2_PRODUT  = SC6.C6_PRODUTO
+    _cQuery += CrLf + "     and VV2.VV2_OPCION  BETWEEN '" + _aRet[16] + "' AND '" + _aRet[17] + "' "
+    _cQuery += CrLf + "     AND VV2.VV2_CORINT  BETWEEN '" + _aRet[20] + "' AND '" + _aRet[21] + "' "
+    _cQuery += CrLf + "     AND VV2.VV2_COREXT  BETWEEN '" + _aRet[22] + "' AND '" + _aRet[23] + "' " 
+    _cQuery += CrLf + "     AND VV2.D_E_L_E_T_  = ' '
+
+    If !Empty(_cJoin)
+        _cQuery += _cJoin
+    Endif
+
+    _cQuery += CrLf + " WHERE   SC6.C6_FILIAL    = '" + xFilial("SC6") + "' "
+    _cQuery += CrLf + "     AND SC6.C6_CLI       BETWEEN '" +      _aRet[01]  + "' AND '" +      _aRet[03]  + "' "
+    _cQuery += CrLf + "     AND SC6.C6_LOJA      BETWEEN '" +      _aRet[02]  + "' AND '" +      _aRet[04]  + "' "
+    _cQuery += CrLf + "     AND SC6.C6_PRODUTO   BETWEEN '" +      _aRet[05]  + "' AND '" +      _aRet[06]  + "' "
+    _cQuery += CrLf + "     AND SC6.C6_PEDCLI    BETWEEN '" +      _aRet[08]  + "' AND '" +      _aRet[09]  + "' "
+    _cQuery += CrLf + "     AND SC6.C6_XCODMAR   BETWEEN '" +      _aRet[10]  + "' AND '" +      _aRet[11]  + "' "
+    _cQuery += CrLf + "     AND SC6.C6_XGRPMOD   BETWEEN '" +      _aRet[12]  + "' AND '" +      _aRet[13]  + "' "
+    _cQuery += CrLf + "     AND SC6.C6_XMODVEI   BETWEEN '" +      _aRet[14]  + "' AND '" +      _aRet[15]  + "' "
+    //_cQuery += CrLf + "     AND SC6.C6_XSEGMOD   BETWEEN '" +      _aRet[16]  + "' AND '" +      _aRet[17]  + "' "
+    _cQuery += CrLf + "     AND SC6.C6_XFABMOD   BETWEEN '" +      _aRet[18]  + "' AND '" +      _aRet[19]  + "' "
+    //_cQuery += CrLf + "     AND SC6.C6_XCORINT   BETWEEN '" +      _aRet[20]  + "' AND '" +      _aRet[21]  + "' "
+    //_cQuery += CrLf + "     AND SC6.C6_XCOREXT   BETWEEN '" +      _aRet[22]  + "' AND '" +      _aRet[23]  + "' "
+    _cQuery += CrLf + "     AND SC5.C5_EMISSAO   BETWEEN '" + DtoS(_aRet[24]) + "' AND '" + DtoS(_aRet[25]) + "' "
+    _cQuery += CrLf + "     AND SC6.C6_QTDVEN    > SC6.C6_QTDENT "
+    _cQuery += CrLf + "     AND SC5.C5_TIPO      = 'N' "
+    _cQuery += CrLf + "     AND SC6.C6_PEDCLI    <> ' ' "
+    _cQuery += CrLf + "     AND SC6.C6_NOTA      = '" + Space(9) + "' "
+    _cQuery += CrLf + "     AND SC6.C6_BLQ       = ' ' "
+    _cQuery += CrLf + " 	AND SC6.D_E_L_E_T_   = ' ' "
+    //Verifica se existe mais condicionais para where
+     If !Empty(_cWhere)
+        _cQuery += CrLf + _cWhere 
+    Endif
+    //Group By verifica se existe group BY
+    If !Empty(_cGroup)
+	    _cQuery += CrLf + "GROUP BY " + _cGroup
+    Endif     
+    //Order By verifica decifição de ordem do select
+    If !Empty(_cOrderTab)
+	    _cQuery += CrLf + "ORDER BY " + _cOrderTab 
+    Endif    
+   // _cQuery += CrLf + " ORDER BY " + cOrderTab 
+    Return _cQuery
+
+
+//GAP167  Previsao de Faturamento
+//Chamada do Estorno podendo ser xamado de outras funções
+User Function ZFATF09E(_cWhere)
+Local _oSay
+	FwMsgRun(,{ |_oSay| Estor(_oSay,  _cWhere) }, "Estornando registros", "Aguarde...")  
+Return Nil
+
 
 /*
 //-------------------------------------------------------------------
