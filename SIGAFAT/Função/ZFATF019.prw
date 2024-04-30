@@ -156,12 +156,17 @@ Endif
 
 /*********************************************************************************************************************************************/
 //Cabeçalho
+
+// GAP167  Previsao de Faturamento 
+aCabCampos  := U_XZFAT9CP()
+/*
 aCabCampos  := {"C6_OK"     ,"CC_STATUS" ,"C6_FILIAL" ,"C6_NUM"    ,"C6_PEDCLI" ,"C5_EMISSAO","C5_CLIENTE","C5_LOJACLI",;
                 "A1_NOME"   ,"C5_CONDPAG","C5_NATUREZ","C5_XMENSER","C6_ITEM"   ,"C6_PRODUTO","B1_DESC"   ,"C6_LOCAL"  ,;
                 "C6_CHASSI" ,"C6_NUMSERI","C6_LOCALIZ","C6_XCODMAR","C6_XDESMAR","C6_XGRPMOD","C6_XDGRMOD","C6_XMODVEI",;
                 "C6_XDESMOD","C6_XSEGMOD","C6_XDESSEG","C6_XFABMOD","C6_XCORINT","C6_XCOREXT","C6_QTDVEN" ,"C6_PRCVEN" ,;
                 "C6_VALOR"  ,"C6_OPER"   ,"C6_TES"    ,"C6_XVLRVDA","C6_PRUNIT" ,"C6_XPRCTAB","C6_XVLRPRD","C6_XVLRMVT",;
                 "C6_XBASST" ,"C9_SEQUEN" ,"C9_NFISCAL","C9_SERIENF","C5_XTIPVEN","VRJ_PEDIDO","VRJ_STATUS"}
+*/
 
 aValidCmp   := {{ "C5_CONDPAG" , "{ || fVldCampo( cCabAlias , oSay , cCabTable , oCabTable)}" },;
                 { "C5_NATUREZ" , "{ || fVldCampo( cCabAlias , oSay , cCabTable , oCabTable)}" },;
@@ -524,11 +529,10 @@ EndIf
 While (cCabAlias)->(!Eof())
 
     oSay:SetText("Estornoando Empenho pedido: " + (cCabAlias)->C6_NUM+" ...") 
-    
+    ProcessMessage()    
+
     SD2->(DbSetOrder(8))
-    
     If !SD2->(DbSeek(xFilial("SD2")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))  
-        
         SC5->(DbSetOrder(1))        
         SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
     
@@ -1199,6 +1203,7 @@ Local nStatus       As Numeric
 Local nRecno        As Numeric
 Local lLibPed       As Logical
 Local lRetorno      As Logical
+Local _lPrevisao    As Logical
 
 Private lMsHelpAuto As Logical
 Private lMsErroAuto As Logical
@@ -1230,9 +1235,13 @@ EndIf
 
 (cCabAlias)->(DbGoTop())
 
+_lPrevisao := FWIsInCallStack("U_XZFAT9EP") 
+
 While (cCabAlias)->(!Eof())
     
     oSay:SetText("Preparando pedido: " + (cCabAlias)->C6_NUM+" ...")
+   	ProcessMessage()
+
     if (cCabAlias)->LUPD <> "T"
         cNumSerie := ""
         SC5->(DbSetOrder(1))        
@@ -1241,86 +1250,90 @@ While (cCabAlias)->(!Eof())
         SC6->(DbSetOrder(1))        
         SC6->(DbSeek(xFilial("SC6") + (cCabAlias)->C6_NUM + (cCabAlias)->C6_ITEM))
 
-        If !Empty(Alltrim(cNumPed)) .and. (cCabAlias)->LUPD == "T"
-            //Begin Transaction
-                cNumSerie := If(ValType(cChassi) <> "U" , cChassi, SC6->C6_CHASSI)
+        //GAP167  Previsao de Faturamento
+        //no caso de previsão não locar temporario
+        If !_lPrevisao
+            If !Empty(Alltrim(cNumPed)) .and. (cCabAlias)->LUPD == "T"
+                //Begin Transaction
+                    cNumSerie := If(ValType(cChassi) <> "U" , cChassi, SC6->C6_CHASSI)
 
-                SC5->(DbSetOrder(1))        
-                SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
-                aCabPed := {}
+                    SC5->(DbSetOrder(1))        
+                    SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
+                    aCabPed := {}
 
-                For nY := 1 To SC5->(FCount())
-                    cCampo   := SC5->(FieldName(nY))
-                    nPosicao := (cCabAlias)->(FieldPos(cCampo))
+                    For nY := 1 To SC5->(FCount())
+                        cCampo   := SC5->(FieldName(nY))
+                        nPosicao := (cCabAlias)->(FieldPos(cCampo))
 
-                    If nPosicao <> 0
-                        cConteudo := (cCabAlias)->(FieldGet(nPosicao))
+                        If nPosicao <> 0
+                            cConteudo := (cCabAlias)->(FieldGet(nPosicao))
+                        Else
+                            cConteudo := &("SC5->"+cCampo)
+                        EndIf
+
+                        Aadd(aCabPed, {cCampo,cConteudo, Nil})
+
+                    Next nY
+                    aadd(aCabPed,{"C5_STATUS","XX",Nil})
+                    SC6->(DbSetOrder(1))        
+                    SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
+
+                    aItePed := {}
+                    aLinha  := {}
+
+                    Aadd( aLinha , { "LINPOS"     , "C6_ITEM"               , SC6->C6_ITEM } )
+                    Aadd( aLinha , { "AUTDELETA"  , "N"                     , Nil          } )
+                    Aadd( aLinha , { "C6_PRODUTO" , SC6->C6_PRODUTO         , Nil          } )
+                    Aadd( aLinha , { "C6_QTDVEN"  , SC6->C6_QTDVEN          , Nil          } )
+                    Aadd( aLinha , { "C6_PRCVEN"  , (cCabAlias)->C6_PRCVEN  , Nil          } )
+                    Aadd( aLinha , { "C6_VALOR"   , (cCabAlias)->C6_VALOR   , Nil          } )
+                    Aadd( aLinha , { "C6_PRUNIT"  , SC6->C6_PRUNIT          , Nil          } )
+                    Aadd( aLinha , { "C6_OPER"    , (cCabAlias)->C6_OPER    , Nil          } )
+                    Aadd( aLinha , { "C6_TES"     , (cCabAlias)->C6_TES     , Nil          } )
+                    Aadd( aLinha , { "C6_QTDLIB"  , SC6->C6_QTDVEN          , Nil          } )
+                    Aadd( aLinha , { "C6_CHASSI"  , (cCabAlias)->C6_CHASSI  , Nil          } )
+                    Aadd( aLinha , { "C6_LOCALIZ" , (cCabAlias)->C6_LOCALIZ , Nil          } )
+                    Aadd( aLinha , { "C6_NUMSERI" , (cCabAlias)->C6_NUMSERI , Nil          } )
+                    Aadd( aLinha , { "C6_XVLRMVT" , (cCabAlias)->C6_XVLRMVT , Nil          } )
+                    Aadd( aLinha , { "C6_XVLRVDA" , (cCabAlias)->C6_XVLRVDA , Nil          } )
+                    Aadd( aLinha , { "C6_XVLRPRD" , (cCabAlias)->C6_XVLRVDA , Nil          } )
+                    Aadd(aItePed, aLinha)
+
+                    lMsHelpAuto := .T.
+                    lMsErroAuto := .F.
+
+                    MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, aCabPed, aItePed, nOPc, .F.) // Atu campo
+
+                    If lMsErroAuto
+                        MostraErro()
+                        lRetorno := .F.
+                        //DisarmTransaction()
                     Else
-                        cConteudo := &("SC5->"+cCampo)
+                        RecLock(cCabAlias,.F.)
+                        (cCabAlias)->LUPD := "F"
+                        (cCabAlias)->(MsUnLock())
+                        DBCommitAll()
                     EndIf
+                //End Transaction
+            Else
 
-                    Aadd(aCabPed, {cCampo,cConteudo, Nil})
+                RecLock(cCabAlias,.F.)
+                (cCabAlias)->C5_XMENSER := If(!Empty(Alltrim(SC5->C5_XMENSER)),SC5->C5_XMENSER,Space(8000))
+                (cCabAlias)->(MsUnLock())        
 
-                Next nY
-                aadd(aCabPed,{"C5_STATUS","XX",Nil})
-                SC6->(DbSetOrder(1))        
-                SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
-
-                aItePed := {}
-                aLinha  := {}
-
-                Aadd( aLinha , { "LINPOS"     , "C6_ITEM"               , SC6->C6_ITEM } )
-                Aadd( aLinha , { "AUTDELETA"  , "N"                     , Nil          } )
-                Aadd( aLinha , { "C6_PRODUTO" , SC6->C6_PRODUTO         , Nil          } )
-                Aadd( aLinha , { "C6_QTDVEN"  , SC6->C6_QTDVEN          , Nil          } )
-                Aadd( aLinha , { "C6_PRCVEN"  , (cCabAlias)->C6_PRCVEN  , Nil          } )
-                Aadd( aLinha , { "C6_VALOR"   , (cCabAlias)->C6_VALOR   , Nil          } )
-                Aadd( aLinha , { "C6_PRUNIT"  , SC6->C6_PRUNIT          , Nil          } )
-                Aadd( aLinha , { "C6_OPER"    , (cCabAlias)->C6_OPER    , Nil          } )
-                Aadd( aLinha , { "C6_TES"     , (cCabAlias)->C6_TES     , Nil          } )
-                Aadd( aLinha , { "C6_QTDLIB"  , SC6->C6_QTDVEN          , Nil          } )
-                Aadd( aLinha , { "C6_CHASSI"  , (cCabAlias)->C6_CHASSI  , Nil          } )
-                Aadd( aLinha , { "C6_LOCALIZ" , (cCabAlias)->C6_LOCALIZ , Nil          } )
-                Aadd( aLinha , { "C6_NUMSERI" , (cCabAlias)->C6_NUMSERI , Nil          } )
-                Aadd( aLinha , { "C6_XVLRMVT" , (cCabAlias)->C6_XVLRMVT , Nil          } )
-                Aadd( aLinha , { "C6_XVLRVDA" , (cCabAlias)->C6_XVLRVDA , Nil          } )
-                Aadd( aLinha , { "C6_XVLRPRD" , (cCabAlias)->C6_XVLRVDA , Nil          } )
-                Aadd(aItePed, aLinha)
-
-                lMsHelpAuto := .T.
-                lMsErroAuto := .F.
-
-                MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, aCabPed, aItePed, nOPc, .F.) // Atu campo
-
-                If lMsErroAuto
-                    MostraErro()
-                    lRetorno := .F.
-                    //DisarmTransaction()
-                Else
-                    RecLock(cCabAlias,.F.)
-                    (cCabAlias)->LUPD := "F"
-                    (cCabAlias)->(MsUnLock())
-                    DBCommitAll()
-                EndIf
-            //End Transaction
-        Else
-
-            RecLock(cCabAlias,.F.)
-            (cCabAlias)->C5_XMENSER := If(!Empty(Alltrim(SC5->C5_XMENSER)),SC5->C5_XMENSER,Space(8000))
-            (cCabAlias)->(MsUnLock())        
-
-        EndIf
-
-        If !Empty(Alltrim(SC6->C6_NUMSERI)) .And. !Empty(Alltrim(SC6->C6_CHASSI )) .And.  !Empty(Alltrim(SC6->C6_LOCALIZ))
-
-            SDC->(DbSetOrder(3))
-
-            If SDC->(DbSeek(xFilial("SDC")+SC6->C6_PRODUTO+SC6->C6_LOCAL+SC6->C6_LOTECTL+SC6->C6_NUMLOTE+SC6->C6_LOCALIZ+SC6->C6_NUMSERI+"SC6"))
-                (cCabAlias)->(RecLock(cCabAlias,.F.))
-                (cCabAlias)->C9_SEQUEN  := SDC->DC_SEQ
-                (cCabAlias)->(MsUnLock())
             EndIf
-
+        Endif
+        If !Empty(Alltrim(SC6->C6_NUMSERI)) .And. !Empty(Alltrim(SC6->C6_CHASSI )) .And.  !Empty(Alltrim(SC6->C6_LOCALIZ))
+            SDC->(DbSetOrder(3))
+            //GAP167  Previsao de Faturamento
+            //no caso de previsão não locar temporario
+            If !_lPrevisao
+                If SDC->(DbSeek(xFilial("SDC")+SC6->C6_PRODUTO+SC6->C6_LOCAL+SC6->C6_LOTECTL+SC6->C6_NUMLOTE+SC6->C6_LOCALIZ+SC6->C6_NUMSERI+"SC6"))
+                    (cCabAlias)->(RecLock(cCabAlias,.F.))
+                    (cCabAlias)->C9_SEQUEN  := SDC->DC_SEQ
+                    (cCabAlias)->(MsUnLock())
+                EndIf
+            Endif
             cQuery := ""
             cQuery += CrLf + " UPDATE "+RetSqlName("VRK")                                                                           
             cQuery += CrLf + " SET VRK_CHASSI = '"+SC6->C6_NUMSERI+"' "
@@ -1346,7 +1359,6 @@ While (cCabAlias)->(!Eof())
 
             (cCabAlias)->(DbSkip())
             Loop
-
         EndIf
  
         cQuery := ""
@@ -1459,8 +1471,11 @@ While (cCabAlias)->(!Eof())
                 *******************************
                 /*/
                 nQtdLib   := SC6->C6_QTDLIB
-                nQtdLib   := MaLibDoFat(SC6->(RecNo()),nQtdLib,@lCredito,@lEstoque,lAvCred,lAvEst,lLiber,lTrans)
-    
+                //GAP167  Previsao de Faturamento
+                //no caso de previsão não locar temporario
+                If !_lPrevisao
+                    nQtdLib   := MaLibDoFat(SC6->(RecNo()),nQtdLib,@lCredito,@lEstoque,lAvCred,lAvEst,lLiber,lTrans)
+                Endif        
                 SDC->(DbSetOrder(1))
                 SDC->(DbGoTop())
                 If SDC->(DbSeek(xFilial("SDC")+(cCabAlias)->C6_PRODUTO;
@@ -1529,25 +1544,25 @@ While (cCabAlias)->(!Eof())
                     DbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cTrbAlias, .F., .T. )
     
                     lLibPed  := .T.
-                    (cCabAlias)->(RecLock(cCabAlias,.F.))
-        
-                    If Empty(Alltrim(SC9->C9_BLCRED)) .And. Empty(Alltrim(SC9->C9_BLEST )) .And. Empty(Alltrim(SC9->C9_BLWMS ))
-            
-                        (cCabAlias)->CC_STATUS  := "1"
-            
-                        ElseIf SC9->C9_BLCRED == "01" ; (cCabAlias)->CC_STATUS  := "2"
-                        ElseIf SC9->C9_BLCRED == "04" ; (cCabAlias)->CC_STATUS  := "3"
-                        ElseIf SC9->C9_BLCRED == "05" ; (cCabAlias)->CC_STATUS  := "4"
-                        ElseIf SC9->C9_BLCRED == "06" ; (cCabAlias)->CC_STATUS  := "5"
-                        ElseIf SC9->C9_BLCRED == "09" ; (cCabAlias)->CC_STATUS  := "6"
-                        ElseIf SC9->C9_BLEST  == "02" ; (cCabAlias)->CC_STATUS  := "7"
-                        ElseIf SC9->C9_BLEST  == "03" ; (cCabAlias)->CC_STATUS  := "8"
-                        ElseIf SC9->C9_BLWMS  == "01" ; (cCabAlias)->CC_STATUS  := "9"
-                        ElseIf SC9->C9_BLWMS  == "02" ; (cCabAlias)->CC_STATUS  := "A"
-                        ElseIf SC9->C9_BLWMS  == "03" ; (cCabAlias)->CC_STATUS  := "B"
-                        ElseIf SC9->C9_BLWMS  == "05" ; (cCabAlias)->CC_STATUS  := "C"
-                        ElseIf SC9->C9_BLWMS  == "06" ; (cCabAlias)->CC_STATUS  := "D"
-                        ElseIf SC9->C9_BLWMS  == "07" ; (cCabAlias)->CC_STATUS  := "E"
+                    //GAP167  Previsao de Faturamento
+                    //no caso de previsão não locar temporario
+                    If !_lPrevisao
+                        (cCabAlias)->(RecLock(cCabAlias,.F.))
+                        If Empty(Alltrim(SC9->C9_BLCRED)) .And. Empty(Alltrim(SC9->C9_BLEST )) .And. Empty(Alltrim(SC9->C9_BLWMS ))
+                            (cCabAlias)->CC_STATUS  := "1"
+                            ElseIf SC9->C9_BLCRED == "01" ; (cCabAlias)->CC_STATUS  := "2"
+                            ElseIf SC9->C9_BLCRED == "04" ; (cCabAlias)->CC_STATUS  := "3"
+                            ElseIf SC9->C9_BLCRED == "05" ; (cCabAlias)->CC_STATUS  := "4"
+                            ElseIf SC9->C9_BLCRED == "06" ; (cCabAlias)->CC_STATUS  := "5"
+                            ElseIf SC9->C9_BLCRED == "09" ; (cCabAlias)->CC_STATUS  := "6"
+                            ElseIf SC9->C9_BLEST  == "02" ; (cCabAlias)->CC_STATUS  := "7"
+                            ElseIf SC9->C9_BLEST  == "03" ; (cCabAlias)->CC_STATUS  := "8"
+                            ElseIf SC9->C9_BLWMS  == "01" ; (cCabAlias)->CC_STATUS  := "9"
+                            ElseIf SC9->C9_BLWMS  == "02" ; (cCabAlias)->CC_STATUS  := "A"
+                            ElseIf SC9->C9_BLWMS  == "03" ; (cCabAlias)->CC_STATUS  := "B"
+                            ElseIf SC9->C9_BLWMS  == "05" ; (cCabAlias)->CC_STATUS  := "C"
+                            ElseIf SC9->C9_BLWMS  == "06" ; (cCabAlias)->CC_STATUS  := "D"
+                            ElseIf SC9->C9_BLWMS  == "07" ; (cCabAlias)->CC_STATUS  := "E"
                         EndIf
                     
                         (cCabAlias)->C6_CHASSI  := (cTmpAlias)->VV1_CHASSI 
@@ -1567,8 +1582,8 @@ While (cCabAlias)->(!Eof())
                         (cCabAlias)->C6_XDGRMOD := ""                      
                         (cCabAlias)->C9_NFISCAL := CriaVar("C9_NFISCAL")
                         (cCabAlias)->C9_SERIENF := CriaVar("C9_SERIENF")
-                    (cCabAlias)->(MsUnLock())
-    
+                        (cCabAlias)->(MsUnLock())
+                    Endif 
                     SC6->(RecLock("SC6",.F.))
                         SC6->C6_XCODMAR	:= (cTrbAlias)->MARCA  
                         SC6->C6_XDESMAR	:= (cTrbAlias)->DESCMAR
@@ -1623,7 +1638,6 @@ While (cCabAlias)->(!Eof())
         EndIf
     
         If !lLibPed
-        
             SC6->(RecLock("SC6",.F.))
                 SC6->C6_LOTECTL := CriaVar("C6_LOTECTL")
                 SC6->C6_DTVALID := CriaVar("C6_DTVALID")
@@ -1656,71 +1670,70 @@ While (cCabAlias)->(!Eof())
     (cCabAlias)->(DbSkip())
 EndDo
 
-SC6->(DbSetOrder(1))
-(cCabAlias)->(DbGoTop())
+//GAP167  Previsao de Faturamento
+//Não atualizar Browse quando for Previsão
+If !_lPrevisao
+    SC6->(DbSetOrder(1))
+    (cCabAlias)->(DbGoTop())
+    While (cCabAlias)->(!Eof())
+        nRecno := (cCabAlias)->(Recno())    
 
-While (cCabAlias)->(!Eof())
-    nRecno := (cCabAlias)->(Recno())    
+        If Empty(Alltrim((cCabAlias)->C6_CHASSI)) .Or. Empty(Alltrim((cCabAlias)->C6_NUMSERI))        
 
-    If Empty(Alltrim((cCabAlias)->C6_CHASSI)) .Or. Empty(Alltrim((cCabAlias)->C6_NUMSERI))        
-        
-        SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
-        SC6->(RecLock("SC6",.F.))
-            SC6->C6_LOTECTL := CriaVar("C6_LOTECTL") 
-            SC6->C6_DTVALID := CriaVar("C6_DTVALID") 
-            SC6->C6_NUMSERI := CriaVar("C6_NUMSERI")
-            SC6->C6_CHASSI  := CriaVar("C6_CHASSI" ) 
-            SC6->C6_LOCALIZ := CriaVar("C6_LOCALIZ") 
-            SC6->C6_XCODMAR := CriaVar("C6_XCODMAR")
-            SC6->C6_XDESMAR	:= CriaVar("C6_XDESMAR")
-            SC6->C6_XGRPMOD := CriaVar("C6_XGRPMOD")
-            SC6->C6_XDGRMOD := CriaVar("C6_XDGRMOD")
-            SC6->C6_XMODVEI	:= CriaVar("C6_XMODVEI") 
-            SC6->C6_XDESMOD	:= CriaVar("C6_XDESMOD")
-            SC6->C6_XSEGMOD	:= CriaVar("C6_XSEGMOD")
-            SC6->C6_XDESSEG	:= CriaVar("C6_XDESSEG") 
-            SC6->C6_XFABMOD	:= CriaVar("C6_XFABMOD")
-            SC6->C6_XCORINT	:= CriaVar("C6_XCORINT")
-            SC6->C6_XCOREXT	:= CriaVar("C6_XCOREXT")
-        SC6->(MsUnLock())
+            SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
+            SC6->(RecLock("SC6",.F.))
+                SC6->C6_LOTECTL := CriaVar("C6_LOTECTL") 
+                SC6->C6_DTVALID := CriaVar("C6_DTVALID") 
+                SC6->C6_NUMSERI := CriaVar("C6_NUMSERI")
+                SC6->C6_CHASSI  := CriaVar("C6_CHASSI" ) 
+                SC6->C6_LOCALIZ := CriaVar("C6_LOCALIZ") 
+                SC6->C6_XCODMAR := CriaVar("C6_XCODMAR")
+                SC6->C6_XDESMAR	:= CriaVar("C6_XDESMAR")
+                SC6->C6_XGRPMOD := CriaVar("C6_XGRPMOD")
+                SC6->C6_XDGRMOD := CriaVar("C6_XDGRMOD")
+                SC6->C6_XMODVEI	:= CriaVar("C6_XMODVEI") 
+                SC6->C6_XDESMOD	:= CriaVar("C6_XDESMOD")
+                SC6->C6_XSEGMOD	:= CriaVar("C6_XSEGMOD")
+                SC6->C6_XDESSEG	:= CriaVar("C6_XDESSEG") 
+                SC6->C6_XFABMOD	:= CriaVar("C6_XFABMOD")
+                SC6->C6_XCORINT	:= CriaVar("C6_XCORINT")
+                SC6->C6_XCOREXT	:= CriaVar("C6_XCOREXT")
+            SC6->(MsUnLock())
 
-        (cCabAlias)->(RecLock(cCabAlias,.F.))
-        (cCabAlias)->(DBDelete())
-        (cCabAlias)->(MsUnLock())
-    
+            (cCabAlias)->(RecLock(cCabAlias,.F.))
+            (cCabAlias)->(DBDelete())
+            (cCabAlias)->(MsUnLock())
+
+        EndIf
+        (cCabAlias)->(DbGoTo(nRecno))
+        (cCabAlias)->(DbSkip())
+    EndDo
+
+    If !Empty(Alltrim(cNumPed))
+     (cCabAlias)->(DBClearFilter())
     EndIf
+    TcRefresh(oCabTable:GetTableNameForQuery())
 
-    (cCabAlias)->(DbGoTo(nRecno))
-    (cCabAlias)->(DbSkip())
-EndDo
-
-If !Empty(Alltrim(cNumPed))
-    (cCabAlias)->(DBClearFilter())
-EndIf
-
-TcRefresh(oCabTable:GetTableNameForQuery())
-
-If ValType(oBrwCab) <> "U"
-    nAt     := oBrwCab:nAt
-    nLinPos := nAt
-    oBrwCab:GoTop(.T.)
-    oBrwCab:LineRefresh(nAt)
-    //oBrwCab:GoTop(.T.)
-    oBrwCab:GoTo(nAt)
-    oBrwCab:Refresh()
-    /*
-	oBrwCab:GoTo(nAt)
-	oBrwCab:LineRefresh() //só refaz a linha
-    oBrwCab:GoTop(.T.)
-    oBrwCab:UpdateBrowse() //reconstroi tudo	
-    oBrwCab:Refresh()
-    oBrwCab:GoTo(nAt)
-    oBrwCab:Refresh()
-    oNwFat001:Refresh()
-    */
-
-EndIf
-
+    If ValType(oBrwCab) <> "U"
+        nAt     := oBrwCab:nAt
+        nLinPos := nAt
+        oBrwCab:GoTop(.T.)
+        oBrwCab:LineRefresh(nAt)
+        //oBrwCab:GoTop(.T.)
+        oBrwCab:GoTo(nAt)
+        oBrwCab:Refresh()
+        /*
+	    oBrwCab:GoTo(nAt)
+	    oBrwCab:LineRefresh() //só refaz a linha
+        oBrwCab:GoTop(.T.)
+        oBrwCab:UpdateBrowse() //reconstroi tudo	
+        oBrwCab:Refresh()
+        oBrwCab:GoTo(nAt)
+        oBrwCab:Refresh()
+        oNwFat001:Refresh()
+        */
+    EndIf
+Endif 
 Return()
 
 /*
@@ -4045,14 +4058,36 @@ Default _cJoin      := ""
     Return _cQuery
 
 
+//Campos a serem retornados por Select
+User Function XZFAT9CP()
+Local _aCab
+_aCab  := { "C6_OK"     ,"CC_STATUS" ,"C6_FILIAL" ,"C6_NUM"    ,"C6_PEDCLI" ,"C5_EMISSAO","C5_CLIENTE","C5_LOJACLI",;
+            "A1_NOME"   ,"C5_CONDPAG","C5_NATUREZ","C5_XMENSER","C6_ITEM"   ,"C6_PRODUTO","B1_DESC"   ,"C6_LOCAL"  ,;
+            "C6_CHASSI" ,"C6_NUMSERI","C6_LOCALIZ","C6_XCODMAR","C6_XDESMAR","C6_XGRPMOD","C6_XDGRMOD","C6_XMODVEI",;
+            "C6_XDESMOD","C6_XSEGMOD","C6_XDESSEG","C6_XFABMOD","C6_XCORINT","C6_XCOREXT","C6_QTDVEN" ,"C6_PRCVEN" ,;
+            "C6_VALOR"  ,"C6_OPER"   ,"C6_TES"    ,"C6_XVLRVDA","C6_PRUNIT" ,"C6_XPRCTAB","C6_XVLRPRD","C6_XVLRMVT",;
+            "C6_XBASST" ,"C9_SEQUEN" ,"C9_NFISCAL","C9_SERIENF","C5_XTIPVEN","VRJ_PEDIDO","VRJ_STATUS"}
+Return _aCab
+
+
 //GAP167  Previsao de Faturamento
-//Chamada do Estorno podendo ser xamado de outras funções
-User Function ZFATF09E(_cWhere)
+//Realiza o empenho
+User Function XZFAT9EP(_cAlias)
 Local _oSay
-	FwMsgRun(,{ |_oSay| Estor(_oSay,  _cWhere) }, "Estornando registros", "Aguarde...")  
+	FwMsgRun(,{ |_oSay| fAtuPeds(_cAlias, _oSay  ) }, "Empenhando registros", "Aguarde...")  
 Return Nil
 
 
+//GAP167  Previsao de Faturamento
+//Chamada do Estorno podendo ser xamado de outras funções
+User Function XZFAT9ET(_cAlias)
+Local _oSay
+	//FwMsgRun(,{ |_oSay| Estor( _cAlias, _oSay ) }, "Estornando registros", "Aguarde...")  
+	FwMsgRun(,{ |_oSay| fAtuEmp(_oSay,_cAlias,/*cIteAlias*/,/*lOk*/) }, "Estornando registros", "Aguarde...")  
+Return Nil
+
+
+//Cabeçalho
 /*
 //-------------------------------------------------------------------
     Calcula do Cabeçalho do Documento

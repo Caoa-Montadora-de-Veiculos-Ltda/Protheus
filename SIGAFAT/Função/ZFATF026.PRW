@@ -426,13 +426,12 @@ Return Nil
 
 
 /*/{Protheus.doc} ValidCampo
-//TODO EdiÃ§Ã£o da tela de planejamento para gravar quando alterar.
+//Valida para verificar se liber ou não a Previsão
 @author denilso.almeida
-@since 14/10/2019
+@since 
 @version 1.0
-@return ${return}, ${return_description}
-@param _oBrW, , descricao
-@param _cCol, , descricao
+@return 
+@param 
 @type function
 /*/
 Static Function ValidCampo(_cCol, _cAliasPesq, _oBrW)
@@ -456,50 +455,70 @@ Begin Sequence
 	
 	//Verificar quantidades para avaliar se possui chassis
 	ZZP->( DbGoto(_nRegZZP) )
+	//neste caso não foi alterado
+	If ZZP->ZZP_QTELIB  == _nQtdeLib
+		Return .F.
+	Endif 
 	_nQtdeLZZP 	:= ZZP->ZZP_QTELIB
 	_nQtde 		:= ZZP->ZZP_QTELIB   //sempre deixar quantidade anterior caso não execute o calculo volta para anterior
 
 	If _nQtdeLib > _nQtdePed
 		MSGINFO( "Quantidade liberada não pode ser maior que quantidade do Pedido", "Atencao" )
-		_lRet 	:= .F. 
+		_lRet 	:= .F.
+		Break  
 	Endif 
-	//Ja validou
-	If _lRet 
-		If _nQtdeLZZP > _nQtdeLib
-			_nQtde := ZFATF026RE(ZZP->ZZP_CODPRD, ZZP->ZZP_CODPRV, _nQtdeLZZP, _nQtdeLib)
+	//Caso 1 qtde existente no Sistema maior que a quantidade liberada (ja foi selecionado anteriormente uma qtde)
+	If _nQtdeLZZP > _nQtdeLib
+		_nQtde := ZFATF026RE(ZZP->ZZP_CODPRD, ZZP->ZZP_CODPRV, _nQtdeLZZP, _nQtdeLib)
+		If _nQtde < 0
+			Return .F.
+		Endif	
+	Else 
+		_nQtdEmpenho := ZFATF026AV(ZZP->ZZP_CODPRD, ZZP->ZZP_CODPRV, _nQtdeLZZP, _nQtdeLib) 
+		If _nQtdEmpenho >= _nQtdeLib 	
+			//diferença de quantidade Calculada ja existente e empenhada com necessidade de liberação 
+			_nQtde :=  _nQtdeLib
+			ZFATF26EMP( 1, ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, ZZP->ZZP_CODPRD, _nQtde)
 		Else 
-			_nQtdEmpenho := ZFATF026AV(ZZP->ZZP_CODPRD, ZZP->ZZP_CODPRV, _nQtdeLZZP, _nQtdeLib) 
-			If _nQtdEmpenho >= _nQtdeLib 	
-				_nQtde :=  _nQtdeLib
-			Else 
-				MSGINFO( "Quantidade de chassi nao Empenhada  "+AllTrim(Str(_nQtdEmpenho))+" disponivel, nao atende a necessidade ", "Atencao" )
-				_lRet 	:= .F. 
-			Endif
+			MSGINFO( "Quantidade de chassi nao Empenhada  "+AllTrim(Str(_nQtdEmpenho))+" disponivel, nao atende a necessidade ", "Atencao" )
+			_lRet 	:= .F. 
 		Endif
-	Endif 
-	//_oBrW:FWBrowse(): ColPos 
-   	//Atualizar para que possa ser dado o refresh
-   	If RecLock(_cAliasPesq,.F.)
-		(_cAliasPesq)->(FieldPut(FieldPos("ZZP_QTELIB"),_nQtde))
-   		(_cAliasPesq)->(MsUnLock())
-   	Endif		
+	Endif
+
 End Sequence 
-//(_cAliasPlan)->(DbGotop())
-//(_cAliasPesq)->(DbGoto(_nPos))
+//_oBrW:FWBrowse(): ColPos 
+//Atualizar para que possa ser dado o refresh 
+//Sempre deixar atualiza com a quantidade
+If !_lRet  //Caso de problemas na atualização voltar a qtde anterior 
+	_nQtde 	:= _nQtdeLZZP
+Endif 
+If RecLock(_cAliasPesq,.F.)
+	(_cAliasPesq)->(FieldPut(FieldPos("ZZP_QTELIB"),_nQtde))
+	(_cAliasPesq)->(MsUnLock())
+Endif		
+ZZP->( DbGoto(_nRegZZP) )
+//Grava tabela Principal pelo motivo de estar empenhando direto
+If RecLock("ZZP",.F.)
+	ZZP->(FieldPut(FieldPos("ZZP_QTELIB"),_nQtde))
+	ZZP->(MsUnLock())
+Endif
+
 _oBrW:Refresh()
 Return _lRet
 
 //Função que verifica se possui mais empenho que o solicitado e retira o empenho caso confirmado
+//Caso 1 qtde existente no Sistema maior que a quantidade liberada (ja foi selecionado anteriormente uma qtde)
 Static Function ZFATF026RE(_cCodProd, _cCodPrev, _nQtdeLZZP, _nQtdeLib)
-Local _nQtdeCalc := _nQtdeLZZP  //deixa a que foi liberada anteriorment
+Local _nQtdeCalc := _nQtdeLib  
 Begin Sequence 
 	If !MsgYesNo("Quantidade liberada "+AllTrim(Str(_nQtdeLZZP))+" anterior maior que "+AllTrim(Str(_nQtdeLib))+" atual, confirma ?") 
+		_nQtdeCalc := -1
 		Break 
 	Endif
-	//montar regra 	
-	//_nQtdeCalc := _nQtdeLZZP - _nQtdeLib  //tem que retirar chassi e emprnho
-	//If  //Funcao para retirar empenho
-	//	_nQtdeCalc 	:= _nQtdeLib  //Assumira a quantidade de estiver ok
+	_nQtdeCalc := _nQtdeLZZP - _nQtdeLib  
+	//montar regra 	retornar caso de certo a quantidade a ser liberada
+	ZFATF26EMP( 2, FWxFilial("ZZP"), _cCodPrev, _cCodProd, _nQtdeCalc)
+	//	_nQtdeCalc 	:= _xfun  //Assumira a quantidade de estiver ok
 	//Endif
 End Sequence
 Return _nQtdeCalc
@@ -640,7 +659,6 @@ Local _cAlias 		:= GetNextAlias()
 Local _nQtdeChassi  := 0
 Local _nQtdeCalc    := 0
 Local _nQtdePedEmp  := 0
-Local _nQtdeDif		:= 0
 
 Default _cCodProd 	:= "" 
 Default _cCodPrev 	:= ""
@@ -665,9 +683,9 @@ Default _nQtdeLZZP	:= 0
 	If Select(_cAlias) <> 0
 		(_cAlias)->(DbCloseArea())
 	Endif
-	//diferença de quantidade Calculada ja existente e empenhada com necessidade de liberação 
-	_nQtdeDif 		:= _nQtdeLib - _nQtdePedEmp
-	_nQtdeChassi 	:= ZFATF026QChassi(_cCodProd)  //Verifica quantos chassis tem disponiveis
+	If _nQtdeLib > 0 
+		_nQtdeChassi 	:= ZFATF026QChassi(_cCodProd)  //Verifica quantos chassis tem disponiveis
+	Endif
 	_nQtdeCalc 		:= _nQtdeChassi + _nQtdePedEmp  //somatoria do que possui no SC6 e chassi disponivel
 
 If Select(_cAlias) <> 0
@@ -677,17 +695,116 @@ Endif
 Return _nQtdeCalc
 
 
+//Realiza o Empenho 
+//_nOpc == 1 Criar Empenho
+//_nOpc == 2 Retirar Empenho
+
+Static Function ZFATF26EMP( _nOpc, _cFilPrev, _cCodPrev, _cCodProd,  _nQtde, _lMens )
+Local _cAliasEmp	:= GetNextAlias()
+Local _lRet 		:= .T.
+Local _cCampos		:= ""
+Local _cWhere		:= ""
+Local _cJoin 		:= ""
+Local _nRow			:= 0 
+Local _aCampos 		:= {}
+Local _nPos
+
+Default _lMens 		:= .T. 
+
+Begin Sequence
+	//Acrescentar  + 1 no select não valida = somente > ou <
+	_nRow		:= Str(_nQtde + 1)
+	_nRow 		:= "%"+_nRow+"%"
+
+	_aCampos 	:=   U_XZFAT9CP()
+	_cCampos 	:= CRLF +" 'F' AS LUPD "
+	For _nPos := 1 To Len( _aCampos )	
+		If SubsTr(_aCampos[_nPos],1,3) == "C6_"
+			_cCampos += CRLF + ", "+_aCampos[_nPos]
+		ElseIf SubsTr(_aCampos[_nPos],1,3) == "C5_"
+			_cCampos += CRLF + ", "+_aCampos[_nPos]
+		ElseIf  _nOpc == 2 .And. SubsTr(_aCampos[_nPos],1,4) == "VRJ_"
+			_cCampos += CRLF + ", "+_aCampos[_nPos]
+		Endif
+	Next _nPos
+	_cCampos := "%"+_cCampos+"%"
+
+	If  _nOpc == 2
+	/*
+		_cJoin 	+= " JOIN "+RetSqlName("SC5")+" SC5 "
+		_cJoin 	+= " ON  SC5.D_E_L_E_T_  	= ' ' 	"
+		_cJoin 	+= " AND SC5.C5_FILIAL		= '" + FWxFilial("SC5") + "' "
+		_cJoin 	+= " AND SC5.C5_NUM 		= SC6.C6_NUM "
+		_cJoin 	:= "%"+_cJoin+"%"
+	*/
+		_cJoin 	+=  CRLF +" JOIN " + RetSqlName("VRJ") + " VRJ "
+		_cJoin 	+=  CRLF +"	ON  VRJ.VRJ_FILIAL = '" + xFilial("VRJ") + "' "
+		_cJoin 	+=  CRLF +" 	AND VRJ.VRJ_PEDCOM = SC6.C6_PEDCLI "
+		_cJoin 	+= 	CRLF +"	AND VRJ.VRJ_STATUS in ('A','F') "
+		_cJoin 	+= 	CRLF +"	AND VRJ.D_E_L_E_T_ = ' ' "
+	Endif 
+	_cJoin 	:= "%"+_cJoin+"%"
+
+	If _nOpc == 1  //incluir empenho
+		_cWhere	+= " SC6.C6_CHASSI  = ' ' "
+	ElseIf  _nOpc == 2
+		_cWhere	+= " SC6.C6_CHASSI  <> ' ' "
+	Endif 
+	_cWhere := "%"+_cWhere+"%"
+
+	BeginSql Alias _cAliasEmp //Define o nome do alias temporário 
+		SELECT 	%Exp:_cCampos% 
+		FROM  	%Table:SC6% SC6 
+ 		JOIN 	%Table:SC5% SC5 
+	 		ON  SC5.%notDel% 	
+	 		AND SC5.C5_FILIAL	= %xFilial:SC5%
+	 		AND SC5.C5_NUM 		= SC6.C6_NUM
+			AND SC5.C5_CLIENTE 	= SC6.C6_CLI
+			AND SC5.C5_LOJACLI 	= SC6.C6_LOJA
+		%Exp:_cJoin%
+		WHERE SC6.%notDel%	
+			AND SC6.C6_FILIAL 	= %xFilial:SC6%
+			AND SC6.C6_PRODUTO  = %Exp:_cCodProd%
+			AND SC6.C6_XFILPVR	= %Exp:_cFilPrev%
+			AND SC6.C6_XCODPVR 	= %Exp:_cCodPrev%
+			AND %Exp:_cWhere%
+			AND ROWNUM 			< %Exp:_nRow%
+			ORDER BY SC6.C6_NUM 
+	EndSql
+	iF (_cAliasEmp)->(Eof()) 
+		If _lMens
+	    	ApMsgStop("Não localizado registros para serem empenhados nos pedidos", "Previsão Faturamento")
+		Endif	
+		_lRet	:=  .F.
+		Break 
+	Endif  
+	If _nOpc == 1
+		U_XZFAT9EP(_cAliasEmp)   //localizado em ZFATF019
+	ElseIf _nOpc == 2
+		U_XZFAT9ET(_cAliasEmp)   //localizado em ZFATF019
+	Endif
+End Sequence
+If Select(_cAliasEmp) <> 0
+	(_cAliasEmp)->(DbCloseArea())
+	Ferase(_cAliasEmp+GetDBExtension())
+Endif
+
+Return _lRet 
+
 //Localizar quantos chassis disponíveis possuem para o Produto
 Static Function ZFATF026QChassi(_cCodProd)
 Local _cAlias 		:= GetNextAlias()
 Local _cQuery 		:= ""
 Local _nQtdeChassi  := 0
+
 	_cQuery  := U_XZFT25CH(_cCodProd)
 	TcQuery _cQuery new alias (_cAlias)
 	DbSelectArea(_cAlias)
-	(_cAlias)->(DbGotop())
-	Count To _nQtdeChassi	  //Conta quantos chassis estão disponiveis
-	(_cAlias)->(DbGotop())
+	If (_cAlias)->(!Eof())
+		(_cAlias)->(DbGotop())
+		Count To _nQtdeChassi	  //Conta quantos chassis estão disponiveis
+		(_cAlias)->(DbGotop())
+	Endif
 If Select(_cAlias) <> 0
 	(_cAlias)->(DbCloseArea())
 	Ferase(_cAlias+GetDBExtension())
@@ -707,6 +824,9 @@ Default	_lCancel    := .F.
 Begin Sequence
 	(_cAliasPesq)->(DbGotop())
 	While (_cAliasPesq)->(!Eof())
+		If _nOpc == 2  //Vizualizar
+			Break
+		Endif 
 		//Caso os valores de liberação não preenchidos e ou for deleção informar
 		If (_cAliasPesq)->ZZP_QTELIB == 0 .Or. _nOpc == 5
 			Aadd(_aReg, (_cAliasPesq)->NREGZZP)
@@ -737,7 +857,7 @@ Begin Sequence
 	If _lProcessa 
 		//Funcionalidade para liberar o SC6 da previsão pode ser UPD
 		AjustaZZP(_aReg, _cFilPrev, _cCodPrev, _nOpc)
-		U_XZFAT25AP()
+		U_XZFAT25LP()
 	Endif
 End Sequence 
 
@@ -746,17 +866,27 @@ Return _lRet
 //funcionalidade esponsavel por apagar os dados que não foram indicados para liberação
 Static Function AjustaZZP(_aReg, _cFilPrev, _cCodPrev, _nOpc)
 Local _nPos 
-	//Se for deletar retirar empenho 
-	If _nOpc == 5
-		//DACXXX
-	Endif
+Local _nQtde
+
+	//Se for Cancelar retirar empenho caso exista
+	If _nOpc == 5 .And. Len(_aReg) > 0
+		_nQtde := Len(_aReg)
+		//Verifica se tem empenho para retirar
+		ZFATF26EMP( 2, ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, ZZP->ZZP_CODPRD, _nQtde, .F.)
+	Endif 
+
 	For _nPos := 1 To Len(_aReg)
 		ZZP->(DbGoto(_aReg[_nPos]))
 	   	If RecLock("ZZP",.F.)
-			ZZP->(DbDelete())
+			If _nOpc == 5
+				ZZP->ZZP_STATUS := "C"	
+			Else
+				ZZP->(DbDelete())
+			Endif	
 			ZZP->(MsUnlock())
 		Endif 
 	Next
+
 	//Colocar depois para aplicar update em observação no SC6 retirado
 	//SC6->C6_MOPC    := AllTrim(SC6->C6_MOPC) + CRLF + Upper(_cMens) + CRLF 
 	//Exemplo SET VS1.VS1_OBSAGL = RAWTOHEX('ALTERADO FORMAG ANTERIOR' || VS1.VS1_FORPAG || ' GMUD NR. ' ||  NVL(UTL_RAW.CAST_TO_VARCHAR2(dbms_lob.substr(VS1.VS1_OBSAGL , 2000, 1)),' ') ) ,
@@ -777,4 +907,7 @@ Local _nPos
 	EndIf
 
 Return Nil
+
+
+
 

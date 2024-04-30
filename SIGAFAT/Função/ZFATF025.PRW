@@ -277,13 +277,15 @@ Begin Sequence
     Self:_OBrPlan:SetFixedBrowse(.T.)
     Self:_OBrPlan:AddLegend("AllTrim(TRB_STATUS) = 'F'  "  ,"BLUE" 	   	,"Faturado")
 	Self:_OBrPlan:AddLegend("AllTrim(TRB_STATUS) = 'A'  "  ,"GREEN"     ,"Em Aberto")
-	Self:_OBrPlan:AddLegend("AllTrim(ZZP_STATUS) = 'C'  "  ,"RED"       ,"Cancelado")
+	Self:_OBrPlan:AddLegend("AllTrim(TRB_STATUS) = 'C'  "  ,"RED"       ,"Cancelado")
 	Self:_OBrPlan:AddLegend("AllTrim(TRB_STATUS) <> ' '  " ,"GRAY"      ,"Pendente")
 
 	Self:_OBrPlan:AddButton("Incluir"	, { || Self:MenuPrev(3)	})
 	Self:_OBrPlan:AddButton("Alterar"	, { || Self:MenuPrev(4)	})
 	Self:_OBrPlan:AddButton("Faturar"	, { || Self:MenuPrev(1)	})
-	Self:_OBrPlan:AddButton("Excluir"	, { || Self:MenuPrev(5)	})
+	Self:_OBrPlan:AddButton("Cancelar"	, { || Self:MenuPrev(5)	})
+	Self:_OBrPlan:AddButton("Visualizar", { || Self:MenuPrev(2)	})
+
 	//mudanca de linha
 	Self:_OBrPlan:setChange({|| ZFT25Change(), Self:Refresh()})
   
@@ -950,12 +952,12 @@ Local _cCodPrev
 
 	_cFilPrev := (_cAliasPlan)->TRB_FILIAL
 	_cCodPrev := (_cAliasPlan)->TRB_PREVIS
-	If _nOpc <> 3 .and. (_cAliasPlan)->TRB_STATUS == "F"
+	If _nOpc < 2 .And. _nOpc > 3 .And. (_cAliasPlan)->TRB_STATUS == "F"
         MsgStop("Previsao ja Faturada", "PREVISAO")
 		Return Nil
 	Endif 
 
-	If _nOpc <> 3 .And. (_cAliasPlan)->TRB_STATUS == "C"
+	If _nOpc < 2 .And. _nOpc > 3 .And. (_cAliasPlan)->TRB_STATUS == "C"
         MsgStop("Previsao Cancelada", "PREVISAO")
 		Return Nil
 	Endif 
@@ -1307,6 +1309,6 @@ Return _cQuery
 
 
 //Função Responsável por atualizar planilha quando chamada de outra funcionalidade
-User Function XZFAT25AP()
+User Function XZFAT25LP()
 	LoadPlan()
 Return Nil	
