@@ -447,6 +447,7 @@ Local _nQtdeLib
 Local _nQtdePed
 Local _nRegZZP
 Local _nQtdeLZZP
+Local _aRelac
 
 Begin Sequence
 	_nQtdeLib	:= _xConteudo
@@ -502,7 +503,18 @@ If RecLock("ZZP",.F.)
 	ZZP->(FieldPut(FieldPos("ZZP_QTELIB"),_nQtde))
 	ZZP->(MsUnLock())
 Endif
-
+If _lRet  
+	//Atualizar dados
+	_aRelac 	:= ZFAT026Total(ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, /*_lCarrega*/)
+	_aRefCli	:= _aRelac[1]
+	_aRefPrd	:= _aRelac[2]
+	_oBrWCli:Activate()
+	_oBrWCli:GoTop(.T.)
+	_oBrWCli:Refresh(.T.)
+	_oBrWPrd:Activate()
+	_oBrWPrd:GoTop(.T.)
+	_oBrWPrd:Refresh(.T.)
+Endif
 _oBrW:Refresh()
 Return _lRet
 
@@ -521,7 +533,7 @@ Begin Sequence
 	//	_nQtdeCalc 	:= _xfun  //Assumira a quantidade de estiver ok
 	//Endif
 End Sequence
-Return _nQtdeCalc
+Return _nQtdeLib
 
 
 /*/{Protheus.doc} ZFAT026Total
@@ -818,6 +830,7 @@ Local _aReg 		:= {}
 Local _lLiberado	:= .F. 
 Local _lProcessa 	:= .F.
 Local _lRet 		:= .T.
+Local _aRelac
 
 Default	_lCancel    := .F. 
 
@@ -858,12 +871,25 @@ Begin Sequence
 		//Funcionalidade para liberar o SC6 da previsão pode ser UPD
 		AjustaZZP(_aReg, _cFilPrev, _cCodPrev, _nOpc)
 		U_XZFAT25LP()
+		_aRelac 	:= ZFAT026Total( _cFilPrev, _cCodPrev, /*_lCarrega*/)
+		_aRefCli	:= _aRelac[1]
+		_aRefPrd	:= _aRelac[2]
+	
+		_oBrWCli:Activate()
+		_oBrWCli:GoTop(.T.)
+		_oBrWCli:Refresh(.T.)
+		_oBrWPrd:Activate()
+		_oBrWPrd:GoTop(.T.)
+		_oBrWPrd:Refresh(.T.)
+
 	Endif
+	_oBrW:Refresh()
+
 End Sequence 
 
 Return _lRet	
 
-//funcionalidade esponsavel por apagar os dados que não foram indicados para liberação
+//funcionalidade responsavel por apagar os dados que não foram indicados para liberação
 Static Function AjustaZZP(_aReg, _cFilPrev, _cCodPrev, _nOpc)
 Local _nPos 
 Local _nQtde

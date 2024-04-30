@@ -1636,36 +1636,36 @@ While (cCabAlias)->(!Eof())
                 EndIf
             //End Transaction
         EndIf
-    
-        If !lLibPed
-            SC6->(RecLock("SC6",.F.))
-                SC6->C6_LOTECTL := CriaVar("C6_LOTECTL")
-                SC6->C6_DTVALID := CriaVar("C6_DTVALID")
-                SC6->C6_NUMSERI := CriaVar("C6_NUMSERI")
-                SC6->C6_CHASSI  := CriaVar("C6_CHASSI" )
-                SC6->C6_LOCALIZ := CriaVar("C6_LOCALIZ")
-                SC6->C6_XCODMAR := CriaVar("C6_XCODMAR")
-                SC6->C6_XDESMAR	:= CriaVar("C6_XDESMAR")
-                SC6->C6_XGRPMOD := CriaVar("C6_XGRPMOD")
-                SC6->C6_XDGRMOD := CriaVar("C6_XDGRMOD")
-                SC6->C6_XMODVEI	:= CriaVar("C6_XMODVEI")
-                SC6->C6_XDESMOD	:= CriaVar("C6_XDESMOD")
-                SC6->C6_XSEGMOD	:= CriaVar("C6_XSEGMOD")
-                SC6->C6_XDESSEG	:= CriaVar("C6_XDESSEG")
-                SC6->C6_XFABMOD	:= CriaVar("C6_XFABMOD")
-                SC6->C6_XCORINT	:= CriaVar("C6_XCORINT")
-                SC6->C6_XCOREXT	:= CriaVar("C6_XCOREXT")
-            SC6->(MsUnLock())
-    
-            (cCabAlias)->(RecLock(cCabAlias,.F.))
-                (cCabAlias)->C6_CHASSI  := CriaVar("C6_CHASSI" )
-                (cCabAlias)->C6_NUMSERI := CriaVar("C6_NUMSERI")
-                (cCabAlias)->C6_LOCALIZ := CriaVar("C6_LOCALIZ")
-            (cCabAlias)->(MsUnLock())
-        
-            DBCommitAll()
-        
-        EndIf
+
+        If !_lPrevisao
+            If !lLibPed
+                SC6->(RecLock("SC6",.F.))
+                    SC6->C6_LOTECTL := CriaVar("C6_LOTECTL")
+                    SC6->C6_DTVALID := CriaVar("C6_DTVALID")
+                    SC6->C6_NUMSERI := CriaVar("C6_NUMSERI")
+                    SC6->C6_CHASSI  := CriaVar("C6_CHASSI" )
+                    SC6->C6_LOCALIZ := CriaVar("C6_LOCALIZ")
+                    SC6->C6_XCODMAR := CriaVar("C6_XCODMAR")
+                    SC6->C6_XDESMAR	:= CriaVar("C6_XDESMAR")
+                    SC6->C6_XGRPMOD := CriaVar("C6_XGRPMOD")
+                    SC6->C6_XDGRMOD := CriaVar("C6_XDGRMOD")
+                    SC6->C6_XMODVEI	:= CriaVar("C6_XMODVEI")
+                    SC6->C6_XDESMOD	:= CriaVar("C6_XDESMOD")
+                    SC6->C6_XSEGMOD	:= CriaVar("C6_XSEGMOD")
+                    SC6->C6_XDESSEG	:= CriaVar("C6_XDESSEG")
+                    SC6->C6_XFABMOD	:= CriaVar("C6_XFABMOD")
+                    SC6->C6_XCORINT	:= CriaVar("C6_XCORINT")
+                    SC6->C6_XCOREXT	:= CriaVar("C6_XCOREXT")
+                SC6->(MsUnLock())
+                (cCabAlias)->(RecLock(cCabAlias,.F.))
+                    (cCabAlias)->C6_CHASSI  := CriaVar("C6_CHASSI" )
+                    (cCabAlias)->C6_NUMSERI := CriaVar("C6_NUMSERI")
+                    (cCabAlias)->C6_LOCALIZ := CriaVar("C6_LOCALIZ")
+                (cCabAlias)->(MsUnLock())
+
+                DBCommitAll()
+            EndIf
+        Endif    
     EndIf
     (cCabAlias)->(DbSkip())
 EndDo
