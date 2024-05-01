@@ -20,11 +20,7 @@
 #define DATA_QTDEPREV	4
 #define DATA_SALDOPRD	5
 
-Static _oBrw
-Static _oBrWCli
-Static _oBrWPrd
-Static _oBrWRes
-
+Static _cAliasZF026
 Static _AREFCLI
 Static _AREFPRD
 Static _AREFRES
@@ -41,7 +37,7 @@ User Function ZFATF026(_nOpc, _cFilPrev, _cCodPrev)
 Local _aArea        := GetArea()
 Local _cTitulo      := "Previsão Faturamento "
 Local _aCoors 		:= FWGetDialogSize( oMainWnd )
-Local _cAliasPesq   := ""
+//Local _cAliasZF026   := ""
 Local _aPrevisao    := {}
 Local _aEdit  		:= {}
 Local _oDlgPrev
@@ -55,6 +51,10 @@ Local _nPos
 Local _aFolders
 Local _aButtons
 
+Private _oBrw
+Private _oBrWCli
+Private _oBrWPrd
+Private _oBrWRes
 
 Default _cFilPrev 		:= FwXFilial("ZZP") 
 Default _cCodPrev  		:= ""
@@ -66,11 +66,11 @@ Begin Sequence
 	If _nOpc == 0 .Or. Empty(_cCodPrev)
 		Break
 	Endif
- 	FwMsgRun(,{ |_oSay| ZFATF026PR(_cFilPrev, _cCodPrev, @_cAliasPesq, @_aPrevisao, @_oSay ) }, "Selecionando dados para a Montagem Previsao", "Aguarde...")  
+ 	FwMsgRun(,{ |_oSay| ZFATF026PR(_cFilPrev, _cCodPrev, @_aPrevisao, @_oSay ) }, "Selecionando dados para a Montagem Previsao", "Aguarde...")  
 	//acrescentar campos editaveis
 	Aadd( _aEdit,"ZZP_QTELIB")
     //Abre arquivo selecionado
-	DbSelectArea(_cAliasPesq)
+	DbSelectArea(_cAliasZF026)
 	Define MsDialog _oDlgPrev Title _cTitulo From _aCoors[1], _aCoors[2] To _aCoors[3], _aCoors[4] Pixel
 		
 	//-- Cria o conteiner
@@ -87,12 +87,12 @@ Begin Sequence
 	_oFWLayer:AddCollumn( 'ALL', 100, .T., 'DOW' )
 	_oPanelDow := _oFWLayer:GetColPanel( 'ALL', 'DOW' )
 
- 	DbSelectArea(_cAliasPesq)
+ 	DbSelectArea(_cAliasZF026)
  	_oBrw := FWMBrowse():New()
 	_oBrw:SetCanSaveArea(.T.)	//abertura de mais de uma  browse
 	_oBrw:SetTemporary(.T.)
     //_oBrw:SetOwner(_oTPanel01)
-    _oBrw:SetAlias(_cAliasPesq)	
+    _oBrw:SetAlias(_cAliasZF026)	
 	_oBrw:SetMenuDef('')
 	//_oBrw:SetFields(_aPrevisao)
     _oBrw:SetOwner(_oPanelUp)
@@ -112,7 +112,7 @@ Begin Sequence
 	_oBrw:AddLegend("AllTrim(ZZP_STATUS) = 'A'  "  ,"GREEN"     ,"Em Aberto")
 	_oBrw:AddLegend("AllTrim(ZZP_STATUS) = 'C'  "  ,"RED"       ,"Cancelado")
 	_oBrw:AddLegend("AllTrim(ZZP_STATUS) <> ' '  " ,"GRAY"      ,"Pendente")
-	_oBrw:SetPreEditCell({|| DbSelectArea(_cAliasPesq), .T.})
+	_oBrw:SetPreEditCell({|| DbSelectArea(_cAliasZF026), .T.})
     _oBrw:SetEditCell( .T. , { || .T. } )
     _oBrw:lHeaderClick := .F.
     For _nPos := 1 To Len(_aPrevisao)
@@ -127,13 +127,15 @@ Begin Sequence
         _oColumn:SetEdit(.T.)
         //Habilita a edicao dos campos quando for alteração
         If _nOpc == 4 .And. Ascan(_aEdit,_xValor) > 0   
-            (_cAliasPesq)->(_oColumn:SetReadVar(_aPrevisao[_nPos,2]))
-            //_oColumn:SetValid({|| ValidCampo(Str(_nPos), _cAliasPesq, _ObrW ),_ObrW:Refresh() })
-            _oColumn:SetValid({|| ValidCampo(Str(_nPos), _cAliasPesq, _ObrW ) })
+            (_cAliasZF026)->(_oColumn:SetReadVar(_aPrevisao[_nPos,2]))
+            //_oColumn:SetValid({|| ValidCampo(Str(_nPos), _cAliasZF026, _ObrW ),_ObrW:Refresh() })
+            _oColumn:SetValid({|| ValidCampo(Str(_nPos), _ObrW ) })
        //     oColumn:SetValid({|| ValidCampo(Str(_nPos),Self:_OBrPlan) })
         EndIf
         _ObrW:SetColumns({_oColumn})
     Next
+	//mudanca de linha
+	_ObrW:setChange({ || ZFT26Change() })
 
    //Ativamos a classe
     _ObrW:Refresh(.T.)
@@ -146,7 +148,7 @@ Begin Sequence
 	_aFolders := {"Resumo","Totais Cliente","Totais Produto"}
 	_oFolder := TFolder():New(_aPosSize[1],_aPosSize[2],_aFolders,_aFolders,_oPanelDow,,,,.T.,.T.,_aPosSize[3],_aPosSize[4])
 
-	_aRelac 	:= ZFAT026Total(_cFilPrev, _cCodPrev, _cAliasPesq /*_lCarrega*/)
+	_aRelac 	:= ZFAT026Total(_cFilPrev, _cCodPrev, /*_lCarrega*/)
 	_aRefCli	:= _aRelac[1]
 	_aRefPrd	:= _aRelac[2]
 	_aRefRes    := _aRelac[3]
@@ -195,12 +197,12 @@ Begin Sequence
 
     //_oDlgPrev:Activate()
 	_aButtons := {}
-	Activate MsDialog _oDlgPrev On Init EnchoiceBar(_oDlgPrev,{	|| ZFATF026End(_nOpc, _cAliasPesq, _cFilPrev, _cCodPrev), _oDlgPrev:End() },;
-																{||If(ZFATF026End(_nOpc, _cAliasPesq, _cFilPrev, _cCodPrev, .T.),_oDlgPrev:End(), .T.)},,_aButtons)
+	Activate MsDialog _oDlgPrev On Init EnchoiceBar(_oDlgPrev,{	|| ZFATF026End(_nOpc, _cFilPrev, _cCodPrev), _oDlgPrev:End() },;
+																{||If(ZFATF026End(_nOpc, _cFilPrev, _cCodPrev, .T.),_oDlgPrev:End(), .T.)},,_aButtons)
 
 End Sequence
-If ValType(_cAliasPesq) == "C" .And. Select((_cAliasPesq)) <> 0
-	(_cAliasPesq)->(DbCloseArea())
+If ValType(_cAliasZF026) == "C" .And. Select((_cAliasZF026)) <> 0
+	(_cAliasZF026)->(DbCloseArea())
 	//Ferase(_cTable+GetDBExtension())
     //_oTable:Delete()
 Endif      
@@ -370,7 +372,7 @@ Processar Pedido de Compras Pendentes
 @obs        
 /*/
 
-Static Function ZFATF026PR(_cFilPrev, _cCodPrev, _cAliasPesq, _aPrevisao, _oSay)
+Static Function ZFATF026PR(_cFilPrev, _cCodPrev, _aPrevisao, _oSay)
 Local _cWhere       := ""
 Local _nPos
 Local _aStru
@@ -431,7 +433,7 @@ Begin Sequence
     _oTable:SetFields(_aStru)
     _oTable:AddIndex("INDZFT261", {"ZZP_CODPRV", "ZZP_CODCLI", "ZZP_LOJCLI", "ZZP_CODPRD"} )
     _oTable:Create()
-    _cAliasPesq := _oTable:GetAlias()
+    _cAliasZF026 := _oTable:GetAlias()
 
     _cTable := _oTable:GetRealName()
 	_cWhere     := ""
@@ -479,12 +481,12 @@ Begin Sequence
         Break    
     Endif
 
-    (_cAliasPesq)->(DbGoTop())
-	If (_cAliasPesq)->(Eof())
+    (_cAliasZF026)->(DbGoTop())
+	If (_cAliasZF026)->(Eof())
 		MSGINFO( "Não existem dados para visualizar", "Atencao" )
 		Break
 	Endif
-	//RegToMemory (_cAliasPesq, .T. /*lInclui*/, .F. /*lDic*/)
+	//RegToMemory (_cAliasZF026, .T. /*lInclui*/, .F. /*lDic*/)
 End Sequence
 Return Nil
 
@@ -498,9 +500,9 @@ Return Nil
 @param 
 @type function
 /*/
-Static Function ValidCampo(_cCol, _cAliasPesq, _oBrW)
+Static Function ValidCampo(_cCol, _oBrW)
 Local _lRet := .T. 
-Local _nPos := (_cAliasPesq)->(Recno())
+Local _nPos := (_cAliasZF026)->(Recno())
  //Guarda o posicionamento do temporÃ¡rio
 //Local _aOrd 	:= SaveOrd(_cAliasPlan)
 //Local _nPosLin 	:= Self:_oBrPlan:nAt
@@ -516,8 +518,8 @@ Local _aRelac
 
 Begin Sequence
 	_nQtdeLib	:= _xConteudo
-	_nQtdePed 	:= (_cAliasPesq)->(FieldGet(FieldPos("ZZP_QTEPED")))
-	_nRegZZP	:= (_cAliasPesq)->(FieldGet(FieldPos("NREGZZP")))
+	_nQtdePed 	:= (_cAliasZF026)->(FieldGet(FieldPos("ZZP_QTEPED")))
+	_nRegZZP	:= (_cAliasZF026)->(FieldGet(FieldPos("NREGZZP")))
 	
 	//Verificar quantidades para avaliar se possui chassis
 	ZZP->( DbGoto(_nRegZZP) )
@@ -566,9 +568,9 @@ End Sequence
 If !_lRet  //Caso de problemas na atualização voltar a qtde anterior 
 	_nQtde 	:= _nQtdeLZZP
 Endif 
-If RecLock(_cAliasPesq,.F.)
-	(_cAliasPesq)->(FieldPut(FieldPos("ZZP_QTELIB"),_nQtde))
-	(_cAliasPesq)->(MsUnLock())
+If RecLock(_cAliasZF026,.F.)
+	(_cAliasZF026)->(FieldPut(FieldPos("ZZP_QTELIB"),_nQtde))
+	(_cAliasZF026)->(MsUnLock())
 Endif		
 ZZP->( DbGoto(_nRegZZP) )
 //Grava tabela Principal pelo motivo de estar empenhando direto
@@ -578,7 +580,7 @@ If RecLock("ZZP",.F.)
 Endif
 If _lRet  
 	//Atualizar dados
-	_aRelac 	:= ZFAT026Total(ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, _cAliasPesq, /*_lCarrega*/)
+	_aRelac 	:= ZFAT026Total(ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, /*_lCarrega*/)
 	_aRefCli	:= _aRelac[1]
 	_aRefPrd	:= _aRelac[2]
 	_aRefRes	:= _aRelac[3]
@@ -623,7 +625,7 @@ Return _nQtdeLib
 @return _lRet, Logico
 @type Static function
 /*/
-Static Function ZFAT026Total(_cFilPrev, _cCodPrev, _cAliasPesq, _lCarrega)
+Static Function ZFAT026Total(_cFilPrev, _cCodPrev, _lCarrega)
 //Local _cWhere		:= ""
 Local _cAlias		:= GetNextAlias()
 Local _AREFCLI		:= {} 
@@ -685,7 +687,7 @@ Begin Sequence
 	Endif 
 
 	//Pegar o código Posicionado
-	_cCoPrddRes	:= (_cAliasPesq)->(FieldGet(FieldPos( "ZZP_CODPRD")))
+	_cCoPrddRes	:= (_cAliasZF026)->(FieldGet(FieldPos( "ZZP_CODPRD")))
 
 	BeginSql Alias _cAlias //Define o nome do alias temporÃ¡rio 
 		SELECT  ZZP.ZZP_CODPRD
@@ -928,7 +930,7 @@ Return _nQtdeChassi
 
 
 //Verifica dados alterados para ajustar posicionamento e retirar os não preenchidos
-Static Function ZFATF026End( _nOpc, _cAliasPesq, _cFilPrev, _cCodPrev, _lCancel)
+Static Function ZFATF026End( _nOpc, _cFilPrev, _cCodPrev, _lCancel)
 Local _aReg 		:= {}
 Local _lLiberado	:= .F. 
 Local _lProcessa 	:= .F.
@@ -938,18 +940,18 @@ Local _aRelac
 Default	_lCancel    := .F. 
 
 Begin Sequence
-	(_cAliasPesq)->(DbGotop())
-	While (_cAliasPesq)->(!Eof())
+	(_cAliasZF026)->(DbGotop())
+	While (_cAliasZF026)->(!Eof())
 		If _nOpc == 2  //Vizualizar
 			Break
 		Endif 
 		//Caso os valores de liberação não preenchidos e ou for deleção informar
-		If (_cAliasPesq)->ZZP_QTELIB == 0 .Or. _nOpc == 5
-			Aadd(_aReg, (_cAliasPesq)->NREGZZP)
+		If (_cAliasZF026)->ZZP_QTELIB == 0 .Or. _nOpc == 5
+			Aadd(_aReg, (_cAliasZF026)->NREGZZP)
 		ElseIf _nOpc <> 5
 			_lLiberado := .T.  //indica que elo menos um foi liberado
 		Endif 
-		(_cAliasPesq)->(DbSkip())
+		(_cAliasZF026)->(DbSkip())
 	EndDo 		 
 	//Se existe um Registro e esta solicitando cancelamento não deixar não pode ser cancelado somente confirmado
 	If _lLiberado .And. _lCancel  
@@ -974,7 +976,7 @@ Begin Sequence
 		//Funcionalidade para liberar o SC6 da previsão pode ser UPD
 		AjustaZZP(_aReg, _cFilPrev, _cCodPrev, _nOpc)
 		U_XZFAT25LP()
-		_aRelac 	:= ZFAT026Total( _cFilPrev, _cCodPrev, _cAliasPesq, /*_lCarrega*/)
+		_aRelac 	:= ZFAT026Total( _cFilPrev, _cCodPrev, /*_lCarrega*/)
 		_aRefCli	:= _aRelac[1]
 		_aRefPrd	:= _aRelac[2]
 		_aRefRef	:= _aRelac[3]
@@ -1043,4 +1045,26 @@ Return Nil
 
 
 
+//Ajustar por produto a visualização conforme muda de linha
+Static Function ZFT26Change()
+Local _nPos 
+Local _aRet 
+	If ValType(_AREFPRD) == "A" .And. ValType(_cAliasZF026) == "C" .And. ValType(_oBrWRes)=="O"
+		_nPos := Ascan(_AREFPRD,{|x| AllTrim(x[1]) == AllTrim((_cAliasZF026)->ZZP_CODPRD)})
+		If _nPos > 0 
+			_aRet 	:= _AREFPRD[_nPos]
+		Else 
+			_aRet	:= {	;
+							Space(Len(ZZP->ZZP_CODPRD)),;
+							Space(Len(SB1->B1_DESC)),;
+							0,;
+							0,;
+							0 ;
+							}
 
+		Endif
+		_AREFRES := {}
+		Aadd(_AREFRES, _aRet)
+		_oBrWRes:Refresh()
+	Endif 
+Return .T.

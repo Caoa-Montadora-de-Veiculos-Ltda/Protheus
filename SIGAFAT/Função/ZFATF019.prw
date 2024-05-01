@@ -53,7 +53,7 @@ Descricao / Objetivo:   Faz a Liberação do Pedidos para o Faturamento
 =======================================================================================
 */
 
-Static Function fLibPed(oSay)
+Static Function fLibPed(oSay, _aParam, _cWhere)
 
 Local bRet          As Logical
 Local lOk           As Logical
@@ -81,6 +81,10 @@ Local aTamSx3       As Array
 Local aValidCmp     As Array
 //Local dDatIni       := Date()
 //Local dDatfin       := Date()
+//GAP167  Previsao de Faturamento
+Local _lPrevFat    := FWIsInCallStack("U_XZFAT9FT") 
+
+Default _cWhere     := ""
 
 Private cCabAlias   As Character
 Private cIteAlias   As Character
@@ -150,7 +154,10 @@ If !bRet
     Return(.F.)
 EndIf
 */
-If !U_ZFATF09M(@aRet)
+
+//Se vier de previsão não precisa fazer os parametros
+//If !U_XZFAT9PA(@aRet)
+If !_lPrevFat .And. !U_XZFAT9PA(@aRet)
     Return(.F.)
 Endif 
 
@@ -277,7 +284,10 @@ cQuery += CrLf + "        ' ' as  D_E_L_E_T_  , "
 cQuery += CrLf + "        ROW_NUMBER() OVER (ORDER BY " + cOrderTab + " )  R_E_C_N_O_ "
 
 //GAP167  Previsao de Faturamento
-_cCargaQry := U_ZFATF09Q(cQuery, cOrderTab, aRet, /*_cWhere*/, /*_cJoin*/)
+If _lPrevFat  
+    aRet := _aParam  //Tem qe receber parametros mesmos que vazio
+Endif
+_cCargaQry := U_XZFAT9QY(cQuery, cOrderTab, aRet, _cWhere /*_cJoin*/)
 If Empty(_cCargaQry)
     ApMsgStop("Problemas na montagem do Select", "Previsão Faturamento")
     Return(.F.)
@@ -373,7 +383,11 @@ ElseIf (cCabAlias)->(Eof())
 
 EndIf
 
-fAtuPeds(cCabAlias,oSay,cCabTable,oCabTable,"")
+//GAP167  Previsao de Faturamento
+If !_lPrevFat
+    fAtuPeds(cCabAlias,oSay,cCabTable,oCabTable,"")
+Endif 
+    
 fTabBackup(aCabStru)
 
 /*********************************************************************************************************************************************/
@@ -508,8 +522,14 @@ Local nPosOper  As Numeric
 Local nPosTes   As Numeric
 Local nPosMvt   As Numeric 
 Local nPosVda   As Numeric 
+Local _lPrevFat    := FWIsInCallStack("U_XZFAT9FT") 
 
 Default lOk := .T.
+
+//Quando for chamado pela previsão não é retirado empenho 
+If _lPrevFat
+    Return .t.
+Endif
 
 cCamPed := "C5_NUM|C5_TIPO|C5_CLIENTE|C5_LOJACLI|C5_LOJAENT|C5_CONDPAG"
 
@@ -3915,11 +3935,16 @@ Return
 
 //GAP167  Previsao de Faturamento
 //Separado parametro para que possa ser utilizado por outras funcionalidades
-User Function ZFATF09M(_aRet)
+User Function XZFAT9PA(_aRet, _lCarrega)
 Local _aParamBox    := {}
-Local _dDatIni       := Date()
-Local _dDatfin       := Date()
+Local _dDatIni      := Date() - 200
+Local _dDatfin      := Date()
 Local _bRet         := {||.T.}
+//Local _bBloco     
+//Local _bEnquanto  
+
+Default _lCarrega   := .T.
+Default _aRet       := {}
 
     Aadd(_aParamBox, {1, "Cliente De"          ,Space(TamSx3("C5_CLIENTE")[01]), "@!",,"SA1"   ,, 050	, .F.	})
     Aadd(_aParamBox, {1, "Loja De"             ,Space(TamSx3("C5_LOJACLI")[01]), "@!",,        ,, 020	, .F.	})
@@ -3946,18 +3971,27 @@ Local _bRet         := {||.T.}
     Aadd(_aParamBox, {1, "Cor Externa Ate"     ,Space(TamSx3("C6_XCOREXT")[01]), "@!",,        ,, 040	, .F.	})
     Aadd(_aParamBox, {1, "Data De"             ,_dDatIni                       , "@D",,        ,, 060	, .F.	})
     Aadd(_aParamBox, {1, "Data Ate"            ,_dDatfin                       , "@D",,        ,, 060	, .F.	})
-
-    _bRet := ParamBox(_aParamBox, "Parametros para seleção dos dados"	, @_aRet, , , .T. /*lCentered*/, 0, 0, , , .T. /*lCanSave*/, .T. /*lUserSave*/)
-    If !_bRet
-        ApMsgStop("Rotina cancelada!", "Atencao")
-        Return(.F.)
-    EndIf
+    //Carregar e abrir perguntas
+    If _lCarrega
+        _bRet := ParamBox(_aParamBox, "Parametros para seleção dos dados"	, @_aRet, , , .T. /*lCentered*/, 0, 0, , , .T. /*lCanSave*/, .T. /*lUserSave*/)
+        If !_bRet
+         ApMsgStop("Rotina cancelada!", "Atencao")
+         Return(.F.)
+        EndIf
+    Else 
+    //somente retorna o resultado do paramentro zerado
+        _aRet := _aParamBox
+        _bRet := .T.
+        //_bBloco     := {|x| nCnt++, Aadd(_aRet,_aParamBox[nCnt,2])}
+        //_bEnquanto  := {||.T.}
+        //_bRet       := DbEval(_bBloco, , _bEnquanto)
+    Endif     
 Return _bRet
 
 //GAP167  Previsao de Faturamento
 //Funcionalidade Responsavel por retornar dados da Query podendo ser utilizada por outros fontes
 //Utilizado no ZFAT025
-User Function ZFATF09Q(_cSelect, _cOrderTab, _aRet, _cWhere, _cJoin, _cGroup)
+User Function XZFAT9QY(_cSelect, _cOrderTab, _aRet, _cWhere, _cJoin, _cGroup)
 Local _cQuery := ""
 
 Default _cSelect    := "*"
@@ -4084,6 +4118,50 @@ User Function XZFAT9ET(_cAlias)
 Local _oSay
 	//FwMsgRun(,{ |_oSay| Estor( _cAlias, _oSay ) }, "Estornando registros", "Aguarde...")  
 	FwMsgRun(,{ |_oSay| fAtuEmp(_oSay,_cAlias,/*cIteAlias*/,/*lOk*/) }, "Estornando registros", "Aguarde...")  
+Return Nil
+
+//GAP167  Previsao de Faturamento
+//Chamada do Estorno podendo ser xamado de outras funções
+User Function XZFAT9FT(_cFilPrev, _cCodPrev)
+Local _aRet     := {}
+Local _aParam   := {}
+Local _cWhere   := ""
+Local _oSay
+Local _nPos
+
+Default _cCodPrev   := ""
+Default _cFilPrev   := FwxFilial("ZZP")
+
+     If Empty(_cCodPrev)
+	    ApMsgStop("Não informada Previsao", "Previsao Faturamento")
+        Return Nil
+    Endif
+
+	If !U_XZFAT9PA(@_aParam, .F. /*nao carregar tela*/) .Or. Len(_aParam) == 0
+        Return Nil
+	Endif
+    For _nPos := 1 To Len(_aParam)
+        _xVar := ""
+        If At(Upper(" Ate"), Upper(_aParam[_nPos, 2])) > 0
+            If ValType(_aParam[_nPos, 3]) == "C"
+                _xVar := Replicate("Z",Len(_aParam[_nPos, 3]))
+            ElseIf ValType(_aParam[_nPos, 3]) == "N"
+                _xVar := Replicate(9,Len(_aParam[_nPos, 3]))
+            ElseIf ValType(_aParam[_nPos, 3]) == "D"
+                _xVar := Date()
+            Else 
+                _xVar := _aParam[_nPos, 3]    
+            Endif 
+        Else 
+            _xVar := _aParam[_nPos, 3]    
+        Endif
+       Aadd(_aRet,_xVar)
+    Next
+
+    //colocar validação do ZZP tem que estar com qtde liberada
+	_cWhere := " AND SC6.C6_XFILPVR = '" + _cFilPrev + "' "
+	_cWhere += " AND SC6.C6_XCODPVR = '" + _cCodPrev + "' "
+    fLibPed(_oSay, _aRet, _cWhere)
 Return Nil
 
 

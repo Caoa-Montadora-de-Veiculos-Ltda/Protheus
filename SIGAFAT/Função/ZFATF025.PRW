@@ -952,12 +952,14 @@ Local _cCodPrev
 
 	_cFilPrev := (_cAliasPlan)->TRB_FILIAL
 	_cCodPrev := (_cAliasPlan)->TRB_PREVIS
-	If _nOpc < 2 .And. _nOpc > 3 .And. (_cAliasPlan)->TRB_STATUS == "F"
+
+	//somente liberado para visualizar e ou incluir 
+	If (_nOpc < 2 .Or. _nOpc > 3) .And. (_cAliasPlan)->TRB_STATUS == "F"
         MsgStop("Previsao ja Faturada", "PREVISAO")
 		Return Nil
 	Endif 
-
-	If _nOpc < 2 .And. _nOpc > 3 .And. (_cAliasPlan)->TRB_STATUS == "C"
+	//somente liberado para visualizar e ou incluir 
+	If (_nOpc < 2 .Or. _nOpc > 3) .And. (_cAliasPlan)->TRB_STATUS == "C"
         MsgStop("Previsao Cancelada", "PREVISAO")
 		Return Nil
 	Endif 
@@ -965,7 +967,7 @@ Local _cCodPrev
 	If _nOpc ==  3
 		ZFATF025Inclui()
 	ElseIf _nOpc ==  1
-		MsgStop("Em desenvolvimento", "PREVISAO")	
+		U_XZFAT9FT(_cFilPrev, _cCodPrev)
 	Else	
 		FwMsgRun(,{ |_oSay| U_ZFATF026(_nOpc, _cFilPrev, _cCodPrev , @_oSay ) }, "Selecionando dados", "Aguarde...")  
 	Endif
@@ -1009,11 +1011,11 @@ Local _oSay
 
 Begin Sequence
 	//Parametro encontra na função ZFATF019
-	If !U_ZFATF09M(@_aRet)
+	If !U_XZFAT9PA(@_aRet)
     	_lRet := .F. 
 		Break
 	Endif
-
+	
 	//Garantir que o processamento seja unico
 	_cChave		:= AllTrim(FWCodEmp())+"ZFATF025"
 	If !LockByName(_cChave,.T.,.T.)  
@@ -1122,13 +1124,14 @@ Begin Sequence
 	_cQuery += "    END	) OVER (ORDER BY SC6.C6_PRODUTO) AS QTD_CHASSI "
 
 	//aCRESCENTAR CLAUSULA wHERE
-	_cWhere := " AND SC6.C6_XCODPVR = ' ' "
+	_cWhere := " AND SC6.C6_XFILPVR = ' ' "
+	_cWhere += " AND SC6.C6_XCODPVR = ' ' "
 
 	//Caso deseje incluir na queri o Join
 	//_cJoin := ZFATF026Chassi(/*_cProduto*/)
-	_cCargaQry := U_ZFATF09Q( _cQuery, _cOrderTab, _aRet, _cWhere, _cJoin, _cGroup)
+	_cCargaQry := U_XZFAT9QY( _cQuery, _cOrderTab, _aRet, _cWhere, _cJoin, _cGroup)
 	If Empty(_cCargaQry)
-	    ApMsgStop("Problemas na montagem do Select", "Previsão Faturamento")
+	    ApMsgStop("Problemas na montagem do Select", "Previsao Faturamento")
 	    _lRet := .F.
 		Break
 	Endif
