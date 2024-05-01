@@ -23,8 +23,12 @@
 Static _oBrw
 Static _oBrWCli
 Static _oBrWPrd
+Static _oBrWRes
+
 Static _AREFCLI
 Static _AREFPRD
+Static _AREFRES
+
 /*/{Protheus.doc} ZFATF026
 Previsão de Faturamento
 @author     DAC - Denilso 
@@ -124,7 +128,8 @@ Begin Sequence
         //Habilita a edicao dos campos quando for alteração
         If _nOpc == 4 .And. Ascan(_aEdit,_xValor) > 0   
             (_cAliasPesq)->(_oColumn:SetReadVar(_aPrevisao[_nPos,2]))
-            _oColumn:SetValid({|| ValidCampo(Str(_nPos), _cAliasPesq, _ObrW ),_ObrW:Refresh() })
+            //_oColumn:SetValid({|| ValidCampo(Str(_nPos), _cAliasPesq, _ObrW ),_ObrW:Refresh() })
+            _oColumn:SetValid({|| ValidCampo(Str(_nPos), _cAliasPesq, _ObrW ) })
        //     oColumn:SetValid({|| ValidCampo(Str(_nPos),Self:_OBrPlan) })
         EndIf
         _ObrW:SetColumns({_oColumn})
@@ -138,12 +143,27 @@ Begin Sequence
 	_aPosSize := {0,0,0,0}
 	_aPosSize[3] := 670
 	_aPosSize[4] := 85
-	_aFolders := {"Totais Cliente","Totais Produto"}
+	_aFolders := {"Resumo","Totais Cliente","Totais Produto"}
 	_oFolder := TFolder():New(_aPosSize[1],_aPosSize[2],_aFolders,_aFolders,_oPanelDow,,,,.T.,.T.,_aPosSize[3],_aPosSize[4])
 
-	_aRelac 	:= ZFAT026Total(_cFilPrev, _cCodPrev, /*_lCarrega*/)
+	_aRelac 	:= ZFAT026Total(_cFilPrev, _cCodPrev, _cAliasPesq /*_lCarrega*/)
 	_aRefCli	:= _aRelac[1]
 	_aRefPrd	:= _aRelac[2]
+	_aRefRes    := _aRelac[3]
+
+	// Define o Browse Relacionados Produto
+	_oBrWRes := FWBrowse():New()
+	_oBrWRes:SetDataArray(.T.)
+	_oBrWRes:SetArray(_aRefRes)
+	_oBrWRes:DisableConfig(.T.)
+	_oBrWRes:DisableReport(.T.)
+	_oBrWRes:DisableLocate(.T.)
+	_oBrWRes:DisableFilter(.T.)
+    _oBrWRes:SetOwner(_oFolder:aDialogs[1])
+	ZFAT026MRes()
+	_oBrWRes:Activate()
+	_oBrWRes:GoTop(.T.)
+	_oBrWRes:Refresh(.T.)
 
 	// Define o Browse Relacionados
 	_oBrWCli := FWBrowse():New(_oPanelDow)
@@ -153,7 +173,7 @@ Begin Sequence
 	_oBrWCli:DisableReport(.T.)
 	_oBrWCli:DisableLocate(.T.)
 	_oBrWCli:DisableFilter(.T.)
-    _oBrWCli:SetOwner(_oFolder:aDialogs[1])
+    _oBrWCli:SetOwner(_oFolder:aDialogs[2])
 	ZFAT026MCli()
 	_oBrWCli:Activate()
 	_oBrWCli:GoTop(.T.)
@@ -167,11 +187,12 @@ Begin Sequence
 	_oBrWPrd:DisableReport(.T.)
 	_oBrWPrd:DisableLocate(.T.)
 	_oBrWPrd:DisableFilter(.T.)
-    _oBrWPrd:SetOwner(_oFolder:aDialogs[2])
+    _oBrWPrd:SetOwner(_oFolder:aDialogs[3])
 	ZFAT026MPrd()
 	_oBrWPrd:Activate()
 	_oBrWPrd:GoTop(.T.)
 	_oBrWPrd:Refresh(.T.)
+
     //_oDlgPrev:Activate()
 	_aButtons := {}
 	Activate MsDialog _oDlgPrev On Init EnchoiceBar(_oDlgPrev,{	|| ZFATF026End(_nOpc, _cAliasPesq, _cFilPrev, _cCodPrev), _oDlgPrev:End() },;
@@ -192,7 +213,6 @@ Return Nil
 // Adiciona as colunas do Browse
 Static Function ZFAT026MCli()
 Local _oColumn
-
 	_oColumn := FWBrwColumn():New()
 	_oColumn:SetData({||_aRefCli[_oBrWCli:nAt,DATA_CLIENTE]})
 	_oColumn:SetTitle("Cliente" ) 
@@ -248,7 +268,6 @@ Local _oColumn
 	_oColumn:SetDecimal(2)
 	_oColumn:SetPicture("@E 999,999,999.99")
 	_oBrWCli:SetColumns({_oColumn})
-
 Return Nil
 
 //Cria cabeçalho e coluna totalização por produto
@@ -296,6 +315,51 @@ Local _oColumn
 	_oBrWPrd:SetColumns({_oColumn})
 Return Nil
 
+
+//Cria cabeçalho e coluna totalização por produto
+Static Function ZFAT026MRes()
+Local _oColumn
+	_oColumn := FWBrwColumn():New()
+	_oColumn:SetData({||_aRefRes[_oBrWRes:nAt,DATA_PRODUTO]})
+	_oColumn:SetTitle("Produto" ) 
+	_oColumn:SetSize(Len(SB1->B1_COD))
+	_oColumn:SetDecimal(0)
+	//_oColumn:SetPicture("@!")
+	_oBrWRes:SetColumns({_oColumn})
+	
+	_oColumn := FWBrwColumn():New()
+	_oColumn:SetData({||_aRefRes[_oBrWRes:nAt,DATA_DESCPRD]})
+	_oColumn:SetTitle("Descrição") 
+	_oColumn:SetSize(Len(SB1->B1_DESC))
+	_oColumn:SetDecimal(0)
+	_oColumn:SetPicture("@!")
+	_oBrWRes:SetColumns({_oColumn})
+
+	//Qtde de Chassis disponivel
+	_oColumn := FWBrwColumn():New()
+	_oColumn:SetData({||_aRefRes[_oBrWRes:nAt,DATA_QTDEPRD]})
+	_oColumn:SetTitle("Estoque")   
+	_oColumn:SetSize(14)
+	_oColumn:SetDecimal(0)
+	_oColumn:SetPicture("@E 9,999,999")
+	_oBrWRes:SetColumns({_oColumn})
+
+	_oColumn := FWBrwColumn():New()
+	_oColumn:SetData({||_aRefRes[_oBrWRes:nAt,DATA_QTDEPREV]})
+	_oColumn:SetTitle("Em Previsao") 
+	_oColumn:SetSize(15)
+	_oColumn:SetDecimal(2)
+	_oColumn:SetPicture("@E 9,999,999")
+	_oBrWRes:SetColumns({_oColumn})
+
+	_oColumn := FWBrwColumn():New()
+	_oColumn:SetData({||_aRefRes[_oBrWRes:nAt,DATA_SALDOPRD]})
+	_oColumn:SetTitle("Saldo") 
+	_oColumn:SetSize(15)
+	_oColumn:SetDecimal(2)
+	_oColumn:SetPicture("@E 9,999,999")
+	_oBrWRes:SetColumns({_oColumn})
+Return Nil
 
 
 /*/{Protheus.doc} ZFATF026PR
@@ -440,9 +504,10 @@ Local _nPos := (_cAliasPesq)->(Recno())
  //Guarda o posicionamento do temporÃ¡rio
 //Local _aOrd 	:= SaveOrd(_cAliasPlan)
 //Local _nPosLin 	:= Self:_oBrPlan:nAt
-Local _nCol     := Val(_cCol)
-Local _xRead    := TRIM(READVAR())
-Local _xConteudo:= &_xRead
+Local _nCol     	:= Val(_cCol)
+Local _xRead    	:= TRIM(READVAR())
+Local _xConteudo	:= &_xRead
+Local _nQtdEmpenho	:= 0
 Local _nQtdeLib    
 Local _nQtdePed
 Local _nRegZZP
@@ -458,31 +523,39 @@ Begin Sequence
 	ZZP->( DbGoto(_nRegZZP) )
 	//neste caso não foi alterado
 	If ZZP->ZZP_QTELIB  == _nQtdeLib
-		Return .F.
+		Return .T.
 	Endif 
 	_nQtdeLZZP 	:= ZZP->ZZP_QTELIB
 	_nQtde 		:= ZZP->ZZP_QTELIB   //sempre deixar quantidade anterior caso não execute o calculo volta para anterior
-
+	//Não deixar liberar mas que existe em pedido
 	If _nQtdeLib > _nQtdePed
 		MSGINFO( "Quantidade liberada não pode ser maior que quantidade do Pedido", "Atencao" )
 		_lRet 	:= .F.
 		Break  
 	Endif 
-	//Caso 1 qtde existente no Sistema maior que a quantidade liberada (ja foi selecionado anteriormente uma qtde)
+	//Caso seja o mesmo valor  não precisa alterar
+	If _nQtdeLZZP == _nQtdeLib
+		Return .T.
+	Endif
+	//Caso qtde existente no Sistema maior que a quantidade liberada (ja foi selecionado anteriormente uma qtde)
 	If _nQtdeLZZP > _nQtdeLib
 		_nQtde := ZFATF026RE(ZZP->ZZP_CODPRD, ZZP->ZZP_CODPRV, _nQtdeLZZP, _nQtdeLib)
 		If _nQtde < 0
 			Return .F.
 		Endif	
 	Else 
-		_nQtdEmpenho := ZFATF026AV(ZZP->ZZP_CODPRD, ZZP->ZZP_CODPRV, _nQtdeLZZP, _nQtdeLib) 
-		If _nQtdEmpenho >= _nQtdeLib 	
-			//diferença de quantidade Calculada ja existente e empenhada com necessidade de liberação 
-			_nQtde :=  _nQtdeLib
-			ZFATF26EMP( 1, ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, ZZP->ZZP_CODPRD, _nQtde)
-		Else 
-			MSGINFO( "Quantidade de chassi nao Empenhada  "+AllTrim(Str(_nQtdEmpenho))+" disponivel, nao atende a necessidade ", "Atencao" )
-			_lRet 	:= .F. 
+		//deve ser verificada a diferença para calcular o empenho caso seja maior que zero
+		_nQtdeCalc := _nQtdeLib - _nQtdeLZZP 
+		iF _nQtdeCalc > 0
+			//Qtde utilizada na previsão (com Chassi) e qtde empenho Disponivel
+			_nQtdeChassi := ZFATF026AV(ZZP->ZZP_CODPRD, ZZP->ZZP_CODPRV, _nQtdeLZZP, _nQtdeLib, @_nQtdEmpenho) 
+			If _nQtdeChassi >= _nQtdeCalc 	
+				ZFATF26EMP( 1, ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, ZZP->ZZP_CODPRD, _nQtdeCalc)
+				_nQtde	:= _nQtdeCalc + _nQtdeLZZP
+			Else 
+				MSGINFO( "Quantidade de chassi nao Empenhada  "+AllTrim(Str(_nQtdeChassi))+" disponivel, nao atende a necessidade ", "Atencao" )
+				_lRet 	:= .F. 
+			Endif
 		Endif
 	Endif
 
@@ -505,15 +578,20 @@ If RecLock("ZZP",.F.)
 Endif
 If _lRet  
 	//Atualizar dados
-	_aRelac 	:= ZFAT026Total(ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, /*_lCarrega*/)
+	_aRelac 	:= ZFAT026Total(ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, _cAliasPesq, /*_lCarrega*/)
 	_aRefCli	:= _aRelac[1]
 	_aRefPrd	:= _aRelac[2]
-	_oBrWCli:Activate()
+	_aRefRes	:= _aRelac[3]
+
+	//_oBrWCli:Activate()
 	_oBrWCli:GoTop(.T.)
 	_oBrWCli:Refresh(.T.)
-	_oBrWPrd:Activate()
+	//_oBrWPrd:Activate()
 	_oBrWPrd:GoTop(.T.)
 	_oBrWPrd:Refresh(.T.)
+	//_oBrWRes:Activate()
+	_oBrWRes:GoTop(.T.)
+	_oBrWRes:Refresh(.T.)
 Endif
 _oBrW:Refresh()
 Return _lRet
@@ -545,13 +623,16 @@ Return _nQtdeLib
 @return _lRet, Logico
 @type Static function
 /*/
-Static Function ZFAT026Total(_cFilPrev, _cCodPrev,_lCarrega)
+Static Function ZFAT026Total(_cFilPrev, _cCodPrev, _cAliasPesq, _lCarrega)
 //Local _cWhere		:= ""
 Local _cAlias		:= GetNextAlias()
 Local _AREFCLI		:= {} 
 Local _AREFPRD    	:= {}
+Local _AREFRES    	:= {}
+
 Local _lRet 		:= .T.
 Local _nQtdeChassi	:= 0
+Local _cCoPrddRes		:= ""
 
 Default _lCarrega	:= .T.
 
@@ -603,6 +684,9 @@ Begin Sequence
 		(_cAlias)->(DbCloseArea())
 	Endif 
 
+	//Pegar o código Posicionado
+	_cCoPrddRes	:= (_cAliasPesq)->(FieldGet(FieldPos( "ZZP_CODPRD")))
+
 	BeginSql Alias _cAlias //Define o nome do alias temporÃ¡rio 
 		SELECT  ZZP.ZZP_CODPRD
 				, SB1.B1_DESC 
@@ -632,6 +716,16 @@ Begin Sequence
 							(_cAlias)->TOTAL_LIB,;
 							_nQtdeChassi - (_cAlias)->TOTAL_LIB ;
 							})
+			//Para gravar em Resumo
+			If (_cAlias)->ZZP_CODPRD == _cCoPrddRes
+				Aadd(_AREFRES,{	;
+							(_cAlias)->ZZP_CODPRD,;
+							(_cAlias)->B1_DESC,;
+							_nQtdeChassi,;
+							(_cAlias)->TOTAL_LIB,;
+							_nQtdeChassi - (_cAlias)->TOTAL_LIB ;
+							})
+			Endif
 			(_cAlias)->(DbSkip())
 		EndDo
 	Endif	
@@ -657,20 +751,29 @@ If Len(_AREFPRD) == 0
 					})
 Endif
 
+If Len(_AREFRES) == 0
+	Aadd(_AREFRES,{	;
+					Space(Len(ZZP->ZZP_CODPRD)),;
+					Space(Len(SB1->B1_DESC)),;
+					0,;
+					0,;
+					0 ;
+					})
+Endif
+
 If Select((_cAlias)) <> 0
 	(_cAlias)->(DbCloseArea())
 	Ferase(_cAlias+GetDBExtension())
 Endif 
-Return {_AREFCLI, _AREFPRD}
+Return {_AREFCLI, _AREFPRD, _AREFRES}
 
 
 
 //VERIFICA OS EMPENHOS NO PEDIDO E DISPONIVEIS AINDA NÃO PENHORADOS
-Static Function ZFATF026AV( _cCodProd, _cCodPrev, _nQtdeLZZP, _nQtdeLib)
+Static Function ZFATF026AV( _cCodProd, _cCodPrev, _nQtdeLZZP, _nQtdeLib, _nQtdEmpenho)
 Local _cAlias 		:= GetNextAlias()
-Local _nQtdeChassi  := 0
-Local _nQtdeCalc    := 0
 Local _nQtdePedEmp  := 0
+Local _nQtdeChassi  := 0
 
 Default _cCodProd 	:= "" 
 Default _cCodPrev 	:= ""
@@ -680,7 +783,7 @@ Default _nQtdeLZZP	:= 0
 	BeginSql Alias _cAlias //Define o nome do alias temporário 
 		SELECT 	  SC6.C6_PRODUTO
 				, SUM(SC6.C6_QTDVEN)  	AS NQTDEVEN
-				, SUM(SC6.C6_QTDEMP) 	AS NqTDEEMP
+				, SUM(SC6.C6_QTDEMP) 	AS NQTDEEMP
 		FROM  	%Table:SC6% SC6 
 		WHERE SC6.%notDel%	
 			AND SC6.C6_FILIAL 	= %xFilial:SC6%
@@ -692,19 +795,19 @@ Default _nQtdeLZZP	:= 0
 	iF (_cAlias)->(!Eof()) .and. (_cAlias)->NQTDEVEN > 0  
 		_nQtdePedEmp := (_cAlias)->NQTDEVEN
 	Endif
+	_nQtdEmpenho := _nQtdePedEmp
 	If Select(_cAlias) <> 0
 		(_cAlias)->(DbCloseArea())
 	Endif
 	If _nQtdeLib > 0 
 		_nQtdeChassi 	:= ZFATF026QChassi(_cCodProd)  //Verifica quantos chassis tem disponiveis
 	Endif
-	_nQtdeCalc 		:= _nQtdeChassi + _nQtdePedEmp  //somatoria do que possui no SC6 e chassi disponivel
-
+	//_nQtdeCalc 		:= _nQtdeChassi + _nQtdePedEmp  //somatoria do que possui no SC6 e chassi disponivel
 If Select(_cAlias) <> 0
 	(_cAlias)->(DbCloseArea())
 	Ferase(_cAlias+GetDBExtension())
 Endif
-Return _nQtdeCalc
+Return _nQtdeChassi  //Qtde de chacssi disponivel para gerar empenho
 
 
 //Realiza o Empenho 
@@ -871,16 +974,20 @@ Begin Sequence
 		//Funcionalidade para liberar o SC6 da previsão pode ser UPD
 		AjustaZZP(_aReg, _cFilPrev, _cCodPrev, _nOpc)
 		U_XZFAT25LP()
-		_aRelac 	:= ZFAT026Total( _cFilPrev, _cCodPrev, /*_lCarrega*/)
+		_aRelac 	:= ZFAT026Total( _cFilPrev, _cCodPrev, _cAliasPesq, /*_lCarrega*/)
 		_aRefCli	:= _aRelac[1]
 		_aRefPrd	:= _aRelac[2]
+		_aRefRef	:= _aRelac[3]
 	
-		_oBrWCli:Activate()
+		//_oBrWCli:Activate()
 		_oBrWCli:GoTop(.T.)
 		_oBrWCli:Refresh(.T.)
-		_oBrWPrd:Activate()
+		//_oBrWPrd:Activate()
 		_oBrWPrd:GoTop(.T.)
 		_oBrWPrd:Refresh(.T.)
+		//_oBrWRes:Activate()
+		_oBrWRes:GoTop(.T.)
+		_oBrWRes:Refresh(.T.)
 
 	Endif
 	_oBrW:Refresh()
