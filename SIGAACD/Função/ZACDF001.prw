@@ -185,7 +185,7 @@ User Function ZACDF001( cOriUnitz )   // vtdebug
 	
 	TcQuery cmd new alias (cTb)
 	
-	IF ELAPTIME( (cTb)->ZJ_HRLEITU , fTimer() ) <= "00:30:00" .AND. Dtos(Date()) == (cTb)->ZJ_DATE
+	IF ELAPTIME( (cTb)->ZJ_HRLEITU , fTimer() ) <= "00:30:00" .AND. Dtos(Date()) == (cTb)->ZJ_DATA
 		VTAlert( "Unitizador: " + AllTrim(cOriUnitz) + " já se encontra na fila", "Erro", .T.)
 		Loop
 	ENDIF
