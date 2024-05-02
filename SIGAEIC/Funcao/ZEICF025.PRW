@@ -78,7 +78,7 @@ Private cUserName   := SuperGetMV("CMV_EIC004",,"Caoa")     // type here user na
 Private cPassword   := SuperGetMV("CMV_EIC005",,"bRTxqzUyJwN5BnT")     // type here user password    "bRTxqzUyJwN5BnT" 
 
 Default _cChave := " "                    ///"SHA23090924"          //informações como numero da House
-Default _cUrlFH	:= GETMV("CMV_EIC001")   ///"https://api.asiashipping.com.br/followup/House"
+Default _cUrlFH	:= "https://api.asiashipping.com.br/followup/House"    // GETMV("CMV_EIC001")   ///"https://api.asiashipping.com.br/followup/House"
 
 //Default _cUrlFS	:= "https://api.asiashipping.com.br/followup/Shipment"
 //Default _cUrlOR	:= "https://api.asiashipping.com.br/bot/OrderRef"
@@ -133,7 +133,7 @@ Private _aHeader    := {}
 		_cToken := U_getToke1()
 		
 		if Valtype(_cToken) = "U"
-			Aadd(_aMsg,"Não existe retorno do Host Token, excedido o numero de tentativas de conexão "+_cToken)
+			Aadd(_aMsg,"Não existe retorno do Host Token, excedido o numero de tentativas de conexão ")
 			Return .F.
 		else
 			Aadd(_aHeader,'Authorization:' + _cToken )
@@ -538,7 +538,6 @@ User Function getToke1()
     Else
         cError  := oRest:GetLastError()
         cStatus := oRest:GetHTTPCode()
-        _cToken := cError
     EndIf
 Return _cToken
 
@@ -585,15 +584,20 @@ If ValType(_oJSRet) <> "J"
 	Return .F.
 Endif
 
+If _oJSRet:GetJsonText("status") == "404"  //caso não venha com nenhuma msg
+	_nMsg	:= 404
+	_cMsg	:= "Processo não encontrado."
+EndIf
+
 _cHouse := AllTrim(_oJSRet:GetJsonText("HouseBill"))
 BeginSql Alias _cAlias
 	SELECT 	SW6.R_E_C_N_O_ NREGSW6
 	FROM %table:SW6% SW6
 	WHERE SW6.W6_FILIAL    = %XFilial:SW6%
-		AND SW6.W6_HOUSE   = %Exp:_cHouse%
+		//AND SW6.W6_HOUSE   = %Exp:_cHouse%
 		AND SW6.W6_DT_ENCE = %Exp:_Encer%
 		AND SW6.W6_AGENTE  = %Exp:_Import% 
-		//AND SW6.W6_HOUSE   = %Exp:_cChave%
+		AND SW6.W6_HOUSE   = %Exp:_cChave%
 		AND SW6.%notDel%		  
 EndSql 
 
