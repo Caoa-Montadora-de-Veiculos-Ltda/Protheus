@@ -4,7 +4,6 @@
 #DEFINE cFONT   '<b><font size="3" color="blue"><b>'
 #DEFINE cALERT  '<b><font size="3" color="red"><b>'
 #DEFINE cNOFONT '</b></font></b></u>'
-
 /*/{Protheus.doc} SF1140I
 @author A.Carlos
 @since 	27/04/2023
