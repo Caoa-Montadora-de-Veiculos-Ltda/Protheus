@@ -5,8 +5,7 @@
 #INCLUDE "REPORT.CH"
 #INCLUDE "DBINFO.CH"
 #INCLUDE 'TOPCONN.CH'
-
-
+#Include "TbiConn.CH"
 
 // identificadores de layout
 #define LAYOUT_AR "layout_ar"
@@ -154,8 +153,7 @@ Class TelAcWindow
 	Method CreateCenterColumn()
 	//Method FilterFile()
 	// atualizaÃ§Ã£o
-	Method Refresh()	
-	Method RefreshPrd()
+	Method RefreshPrev()	
 
 	Method SetBrowseTitle()
 
@@ -275,8 +273,9 @@ Begin Sequence
     Self:_OBrPlan:SetWalkThru(.F.)
     Self:_OBrPlan:SetAmbiente(.F.) //Habilita a utilização da funcionalidade Ambiente no Browse
     Self:_OBrPlan:SetFixedBrowse(.T.)
+	Self:_OBrPlan:AddLegend("AllTrim(TRB_STATUS) = 'A'  "  ,"WHITE"     ,"Em Aberto")
+	Self:_OBrPlan:AddLegend("AllTrim(TRB_STATUS) = 'L'  "  ,"GREEN"     ,"Liberado Fat")
     Self:_OBrPlan:AddLegend("AllTrim(TRB_STATUS) = 'F'  "  ,"BLUE" 	   	,"Faturado")
-	Self:_OBrPlan:AddLegend("AllTrim(TRB_STATUS) = 'A'  "  ,"GREEN"     ,"Em Aberto")
 	Self:_OBrPlan:AddLegend("AllTrim(TRB_STATUS) = 'C'  "  ,"RED"       ,"Cancelado")
 	Self:_OBrPlan:AddLegend("AllTrim(TRB_STATUS) <> ' '  " ,"GRAY"      ,"Pendente")
 
@@ -287,7 +286,7 @@ Begin Sequence
 	Self:_OBrPlan:AddButton("Visualizar", { || Self:MenuPrev(2)	})
 
 	//mudanca de linha
-	Self:_OBrPlan:setChange({|| ZFT25Change(), Self:Refresh()})
+	Self:_OBrPlan:setChange({|| ZFT25Change(), Self:RefreshPrev()})
   
     Self:_OBrPlan:SetOwner(Self:oPanelSearch)
 
@@ -387,23 +386,6 @@ Begin Sequence
 	_oBrTotCli:Activate()
 	_oBrTotCli:GoTop(.T.)
 	_oBrTotCli:Refresh(.T.)
-
-	/*
-	// Define o Browse Relacionados Produto
-	_oBrTotPrd := FWBrowse():New()
-	_oBrTotPrd:SetDataArray(.T.)
-	_oBrTotPrd:SetArray(_aPrdRel)
-	_oBrTotPrd:DisableConfig(.T.)
-	_oBrTotPrd:DisableReport(.T.)
-	_oBrTotPrd:DisableLocate(.T.)
-	_oBrTotPrd:DisableFilter(.T.)
-    _oBrTotPrd:SetOwner(_oFolder:aDialogs[2])
-	ZFATF025Prd()
-	_oBrTotPrd:Activate()
-	_oBrTotPrd:GoTop(.T.)
-	_oBrTotPrd:Refresh(.T.)
-	//ZFT25Change()
-	*/
 End Begin
  //aRotina := ArotBKP	
 Return Nil
@@ -607,24 +589,20 @@ Return aDim
 TelAcWindow:Refresh()
 Atualiza os painÃ©is de pesquisa e de grÃ¡ficos (caso o mesmo exista).
 ---------------------------------------------------------------------------- */
-Method Refresh(_lPainel) Class TelAcWindow
+Method RefreshPrev(_lPainel) Class TelAcWindow
 	Default _lPainel := .F. 
-
-	Self:_OBrPlan:Refresh(If(_lPainel,.T.,) )
+	//If !_lPainel 
+	Self:_OBrPlan:Refresh() 
+	//Endif 	
 	If Valtype(Self:oPanelVis) == "O"
-		Self:oPanelVis:Refresh(If(_lPainel,.T.,))
+		Self:oPanelVis:Refresh(.T.)
 	Endif 
 	If Valtype(Self:oPanelBrowse) == "O"
-		Self:oPanelBrowse:Refresh(If(_lPainel,.T.,))
+		Self:oPanelBrowse:Refresh(.T.)
 	Endif
 	If ValType(_oBrTotCli) == "O" 
-		_oBrTotCli:Refresh(If(_lPainel,.T.,))
+		_oBrTotCli:Refresh(.T.)
 	Endif
-	
-	//aDicBrw[np]:Refresh()
-	//If ValType(_oBrTotPrd) == "O" 
-	//	_oBrTotPrd:Refresh(.T.)
-	//Endif 
 Return Nil
 
 /* ----------------------------------------------------------------------------
@@ -700,24 +678,6 @@ Devolve o painel no qual serÃ¡ mostra a visualizaÃ§Ã£o dos registros.
 ---------------------------------------------------------------------------- */
 Method GetVisPanel() Class TelAcWindow
 Return Self:oArea:GetWinPanel(COL_CENTER, WND_VIS)
-
-
-
-/* ----------------------------------------------------------------------------
-TelAcWindow:RefreshPrd()
-Atualiza o painel de saldos. NÃ£o efetua nenhum recÃ¡lculo de valores.
----------------------------------------------------------------------------- */
-Method RefreshPrd() Class TelAcWindow
-	//Self:cSayDescPrd := cSayDescPrd
-	//Self:cSayUltCMP	 := cSayUltCMP
-	//Self:cSayUltVND  := cSayUltVND
-
-	//Self:oSayDescPrd:Refresh()
-	//Self:oSayUltCMP:Refresh()
-	//Self:oSayUltVND:Refresh()
-Return Nil
-
-
 
 /* ----------------------------------------------------------------------------
 ShowViewPanel()
@@ -954,24 +914,34 @@ Local _cCodPrev
 	_cCodPrev := (_cAliasPlan)->TRB_PREVIS
 
 	//somente liberado para visualizar e ou incluir 
-	If (_nOpc < 2 .Or. _nOpc > 3) .And. (_cAliasPlan)->TRB_STATUS == "F"
-        MsgStop("Previsao ja Faturada", "PREVISAO")
+	If (_nOpc < 2 .Or. _nOpc > 3) .And. (_cAliasPlan)->TRB_STATUS $ "F"
+        MsgStop("Previsao jafaturada", "PREVISAO")
+		Return Nil
+	Endif 
+	If (_nOpc < 1 .Or. _nOpc > 3) .And. (_cAliasPlan)->TRB_STATUS $ "L"
+        MsgStop("Previsao liberada para faturamento", "PREVISAO")
 		Return Nil
 	Endif 
 	//somente liberado para visualizar e ou incluir 
 	If (_nOpc < 2 .Or. _nOpc > 3) .And. (_cAliasPlan)->TRB_STATUS == "C"
-        MsgStop("Previsao Cancelada", "PREVISAO")
+        MsgStop("Previsao cancelada", "PREVISAO")
 		Return Nil
 	Endif 
 	//Se for inclusão
 	If _nOpc ==  3
-		ZFATF025Inclui()
+		If ZFATF025Inclui()
+			LoadPlan()  //após incluir refazer planilha
+		Endif
+		Self:RefreshPrev(.T.)
 	ElseIf _nOpc ==  1
 		U_XZFAT9FT(_cFilPrev, _cCodPrev)
 	Else	
 		FwMsgRun(,{ |_oSay| U_ZFATF026(_nOpc, _cFilPrev, _cCodPrev , @_oSay ) }, "Selecionando dados", "Aguarde...")  
+		If _nOpc ==  5
+			LoadPlan()  //após incluir refazer planilha
+		Endif
 	Endif
-	Self:Refresh(If(_nOpc == 5,.T.,))  //Envio informação para atualizar o objeto e posicionar no inicio
+	Self:RefreshPrev(If(_nOpc == 5 ,.T.,))  //Envio informação para atualizar o objeto e posicionar no inicio
 Return Nil
 
 // Vaidar quando movimentado cursor e ajustar totalizações
@@ -981,10 +951,6 @@ Local _aRelac
 		_aRelac 	:= ZFAT025Total((_cAliasPlan)->TRB_FILIAL, (_cAliasPlan)->TRB_PREVIS,  /*_lCarrega*/)
 		_aCliRel	:= Aclone(_aRelac[1])
 		_aPrdRel	:= Aclone(_aRelac[2])
-		//_oBrTotCli:GoTop(.T.)
-		//_oBrTotCli:Refresh(.T.)
-		//_oBrTotPrd:GoTop(.T.)
-		//_oBrTotPrd:Refresh(.T.)
 	Endif
 Return .T.
 
@@ -1040,7 +1006,7 @@ End Sequence
 If !Empty(_cChave)
 	UnLockByName(_cChave,.T.,.T.)
 Endif
-Return Nil
+Return _lRet
 
 //Inclusão de Nova Previsão
 
@@ -1053,6 +1019,7 @@ Local _cQuery 		:= ""
 Local _cCargaQry	:= ""
 Local _cOrderTab	:= ""
 Local _cWhere		:= ""
+Local _cWhereAll  	:= ""
 Local _cJoin		:= ""
 Local _cGroup		:= ""
 Local _aCampos 		:= {}
@@ -1113,23 +1080,27 @@ Begin Sequence
 
 	_cOrderTab := " C5_CLIENTE, C5_LOJACLI, C6_PRODUTO"
 
-	_cQuery := "SELECT "		+CRLF
+	_cQuery := CRLF + "SELECT "		
 	For _nPos := 1 To Len(_aCampos)
-		_cQuery += If(_nPos>1,", ","  ")+_aCampos[_nPos]+ " "+CRLF
+		_cQuery += CRLF + If(_nPos>1,", ","  ")+_aCampos[_nPos]+ " "
 	Next 
+
+	/* NÃO ESTA UTILIZANDO
 	_cQuery += ", SUM(	CASE "  
 	_cQuery += " 		WHEN SC6.C6_CHASSI <> ' ' THEN SC6.C6_QTDVEN "
 	_cQuery += "    	ELSE "
 	_cQuery += "			0 "	 
 	_cQuery += "    END	) OVER (ORDER BY SC6.C6_PRODUTO) AS QTD_CHASSI "
-
+	*/
 	//aCRESCENTAR CLAUSULA wHERE
-	_cWhere := " AND SC6.C6_XFILPVR = ' ' "
-	_cWhere += " AND SC6.C6_XCODPVR = ' ' "
+	_cWhere := CRLF + " AND SC6.C6_XFILPVR = ' ' "
+	_cWhere += CRLF + " AND SC6.C6_XCODPVR = ' ' "
 
+	//Se enviado esta variavel despresara a clausula where na funcionalidade substituindo por esta
+	_cWhereAll := ""
 	//Caso deseje incluir na queri o Join
 	//_cJoin := ZFATF026Chassi(/*_cProduto*/)
-	_cCargaQry := U_XZFAT9QY( _cQuery, _cOrderTab, _aRet, _cWhere, _cJoin, _cGroup)
+	_cCargaQry := U_XZFAT9QY( _cQuery, _cOrderTab, _aRet, _cWhere, /*_cWhereAll*/, _cJoin, _cGroup)
 	If Empty(_cCargaQry)
 	    ApMsgStop("Problemas na montagem do Select", "Previsao Faturamento")
 	    _lRet := .F.

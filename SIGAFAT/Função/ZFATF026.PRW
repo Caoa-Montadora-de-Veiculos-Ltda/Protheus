@@ -21,9 +21,7 @@
 #define DATA_SALDOPRD	5
 
 Static _cAliasZF026
-Static _AREFCLI
-Static _AREFPRD
-Static _AREFRES
+
 
 /*/{Protheus.doc} ZFATF026
 Previsão de Faturamento
@@ -55,6 +53,9 @@ Private _oBrw
 Private _oBrWCli
 Private _oBrWPrd
 Private _oBrWRes
+Private _AREFCLI
+Private _AREFPRD
+Private _AREFRES
 
 Default _cFilPrev 		:= FwXFilial("ZZP") 
 Default _cCodPrev  		:= ""
@@ -323,7 +324,7 @@ Static Function ZFAT026MRes()
 Local _oColumn
 	_oColumn := FWBrwColumn():New()
 	_oColumn:SetData({||_aRefRes[_oBrWRes:nAt,DATA_PRODUTO]})
-	_oColumn:SetTitle("Produto" ) 
+	_oColumn:SetTitle("Referencia" ) 
 	_oColumn:SetSize(Len(SB1->B1_COD))
 	_oColumn:SetDecimal(0)
 	//_oColumn:SetPicture("@!")
@@ -628,9 +629,9 @@ Return _nQtdeLib
 Static Function ZFAT026Total(_cFilPrev, _cCodPrev, _lCarrega)
 //Local _cWhere		:= ""
 Local _cAlias		:= GetNextAlias()
-Local _AREFCLI		:= {} 
-Local _AREFPRD    	:= {}
-Local _AREFRES    	:= {}
+Local _ARETCLI		:= {} 
+Local _ARETPRD    	:= {}
+Local _ARETRES    	:= {}
 
 Local _lRet 		:= .T.
 Local _nQtdeChassi	:= 0
@@ -668,7 +669,7 @@ Begin Sequence
 	If (_cAlias)->(!Eof()) 
 		//Verificar os itens dos KITs para saber se tem algun zerado caso tenha nÃ£o ira utilizar o kit
 		While (_cAlias)->(!Eof())
-			Aadd(_AREFCLI,{	;
+			Aadd(_ARETCLI,{	;
 							(_cAlias)->ZZP_CODCLI,;
 							(_cAlias)->ZZP_LOJCLI,;
 							(_cAlias)->ZZP_CNPJCP,;
@@ -680,7 +681,7 @@ Begin Sequence
 			(_cAlias)->(DbSkip())
 		EndDo
 	Endif	
-
+	_AREFCLI := _ARETCLI
 	//Preparar a pesquisa por Produto
 	If Select((_cAlias)) <> 0
 		(_cAlias)->(DbCloseArea())
@@ -711,16 +712,15 @@ Begin Sequence
 		_nQtdeChassi := ZFATF026QChassi((_cAlias)->ZZP_CODPRD)  //Verifica quantos chassis tem disponiveis
 		//Verificar os itens dos KITs para saber se tem algun zerado caso tenha nÃ£o ira utilizar o kit
 		While (_cAlias)->(!Eof())
-			Aadd(_AREFPRD,{	;
+			Aadd(_ARETPRD,{	;
 							(_cAlias)->ZZP_CODPRD,;
 							(_cAlias)->B1_DESC,;
 							_nQtdeChassi,;
 							(_cAlias)->TOTAL_LIB,;
 							_nQtdeChassi - (_cAlias)->TOTAL_LIB ;
 							})
-			//Para gravar em Resumo
-			If (_cAlias)->ZZP_CODPRD == _cCoPrddRes
-				Aadd(_AREFRES,{	;
+			/*
+				Aadd(_ARETRES,{	;
 							(_cAlias)->ZZP_CODPRD,;
 							(_cAlias)->B1_DESC,;
 							_nQtdeChassi,;
@@ -728,13 +728,22 @@ Begin Sequence
 							_nQtdeChassi - (_cAlias)->TOTAL_LIB ;
 							})
 			Endif
+			*/
 			(_cAlias)->(DbSkip())
 		EndDo
+		_AREFPRD := _ARETPRD
 	Endif	
 
+	//Para gravar em Resumo
+	//If (_cAlias)->ZZP_CODPRD == _cCoPrddRes
+	_ARETRES := {}
+	ZFT26Change()
+	_ARETRES	:= _AREFRES  
+	//Endif
+
 End Sequence
-If Len(_AREFCLI) == 0
-	_AREFCLI	:= {{	Space(Len(ZZP->ZZP_CODCLI)),;
+If Len(_ARETCLI) == 0
+	_ARETCLI	:= {{	Space(Len(ZZP->ZZP_CODCLI)),;
 						Space(Len(ZZP->ZZP_LOJCLI)),;
 						Space(Len(ZZP->ZZP_CNPJCP)),;
 						Space(Len(SA1->A1_NOME)),;
@@ -743,8 +752,8 @@ If Len(_AREFCLI) == 0
 						0;
 					}}
 EndIf
-If Len(_AREFPRD) == 0
-	Aadd(_AREFPRD,{	;
+If Len(_ARETPRD) == 0
+	Aadd(_ARETPRD,{	;
 					Space(Len(ZZP->ZZP_CODPRD)),;
 					Space(Len(SB1->B1_DESC)),;
 					0,;
@@ -752,9 +761,9 @@ If Len(_AREFPRD) == 0
 					0 ;
 					})
 Endif
-
-If Len(_AREFRES) == 0
-	Aadd(_AREFRES,{	;
+/*
+If Len(_ARETRES) == 0
+	Aadd(_ARETRES,{	;
 					Space(Len(ZZP->ZZP_CODPRD)),;
 					Space(Len(SB1->B1_DESC)),;
 					0,;
@@ -762,12 +771,12 @@ If Len(_AREFRES) == 0
 					0 ;
 					})
 Endif
-
+*/
 If Select((_cAlias)) <> 0
 	(_cAlias)->(DbCloseArea())
 	Ferase(_cAlias+GetDBExtension())
 Endif 
-Return {_AREFCLI, _AREFPRD, _AREFRES}
+Return {_ARETCLI, _ARETPRD, _ARETRES}
 
 
 
@@ -958,10 +967,11 @@ Begin Sequence
 	    ApMsgStop("Existem registros com informacao de liberado não podera ser cancelada operacao", "Previsao Faturamento")
 		_lRet := .F.
 		Break
+	//Caso tenha seido apertado botão cancelar	
 	ElseIf _lCancel  
-		_lRet 	:= .T.	
+		Break	
 	Endif
-	
+    //Caso não tenha selecionado nenhum registro	
 	If Len(_aReg) == 0 
 		Break 
 	Endif 
@@ -975,25 +985,26 @@ Begin Sequence
 	If _lProcessa 
 		//Funcionalidade para liberar o SC6 da previsão pode ser UPD
 		AjustaZZP(_aReg, _cFilPrev, _cCodPrev, _nOpc)
-		U_XZFAT25LP()
-		_aRelac 	:= ZFAT026Total( _cFilPrev, _cCodPrev, /*_lCarrega*/)
-		_aRefCli	:= _aRelac[1]
-		_aRefPrd	:= _aRelac[2]
-		_aRefRef	:= _aRelac[3]
-	
-		//_oBrWCli:Activate()
-		_oBrWCli:GoTop(.T.)
-		_oBrWCli:Refresh(.T.)
-		//_oBrWPrd:Activate()
-		_oBrWPrd:GoTop(.T.)
-		_oBrWPrd:Refresh(.T.)
-		//_oBrWRes:Activate()
-		_oBrWRes:GoTop(.T.)
-		_oBrWRes:Refresh(.T.)
+		If _nOpc <> 5  //Não fazer refrese na exclusão pois não abre tela
+			U_XZFAT25LP()
+			_aRelac 	:= ZFAT026Total( _cFilPrev, _cCodPrev, /*_lCarrega*/)
+			_aRefCli	:= _aRelac[1]
+			_aRefPrd	:= _aRelac[2]
+			_aRefRes	:= _aRelac[3]
 
+			//_oBrWCli:Activate()
+			_oBrWCli:GoTop(.T.)
+			_oBrWCli:Refresh(.T.)
+			//_oBrWPrd:Activate()
+			_oBrWPrd:GoTop(.T.)
+			_oBrWPrd:Refresh(.T.)
+			//_oBrWRes:Activate()
+			_oBrWRes:GoTop(.T.)
+			_oBrWRes:Refresh(.T.)
+
+			_oBrW:Refresh()
+		Endif
 	Endif
-	_oBrW:Refresh()
-
 End Sequence 
 
 Return _lRet	
@@ -1002,7 +1013,7 @@ Return _lRet
 Static Function AjustaZZP(_aReg, _cFilPrev, _cCodPrev, _nOpc)
 Local _nPos 
 Local _nQtde
-
+Begin Sequence
 	//Se for Cancelar retirar empenho caso exista
 	If _nOpc == 5 .And. Len(_aReg) > 0
 		_nQtde := Len(_aReg)
@@ -1040,6 +1051,22 @@ Local _nQtde
 	If (_nStatus < 0)
     	MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Empenho SC6")
 	EndIf
+	//Caso seja delecao posso sair
+	If _nOpc == 5	
+		Break
+	Endif
+    //Atualiza Status dos registros que ficaram no ZZP para liberado Faturamento
+    _cQuery := " UPDATE " + RetSqlName("ZZP")+ " ZZP "
+    _cQuery += " SET ZZP.ZZP_STATUS 	= 'L' "
+    _cQuery += " WHERE ZZP.D_E_L_E_T_  	= ' ' "
+	_cQuery += " 	AND ZZP.ZZP_FILIAL 	= '" + _cFilPrev + "' "
+    _cQuery += "    AND ZZP.ZZP_CODPRV	= '" + _cCodPrev + "' "
+    _cQuery += "   	AND ZZP.ZZP_QTELIB	> 0 "
+	_nStatus := TCSqlExec(_cQuery)
+	If (_nStatus < 0)
+    	MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Empenho SC6")
+	EndIf
+End Sequence
 
 Return Nil
 
@@ -1049,7 +1076,10 @@ Return Nil
 Static Function ZFT26Change()
 Local _nPos 
 Local _aRet 
-	If ValType(_AREFPRD) == "A" .And. ValType(_cAliasZF026) == "C" .And. ValType(_oBrWRes)=="O"
+Local _lAtualiza := .F.
+
+	_AREFRES := {}
+	If ValType(_AREFPRD) == "A" .And. ValType(_cAliasZF026) == "C"  
 		_nPos := Ascan(_AREFPRD,{|x| AllTrim(x[1]) == AllTrim((_cAliasZF026)->ZZP_CODPRD)})
 		If _nPos > 0 
 			_aRet 	:= _AREFPRD[_nPos]
@@ -1063,8 +1093,25 @@ Local _aRet
 							}
 
 		Endif
-		_AREFRES := {}
 		Aadd(_AREFRES, _aRet)
-		_oBrWRes:Refresh()
+		_lAtualiza := .T.
+	Endif
+	If ValType(_AREFCLI) == "A" .And. ValType(_cAliasZF026) == "C" 
+		_nPos := Ascan(_AREFCLI,{|x| x[1]+X[2] == (_cAliasZF026)->ZZP_CODCLI+(_cAliasZF026)->ZZP_LOJCLI})
+		If _nPos > 0 
+			//Tera que ser feito separação pois o browsee é de produtos 
+			_aRet := {}
+			Aadd(_aRet,"CNPJ : "+ _AREFCLI[_nPos, 3] )  //CGC
+			Aadd(_aRet,_AREFCLI[_nPos, 1]+" - "+_AREFCLI[_nPos, 2]+" : "+ _AREFCLI[_nPos, 4] )  //Nome
+			Aadd(_aRet,0)  //Qtde liberadoa
+			Aadd(_aRet,0)  //Total liberado  
+			Aadd(_aRet,_AREFCLI[_nPos, 7])  //Total liberado  
+			Aadd(_AREFRES, _aRet)
+			_lAtualiza := .T.
+		Endif
 	Endif 
+	If ValType(_oBrWRes)=="O" .And. _lAtualiza
+		_oBrWRes:Refresh(.T.)
+	Endif
+
 Return .T.
