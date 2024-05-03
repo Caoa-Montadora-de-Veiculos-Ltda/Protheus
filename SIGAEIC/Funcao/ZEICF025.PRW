@@ -78,7 +78,7 @@ Private cUserName   := SuperGetMV("CMV_EIC004",,"Caoa")     // type here user na
 Private cPassword   := SuperGetMV("CMV_EIC005",,"bRTxqzUyJwN5BnT")     // type here user password    "bRTxqzUyJwN5BnT" 
 
 Default _cChave := " "                    ///"SHA23090924"          //informações como numero da House
-Default _cUrlFH	:= "https://api.asiashipping.com.br/followup/House"    // GETMV("CMV_EIC001")   ///"https://api.asiashipping.com.br/followup/House"
+Default _cUrlFH	:= "http://homolog-api.asiashipping.com.br/"    // GETMV("CMV_EIC001")   ///"https://api.asiashipping.com.br/followup/House"
 
 //Default _cUrlFS	:= "https://api.asiashipping.com.br/followup/Shipment"
 //Default _cUrlOR	:= "https://api.asiashipping.com.br/bot/OrderRef"
@@ -208,7 +208,7 @@ Aadd(_aHeaFH,'Content-Type: application/json')
 
 			_cRet := Httpget(_cUrl, ' ', _nTime , _aHeaFH)
 
-			if ValType(_cRet) = "U"
+			if ValType(_cRet) = "U" .OR. Empty(_oJSRet) 
 			    Conout("ZEICF025 - Não existe retorno do Host, excedido o numero de tentativa de conexão ")
 				(_cAliasJ)->(DbSkip())
 				LOOP
@@ -305,7 +305,7 @@ Local dCargo   := CTOD("  /  /    ")   //W6_XCARGOR   //Estimativa de carga pron
 Local dCargoP  := CTOD("  /  /    ")   //W6_XCARGOP   //Carga pronta
 Local dAutoE   := CTOD("  /  /    ")   // W6_XAUTOE    //Data de autorização de envio
 Local dETE     := CTOD("  /  /    ")   //W6_DT_ETD    //ETD - Origem (Estimativa de Saida)
-Local cATD     := " "                  //W6_XATD      //ATD - Origem (Data real Disponivel para Entrega)
+Local cATD     := CTOD("  /  /    ")   //W6_XATD      //ATD - Origem (Data real Disponivel para Entrega)
 Local dETA     := CTOD("  /  /    ")   //W6_DT_ETA    //ETA - Destino (Estimado de Chegada)
 Local dXATA    := CTOD("  /  /    ")   //W6_XATA      //ATA - Destino (Atracação)
 Local cPortOri := ' '                  //W6_ORIGEM    //Porto Origem
@@ -334,13 +334,13 @@ Local cLegVes  := ' '                  //             //LegVessel do navio
 	nEIHQTD    := _oJSRet:GetJsonText("PacksQTD")
 	cXPTYPE    := _oJSRet:GetJsonText("PacksType")
 	nMT3       := _oJSRet:GetJsonText("VolQTD")
-	dCargo     := CTOD(SUBSTR(_oJSRet:GetJsonText("CargoReadyEstimate"),1,10))
-	dCargoP    := CTOD(SUBSTR(_oJSRet:GetJsonText("CargoReadyActual"),1,10))
-	dAutoE     := CTOD(SUBSTR(_oJSRet:GetJsonText("ShipAuthorizationDate"),1,10))
-	dETE       := CTOD(SUBSTR(_oJSRet:GetJsonText("EstimateDeparture"),1,10))
-	dETA       := CTOD(SUBSTR(_oJSRet:GetJsonText("EstimateArrival"),1,10))
-	dXATA      := CTOD(SUBSTR(_oJSRet:GetJsonText("ActualArrival"),1,10))
-	cATD       := SUBSTR(_oJSRet:GetJsonText("ActualDeparture"),1,10)
+	dCargo     := CTOD(_oJSRet:GetJsonText("CargoReadyEstimate"))
+	dCargoP    := CTOD(_oJSRet:GetJsonText("CargoReadyActual"))
+	dAutoE     := CTOD(_oJSRet:GetJsonText("ShipAuthorizationDate"))
+	dETE       := CTOD(_oJSRet:GetJsonText("EstimateDeparture"))
+	dETA       := CTOD(_oJSRet:GetJsonText("EstimateArrival"))
+	dXATA      := CTOD(_oJSRet:GetJsonText("ActualArrival"))
+	cATD       := CTOD(_oJSRet:GetJsonText("ActualDeparture"))
 	cVIAGEM    := Alltrim(_oJSRet:GetJsonText("Voyage"))
 	cXCARRIE   := _oJSRet:GetJsonText("CarrierName")
 	cIDENTVE   := _oJSRet:GetJsonText("Vessel")
@@ -377,7 +377,7 @@ Local cLegVes  := ' '                  //             //LegVessel do navio
     SJF->(DbSetOrder(1))      //JF_FILIAL+JF_CODIGO  da embalagem                                                                                                                                                                                                                                                                               
     If SJF->(DbSeek(xFilial("SJF")+EIH->EIH_CODIGO))	
 		SJF->(RecLock("SJF",.F.))
-		SJF->JF_XPTYPE := cXPTYPE         //c  
+		SJF->JF_XPTYPE := cXPTYPE         //c Criar o campo 
 		SJF->(MsUnLock())
     Endif 
 
@@ -388,60 +388,64 @@ Local cLegVes  := ' '                  //             //LegVessel do navio
         _CodArm := Space(06)
     Endif 
 
-    _names := Len(_oJSRet['Containers'])
+    If !Empty(_oJSRet['Containers'])
+      
+		_names := Len(_oJSRet['Containers'])
 
-    cConType := ''
-	nQtdeTtl := 0
-	nOUTCTN  := 0
-    nQtd40HC := 0
-    nQtd40   := 0
-    nQtd20   := 0
+		cConType := ''
+		nQtdeTtl := 0
+		nOUTCTN  := 0
+		nQtd40HC := 0
+		nQtd40   := 0
+		nQtd20   := 0
 
-    FOR _nX := 1 TO _names
-        nQtde    := Val(_oJSRet["Containers"][_nX]["ContainerQTD"])
-        cConType := Alltrim(_oJSRet["Containers"][_nX]["ContainerType"])
-		IF cConType = "40HC" 
-			nQtd40HC := nQtd40HC + nQtde
-			cTipoCT  := "3"
-		ELSEIF cConType = "20"  		
-			nQtd20   := nQtd20 + nQtde
-			cTipoCT  := "1"		    
-		ELSEIF cConType = "40"  
-			nQtd40   := nQtd40 + nQtde
-			cTipoCT  := "2"	
-		ELSE 
-			nOUTCTN  := nOUTCTN + nQtde 
-			cTipoCT  := "4"	
-		ENDIF
+		FOR _nX := 1 TO _names
+			nQtde    := Val(_oJSRet["Containers"][_nX]["ContainerQTD"])
+			cConType := Alltrim(_oJSRet["Containers"][_nX]["ContainerType"])
+			IF cConType = "40HC" 
+				nQtd40HC := nQtd40HC + nQtde
+				cTipoCT  := "3"
+			ELSEIF cConType = "20"  		
+				nQtd20   := nQtd20 + nQtde
+				cTipoCT  := "1"		    
+			ELSEIF cConType = "40"  
+				nQtd40   := nQtd40 + nQtde
+				cTipoCT  := "2"	
+			ELSE 
+				nOUTCTN  := nOUTCTN + nQtde 
+				cTipoCT  := "4"	
+			ENDIF
 
-		nQtdeTtl := nQtdeTtl + nQtde
+			nQtdeTtl := nQtdeTtl + nQtde
 
-		cContainer := Alltrim(_oJSRet["Containers"][_nX]["ContainerNum"])
+			cContainer := Alltrim(_oJSRet["Containers"][_nX]["ContainerNum"])
 
-		SJD->(DbSetOrder(1))//FILIAL+HAWB+Cont
-		SJD->(DbGotop())
-		IF SJD->(dbSeek(xFilial("SJD") + SW6->W6_HAWB + cContainer ))
-			SJD->(RecLock("SJD",.F.))		    
-			SJD->JD_LACRE   := Alltrim(_oJSRet["Containers"][_nX]["ContainerSelo"])	
-			SJD->JD_DEVOLUC := CTOD(SUBSTR(_oJSRet["Containers"][_nX]["DevContVazio"],1,10))
-			SJD->JD_TIPO_CT := cTipoCT			
-			SJD->JD_QTD_REC := nQtde
-	        SJD->(MsUnLock())
-		ELSE
-			SJD->(RecLock("SJD",.T.))
-			SJD->JD_FILIAL  := xFilial("SJD")			
-			SJD->JD_HAWB    := Alltrim(SW6->W6_HAWB)
-			SJD->JD_CONTAIN := cContainer
-			SJD->JD_ARMADOR := Substr(_CodArm,3,3)  //Ainda não tem o De x Para
-			SJD->JD_CADEADO := '000'  //Ainda não tem
-			SJD->JD_DEVOLUC := CTOD(SUBSTR(_oJSRet["Containers"][_nX]["DevContVazio"],1,10)) 
-			SJD->JD_LACRE   := Alltrim(_oJSRet["Containers"][_nX]["ContainerSelo"])												    
-			SJD->JD_TIPO_CT := cTipoCT	
-			SJD->JD_QTD_REC := nQtdeTtl
-	        SJD->(MsUnLock())
-        ENDIF
+			SJD->(DbSetOrder(1))//FILIAL+HAWB+Cont
+			SJD->(DbGotop())
+			IF SJD->(dbSeek(xFilial("SJD") + SW6->W6_HAWB + cContainer ))
+				SJD->(RecLock("SJD",.F.))		    
+				SJD->JD_LACRE   := Alltrim(_oJSRet["Containers"][_nX]["ContainerSelo"])	
+				SJD->JD_DEVOLUC := CTOD(SUBSTR(_oJSRet["Containers"][_nX]["DevContVazio"],1,10))
+				SJD->JD_TIPO_CT := cTipoCT			
+				SJD->JD_QTD_REC := nQtde
+				SJD->(MsUnLock())
+			ELSE
+				SJD->(RecLock("SJD",.T.))
+				SJD->JD_FILIAL  := xFilial("SJD")			
+				SJD->JD_HAWB    := Alltrim(SW6->W6_HAWB)
+				SJD->JD_CONTAIN := cContainer
+				SJD->JD_ARMADOR := Substr(_CodArm,3,3)  //Ainda não tem o De x Para
+				SJD->JD_CADEADO := '000'  //Ainda não tem
+				SJD->JD_DEVOLUC := CTOD(SUBSTR(_oJSRet["Containers"][_nX]["DevContVazio"],1,10)) 
+				SJD->JD_LACRE   := Alltrim(_oJSRet["Containers"][_nX]["ContainerSelo"])												    
+				SJD->JD_TIPO_CT := cTipoCT	
+				SJD->JD_QTD_REC := nQtdeTtl
+				SJD->(MsUnLock())
+			ENDIF
 
-    NEXT _nX
+		NEXT _nX
+
+    Endif
 
 	SW6->(RecLock("SW6",.F.))
 	SW6->W6_MT3     := Val(nMT3)       //n 8,2
@@ -464,7 +468,7 @@ Local cLegVes  := ' '                  //             //LegVessel do navio
 	SW6->W6_XMODCON := cModCon
 	SW6->W6_XMCONT  := cXMCONT
 	SW6->W6_XTIPOL  := cXTIPOL
-	SW6->W6_XCONSC  := cXCONSC
+	//SW6->W6_XCONSC  := cXCONSC
 	SW6->W6_XCEMERC := cXCEMERC
 	SW6->W6_XTLDEM  := cXTLDEM
 	SW6->W6_XANOTA  := mXANOTA
@@ -476,6 +480,7 @@ Local cLegVes  := ' '                  //             //LegVessel do navio
 	SW6->W6_CON40HC := nQtd40HC
 	SW6->W6_PESO_BR := Val(nPESO_BR)
 	SW6->W6_OUT_CTN := Str(Int(nOUTCTN))
+	SW6->W6_XLEGVES := cLegVes
 
 	SW6->(MsUnLock())
 
