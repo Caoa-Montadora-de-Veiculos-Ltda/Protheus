@@ -37,6 +37,7 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 	Local _cUsua     	:= Alltrim(Getmv("CMV_WSR016")) // Usuário
 	Local _cSenha    	:= Alltrim(Getmv("CMV_WSR017")) // Senha encodada no Postman com o tipo Basic
 	Local _cCnpjTransf  := AllTrim(SuperGetMV( "CMV_WSR019"  ,,"03471344"))	//Raiz CNPJ de transferencia
+	Local cCnpj			:= ""
 	Local oJsEnt
 	Local _cAlias 	 	:= GetNextAlias()   
 	Local aResRg	 	:= { .F. } 
@@ -142,7 +143,7 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 	(_cAlias)->(dbGoTop())
 
     If (_cAlias)->(!EOF())
-		If (_cAlias)->F1_TIPO == "D"
+		If ( (_cAlias)->F1_TIPO == "D" .Or. (_cAlias)->F1_TIPO == "B" )
 			cXTipo := "DEV"
 			SA1->(dbSetOrder(1))
 			If SA1->(dbSeek(xFilial("SA1")+(_cAlias)->F1_FORNECE+(_cAlias)->F1_LOJA))
@@ -161,7 +162,8 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 				cForn := SA2->A2_COD
 				cLoja := SA2->A2_LOJA
 				cCnpj := SA2->A2_CGC
-
+			Else
+				_lRet := .F.
 			EndIf
 			If Substring(SA2->A2_CGC,1,8) == _cCnpjTransf //'03471344'
 				cXTipo := "TRF"
