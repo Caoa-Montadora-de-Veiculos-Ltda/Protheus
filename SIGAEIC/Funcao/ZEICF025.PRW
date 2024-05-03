@@ -78,7 +78,7 @@ Private cUserName   := SuperGetMV("CMV_EIC004",,"Caoa")     // type here user na
 Private cPassword   := SuperGetMV("CMV_EIC005",,"bRTxqzUyJwN5BnT")     // type here user password    "bRTxqzUyJwN5BnT" 
 
 Default _cChave := " "                    ///"SHA23090924"          //informações como numero da House
-Default _cUrlFH	:= "http://homolog-api.asiashipping.com.br/"    // GETMV("CMV_EIC001")   ///"https://api.asiashipping.com.br/followup/House"
+Default _cUrlFH	:= "https://apihomolog.asiashipping.com.br/index.html"    // GETMV("CMV_EIC001")   ///"https://api.asiashipping.com.br/followup/House"
 
 //Default _cUrlFS	:= "https://api.asiashipping.com.br/followup/Shipment"
 //Default _cUrlOR	:= "https://api.asiashipping.com.br/bot/OrderRef"
