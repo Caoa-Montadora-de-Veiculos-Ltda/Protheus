@@ -108,10 +108,14 @@ Begin Sequence
     //Definimos a tabela que será exibida na Browse utilizando o método SetAlias
     //Legenda da grade, é obrigatório carregar antes de montar as colunas
     //A=ABERTO;F=FATURADO;C=CANCELADO
+	
+	_oBrw:AddLegend("AllTrim(ZZP_STATUS) = 'A'  "  ,"WHITE"     ,"Em Aberto")
+	_oBrw:AddLegend("AllTrim(ZZP_STATUS) = 'L'  "  ,"GREEN"     ,"Liberado Fat")
     _oBrw:AddLegend("AllTrim(ZZP_STATUS) = 'F'  "  ,"BLUE" 	   	,"Faturado")
-	_oBrw:AddLegend("AllTrim(ZZP_STATUS) = 'A'  "  ,"GREEN"     ,"Em Aberto")
 	_oBrw:AddLegend("AllTrim(ZZP_STATUS) = 'C'  "  ,"RED"       ,"Cancelado")
 	_oBrw:AddLegend("AllTrim(ZZP_STATUS) <> ' '  " ,"GRAY"      ,"Pendente")
+	
+
 	_oBrw:SetPreEditCell({|| DbSelectArea(_cAliasZF026), .T.})
     _oBrw:SetEditCell( .T. , { || .T. } )
     _oBrw:lHeaderClick := .F.
@@ -951,12 +955,8 @@ Default	_lCancel    := .F.
 	If _nOpc == 2  //Vizualizar
 		Return _lRet
 	Endif 
-
-	If !MsgYesNo("Deseja Candelar Previsao "+_cCodPrev+" ?") 
-		Return .f.
-	Endif
-
 	FwMsgRun(, {|_oSay| _lRet := ZFTF26PrcEnd( _nOpc, _cFilPrev, _cCodPrev, _lCancel, @_oSay) }, "Avaliando Registros Previsao", "Por favor aguarde...")
+
 Return _lRet	
 
 
@@ -1002,6 +1002,10 @@ Begin Sequence
 	Endif
 
 	If _lProcessa 
+		If !MsgYesNo("Deseja Candelar Previsao "+_cCodPrev+" ?") 
+			Return .f.
+		Endif
+
 		_oSay:SetText("Aguarde Atualizando informações - Hora: "+Time())
 		ProcessMessage()
 		//Guardar registro do  ZZN para atuaizar
@@ -1023,7 +1027,6 @@ Begin Sequence
 			ZZN->(MsUnlock())
 		Endif 
 		//If _nOpc <> 5  //Não fazer refresh na exclusão pois não abre tela
-		U_XZFAT25LP()
 		ZFAT026Total( _cFilPrev, _cCodPrev, /*_lCarrega*/)
 		_oBrW:Refresh()
 	Endif
