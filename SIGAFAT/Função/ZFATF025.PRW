@@ -71,8 +71,6 @@
 #define DATA_QTDEPREV	4
 #define DATA_SALDOPRD	5
 
-Static _oRelac
-Static _aColuna		:= {}
 
 //Static cSayUltCMP	:= ""
 //Static cSayUltVND   := ""
@@ -80,27 +78,15 @@ Static _aColuna		:= {}
 //====================================
 
 User Function ZFATF025(_oSay)
-Begin Sequence
-	Private TelWindow 	:= TelAcWindow():New("SB1")	
-	Private _cAliasPlan := ""
-	Private oArea    
-	Private oPanelVis
-	Private _oBrTotCli  := {}
-	Private _oBrTotPrd  := {}
+Private TelWindow 	:= TelAcWindow():New("SB1")	
+Private oArea    
+Private oPanelVis
+Private	_aCliRel  	:= {}
 
-	Private	_aCliRel  	:= {}
-	Private	_aPrdRel    := {}
-	Private _aFolders   := {}
-	Private _cTableZZP 	:= ""
-	//lPanel := .T.
-	
+Begin Sequence
 	TelWindow:Init()
 	TelWindow:Show()
 End Sequence
-If Select(_cAliasPlan) <> 0
-	(_cAliasPlan)->(DbCloseArea())
-	Ferase(_cAliasPlan+GetDBExtension())
-Endif      
 Return .T.
 
 Class TelAcWindow
@@ -114,25 +100,25 @@ Class TelAcWindow
 	// pain√©is esquerdos
 	Data oPanelSearch 	As Object
 	Data oPanelChart 	As Object
-	Data oPanelDados 	As Object // exclusivo para SE5
+	Data oPanelDados 	As Object 
+	Data _oBrowseZZN	As Object
+
 	// pain√©is centrais
 	Data oPanelBrowse 	As Object
 	Data oPanelVis 		As Object
+	Data _oBrowseZZP	As Object
+	Data _oBrwTotCli	As Object
 	// pain√©is direitos	
 	Data oPanelEVenda 	As Object
 	Data oPanelDetalhe 	As Object
+
+
 	// objetos necess√°rios para a interface	
 	Data oGetData 		As Object
-	Data oPrn 			As Object
-	Data _oBrPlan 		As Object
-	Data oTOleContainer As Object
-	Data oOle 			As Object
-	Data oScroll 		As Object
-	Data _oBrowseZZP 	AS Object
+
 	Data oDlg 			As Object
 	Data oTreeAccounts 	As Object
 
-	Data aPergunte 		As Array
 	Data oChart 		As Array
 
 	//Data oSayDescPrd 	As Object
@@ -173,7 +159,7 @@ Class TelAcWindow
 	Method ShowViewPanel()
 	Method DimObj()
 	Method MenuPrev(_nOpc)
-
+	Method ZFT25Change()
 EndClass
 
 /* ----------------------------------------------------------------------------
@@ -198,15 +184,17 @@ Begin Sequence
 	Self:oSidebar		:= Nil
 		
 	Self:cAliasFile 	:= cAliasFile
-	Self:aPergunte 		:= {}
 
 	Self:oPanelSearch 	:= Nil
 	Self:oPanelChart 	:= Nil
 	Self:oPanelDados 	:= Nil // Ferramentas
+	Self:_oBrowseZZN	:= Nil
 
 	// pain√©is centrais
 	Self:oPanelBrowse	:= Nil
 	Self:oPanelVis 		:= Nil
+	Self:_oBrowseZZP	:= Nil
+	Self:_oBrwTotCli	:= Nil
 
 	// pain√©is direitos	
 	Self:oPanelEVenda 	:= Nil
@@ -214,13 +202,6 @@ Begin Sequence
 
 	// objetos necess√°rios para a interface	
 	Self:oGetData 		:= Nil
-	Self:oPrn 	    	:= Nil
-	Self:_oBrPlan   	:= Nil 
-	Self:_oBrowseZZP	:= Nil
-	Self:oTOleContainer := Nil
-	Self:oOle			:= Nil	
-	Self:oScroll		:= Nil
-	Self:aPergunte 		:= Nil
 	Self:oChart 		:= Nil
 
 	//Self:oSayDescPrd 	:= Nil
@@ -245,7 +226,6 @@ Cria os pain√©is do lado esquerdo, de acordo com o gestor utilizado:
 Contas a Receber, Contas a Pagar ou Tesouraria:
 ---------------------------------------------------------------------------- */
 Method CreateLeftColumn() Class TelAcWindow
-Local _nPos
 
 Begin Sequence
 	Self:oArea:AddCollumn(COL_LEFT , 30, .T.)
@@ -255,62 +235,40 @@ Begin Sequence
 	// cria o panel da pesquisa
 	Self:oPanelSearch := Self:oArea:GetWinPanel(COL_LEFT, WND_SEARCH)
     //funcionalidade para carga da tabela tempor√°ria
-	LoadPlan()
+	DbSelectArea("ZZN")
     //tabela temporaria
-    Self:_OBrPlan:=FWMBrowse():New()
-    Self:_OBrPlan:SetTemporary(.T.) //Indica que o Browse utiliza tabela tempor√°ria
-    //descri√ß√£o do browse
-   	// Self:_OBrPlan:SetDescription('Previsao')
-    //tabela temporaria
-    Self:_OBrPlan:SetAlias(_cAliasPlan)
-    //Self:_OBrPlan:SetUseFilter(.F.)
-    //Self:_OBrPlan:SetDBFFilter(.F.)                  
-    Self:_OBrPlan:DisableConfig() 		// Desabilita a utilizaÁ„o do Browse
-	Self:_OBrPlan:SetCanSaveArea(.T.)	//abertura de mais de uma  browse
-    Self:_OBrPlan:DisableDetails()
-	Self:_OBrPlan:SetMenuDef('')
-    Self:_OBrPlan:SetIgnoreARotina(.T.) // Indica que a mbrowse, ira ignorar a variavel private aRotina na construÁ„o das opÁıes de menu.
-    Self:_OBrPlan:SetWalkThru(.F.)
-    Self:_OBrPlan:SetAmbiente(.F.) //Habilita a utilizaÁ„o da funcionalidade Ambiente no Browse
-    Self:_OBrPlan:SetFixedBrowse(.T.)
-	Self:_OBrPlan:AddLegend("AllTrim(TRB_STATUS) = 'A'  "  ,"WHITE"     ,"Em Aberto")
-	Self:_OBrPlan:AddLegend("AllTrim(TRB_STATUS) = 'L'  "  ,"GREEN"     ,"Liberado Fat")
-    Self:_OBrPlan:AddLegend("AllTrim(TRB_STATUS) = 'F'  "  ,"BLUE" 	   	,"Faturado")
-	Self:_OBrPlan:AddLegend("AllTrim(TRB_STATUS) = 'C'  "  ,"RED"       ,"Cancelado")
-	Self:_OBrPlan:AddLegend("AllTrim(TRB_STATUS) <> ' '  " ,"GRAY"      ,"Pendente")
+    
+	Self:_oBrowseZZN:=FWMBrowse():New()
+    Self:_oBrowseZZN:SetAlias("ZZN")
+	Self:_oBrowseZZN:SetDescription('Previsao')
+    Self:_oBrowseZZN:SetOwner(Self:oPanelSearch)
+    //Self:_oBrowseZZN:SetUseFilter(.F.)
+    //Self:_oBrowseZZN:SetDBFFilter(.F.)                  
+    //Self:_oBrowseZZN:DisableConfig() 		// Desabilita a utilizaÁ„o do Browse
+	Self:_oBrowseZZN:SetCanSaveArea(.T.)	//abertura de mais de uma  browse
+    //Self:_oBrowseZZN:DisableDetails()
+	Self:_oBrowseZZN:SetMenuDef('')
+    Self:_oBrowseZZN:SetIgnoreARotina(.T.) // Indica que a mbrowse, ira ignorar a variavel private aRotina na construÁ„o das opÁıes de menu.
+    Self:_oBrowseZZN:SetWalkThru(.F.)
+    Self:_oBrowseZZN:SetAmbiente(.F.) //Habilita a utilizaÁ„o da funcionalidade Ambiente no Browse
+    Self:_oBrowseZZN:SetFixedBrowse(.T.)
+	Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) = 'A'  "  ,"WHITE"     ,"Em Aberto")
+	Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) = 'L'  "  ,"GREEN"     ,"Liberado Fat")
+    Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) = 'F'  "  ,"BLUE" 	   	,"Faturado")
+	Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) = 'C'  "  ,"RED"       ,"Cancelado")
+	Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) <> ' '  " ,"GRAY"      ,"Pendente")
 
-	Self:_OBrPlan:AddButton("Incluir"	, { || Self:MenuPrev(3)	})
-	Self:_OBrPlan:AddButton("Alterar"	, { || Self:MenuPrev(4)	})
-	Self:_OBrPlan:AddButton("Faturar"	, { || Self:MenuPrev(1)	})
-	Self:_OBrPlan:AddButton("Cancelar"	, { || Self:MenuPrev(5)	})
-	Self:_OBrPlan:AddButton("Visualizar", { || Self:MenuPrev(2)	})
-
+	Self:_oBrowseZZN:AddButton("Incluir"	, { || Self:MenuPrev(3)	})
+	Self:_oBrowseZZN:AddButton("Alterar"	, { || Self:MenuPrev(4)	})
+	Self:_oBrowseZZN:AddButton("Faturar"	, { || Self:MenuPrev(1)	})
+	Self:_oBrowseZZN:AddButton("Cancelar"	, { || Self:MenuPrev(5)	})
+	Self:_oBrowseZZN:AddButton("Visualizar",  { || Self:MenuPrev(2)	})
 	//mudanca de linha
-	Self:_OBrPlan:setChange({|| ZFT25Change(), Self:RefreshPrev()})
-  
-    Self:_OBrPlan:SetOwner(Self:oPanelSearch)
-
-    //Cria as colunas com base no array aCampos
-    For _nPos := 1 To Len(_aColuna)
-        xValor := _aColuna[_nPos,2]
-		If xValor == "TRB_STATUS"
-			Loop
-		Endif
-        oColumn := FWBrwColumn():New()
-        oColumn:SetData(&("{ ||" + xValor + " }"))
-        oColumn:SetTitle(_aColuna[_nPos,1])
-        oColumn:SetSize(_aColuna[_nPos,4])
-        oColumn:SetDecimal(_aColuna[_nPos,5])
-        oColumn:SetPicture(_aColuna[_nPos,6])
-        oColumn:SetEdit(.T.)
-        Self:_OBrPlan:SetColumns({oColumn})
-	Next
+	Self:_oBrowseZZN:setChange({||  Self:ZFT25Change(), Self:RefreshPrev()})
 	//Self:SetDadosTitle('Consulta Previsao')
-    //_OBrPlaneja := Self:_OBrPlan
-	Self:_OBrPlan:Activate(Self:oPanelSearch)
-	Self:_OBrPlan:GoTop(.T.)
-	Self:_OBrPlan:Refresh(.T.)
-
+	Self:_oBrowseZZN:Activate()
+	Self:_oBrowseZZN:GoTop(.T.)
+	Self:_oBrowseZZN:Refresh(.T.)
 End Sequence
 Return
 
@@ -321,71 +279,103 @@ Cria os pain√©is centrais, de acordo com o gestor utilizado: Contas a Receber,
 Contas a Pagar ou Tesouraria:
 ---------------------------------------------------------------------------- */
 Method CreateCenterColumn() Class TelAcWindow
-Local _aRelac
+//Local _aRelac
+Local _oRelac
 
 Begin Sequence
 	oArea := Self:oArea
 	// cria a coluna do meio	
 	Self:oArea:AddCollumn(COL_CENTER, 70, .F.)
 	Self:oArea:SetColSplit(COL_CENTER, CONTROL_ALIGN_LEFT)
-
 	// visualiza√ß√£o do planejamento
 	Self:oArea:Addwindow(COL_CENTER, WND_VIS, "Consulta Previs„o ", 70, .T., .F.) 
 	Self:oPanelBrowse := Self:oArea:GetWinPanel(COL_CENTER, WND_VIS)
 
 	Self:oArea:AddWindow(COL_CENTER, WND_BROWSE, "Totais", 30, .T., .F.)
 	Self:oPanelVis := Self:oArea:GetWinPanel(COL_CENTER, WND_BROWSE)
-
 	//Self:oArea:AddWindow(COL_CENTER, WND_BROWSE, "Relacionamento ", 30, .T., .F.)
 	//Self:oPanelVis := Self:oArea:GetWinPanel(COL_CENTER, WND_BROWSE)
 
     //Campos tabela temporaria              
-	_aColuna := {}
-	 
+	DbSelectArea("ZZP")
     Self:_oBrowseZZP:= FWMBrowse():New()
 	Self:_oBrowseZZP:SetOwner( Self:oPanelBrowse )
 	Self:_oBrowseZZP:SetDescription("Previsao")
 	Self:_oBrowseZZP:SetMenuDef( '' )
-	//_oBrowseZZP:DisableReport()
+	//Self:_oBrowseZZP:DisableReport()
 	Self:_oBrowseZZP:DisableDetails()
 	Self:_oBrowseZZP:SetAlias('ZZP')
-
-	Self:_oBrowseZZP:SetProfileID( '1' )
-	Self:_oBrowseZZP:Activate()
+	//Self:_oBrowseZZP:SetProfileID( '2' )
+	Self:_oBrowseZZP:Activate() 
 	//-- Relacionamento entre os Paineis
 	_oRelac:= FWBrwRelation():New()
-	_oRelac:AddRelation(  Self:_OBrPlan, Self:_oBrowseZZP , {	{"ZZP_FILIAL" , "TRB_FILIAL" } ,; 
-                                         						{"ZZP_CODPRV" , "TRB_PREVIS" }})
+	_oRelac:AddRelation(  Self:_oBrowseZZN, Self:_oBrowseZZP ,  {	{"ZZP_FILIAL" , "ZZN_FILIAL" } ,; 
+                                        							{"ZZP_CODPRV" , "ZZN_CODPRV" }})  
 	_oRelac:Activate()
-	/*
-	// Calcula as dimensoes dos objetos
-	_aFolders := {"Totais Cliente","Totais Produto"}
-	_aPosSize := {0,0,0,0}
-	_aPosSize[3] := 460
-	_aPosSize[4] := 250
-	_oFolder := TFolder():New(_aPosSize[1],_aPosSize[2],_aFolders,_aFolders,Self:oPanelVis,,,,.T.,.T.,_aPosSize[3],_aPosSize[4])
-	*/
-	//oFolder:bChange := {|| Iif(oFolder:nOption < 3, oBtnGte:Enable(), oBtnGte:Disable()), fFldrChg(),;
-	//						oDlg:cCaption := "CallCenter (" + _cOperador + ")"}
 
-	// Define o Browse Relacionados
-	_aRelac 	:= ZFAT025Total((_cAliasPlan)->TRB_FILIAL, (_cAliasPlan)->TRB_PREVIS,  /*_lCarrega*/)
-	_aCliRel	:= aClone(_aRelac[1])
-	_aPrdRel	:= aClone(_aRelac[2])
+	// Define o Browse Relacionados carrega _aCliRel
+	_aRelac := ZFAT025Total( ZZN->ZZN_FILIAL, ZZN->ZZN_CODPRV,  /*_lCarrega*/)
+	Self:_oBrwTotCli := FWBrowse():New()
+	Self:_oBrwTotCli:SetDataArray(.T.)
+	Self:_oBrwTotCli:SetArray(_aCliRel)
+	Self:_oBrwTotCli:DisableConfig(.T.)
+	Self:_oBrwTotCli:DisableReport(.T.)
+	Self:_oBrwTotCli:DisableLocate(.T.)
+	Self:_oBrwTotCli:DisableFilter(.T.)
+    Self:_oBrwTotCli:SetOwner(Self:oPanelVis)
+	//Self:_oBrwTotCli:SetDoubleClick({ || xfunc(Self:_oBrwTotCli,Self:_oBrwTotCli:nAt) , Self:, Self:_oBrwTotCli:Refresh()    })	
 
-	_oBrTotCli := FWBrowse():New()
-	_oBrTotCli:SetDataArray(.T.)
-	_oBrTotCli:SetArray(_aCliRel)
-	_oBrTotCli:DisableConfig(.T.)
-	_oBrTotCli:DisableReport(.T.)
-	_oBrTotCli:DisableLocate(.T.)
-	_oBrTotCli:DisableFilter(.T.)
-    _oBrTotCli:SetOwner(Self:oPanelVis)
-	//_oBrTotCli:SetDoubleClick({ || xfunc(_oBrTotCli,_oBrTotCli:nAt) , Self:, _oBrTotCli:Refresh()    })	
-	ZFATF025Cli()
-	_oBrTotCli:Activate()
-	_oBrTotCli:GoTop(.T.)
-	_oBrTotCli:Refresh(.T.)
+	// Cria uma coluna de status
+	// Adiciona as colunas do Browse
+	_oColumn := FWBrwColumn():New()
+	_oColumn:SetData({||_aCliRel[Self:_oBrwTotCli:nAt,DATA_CLIENTE]})
+	_oColumn:SetTitle("Cliente" ) 
+	_oColumn:SetSize(Len(SA1->A1_COD))
+	Self:_oBrwTotCli:SetColumns({_oColumn})
+	
+	_oColumn := FWBrwColumn():New()
+	_oColumn:SetData({||_aCliRel[Self:_oBrwTotCli:nAt,DATA_LOJA]})
+	_oColumn:SetTitle("Loja") 
+	_oColumn:SetSize(Len(SA1->A1_LOJA))
+	_oColumn:SetDecimal(2)
+	//oColumn:SetPicture("@!")
+	Self:_oBrwTotCli:SetColumns({_oColumn})
+
+	_oColumn := FWBrwColumn():New()
+	_oColumn:SetData({||_aCliRel[Self:_oBrwTotCli:nAt,DATA_CNPJCPF]})
+	_oColumn:SetTitle("CNPJ/CPF") 
+	_oColumn:SetSize(Len(SA1->A1_CGC))
+	_oColumn:SetDecimal(0)
+	//_oColumn:SetPicture("@!")
+	Self:_oBrwTotCli:SetColumns({_oColumn})
+
+	_oColumn := FWBrwColumn():New()
+	_oColumn:SetData({||_aCliRel[Self:_oBrwTotCli:nAt,DATA_NOMCLI]})
+	_oColumn:SetTitle("Nome Cliente") 
+	_oColumn:SetSize(Len(SA1->A1_NOME))
+	_oColumn:SetDecimal(0)
+	_oColumn:SetPicture("@!")
+	Self:_oBrwTotCli:SetColumns({_oColumn})
+
+	_oColumn := FWBrwColumn():New()
+	_oColumn:SetData({||_aCliRel[Self:_oBrwTotCli:nAt,DATA_TOTCLI]})
+	_oColumn:SetTitle("Total Pedido") 
+	_oColumn:SetSize(15)
+	_oColumn:SetDecimal(2)
+	_oColumn:SetPicture("@E 9999,999,999.99")
+	Self:_oBrwTotCli:SetColumns({_oColumn})
+
+	_oColumn := FWBrwColumn():New()
+	_oColumn:SetData({||_aCliRel[Self:_oBrwTotCli:nAt,DATA_TOTFAT]})
+	_oColumn:SetTitle("Total Faturamento") 
+	_oColumn:SetSize(15)
+	_oColumn:SetDecimal(2)
+	_oColumn:SetPicture("@E 9999,999,999.99")
+	Self:_oBrwTotCli:SetColumns({_oColumn})
+
+	Self:_oBrwTotCli:Activate()
+	Self:_oBrwTotCli:GoTop(.T.)
+	Self:_oBrwTotCli:Refresh(.T.)
 End Begin
  //aRotina := ArotBKP	
 Return Nil
@@ -415,103 +405,6 @@ Begin Sequence
 End Sequence
 Return Nil
 
-//Carrega Resumo Cliente
-Static Function ZFATF025Cli()
-Local _oColumn
-	// Cria uma coluna de status
-	// Adiciona as colunas do Browse
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aCliRel[_oBrTotCli:nAt,DATA_CLIENTE]})
-	_oColumn:SetTitle("Cliente" ) 
-	_oColumn:SetSize(Len(SA1->A1_COD))
-	_oBrTotCli:SetColumns({_oColumn})
-	
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aCliRel[_oBrTotCli:nAt,DATA_LOJA]})
-	_oColumn:SetTitle("Loja") 
-	_oColumn:SetSize(Len(SA1->A1_LOJA))
-	_oColumn:SetDecimal(2)
-	//oColumn:SetPicture("@!")
-	_oBrTotCli:SetColumns({_oColumn})
-
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aCliRel[_oBrTotCli:nAt,DATA_CNPJCPF]})
-	_oColumn:SetTitle("CNPJ/CPF") 
-	_oColumn:SetSize(Len(SA1->A1_CGC))
-	_oColumn:SetDecimal(0)
-	//_oColumn:SetPicture("@!")
-	_oBrTotCli:SetColumns({_oColumn})
-
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aCliRel[_oBrTotCli:nAt,DATA_NOMCLI]})
-	_oColumn:SetTitle("Nome Cliente") 
-	_oColumn:SetSize(Len(SA1->A1_NOME))
-	_oColumn:SetDecimal(0)
-	_oColumn:SetPicture("@!")
-	_oBrTotCli:SetColumns({_oColumn})
-
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aCliRel[_oBrTotCli:nAt,DATA_TOTCLI]})
-	_oColumn:SetTitle("Total Pedido") 
-	_oColumn:SetSize(15)
-	_oColumn:SetDecimal(2)
-	_oColumn:SetPicture("@E 9999,999,999.99")
-	_oBrTotCli:SetColumns({_oColumn})
-
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aCliRel[_oBrTotCli:nAt,DATA_TOTFAT]})
-	_oColumn:SetTitle("Total Faturamento") 
-	_oColumn:SetSize(15)
-	_oColumn:SetDecimal(2)
-	_oColumn:SetPicture("@E 9999,999,999.99")
-	_oBrTotCli:SetColumns({_oColumn})
-Return Nil
-
-
-
-//Carrega resumo de produto
-Static Function ZFATF025Prd()
-Local _oColumn
-
-	//INCLUIR COLUNAS
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aPrdRel[_oBrTotPrd:nAt,DATA_PRODUTO]})
-	_oColumn:SetTitle("Produto" ) 
-	_oColumn:SetSize(4)
-	_oBrTotPrd:SetColumns({_oColumn})
-	
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aPrdRel[_oBrTotPrd:nAt,DATA_DESCPRD]})
-	_oColumn:SetTitle("DescriÁ„o") 
-	_oColumn:SetSize(15)
-	_oColumn:SetDecimal(2)
-	//oColumn:SetPicture("@!")
-	_oBrTotPrd:SetColumns({_oColumn})
-
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aPrdRel[_oBrTotPrd:nAt,DATA_QTDEPRD]})
-	_oColumn:SetTitle("Saldo") 
-	_oColumn:SetSize(14)
-	_oColumn:SetDecimal(0)
-	_oColumn:SetPicture("@E 9,999,999")
-	_oBrTotPrd:SetColumns({_oColumn})
-
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aPrdRel[_oBrTotPrd:nAt,DATA_QTDEPREV]})
-	_oColumn:SetTitle("Liberado") 
-	_oColumn:SetSize(15)
-	_oColumn:SetDecimal(2)
-	_oColumn:SetPicture("@E 9,999,999")
-	_oBrTotPrd:SetColumns({_oColumn})
-
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aPrdRel[_oBrTotPrd:nAt,DATA_SALDOPRD]})
-	_oColumn:SetTitle("Faturado") 
-	_oColumn:SetSize(15)
-	_oColumn:SetDecimal(2)
-	_oColumn:SetPicture("@E 9,999,999")
-	_oBrTotPrd:SetColumns({_oColumn})
-Return Nil
 
 
 
@@ -591,18 +484,37 @@ Atualiza os pain√©is de pesquisa e de gr√°ficos (caso o mesmo exista).
 ---------------------------------------------------------------------------- */
 Method RefreshPrev(_lPainel) Class TelAcWindow
 	Default _lPainel := .F. 
+
 	//If !_lPainel 
-	Self:_OBrPlan:Refresh() 
+	//Self:_oBrowseZZN:Refresh() 
 	//Endif 	
+	/*
 	If Valtype(Self:oPanelVis) == "O"
 		Self:oPanelVis:Refresh(.T.)
 	Endif 
 	If Valtype(Self:oPanelBrowse) == "O"
 		Self:oPanelBrowse:Refresh(.T.)
 	Endif
-	If ValType(_oBrTotCli) == "O" 
-		_oBrTotCli:Refresh(.T.)
+	*/
+	/*
+	If ValType(Self:_oBrowseZZP) == "O" 
+		Self:_oBrowseZZP:Refresh(.T.)
 	Endif
+	*/
+
+	If ValType(Self:_oBrowseZZN) == "O" 
+		Self:_oBrowseZZN:Refresh()
+	Endif 
+
+	If ValType(Self:_oBrowseZZP) == "O" 
+		Self:_oBrowseZZP:Refresh()
+	Endif
+	
+	If ValType(Self:_oBrwTotCli) == "O" 
+		Self:_oBrwTotCli:SetArray(_aCliRel)
+		Self:_oBrwTotCli:Refresh(.T.)
+	Endif
+	
 Return Nil
 
 /* ----------------------------------------------------------------------------
@@ -694,89 +606,6 @@ End Sequence
 Return Nil
 
 
-
-//Popular Tabrla Tempor√°ria
-//============================================================================
-Static Function LoadPlan()
-//============================================================================
-Local _aStru  	:= {}
-Local _lRet   	:= .T.
-Local _oTable
-Local _cTable
-Local _nPos
-Local _cQuery
-
-
-Begin Sequence
- 	SB1->(DbSetOrder(1))
-  	If ValType(_aColuna) <> "A" .or. Len(_aColuna) == 0
-  		_aColuna := {}
-  		Aadd(_aColuna, {"Filial"		,"TRB_FILIAL"	,"C",Len(ZZP->ZZP_FILIAL)	,00	,"@!" })
-  		Aadd(_aColuna, {"Previsao"		,"TRB_PREVIS"	,"C",Len(ZZP->ZZP_CODPRV)	,00	,"@!" })
-  		Aadd(_aColuna, {"Inclusao"		,"TRB_PREVDI"	,"D",08						,00	,"@D" })
-  		Aadd(_aColuna, {"Status"		,"TRB_STATUS"	,"C",Len(ZZP->ZZP_STATUS)	,00	,"@!" })
-  	Endif	
-	//dados para tabela tempor√°ria
-	//reorganizar posis rsta colocado como acols de browse
-	For _nPos := 1 To Len(_aColuna)
-		Aadd(_aStru, 	{_aColuna[_nPos,2],; //nome do campo
-						_aColuna[_nPos,3],;	//tipo de compo
-						_aColuna[_nPos,4],;	//tamanho do campo						
-						_aColuna[_nPos,5],;	//decimal
-						_aColuna[_nPos,1],;	//Descri√ß√£o
-						_aColuna[_nPos,6];	//pict
-						})												  
-	Next
-
-	If !Empty(_cAliasPlan) .and. Select(_cAliasPlan) <> 0
-		(_cAliasPlan)->(__dbZap())
-		_cTable := _cTableZZP 
-		//Ferase(_cAliasPlan+GetDBExtension())
-	Else 	
-   		_cTable := GetNextAlias()
-   		_oTable := FWTemporaryTable():New()
-   		_oTable:SetFields(_aStru)
-   		_oTable:AddIndex("INDEX1", {"TRB_FILIAL","TRB_PREVIS"} )
-   		_oTable:Create()
-   		_cAliasPlan := _oTable:GetAlias()
-   		_cTable 	:= _oTable:GetRealName()
-		_cTableZZP	:= _cTable
-	Endif 
-	_cQuery := " INSERT INTO "+_cTable +CRLF
-    _cQuery += " ( "
-    For _nPos := 01 To Len(_aStru)
-        _cQuery += _aStru[_nPos,1]
-   	    _cQuery += ", "
-    Next _nPos
-    _cQuery += " D_E_L_E_T_, R_E_C_N_O_ "   //campos que n„o aparecem no browse e devem ser preenchidos
-    _cQuery += " ) "+ CRLF
-
-    _cQuery += " SELECT   ZZP.ZZP_FILIAL "								+ CRLF                    
-    _cQuery += "        , ZZP.ZZP_CODPRV "								+ CRLF                      
-    _cQuery += "        , MAX(ZZP.ZZP_DTINC) AS ZZP_DTINC "				+ CRLF                      
-    _cQuery += "     	, ZZP.ZZP_STATUS "								+ CRLF
-    _cQuery += "        ,' '                 AS  D_E_L_E_T_ "			+ CRLF       
-    _cQuery += "        , ROW_NUMBER() OVER (ORDER BY ZZP_CODPRV)  AS  R_E_C_N_O "			+ CRLF        
-    _cQuery += " FROM "+RetSqlName("ZZP")+" ZZP "                    	+ CRLF                    
-    _cQuery += " WHERE ZZP.D_E_L_E_T_ = '  ' "						  	+ CRLF                   
-    _cQuery += "    AND ZZP.ZZP_FILIAL  = '"+FwXFilial("ZZP")+"' " 	  	+ CRLF              
-    _cQuery += " GROUP BY ZZP.ZZP_FILIAL, ZZP.ZZP_CODPRV, ZZP.ZZP_STATUS "     + CRLF
-    _cQuery += " ORDER BY ZZP.ZZP_CODPRV "                              + CRLF
-
-	nStatus := TCSqlExec(_cQuery)
-    If (nStatus < 0)
-        MsgStop("TCSQLError() " + TCSQLError(), "Registros CabeÁalho")
-        Break    
-    Endif
-
-    (_cAliasPlan)->(DbGoTop())
-	//If (_cAliasPlan)->(Eof())
-	//Endif
-
-End Sequence
-Return _lRet  
-                       
-
 /*/{Protheus.doc} ZFAT025Total
 //Trazer totais dos clientes por previsao
 @author DAC denilso
@@ -790,14 +619,13 @@ Static Function ZFAT025Total(_cFilPrev, _cCodPrev,_lCarrega)
 //Local _cWhere		:= ""
 Local _cAliasPesq	:= GetNextAlias()
 Local _aRetCli		:= {} 
-Local _aRetPrd    	:= {}
 Local _lRet 		:= .T.
 
 Default _lCarrega	:= .T.
 
 Begin Sequence
+	_aCliRel := {}
 	If ! _lCarrega
-		_aCliRel := {}
 		_lRet := .F. 
 		Break 
 	Endif		
@@ -836,47 +664,6 @@ Begin Sequence
 			(_cAliasPesq)->(DbSkip())
 		EndDo
 	Endif	
-
-	/*
-	//Preparar a pesquisa por Produto
-	If Select((_cAliasPesq)) <> 0
-		(_cAliasPesq)->(DbCloseArea())
-	Endif 
-
-	// n„o gerar estava ocorrenco erro em Folder
-	 BeginSq l Alias _cAliasPesq //Define o nome do alias tempor√°rio 
-		SELECT  ZZP.ZZP_CODPRD
-				, SB1.B1_DESC 
-				, ISNULL(SUM(ZZP.ZZP_QTEPED),0) TOTAL_PED
-				, ISNULL(SUM(ZZP.ZZP_QTELIB),0) TOTAL_LIB
-				, ISNULL(SUM(CASE WHEN ZZP.ZZP_QTEFAT > 0 THEN ZZP.ZZP_QTEFAT ELSE 0 END),0) TOTAL_FAT
-		FROM %Table:ZZP% ZZP		
-		LEFT JOIN %Table:SB1% SB1 
-			ON  SB1.%notDel%
-			AND SB1.B1_FILIAL 	= %xFilial:SB1%
-			AND SB1.B1_COD    	= ZZP.ZZP_CODPRD
-		WHERE 	ZZP.%notDel%
-			AND ZZP.ZZP_FILIAL  = %Exp:_cFilPrev%
-			AND	ZZP.ZZP_CODPRV  = %Exp:_cCodPrev%
-     	GROUP BY ZZP.ZZP_CODPRD, SB1.B1_DESC 
-		ORDER BY ZZP.ZZP_CODPRV 
-	EndSql
-	//			AND ZZP.ZZP_FILIAL  = %xFilial:ZZP%
-	If (_cAliasPesq)->(!Eof()) 
-		//Verificar os itens dos KITs para saber se tem algun zerado caso tenha n√£o ira utilizar o kit
-		While (_cAliasPesq)->(!Eof())
-			Aadd(_aRetPrd,{	;
-							(_cAliasPesq)->ZZP_CODPRD,;
-							(_cAliasPesq)->B1_DESC,;
-							(_cAliasPesq)->TOTAL_PED,;
-							(_cAliasPesq)->TOTAL_LIB,;
-							(_cAliasPesq)->TOTAL_FAT ;
-							})
-			(_cAliasPesq)->(DbSkip())
-		EndDo
-	Endif	
-	*/
-
 End Sequence
 If Len(_aRetCli) == 0
 	_aRetCli	:= {{	Space(Len(ZZP->ZZP_CODCLI)),;
@@ -887,21 +674,14 @@ If Len(_aRetCli) == 0
 						0;
 					}}
 EndIf
-If Len(_aRetPrd) == 0
-	Aadd(_aRetPrd,{	;
-					Space(Len(ZZP->ZZP_CODPRD)),;
-					Space(Len(SB1->B1_DESC)),;
-					0,;
-					0,;
-					0 ;
-					})
-Endif
 
 If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif 
-Return {_aRetCli, _aRetPrd}
+_aCliRel	:= _aRetCli
+
+Return _aRetCli
 
 
 
@@ -910,47 +690,45 @@ Method MenuPrev(_nOpc) Class TelAcWindow
 Local _cFilPrev 	
 Local _cCodPrev
 
-	_cFilPrev := (_cAliasPlan)->TRB_FILIAL
-	_cCodPrev := (_cAliasPlan)->TRB_PREVIS
+	_cFilPrev := ZZN->ZZN_FILIAL
+	_cCodPrev := ZZN->ZZN_CODPRV
 
 	//somente liberado para visualizar e ou incluir 
-	If (_nOpc < 2 .Or. _nOpc > 3) .And. (_cAliasPlan)->TRB_STATUS $ "F"
+	//If (_nOpc < 2 .Or. _nOpc > 3) .And. ZZN->ZZN_STATUS $ "F"
+	If  _nOpc > 3 .And. ZZN->ZZN_STATUS $ "F"
         MsgStop("Previsao jafaturada", "PREVISAO")
 		Return Nil
 	Endif 
-	If (_nOpc < 1 .Or. _nOpc > 3) .And. (_cAliasPlan)->TRB_STATUS $ "L"
+	If (_nOpc < 1 .Or. _nOpc > 3) .And. ZZN->ZZN_STATUS $ "L"
         MsgStop("Previsao liberada para faturamento", "PREVISAO")
 		Return Nil
 	Endif 
 	//somente liberado para visualizar e ou incluir 
-	If (_nOpc < 2 .Or. _nOpc > 3) .And. (_cAliasPlan)->TRB_STATUS == "C"
+	If (_nOpc < 2 .Or. _nOpc > 3) .And. ZZN->ZZN_STATUS == "C"
         MsgStop("Previsao cancelada", "PREVISAO")
 		Return Nil
 	Endif 
 	//Se for inclus„o
 	If _nOpc ==  3
-		If ZFATF025Inclui()
-			LoadPlan()  //apÛs incluir refazer planilha
-		Endif
-		Self:RefreshPrev(.T.)
+		ZFATF025Inclui()
+		//If ZFATF025Inclui()
+		//	_oBrowseZZN:Refresh()
+		//	_oBrowseZZP:Refresh()
+		//Endif
 	ElseIf _nOpc ==  1
 		U_XZFAT9FT(_cFilPrev, _cCodPrev)
 	Else	
 		FwMsgRun(,{ |_oSay| U_ZFATF026(_nOpc, _cFilPrev, _cCodPrev , @_oSay ) }, "Selecionando dados", "Aguarde...")  
-		If _nOpc ==  5
-			LoadPlan()  //apÛs incluir refazer planilha
-		Endif
 	Endif
-	Self:RefreshPrev(If(_nOpc == 5 ,.T.,))  //Envio informaÁ„o para atualizar o objeto e posicionar no inicio
+	Self:RefreshPrev(.T.)
+
 Return Nil
 
 // Vaidar quando movimentado cursor e ajustar totalizaÁıes
-Static Function ZFT25Change()
+Method ZFT25Change() Class TelAcWindow
 Local _aRelac
-	If ValType(_oBrTotCli) == "O"  //Somente quando estiver ativo tela de totalizaÁ„o
-		_aRelac 	:= ZFAT025Total((_cAliasPlan)->TRB_FILIAL, (_cAliasPlan)->TRB_PREVIS,  /*_lCarrega*/)
-		_aCliRel	:= Aclone(_aRelac[1])
-		_aPrdRel	:= Aclone(_aRelac[2])
+	If ValType(Self:_oBrwTotCli) == "O"  //Somente quando estiver ativo tela de totalizaÁ„o
+		_aRelac	:= ZFAT025Total(ZZN->ZZN_FILIAL, ZZN->ZZN_CODPRV,  /*_lCarrega*/)
 	Endif
 Return .T.
 
@@ -994,7 +772,7 @@ Begin Sequence
 			EndIf
 		Next		
 		If !_lRet
-			MSGINFO("J· existe um processamento em execuÁ„o rotina para gerar Previsao, aguarde!", "[ZFATF025] - AtenÁ„o" )
+		    ApMsgStop("J· existe um processamento em execuÁ„o rotina para gerar Previsao, aguarde!", "[ZFATF025]Previs„o Faturamento")
 			Break
 		EndIf
 	EndIf
@@ -1122,6 +900,19 @@ Begin Sequence
 	_oSay:SetText("Aguarde Montando Previs„o ... Hora: "+Time() )
 	ProcessMessage()
 	Begin Transaction
+		If !RecLock("ZZN",.T.) 
+			_lRet := .F.
+			Disarmtransaction()
+			Return _lRet			 
+		Endif
+		//Gravar Previs„o CabeÁalho
+		ZZN->ZZN_FILIAL := FwXFilial("ZZN") 
+		ZZN->ZZN_CODPRV := _cNumPrev
+		ZZN->ZZN_STATUS := "A"
+		ZZN->ZZN_DTINC  := Date()
+		ZZN->ZZN_USUINC := RetCodUsr()
+		ZZN->(MsUnlock())
+		//Gravar Previs„o Itens
     	While (_cAliasPesq)->(!Eof()) 
 			_cCliente 	:= (_cAliasPesq)->C5_CLIENTE
 			_cLoja    	:= (_cAliasPesq)->C5_LOJACLI
@@ -1199,8 +990,9 @@ If Select(_cAliasPesq) <> 0
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif
 If _lRet
-	LoadPlan()  //apÛs incluir refazer planilha
+    ApMsgStop("Gerada previsao "+_cNumPrev, "Previs„o Faturamento")
 Endif 
+
 Return _lRet
 
 
@@ -1280,9 +1072,3 @@ Default _cLocal 	:= ""
 	Endif
 Return _cQuery
 
-
-
-//FunÁ„o Respons·vel por atualizar planilha quando chamada de outra funcionalidade
-User Function XZFAT25LP()
-	LoadPlan()
-Return Nil	
