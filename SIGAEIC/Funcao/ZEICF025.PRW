@@ -511,10 +511,13 @@ User Function getToke1()
     Local aHeader    As Array     // request header
     Local jBody      As Character // corpo
 
-    cBaseURL   := SuperGetMV("CMV_EIC002",,"https://apihomolog.asiashipping.com.br/index.html/account/token/" )  //"https://api.asiashipping.com.br/account/token/"       //"https://api.asiashipping.com.br/account/token/"   // type here your base URL
+    cBaseURL   := SuperGetMV("CMV_EIC002",,"https://apihomolog.asiashipping.com.br/index.html" )  //"https://api.asiashipping.com.br/account/token/"       //"https://api.asiashipping.com.br/account/token/"   // type here your base URL
     cGrantType := SuperGetMV("CMV_EIC003",,"password" )     //type here grant type to request "password"   
 
-    cPath      := "?grant_type=" + cGrantType + "&username=" + cUserName + "&password=" + cPassword // type here token endpoint
+    cPath      := "/account/token?grant_type=" + cGrantType + "&username=" + cUserName + "&password=" + cPassword // type here token endpoint
+
+     //cPath := "/account/token?grant_type=" + "Refresh token" + "&username=" + cUserName + "&password=" + cPassword // type here token endpoint
+    
     aHeader    := {} 
 	jBody      := ''
 
