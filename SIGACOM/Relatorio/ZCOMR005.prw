@@ -3,33 +3,33 @@
 
 /*
 =====================================================================================
-Programa.:              ZCOMR005
-Autor....:              CAOA - Evandro A Mariano dos Santos 
-Data.....:              23/06/2022
-Descricao / Objetivo:   Relatorio de Conferencia
+Programa.:              ZFISR018
+Autor....:              CAOA - A>Carlos
+Data.....:              06/05/2024
+Descricao / Objetivo:   Relatório de Cabeçalho NF de Entrada
 Doc. Origem:            
 Solicitante:            
 Uso......:              
 Obs......:
 =====================================================================================
 */
-User Function ZCOMR005()
+User Function ZFISR018()
     
     Local oReport 
     Local oSection
 
     Private cAliasTMP := GetNextAlias()
 
-	oReport:= TReport():New("ZCOMR005",;
-                            "Entradas Canc.",;
-                            Padr("ZCOMR005",10),;
+	oReport:= TReport():New("ZFISR018",;
+                            "Entradas",;
+                            Padr("ZFISR018",10),;
                             {|oReport|  ReportPrint(oReport)},;
-                            "Este relatorio realiza a conferencia de Recebimento RgLog")
+                            "Este relatorio apresenta o cabeçalho das NFs de Entradas")
 	oReport:HideParamPage()   // Desabilita a impressao da pagina de parametros.
-    oReport:HideHeader() //--Define que não será impresso o cabeçalho padrão da página
-    oReport:HideFooter() //--Define que não será impresso o rodapé padrão da página
-    oReport:SetDevice(4) //--Define o tipo de impressão selecionado. Opções: 1-Arquivo,2-Impressora,3-Email,4-Planilha, 5-Html e 6-PDF
-    oReport:SetPreview(.T.) //--Define se será apresentada a visualização do relatório antes da impressão física
+    oReport:HideHeader()      //--Define que não será impresso o cabeçalho padrão da página
+    oReport:HideFooter()      //--Define que não será impresso o rodapé padrão da página
+    oReport:SetDevice(4)      //--Define o tipo de impressão selecionado. Opções: 1-Arquivo,2-Impressora,3-Email,4-Planilha, 5-Html e 6-PDF
+    oReport:SetPreview(.T.)   //--Define se será apresentada a visualização do relatório antes da impressão física
     oReport:SetEnvironment(2) //--Define o ambiente para impressão 	Ambiente: 1-Server e 2-Client
     //oReport:SetEdit(.T.) 
 	
@@ -38,20 +38,45 @@ User Function ZCOMR005()
 	
 	oSection := TRSection():New(oReport    ,"Colunas"    ,{cAliasTMP}) 
     
-    TRCell():New( oSection  ,"F1_TIPO"	        ,cAliasTMP  ,'Tipo da Nota'	                ,PesqPict("SF1","F1_TIPO")      ,TamSx3("F1_TIPO")[1] 	    ,/*lPixel*/,{|| (cAliasTMP)->F1_TIPO            })
-    TRCell():New( oSection  ,"F1_DTDIGIT"	    ,cAliasTMP  ,'Data de Digitação'	        ,                               ,TamSx3("F1_DTDIGIT")[1] 	,/*lPixel*/,{|| SToD((cAliasTMP)->F1_DTDIGIT)   })
-    TRCell():New( oSection  ,"F1_EMISSAO"	    ,cAliasTMP  ,'Data de Emissão'  	        ,                               ,TamSx3("F1_EMISSAO")[1] 	,/*lPixel*/,{|| SToD((cAliasTMP)->F1_EMISSAO)   })
-    TRCell():New( oSection  ,"F1_DOC"	        ,cAliasTMP  ,'Nota Fiscal'  	            ,PesqPict("SF1","F1_DOC")       ,TamSx3("F1_DOC")[1] 	    ,/*lPixel*/,{|| (cAliasTMP)->F1_DOC             })
-    TRCell():New( oSection  ,"F1_SERIE"	        ,cAliasTMP  ,'Serie'          	            ,PesqPict("SF1","F1_SERIE")     ,TamSx3("F1_SERIE")[1] 	    ,/*lPixel*/,{|| (cAliasTMP)->F1_SERIE           })
-    TRCell():New( oSection  ,"F1_FORNECE"       ,cAliasTMP  ,'Cod. Fornecedor' 	            ,PesqPict("SF1","F1_FORNECE")   ,TamSx3("F1_FORNECE")[1]    ,/*lPixel*/,{|| (cAliasTMP)->F1_FORNECE         })
-    TRCell():New( oSection  ,"F1_LOJA"          ,cAliasTMP  ,'Loja'         	            ,PesqPict("SF1","F1_LOJA")      ,TamSx3("F1_LOJA")[1]       ,/*lPixel*/,{|| (cAliasTMP)->F1_LOJA            })
-    TRCell():New( oSection  ,"A2_NREDUZ"        ,cAliasTMP  ,'Razão Social'    	            ,PesqPict("SA2","A2_NREDUZ")    ,TamSx3("A2_NREDUZ")[1]     ,/*lPixel*/,{|| (cAliasTMP)->A2_NREDUZ          })
-    TRCell():New( oSection  ,"D1_COD"           ,cAliasTMP  ,'Produto'    	                ,PesqPict("SD1","D1_COD")       ,TamSx3("D1_COD")[1]        ,/*lPixel*/,{|| (cAliasTMP)->D1_COD             })
-    TRCell():New( oSection  ,"B1_DESC"          ,cAliasTMP  ,'Descrição'    	            ,PesqPict("SB1","B1_DESC")      ,TamSx3("B1_DESC")[1]       ,/*lPixel*/,{|| (cAliasTMP)->B1_DESC            })
-    TRCell():New( oSection  ,"D1_QUANT"         ,cAliasTMP  ,'Qtde NFiscal'    	            ,PesqPict("SD1","D1_QUANT")     ,TamSx3("D1_QUANT")[1]      ,/*lPixel*/,{|| (cAliasTMP)->D1_QUANT           })
-    TRCell():New( oSection  ,"ZD1_QTCONF"       ,cAliasTMP  ,'Qtde Conferida'  	            ,PesqPict("SD1","D1_QUANT")     ,TamSx3("ZD1_QTCONF")[1]    ,/*lPixel*/,{|| (cAliasTMP)->ZD1_QTCONF         })    
-    TRCell():New( oSection  ,"ZD1_SLDIT"        ,cAliasTMP  ,'Saldo a Conferir'	            ,PesqPict("SD1","D1_QUANT")     ,TamSx3("ZD1_SLDIT")[1]     ,/*lPixel*/,{|| (cAliasTMP)->ZD1_SLDIT          })    
-    
+    TRCell():New( oSection  ,"F3_NFISCAL"	,cAliasTMP  ,'Tipo da Nota'	                ,PesqPict("SF1","F1_TIPO")      ,TamSx3("F1_TIPO")[1] 	    ,/*lPixel*/,{|| (cAliasTMP)->F1_TIPO            })
+    TRCell():New( oSection  ,"F3_SERIE"	    ,cAliasTMP  ,'Data de Digitação'	        ,                               ,TamSx3("F1_DTDIGIT")[1] 	,/*lPixel*/,{|| SToD((cAliasTMP)->F1_DTDIGIT)   })
+    TRCell():New( oSection  ,"F3_ESPECIE"	,cAliasTMP  ,'Data de Emissão'  	        ,                               ,TamSx3("F1_EMISSAO")[1] 	,/*lPixel*/,{|| SToD((cAliasTMP)->F1_EMISSAO)   })
+    TRCell():New( oSection  ,"F3_CFO"	    ,cAliasTMP  ,'Nota Fiscal'  	            ,PesqPict("SF1","F1_DOC")       ,TamSx3("F1_DOC")[1] 	    ,/*lPixel*/,{|| (cAliasTMP)->F1_DOC             })
+    TRCell():New( oSection  ,"FT_TIPOMOV"	,cAliasTMP  ,'Serie'          	            ,PesqPict("SF1","F1_SERIE")     ,TamSx3("F1_SERIE")[1] 	    ,/*lPixel*/,{|| (cAliasTMP)->F1_SERIE           })
+    TRCell():New( oSection  ,"A2_COD"       ,cAliasTMP  ,'Qtde Conferida'  	            ,PesqPict("SD1","D1_QUANT")     ,TamSx3("ZD1_QTCONF")[1]    ,/*lPixel*/,{|| (cAliasTMP)->ZD1_QTCONF         })    
+    TRCell():New( oSection  ,"A2_LOJA"      ,cAliasTMP  ,'Saldo a Conferir'	            ,PesqPict("SD1","D1_QUANT")     ,TamSx3("ZD1_SLDIT")[1]     ,/*lPixel*/,{|| (cAliasTMP)->ZD1_SLDIT          })    
+    TRCell():New( oSection  ,"A2_NOME"      ,cAliasTMP  ,'Saldo a Conferir'	            ,PesqPict("SD1","D1_QUANT")     ,TamSx3("ZD1_SLDIT")[1]     ,/*lPixel*/,{|| (cAliasTMP)->ZD1_SLDIT          })    
+    TRCell():New( oSection  ,"A2_EST"       ,cAliasTMP  ,'Saldo a Conferir'	            ,PesqPict("SD1","D1_QUANT")     ,TamSx3("ZD1_SLDIT")[1]     ,/*lPixel*/,{|| (cAliasTMP)->ZD1_SLDIT          })    
+    TRCell():New( oSection  ,"A2_CGC"       ,cAliasTMP  ,'Cod. Fornecedor' 	            ,PesqPict("SF1","F1_FORNECE")   ,TamSx3("F1_FORNECE")[1]    ,/*lPixel*/,{|| (cAliasTMP)->F1_FORNECE         })
+    TRCell():New( oSection  ,"A2_INSCR"     ,cAliasTMP  ,'Loja'         	            ,PesqPict("SF1","F1_LOJA")      ,TamSx3("F1_LOJA")[1]       ,/*lPixel*/,{|| (cAliasTMP)->F1_LOJA            })
+    TRCell():New( oSection  ,"A2_NREDUZ"    ,cAliasTMP  ,'Razão Social'    	            ,PesqPict("SA2","A2_NREDUZ")    ,TamSx3("A2_NREDUZ")[1]     ,/*lPixel*/,{|| (cAliasTMP)->A2_NREDUZ          })
+    TRCell():New( oSection  ,"C6_NUM"       ,cAliasTMP  ,'Produto'    	                ,PesqPict("SD1","D1_COD")       ,TamSx3("D1_COD")[1]        ,/*lPixel*/,{|| (cAliasTMP)->D1_COD             })
+    TRCell():New( oSection  ,"F3_EMISSAO"   ,cAliasTMP  ,'Descrição'    	            ,PesqPict("SB1","B1_DESC")      ,TamSx3("B1_DESC")[1]       ,/*lPixel*/,{|| (cAliasTMP)->B1_DESC            })
+    TRCell():New( oSection  ,"F3_ENTRADA"   ,cAliasTMP  ,'Qtde NFiscal'    	            ,PesqPict("SD1","D1_QUANT")     ,TamSx3("D1_QUANT")[1]      ,/*lPixel*/,{|| (cAliasTMP)->D1_QUANT           })
+    TRCell():New( oSection  ,"F3_VALCONT"   ,cAliasTMP  ,'Qtde Conferida'  	            ,PesqPict("SD1","D1_QUANT")     ,TamSx3("ZD1_QTCONF")[1]    ,/*lPixel*/,{|| (cAliasTMP)->ZD1_QTCONF         })    
+    TRCell():New( oSection  ,"F3_BASEICM"   ,cAliasTMP  ,'Saldo a Conferir'	            ,PesqPict("SD1","D1_QUANT")     ,TamSx3("ZD1_SLDIT")[1]     ,/*lPixel*/,{|| (cAliasTMP)->ZD1_SLDIT          })    
+    TRCell():New( oSection  ,"F3_VALICM"    ,cAliasTMP  ,'Cod. Fornecedor' 	            ,PesqPict("SF1","F1_FORNECE")   ,TamSx3("F1_FORNECE")[1]    ,/*lPixel*/,{|| (cAliasTMP)->F1_FORNECE         })
+    TRCell():New( oSection  ,"F3_ISENICM"   ,cAliasTMP  ,'Loja'         	            ,PesqPict("SF1","F1_LOJA")      ,TamSx3("F1_LOJA")[1]       ,/*lPixel*/,{|| (cAliasTMP)->F1_LOJA            })
+    TRCell():New( oSection  ,"F3_OUTRICM"   ,cAliasTMP  ,'Razão Social'    	            ,PesqPict("SA2","A2_NREDUZ")    ,TamSx3("A2_NREDUZ")[1]     ,/*lPixel*/,{|| (cAliasTMP)->A2_NREDUZ          })
+    TRCell():New( oSection  ,"F3_BASERET"   ,cAliasTMP  ,'Produto'    	                ,PesqPict("SD1","D1_COD")       ,TamSx3("D1_COD")[1]        ,/*lPixel*/,{|| (cAliasTMP)->D1_COD             })
+    TRCell():New( oSection  ,"F3_ICMSRET"   ,cAliasTMP  ,'Descrição'    	            ,PesqPict("SB1","B1_DESC")      ,TamSx3("B1_DESC")[1]       ,/*lPixel*/,{|| (cAliasTMP)->B1_DESC            })
+    TRCell():New( oSection  ,"F3_BASEIPI"   ,cAliasTMP  ,'Qtde NFiscal'    	            ,PesqPict("SD1","D1_QUANT")     ,TamSx3("D1_QUANT")[1]      ,/*lPixel*/,{|| (cAliasTMP)->D1_QUANT           })
+    TRCell():New( oSection  ,"F3_VALIPI"    ,cAliasTMP  ,'Qtde Conferida'  	            ,PesqPict("SD1","D1_QUANT")     ,TamSx3("ZD1_QTCONF")[1]    ,/*lPixel*/,{|| (cAliasTMP)->ZD1_QTCONF         })    
+    TRCell():New( oSection  ,"F3_ISENIPI"   ,cAliasTMP  ,'Cod. Fornecedor' 	            ,PesqPict("SF1","F1_FORNECE")   ,TamSx3("F1_FORNECE")[1]    ,/*lPixel*/,{|| (cAliasTMP)->F1_FORNECE         })
+    TRCell():New( oSection  ,"F3_OUTRIPI"   ,cAliasTMP  ,'Loja'         	            ,PesqPict("SF1","F1_LOJA")      ,TamSx3("F1_LOJA")[1]       ,/*lPixel*/,{|| (cAliasTMP)->F1_LOJA            })
+    TRCell():New( oSection  ,"F3_DESPESA"   ,cAliasTMP  ,'Razão Social'    	            ,PesqPict("SA2","A2_NREDUZ")    ,TamSx3("A2_NREDUZ")[1]     ,/*lPixel*/,{|| (cAliasTMP)->A2_NREDUZ          })
+    TRCell():New( oSection  ,"F3_VALOBSE"   ,cAliasTMP  ,'Produto'    	                ,PesqPict("SD1","D1_COD")       ,TamSx3("D1_COD")[1]        ,/*lPixel*/,{|| (cAliasTMP)->D1_COD             })
+    TRCell():New( oSection  ,"F3_BASIMP6"   ,cAliasTMP  ,'Descrição'    	            ,PesqPict("SB1","B1_DESC")      ,TamSx3("B1_DESC")[1]       ,/*lPixel*/,{|| (cAliasTMP)->B1_DESC            })
+    TRCell():New( oSection  ,"F3_VALIMP6"   ,cAliasTMP  ,'Qtde NFiscal'    	            ,PesqPict("SD1","D1_QUANT")     ,TamSx3("D1_QUANT")[1]      ,/*lPixel*/,{|| (cAliasTMP)->D1_QUANT           })
+    TRCell():New( oSection  ,"F3_BASIMP5"   ,cAliasTMP  ,'Qtde Conferida'  	            ,PesqPict("SD1","D1_QUANT")     ,TamSx3("ZD1_QTCONF")[1]    ,/*lPixel*/,{|| (cAliasTMP)->ZD1_QTCONF         })    
+    TRCell():New( oSection  ,"F3_VALIMP5"   ,cAliasTMP  ,'Cod. Fornecedor' 	            ,PesqPict("SF1","F1_FORNECE")   ,TamSx3("F1_FORNECE")[1]    ,/*lPixel*/,{|| (cAliasTMP)->F1_FORNECE         })
+    TRCell():New( oSection  ,"F3_CHVNFE"    ,cAliasTMP  ,'Loja'         	            ,PesqPict("SF1","F1_LOJA")      ,TamSx3("F1_LOJA")[1]       ,/*lPixel*/,{|| (cAliasTMP)->F1_LOJA            })
+    TRCell():New( oSection  ,"F3_BASEPS3"   ,cAliasTMP  ,'Razão Social'    	            ,PesqPict("SA2","A2_NREDUZ")    ,TamSx3("A2_NREDUZ")[1]     ,/*lPixel*/,{|| (cAliasTMP)->A2_NREDUZ          })
+    TRCell():New( oSection  ,"F3_VALPS3"    ,cAliasTMP  ,'Produto'    	                ,PesqPict("SD1","D1_COD")       ,TamSx3("D1_COD")[1]        ,/*lPixel*/,{|| (cAliasTMP)->D1_COD             })
+    TRCell():New( oSection  ,"F3_BASECF3"   ,cAliasTMP  ,'Descrição'    	            ,PesqPict("SB1","B1_DESC")      ,TamSx3("B1_DESC")[1]       ,/*lPixel*/,{|| (cAliasTMP)->B1_DESC            })
+    TRCell():New( oSection  ,"F3_VALCF3"    ,cAliasTMP  ,'Qtde NFiscal'    	            ,PesqPict("SD1","D1_QUANT")     ,TamSx3("D1_QUANT")[1]      ,/*lPixel*/,{|| (cAliasTMP)->D1_QUANT           })
+    TRCell():New( oSection  ,"F3_OBSERV"    ,cAliasTMP  ,'Qtde Conferida'  	            ,PesqPict("SD1","D1_QUANT")     ,TamSx3("ZD1_QTCONF")[1]    ,/*lPixel*/,{|| (cAliasTMP)->ZD1_QTCONF         })    
+ 
     oReport:PrintDialog()
 
 Return
