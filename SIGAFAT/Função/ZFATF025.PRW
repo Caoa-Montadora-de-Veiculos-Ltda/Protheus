@@ -279,7 +279,6 @@ Cria os painÃ©is centrais, de acordo com o gestor utilizado: Contas a Receber,
 Contas a Pagar ou Tesouraria:
 ---------------------------------------------------------------------------- */
 Method CreateCenterColumn() Class TelAcWindow
-//Local _aRelac
 Local _oRelac
 
 Begin Sequence
@@ -314,7 +313,7 @@ Begin Sequence
 	_oRelac:Activate()
 
 	// Define o Browse Relacionados carrega _aCliRel
-	_aRelac := ZFAT025Total( ZZN->ZZN_FILIAL, ZZN->ZZN_CODPRV,  /*_lCarrega*/)
+	ZFAT025Total( ZZN->ZZN_FILIAL, ZZN->ZZN_CODPRV,  /*_lCarrega*/)
 	Self:_oBrwTotCli := FWBrowse():New()
 	Self:_oBrwTotCli:SetDataArray(.T.)
 	Self:_oBrwTotCli:SetArray(_aCliRel)
@@ -680,7 +679,6 @@ If Select((_cAliasPesq)) <> 0
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif 
 _aCliRel	:= _aRetCli
-
 Return _aRetCli
 
 
@@ -689,20 +687,23 @@ Return _aRetCli
 Method MenuPrev(_nOpc) Class TelAcWindow
 Local _cFilPrev 	
 Local _cCodPrev
+Local _nRegZZN
 
 	_cFilPrev := ZZN->ZZN_FILIAL
 	_cCodPrev := ZZN->ZZN_CODPRV
 
 	//somente liberado para visualizar e ou incluir 
 	//If (_nOpc < 2 .Or. _nOpc > 3) .And. ZZN->ZZN_STATUS $ "F"
-	If  _nOpc > 3 .And. ZZN->ZZN_STATUS $ "F"
+	If  (_nOpc < 2 .Or. _nOpc > 3) .And. ZZN->ZZN_STATUS $ "F"
         MsgStop("Previsao jafaturada", "PREVISAO")
 		Return Nil
-	Endif 
-	If (_nOpc < 1 .Or. _nOpc > 3) .And. ZZN->ZZN_STATUS $ "L"
-        MsgStop("Previsao liberada para faturamento", "PREVISAO")
+	Endif
+	 
+	If _nOpc == 1 .And. !ZZN->ZZN_STATUS $ "L"
+        MsgStop("Previsao tem que possuir status liberada para faturamento", "PREVISAO")
 		Return Nil
 	Endif 
+	
 	//somente liberado para visualizar e ou incluir 
 	If (_nOpc < 2 .Or. _nOpc > 3) .And. ZZN->ZZN_STATUS == "C"
         MsgStop("Previsao cancelada", "PREVISAO")
@@ -710,7 +711,19 @@ Local _cCodPrev
 	Endif 
 	//Se for inclusão
 	If _nOpc ==  3
-		ZFATF025Inclui()
+		_nRegZZN := 0
+		ZFATF025Inclui(@_nRegZZN)
+		//If ValType(_nRegZZN) == "N"
+		//	ZZN->(DbGoto(_nRegZZN))
+		//	_cFilPrev := ZZN->ZZN_FILIAL
+		//	_cCodPrev := ZZN->ZZN_CODPRV
+		//Endif	
+		//_nRegZZN := ZZN->(Recno())
+		Self:_oBrowseZZN:GoTop(.T.)
+		Self:_oBrowseZZN:Refresh(.T.)
+		//ZZN->(DbSetOrder(1))
+		//ZZN->(DbSeek(_cFilPrev+_cCodPrev))
+		ZFAT025Total( ZZN->ZZN_FILIAL, ZZN->ZZN_CODPRV,  /*_lCarrega*/)
 		//If ZFATF025Inclui()
 		//	_oBrowseZZN:Refresh()
 		//	_oBrowseZZP:Refresh()
@@ -726,9 +739,9 @@ Return Nil
 
 // Vaidar quando movimentado cursor e ajustar totalizações
 Method ZFT25Change() Class TelAcWindow
-Local _aRelac
 	If ValType(Self:_oBrwTotCli) == "O"  //Somente quando estiver ativo tela de totalização
-		_aRelac	:= ZFAT025Total(ZZN->ZZN_FILIAL, ZZN->ZZN_CODPRV,  /*_lCarrega*/)
+		ZFAT025Total(ZZN->ZZN_FILIAL, ZZN->ZZN_CODPRV,  /*_lCarrega*/)
+		Self:RefreshPrev(.T.)
 	Endif
 Return .T.
 
@@ -746,7 +759,7 @@ Função para inclusão de nova previsao
 @ Obs		
 @history    
 /*/
-Static Function ZFATF025Inclui(  )
+Static Function ZFATF025Inclui( _nRegZZN  )
 Local _cChave		:= ""
 Local _lRet			:= .T.
 Local _aRet 		:= {}
@@ -777,7 +790,7 @@ Begin Sequence
 		EndIf
 	EndIf
 	//MONTA qUERY
-	FwMsgRun(,{ |_oSay| ZFATF025Qry(_aRet, @_oSay ) }, "Processando ", "Aguarde...")  
+	FwMsgRun(,{ |_oSay| ZFATF025Qry(_aRet, @_nRegZZN, @_oSay ) }, "Processando ", "Aguarde...")  
 	//ZFT25Change()
 End Sequence
 //Desbloquear processamento
@@ -788,20 +801,14 @@ Return _lRet
 
 //Inclusão de Nova Previsão
 
-Static Function ZFATF025Qry( _aRet, _oSay )
+Static Function ZFATF025Qry( _aRet, _nRegZZN, _oSay )
 Local _cAliasPesq 	:= GetNextAlias()
 Local _lRet 		:= .T.
 Local _lPergunta	:= .T.
 Local _cNumPrev		:= ""
 Local _cQuery 		:= ""
-Local _cCargaQry	:= ""
-Local _cOrderTab	:= ""
-Local _cWhere		:= ""
-Local _cWhereAll  	:= ""
-Local _cJoin		:= ""
-Local _cGroup		:= ""
-Local _aCampos 		:= {}
-Local _nPos 
+Local _aMsg 		:= {}
+//Local _nPos 
 Local _cCliente 	
 Local _cLoja   
 Local _cCGC 	
@@ -826,69 +833,113 @@ Begin Sequence
 
 	ZZP->(DbSetOrder(1))
 	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
-		SELECT 	MAX(ZZP_CODPRV) AS NPREVISAO
-		FROM  	%Table:ZZP% ZZP
-		WHERE 	ZZP.%notDel% 
-			AND ZZP.ZZP_FILIAL 	= %xFilial:ZZP%
+		SELECT 	MAX(ZZN_CODPRV) AS NPREVISAO
+		FROM  	%Table:ZZN% ZZN
+		WHERE 	ZZN.%notDel% 
+			AND ZZN.ZZN_FILIAL 	= %xFilial:ZZN%
 	EndSql
 	_cNumPrev := Soma1((_cAliasPesq)->NPREVISAO) 
 	If Select(_cAliasPesq) <> 0
 		(_cAliasPesq)->(DbCloseArea())
 	Endif
+	
+    _cQuery += CRLF + " WITH PEDIDOS_FAT AS ( 	SELECT "
+    _cQuery += CRLF + " 						SC6.C6_OK " 
+    _cQuery += CRLF + " 						, SC6.C6_FILIAL "
+    _cQuery += CRLF + " 						, SC5.C5_CLIENTE "
+    _cQuery += CRLF + " 						, SC5.C5_LOJACLI "
+    _cQuery += CRLF + " 						, SA1.A1_CGC "
+    _cQuery += CRLF + " 						, SC6.C6_PRODUTO "
+    _cQuery += CRLF + " 						, SB1.B1_DESC "
+    _cQuery += CRLF + " 						, SC6.C6_QTDVEN "
+    _cQuery += CRLF + " 						, SC6.C6_PRCVEN "
+    _cQuery += CRLF + " 						, SC6.C6_PRUNIT "
+    _cQuery += CRLF + " 						, SC6.C6_PEDCLI "
+    _cQuery += CRLF + " 						, SC6.C6_ITEM "
+    _cQuery += CRLF + " 						, SC6.R_E_C_N_O_ AS NREGSC6  "
 
-	Aadd(_aCampos, "C6_OK")
-	Aadd(_aCampos, "C6_FILIAL")
-	Aadd(_aCampos, "C5_CLIENTE")
-	Aadd(_aCampos, "C5_LOJACLI")
-	Aadd(_aCampos, "A1_CGC")
-	Aadd(_aCampos, "C6_PRODUTO")
-	Aadd(_aCampos, "B1_DESC")
-	Aadd(_aCampos, "C6_QTDVEN")
-	Aadd(_aCampos, "C6_PRCVEN" )
-	Aadd(_aCampos, "C6_PRUNIT")
-	Aadd(_aCampos, "SC6.R_E_C_N_O_ AS NREGSC6")
-	Aadd(_aCampos, "VRJ_PEDIDO")
+    _cQuery += CRLF +  "        FROM  " + RetSqlName("SC6") + " SC6 " 
+    _cQuery += CRLF + "         JOIN " + RetSqlName("SC5") + " SC5 
+    _cQuery += CRLF + "             ON  SC5.C5_FILIAL  = '" + FwxFilial("SC5") + "' "
+    _cQuery += CRLF + "             AND SC5.C5_NUM     = SC6.C6_NUM "
+    _cQuery += CRLF + "             AND SC5.C5_CLIENTE = SC6.C6_CLI "
+    _cQuery += CRLF + "             AND SC5.C5_LOJACLI = SC6.C6_LOJA "
+    _cQuery += CRLF + "             AND SC5.D_E_L_E_T_ = ' ' "
 
-	//Não irei utilizar o Group By pois terei que guardar endereços do SC6 para gravar dados
-	//Aadd(_aCampos, "SUM(C6_QTDVEN) AS QTDVENDIDA")
-	//Aadd(_aCampos, "MAX(C6_PRCVEN) AS PRECOCENDA" )
-	//Aadd(_aCampos, "MAX(C6_PRUNIT) AS VLSUNTITARIO")
+    _cQuery += CRLF + "         JOIN " + RetSqlName("VV2") + "  VV2 "
+    _cQuery += CRLF + "             ON  VV2.VV2_FILIAL  = '" + FwxFilial("VV2") + "' "
+    _cQuery += CRLF + "             AND VV2.VV2_PRODUT  = SC6.C6_PRODUTO
+    _cQuery += CRLF + "             and VV2.VV2_OPCION  BETWEEN '" + _aRet[16] + "' AND '" + _aRet[17] + "' "
+    _cQuery += CRLF + "             AND VV2.VV2_CORINT  BETWEEN '" + _aRet[20] + "' AND '" + _aRet[21] + "' "
+    _cQuery += CRLF + "             AND VV2.VV2_COREXT  BETWEEN '" + _aRet[22] + "' AND '" + _aRet[23] + "' " 
+    _cQuery += CRLF + "             AND VV2.D_E_L_E_T_  = ' '
 
-	//_cGroup := "C6_OK, C6_FILIAL, C5_CLIENTE, C5_LOJACLI, C6_PRODUTO, B1_DESC"
+    _cQuery += CRLF + "         JOIN " + RetSqlName("SF4") + " SF4 "
+    _cQuery += CRLF + "             ON  SF4.F4_FILIAL  =  '" + FwxFilial("SF4") + "' "
+    _cQuery += CRLF + "             AND SF4.F4_CODIGO  = SC6.C6_TES "
+    _cQuery += CRLF + "             AND SF4.F4_DUPLIC  = 'S' "
+    _cQuery += CRLF + "             AND SF4.D_E_L_E_T_ = ' ' "
 
-	_cOrderTab := " C5_CLIENTE, C5_LOJACLI, C6_PRODUTO"
+    _cQuery += CRLF + "         JOIN " + RetSqlName("SA1") + " SA1 "
+    _cQuery += CRLF + "             ON  SA1.A1_FILIAL  = '" + FwxFilial("SA1") + "' "
+    _cQuery += CRLF + "             AND SA1.A1_COD     = SC6.C6_CLI "
+    _cQuery += CRLF + "             AND SA1.A1_LOJA    = SC6.C6_LOJA "
+    _cQuery += CRLF + "             AND SA1.D_E_L_E_T_ = ' ' "
 
-	_cQuery := CRLF + "SELECT "		
-	For _nPos := 1 To Len(_aCampos)
-		_cQuery += CRLF + If(_nPos>1,", ","  ")+_aCampos[_nPos]+ " "
-	Next 
+    _cQuery += CRLF + "         JOIN " + RetSqlName("SB1") + " SB1 "
+    _cQuery += CRLF + "             ON  SB1.B1_FILIAL  = '" + xFilial("SB1") + "' "
+    _cQuery += CRLF + "             AND SB1.B1_COD     = SC6.C6_PRODUTO "
+    _cQuery += CRLF + "             AND SB1.B1_GRUPO   = 'VEIA' "
+    _cQuery += CRLF + "             AND SB1.D_E_L_E_T_ = ' ' "
 
-	/* NÃO ESTA UTILIZANDO
-	_cQuery += ", SUM(	CASE "  
-	_cQuery += " 		WHEN SC6.C6_CHASSI <> ' ' THEN SC6.C6_QTDVEN "
-	_cQuery += "    	ELSE "
-	_cQuery += "			0 "	 
-	_cQuery += "    END	) OVER (ORDER BY SC6.C6_PRODUTO) AS QTD_CHASSI "
-	*/
-	//aCRESCENTAR CLAUSULA wHERE
-	_cWhere := CRLF + " AND SC6.C6_XFILPVR = ' ' "
-	_cWhere += CRLF + " AND SC6.C6_XCODPVR = ' ' "
+    _cQuery += CRLF + "     WHERE SC6.C6_FILIAL	= '" + xFilial("SC6") + "' "  
+    _cQuery += CRLF + "         AND SC6.C6_CLI     	BETWEEN '" +      _aRet[01]  + "' AND '" +      _aRet[03]  + "' "
+    _cQuery += CRLF + "         AND SC6.C6_LOJA    	BETWEEN '" +      _aRet[02]  + "' AND '" +      _aRet[04]  + "' "
+    _cQuery += CRLF + "         AND SC6.C6_PRODUTO 	BETWEEN '" +      _aRet[05]  + "' AND '" +      _aRet[06]  + "' "
+    _cQuery += CRLF + "         AND SC6.C6_PEDCLI  	BETWEEN '" +      _aRet[08]  + "' AND '" +      _aRet[09]  + "' "
+    _cQuery += CRLF + "         AND SC6.C6_XCODMAR 	BETWEEN '" +      _aRet[10]  + "' AND '" +      _aRet[11]  + "' "
+    _cQuery += CRLF + "         AND SC6.C6_XGRPMOD 	BETWEEN '" +      _aRet[12]  + "' AND '" +      _aRet[13]  + "' "
+    _cQuery += CRLF + "         AND SC6.C6_XMODVEI 	BETWEEN '" +      _aRet[14]  + "' AND '" +      _aRet[15]  + "' "
+    //_cQuery += CRLF +     "     AND SC6.C6_XSEGMOD   BETWEEN '" +      _aRet[16]  + "' AND '" +      _aRet[17]  + "' "
+    _cQuery += CRLF + "         AND SC6.C6_XFABMOD 	BETWEEN '" +      _aRet[18]  + "' AND '" +      _aRet[19]  + "' "
+    //_cQuery += CRLF +     "     AND SC6.C6_XCORINT   BETWEEN '" +      _aRet[20]  + "' AND '" +      _aRet[21]  + "' "
+    //_cQuery += CRLF +     "     AND SC6.C6_XCOREXT   BETWEEN '" +      _aRet[22]  + "' AND '" +      _aRet[23]  + "' "
+    _cQuery += CRLF + "         AND SC5.C5_EMISSAO 	BETWEEN '" + DtoS(_aRet[24]) + "' AND '" + DtoS(_aRet[25]) + "' "
+    _cQuery += CRLF + "         AND SC6.C6_QTDVEN 	> SC6.C6_QTDENT "
+    _cQuery += CRLF + "         AND SC5.C5_TIPO   	= 'N' "
+    _cQuery += CRLF + "         AND SC6.C6_PEDCLI  	<> ' ' "
+    _cQuery += CRLF + "         AND SC6.C6_NOTA    	= '" + Space(9) + "' "
+    _cQuery += CRLF + "         AND SC6.C6_BLQ     	= ' ' "
+	_cQuery += CRLF + " 		AND SC6.C6_XFILPVR 	= ' ' "
+	_cQuery += CRLF + " 		AND SC6.C6_XCODPVR 	= ' ' "
+	_cQuery += CRLF + " 		AND SC6.D_E_L_E_T_ 	= ' ' "
 
-	//Se enviado esta variavel despresara a clausula where na funcionalidade substituindo por esta
-	_cWhereAll := ""
-	//Caso deseje incluir na queri o Join
-	//_cJoin := ZFATF026Chassi(/*_cProduto*/)
-	_cCargaQry := U_XZFAT9QY( _cQuery, _cOrderTab, _aRet, _cWhere, /*_cWhereAll*/, _cJoin, _cGroup)
-	If Empty(_cCargaQry)
-	    ApMsgStop("Problemas na montagem do Select", "Previsao Faturamento")
-	    _lRet := .F.
-		Break
-	Endif
+
+    _cQuery += CRLF + "          )"       
+
+    _cQuery += CRLF + " SELECT PEDIDOS_FAT.* "
+    _cQuery += CRLF +"	, VRJ.VRJ_PEDIDO "
+    _cQuery += CRLF + " FROM PEDIDOS_FAT  "    
+
+    _cQuery += CRLF + " JOIN " + RetSqlName("VRJ") + " VRJ "
+    _cQuery += CRLF + "     ON  VRJ.VRJ_FILIAL = '" + FWxFilial("VRJ") + "' "
+    _cQuery += CRLF + "     AND VRJ.VRJ_PEDCOM = PEDIDOS_FAT.C6_PEDCLI "
+    _cQuery += CRLF + "     AND VRJ.VRJ_STATUS in ('A','F') "
+    _cQuery += CRLF + "     AND VRJ.D_E_L_E_T_ = ' ' "
+
+    _cQuery += CRLF + " JOIN " + RetSqlName("VRK") + " VRK "
+    _cQuery += CRLF + "     ON  VRK.VRK_FILIAL = '" + FWxFilial("VRK") + "' "
+    _cQuery += CRLF + "     AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
+    _cQuery += CRLF + "     AND VRK.VRK_ITEPED = LPad(PEDIDOS_FAT.C6_ITEM,3,'0') "
+    _cQuery += CRLF + "     AND VRK.VRK_ITETRA = ' ' "
+    _cQuery += CRLF + "     AND VRK.D_E_L_E_T_ = ' ' "
+	_cQuery += CRLF + " ORDER BY  C5_CLIENTE, C5_LOJACLI, C6_PRODUTO
+    
 	//Realizar o Select
 	_oSay:SetText("Aguarde Selecionando registros ... Hora: "+Time() )
 	ProcessMessage()
 
-	TcQuery _cCargaQry new alias (_cAliasPesq)
+	TcQuery _cQuery new alias (_cAliasPesq)
 
     (_cAliasPesq)->(DbGoTop())
 	If (_cAliasPesq)->(Eof())
@@ -912,6 +963,7 @@ Begin Sequence
 		ZZN->ZZN_DTINC  := Date()
 		ZZN->ZZN_USUINC := RetCodUsr()
 		ZZN->(MsUnlock())
+		_nRegZZN		:= ZZN->(Recno())
 		//Gravar Previsão Itens
     	While (_cAliasPesq)->(!Eof()) 
 			_cCliente 	:= (_cAliasPesq)->C5_CLIENTE
@@ -925,6 +977,19 @@ Begin Sequence
 			While (_cAliasPesq)->(!Eof()) .And.  _cCliente 	== (_cAliasPesq)->C5_CLIENTE .And. _cLoja == (_cAliasPesq)->C5_LOJACLI .And. _cProduto == (_cAliasPesq)->C6_PRODUTO
 				SC6->(DbGoto((_cAliasPesq)->NREGSC6))
 				_cMens := ""
+				//somente incluir se tiver quantidade
+				If SC6->C6_QTDVEN <= 0
+					(_cAliasPesq)->(DbSkip())
+					Loop	
+				Endif	
+				//Não permitir incusão de previsao com chassi
+				If !Empty(SC6->C6_CHASSI)
+					_cMens += CRLF + " Pedido "+SC6->C6_NUM+" com numero de Chassim "+SC6->C6_CHASSI+ " nao sera utilizado na Previsao "+SC6->C6_XCODPVR
+					Aadd(_aMsg,_cMens)
+					(_cAliasPesq)->(DbSkip())
+					Loop	
+				Endif	
+				//Pedido ja posui uma previsao verificar se o usuario deseja trocar
 				If !Empty(SC6->C6_XCODPVR)
 					//Somente perguntar uma vez 
 					If _lPergunta .And. !MsgYesNo("Existem registros com Previsão "+SC6->C6_XCODPVR+" deseje encerralas ?") 
@@ -934,19 +999,21 @@ Begin Sequence
 					_lPergunta := .F.
 					_cMens 	:= "Previsão Faturamento"+SC6->C6_XFILPVR+"-"+SC6->C6_XCODPVR+" Encerrada, substituida pela "+FwXFilial("ZZP")+"-"+_cNumPrev+", Usuario "+RetCodUsr()+" em "+Date() 	
 					_cMens 	+= CRLF + "Referente ao Pedido "+SC6->C6_NUM
+					Aadd(_aMsg,_cMens)
 				Endif 
 				If !RecLock("SC6",.F.)
 					_lRet := .F.
 					Exit 
 				Endif 
+				_nQtVen			+= SC6->C6_QTDVEN
 				SC6->C6_XFILPVR := FwXFilial("ZZP")
 				SC6->C6_XCODPVR := _cNumPrev
 				SC6->C6_XDTPVR 	:= Date()
 				SC6->C6_XUSUPVR	:= RetCodUsr()
+				_cMens := "Pedido incluido na Previsao "+_cNumPrev
 				If !Empty(_cMens)
 					SC6->C6_MOPC    := AllTrim(SC6->C6_MOPC) + CRLF + Upper(_cMens) + CRLF 
 				Endif
-				_nQtVen		+= SC6->C6_QTDVEN
 				(_cAliasPesq)->(DbSkip())
 			EndDo 	
 			//Não encontrou nenhum
@@ -990,6 +1057,8 @@ If Select(_cAliasPesq) <> 0
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif
 If _lRet
+	ZZN->(DbGotop())
+	ZZN->(DbGoto(_nRegZZN))
     ApMsgStop("Gerada previsao "+_cNumPrev, "Previsão Faturamento")
 Endif 
 
@@ -1056,7 +1125,7 @@ Default _cLocal 	:= ""
 		_cQuery += "  		AND SBF.BF_PRODUTO = '" +_cProduto+"' "				+CRLF
 	Endif	
 	If !Empty(_cLocal)
-    	cQuery += CrLf + "  AND SBF.BF_LOCAL   = '" +_cLocal+ "' "				+CRLF
+    	cQuery += CRLF + "  AND SBF.BF_LOCAL   = '" +_cLocal+ "' "				+CRLF
 	Endif	
 
 	_cQuery += "		WHERE   VV1.VV1_FILIAL      = '"+FwXFilial("VV1") +"' " +CRLF	

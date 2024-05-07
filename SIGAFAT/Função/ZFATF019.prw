@@ -1231,6 +1231,10 @@ Local nRecno        As Numeric
 Local lLibPed       As Logical
 Local lRetorno      As Logical
 Local _lPrevisao    As Logical
+Local _cLocal       As Character
+Local _cNum         As Character
+Local _cItem        As Character
+Local _cCC_STATUS   As Character
 
 Private lMsHelpAuto As Logical
 Private lMsErroAuto As Logical
@@ -1343,24 +1347,24 @@ While (cCabAlias)->(!Eof())
                     EndIf
                 //End Transaction
             Else
-
                 RecLock(cCabAlias,.F.)
                 (cCabAlias)->C5_XMENSER := If(!Empty(Alltrim(SC5->C5_XMENSER)),SC5->C5_XMENSER,Space(8000))
                 (cCabAlias)->(MsUnLock())        
 
             EndIf
         Endif
+
         If !Empty(Alltrim(SC6->C6_NUMSERI)) .And. !Empty(Alltrim(SC6->C6_CHASSI )) .And.  !Empty(Alltrim(SC6->C6_LOCALIZ))
             SDC->(DbSetOrder(3))
             //GAP167  Previsao de Faturamento
             //no caso de previsão não locar temporario
-            If !_lPrevisao
+            //If !_lPrevisao
                 If SDC->(DbSeek(xFilial("SDC")+SC6->C6_PRODUTO+SC6->C6_LOCAL+SC6->C6_LOTECTL+SC6->C6_NUMLOTE+SC6->C6_LOCALIZ+SC6->C6_NUMSERI+"SC6"))
                     (cCabAlias)->(RecLock(cCabAlias,.F.))
                     (cCabAlias)->C9_SEQUEN  := SDC->DC_SEQ
                     (cCabAlias)->(MsUnLock())
                 EndIf
-            Endif
+            //Endif
             cQuery := ""
             cQuery += CrLf + " UPDATE "+RetSqlName("VRK")                                                                           
             cQuery += CrLf + " SET VRK_CHASSI = '"+SC6->C6_NUMSERI+"' "
@@ -1503,13 +1507,19 @@ While (cCabAlias)->(!Eof())
             //If !_lPrevisao
                 nQtdLib   := MaLibDoFat(SC6->(RecNo()),nQtdLib,@lCredito,@lEstoque,lAvCred,lAvEst,lLiber,lTrans)
             //Endif        
+
+            _cLocal := If(_lPrevisao,SC6->C6_LOCAL  , (cCabAlias)->C6_LOCAL )    
+            _cNum   := If(_lPrevisao,SC6->C6_NUM    , (cCabAlias)->C6_NUM )
+            _cItem  := If(_lPrevisao,SC6->C6_ITEM   , (cCabAlias)->C6_ITEM )  
+
             SDC->(DbSetOrder(1))
             SDC->(DbGoTop())
+
             If SDC->(DbSeek(xFilial("SDC")+(cCabAlias)->C6_PRODUTO;
-                                              +(cCabAlias)->C6_LOCAL  ;
+                                              +_cLocal                ;  //+(cCabAlias)->C6_LOCAL  ;
                                               +"SC6"                  ;
-                                              +(cCabAlias)->C6_NUM    ;
-                                              +(cCabAlias)->C6_ITEM   ;
+                                              +_cNum                  ;  //+(cCabAlias)->C6_NUM    ;
+                                              +_cItem                 ; //+(cCabAlias)->C6_ITEM   ;
                                               +SC9->C9_SEQUEN         ;
                                               +CriaVar("DC_LOTECTL")  ;
                                               +CriaVar("DC_NUMLOTE")  ;
@@ -1573,25 +1583,47 @@ While (cCabAlias)->(!Eof())
                 lLibPed  := .T.
                 //GAP167  Previsao de Faturamento
                 //no caso de previsão não locar temporario
+ 
+                If Empty(Alltrim(SC9->C9_BLCRED)) .And. Empty(Alltrim(SC9->C9_BLEST )) .And. Empty(Alltrim(SC9->C9_BLWMS ))
+                                                    _cCC_STATUS  := "1"
+                    ElseIf SC9->C9_BLCRED == "01" ; _cCC_STATUS  := "2"
+                    ElseIf SC9->C9_BLCRED == "04" ; _cCC_STATUS  := "3"
+                    ElseIf SC9->C9_BLCRED == "05" ; _cCC_STATUS  := "4"
+                    ElseIf SC9->C9_BLCRED == "06" ; _cCC_STATUS  := "5"
+                    ElseIf SC9->C9_BLCRED == "09" ; _cCC_STATUS  := "6"
+                    ElseIf SC9->C9_BLEST  == "02" ; _cCC_STATUS  := "7"
+                    ElseIf SC9->C9_BLEST  == "03" ; _cCC_STATUS  := "8"
+                    ElseIf SC9->C9_BLWMS  == "01" ; _cCC_STATUS  := "9"
+                    ElseIf SC9->C9_BLWMS  == "02" ; _cCC_STATUS  := "A"
+                    ElseIf SC9->C9_BLWMS  == "03" ; _cCC_STATUS  := "B"
+                    ElseIf SC9->C9_BLWMS  == "05" ; _cCC_STATUS  := "C"
+                    ElseIf SC9->C9_BLWMS  == "06" ; _cCC_STATUS  := "D"
+                    ElseIf SC9->C9_BLWMS  == "07" ; _cCC_STATUS  := "E"
+                EndIf
+ 
+ 
                 If !_lPrevisao
                     (cCabAlias)->(RecLock(cCabAlias,.F.))
-                    If Empty(Alltrim(SC9->C9_BLCRED)) .And. Empty(Alltrim(SC9->C9_BLEST )) .And. Empty(Alltrim(SC9->C9_BLWMS ))
-                        (cCabAlias)->CC_STATUS  := "1"
-                        ElseIf SC9->C9_BLCRED == "01" ; (cCabAlias)->CC_STATUS  := "2"
-                        ElseIf SC9->C9_BLCRED == "04" ; (cCabAlias)->CC_STATUS  := "3"
-                        ElseIf SC9->C9_BLCRED == "05" ; (cCabAlias)->CC_STATUS  := "4"
-                        ElseIf SC9->C9_BLCRED == "06" ; (cCabAlias)->CC_STATUS  := "5"
-                        ElseIf SC9->C9_BLCRED == "09" ; (cCabAlias)->CC_STATUS  := "6"
-                        ElseIf SC9->C9_BLEST  == "02" ; (cCabAlias)->CC_STATUS  := "7"
-                        ElseIf SC9->C9_BLEST  == "03" ; (cCabAlias)->CC_STATUS  := "8"
-                        ElseIf SC9->C9_BLWMS  == "01" ; (cCabAlias)->CC_STATUS  := "9"
-                        ElseIf SC9->C9_BLWMS  == "02" ; (cCabAlias)->CC_STATUS  := "A"
-                        ElseIf SC9->C9_BLWMS  == "03" ; (cCabAlias)->CC_STATUS  := "B"
-                        ElseIf SC9->C9_BLWMS  == "05" ; (cCabAlias)->CC_STATUS  := "C"
-                        ElseIf SC9->C9_BLWMS  == "06" ; (cCabAlias)->CC_STATUS  := "D"
-                        ElseIf SC9->C9_BLWMS  == "07" ; (cCabAlias)->CC_STATUS  := "E"
-                    EndIf
-                
+                    //Guardar no ZZN Camo novo DAC***
+                    /*
+                If Empty(Alltrim(SC9->C9_BLCRED)) .And. Empty(Alltrim(SC9->C9_BLEST )) .And. Empty(Alltrim(SC9->C9_BLWMS ))
+                                                    (cCabAlias)->CC_STATUS  := "1"
+                    ElseIf SC9->C9_BLCRED == "01" ; (cCabAlias)->CC_STATUS  := "2"
+                    ElseIf SC9->C9_BLCRED == "04" ; (cCabAlias)->CC_STATUS  := "3"
+                    ElseIf SC9->C9_BLCRED == "05" ; (cCabAlias)->CC_STATUS  := "4"
+                    ElseIf SC9->C9_BLCRED == "06" ; (cCabAlias)->CC_STATUS  := "5"
+                    ElseIf SC9->C9_BLCRED == "09" ; (cCabAlias)->CC_STATUS  := "6"
+                    ElseIf SC9->C9_BLEST  == "02" ; (cCabAlias)->CC_STATUS  := "7"
+                    ElseIf SC9->C9_BLEST  == "03" ; (cCabAlias)->CC_STATUS  := "8"
+                    ElseIf SC9->C9_BLWMS  == "01" ; (cCabAlias)->CC_STATUS  := "9"
+                    ElseIf SC9->C9_BLWMS  == "02" ; (cCabAlias)->CC_STATUS  := "A"
+                    ElseIf SC9->C9_BLWMS  == "03" ; (cCabAlias)->CC_STATUS  := "B"
+                    ElseIf SC9->C9_BLWMS  == "05" ; (cCabAlias)->CC_STATUS  := "C"
+                    ElseIf SC9->C9_BLWMS  == "06" ; (cCabAlias)->CC_STATUS  := "D"
+                    ElseIf SC9->C9_BLWMS  == "07" ; (cCabAlias)->CC_STATUS  := "E"
+                EndIf
+                    */
+
                     (cCabAlias)->C6_CHASSI  := (cTmpAlias)->VV1_CHASSI 
                     (cCabAlias)->C6_NUMSERI := (cTmpAlias)->VV1_CHASSI
                     (cCabAlias)->C6_LOCALIZ := (cTmpAlias)->BF_LOCALIZ 
@@ -4009,6 +4041,7 @@ Return _bRet
 //GAP167  Previsao de Faturamento
 //Funcionalidade Responsavel por retornar dados da Query podendo ser utilizada por outros fontes
 //Utilizado no ZFAT025
+
 User Function XZFAT9QY(_cSelect, _cOrderTab, _aRet, _cWhere, _cWhereAll, _cJoin, _cGroup)
 Local _cQuery := ""
 
@@ -4024,7 +4057,7 @@ Default _cGroup     := ""
     If Len(_aRet) == 0 
         Return _cQuery
     Endif
-
+    
 	_cQuery := CrLf +_cSelect 
     _cQuery += CrLf + " FROM " + RetSqlName("SC6") + " SC6 "
     _cQuery += CrLf + " JOIN " + RetSqlName("SC5") + " SC5 

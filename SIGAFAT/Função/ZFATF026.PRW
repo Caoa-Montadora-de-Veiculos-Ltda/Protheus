@@ -365,9 +365,9 @@ Return Nil
 
 
 /*/{Protheus.doc} ZFATF026PR
-Processar Pedido de Compras Pendentes
+Processar Pedido 
 @author     DAC - Denilso 
-@since      26/06/2023
+@since      
 @version    1.0
 @obs        
 /*/
@@ -622,7 +622,7 @@ Local _ARETRES    	:= {}
 Local _lRet 		:= .T.
 Local _nQtdeChassi	:= 0
 Local _nQtdeTotal	:= 0
-Local _cCoPrddRes	:= ""
+//Local _cCoPrddRes	:= ""
 
 Default _lCarrega	:= .T.
 
@@ -675,13 +675,13 @@ Begin Sequence
 	Endif 
 
 	//Pegar o código Posicionado
-	_cCoPrddRes	:= (_cAliasZF026)->(FieldGet(FieldPos( "ZZP_CODPRD")))
+	//_cCoPrddRes	:= (_cAliasZF026)->(FieldGet(FieldPos( "ZZP_CODPRD")))
 
 	BeginSql Alias _cAlias //Define o nome do alias temporÃ¡rio 
 		SELECT  ZZP.ZZP_CODPRD
 				, SB1.B1_DESC 
-				, ISNULL(SUM(ZZP.ZZP_QTEPED),0) TOTAL_PED
-				, ISNULL(SUM(ZZP.ZZP_QTELIB),0) TOTAL_LIB
+				, ISNULL(SUM(CASE WHEN ZZP.ZZP_QTEPED > 0 THEN ZZP.ZZP_QTEPED ELSE 0 END),0) TOTAL_PED
+				, ISNULL(SUM(CASE WHEN ZZP.ZZP_QTELIB > 0 THEN ZZP.ZZP_QTELIB ELSE 0 END),0) TOTAL_LIB
 				, ISNULL(SUM(CASE WHEN ZZP.ZZP_QTEFAT > 0 THEN ZZP.ZZP_QTEFAT ELSE 0 END),0) TOTAL_FAT
 		FROM %Table:ZZP% ZZP		
 		LEFT JOIN %Table:SB1% SB1 
@@ -696,10 +696,10 @@ Begin Sequence
 	EndSql
 	//			AND ZZP.ZZP_FILIAL  = %xFilial:ZZP%
 	If (_cAlias)->(!Eof()) 
-		_nQtdeChassi := ZFATF026QChassi((_cAlias)->ZZP_CODPRD)  //Verifica quantos chassis tem disponiveis
-		_nQtdeTotal	 := _nQtdeChassi - (_cAlias)->TOTAL_LIB	 	//solicitado para não deixar numetro negativo no total 
 		//Verificar os itens dos KITs para saber se tem algun zerado caso tenha nÃ£o ira utilizar o kit
 		While (_cAlias)->(!Eof())
+			_nQtdeChassi := ZFATF026QChassi((_cAlias)->ZZP_CODPRD)  //Verifica quantos chassis tem disponiveis
+			_nQtdeTotal	 := _nQtdeChassi 	//- (_cAlias)->TOTAL_LIB	 	//solicitado para não deixar numetro negativo no total 
 			Aadd(_ARETPRD,{	;
 							(_cAlias)->ZZP_CODPRD,;
 							(_cAlias)->B1_DESC,;
@@ -838,9 +838,6 @@ Local _nPos
 Default _lMens 		:= .T. 
 
 Begin Sequence
-	//Acrescentar  + 1 no select não valida = somente > ou <
-	_nRow		:= Str(_nQtde + 1)
-	_nRow 		:= "%"+_nRow+"%"
 
 	_aCampos 	:=   U_XZFAT9CP()
 	_cCampos 	:= CRLF +" 'F' AS LUPD "
@@ -871,10 +868,23 @@ Begin Sequence
 	Endif 
 	_cJoin 	:= "%"+_cJoin+"%"
 
-	If _nOpc == 1  //incluir empenho
-		_cWhere	+= " SC6.C6_CHASSI  = ' ' "
+	//Pode vir com Produto ou todos
+	If !Empty(_cCodProd)
+		_cWhere	+= " AND SC6.C6_PRODUTO  = '"+_cCodProd+"' "
+	Endif 
+	//incluir empenho 
+	If _nOpc == 1  
+		_cWhere	+= " AND SC6.C6_CHASSI  = ' ' "
+	//Retirar empenho 
 	ElseIf  _nOpc == 2
-		_cWhere	+= " SC6.C6_CHASSI  <> ' ' "
+		_cWhere	+= " AND SC6.C6_CHASSI  <> ' ' "
+	Endif 
+	//Qtde de colunas, quando informado este campo será validado até a quantidade enviada
+	//Acrescentar  + 1 no select não valida = somente > ou <
+	If _nQtde > 0
+		_nRow		:= Str(_nQtde + 1)
+		//_nRow 		:= "%"+_nRow+"%"
+		_cWhere	+= "AND ROWNUM 	< "+_nRow
 	Endif 
 	_cWhere := "%"+_cWhere+"%"
 
@@ -890,11 +900,10 @@ Begin Sequence
 		%Exp:_cJoin%
 		WHERE SC6.%notDel%	
 			AND SC6.C6_FILIAL 	= %xFilial:SC6%
-			AND SC6.C6_PRODUTO  = %Exp:_cCodProd%
 			AND SC6.C6_XFILPVR	= %Exp:_cFilPrev%
 			AND SC6.C6_XCODPVR 	= %Exp:_cCodPrev%
-			AND %Exp:_cWhere%
-			AND ROWNUM 			< %Exp:_nRow%
+			AND SC6.C6_NOTA    	= ' '
+			%Exp:_cWhere%
 			ORDER BY SC6.C6_NUM 
 	EndSql
 	iF (_cAliasEmp)->(Eof()) 
@@ -963,6 +972,7 @@ Return _lRet
 //Processar Previsao de acordo com opcao
 Static Function ZFTF26PrcEnd( _nOpc, _cFilPrev, _cCodPrev, _lCancel, _oSay)
 Local _aReg 		:= {}
+Local _aLiberado 	:= {}
 Local _lLiberado	:= .F. 
 Local _lProcessa 	:= .F.
 Local _lRet 		:= .T.
@@ -977,7 +987,9 @@ Begin Sequence
 		If (_cAliasZF026)->ZZP_QTELIB == 0 .Or. _nOpc == 5
 			Aadd(_aReg, (_cAliasZF026)->NREGZZP)
 		ElseIf _nOpc <> 5
-			_lLiberado := .T.  //indica que elo menos um foi liberado
+			_lLiberado := .T.  //indica que ao menos um foi liberado
+		ElseIf _nOpc <> 5
+
 		Endif 
 		(_cAliasZF026)->(DbSkip())
 	EndDo 		 
@@ -1002,7 +1014,7 @@ Begin Sequence
 	Endif
 
 	If _lProcessa 
-		If !MsgYesNo("Deseja Candelar Previsao "+_cCodPrev+" ?") 
+		If _nOpc == 5 .And. !MsgYesNo("Deseja Cancelar Previsao "+_cCodPrev+" ?") 
 			Return .f.
 		Endif
 
@@ -1016,7 +1028,7 @@ Begin Sequence
 		Endif	
 		_nRegZZN := ZZN->(Recno())
 		//Funcionalidade para liberar o SC6 da previsão pode ser UPD
-		AjustaZZP(_aReg, _cFilPrev, _cCodPrev, _nOpc)
+		AjustaZZP(_aReg, _cFilPrev, _cCodPrev, _nOpc, _aLiberado)
 		//Atualizar Cabeçalho
 		If RecLock("ZZN",.F.)
 			If _nOpc == 5  
@@ -1035,23 +1047,24 @@ End Sequence
 Return _lRet	
 
 //funcionalidade responsavel por apagar os dados que não foram indicados para liberação
-Static Function AjustaZZP(_aReg, _cFilPrev, _cCodPrev, _nOpc)
+Static Function AjustaZZP(_aReg, _cFilPrev, _cCodPrev, _nOpc, _aLiberado)
 Local _cStatus := " "
+Local _nQtde	:= 0
+
 Local _nPos 
-Local _nQtde
 Begin Sequence
 	//Se for Cancelar retirar empenho caso exista
-	If _nOpc == 5 .And. Len(_aReg) > 0
-		_nQtde := Len(_aReg)
+	If _nOpc == 5   
 		//Verifica se tem empenho para retirar
-		ZFATF26EMP( 2, ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, ZZP->ZZP_CODPRD, _nQtde, .F.)
+		ZFATF26EMP( 2, ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, /*ZZP->ZZP_CODPRD*/, _nQtde, .F.)
 	Endif 
-
+	//Apagar registros que estão zerados
 	For _nPos := 1 To Len(_aReg)
 		ZZP->(DbGoto(_aReg[_nPos]))
 	   	If RecLock("ZZP",.F.)
 			If _nOpc == 5
 				ZZP->ZZP_STATUS := "C"	
+				ZZP->ZZP_QTELIB := 0
 			Else
 				ZZP->(DbDelete())
 			Endif	
@@ -1059,7 +1072,7 @@ Begin Sequence
 		Endif 
 	Next
 
-	//Colocar depois para aplicar update em observação no SC6 retirado
+	//Colocar depois para aplicar update em observação no SC6  ==> retirado
 	//SC6->C6_MOPC    := AllTrim(SC6->C6_MOPC) + CRLF + Upper(_cMens) + CRLF 
 	//Exemplo SET VS1.VS1_OBSAGL = RAWTOHEX('ALTERADO FORMAG ANTERIOR' || VS1.VS1_FORPAG || ' GMUD NR. ' ||  NVL(UTL_RAW.CAST_TO_VARCHAR2(dbms_lob.substr(VS1.VS1_OBSAGL , 2000, 1)),' ') ) ,
 
@@ -1067,7 +1080,7 @@ Begin Sequence
     _cQuery := " UPDATE " + RetSqlName("SC6")+ " SC6 "
     _cQuery += " SET SC6.C6_XFILPVR 	= '" + Criavar("C6_XFILPVR") + "' "
     _cQuery += "    ,SC6.C6_XCODPVR  	= '" + Criavar("C6_XCODPVR" ) + "' "
-    _cQuery += " WHERE D_E_L_E_T_  = ' ' "
+    _cQuery += " WHERE D_E_L_E_T_  		= ' ' "
 	_cQuery += " 	AND SC6.C6_FILIAL 	= '" + FWxFilial("SC6") + "' "
     //_cQuery += "   	AND SC6.C6_PRODUTO	= '" +ZZP->ZZP_CODPRD+ "' "  //não colocar produto na teoria quem não possui chassi não foi selecionado na previsão
     _cQuery += "   	AND SC6.C6_XFILPVR	= '" +_cFilPrev+ "' "
@@ -1082,6 +1095,7 @@ Begin Sequence
 		_cStatus := "C"
 		Break
 	Endif
+
     //Atualiza Status dos registros que ficaram no ZZP para liberado Faturamento
     _cQuery := " UPDATE " + RetSqlName("ZZP")+ " ZZP "
     _cQuery += " SET ZZP.ZZP_STATUS 	= 'L' "
