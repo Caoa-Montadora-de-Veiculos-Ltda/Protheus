@@ -57,80 +57,79 @@ Obs......:
 */
 Static Function zProcessa(_lJob, _nDias)
 
-Local cQuery		:= ""
-Local cAliasTRB		:= GetNextAlias()
-Local nTotReg       := 0
-Local _dDataProc    := Date()
-Local _aBloq		:= {}
-Local cStatus       := ""
-Local lRet          := .F.
+    Local cQuery		:= ""
+    Local cAliasTRB		:= GetNextAlias()
+    Local nTotReg       := 0
+    Local _dDataProc    := Date()
+    Local _aBloq		:= {}
+    Local cStatus       := ""
+    Local lRet          := .F.
 
-Default _lJob       := .F.
-Default _nDias      := 60
+    Default _lJob       := .F.
+    Default _nDias      := 60
 
-If Select( (cAliasTRB) ) > 0
+    If Select( (cAliasTRB) ) > 0
+        (cAliasTRB)->(DbCloseArea())
+    EndIf
+
+    _dDataProc := _dDataProc - _nDias
+
+    //Administrador/Fabio/Evandro - Não bloqueia
+    cQuery := " "
+    cQuery += " SELECT USR_ID,USR_CODIGO,USR_MSBLQL,USR_DTINC, USR_DTLOGON FROM ABDHDU_PROT.SYS_USR "                                                       + CRLF
+    cQuery += " WHERE  D_E_L_E_T_ = ' ' "                                                                                                                   + CRLF 
+    cQuery += " AND USR_ID <> '000000' "                                                                                                                    + CRLF
+    cQuery += " AND ( ( USR_DTINC < '"+DToS(_dDataProc)+"'  AND USR_DTLOGON = ' ' ) OR ( USR_DTLOGON < '"+DToS(_dDataProc)+"'  AND USR_DTLOGON <> ' ') ) "  + CRLF
+    cQuery += " AND USR_MSBLQL = '2' "                                                                                                                      + CRLF
+    cQuery += " ORDER BY USR_ID "                                                                                                                           + CRLF
+
+    // Executa a consulta.
+    DbUseArea( .T., "TOPCONN", TcGenQry(,,cQuery), cAliasTRB, .T., .T. )
+
+    DbSelectArea((cAliasTRB))
+
+    If !(_lJob)
+        nTotReg := Contar(cAliasTRB,"!Eof()")
+
+        // Conta quantos registros existem, e seta no tamanho da régua.
+        ProcRegua( nTotReg )
+    EndIf
+
+    (cAliasTRB)->(dbGoTop())
+    If (cAliasTRB)->(!Eof())
+
+        While (cAliasTRB)->(!Eof())
+
+            If !(_lJob)
+                // Incrementa a mensagem na régua.
+                IncProc( "Bloqueando Usuário: " + Alltrim((cAliasTRB)->USR_ID) + " | " + Alltrim((cAliasTRB)->USR_CODIGO) )
+            Else
+                ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZMSBLQUSR] Bloqueando Usuario: " + Alltrim((cAliasTRB)->USR_ID) + " | " + Alltrim((cAliasTRB)->USR_CODIGO))          
+            EndIf
+            
+
+            //Faz o processamento do Bloqueio
+            lRet := U_ZWSR017((cAliasTRB)->USR_ID)
+            Conout( "[ZMSBLQUSR] Retorno da funcao U_ZWSR017, lRet: " + AllToChar(lRet) + ", tentativa de bloqueio do usuário: " + (cAliasTRB)->USR_ID + " .")
+            //GAP153 Alterado para bloqueio via API - Nicolas Lima
+            //zProcBloq((cAliasTRB)->USR_ID) 
+            cStatus := IIf(lRet, "Usuário Bloqueado","ATENÇÃO - NÃO Bloqueado")
+            //Grava o array com os usuários bloqueados
+            Aadd( _aBloq, {     AllTrim(cStatus),;    
+                                AllTrim((cAliasTRB)->USR_ID),;
+                                Alltrim((cAliasTRB)->USR_CODIGO),;
+                                AllTrim(DToC(SToD((cAliasTRB)->USR_DTINC))),;
+                                AllTrim(DToC(SToD((cAliasTRB)->USR_DTLOGON))) } )	
+            
+            (cAliasTRB)->(DbSkip())
+        End
+
+        //Dispara o e-mail com os usuários bloqueados
+        zEnviaMail(_aBloq, _nDias)
+
+    EndIf
+
     (cAliasTRB)->(DbCloseArea())
-EndIf
-
-_dDataProc := _dDataProc - _nDias
-
-//Administrador/Fabio/Evandro - Não bloqueia
-cQuery := " "
-cQuery += " SELECT USR_ID,USR_CODIGO,USR_MSBLQL,USR_DTINC, USR_DTLOGON FROM ABDHDU_PROT.SYS_USR "                                                       + CRLF
-cQuery += " WHERE  D_E_L_E_T_ = ' ' "                                                                                                                   + CRLF 
-cQuery += " AND USR_ID <> '000000' "                                                                                                                    + CRLF
-cQuery += " AND ( ( USR_DTINC < '"+DToS(_dDataProc)+"'  AND USR_DTLOGON = ' ' ) OR ( USR_DTLOGON < '"+DToS(_dDataProc)+"'  AND USR_DTLOGON <> ' ') ) "  + CRLF
-//    cQuery += " AND ( ( USR_DTINC < '"+ _dDataProc +"'  AND USR_DTLOGON = ' ' ) OR ( USR_DTLOGON < '"+ _dDataProc +"'  AND USR_DTLOGON <> ' ') ) "  + CRLF
-cQuery += " AND USR_MSBLQL = '2' "                                                                                                                      + CRLF
-cQuery += " ORDER BY USR_ID "                                                                                                                           + CRLF
-
-// Executa a consulta.
-DbUseArea( .T., "TOPCONN", TcGenQry(,,cQuery), cAliasTRB, .T., .T. )
-
-DbSelectArea((cAliasTRB))
-
-If !(_lJob)
-    nTotReg := Contar(cAliasTRB,"!Eof()")
-
-    // Conta quantos registros existem, e seta no tamanho da régua.
-    ProcRegua( nTotReg )
-EndIf
-
-(cAliasTRB)->(dbGoTop())
-If (cAliasTRB)->(!Eof())
-
-    While (cAliasTRB)->(!Eof())
-
-        If !(_lJob)
-            // Incrementa a mensagem na régua.
-            IncProc( "Bloqueando Usuário: " + Alltrim((cAliasTRB)->USR_ID) + " | " + Alltrim((cAliasTRB)->USR_CODIGO) )
-        Else
-            ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZMSBLQUSR] Bloqueando Usuario: " + Alltrim((cAliasTRB)->USR_ID) + " | " + Alltrim((cAliasTRB)->USR_CODIGO))          
-        EndIf
-        
-
-        //Faz o processamento do Bloqueio
-        lRet := U_ZWSR017((cAliasTRB)->USR_ID)
-        Conout( "[ZMSBLQUSR] Retorno da funcao U_ZWSR017, lRet: " + AllToChar(lRet) + ", tentativa de bloqueio do usuário: " + (cAliasTRB)->USR_ID + " .")
-        //GAP153 Alterado para bloqueio via API - Nicolas Lima
-        //zProcBloq((cAliasTRB)->USR_ID) 
-        cStatus := IIf(lRet, "Usuário Bloqueado","ATENÇÃO - NÃO Bloqueado")
-        //Grava o array com os usuários bloqueados
-        Aadd( _aBloq, {     AllTrim(cStatus),;    
-                            AllTrim((cAliasTRB)->USR_ID),;
-                            Alltrim((cAliasTRB)->USR_CODIGO),;
-                            AllTrim(DToC(SToD((cAliasTRB)->USR_DTINC))),;
-                            AllTrim(DToC(SToD((cAliasTRB)->USR_DTLOGON))) } )	
-        
-        (cAliasTRB)->(DbSkip())
-    End
-
-    //Dispara o e-mail com os usuários bloqueados
-    zEnviaMail(_aBloq, _nDias)
-
-EndIf
-
-(cAliasTRB)->(DbCloseArea())
 
 Return()
 
@@ -257,11 +256,9 @@ Static Function zEnviaMail(_aBloq, _nDias)
     _cHtml += "			</tr>"+ CRLF
     _cHtml += "		</table >"+ CRLF
     _cHtml += "	</body >"+ CRLF
-
     _cHtml +=    "<br/> <br/> <br/> <br/>" 
     _cHtml +=    " <h5>Esse email foi gerado pela rotina " + FunName() + " </h5>"
 
-        
     ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZMSBLQUSR] Enviando e-mail com os usuarios bloquedos")
 
     /*
