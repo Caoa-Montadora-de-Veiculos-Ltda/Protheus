@@ -115,7 +115,6 @@ Begin Sequence
 	_oBrw:AddLegend("AllTrim(ZZP_STATUS) = 'C'  "  ,"RED"       ,"Cancelado")
 	_oBrw:AddLegend("AllTrim(ZZP_STATUS) <> ' '  " ,"GRAY"      ,"Pendente")
 	
-
 	_oBrw:SetPreEditCell({|| DbSelectArea(_cAliasZF026), .T.})
     _oBrw:SetEditCell( .T. , { || .T. } )
     _oBrw:lHeaderClick := .F.

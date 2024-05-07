@@ -1098,14 +1098,15 @@ If Select(_cAliasPesq) <> 0
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif
 //Gravar msg
+ZZN->(DbGotop())
+ZZN->(DbGoto(_nRegZZN))
 If Len(_aMsg) > 0
-	ZZN->(DbGotop())
-	ZZN->(DbGoto(_nRegZZN))
 	For _nPos := 1 To Len(_aMsg)
 		If !RecLock("ZZN",.F.)
-			ZZN->ZZN_OBS := _aMsg[] + CRLF
-			ZZN->(MsUnlock(_nPos))
+			Exit
 		Endif
+		ZZN->ZZN_OBS := AllTrim(ZZN->ZZN_OBS) + CRLF +Upper(AllTrim(_aMsg[_nPos])) + CRLF
+		ZZN->(MsUnlock())
 	Next
 Endif 
 
