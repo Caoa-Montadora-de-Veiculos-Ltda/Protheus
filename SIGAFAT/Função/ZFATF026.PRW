@@ -390,6 +390,8 @@ Begin Sequence
     Aadd( _aCpoCab, {"ZZP", "ZZP_CNPJCP"  	,.T.}) 		//cnpj cpf
     Aadd( _aCpoCab, {"ZZP", "ZZP_CODPRD"  	,.T.}) 		//cod produto
     Aadd( _aCpoCab, {"SB1", "B1_DESC"  	    ,.T.}) 		//descricao produto
+    Aadd( _aCpoCab, {"ZZP", "ZZP_MODVEI"  	,.T.}) 		//modelo do veiculo
+    Aadd( _aCpoCab, {"ZZP", "ZZP_FABMOD"  	,.T.}) 		//Ano do veiculo
     Aadd( _aCpoCab, {"ZZP", "ZZP_QTEPED"  	,.T.}) 		//qtde pedido
     Aadd( _aCpoCab, {"ZZP", "ZZP_QTELIB"  	,.T.}) 		//qtde liberada
     Aadd( _aCpoCab, {"ZZP", "ZZP_QTEFAT"  	,.T.}) 		//qtde faturada
@@ -703,9 +705,9 @@ Begin Sequence
 			Aadd(_ARETPRD,{	;
 							(_cAlias)->ZZP_CODPRD,;
 							(_cAlias)->B1_DESC,;
-							_nQtdeChassi,;
+							_nQtdeChassi + (_cAlias)->TOTAL_LIB,;   //demonstrr saldo total estoque com previsao
 							(_cAlias)->TOTAL_LIB,;
-							If(_nQtdeTotal > 0, _nQtdeTotal,0) ;     
+							If(_nQtdeTotal > 0, _nQtdeTotal,0) ;    //saldo disponivel 
 							})
 			/*
 				Aadd(_ARETRES,{	;
