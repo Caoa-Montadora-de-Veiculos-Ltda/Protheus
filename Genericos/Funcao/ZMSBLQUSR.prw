@@ -20,10 +20,8 @@ User Function ZMSBLQUSR(_lJob, _nDias)
 Local lUserAut      := .F.
 
 Default _lJob       := .F.
-//Default _lJob       := .T. //Para teste
 Default _nDias      := 60
 			
-
 If (_lJob)
     
     zProcessa(_lJob, _nDias)
