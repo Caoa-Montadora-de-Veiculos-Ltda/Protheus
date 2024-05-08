@@ -78,7 +78,8 @@ Private cUserName   := SuperGetMV("CMV_EIC004",,"Caoa")     // type here user na
 Private cPassword   := SuperGetMV("CMV_EIC005",,"bRTxqzUyJwN5BnT")     // type here user password    "bRTxqzUyJwN5BnT" 
 
 Default _cChave := " "                    ///"SHA23090924"          //informações como numero da House
-Default _cUrlFH	:= "https://apihomolog.asiashipping.com.br/index.html"    // GETMV("CMV_EIC001")   ///"https://api.asiashipping.com.br/followup/House"
+
+Default _cUrlFH	:= "https://apihomolog.asiashipping.com.br"      // GETMV("CMV_EIC001")   ///"https://api.asiashipping.com.br/followup/House"
 
 //Default _cUrlFS	:= "https://api.asiashipping.com.br/followup/Shipment"
 //Default _cUrlOR	:= "https://api.asiashipping.com.br/bot/OrderRef"
@@ -170,7 +171,7 @@ Static Function ZEIC25job(_cURL,_lJob,_cAliasJ,_Encer,_Import,_nTime,_aHeader,_c
 Local _lRet   := .F.
 Local _sUrl   := _cURL
 Local _aHeaFH := {}  
-Local _jBody  := ' '      // corpo
+Local _jBody  := ' '     
 
 _jBody := JsonObject():New()
 _jBody["username"] := cUserName
@@ -286,9 +287,11 @@ Chamado pela função ZEICF025PR posicionar na SW6 para gravar os dados
 /*/
 Static function ZEIC025GRV(_cHouse,NREGSW6) 
 Local _Ret     := ' '
-Local _names   := ' '
+Local _nContai := ' '
 Local _CodArm  := ' '
 Local _nX      := 0
+Local _nY      := 0
+Local _nTleg   := 0
 Local nQtdeTtl := 0
 Local nQtde    := 0
 Local nOUTCTN  := 0
@@ -327,8 +330,26 @@ Local mXANOTA  := ' '                  //W6_XANOTA    //Anotações do Agente
 Local cXCSTAT  := ' '                  //W6_XCSTAT    //Status da carga
 Local cXCHOUSE := ' '                  //W6_XCHOUSE   //Conhecimento de House recebido (Sim/Não)
 Local cXEUROPA := ' '                  //W6_XEUROPA   //Se carga é Via Europa
-Local cLegVes  := ' '                  //             //LegVessel do navio
-    SW6->(dbGoto(NREGSW6))
+Local cCONEVE1 := ' '                  //LegVessel
+Local cXLV1	   := ' '                  //LegVoyage
+Local cXLTM1   := ' '                  //LegTransportMode	
+Local cXLED1   := CTOD("  /  /    ")   //LegEstimateDeparture	
+Local cXLAD1   := CTOD("  /  /    ")   //LegActualDeparture	
+Local cXLEA1   := CTOD("  /  /    ")   //LegEstimateArrival
+Local cXLAA1   := CTOD("  /  /    ")   //LegEstimateArrival	
+Local cXLLP1   := ' '                  //LegActualArrival	
+Local cXLDP1   := ' '                  //LegLoadPort	
+Local cCONEVE2 := ' '                  //
+Local cXLV2    := ' '                  //	
+Local cXLTM2   := ' '                  //	
+Local cXLED2   := CTOD("  /  /    ")   //LegEstimateArrival                  //	
+Local cXLAD2   := CTOD("  /  /    ")   //LegEstimateArrival                  //	
+Local cXLEA2   := CTOD("  /  /    ")   //LegEstimateArrival                  //	
+Local cXLAA2   := CTOD("  /  /    ")   //LegEstimateArrival                  //	
+Local cXLLP2   := ' '                  //	
+Local cXLDP2   := ' '                  //	
+
+    SW6->(dbGoto(NREGSW6))  //Posicionar no registro da SW6
 
     cXSHIPME   := _oJSRet:GetJsonText("ShipmentNum")
 	nEIHQTD    := _oJSRet:GetJsonText("PacksQTD")
@@ -358,8 +379,7 @@ Local cLegVes  := ' '                  //             //LegVessel do navio
 	cXCSTAT    := _oJSRet:GetJsonText("CargoStatus")
 	cXCHOUSE   := _oJSRet:GetJsonText("IsHBLReceived")
 	cXEUROPA   := _oJSRet:GetJsonText("IsEuropeRoute")
-	cLegVes    := _oJSRet:GetJsonText("LegVessel")
-		
+
 	cPortOri  := Posicione("SY9",4,xFilial("SY9")+AllTrim(_oJSRet:GetJsonText("PortofLoading")),"Y9_SIGLA")
 	cPortDes  := Posicione("SY9",4,xFilial("SY9")+AllTrim(_oJSRet:GetJsonText("PortofDischarge")),"Y9_SIGLA")
 	
@@ -390,7 +410,7 @@ Local cLegVes  := ' '                  //             //LegVessel do navio
 
     If !Empty(_oJSRet['Containers'])
       
-		_names := Len(_oJSRet['Containers'])
+		_nContai := Len(_oJSRet['Containers'])
 
 		cConType := ''
 		nQtdeTtl := 0
@@ -399,7 +419,7 @@ Local cLegVes  := ' '                  //             //LegVessel do navio
 		nQtd40   := 0
 		nQtd20   := 0
 
-		FOR _nX := 1 TO _names
+		FOR _nX := 1 TO _nContai   //Loop de Containner
 			nQtde    := Val(_oJSRet["Containers"][_nX]["ContainerQTD"])
 			cConType := Alltrim(_oJSRet["Containers"][_nX]["ContainerType"])
 			IF cConType = "40HC" 
@@ -447,6 +467,44 @@ Local cLegVes  := ' '                  //             //LegVessel do navio
 
     Endif
 
+    If !Empty(_oJSRet['TransportLegs'])
+      
+		_nTleg := Len(_oJSRet['TransportLegs'])
+
+		FOR _nY := 1 TO _nTleg   //Loop de Leg de Transporte
+
+			IF _nY = 1
+
+				cCONEVE1 := _oJSRet["TransportLegs"][_nY]["LegVessel"]
+				cXLV1	 := _oJSRet["TransportLegs"][_nY]["LegVoyage"]
+				cXLTM1	 := _oJSRet["TransportLegs"][_nY]["LegTransportMode"]
+				cXLED1	 := CTOD(_oJSRet["TransportLegs"][_nY]["LegEstimateDeparture"])
+				cXLAD1	 := CTOD(_oJSRet["TransportLegs"][_nY]["LegActualDeparture"])
+				cXLEA1	 := CTOD(_oJSRet["TransportLegs"][_nY]["LegEstimateArrival"])
+				cXLAA1	 := CTOD(_oJSRet["TransportLegs"][_nY]["LegActualArrival"])
+				cXLLP1	 := _oJSRet["TransportLegs"][_nY]["LegLoadPort"]
+				cXLDP1	 := _oJSRet["TransportLegs"][_nY]["LegDischargePort"]
+			
+			ENDIF
+
+			IF _nY = 2
+
+				cCONEVE2 := _oJSRet["TransportLegs"][_nY]["LegVessel"]
+				cXLV2	 := _oJSRet["TransportLegs"][_nY]["LegVoyage"]
+				cXLTM2	 := _oJSRet["TransportLegs"][_nY]["LegTransportMode"]
+				cXLED2	 := CTOD(_oJSRet["TransportLegs"][_nY]["LegEstimateDeparture"])
+				cXLAD2	 := CTOD(_oJSRet["TransportLegs"][_nY]["LegActualDeparture"])
+				cXLEA2	 := CTOD(_oJSRet["TransportLegs"][_nY]["LegEstimateArrival"])
+				cXLAA2	 := CTOD(_oJSRet["TransportLegs"][_nY]["LegActualArrival"])
+				cXLLP2	 := _oJSRet["TransportLegs"][_nY]["LegLoadPort"]
+				cXLDP2	 := _oJSRet["TransportLegs"][_nY]["LegDischargePort"]
+			
+			ENDIF
+
+		NEXT _nY		
+
+    EndIf
+
 	SW6->(RecLock("SW6",.F.))
 	SW6->W6_MT3     := Val(nMT3)       //n 8,2
 	SW6->W6_XSHIPME := cXSHIPME        //c 10
@@ -462,13 +520,13 @@ Local cLegVes  := ' '                  //             //LegVessel do navio
 	SW6->W6_IDENTVE := cIDENTVE
 	SW6->W6_VIAGEM  := cVIAGEM
 	SW6->W6_XREFARM := cXREFARM
-	SW6->W6_HOUSE   := cHOUSE
+	//SW6->W6_HOUSE   := cHOUSE
 	SW6->W6_ORIGEM  := cPortOri
 	SW6->W6_DEST    := cPortDes
 	SW6->W6_XMODCON := cModCon
 	SW6->W6_XMCONT  := cXMCONT
 	SW6->W6_XTIPOL  := cXTIPOL
-	//SW6->W6_XCONSC  := cXCONSC
+	SW6->W6_XCONSC  := cXCONSC
 	SW6->W6_XCEMERC := cXCEMERC
 	SW6->W6_XTLDEM  := cXTLDEM
 	SW6->W6_XANOTA  := mXANOTA
@@ -480,7 +538,24 @@ Local cLegVes  := ' '                  //             //LegVessel do navio
 	SW6->W6_CON40HC := nQtd40HC
 	SW6->W6_PESO_BR := Val(nPESO_BR)
 	SW6->W6_OUT_CTN := Str(Int(nOUTCTN))
-	SW6->W6_XLEGVES := cLegVes
+	SW6->W6_CONEVE1 := cCONEVE1 
+	SW6->W6_XLV1    := cXLV1	 
+	SW6->W6_XLTM1   := cXLTM1	 
+	SW6->W6_XLED1   := cXLED1	 
+	SW6->W6_XLAD1   := cXLAD1	 
+	SW6->W6_XLEA1   := cXLEA1	 
+	SW6->W6_XLAA1   := cXLAA1	 
+	SW6->W6_XLLP1   := cXLLP1	 
+	SW6->W6_XLDP1   := cXLDP1	 
+	SW6->W6_CONEVE2 := cCONEVE2 
+	SW6->W6_XLV2	:= cXLV2	 
+	SW6->W6_XLTM2   := cXLTM2	 
+	SW6->W6_XLED2	:= cXLED2	 
+	SW6->W6_XLAD2   := cXLAD2	 
+	SW6->W6_XLEA2   := cXLEA2	 
+	SW6->W6_XLAA2   := cXLAA2	 
+	SW6->W6_XLLP2   := cXLLP2	 
+	SW6->W6_XLDP2   := cXLDP2
 
 	SW6->(MsUnLock())
 
@@ -511,13 +586,13 @@ User Function getToke1()
     Local aHeader    As Array     // request header
     Local jBody      As Character // corpo
 
-    cBaseURL   := SuperGetMV("CMV_EIC002",,"https://apihomolog.asiashipping.com.br/index.html" )  //"https://api.asiashipping.com.br/account/token/"       //"https://api.asiashipping.com.br/account/token/"   // type here your base URL
+    cBaseURL   := SuperGetMV("CMV_EIC002",,"https://apihomolog.asiashipping.com.br/" )  //"https://api.asiashipping.com.br/account/token/"       //"https://api.asiashipping.com.br/account/token/"   // type here your base URL
     cGrantType := SuperGetMV("CMV_EIC003",,"password" )     //type here grant type to request "password"   
-
-    cPath      := "/account/token?grant_type=" + cGrantType + "&username=" + cUserName + "&password=" + cPassword // type here token endpoint
-
-     //cPath := "/account/token?grant_type=" + "Refresh token" + "&username=" + cUserName + "&password=" + cPassword // type here token endpoint
     
+	//cPath      := "token?grant_type=" + cGrantType + "&username=" + cUserName + "&password=" + cPassword // type here token endpoint
+
+    cPath := "account/token/??grant_type%3D=" + cGrantType   
+	   
     aHeader    := {} 
 	jBody      := ''
 
@@ -564,7 +639,7 @@ Static Function ZEIC25FH(_cUrlFH,_nTime,_aHeader,_Import,_Encer,_cChave)
 Local _cAlias := GetNextAlias()
 Local _aMsg	  := {}
 Local _aHeaFH := {}  
-Local _jBody  := ' '      // corpo
+Local _jBody  := ' '      
 
 _jBody := JsonObject():New()
 _jBody["username"] := cUsername
@@ -572,12 +647,12 @@ _jBody["password"] := cPassword
 
 Aadd(_aHeaFH, "Authorization: Bearer " + _cToken )
 Aadd(_aHeaFH,'Content-Type: application/json')
-//Aadd(_aHeaFH,'Accept: application/json')
 
 //_cProc  := Alltrim(SW6->W6_HAWB)
 //_cChave := _Teste  //Alltrim(SW6->W6_HOUSE)
 
-_cUrlFH += "?HouseBill="+_cChave
+_cUrlFH += "/followup/House?HouseBill="+_cChave  //Acessar o House após autorização
+
 _cRet := Httpget(_cUrlFH, '', _nTime , _aHeaFH)
 
 if Valtype(_cRet) = "U" .OR. Empty(_cRet)
