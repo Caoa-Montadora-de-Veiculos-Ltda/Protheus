@@ -1167,13 +1167,16 @@ if nStatuHttp >= 200 .and. nStatuHttp <= 299
 
 			nPos := aScan( aSimple, {|aVet| aVet[2] == "montanteMoedaPagamento" .and. aVet[5] == "ContasAReceberRequest#1.documentos#1.AccountReceivable#" + Alltrim(Str(nz))} )
 
-			//Adicionado essa regra para os faturamentos da empresa 02 | Franco da Rocha para o cliente 000387|02  HMB
+
+			/*//Adicionado essa regra para os faturamentos da empresa 02 | Franco da Rocha para o cliente 000387|02  HMB
 			If ( AllTrim(SE1->E1_CLIENTE) == "000387" .And. AllTrim(SE1->E1_LOJA) == "02" ) .And. AllTrim(SE1->E1_TIPO) == "NF"
 				xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR(IIf(lInvSinal,SE1->E1_VALOR - (SE1->E1_PIS + SE1->E1_COFINS) * -1, SE1->E1_VALOR - (SE1->E1_PIS + SE1->E1_COFINS))))) //###LINHA ORIGINAL
 			Else
 				xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR(IIf(lInvSinal,SE1->E1_VALOR * -1,SE1->E1_VALOR)))) //###LINHA ORIGINAL
-			EndIf
+			EndIf*/
 
+			xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR(IIf(lInvSinal,SE1->E1_VALOR * -1,SE1->E1_VALOR)))) //###LINHA ORIGINAL
+			
 			If !xRet
 				U_ZF12GENSAP((cAliasNF)->Z7_FILIAL,(cAliasNF)->Z7_XTABELA,(cAliasNF)->Z7_XCHAVE,(cAliasNF)->Z7_XSEQUEN,"E","montanteMoedaPagamento Erro: " + oWsdl:cError)
 				lContinua := .F.
