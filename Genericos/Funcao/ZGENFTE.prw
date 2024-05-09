@@ -131,6 +131,7 @@ Begin Sequence
 				,SF2.F2_ESPECIE
 				,SF2.F2_SEGURO 
 				,SF2.F2_FRETE
+				,SF2.F2_CHVNFE
 				,SD2.D2_DOC
 				,SD2.D2_SERIE
 				,SD2.D2_ITEM
@@ -193,22 +194,24 @@ Begin Sequence
 		_cLojaCli	:= (_cAliasPesq)->F2_LOJA
         _nRecSF2 	:= (_cAliasPesq)->NREGSF2	
 
-		Aadd(_aCabNFE,{"F1_FILIAL"  , xFilial('SF1')           ,  nil })
-		aadd(_aCabNFE,{"F1_TIPO"   	, "N"                      ,  nil })    
-		aadd(_aCabNFE,{"F1_FORMUL" 	, "N"                      ,  nil })
-		aadd(_aCabNFE,{"F1_DOC"    	, _cNumNFE                 ,  nil })    
-		aadd(_aCabNFE,{"F1_SERIE"  	, (_cAliasPesq)->F2_SERIE  ,  nil })    
-		aadd(_aCabNFE,{"F1_EMISSAO"	, dDataBase                ,  nil })
-		aadd(_aCabNFE,{"F1_FORNECE"	, SA2->A2_COD              ,  nil })    
-		aadd(_aCabNFE,{"F1_LOJA"   	, SA2->A2_LOJA             ,  nil })     
-		aadd(_aCabNFE,{"F1_ESPECIE"	, "NF"                     ,  nil })    
-		aadd(_aCabNFE,{"F1_COND"	, _cCPgto                  ,  nil })
-		aadd(_aCabNFE,{"F1_EST"		, SA2->A2_EST              ,  nil })    
-		aadd(_aCabNFE,{"F1_DESCONT" , 0				           ,  nil })
-		aadd(_aCabNFE,{"F1_DESPESA" , 0				           ,  nil })
-		aadd(_aCabNFE,{"F1_SEGURO"  , (_cAliasPesq)->F2_SEGURO ,  nil })    
-		aadd(_aCabNFE,{"F1_FRETE"   , (_cAliasPesq)->F2_FRETE  ,  nil })    
-		aadd(_aCabNFE,{"F1_XINTEG"	, 'X'                      ,  nil })	
+		Aadd(_aCabNFE,{"F1_FILIAL"  , xFilial('SF1')           	,  nil })
+		aadd(_aCabNFE,{"F1_TIPO"   	, "N"                      	,  nil })    
+		aadd(_aCabNFE,{"F1_FORMUL" 	, "N"                      	,  nil })
+		aadd(_aCabNFE,{"F1_DOC"    	, _cNumNFE                 	,  nil })    
+		aadd(_aCabNFE,{"F1_SERIE"  	, (_cAliasPesq)->F2_SERIE  	,  nil })    
+		aadd(_aCabNFE,{"F1_EMISSAO"	, dDataBase                	,  nil })
+		aadd(_aCabNFE,{"F1_FORNECE"	, SA2->A2_COD              	,  nil })    
+		aadd(_aCabNFE,{"F1_LOJA"   	, SA2->A2_LOJA             	,  nil })     
+		aadd(_aCabNFE,{"F1_ESPECIE"	, "SPED"                   	,  nil })    
+		aadd(_aCabNFE,{"F1_COND"	, _cCPgto                  	,  nil })
+		aadd(_aCabNFE,{"F1_EST"		, SA2->A2_EST              	,  nil })    
+		aadd(_aCabNFE,{"F1_DESCONT" , 0				           	,  nil })
+		aadd(_aCabNFE,{"F1_DESPESA" , 0				           	,  nil })
+		aadd(_aCabNFE,{"F1_SEGURO"  , (_cAliasPesq)->F2_SEGURO 	,  nil })    
+		aadd(_aCabNFE,{"F1_FRETE"   , (_cAliasPesq)->F2_FRETE  	,  nil })    
+		aadd(_aCabNFE,{"F1_CHVNFE"  , (_cAliasPesq)->F2_CHVNFE 	,  nil })    
+		aadd(_aCabNFE,{"F1_IMP"  	, "S" 						,  nil })
+		aadd(_aCabNFE,{"F1_XINTEG"	, "X"                      	,  nil })	
 
 		//Faz update na SB1 para trocar o local de recebimento.
 		cUpdSB1P01 := ""
