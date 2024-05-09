@@ -4198,6 +4198,7 @@ Default _cFilPrev   := FwxFilial("ZZP")
 	If !U_XZFAT9PA(@_aParam, .F. /*nao carregar tela*/) .Or. Len(_aParam) == 0
         Return Nil
 	Endif
+    
     For _nPos := 1 To Len(_aParam)
         _xVar := ""
         If At(Upper(" Ate"), Upper(_aParam[_nPos, 2])) > 0
@@ -4217,8 +4218,9 @@ Default _cFilPrev   := FwxFilial("ZZP")
     Next
 
     //colocar validação do ZZP tem que estar com qtde liberada
-	_cWhere := " AND SC6.C6_XFILPVR = '"+ _cFilPrev +"' "+ CrLf 
-	_cWhere += " AND SC6.C6_XCODPVR = '" + _cCodPrev + "' "+ CrLf
+	_cWhere := "     AND SC6.C6_XFILPVR =  '" + _cFilPrev + "' " + CrLf 
+	_cWhere += "     AND SC6.C6_XCODPVR =  '" + _cCodPrev + "' " + CrLf
+	_cWhere += "     AND SC6.C6_CHASSI  <> '" + Space(Len(SC6->C6_CHASSI)) + "' " 
 
     /*
     _cJoin := CrLf + " JOIN " + RetSqlName("ZZP") + "  ZZP "

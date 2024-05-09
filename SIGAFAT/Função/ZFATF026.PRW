@@ -541,7 +541,7 @@ Begin Sequence
 	Endif
 	//Caso qtde existente no Sistema maior que a quantidade liberada (ja foi selecionado anteriormente uma qtde)
 	If _nQtdeLZZP > _nQtdeLib
-		_nQtde := ZFATF026RE(ZZP->ZZP_CODPRD, ZZP->ZZP_CODPRV, _nQtdeLZZP, _nQtdeLib)
+		_nQtde := ZFATF026RE( _nQtdeLZZP, _nQtdeLib)
 		If _nQtde < 0
 			Return .F.
 		Endif	
@@ -552,7 +552,7 @@ Begin Sequence
 			//Qtde utilizada na previsão (com Chassi) e qtde empenho Disponivel
 			_nQtdeChassi := ZFATF026AV(ZZP->ZZP_CODPRD, ZZP->ZZP_CODPRV, _nQtdeLZZP, _nQtdeLib, @_nQtdEmpenho) 
 			If _nQtdeChassi >= _nQtdeCalc 	
-				ZFATF26EMP( 1, ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, ZZP->ZZP_CODPRD, _nQtdeCalc)
+				ZFATF26EMP( 1, ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, ZZP->ZZP_CODCLI, ZZP->ZZP_LOJCLI, ZZP->ZZP_CODPRD, _nQtdeCalc, /*_lMens*/ )
 				_nQtde	:= _nQtdeCalc + _nQtdeLZZP
 			Else 
 				MSGINFO( "Quantidade de chassi nao Empenhada  "+AllTrim(Str(_nQtdeChassi))+" disponivel, nao atende a necessidade ", "Atencao" )
@@ -588,7 +588,7 @@ Return _lRet
 
 //Função que verifica se possui mais empenho que o solicitado e retira o empenho caso confirmado
 //Caso 1 qtde existente no Sistema maior que a quantidade liberada (ja foi selecionado anteriormente uma qtde)
-Static Function ZFATF026RE(_cCodProd, _cCodPrev, _nQtdeLZZP, _nQtdeLib)
+Static Function ZFATF026RE( _nQtdeLZZP, _nQtdeLib)
 Local _nQtdeCalc := _nQtdeLib  
 Begin Sequence 
 	If !MsgYesNo("Quantidade liberada "+AllTrim(Str(_nQtdeLZZP))+" anterior maior que "+AllTrim(Str(_nQtdeLib))+" atual, confirma ?") 
@@ -597,9 +597,7 @@ Begin Sequence
 	Endif
 	_nQtdeCalc := _nQtdeLZZP - _nQtdeLib  
 	//montar regra 	retornar caso de certo a quantidade a ser liberada
-	ZFATF26EMP( 2, FWxFilial("ZZP"), _cCodPrev, _cCodProd, _nQtdeCalc)
-	//	_nQtdeCalc 	:= _xfun  //Assumira a quantidade de estiver ok
-	//Endif
+	ZFATF26EMP( 2, ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, ZZP->ZZP_CODCLI, ZZP->ZZP_LOJCLI, ZZP->ZZP_CODPRD, _nQtdeCalc, /*_lMens*/ )
 End Sequence
 Return _nQtdeLib
 
@@ -640,7 +638,7 @@ Begin Sequence
 				, SA1.A1_NOME
 				, ISNULL(SUM(ZZP.ZZP_QTEPED),0) TOTAL_CLI
 				, ISNULL(SUM(ZZP.ZZP_QTELIB),0) TOTAL_LIB 
-				, ISNULL(MAX(ZZP.ZZP_VLRTAB),0) VALOR_TAB
+				, ISNULL(SUM(ZZP.ZZP_QTELIB * ZZP.ZZP_VLRTAB),0) VALOR_TOT
 		FROM %Table:ZZP% ZZP		
 		LEFT JOIN %Table:SA1% SA1 
 			ON  SA1.%notDel%
@@ -664,7 +662,7 @@ Begin Sequence
 							(_cAlias)->A1_NOME,;
 							0,;								//LIMITE DE CRÉDITO
 							(_cAlias)->TOTAL_LIB,;
-							(_cAlias)->TOTAL_LIB * (_cAlias)->VALOR_TAB;
+							(_cAlias)->VALOR_TOT ;
 							})
 			(_cAlias)->(DbSkip())
 		EndDo
@@ -826,7 +824,7 @@ Return _nQtdeChassi  //Qtde de chacssi disponivel para gerar empenho
 //_nOpc == 1 Criar Empenho
 //_nOpc == 2 Retirar Empenho
 
-Static Function ZFATF26EMP( _nOpc, _cFilPrev, _cCodPrev, _cCodProd,  _nQtde, _lMens )
+Static Function ZFATF26EMP( _nOpcEmp, _cFilPrev, _cCodPrev, _cCodCli, _cLojaCli, _cCodProd,  _nQtde, _lMens )
 Local _cAliasEmp	:= GetNextAlias()
 Local _lRet 		:= .T.
 Local _cCampos		:= ""
@@ -836,9 +834,24 @@ Local _nRow			:= 0
 Local _aCampos 		:= {}
 Local _nPos
 
+Default _nOpcEmp	:= 0
+Default	_cFilPrev   := FwxFilial("ZZP")
+Default _cCodPrev   := ""
+Default _cCodCli 	:= ""
+Default _cLojaCli	:= "" 
+Default _cCodProd   := ""
+Default _nQtde		:= 0
 Default _lMens 		:= .T. 
 
 Begin Sequence
+	//nao pode vir em branco
+	iF Empty(_cCodPrev)
+		If _lMens
+	    	ApMsgStop("Codigo previsao em branco, verificar com ADM Sistemas", "Previsão Faturamento")
+		Endif	
+		_lRet	:=  .F.
+		Break 
+	Endif
 
 	_aCampos 	:=   U_XZFAT9CP()
 	_cCampos 	:= CRLF +" 'F' AS LUPD "
@@ -847,13 +860,13 @@ Begin Sequence
 			_cCampos += CRLF + ", "+_aCampos[_nPos]
 		ElseIf SubsTr(_aCampos[_nPos],1,3) == "C5_"
 			_cCampos += CRLF + ", "+_aCampos[_nPos]
-		ElseIf  _nOpc == 2 .And. SubsTr(_aCampos[_nPos],1,4) == "VRJ_"
+		ElseIf  _nOpcEmp == 2 .And. SubsTr(_aCampos[_nPos],1,4) == "VRJ_"
 			_cCampos += CRLF + ", "+_aCampos[_nPos]
 		Endif
 	Next _nPos
 	_cCampos := "%"+_cCampos+"%"
 
-	If  _nOpc == 2
+	If  _nOpcEmp == 2
 	/*
 		_cJoin 	+= " JOIN "+RetSqlName("SC5")+" SC5 "
 		_cJoin 	+= " ON  SC5.D_E_L_E_T_  	= ' ' 	"
@@ -863,21 +876,29 @@ Begin Sequence
 	*/
 		_cJoin 	+=  CRLF +" JOIN " + RetSqlName("VRJ") + " VRJ "
 		_cJoin 	+=  CRLF +"	ON  VRJ.VRJ_FILIAL = '" + xFilial("VRJ") + "' "
-		_cJoin 	+=  CRLF +" 	AND VRJ.VRJ_PEDCOM = SC6.C6_PEDCLI "
+		_cJoin 	+=  CRLF +" AND VRJ.VRJ_PEDCOM = SC6.C6_PEDCLI "
 		_cJoin 	+= 	CRLF +"	AND VRJ.VRJ_STATUS in ('A','F') "
 		_cJoin 	+= 	CRLF +"	AND VRJ.D_E_L_E_T_ = ' ' "
 	Endif 
 	_cJoin 	:= "%"+_cJoin+"%"
 
-	//Pode vir com Produto ou todos
+	//Cliente ou todos
+	If !Empty(_cCodCli)
+		_cWhere	+= " AND SC6.C6_CLI  = '"+_cCodCli+"' "
+	Endif 
+	//loja ou todos
+	If !Empty(_cLojaCli)
+		_cWhere	+= " AND SC6.C6_LOJA  = '"+_cLojaCli+"' "
+	Endif 
+	//Produto ou todos
 	If !Empty(_cCodProd)
 		_cWhere	+= " AND SC6.C6_PRODUTO  = '"+_cCodProd+"' "
 	Endif 
 	//incluir empenho 
-	If _nOpc == 1  
+	If _nOpcEmp == 1  
 		_cWhere	+= " AND SC6.C6_CHASSI  = ' ' "
 	//Retirar empenho 
-	ElseIf  _nOpc == 2
+	ElseIf  _nOpcEmp == 2
 		_cWhere	+= " AND SC6.C6_CHASSI  <> ' ' "
 	Endif 
 	//Qtde de colunas, quando informado este campo será validado até a quantidade enviada
@@ -914,9 +935,9 @@ Begin Sequence
 		_lRet	:=  .F.
 		Break 
 	Endif  
-	If _nOpc == 1
+	If _nOpcEmp == 1
 		U_XZFAT9EP(_cAliasEmp)   //localizado em ZFATF019
-	ElseIf _nOpc == 2
+	ElseIf _nOpcEmp == 2
 		U_XZFAT9ET(_cAliasEmp)   //localizado em ZFATF019
 	Endif
 End Sequence
@@ -989,14 +1010,13 @@ Begin Sequence
 			Aadd(_aReg, (_cAliasZF026)->NREGZZP)
 		ElseIf _nOpc <> 5
 			_lLiberado := .T.  //indica que ao menos um foi liberado
-		ElseIf _nOpc <> 5
-
 		Endif 
 		(_cAliasZF026)->(DbSkip())
 	EndDo 		 
 	//Se existe um Registro e esta solicitando cancelamento não deixar não pode ser cancelado somente confirmado
 	If _lLiberado .And. _lCancel  
 	    ApMsgStop("Existem registros com informacao de liberado não podera ser cancelada operacao", "Previsao Faturamento")
+		_oBrW:Refresh(.T.)
 		_lRet := .F.
 		Break
 	//Caso tenha seja apertado botão cancelar	
@@ -1004,21 +1024,28 @@ Begin Sequence
 		Break	
 	Endif
     //Caso não tenha selecionado nenhum registro	
-	If Len(_aReg) == 0 
-		Break 
-	Endif 
-	//se existir registros verificar os que estão zerados e retirar ou validar Cancelamento
 	If _nOpc == 5  
 		_lProcessa 	:= .T.  //indica que ira refazer browser
-	ElseIf _lLiberado .And. Len(_aReg) > 0 
+    //Caso não tenha registros e não tenha liberação
+	ElseIf Len(_aReg) == 0  .And. !_lLiberado
+		Break 
+	//se existir registros verificar os que estão zerados e retirar ou validar Cancelamento
+	ElseIf _lLiberado  //.And. Len(_aReg) > 0 
 		_lProcessa 	:= .T.  //indica que ira refazer browser
 	Endif
 
 	If _lProcessa 
-		If _nOpc == 5 .And. !MsgYesNo("Deseja Cancelar Previsao "+_cCodPrev+" ?") 
-			Return .f.
+		If _nOpc == 5 
+			//Confirmar o cancelamento total da previsão 
+			If !MsgYesNo("Deseja Cancelar Previsao "+_cCodPrev+" ?") 
+				_lRet := .F. 
+				_oBrW:Refresh(.T.)
+				Break
+			Endif	
+			//somente em alteração validar
+		ElseIf _nOpc <> 4
+			Break
 		Endif
-
 		_oSay:SetText("Aguarde Atualizando informações - Hora: "+Time())
 		ProcessMessage()
 		//Guardar registro do  ZZN para atuaizar
@@ -1049,28 +1076,30 @@ Return _lRet
 
 //funcionalidade responsavel por apagar os dados que não foram indicados para liberação
 Static Function AjustaZZP(_aReg, _cFilPrev, _cCodPrev, _nOpc, _aLiberado)
-Local _cStatus := " "
-Local _nQtde	:= 0
+Local _cStatus 	:= " "
+Local _cWhere	:= ""
+//Local _nQtde	:= 0
 
 Local _nPos 
 Begin Sequence
 	//Se for Cancelar retirar empenho caso exista
 	If _nOpc == 5   
 		//Verifica se tem empenho para retirar
-		ZFATF26EMP( 2, ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, /*ZZP->ZZP_CODPRD*/, _nQtde, .F.)
+		ZFATF26EMP( 2, _cFilPrev, _cCodPrev, /*_cCodCli*/, /*_cLojaCli*/, /*_cCodProd*/,  /*_nQtde*/, .F. /*_lMens*/ )
 	Endif 
 	//Apagar registros que estão zerados
 	For _nPos := 1 To Len(_aReg)
 		ZZP->(DbGoto(_aReg[_nPos]))
-	   	If RecLock("ZZP",.F.)
-			If _nOpc == 5
-				ZZP->ZZP_STATUS := "C"	
-				ZZP->ZZP_QTELIB := 0
-			Else
-				ZZP->(DbDelete())
-			Endif	
-			ZZP->(MsUnlock())
-		Endif 
+	   	If !RecLock("ZZP",.F.)
+			Break 
+		Endif	
+		If _nOpc == 5
+			ZZP->ZZP_STATUS := "C"	
+			ZZP->ZZP_QTELIB := 0
+		ElseIf ZZP->ZZP_QTELIB == 0
+			ZZP->(DbDelete())
+		Endif	
+		ZZP->(MsUnlock())
 	Next
 
 	//Colocar depois para aplicar update em observação no SC6  ==> retirado
@@ -1087,6 +1116,9 @@ Begin Sequence
     _cQuery += "   	AND SC6.C6_XFILPVR	= '" +_cFilPrev+ "' "
     _cQuery += "    AND SC6.C6_XCODPVR	= '" +_cCodPrev+ "' "
     _cQuery += "    AND SC6.C6_CHASSI	= '" +Space(Len(SC6->C6_CHASSI))+ "' "
+	_cQuery += _cWhere
+
+
 	_nStatus := TCSqlExec(_cQuery)
 	If (_nStatus < 0)
     	MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Empenho SC6")

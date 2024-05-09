@@ -864,6 +864,7 @@ Begin Sequence
     _cQuery += CRLF + " 						, SC6.C6_ITEM "
     _cQuery += CRLF + " 						, SC6.C6_XMODVEI "
     _cQuery += CRLF + " 						, SC6.C6_XFABMOD "
+	_cQuery += CRLF + " 						, SC6.C6_XPRCTAB "
     _cQuery += CRLF + " 						, SC6.R_E_C_N_O_ AS NREGSC6  "
 
     _cQuery += CRLF +  "        FROM  " + RetSqlName("SC6") + " SC6 " 
@@ -969,7 +970,7 @@ Begin Sequence
 		_cLoja    	:= (_cAliasPesq)->C6_LOJA
 		_cCGC 		:= (_cAliasPesq)->A1_CGC
 		_cProduto 	:= (_cAliasPesq)->C6_PRODUTO  
-		_nVlrVen  	:= (_cAliasPesq)->C6_PRCVEN
+		_nVlrVen  	:= (_cAliasPesq)->C6_XPRCTAB   //C6_PRCVEN
 		_nVlrUnit  	:= (_cAliasPesq)->C6_PRUNIT
 		_cModelo 	:= (_cAliasPesq)->C6_XMODVEI
 		_cFabAno 	:= (_cAliasPesq)->C6_XFABMOD
