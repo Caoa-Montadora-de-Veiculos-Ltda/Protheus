@@ -6,6 +6,7 @@
 #Include "Parmtype.ch"
 #Include "PROTHEUS.CH"
 #Include "FWMBROWSE.CH"
+#INCLUDE "APWEBSRV.CH"
 
 /*/{Protheus.doc} ZEICF025
 Integração  Asia Shipping - Followup-House  recebimento de mercadorias 
@@ -529,7 +530,7 @@ Local cXLDP2   := ' '                  //
 	SW6->W6_XCONSC  := cXCONSC
 	SW6->W6_XCEMERC := cXCEMERC
 	SW6->W6_XTLDEM  := cXTLDEM
-	SW6->W6_XANOTA  := mXANOTA
+	SW6->W6_XANOTA  := U_ZREMXML(mXANOTA)     // mXANOTA   
 	SW6->W6_XCSTAT  := cXCSTAT
 	SW6->W6_XCHOUSE := cXCHOUSE
 	SW6->W6_XEUROPA := cXEUROPA
@@ -540,20 +541,24 @@ Local cXLDP2   := ' '                  //
 	SW6->W6_OUT_CTN := Str(Int(nOUTCTN))
 	SW6->W6_CONEVE1 := cCONEVE1 
 	SW6->W6_XLV1    := cXLV1	 
-	SW6->W6_XLTM1   := cXLTM1	 
+	SW6->W6_XLTM1   := cXLTM1
+	SW6->W6_CONEET1 := cXLED1	
 	SW6->W6_XLED1   := cXLED1	 
 	SW6->W6_XLAD1   := cXLAD1	 
 	SW6->W6_XLEA1   := cXLEA1	 
 	SW6->W6_XLAA1   := cXLAA1	 
-	SW6->W6_XLLP1   := cXLLP1	 
+	SW6->W6_XLLP1   := cXLLP1
+	SW6->W6_CONEPO1 := cXLLP1 	 
 	SW6->W6_XLDP1   := cXLDP1	 
 	SW6->W6_CONEVE2 := cCONEVE2 
 	SW6->W6_XLV2	:= cXLV2	 
 	SW6->W6_XLTM2   := cXLTM2	 
+	SW6->W6_CONEET2 := cXLED2
 	SW6->W6_XLED2	:= cXLED2	 
 	SW6->W6_XLAD2   := cXLAD2	 
 	SW6->W6_XLEA2   := cXLEA2	 
-	SW6->W6_XLAA2   := cXLAA2	 
+	SW6->W6_XLAA2   := cXLAA2	
+	SW6->W6_CONEPO2 := cXLLP2 	 
 	SW6->W6_XLLP2   := cXLLP2	 
 	SW6->W6_XLDP2   := cXLDP2
 
