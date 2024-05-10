@@ -53,7 +53,7 @@ Descricao / Objetivo:   Faz a Liberação do Pedidos para o Faturamento
 =======================================================================================
 */
 
-Static Function fLibPed(oSay, _aParam, _cWhere, _cJoin)
+Static Function fLibPed(oSay, _aParam, _cWhere, _cJoin, cOrderTab)
 
 Local bRet          As Logical
 Local lOk           As Logical
@@ -68,7 +68,7 @@ Local oSize2        As Object
 Local cCabTable     As Character
 Local cTipCpo       As Character
 Local cIteTable     As Character
-Local cOrderTab     As Character
+//Local cOrderTab     As Character
 Local aCabStru      As Array
 Local aCabCol       As Array
 Local aCords        As Array
@@ -86,6 +86,8 @@ Local _lPrevFat    := FWIsInCallStack("U_XZFAT9FT")
 
 Default _cWhere     := ""
 Default _cJoin      := ""
+Default cOrderTab   := "SC6.C6_FILIAL,SC6.C6_PEDCLI,SC6.C6_ITEM,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO"
+
 
 Private cCabAlias   As Character
 Private cIteAlias   As Character
@@ -239,7 +241,7 @@ aHeaderAux := aClone(oCabTable:oStruct:aFields)
 cCabAlias := oCabTable:GetAlias()
 
 cCabTable := oCabTable:GetRealName()
-cOrderTab := "SC6.C6_FILIAL,SC6.C6_PEDCLI,SC6.C6_ITEM,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO"
+//cOrderTab := "SC6.C6_FILIAL,SC6.C6_PEDCLI,SC6.C6_ITEM,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO"
 cQuery := ""
 cQuery += " INSERT INTO " + cCabTable + " "
 cQuery += CrLf + " ("
@@ -1583,7 +1585,7 @@ While (cCabAlias)->(!Eof())
                 lLibPed  := .T.
                 //GAP167  Previsao de Faturamento
                 //no caso de previsão não locar temporario
- 
+                //Tabela SCC não é gerada
                 If Empty(Alltrim(SC9->C9_BLCRED)) .And. Empty(Alltrim(SC9->C9_BLEST )) .And. Empty(Alltrim(SC9->C9_BLWMS ))
                                                     _cCC_STATUS  := "1"
                     ElseIf SC9->C9_BLCRED == "01" ; _cCC_STATUS  := "2"
@@ -1604,24 +1606,24 @@ While (cCabAlias)->(!Eof())
  
                 If !_lPrevisao
                     (cCabAlias)->(RecLock(cCabAlias,.F.))
-                    //Guardar no ZZN Camo novo DAC***
+                    //Tabela SCC não é gerada 
                     /*
-                If Empty(Alltrim(SC9->C9_BLCRED)) .And. Empty(Alltrim(SC9->C9_BLEST )) .And. Empty(Alltrim(SC9->C9_BLWMS ))
-                                                    (cCabAlias)->CC_STATUS  := "1"
-                    ElseIf SC9->C9_BLCRED == "01" ; (cCabAlias)->CC_STATUS  := "2"
-                    ElseIf SC9->C9_BLCRED == "04" ; (cCabAlias)->CC_STATUS  := "3"
-                    ElseIf SC9->C9_BLCRED == "05" ; (cCabAlias)->CC_STATUS  := "4"
-                    ElseIf SC9->C9_BLCRED == "06" ; (cCabAlias)->CC_STATUS  := "5"
-                    ElseIf SC9->C9_BLCRED == "09" ; (cCabAlias)->CC_STATUS  := "6"
-                    ElseIf SC9->C9_BLEST  == "02" ; (cCabAlias)->CC_STATUS  := "7"
-                    ElseIf SC9->C9_BLEST  == "03" ; (cCabAlias)->CC_STATUS  := "8"
-                    ElseIf SC9->C9_BLWMS  == "01" ; (cCabAlias)->CC_STATUS  := "9"
-                    ElseIf SC9->C9_BLWMS  == "02" ; (cCabAlias)->CC_STATUS  := "A"
-                    ElseIf SC9->C9_BLWMS  == "03" ; (cCabAlias)->CC_STATUS  := "B"
-                    ElseIf SC9->C9_BLWMS  == "05" ; (cCabAlias)->CC_STATUS  := "C"
-                    ElseIf SC9->C9_BLWMS  == "06" ; (cCabAlias)->CC_STATUS  := "D"
-                    ElseIf SC9->C9_BLWMS  == "07" ; (cCabAlias)->CC_STATUS  := "E"
-                EndIf
+                    If Empty(Alltrim(SC9->C9_BLCRED)) .And. Empty(Alltrim(SC9->C9_BLEST )) .And. Empty(Alltrim(SC9->C9_BLWMS ))
+                                                        (cCabAlias)->CC_STATUS  := "1"
+                        ElseIf SC9->C9_BLCRED == "01" ; (cCabAlias)->CC_STATUS  := "2"
+                        ElseIf SC9->C9_BLCRED == "04" ; (cCabAlias)->CC_STATUS  := "3"
+                        ElseIf SC9->C9_BLCRED == "05" ; (cCabAlias)->CC_STATUS  := "4"
+                        ElseIf SC9->C9_BLCRED == "06" ; (cCabAlias)->CC_STATUS  := "5"
+                        ElseIf SC9->C9_BLCRED == "09" ; (cCabAlias)->CC_STATUS  := "6"
+                        ElseIf SC9->C9_BLEST  == "02" ; (cCabAlias)->CC_STATUS  := "7"
+                        ElseIf SC9->C9_BLEST  == "03" ; (cCabAlias)->CC_STATUS  := "8"
+                        ElseIf SC9->C9_BLWMS  == "01" ; (cCabAlias)->CC_STATUS  := "9"
+                        ElseIf SC9->C9_BLWMS  == "02" ; (cCabAlias)->CC_STATUS  := "A"
+                        ElseIf SC9->C9_BLWMS  == "03" ; (cCabAlias)->CC_STATUS  := "B"
+                        ElseIf SC9->C9_BLWMS  == "05" ; (cCabAlias)->CC_STATUS  := "C"
+                        ElseIf SC9->C9_BLWMS  == "06" ; (cCabAlias)->CC_STATUS  := "D"
+                        ElseIf SC9->C9_BLWMS  == "07" ; (cCabAlias)->CC_STATUS  := "E"
+                    EndIf
                     */
 
                     (cCabAlias)->C6_CHASSI  := (cTmpAlias)->VV1_CHASSI 
@@ -1665,6 +1667,9 @@ While (cCabAlias)->(!Eof())
                     SC9->C9_XCORINT := (cTrbAlias)->CORINT
                     SC9->C9_XCOREXT := (cTrbAlias)->COREXT
                     SC9->C9_XGRPMOD := ""
+                    If _lPrevisao .And. Empty(SC9->C9_SEQUEN)
+                        SC9->C9_SEQUEN  := SDC->DC_SEQ
+                    EndIf
                 SC9->(MsUnLock())
 
                 cQuery := "" 
@@ -1814,9 +1819,10 @@ Local   cSerieId    As Character
 Local   aDadosDoc   As Array
 Local   nStatus     As Numeric 
 // GAP167  Previsao de Faturamento 
-Local   _aPrev      := {}
-Local   _lPrevFat    := FWIsInCallStack("U_XZFAT9FT") 
-Local   _nRegSC6
+Local   _aPrev      As Array
+Local   _lPrevFat   As Logical
+Local   _nRegSC6    As Numeric 
+Local   _cSeq       As Character
 
 Private cSerie      As Character
 Private cNotaSer    As Character
@@ -1824,8 +1830,8 @@ Private cNotaSer    As Character
 aDadosDoc  := {}
 lUsaNewKey := GetSX3Cache("F2_SERIE","X3_TAMANHO") == 14 // Verifica se o novo formato de gravacao do Id nos campos _SERIE esta em uso
 cSerieId   := IIf( lUsaNewKey , SerieNfId("SF2",4,"F2_SERIE",dDataBase,A460Especie(cSerie),cSerie) , cSerie )
-
-
+_aPrev     := {} 
+_lPrevFat  := FWIsInCallStack("U_XZFAT9FT") 
 
 Dbselectarea("SC6") ; SC6->(DbSetOrder(RetOrder("SC6","C6_FILIAL+C6_NUM+C6_ITEM+C6_PRODUTO" )))
 Dbselectarea("SC5") ; SC5->(DbSetOrder(RetOrder("SC5","C5_FILIAL+C5_NUM"                    )))
@@ -1867,8 +1873,18 @@ While (cCabAlias)->(!Eof()) .And. lContinua
             If SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
                 SC9->(DbSetOrder(1))
                 //Necessário montar consistencia para localizar C9_SEQUEN o mesmo também é compartilhado com a tabela SDC 
-                    //DAC***
-                If SC9->( DbSeek( xFilial("SC6") + (cCabAlias)->C6_NUM + (cCabAlias)->C6_ITEM + (cCabAlias)->C9_SEQUEN ) ) .And. ;
+                If _lPrevFat
+                    SDC->(DbSetOrder(3))  //DC_FILIAL+DC_PRODUTO+DC_LOCAL+DC_LOTECTL+DC_NUMLOTE+DC_LOCALIZ+DC_NUMSERI+DC_ORIGEM                                                                             
+                    _cSeq := '01'
+                    If SDC->(DbSeek(xFilial("SDC")+SC6->C6_PRODUTO+SC6->C6_LOCAL+SC6->C6_LOTECTL+SC6->C6_NUMLOTE+SC6->C6_LOCALIZ+SC6->C6_NUMSERI+"SC6"))
+                        _cSeq  := SDC->DC_SEQ
+                    EndIf
+                Else 
+                    _cSeq :=  (cCabAlias)->C9_SEQUEN
+                Endif    
+                //If SC9->( DbSeek( xFilial("SC6") + (cCabAlias)->C6_NUM + (cCabAlias)->C6_ITEM + (cCabAlias)->C9_SEQUEN ) ) .And. ;
+                //    Empty(Alltrim(SC9->C9_BLEST  )) .And. Empty(Alltrim(SC9->C9_BLCRED )) .And. Empty(Alltrim(SC9->C9_NFISCAL))
+                If SC9->( DbSeek( xFilial("SC6") + (cCabAlias)->C6_NUM + (cCabAlias)->C6_ITEM + _cSeq ) ) .And. ;
                     Empty(Alltrim(SC9->C9_BLEST  )) .And. Empty(Alltrim(SC9->C9_BLCRED )) .And. Empty(Alltrim(SC9->C9_NFISCAL))
 
                     SB1->(DbSetOrder(1)) ; SB1->(DbSeek(xFilial("SB1")+SC9->C9_PRODUTO              ))
@@ -1996,14 +2012,15 @@ If Len(aDadosDoc) <> 0
     NotaDados(aDadosDoc)
 EndIf
 
-if lContinua
-    StartJob("U_CMVAUT04", GetEnvServer(), .F.)//, cEmpAnt, cFilAnt)
-endif
-
 // GAP167  Previsao de Faturamento  DAC 09/05/2024
 If Len(_aPrev) > 0
     XZFAT9ATPV(_aPrev)
 Endif
+
+if lContinua
+    StartJob("U_CMVAUT04", GetEnvServer(), .F.)//, cEmpAnt, cFilAnt)
+endif
+
 
 
 Return(Nil)
@@ -4208,6 +4225,8 @@ Local _oSay
 	FwMsgRun(,{ |_oSay| fAtuEmp(_oSay,_cAlias,/*cIteAlias*/,/*lOk*/) }, "Estornando registros", "Aguarde...")  
 Return Nil
 
+
+
 //GAP167  Previsao de Faturamento
 //Chamada do Estorno podendo ser xamado de outras funções
 User Function XZFAT9FT(_cFilPrev, _cCodPrev, _oSay)
@@ -4215,6 +4234,7 @@ Local _aRet     := {}
 Local _aParam   := {}
 Local _cWhere   := ""
 Local _cJoin    := ""
+Local _cOrderTab:= ""
 Local _nPos
 
 Default _cCodPrev   := ""
@@ -4268,10 +4288,11 @@ Default _cFilPrev   := FwxFilial("ZZP")
     _cQuery += CrLf + "     AND VV2.VV2_COREXT  BETWEEN '" + _aRet[22] + "' AND '" + _aRet[23] + "' " 
     _cQuery += CrLf + "     AND VV2.D_E_L_E_T_  = ' '
     */
+    _cOrderTab:= "SC6.C6_FILIAL,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PEDCLI,SC6.C6_ITEM,SC6.C6_PRODUTO"    
 	_oSay:SetText("Aguarde Selecionando registros - Hora: "+Time())
 	ProcessMessage()
 
-    fLibPed(_oSay, _aRet, _cWhere, _cJoin)
+    fLibPed(_oSay, _aRet, _cWhere, _cJoin, _cOrderTab)
 Return Nil
 
 
@@ -4317,7 +4338,7 @@ Default _aPrev := {}
     Endif 
     ZZP->(DbSetOrder(1))  //ZZP_FILIAL+ZZP_CODPRV+ZZP_CODCLI+ZZP_LOJCLI+ZZP_CODPRD                                                                                                          
     _cChave     := ""
-    _nQtdeFat  := 0
+    _nQtdeFat   := 0
     //Organizar pela chave da previsao para verificar se atingiu a quantidade
     aSort(_aPrev, ,,{|x,y| x[1]+x[2]+x[3]+x[4]+x[5]+x[6] < y[2]+y[2]+y[3]+y[4]+y[5]+y[6]})
     For _nPos := 1 To Len(_aPrev) 
@@ -4329,37 +4350,40 @@ Default _aPrev := {}
         Else 
             _nQtdeFat += _aPrev[_nPos,09]
         Endif    
-        _cMens := "Pedido "+SC6->NUM+", produto "+SC6->C6_PRODUTO+", qtde "+AllTrim(Str(SC6->C6_QTDVEN))+" faturado doc "+_aPrev[_nPos,07]+" serie "+_aPrev[_nPos,08]
+        _cMens := "Pedido "+SC6->C6_NUM+", produto "+SC6->C6_PRODUTO+", qtde "+AllTrim(Str(SC6->C6_QTDVEN))+" faturado doc "+_aPrev[_nPos,07]+" serie "+_aPrev[_nPos,08]
         AAdd(_aMsg,_cMens)
 
         If _cChave <> _aPrev[_nPos,01]+_aPrev[_nPos,02]+_aPrev[_nPos,03]+_aPrev[_nPos,04]+_aPrev[_nPos,05]+_aPrev[_nPos,06]
             //Atualiza ZZP
-            XZFAT9ATZP(_cFilPrev,_cCodPrev,_cCliPrev,_cLojaPrev,_cCodProPrev,_cModPrev,_cAnoPrev, _nQtdeFat, _cFatura, _cSerFat, @_aMsg)
+            If !Empty(_cChave)  //inicio somente carregar
+                XZFAT9ATZP(_cFilPrev,_cCodPrev,_cCliPrev,_cLojaPrev,_cCodProPrev,_cModPrev,_cAnoPrev, _nQtdeFat, _cFatura, _cSerFat, @_aMsg)
+            EndIf
             //Carregar nova chave
             _cFilPrev   := SC6->C6_XFILPVR
             _cCodPrev   := SC6->C6_XCODPVR 
             _cCliPrev   := SC6->C6_CLI
             _cLojaPrev  := SC6->C6_LOJA
             _cCodProPrev:= SC6->C6_PRODUTO 
-            _cModPrev   := SC6->_XMODVEI
+            _cModPrev   := SC6->C6_XMODVEI
             _cAnoPrev   := SC6->C6_XFABMOD
-            _nQtdeFat  := 0
+            _nQtdeFat   := 0
             _aMsg       := {}
             _cChave     := _aPrev[_nPos,01]+_aPrev[_nPos,02]+_aPrev[_nPos,03]+_aPrev[_nPos,04]+_aPrev[_nPos,05]+_aPrev[_nPos,06]
             _cFatura    := _aPrev[_nPos,07]
             _cSerFat    := _aPrev[_nPos,08]
         Endif
     Next _nPos
-    //Atualiza ZZP  necessario pois esta em um next
-    XZFAT9ATZP(_cFilPrev,_cCodPrev,_cCliPrev,_cLojaPrev,_cCodProPrev,_cModPrev,_cAnoPrev, _nQtdeFat, _cFatura, _cSerFat, @_aMsg)
-
+    
+    If !Empty(_cChave)  //inicio somente carregar
+        //Atualiza ZZP  necessario pois esta em um next
+        XZFAT9ATZP(_cFilPrev,_cCodPrev,_cCliPrev,_cLojaPrev,_cCodProPrev,_cModPrev,_cAnoPrev, _nQtdeFat, _cFatura, _cSerFat, @_aMsg)
+    Endif
 Return Nil 
 
 
 //Gravar dados do faturamento nas tabelas ZZN e ZZP
 Static Function XZFAT9ATZP(_cFilPrev,_cCodPrev,_cCliPrev,_cLojaPrev,_cCodProPrev,_cModPrev,_cAnoPrev, _nQtdeFat, _cFatura, _cSerFat, _aMsg)
 Local _lRet         := .T.
-Local _lEncerra     := .F.
 Local _cAliasPesq   := GetNextAlias()
 Local _cMsg 
 Local _cMens
@@ -4372,11 +4396,11 @@ Local _nPos
 		WHERE ZZP.%notDel%	
 			AND ZZP.ZZP_FILIAL 	= %Exp:_cFilPrev%
 			AND ZZP.ZZP_CODPRV  = %Exp:_cCodPrev%
-			AND SC6.ZZP_CODCLI 	= %Exp:_cCliPrev%
+			AND ZZP.ZZP_CODCLI 	= %Exp:_cCliPrev%
 			AND ZZP.ZZP_LOJCLI  = %Exp:_cLojaPrev%
 			AND ZZP.ZZP_CODPRD 	= %Exp:_cCodProPrev%
-			AND ZZP.C6_XMODVEI 	= %Exp:_cModPrev%
-			AND ZZP.C6_XFABMOD 	= %Exp:_cAnoPrev%
+			AND ZZP.ZZP_MODVEI 	= %Exp:_cModPrev%
+			AND ZZP.ZZP_FABMOD 	= %Exp:_cAnoPrev%
 		GROUP BY ZZP.R_E_C_N_O_	
 	EndSql
     (_cAliasPesq)->(DbGotop())    
@@ -4408,32 +4432,29 @@ Local _nPos
     //fechar para abrir novo select
 	(_cAliasPesq)->(DbCloseArea())
 	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
-		SELECT 	ISNULL(COUNT(ZZP.R_E_C_N_O_),0)  AS NREGZZP 
-                ZZN.R_E_C_N_O_ AS NREGZZN
-		FROM  	%Table:ZZP% ZZP
-        JOIN    %Table:ZZn% ZZN
-            ON  ZZN.%notDel%	
-            AND ZZN.ZZN_FILIAL 	= %Exp:_cFilPrev%
-			AND ZZN.ZZN_CODPRV  = %Exp:_cCodPrev%
-		WHERE ZZP.%notDel%	
+		SELECT 	ISNULL(COUNT(ZZP.ZZP_STATUS),0)  AS NTOTZZP 
+                ,ZZN.R_E_C_N_O_   AS NRECZZN
+        FROM %Table:ZZN% ZZN        
+		JOIN %Table:ZZP% ZZP
+            ON  ZZP.%notDel%	
 			AND ZZP.ZZP_FILIAL 	= %Exp:_cFilPrev%
 			AND ZZP.ZZP_CODPRV  = %Exp:_cCodPrev%
             AND ZZP.ZZP_STATUS <> "F" 
-        GROUP BY ZZN.R_E_C_N_O    
+        WHERE ZZN.%notDel%	
+            AND ZZN.ZZN_FILIAL 	= %Exp:_cFilPrev%
+			AND ZZN.ZZN_CODPRV  = %Exp:_cCodPrev%
+        GROUP BY ZZN.R_E_C_N_O_
+        ORDER BY NTOTZZP DESC
 	EndSql
-    (_cAliasPesq)->(DbGotop()) 
     //Tem que retornar pelo menos um registro que é o cabeçalho
-    If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGZZN > 0
+    (_cAliasPesq)->(DbGotop())
+    If  (_cAliasPesq)->NTOTZZP > 0
         _cMsg := "Nao localizado cabecalho da "+_cMens 
          ApMsgStop(_cMsg, "Previsão Faturamento")
          Return .F.   
     Endif
-    //Finalizar com status faturamento no ZZN
-    If (_cAliasPesq)->NREGZZP > 0
-        _lEncerra := .T. 
-    Endif    
-     
-    ZZN->(DbGoto((_cAliasPesq)->NREGZZNP))
+    //Posiciono ZZN para gravar
+    ZZN->(DbGoto((_cAliasPesq)->NRECZZN))
     If RecLock("ZZN",.F.) 
         _cMens := "FATURAMENTO REALIZADO EM "+DtoC(Date())+" AS "+Substr(time(),1,5)+" Usuario "+RetCodUsr()  
         ZZN->ZZN_OBS := ZZN->ZZN_OBS +CrLf+  Upper(_cMens)
@@ -4442,9 +4463,7 @@ Local _nPos
                 ZZN->ZZN_OBS := ZZN->ZZN_OBS +CrLf+  Upper(_aMsg[_nPos])
             Next 
         Endif
-        If _lEncerra
-            ZZN->ZZN_STATUS := "F"
-        Endif
+        ZZN->ZZN_STATUS := "F"
         ZZN->(MsUnlock())
     Endif
 
@@ -4452,7 +4471,6 @@ If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif 
-
 Return _lRet
 
 //Cabeçalho

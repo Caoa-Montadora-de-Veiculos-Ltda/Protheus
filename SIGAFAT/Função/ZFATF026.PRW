@@ -1014,7 +1014,7 @@ Begin Sequence
 		(_cAliasZF026)->(DbSkip())
 	EndDo 		 
 	//Se existe um Registro e esta solicitando cancelamento não deixar não pode ser cancelado somente confirmado
-	If _lLiberado .And. _lCancel  
+	If _lLiberado .And. _lCancel .And. _nOpc <> 5 .And. Len(_aReg) > 0 
 	    ApMsgStop("Existem registros com informacao de liberado não podera ser cancelada operacao", "Previsao Faturamento")
 		_oBrW:Refresh(.T.)
 		_lRet := .F.
