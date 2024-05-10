@@ -20,8 +20,7 @@ User Function ZFISR018()
 	Local	aArea 		:= FwGetArea()
 	Local	oReport     := Nil
 	Local	aPergs		:= {}
-	Local	dDtEmiss	:= Ctod(Space(8)) //Data de emissao de NF
-    //Local	_cFilial	:= Space(TamSX3('F3_FILIAL')[1]) 
+	Local	dDtEmiss	:= Ctod(Space(8)) 
     Local	cNumNF		:= Space(TamSX3('F3_NFISCAL')[1]) 
     Local	cSerieNF	:= Space(TamSX3('F3_SERIE')[1])
 	Local 	cFornece 	:= Space(TamSX3('A2_COD')[1])
@@ -30,20 +29,22 @@ User Function ZFISR018()
     Private cTabela 	:= GetNextAlias()
     Private cAliasTMP   := GetNextAlias()
 
-    aAdd(aPergs, {1,"Entrada de?"			,dDtEmiss	,/*Pict*/	,/*Valid*/	,/*F3*/		,/*When*/,50,.F.})  //MV_PAR01
-	aAdd(aPergs, {1,"Entrada ate?"		    ,dDtEmiss	,/*Pict*/,MV_PAR02 > MV_PAR01,/*F3*/,/*When*/,50,.F.})  //MV_PAR02
-	aAdd(aPergs, {1,"Nota Fiscal De?"		,cNumNF		,/*Pict*/	,/*Valid*/	,/*F3*/		,/*When*/,50,.F.})  //MV_PAR03
-	aAdd(aPergs, {1,"Nota Fiscal Ate?"		,cNumNF		,/*Pict*/	,/*Valid*/	,/*F3*/		,/*When*/,50,.F.})  //MV_PAR04
-    aAdd(aPergs, {1,"Serie?"				,cSerieNF	,/*Pict*/	,/*Valid*/	,/*F3*/	    ,/*When*/,50,.F.})  //MV_PAR05
-    aAdd(aPergs, {1,"Fornecedor De?"		,cFornece	,/*Pict*/	,/*Valid*/	,/*F3*/	    ,/*When*/,50,.F.})  //MV_PAR06
-	aAdd(aPergs, {1,"Fornecedor Ate?"		,cFornece	,/*Pict*/	,/*Valid*/	,/*F3*/	    ,/*When*/,50,.F.})  //MV_PAR07
-	aAdd(aPergs, {1,"Pedido De?"			,cPedido	,/*Pict*/	,/*Valid*/	,/*F3*/	    ,/*When*/,50,.F.}) 	//MV_PAR08
-    aAdd(aPergs, {1,"Pedido Ate?"			,cPedido	,/*Pict*/	,/*Valid*/	,/*F3*/	    ,/*When*/,50,.F.}) 	//MV_PAR09
+    aAdd(aPergs, {1,"Emissao De"		,dDtEmiss	,/*Pict*/	,/*Valid*/	,/*F3*/		,/*When*/,50,.F.})  //MV_PAR01
+	aAdd(aPergs, {1,"Emissao Ate"		,dDtEmiss	,/*Pict*/,MV_PAR02 > MV_PAR01,/*F3*/,/*When*/,50,.F.})  //MV_PAR02
+	aAdd(aPergs, {1,"Nota Fiscal De"	,cNumNF		,/*Pict*/	,/*Valid*/	,"DOCRFT"   ,/*When*/,50,.F.})  //MV_PAR03
+	aAdd(aPergs, {1,"Nota Fiscal Ate"	,cNumNF		,/*Pict*/	,/*Valid*/	,"SF2"		,/*When*/,50,.F.})  //MV_PAR04
+    aAdd(aPergs, {1,"Serie"				,cSerieNF	,/*Pict*/	,/*Valid*/	,"_SF1SE"	    ,/*When*/,50,.F.})  //MV_PAR05
+    aAdd(aPergs, {1,"Fornecedor De"		,cFornece	,/*Pict*/	,/*Valid*/	,"SA2"	    ,/*When*/,50,.F.})  //MV_PAR06
+	aAdd(aPergs, {1,"Fornecedor Ate"	,cFornece	,/*Pict*/	,/*Valid*/	,"SA2"	    ,/*When*/,50,.F.})  //MV_PAR07
+	aAdd(aPergs, {1,"Pedido De"			,cPedido	,/*Pict*/	,/*Valid*/	,"SC6"	    ,/*When*/,50,.F.}) 	//MV_PAR08
+    aAdd(aPergs, {1,"Pedido Ate"		,cPedido	,/*Pict*/	,/*Valid*/	,"SC6"	    ,/*When*/,50,.F.}) 	//MV_PAR09
 
 	If ParamBox(aPergs, "Informe os parâmetros para Nota Fiscal de entrada", , , , , , , , , .F., .F.)
 		oReport := fReportDef()
 		oReport:PrintDialog()
 	EndIf
+
+
 
 	FWRestArea(aArea)
 Return
