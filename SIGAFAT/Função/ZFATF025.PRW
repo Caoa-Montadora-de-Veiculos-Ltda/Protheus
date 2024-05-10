@@ -729,7 +729,7 @@ Local _nRegZZN
 		//	_oBrowseZZP:Refresh()
 		//Endif
 	ElseIf _nOpc ==  1
-		U_XZFAT9FT(_cFilPrev, _cCodPrev)
+		FwMsgRun(,{ |_oSay| U_XZFAT9FT(_cFilPrev, _cCodPrev, @_oSay) }, "Selecionando dados", "Aguarde...")  
 	Else	
 		FwMsgRun(,{ |_oSay| U_ZFATF026(_nOpc, _cFilPrev, _cCodPrev , @_oSay ) }, "Selecionando dados", "Aguarde...")  
 	Endif

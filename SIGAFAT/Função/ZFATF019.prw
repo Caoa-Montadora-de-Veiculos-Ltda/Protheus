@@ -1813,6 +1813,10 @@ Local   lContinua   As Logical
 Local   cSerieId    As Character
 Local   aDadosDoc   As Array
 Local   nStatus     As Numeric 
+// GAP167  Previsao de Faturamento 
+Local   _aPrev      := {}
+Local   _lPrevFat    := FWIsInCallStack("U_XZFAT9FT") 
+Local   _nRegSC6
 
 Private cSerie      As Character
 Private cNotaSer    As Character
@@ -1820,6 +1824,8 @@ Private cNotaSer    As Character
 aDadosDoc  := {}
 lUsaNewKey := GetSX3Cache("F2_SERIE","X3_TAMANHO") == 14 // Verifica se o novo formato de gravacao do Id nos campos _SERIE esta em uso
 cSerieId   := IIf( lUsaNewKey , SerieNfId("SF2",4,"F2_SERIE",dDataBase,A460Especie(cSerie),cSerie) , cSerie )
+
+
 
 Dbselectarea("SC6") ; SC6->(DbSetOrder(RetOrder("SC6","C6_FILIAL+C6_NUM+C6_ITEM+C6_PRODUTO" )))
 Dbselectarea("SC5") ; SC5->(DbSetOrder(RetOrder("SC5","C5_FILIAL+C5_NUM"                    )))
@@ -1860,7 +1866,8 @@ While (cCabAlias)->(!Eof()) .And. lContinua
             
             If SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
                 SC9->(DbSetOrder(1))
-            
+                //Necessário montar consistencia para localizar C9_SEQUEN o mesmo também é compartilhado com a tabela SDC 
+                    //DAC***
                 If SC9->( DbSeek( xFilial("SC6") + (cCabAlias)->C6_NUM + (cCabAlias)->C6_ITEM + (cCabAlias)->C9_SEQUEN ) ) .And. ;
                     Empty(Alltrim(SC9->C9_BLEST  )) .And. Empty(Alltrim(SC9->C9_BLCRED )) .And. Empty(Alltrim(SC9->C9_NFISCAL))
 
@@ -1897,6 +1904,7 @@ While (cCabAlias)->(!Eof()) .And. lContinua
                     Aadd( aTmpPVl , SC9->C9_QTDLIB2 )
 		
 	                Aadd( aPVlNFs, aClone(aTmpPVl))
+                    _nRegSC6 := SC6->(Recno())
 	                /*
                     *****************************
 	                *'Gera nota fiscal de saída.'*
@@ -1914,8 +1922,25 @@ While (cCabAlias)->(!Eof()) .And. lContinua
                         SD2->(DbSeek(xFilial("SD2")+SF2->F2_DOC+SF2->F2_SERIE+SF2->F2_CLIENTE+SF2->F2_LOJA))
                         While SD2->(!Eof()) .And. SD2->D2_DOC     == SF2->F2_DOC     .And. SD2->D2_SERIE == SF2->F2_SERIE   ;
                                             .And. SD2->D2_CLIENTE == SF2->F2_CLIENTE .And. SD2->D2_LOJA  == SF2->F2_LOJA
+
+                            // GAP167  Previsao de Faturamento 
+                            //Guardo informações para atualizar  Previsao DAC 09/05/2024
+                            If _lPrevFat
+                                Aadd(_aPrev,{   SC6->C6_XCODPVR, ;  //01
+                                                SF2->F2_CLIENTE,;   //02
+                                                SF2->F2_LOJA,;      //03
+                                                SD2->D2_COD,;       //04
+                                                SC6->C6_XMODVEI,;   //05
+                                                SC6->C6_XFABMOD,;   //06  
+                                                SF2->F2_DOC,;       //07
+                                                SF2->F2_SERIE,;     //08
+                                                SD2->D2_QUANT,;     //09
+                                                _nRegSC6;           //10
+                                            })
+                            Endif                    
+
+
                             SDB->(DbSetOrder(1))
-                            
                             If SDB->(DbSeek(xFilial("SDB")+SD2->D2_COD+SD2->D2_LOCAL+SD2->D2_NUMSEQ))
                                 VV1->(DbSetOrder(2))
                                 
@@ -1974,6 +1999,12 @@ EndIf
 if lContinua
     StartJob("U_CMVAUT04", GetEnvServer(), .F.)//, cEmpAnt, cFilAnt)
 endif
+
+// GAP167  Previsao de Faturamento  DAC 09/05/2024
+If Len(_aPrev) > 0
+    XZFAT9ATPV(_aPrev)
+Endif
+
 
 Return(Nil)
 
@@ -4179,21 +4210,23 @@ Return Nil
 
 //GAP167  Previsao de Faturamento
 //Chamada do Estorno podendo ser xamado de outras funções
-User Function XZFAT9FT(_cFilPrev, _cCodPrev)
+User Function XZFAT9FT(_cFilPrev, _cCodPrev, _oSay)
 Local _aRet     := {}
 Local _aParam   := {}
 Local _cWhere   := ""
 Local _cJoin    := ""
-Local _oSay
 Local _nPos
 
 Default _cCodPrev   := ""
 Default _cFilPrev   := FwxFilial("ZZP")
 
+	_oSay:SetText("Aguarde Preparando parametros - Hora: "+Time())
+	ProcessMessage()
      If Empty(_cCodPrev)
 	    ApMsgStop("Não informada Previsao", "Previsao Faturamento")
         Return Nil
     Endif
+
 
 	If !U_XZFAT9PA(@_aParam, .F. /*nao carregar tela*/) .Or. Len(_aParam) == 0
         Return Nil
@@ -4235,9 +4268,192 @@ Default _cFilPrev   := FwxFilial("ZZP")
     _cQuery += CrLf + "     AND VV2.VV2_COREXT  BETWEEN '" + _aRet[22] + "' AND '" + _aRet[23] + "' " 
     _cQuery += CrLf + "     AND VV2.D_E_L_E_T_  = ' '
     */
+	_oSay:SetText("Aguarde Selecionando registros - Hora: "+Time())
+	ProcessMessage()
+
     fLibPed(_oSay, _aRet, _cWhere, _cJoin)
 Return Nil
 
+
+/*
+// GAP167  Previsao de Faturamento 
+//Atualizar dados do Faturamento em Previsão e tabelas caso necessário
+
+Aadd(_aPrev,{   SC6->C6_XCODPVR, ;  //01
+                SF2->F2_CLIENTE,;   //02
+                SF2->F2_LOJA,;      //03
+                SD2->D2_COD,;       //04
+                SC6->C6_XMODVEI,;   //05
+                SC6->C6_XFABMOD,;   //06  
+                SF2->F2_DOC,;       //07
+                SF2->F2_SERIE,;     //08
+                SD2->D2_QUANT,;     //09
+                _nRegSC6;           //10
+            })
+
+//DAC 09/05/2024
+*/
+Static Function XZFAT9ATPV(_aPrev)
+Local _aMsg     := {} 
+Local _cMens    := ""
+Local _nQtdeFat := 0
+Local _nPos 
+Local _cFilPrev
+Local _cCodPrev
+Local _cCliPrev
+Local _cLojaPrev
+Local _cCodProPrev
+Local _cModPrev
+Local _cAnoPrev 
+Local _cFatura
+Local _cSerFat
+Local _cChave
+
+Default _aPrev := {}
+
+    If Len(_aPrev) == 0 
+        ApMsgStop("Informado Previsao mas nao encontrado nenhum registro com referencia a previsao, verificar com ADM Sistemas ", "Previsão Faturamento")
+        Return Nil 
+    Endif 
+    ZZP->(DbSetOrder(1))  //ZZP_FILIAL+ZZP_CODPRV+ZZP_CODCLI+ZZP_LOJCLI+ZZP_CODPRD                                                                                                          
+    _cChave     := ""
+    _nQtdeFat  := 0
+    //Organizar pela chave da previsao para verificar se atingiu a quantidade
+    aSort(_aPrev, ,,{|x,y| x[1]+x[2]+x[3]+x[4]+x[5]+x[6] < y[2]+y[2]+y[3]+y[4]+y[5]+y[6]})
+    For _nPos := 1 To Len(_aPrev) 
+        //posicionar  registro inicial
+        SC6->(DbGoto(_aPrev[_nPos,10]))
+        If Empty(SC6->C6_XCODPVR) 
+            _cMens := "Produto "+_aPrev[_nPos,06]+" referente ao Pedido "+SC6->C6_NUM+" nao possui previsao, reg, "+AllTrim(Str(_aPrev[_nPos,09])) 
+            AAdd(_aMsg, _cMens)
+        Else 
+            _nQtdeFat += _aPrev[_nPos,09]
+        Endif    
+        _cMens := "Pedido "+SC6->NUM+", produto "+SC6->C6_PRODUTO+", qtde "+AllTrim(Str(SC6->C6_QTDVEN))+" faturado doc "+_aPrev[_nPos,07]+" serie "+_aPrev[_nPos,08]
+        AAdd(_aMsg,_cMens)
+
+        If _cChave <> _aPrev[_nPos,01]+_aPrev[_nPos,02]+_aPrev[_nPos,03]+_aPrev[_nPos,04]+_aPrev[_nPos,05]+_aPrev[_nPos,06]
+            //Atualiza ZZP
+            XZFAT9ATZP(_cFilPrev,_cCodPrev,_cCliPrev,_cLojaPrev,_cCodProPrev,_cModPrev,_cAnoPrev, _nQtdeFat, _cFatura, _cSerFat, @_aMsg)
+            //Carregar nova chave
+            _cFilPrev   := SC6->C6_XFILPVR
+            _cCodPrev   := SC6->C6_XCODPVR 
+            _cCliPrev   := SC6->C6_CLI
+            _cLojaPrev  := SC6->C6_LOJA
+            _cCodProPrev:= SC6->C6_PRODUTO 
+            _cModPrev   := SC6->_XMODVEI
+            _cAnoPrev   := SC6->C6_XFABMOD
+            _nQtdeFat  := 0
+            _aMsg       := {}
+            _cChave     := _aPrev[_nPos,01]+_aPrev[_nPos,02]+_aPrev[_nPos,03]+_aPrev[_nPos,04]+_aPrev[_nPos,05]+_aPrev[_nPos,06]
+            _cFatura    := _aPrev[_nPos,07]
+            _cSerFat    := _aPrev[_nPos,08]
+        Endif
+    Next _nPos
+    //Atualiza ZZP  necessario pois esta em um next
+    XZFAT9ATZP(_cFilPrev,_cCodPrev,_cCliPrev,_cLojaPrev,_cCodProPrev,_cModPrev,_cAnoPrev, _nQtdeFat, _cFatura, _cSerFat, @_aMsg)
+
+Return Nil 
+
+
+//Gravar dados do faturamento nas tabelas ZZN e ZZP
+Static Function XZFAT9ATZP(_cFilPrev,_cCodPrev,_cCliPrev,_cLojaPrev,_cCodProPrev,_cModPrev,_cAnoPrev, _nQtdeFat, _cFatura, _cSerFat, _aMsg)
+Local _lRet         := .T.
+Local _lEncerra     := .F.
+Local _cAliasPesq   := GetNextAlias()
+Local _cMsg 
+Local _cMens
+Local _nPos
+
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT 	ISNULL(SUM(ZZP.ZZP_QTELIB),0) TOTAL_LIB
+				, ZZP.R_E_C_N_O_ AS NREGZZP 
+		FROM  	%Table:ZZP% ZZP 
+		WHERE ZZP.%notDel%	
+			AND ZZP.ZZP_FILIAL 	= %Exp:_cFilPrev%
+			AND ZZP.ZZP_CODPRV  = %Exp:_cCodPrev%
+			AND SC6.ZZP_CODCLI 	= %Exp:_cCliPrev%
+			AND ZZP.ZZP_LOJCLI  = %Exp:_cLojaPrev%
+			AND ZZP.ZZP_CODPRD 	= %Exp:_cCodProPrev%
+			AND ZZP.C6_XMODVEI 	= %Exp:_cModPrev%
+			AND ZZP.C6_XFABMOD 	= %Exp:_cAnoPrev%
+		GROUP BY ZZP.R_E_C_N_O_	
+	EndSql
+    (_cAliasPesq)->(DbGotop())    
+    //dEIXO UM DEFAULT PARA MENSAGEM
+    _cMens := "Previsao "+_cCodPrev+" cliente "+_cCliPrev+"-"+_cLojaPrev+" produto "+_cCodProPrev+" modelo "+_cModPrev+" ano "+_cAnoPrev
+
+	If (_cAliasPesq)->(Eof()) 
+        _cMsg := "Nao localizada a "+_cMens 
+         ApMsgStop(_cMsg, "Previsão Faturamento")
+         Return .F.   
+    Endif 
+    //Caso exista diferença nas quantidades informar masi baixar
+     If (_cAliasPesq)->TOTAL_LIB <> _nQtdeFat  
+        _cMsg := "Qtde Previsao "+AllTrim(Str((_cAliasPesq)->TOTAL_LIB))+" diferente Qtde Faturada "+AllTrim(Str(_nQtdeFat))+", previsao encerrada, " +_cMens 
+        Aadd(_aMsg,_cMsg)
+    Endif         
+
+    While (_cAliasPesq)->(!Eof()) 
+        ZZP->(DbGoto((_cAliasPesq)->NREGZZP))
+        If RecLock("ZZP",.F.) 
+            ZZP->ZZP_STATUS := "F"
+            ZZP->(MsUnlock())
+        Endif
+        _cMsg := "Gerado Fatura "+_cFatura+" serie "+_cSerFat +" "+_cMens 
+        Aadd(_aMsg,_cMsg)
+        (_cAliasPesq)->(DbSkip())
+    EndDo
+
+    //fechar para abrir novo select
+	(_cAliasPesq)->(DbCloseArea())
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT 	ISNULL(COUNT(ZZP.R_E_C_N_O_),0)  AS NREGZZP 
+                ZZN.R_E_C_N_O_ AS NREGZZN
+		FROM  	%Table:ZZP% ZZP
+        JOIN    %Table:ZZn% ZZN
+            ON  ZZN.%notDel%	
+            AND ZZN.ZZN_FILIAL 	= %Exp:_cFilPrev%
+			AND ZZN.ZZN_CODPRV  = %Exp:_cCodPrev%
+		WHERE ZZP.%notDel%	
+			AND ZZP.ZZP_FILIAL 	= %Exp:_cFilPrev%
+			AND ZZP.ZZP_CODPRV  = %Exp:_cCodPrev%
+            AND ZZP.ZZP_STATUS <> "F" 
+        GROUP BY ZZN.R_E_C_N_O    
+	EndSql
+    (_cAliasPesq)->(DbGotop()) 
+    //Tem que retornar pelo menos um registro que é o cabeçalho
+    If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGZZN > 0
+        _cMsg := "Nao localizado cabecalho da "+_cMens 
+         ApMsgStop(_cMsg, "Previsão Faturamento")
+         Return .F.   
+    Endif
+    //Finalizar com status faturamento no ZZN
+    If (_cAliasPesq)->NREGZZP > 0
+        _lEncerra := .T. 
+    Endif    
+     
+    ZZN->(DbGoto((_cAliasPesq)->NREGZZNP))
+    If RecLock("ZZN",.F.) 
+        _cMens := "FATURAMENTO REALIZADO EM "+DtoC(Date())+" AS "+Substr(time(),1,5)+" Usuario "+RetCodUsr()  
+        ZZN->ZZN_OBS := ZZN->ZZN_OBS +CrLf+  Upper(_cMens)
+        If Len(_aMsg) > 0
+            For _nPos := 1 To Len(_aMsg)
+                ZZN->ZZN_OBS := ZZN->ZZN_OBS +CrLf+  Upper(_aMsg[_nPos])
+            Next 
+        Endif
+        If _lEncerra
+            ZZN->ZZN_STATUS := "F"
+        Endif
+        ZZN->(MsUnlock())
+    Endif
+
+If Select((_cAliasPesq)) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif 
+
+Return _lRet
 
 //Cabeçalho
 /*
