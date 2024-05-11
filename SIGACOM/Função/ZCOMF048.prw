@@ -12,7 +12,7 @@ User Function ZCOMF048()
 Private _cPC_NUM := SC7->C7_NUM
 Private _CPC_COD :='C7_PRODUTO'
 
-    IF FWCodEmp() <> '2020' .OR. FWFilial() <> '2001' //Verificar Empresa/Filial Barueri
+    IF !( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
         RETURN Nil
     ENDIF
 

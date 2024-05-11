@@ -35,7 +35,7 @@ User function ZFISF001()
 		" Deseja continuar ?"
 
 	if MsgYesNo(cMsg, "ZFISF001")
-		oProcess := MsNewProcess():New({|lEnd| cRes := u_ZFISF002({FWCodEmp(), cFilAnt, dTos(dDt)}, @oProcess )},"","Geração de arquivos", .F.)
+		oProcess := MsNewProcess():New({|lEnd| cRes := u_ZFISF002({AllTrim(FWCodEmp()), cFilAnt, dTos(dDt)}, @oProcess )},"","Geração de arquivos", .F.)
 		oProcess:Activate()
 	EndIf
 

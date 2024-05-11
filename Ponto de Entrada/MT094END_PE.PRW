@@ -14,7 +14,6 @@ Obs......:
  
 User Function MT094END()
 
-   Local _cEmp       := FWCodEmp()
    Local aArea	      := GetArea()
    Local cTipo       := PARAMIXB[2]
    Local nOpc        := PARAMIXB[3]
@@ -34,7 +33,7 @@ User Function MT094END()
 	Private cFNumFluig  := Alltrim(PARAMIXB[1])  //Determina o processo se pedido ou solicitacao.
 	Private cFMensagem  := "Pedido cancelado pelo Usuario Protheus"
 
-    If _cEmp == "2010" //Executa o p.e. Anapolis.
+    If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
       If (alltrim(cTipo) = 'IP' .OR. alltrim(cTipo) = 'PC' .OR. alltrim(cTipo) = 'CP') .and. ( nOpc = 1 .or. nOpc = 5 .or. nOpc = 6 ) //Aprova, Rejeita ou bloqueia
          IF alltrim(cTipo) = 'CP'
             IF nOpc = 1

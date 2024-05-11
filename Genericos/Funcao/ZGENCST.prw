@@ -28,7 +28,6 @@ Local _cError       := ""
 Local _nPos         := ""
 Local _nCusto       := 0
 Local _aArea 		:= GetArea()
-Local _cEmpresa 	:= FWCodEmp()
 
 Default _cCodProd   := ""
 Default _cLocal     := ""
@@ -40,7 +39,7 @@ If Empty(_cCodProd)
     Break
 EndIF
 
-If _cEmpresa == "2010"
+If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
     If !Empty(_cAnoMod)
         _nCusto := ZCSTVEI(_cCodProd, _cLocal, _cAnoMod, @_aMsgErro)
     Else

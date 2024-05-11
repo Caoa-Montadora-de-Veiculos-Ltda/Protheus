@@ -4,7 +4,6 @@
 User Function CMVCTBCUS()
 
 Private dInicio	:= GetMv("MV_ULMES") + 1
-Private _cEmp  	:= FWCodEmp()
 	
 If Pergunte("CMVCTBCUS",.T.)
 	Processa({||xProcCont()},'Contabilização','Contabilização Fechamento Customizado- CAOA')
@@ -77,7 +76,7 @@ Private	a330ParamZX	:=Array(21)
 Default lOnbOrd		:= .F.
 Default lJourney	:= .F.
 	
-If _cEmp == "2010" //Executa o p.e. somente para Anapolis.
+If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 	OJouRNeyLog		:= acJourneyLog():New()
 	a330ParamZX[01] := dInicio
 	//Variáveis utilizadas pelo MATA330. Não apagar.

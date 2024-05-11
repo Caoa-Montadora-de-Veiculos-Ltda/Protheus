@@ -674,14 +674,14 @@ Static Function ImpCsv02(oSay)
 					aCPLN := Separa(aLinhas[nB], cSep)
 
 					lValid := .T.
-					If LEN(aCPLN) == 4 .AND. FWCodEmp() == '2001' // Kits
+					If LEN(aCPLN) == 4 .AND. AllTrim(FWCodEmp()) == '2001' // Kits
 						lKit      := .T.
 						cProduto  := aCPLN[1]
 						cAnoFab   := cAnoMod := cOpcion := cCorInt := cCorExt  := ""
 						nQuant    := Val( StrTran(aCPLN[2],",",".") )
 						nVlUnit   := Val( StrTran(aCPLN[3],",",".") )
 						cProforma := aCPLN[4]
-					ElseIf LEN(aCPLN) == 9 .AND. FWCodEmp() == '2001'
+					ElseIf LEN(aCPLN) == 9 .AND. AllTrim(FWCodEmp()) == '2001'
 						lKit      := .F.
 						nQtdKIT   := 1
 						cProduto  := AllTrim(aCPLN[1])+AllTrim(aCPLN[4])+Alltrim(aCPLN[5])+AllTrim(aCPLN[6])
@@ -693,7 +693,7 @@ Static Function ImpCsv02(oSay)
 						nQuant    := Val( StrTran(aCPLN[7],",",".") )
 						nVlUnit   := Val( StrTran(aCPLN[8],",",".") )
 						cProforma := aCPLN[9]
-					ElseIf LEN(aCPLN) == 7 .AND. FWCodEmp() == '2020'
+					ElseIf LEN(aCPLN) == 7 .AND. ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 						lKit      := .F.
 						cProduto  := aCPLN[1]
 						nQuant    := Val( StrTran(aCPLN[3],",",".") )
@@ -713,7 +713,7 @@ Static Function ImpCsv02(oSay)
 
 					cLErro   := STRZERO(nCont,5)+" "
 					If lValid
-						If FWCodEmp() == '2001'
+						If AllTrim(FWCodEmp()) == '2001'
 							cProduto := Alltrim(STRTRAN(cProduto, "-", "" ))
 						Endif
 						cQRYA := "QRYA"

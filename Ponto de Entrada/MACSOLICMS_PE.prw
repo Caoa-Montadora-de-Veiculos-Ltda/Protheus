@@ -14,17 +14,15 @@ Obs......:
 */
 User Function MACSOLICMS()
 
-Local _cEmp  	:= FWCodEmp()
-Local _cFil  	:= FWCodFil()
 Local _aRet 	:= {}
 Local nBaseSol  	:= ParamIxb[3] //Base de retencao ICMS Solidario
 Local nAliqSol  	:= ParamIxb[4] //Alíquota Solidário
 Local nValsol   	:= ParamIxb[5]  //Valor do ICMS Solidario
 
 _aRet := {nBaseSol,nAliqSol,nValsol}
-If _cEmp == "2010" //Executa para Anapolis.
+If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 	_aRet := zFMontadora()
-ElseIf _cFil == "2020012001" //Executa para Barueri
+ElseIf ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 	_aRet := zFBarueri()
 EndIf
 

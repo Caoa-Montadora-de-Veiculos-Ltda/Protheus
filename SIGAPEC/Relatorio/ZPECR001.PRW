@@ -47,7 +47,7 @@ Static Function zRel0001()
 	Private aArea     := GetArea()
 	Private aRetP     := {}
 
-	If (FWCodEmp() = '2020' .AND. FWFilial() = '2001')
+	If ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 
 		lUserAut 	:= U_ZGENUSER( RetCodUsr() ,FunName(),.T.)
 

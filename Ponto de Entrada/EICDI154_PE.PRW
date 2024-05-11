@@ -28,7 +28,6 @@ user function EICDI154
 	Local aDoc 	   := {}
 	Local cErr     := ""
 	Local cChave	:= ""
-	Local _cEmp		:= FwCodEmp()
 	Local nTamLote  := TAMSX3('W8_XLOTE')[1] +1
 	Local nTamCase  := TAMSX3('W8_XCASE')[1]
 	Local cCase     := Space(10)
@@ -89,7 +88,7 @@ user function EICDI154
 			If SD1->(dbSeek(xFilial("SD1")+SWN->WN_DOC+SWN->WN_SERIE+SWN->WN_FORNECE+SWN->WN_LOJA+SWN->WN_PRODUTO+STRZERO(SWN->WN_LINHA,4)))
 				nValUni := NOROUND(SD1->D1_TOTAL/SD1->D1_QUANT,5)
 				nTotal  := noround(SD1->D1_QUANT * nValUni,2)
-				If _cEmp == "2010" //Executa Anapolis.
+				If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 					RECLOCK("SD1",.F.)
 						SD1->D1_XCONT 	:= IIF( !EMPTY( SD1->D1_XCONT  ),SD1->D1_XCONT  , WORK1->WN_XCONT )	
 						SD1->D1_CHASSI	:= IIF( !EMPTY( SD1->D1_CHASSI ),SD1->D1_CHASSI	, WORK1->WN_XVIN  )
@@ -257,7 +256,7 @@ user function EICDI154
 			Aadd( aItem, { "D1_CHASSI"	, WORK1->WN_XVIN  , ".T." })
 			Aadd( aItem, { "D1_XCASE"	, cCase           , ".T." })
 
-			If _cEmp == "2010" //Executa Anapolis.
+			If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 				Aadd( aItem, { "D1_CORINT"	, WORK1->WN_CORINT         , ".T." })
 				Aadd( aItem, { "D1_COREXT"	, WORK1->WN_COREXT         , ".T." })
 				Aadd( aItem, { "D1_OPCION"	, WORK1->WN_OPCION         , ".T." })

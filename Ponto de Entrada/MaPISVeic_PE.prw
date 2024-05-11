@@ -15,13 +15,12 @@ Obs......:
 User Function MaPISVeic()
 
     Local _aRet  := {}
-    Local _cEmp  := FWCodEmp()
    
 //ParamIxb[2] - Base do imposto
 //ParamIxb[3] - Alíquota do imposto
 //ParamIxb[4] - Valor do Imposto
 
-    If _cEmp == "2010" //Executa o p.e. somente para Anapolis.
+    If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
         _aRet := U_CMVVEI02(ProcName())
     Else
         //Retorna os valores padrões quando Barueri

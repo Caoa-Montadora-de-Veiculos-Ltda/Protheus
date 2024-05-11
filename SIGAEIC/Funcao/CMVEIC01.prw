@@ -20,7 +20,6 @@ Obs......:              - U_CMVEI01A() - importação de Invoice
 ===================================================================================== */
 Static nNumInte := 0
 Static aStIten  := {} 
-Static cFilExec := "2020"
 
 User Function CMVEIC01()
 
@@ -110,7 +109,7 @@ User Function CMVEI01A()
 	Private cAnoFab		:= Str(Year(dDataBase), 4)
 	Private cAnoMod		:= Str(Year(dDataBase), 4)
 
-	Private cLayout		:= Iif( FWCodEmp() == "2020", aLayout[5], aLayout[1] )
+	Private cLayout		:= Iif( ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ), aLayout[5], aLayout[1] )
 	Private cPicVlr 	:= "@E 999,999,999.99"
 	Private lAgt_Ok		:= "1"
 	Private lOk_Shp		:= "1"
@@ -154,7 +153,7 @@ User Function CMVEI01A()
 			@ 0.2,nCo2	MSGet cDiretorio SIZE 200,8 Picture "@!"  Valid (Vazio() .OR. IIF(!File(AllTrim(cDiretorio)),(MsgStop("Arquivo Inválido!"),.F.),.T.)) When .F. Of oDlg
 			@ 2,240 BUTTON "..." SIZE 12,12 ACTION (Eval(bGetDir)) Pixel OF oDlg
 			@ 1.5,nCo1	Say "Layout:" SIZE 4,2 Of oDlg
-			if FWCodEmp() == cFilExec
+			if ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 				@ 1.4,nCo2	Combobox cLayout ITEMS aLayout When .F. SIZE 80,12 Of oDlg
 			else
 				@ 1.4,nCo2	Combobox cLayout ITEMS aLayout When .T. SIZE 80,12 Of oDlg
@@ -164,7 +163,7 @@ User Function CMVEI01A()
 			@ 1.5,nCo1+22	Say "Ano Mod:"
 			@ 1.4,nCo2+21	MSGet cAnoMod Picture "9999" When .F. /*aScan( aLayout , cLayout )=3*/ Of oDlg
 			@ 2.7,nCo1 SAY "Proforma" Of oDlg
-			if FWCodEmp() == cFilExec
+			if ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 				@ 2.6,nCo2 MsGet cPoNum F3 "SW2" Picture "@!" When .F./*aScan( aLayout , cLayout )<> 1*/ SIZE 60,08 Of oDlg
 			else
 				@ 2.6,nCo2 MsGet cPoNum F3 "SW2" Picture "@!" When aScan( aLayout , cLayout )<> 1 SIZE 60,08 Of oDlg
@@ -211,7 +210,7 @@ Static Function ValidTela() //Validação de todas as informaÃ§Ãµes do CSV
 	Else
 		nLayout   := aScan( aLayout , cLayout )
 
-		If (FWCodEmp() == cFilExec .AND. nLayout < 5) .OR. (FWCodEmp() <> cFilExec .AND. nLayout = 5)
+		If ( ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) .AND. nLayout < 5) .OR. ( !( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) .AND. nLayout = 5)
 			FWAlertError("O layout " + Alltrim(aLayout[nLayout]) + " não pode ser usado nessa filial", "CMVEIC01")
 			Return
 		EndIf
@@ -237,7 +236,7 @@ Static Function ValidTela() //Validação de todas as informaÃ§Ãµes do CSV
 	EndIf
 
     //Ajustes Referente ao GAP023
-	if  (FWCodEmp() = cFilExec .AND. nLayout = 5 .and. lRet)
+	if  ( ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) .AND. nLayout = 5 .and. lRet)
 		_aPergs     := {}
 	    _aRetP      := {}
 
@@ -1946,7 +1945,7 @@ Static Function CMV01GravaInv() //Gravação da tabela EW5
 
 					lProcEW5	:= .F.
 					
-					If nLayOut == 5 .And. FWCodEmp() == cFilExec
+					If nLayOut == 5 .And. ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 						cQuery := ""
 						cQuery += " SELECT SW3.W3_QTDE,EW5.* 						"+(Chr(13)+Chr(10))
 						cQuery += " FROM "+RetSqlName("EW5")+" EW5 					"+(Chr(13)+Chr(10))
@@ -3529,7 +3528,7 @@ Static Function CMV01ValAr()
 		While !WKEW5->(EOF()) .AND. WKEW5->EW5_INVOIC == cInvoice
 			IF SW2->(dbSeek(xFilial("SW2")+WKEW5->EW5_PO_NUM))
 			
-				If nLayOut == 5 .And. FWCodEmp() == "2020"
+				If nLayOut == 5 .And. ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 					
 					cQuery := " "
 					cQuery += " SELECT SW3.W3_POSICAO ,W3_SEQ, SW3.W3_QTDE ,NVL(EW5_QTDE,0) AS QUANT, (SW3.W3_QTDE-NVL(EW5_QTDE,0) ) AS SALDO,W3_PRECO"+(Chr(13)+Chr(10))

@@ -91,7 +91,6 @@ Local _nPosQtde      	:= Ascan(aHeader,{|x| AllTrim(x[2]) == 'C6_QTDVEN' 	})
 Local _nPosPreco       	:= Ascan(aHeader,{|x| AllTrim(x[2]) == 'C6_PRCVEN' 	})
 Local _nPosConta    	:= Ascan(aHeader,{|x| AllTrim(x[2]) == 'C6_CONTA' 	})
 Local _nPosItemConta    := Ascan(aHeader,{|x| AllTrim(x[2]) == 'C6_ITEMCTA' })
-Local _cEmpresa 		:= FWCodEmp()
 Local _lErroImp			:= .F.
 Local _aColsBkp			:= aClone( aCols )
 Public _nLinAc      	:= 0
@@ -138,7 +137,7 @@ Public _nLinAc      	:= 0
 				_cItemConta		:= SB1->B1_ITEMCC
 				_nQtde 			:= NoRound(Val(_aDados[_nX][02]), TamSx3("C6_QTDVEN")[02])
 				
-				If _cEmpresa == '2020'
+				If ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 				
 					If At(".", AllTrim(_aDados[_nX][02])) > 0 .Or. At(",", AllTrim(_aDados[_nX][02])) > 0
 						MsgInfo("Não é permitido quantidade com ponto ou virgula no arquivo de importação."+ CRLF + " Produto: " + _cProduto , " [ZFATF002]")

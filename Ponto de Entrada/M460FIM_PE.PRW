@@ -14,7 +14,6 @@ Ponto de Entrada Depois da Gravacao da Nota Fiscal
 
 User Function M460FIM()
     Local _cProcessa    := GetMV("CMV_FAT012",,.T.)
-    Local _cEmp		    := FWCodEmp()
     Local _cQuery       := ""
     Local _cTmpAlias    := GetNextAlias()
     Local aArea         := GetArea()
@@ -26,7 +25,7 @@ User Function M460FIM()
     Local aAreaSE1      := SE1->(GetArea())
     Local aAreaSA1      := SA1->(GetArea())
 
-	If _cEmp == "2010" //Executa o p.e. Anapolis.
+	If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 
         _cQuery := ""
         _cQuery += " SELECT * "

@@ -152,6 +152,7 @@ cQ += "WHERE (Z7_XSTATUS = 'P' OR (Z7_XSTATUS = 'E' AND Z7_XDTINC >= '"+dTos(dDa
 //cQ += "WHERE Z7_XSTATUS = 'P' "
 cQ += "AND ((Z7_XTABELA = 'SF2' AND Z7_TIPONF NOT IN ('B','D')) "
 cQ += "OR (Z7_XTABELA = 'SF1' AND Z7_TIPONF = 'D')) "  
+cQ += "AND Z7_CLIFOR||Z7_LOJA NOT IN ('00038702') "
 cQ += "AND D_E_L_E_T_ <> '*' "
 
 If nRecRep > 0

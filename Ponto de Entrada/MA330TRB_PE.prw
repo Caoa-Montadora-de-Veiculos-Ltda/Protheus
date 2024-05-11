@@ -21,9 +21,8 @@ User Function MA330TRB()
 	Local aArea     := GetArea()
 	Local aAreaTRB 	:= TRB->(GetArea())
 	Local aAreaSD3  := SD3->(GetArea())
-	Local _cEmp		:= FWCodEmp()
-	
-	If _cEmp == "2020" //Executa CaoaSp
+		
+	If ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 		dbSelectArea("SD3")
 		
 		TRB->(dbSetOrder(4))

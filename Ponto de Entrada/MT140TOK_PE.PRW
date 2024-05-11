@@ -17,7 +17,7 @@
 User Function MT140TOK()
 	Local lRet     := .T.
 
-	IF FWCodEmp() = '2010' .AND. FWFilial() = '2001' .AND. cSerie == "CKD" //.AND. FWIsInCallStack("U_ZCOMF051")
+	IF ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) .And. cSerie == "CKD" //.AND. FWIsInCallStack("U_ZCOMF051")
 
 		_lRet := U_INC_SZM()
 

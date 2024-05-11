@@ -43,7 +43,7 @@ bCANCEL1  := {|| nBTOP  := 0,_oDlg1:END()}
 
 aBUTTONS1:= {{"LBTIK",{},""}}
 
-IF FWCodEmp() = '2020' .AND. FWFilial() = '2001'
+IF ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 
     // Montagem das Celulas 
     AADD(_aStruT1,{"NOTA"      ,"C",09,0})
