@@ -72,6 +72,11 @@ Begin Sequence
 		Break 
 	Endif
 
+	If !( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //Empresa Franco da Rocha | HMB Hyundai
+		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Permitido Executar somente na empresa 90 | HMB"),4,1)   
+		Break 
+	Endif
+
 	FwMsgRun(,{ |_oSay| ZGENFTEPR(_aRet, @_oSay ) }, "Gerando Notas Fiscais de Entada", "Aguarde...")  //Integração / Aguarde
 	
 End Sequence
