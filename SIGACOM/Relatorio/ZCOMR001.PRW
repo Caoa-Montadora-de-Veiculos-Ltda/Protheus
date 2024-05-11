@@ -2743,7 +2743,7 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
     //** --- VALOR - TOTAL FRETE ----------------------------------------------------------------------------------------------------------- **/
 	//-- ALINHAMENTO A DIREITA
 	nAlignH   := ALIGRIGHT
-	nTotFrete := aValores[FRETE]
+	nTotFrete := SC7->C7_FRETE   //aValores[FRETE]
 	cText     := Transform(nTotFrete, "@E 99,999,999.99")
 	// oReport:SayAlign(nRow, nCol, cText, oFont, nTextWidth, nHeight, nClrText, nAlignH, nAlignV)
     cAux      := "TotalsValueSumFrete"
@@ -2800,7 +2800,7 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
 	//-- ALINHAMENTO A DIREITA
 	nAlignH   := ALIGRIGHT
 	oFont     := oFontLabel
-	nTotItems := aValores[TOTPED]
+	nTotItems := aValores[TOTPED] + nTotFrete
 	cText     := Transform(nTotItems, "@E 99,999,999.99")
 	// oReport:SayAlign(nRow, nCol, cText, oFont, nTextWidth, nHeight, nClrText, nAlignH, nAlignV)
     cAux      := "TotalsValueSumPedido"

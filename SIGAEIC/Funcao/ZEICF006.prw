@@ -54,6 +54,7 @@ Static Function zGetItens()
     cmd += CRLF +  " - Retem PIS."       
     cmd += CRLF +  " - Retem COFINS."    
     cmd += CRLF +  " - Grupo tributário."
+    cmd += CRLF +  " - IPI."
     cmd += CRLF + "Deseja atualizar esses campos nos produtos ? "
     
     If MsgYesNo(cmd, "ZEICF006") = .F.
@@ -87,6 +88,7 @@ Static Function zProcessa(aRegs)
         oMdl:SetValue("SB1MASTER", "B1_PIS"   , SYD->YD_XRETPIS)
         oMdl:SetValue("SB1MASTER", "B1_COFINS", SYD->YD_XRETCOF)
         oMdl:SetValue("SB1MASTER", "B1_GRTRIB", SYD->YD_XGRPTRI)
+        oMdl:SetValue("SB1MASTER", "B1_IPI"   , SYD->YD_PER_IPI)
 
         If oMdl:VldData()
             oMdl:CommitData()
