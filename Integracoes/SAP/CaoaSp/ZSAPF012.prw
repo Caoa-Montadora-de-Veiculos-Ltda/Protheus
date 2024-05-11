@@ -147,7 +147,9 @@ endif
 VRJ->(dbSetOrder(1))
 cQ := "SELECT SZ7.*,SZ7.R_E_C_N_O_ SZ7_RECNO "
 cQ += "FROM "+RetSqlName("SZ7")+" SZ7 "
+//cQ += "WHERE (Z7_XSTATUS = 'P' OR (Z7_XSTATUS = 'E' AND Z7_XDTINC >= '"+dTos(dDataBase-nDiasErro)+"') OR (Z7_XSTATUS = 'A' AND Z7_XDTINC >= '"+dTos(dDataBase-nDiasAguar)+"' AND Z7_XDTINC < '"+dTos(dDataBase-1)+"')) "
 cQ += "WHERE (Z7_XSTATUS = 'P' OR (Z7_XSTATUS = 'E' AND Z7_XDTINC >= '"+dTos(dDataBase-nDiasErro)+"')) "
+//cQ += "WHERE Z7_XSTATUS = 'P' "
 cQ += "AND ((Z7_XTABELA = 'SF2' AND Z7_TIPONF NOT IN ('B','D')) "
 cQ += "OR (Z7_XTABELA = 'SF1' AND Z7_TIPONF = 'D')) "  
 cQ += "AND D_E_L_E_T_ <> '*' "
@@ -1165,18 +1167,34 @@ if nStatuHttp >= 200 .and. nStatuHttp <= 299
 				Loop
 			EndIf
 
+				/*
+				nVlrTitTot += nVlrTit
+				// carrega diferenca de arredondamento na ultima parcela
+				If nz == nTit
+					If Abs(nVlrTitTot-nAtiv) > 0
+						nVlrTit += Abs(nVlrTitTot-nAtiv)
+					Endif
+				Endif		 
+				*/	
+
+			//if SE1->E1_TIPO="NCC"
+			//	nPos := aScan( aSimple, {|aVet| aVet[2] == "montanteMoedaPagamento" .and. aVet[5] == "ContasAReceberRequest#1.documentos#1.AccountReceivable#" + Alltrim(Str(nz))} )
+			//xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR(SE1->E1_VALOR * -1)))
+			//xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR((SE1->E1_VALOR-SE1->E1_IRRF-SE1->E1_ISS-SE1->E1_INSS-SE1->E1_PIS-SE1->E1_COFINS-SE1->E1_CSLL) * -1)))
+			//	xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR(nVlrTit * -1)))
+			//	If !xRet
+			//		U_ZF12GENSAP((cAliasNF)->Z7_FILIAL,(cAliasNF)->Z7_XTABELA,(cAliasNF)->Z7_XCHAVE,(cAliasNF)->Z7_XSEQUEN,"E","montanteMoedaPagamento Erro: " + oWsdl:cError)
+			//		lContinua := .F.
+			//		SE1->(dbSkip())
+			//		Loop
+			//	EndIf
+			//ELSE
 			nPos := aScan( aSimple, {|aVet| aVet[2] == "montanteMoedaPagamento" .and. aVet[5] == "ContasAReceberRequest#1.documentos#1.AccountReceivable#" + Alltrim(Str(nz))} )
-
-
-			/*//Adicionado essa regra para os faturamentos da empresa 02 | Franco da Rocha para o cliente 000387|02  HMB
-			If ( AllTrim(SE1->E1_CLIENTE) == "000387" .And. AllTrim(SE1->E1_LOJA) == "02" ) .And. AllTrim(SE1->E1_TIPO) == "NF"
-				xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR(IIf(lInvSinal,SE1->E1_VALOR - (SE1->E1_PIS + SE1->E1_COFINS) * -1, SE1->E1_VALOR - (SE1->E1_PIS + SE1->E1_COFINS))))) //###LINHA ORIGINAL
-			Else
-				xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR(IIf(lInvSinal,SE1->E1_VALOR * -1,SE1->E1_VALOR)))) //###LINHA ORIGINAL
-			EndIf*/
-
+			//xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR(SE1->E1_VALOR)))
+			//xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR((SE1->E1_VALOR-SE1->E1_IRRF-SE1->E1_ISS-SE1->E1_INSS-SE1->E1_PIS-SE1->E1_COFINS-SE1->E1_CSLL))))
+			//xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR(IIf(lInvSinal,nVlrTit * -1,nVlrTit))))
 			xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR(IIf(lInvSinal,SE1->E1_VALOR * -1,SE1->E1_VALOR)))) //###LINHA ORIGINAL
-			
+//					xRet := oWsdl:SetValue( aSimple[nPos][1], ALLTRIM(STR(IIf(lInvSinal,(SE1->E1_VALOR-SE1->E1_DECRESC) * -1,(SE1->E1_VALOR-SE1->E1_DECRESC))))) 
 			If !xRet
 				U_ZF12GENSAP((cAliasNF)->Z7_FILIAL,(cAliasNF)->Z7_XTABELA,(cAliasNF)->Z7_XCHAVE,(cAliasNF)->Z7_XSEQUEN,"E","montanteMoedaPagamento Erro: " + oWsdl:cError)
 				lContinua := .F.
