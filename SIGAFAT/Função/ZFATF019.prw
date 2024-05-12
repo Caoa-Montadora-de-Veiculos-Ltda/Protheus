@@ -4230,26 +4230,30 @@ Return Nil
 //GAP167  Previsao de Faturamento
 //Chamada do Estorno podendo ser xamado de outras funções
 User Function XZFAT9FT(_cFilPrev, _cCodPrev, _oSay)
-Local _aRet     := {}
-Local _aParam   := {}
-Local _cWhere   := ""
-Local _cJoin    := ""
-Local _cOrderTab:= ""
+Local _cAliasPesq   := GetNextAlias()
+Local _aRet         := {}
+Local _aParam       := {}
+Local _cWhere       := ""
+Local _cJoin        := ""
+Local _cOrderTab    := ""
 Local _nPos
+Local _cMens
 
 Default _cCodPrev   := ""
 Default _cFilPrev   := FwxFilial("ZZP")
 
+Private _aMsgPrev   := {}  //carregar informações do processo
+
+Begin Sequence
 	_oSay:SetText("Aguarde Preparando parametros - Hora: "+Time())
 	ProcessMessage()
      If Empty(_cCodPrev)
 	    ApMsgStop("Não informada Previsao", "Previsao Faturamento")
-        Return Nil
+        Break
     Endif
 
-
 	If !U_XZFAT9PA(@_aParam, .F. /*nao carregar tela*/) .Or. Len(_aParam) == 0
-        Return Nil
+        Break
 	Endif
     
     For _nPos := 1 To Len(_aParam)
@@ -4289,10 +4293,58 @@ Default _cFilPrev   := FwxFilial("ZZP")
     _cQuery += CrLf + "     AND VV2.D_E_L_E_T_  = ' '
     */
     _cOrderTab:= "SC6.C6_FILIAL,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PEDCLI,SC6.C6_ITEM,SC6.C6_PRODUTO"    
+
 	_oSay:SetText("Aguarde Selecionando registros - Hora: "+Time())
 	ProcessMessage()
-
+    //Funcionalidade para gerar o Faturamente
     fLibPed(_oSay, _aRet, _cWhere, _cJoin, _cOrderTab)
+
+    //Após o Faturamento atualizar tabela ZZN
+	_oSay:SetText("Aguarde Ajustando Status - Hora: "+Time())
+	ProcessMessage()
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+        %NoParser%
+        WITH PREVSQL AS (   SELECT COALESCE(COUNT(ZZP.ZZP_STATUS),0) AS NTOTZZP
+		                    FROM ZZP010 ZZP
+		                    WHERE   ZZP.%notDel%	 
+			                    AND ZZP.ZZP_FILIAL = %Exp:_cFilPrev%
+			                    AND ZZP.ZZP_CODPRV = %Exp:_cCodPrev% 
+		                        AND ZZP.ZZP_STATUS <> 'F'
+		                )
+        SELECT  PREVSQL.NTOTZZP
+                , ZZN.R_E_C_N_O_ AS NREGZZN
+        FROM    PREVSQL
+                , %Table:ZZN% ZZN   
+        WHERE   ZZN.%notDel% 
+            AND ZZN.ZZN_FILIAL 	= %Exp:_cFilPrev%
+			AND ZZN.ZZN_CODPRV  = %Exp:_cCodPrev%
+	EndSql
+    (_cAliasPesq)->(DbGotop())
+    If  (_cAliasPesq)->(Eof())
+        Break 
+    Endif    
+    ZZN->(DbGoto((_cAliasPesq)->NREGZZN))
+    If !RecLock("ZZN",.F.) 
+        Break 
+    Endif
+    //Se atuualizou todo  o ZPP posso gravar como Faturado
+    If  (_cAliasPesq)->NTOTZZP == 0
+        _cMens := "FATURAMENTO REALIZADO EM "+DtoC(Date())+" AS "+Substr(time(),1,5)+" Usuario "+RetCodUsr()  
+        ZZN->ZZN_OBS    := ZZN->ZZN_OBS +CrLf+  Upper(_cMens)
+        ZZN->ZZN_STATUS := "F"
+    Endif 
+    //na funcao XZFAT9ATPV carrego esta matriz
+    If Len(_aMsgPrev) > 0
+        For _nPos := 1 To Len(_aMsgPrev)
+            ZZN->ZZN_OBS := ZZN->ZZN_OBS +CrLf+  Upper(_aMsgPrev[_nPos])
+        Next _nPos
+    Endif
+    ZZN->(MsUnlock())
+End Sequence
+If Select((_cAliasPesq)) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif 
 Return Nil
 
 
@@ -4329,6 +4381,7 @@ Local _cAnoPrev
 Local _cFatura
 Local _cSerFat
 Local _cChave
+Local _nCount
 
 Default _aPrev := {}
 
@@ -4367,6 +4420,11 @@ Default _aPrev := {}
             _cModPrev   := SC6->C6_XMODVEI
             _cAnoPrev   := SC6->C6_XFABMOD
             _nQtdeFat   := 0
+            If Len(_aMsg) > 0
+                For _nCount := 1 To Len(_aMsg)
+                    Aadd(_aMsgPrev,_aMsg[_nCount])
+                Next _nCount     
+            Endif     
             _aMsg       := {}
             _cChave     := _aPrev[_nPos,01]+_aPrev[_nPos,02]+_aPrev[_nPos,03]+_aPrev[_nPos,04]+_aPrev[_nPos,05]+_aPrev[_nPos,06]
             _cFatura    := _aPrev[_nPos,07]
@@ -4378,16 +4436,16 @@ Default _aPrev := {}
         //Atualiza ZZP  necessario pois esta em um next
         XZFAT9ATZP(_cFilPrev,_cCodPrev,_cCliPrev,_cLojaPrev,_cCodProPrev,_cModPrev,_cAnoPrev, _nQtdeFat, _cFatura, _cSerFat, @_aMsg)
     Endif
+     
 Return Nil 
 
 
-//Gravar dados do faturamento nas tabelas ZZN e ZZP
+//Gravar dados do faturamento nas tabelas ZZP
 Static Function XZFAT9ATZP(_cFilPrev,_cCodPrev,_cCliPrev,_cLojaPrev,_cCodProPrev,_cModPrev,_cAnoPrev, _nQtdeFat, _cFatura, _cSerFat, _aMsg)
 Local _lRet         := .T.
 Local _cAliasPesq   := GetNextAlias()
 Local _cMsg 
 Local _cMens
-Local _nPos
 
 	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
 		SELECT 	ISNULL(SUM(ZZP.ZZP_QTELIB),0) TOTAL_LIB
@@ -4411,61 +4469,25 @@ Local _nPos
         _cMsg := "Nao localizada a "+_cMens 
          ApMsgStop(_cMsg, "Previsão Faturamento")
          Return .F.   
-    Endif 
+    Endif
+    //o faturamento é um a um quando na previsão for mais que um dara este erro pois para faturar 2 da previsão passara aqui  2 vezes 
     //Caso exista diferença nas quantidades informar masi baixar
-     If (_cAliasPesq)->TOTAL_LIB <> _nQtdeFat  
-        _cMsg := "Qtde Previsao "+AllTrim(Str((_cAliasPesq)->TOTAL_LIB))+" diferente Qtde Faturada "+AllTrim(Str(_nQtdeFat))+", previsao encerrada, " +_cMens 
-        Aadd(_aMsg,_cMsg)
-    Endif         
+    // If (_cAliasPesq)->TOTAL_LIB <> _nQtdeFat  
+    //    _cMsg := "Qtde Previsao "+AllTrim(Str((_cAliasPesq)->TOTAL_LIB))+" diferente Qtde Faturada "+AllTrim(Str(_nQtdeFat))+", previsao encerrada, " +_cMens 
+    //    Aadd(_aMsg,_cMsg)
+    //Endif         
 
     While (_cAliasPesq)->(!Eof()) 
         ZZP->(DbGoto((_cAliasPesq)->NREGZZP))
         If RecLock("ZZP",.F.) 
             ZZP->ZZP_STATUS := "F"
+            ZZP->ZZP_QTEFAT := _nQtdeFat
             ZZP->(MsUnlock())
         Endif
         _cMsg := "Gerado Fatura "+_cFatura+" serie "+_cSerFat +" "+_cMens 
         Aadd(_aMsg,_cMsg)
         (_cAliasPesq)->(DbSkip())
     EndDo
-
-    //fechar para abrir novo select
-	(_cAliasPesq)->(DbCloseArea())
-	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
-		SELECT 	ISNULL(COUNT(ZZP.ZZP_STATUS),0)  AS NTOTZZP 
-                ,ZZN.R_E_C_N_O_   AS NRECZZN
-        FROM %Table:ZZN% ZZN        
-		JOIN %Table:ZZP% ZZP
-            ON  ZZP.%notDel%	
-			AND ZZP.ZZP_FILIAL 	= %Exp:_cFilPrev%
-			AND ZZP.ZZP_CODPRV  = %Exp:_cCodPrev%
-            AND ZZP.ZZP_STATUS <> "F" 
-        WHERE ZZN.%notDel%	
-            AND ZZN.ZZN_FILIAL 	= %Exp:_cFilPrev%
-			AND ZZN.ZZN_CODPRV  = %Exp:_cCodPrev%
-        GROUP BY ZZN.R_E_C_N_O_
-        ORDER BY NTOTZZP DESC
-	EndSql
-    //Tem que retornar pelo menos um registro que é o cabeçalho
-    (_cAliasPesq)->(DbGotop())
-    If  (_cAliasPesq)->NTOTZZP > 0
-        _cMsg := "Nao localizado cabecalho da "+_cMens 
-         ApMsgStop(_cMsg, "Previsão Faturamento")
-         Return .F.   
-    Endif
-    //Posiciono ZZN para gravar
-    ZZN->(DbGoto((_cAliasPesq)->NRECZZN))
-    If RecLock("ZZN",.F.) 
-        _cMens := "FATURAMENTO REALIZADO EM "+DtoC(Date())+" AS "+Substr(time(),1,5)+" Usuario "+RetCodUsr()  
-        ZZN->ZZN_OBS := ZZN->ZZN_OBS +CrLf+  Upper(_cMens)
-        If Len(_aMsg) > 0
-            For _nPos := 1 To Len(_aMsg)
-                ZZN->ZZN_OBS := ZZN->ZZN_OBS +CrLf+  Upper(_aMsg[_nPos])
-            Next 
-        Endif
-        ZZN->ZZN_STATUS := "F"
-        ZZN->(MsUnlock())
-    Endif
 
 If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
