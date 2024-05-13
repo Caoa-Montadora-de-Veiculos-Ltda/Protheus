@@ -236,7 +236,7 @@ User Function ZWSR010(cNota, cSerie, cForn, cLoja, lBotao, cTpNf)
 				oJsEnt['recebimento']['id_leva_devolucao']    := ""
 				oJsEnt['recebimento']['nu_invoice']    	      := IiF( (_cAlias)->F1_TIPO == 'N' , zBuscaInv( (_cAlias)->D1_CONHEC, cForn, cLoja, Alltrim((_cAlias)->D1_DOC) ), Alltrim((_cAlias)->D1_DOC) )
 				//oJsEnt['recebimento']['detalhe']              := ZWSR007ITE(oJsEnt, Alltrim((_cAlias)->D1_DOC), Alltrim((_cAlias)->D1_SERIE), cForn , cLoja ,_cAlias)
-				oJsEnt['recebimento']['detalhe']              := ZWSR007ITE(oJsEnt, Alltrim((_cAlias)->D1_DOC), Alltrim((_cAlias)->D1_SERIE), cForn , cLoja , _cDeposito, @_nItem, _cAlias)  //PEC069
+				oJsEnt['recebimento']['detalhe']              := ZWSR007ITE(oJsEnt, Alltrim((_cAlias)->D1_DOC), Alltrim((_cAlias)->D1_SERIE), cForn , cLoja , _cDeposito, @_nItem, _cAlias,cCnpj)  //PEC069
 		
 				FWMsgRun(, {|| aResRg := zPostRg(oJsEnt) }, "Envio de Receb. Nf de Entrada", "Por favor aguarde...")
 
@@ -312,11 +312,12 @@ RETURN()
 /*
 Alteração PEC069 incluido Marca
 */
-Static Function ZWSR007ITE( _oJsEnt, cNota, cSerie, cForn, cLoja , _cDeposito, _nItem, _cAlias )
+Static Function ZWSR007ITE( _oJsEnt, cNota, cSerie, cForn, cLoja , _cDeposito, _nItem, _cAlias,cCnpj )
 	Local _nPos   	:= 0
 	Local cCodFor	:= ""
 	Local cLojaFor	:= ""
 	Local cCodProd	:= ""
+	
 	//Local _nItem	:= 1  //pec069
 
 	Private _aItens := {}
