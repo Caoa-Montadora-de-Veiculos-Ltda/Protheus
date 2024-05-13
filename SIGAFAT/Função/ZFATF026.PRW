@@ -21,6 +21,7 @@
 #define DATA_SALDOPRD	5
 
 Static _cAliasZF026
+Static _aPrevisao    := {}
 
 
 /*/{Protheus.doc} ZFATF026
@@ -36,7 +37,6 @@ Local _aArea        := GetArea()
 Local _cTitulo      := "Previsão Faturamento "
 Local _aCoors 		:= FWGetDialogSize( oMainWnd )
 //Local _cAliasZF026   := ""
-Local _aPrevisao    := {}
 Local _aEdit  		:= {}
 Local _oDlgPrev
 Local _oFWLayer
@@ -66,7 +66,7 @@ Begin Sequence
 	If _nOpc == 0 .Or. Empty(_cCodPrev)
 		Break
 	Endif
- 	FwMsgRun(,{ |_oSay| ZFATF026PR(_cFilPrev, _cCodPrev, @_aPrevisao, @_oSay ) }, "Selecionando dados para a Montagem Previsao", "Aguarde...")  
+ 	FwMsgRun(,{ |_oSay| ZFATF026PR(_cFilPrev, _cCodPrev, @_oSay ) }, "Selecionando dados para a Montagem Previsao", "Aguarde...")  
 	//acrescentar campos editaveis
 	Aadd( _aEdit,"ZZP_QTELIB")
     //Abre arquivo selecionado
@@ -213,153 +213,35 @@ Return Nil
 // Cria uma coluna de Clientes com totais
 // Adiciona as colunas do Browse
 Static Function ZFAT026MCli()
-Local _oColumn
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aRefCli[_oBrWCli:nAt,DATA_CLIENTE]})
-	_oColumn:SetTitle("Cliente" ) 
-	_oColumn:SetSize(Len(SA1->A1_COD))
-	_oColumn:SetDecimal(0)
-	//_oColumn:SetPicture("@!")
-	_oBrWCli:SetColumns({_oColumn})
-	
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aRefCli[_oBrWCli:nAt,DATA_LOJA]})
-	_oColumn:SetTitle("Loja") 
-	_oColumn:SetSize(Len(SA1->A1_LOJA))
-	_oColumn:SetDecimal(0)
-	//_oColumn:SetPicture("@!")
-	_oBrWCli:SetColumns({_oColumn})
-
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aRefCli[_oBrWCli:nAt,DATA_CNPJCPF]})
-	_oColumn:SetTitle("CNPJ/CPF") 
-	_oColumn:SetSize(14)
-	_oColumn:SetDecimal(0)
-	//_oColumn:SetPicture("@!")
-	_oBrWCli:SetColumns({_oColumn})
-
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aRefCli[_oBrWCli:nAt,DATA_NOMCLI]})
-	_oColumn:SetTitle("Razao Social") 
-	_oColumn:SetSize(Len(SA1->A1_NOME))
-	_oColumn:SetDecimal(0)
-	_oColumn:SetPicture("@!")
-	_oBrWCli:SetColumns({_oColumn})
-
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aRefCli[_oBrWCli:nAt,DATA_LC]})
-	_oColumn:SetTitle("Limite Credito R$") 
-	_oColumn:SetSize(15)
-	_oColumn:SetDecimal(2)
-	_oColumn:SetPicture("ZZP_TOTLIB")
-	_oBrWCli:SetColumns({_oColumn})
-
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aRefCli[_oBrWCli:nAt,DATA_TOTCLI]})
-	_oColumn:SetTitle("Total Cliente") 
-	_oColumn:SetSize(15)
-	_oColumn:SetDecimal(4)
-	_oColumn:SetPicture(PesqPict("ZZP","ZZP_QTELIB"))
-	_oBrWCli:SetColumns({_oColumn})
-
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aRefCli[_oBrWCli:nAt,DATA_SALDOLC]})
-	_oColumn:SetTitle("Saldo Credito R$") 
-	_oColumn:SetSize(15)
-	_oColumn:SetDecimal(2)
-	_oColumn:SetPicture(PesqPict("ZZP","ZZP_TOTLIB"))
-	_oBrWCli:SetColumns({_oColumn})
+//Local _oColumn
+	_oBrWCli:SetColumns({ ZFT26StruCpo("ZZP_CODCLI"	, {||_aRefCli[_oBrWCli:nAt,DATA_CLIENTE]},	"Cliente") })
+	_oBrWCli:SetColumns({ ZFT26StruCpo("ZZP_LOJCLI"	, {||_aRefCli[_oBrWCli:nAt,DATA_LOJA]},		"Loja") })
+	_oBrWCli:SetColumns({ ZFT26StruCpo("ZZP_CNPJCP"	, {||_aRefCli[_oBrWCli:nAt,DATA_CNPJCPF]}, 	"CNPJ/CPF") })
+	_oBrWCli:SetColumns({ ZFT26StruCpo("A1_NOME"	, {||_aRefCli[_oBrWCli:nAt,DATA_NOMCLI]}, 	"Razao Social") })
+	_oBrWCli:SetColumns({ ZFT26StruCpo("ZZP_TOTLIB"	, {||_aRefCli[_oBrWCli:nAt,DATA_LC]}, 		"Limite Credito R$") })
+	_oBrWCli:SetColumns({ ZFT26StruCpo("ZZP_QTELIB"	, {||_aRefCli[_oBrWCli:nAt,DATA_TOTCLI]},	"Total Cliente") })
+	_oBrWCli:SetColumns({ ZFT26StruCpo("ZZP_TOTLIB"	, {||_aRefCli[_oBrWCli:nAt,DATA_SALDOLC]},	"Saldo Credito R$") })
 Return Nil
 
 //Cria cabeçalho e coluna totalização por produto
 Static Function ZFAT026MPrd()
-Local _oColumn
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aRefPrd[_oBrWPrd:nAt,DATA_PRODUTO]})
-	_oColumn:SetTitle("Produto" ) 
-	_oColumn:SetSize(Len(SB1->B1_COD))
-	_oColumn:SetDecimal(0)
-	//_oColumn:SetPicture("@!")
-	_oBrWPrd:SetColumns({_oColumn})
-	
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aRefPrd[_oBrWPrd:nAt,DATA_DESCPRD]})
-	_oColumn:SetTitle("Descrição") 
-	_oColumn:SetSize(Len(SB1->B1_DESC))
-	_oColumn:SetDecimal(0)
-	_oColumn:SetPicture("@!")
-	_oBrWPrd:SetColumns({_oColumn})
-
-	//Qtde de Chassis disponivel
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aRefPrd[_oBrWPrd:nAt,DATA_QTDEPRD]})
-	_oColumn:SetTitle("Estoque")   
-	_oColumn:SetSize(15)
-	_oColumn:SetDecimal(3)
-	_oColumn:SetPicture(PesqPict("ZZP","ZZP_QTELIB"))
-	_oBrWPrd:SetColumns({_oColumn})
-
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aRefPrd[_oBrWPrd:nAt,DATA_QTDEPREV]})
-	_oColumn:SetTitle("Em Previsao") 
-	_oColumn:SetSize(15)
-	_oColumn:SetDecimal(3)
-	_oColumn:SetPicture(PesqPict("ZZP","ZZP_QTELIB"))
-	_oBrWPrd:SetColumns({_oColumn})
-
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aRefPrd[_oBrWPrd:nAt,DATA_SALDOPRD]})
-	_oColumn:SetTitle("Saldo") 
-	_oColumn:SetSize(15)
-	_oColumn:SetDecimal(3)
-	_oColumn:SetPicture(PesqPict("ZZP","ZZP_QTELIB"))
-	_oBrWPrd:SetColumns({_oColumn})
+	_oBrWPrd:SetColumns({ ZFT26StruCpo("ZZP_CODPRD"	, {||_aRefPrd[_oBrWPrd:nAt,DATA_PRODUTO]},	"Produto") })
+	_oBrWPrd:SetColumns({ ZFT26StruCpo("B1_DESC"	, {||_aRefPrd[_oBrWPrd:nAt,DATA_DESCPRD]}, 	"Desc Prd") })
+	_oBrWPrd:SetColumns({ ZFT26StruCpo("ZZP_QTELIB"	, {||_aRefPrd[_oBrWPrd:nAt,DATA_QTDEPRD]},	"Estoque") })
+	_oBrWPrd:SetColumns({ ZFT26StruCpo("ZZP_QTELIB"	, {||_aRefPrd[_oBrWPrd:nAt,DATA_QTDEPREV]}, "Em Previsao") })
+	_oBrWPrd:SetColumns({ ZFT26StruCpo("ZZP_QTELIB"	, {||_aRefPrd[_oBrWPrd:nAt,DATA_SALDOPRD]},	"Saldo") })
 Return Nil
 
 
 //Cria cabeçalho e coluna totalização por produto
+//ZFT26StruCpo(_xCampo, _bCampo, _cTitulo, _nSize, _nDecimal, _cPicture )
 Static Function ZFAT026MRes()
-Local _oColumn
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aRefRes[_oBrWRes:nAt,DATA_PRODUTO]})
-	_oColumn:SetTitle("Referencia" ) 
-	_oColumn:SetSize(Len(SB1->B1_COD))
-	_oColumn:SetDecimal(0)
-	//_oColumn:SetPicture("@!")
-	_oBrWRes:SetColumns({_oColumn})
+	_oBrWRes:SetColumns({ ZFT26StruCpo("ZZP_CODPRD"	, {||_aRefRes[_oBrWRes:nAt,DATA_PRODUTO]}	,"Referencia") })
+	_oBrWRes:SetColumns({ ZFT26StruCpo("B1_DESC"	, {||_aRefRes[_oBrWRes:nAt,DATA_DESCPRD]}	,"Desc Prd") })
+	_oBrWRes:SetColumns({ ZFT26StruCpo("ZZP_QTELIB"	, {||_aRefRes[_oBrWRes:nAt,DATA_QTDEPRD]}	,"Estoque") })
+	_oBrWRes:SetColumns({ ZFT26StruCpo("ZZP_QTELIB"	, {||_aRefRes[_oBrWRes:nAt,DATA_QTDEPREV]}	,"Em Previsao") })
+	_oBrWRes:SetColumns({ ZFT26StruCpo("ZZP_QTELIB"	, {||_aRefRes[_oBrWRes:nAt,DATA_SALDOPRD]}	,"Saldo") })
 	
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aRefRes[_oBrWRes:nAt,DATA_DESCPRD]})
-	_oColumn:SetTitle("Descrição") 
-	_oColumn:SetSize(Len(SB1->B1_DESC))
-	_oColumn:SetDecimal(0)
-	_oColumn:SetPicture("@!")
-	_oBrWRes:SetColumns({_oColumn})
-
-	//Qtde de Chassis disponivel
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aRefRes[_oBrWRes:nAt,DATA_QTDEPRD]})
-	_oColumn:SetTitle("Estoque")   
-	_oColumn:SetSize(15)
-	_oColumn:SetDecimal(3)
-	_oColumn:SetPicture(PesqPict("ZZP","ZZP_QTELIB"))
-	_oBrWRes:SetColumns({_oColumn})
-
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aRefRes[_oBrWRes:nAt,DATA_QTDEPREV]})
-	_oColumn:SetTitle("Em Previsao") 
-	_oColumn:SetSize(15)
-	_oColumn:SetDecimal(3)
-	_oColumn:SetPicture(PesqPict("ZZP","ZZP_QTELIB"))
-	_oBrWRes:SetColumns({_oColumn})
-
-	_oColumn := FWBrwColumn():New()
-	_oColumn:SetData({||_aRefRes[_oBrWRes:nAt,DATA_SALDOPRD]})
-	_oColumn:SetTitle("Saldo") 
-	_oColumn:SetSize(15)
-	_oColumn:SetDecimal(3)
-	_oColumn:SetPicture(PesqPict("ZZP","ZZP_QTELIB"))
-	_oBrWRes:SetColumns({_oColumn})
 Return Nil
 
 
@@ -371,7 +253,7 @@ Processar Pedido
 @obs        
 /*/
 
-Static Function ZFATF026PR(_cFilPrev, _cCodPrev, _aPrevisao, _oSay)
+Static Function ZFATF026PR(_cFilPrev, _cCodPrev, _oSay)
 Local _cWhere       := ""
 Local _nPos
 Local _aStru
@@ -1190,3 +1072,45 @@ Local _lAtualiza := .F.
 	Endif
 
 Return .T.
+
+
+
+Static Function ZFT26StruCpo(_xCampo, _bCampo, _cTitulo, _nSize, _nDecimal, _cPicture )
+Local _nPos 
+Local _oColumn
+
+Default _cTitulo 	:= ""
+Default _nSize 		:= 0
+Default _nDecimal   := 0
+Default _cPicture   := ""
+
+Begin Sequence 
+	If _bCampo == Nil
+		Break
+	Endif 
+	_nPos := Ascan( _aPrevisao,{|x| AllTrim(x[2]) == AllTrim(_xCampo)})
+	If _nPos == 0
+		Break 
+	Endif 	
+	If Empty(_cTitulo)
+		_cTitulo := _aPrevisao[_nPos,1]
+	Endif
+	If Empty(_nSize)
+		_nSize	:= _aPrevisao[_nPos,4]
+	Endif
+	If Empty(_nDecimal)
+		_nDecimal := _aPrevisao[_nPos,5]
+	Endif 
+	If Empty(_cPicture)
+		_cPicture := _aPrevisao[_nPos,6]
+	Endif 
+	_oColumn := FWBrwColumn():New()
+	_oColumn:SetData(_bCampo)
+	_oColumn:SetTitle(_cTitulo) 
+	_oColumn:SetSize(_nSize)
+	_oColumn:SetDecimal(_nDecimal)
+	_oColumn:SetPicture(_cPicture)
+
+End Sequence 
+Return _oColumn
+
