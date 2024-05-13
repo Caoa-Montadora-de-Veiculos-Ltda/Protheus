@@ -31,7 +31,7 @@ User Function ZFISR018()
 
     aAdd(aPergs, {1,"Emissao De"		,dDtEmiss	,/*Pict*/	,/*Valid*/	,/*F3*/		,/*When*/,50,.F.})  //MV_PAR01
 	aAdd(aPergs, {1,"Emissao Ate"		,dDtEmiss	,/*Pict*/,MV_PAR02 > MV_PAR01,/*F3*/,/*When*/,50,.F.})  //MV_PAR02
-	aAdd(aPergs, {1,"Nota Fiscal De"	,cNumNF		,/*Pict*/	,/*Valid*/	,"DOCRFT"   ,/*When*/,50,.F.})  //MV_PAR03
+	aAdd(aPergs, {1,"Nota Fiscal De"	,cNumNF		,/*Pict*/	,/*Valid*/	,"SF2"   ,/*When*/,50,.F.})  //MV_PAR03
 	aAdd(aPergs, {1,"Nota Fiscal Ate"	,cNumNF		,/*Pict*/	,/*Valid*/	,"SF2"		,/*When*/,50,.F.})  //MV_PAR04
     aAdd(aPergs, {1,"Serie"				,cSerieNF	,/*Pict*/	,/*Valid*/	,"_SF1SE"	    ,/*When*/,50,.F.})  //MV_PAR05
     aAdd(aPergs, {1,"Fornecedor De"		,cFornece	,/*Pict*/	,/*Valid*/	,"SA2"	    ,/*When*/,50,.F.})  //MV_PAR06
@@ -54,7 +54,7 @@ Return
 
 Static Function fReportDef()
     
-    Local oReport  := Nil
+    Local oReport   := Nil
     Local oSection1 := Nil
     Local oSection2 := Nil
 
@@ -275,12 +275,16 @@ Static Function  ReportPrint(oReport)
 
         oSection1:Cell("DT_EMIS"):SetValue(StoD((cAliasTMP)->DT_EMIS))
         oSection1:Cell("DT_ENTR"):SetValue(StoD((cAliasTMP)->DT_ENTR))
+        oSection1:Cell("F3_DTCANC"):SetValue(StoD((cAliasTMP)->F3_DTCANC))
         
         //Imprimindo a linha atual
         oSection1:PrintLine()	
     
         If (cAliasTMP)->F3_DTCANC != ' '
             oSection2:Init()
+
+            oSection2:Cell("F3_DTCANC"):SetValue(StoD((cAliasTMP)->F3_DTCANC))
+
             oSection2:PrintLine()	
             oSection2:Finish()	  
         EndIf

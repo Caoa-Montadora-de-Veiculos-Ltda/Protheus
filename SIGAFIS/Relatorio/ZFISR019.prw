@@ -290,12 +290,15 @@ Static Function  ReportPrint(oReport)
 
         oSection1:Cell("DT_EMIS"):SetValue(StoD((cAliasTMP)->DT_EMIS))
         oSection1:Cell("DT_LANC"):SetValue(StoD((cAliasTMP)->DT_LANC))
+        oSection1:Cell("F3_DTCANC"):SetValue(StoD((cAliasTMP)->F3_DTCANC))
         
         //Imprimindo a linha atual
         oSection1:PrintLine()	
     
         If (cAliasTMP)->F3_DTCANC != ' '
             oSection2:Init()
+            
+            oSection2:Cell("F3_DTCANC"):SetValue(StoD((cAliasTMP)->F3_DTCANC))
             oSection2:PrintLine()	
             oSection2:Finish()	  
         EndIf
