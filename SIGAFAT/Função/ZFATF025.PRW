@@ -366,7 +366,7 @@ Begin Sequence
 
 	_oColumn := FWBrwColumn():New()
 	_oColumn:SetData({||_aCliRel[Self:_oBrwTotCli:nAt,DATA_TOTFAT]})
-	_oColumn:SetTitle("Total Faturamento") 
+	_oColumn:SetTitle("Total Faturamento R$") 
 	_oColumn:SetSize(15)
 	_oColumn:SetDecimal(2)
 	_oColumn:SetPicture("@E 9999,999,999.99")

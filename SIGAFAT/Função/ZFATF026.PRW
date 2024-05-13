@@ -248,26 +248,26 @@ Local _oColumn
 
 	_oColumn := FWBrwColumn():New()
 	_oColumn:SetData({||_aRefCli[_oBrWCli:nAt,DATA_LC]})
-	_oColumn:SetTitle("Limite Credito") 
-	_oColumn:SetSize(14)
+	_oColumn:SetTitle("Limite Credito R$") 
+	_oColumn:SetSize(15)
 	_oColumn:SetDecimal(2)
-	_oColumn:SetPicture("@E 999,999,999.99")
+	_oColumn:SetPicture("ZZP_TOTLIB")
 	_oBrWCli:SetColumns({_oColumn})
 
 	_oColumn := FWBrwColumn():New()
 	_oColumn:SetData({||_aRefCli[_oBrWCli:nAt,DATA_TOTCLI]})
 	_oColumn:SetTitle("Total Cliente") 
-	_oColumn:SetSize(14)
-	_oColumn:SetDecimal(2)
-	_oColumn:SetPicture("@E 999,999,999.99")
+	_oColumn:SetSize(15)
+	_oColumn:SetDecimal(4)
+	_oColumn:SetPicture(PesqPict("ZZP","ZZP_QTELIB"))
 	_oBrWCli:SetColumns({_oColumn})
 
 	_oColumn := FWBrwColumn():New()
 	_oColumn:SetData({||_aRefCli[_oBrWCli:nAt,DATA_SALDOLC]})
-	_oColumn:SetTitle("Saldo Credito") 
-	_oColumn:SetSize(14)
+	_oColumn:SetTitle("Saldo Credito R$") 
+	_oColumn:SetSize(15)
 	_oColumn:SetDecimal(2)
-	_oColumn:SetPicture("@E 999,999,999.99")
+	_oColumn:SetPicture(PesqPict("ZZP","ZZP_TOTLIB"))
 	_oBrWCli:SetColumns({_oColumn})
 Return Nil
 
@@ -294,25 +294,25 @@ Local _oColumn
 	_oColumn := FWBrwColumn():New()
 	_oColumn:SetData({||_aRefPrd[_oBrWPrd:nAt,DATA_QTDEPRD]})
 	_oColumn:SetTitle("Estoque")   
-	_oColumn:SetSize(14)
-	_oColumn:SetDecimal(0)
-	_oColumn:SetPicture("@E 9,999,999")
+	_oColumn:SetSize(15)
+	_oColumn:SetDecimal(3)
+	_oColumn:SetPicture(PesqPict("ZZP","ZZP_QTELIB"))
 	_oBrWPrd:SetColumns({_oColumn})
 
 	_oColumn := FWBrwColumn():New()
 	_oColumn:SetData({||_aRefPrd[_oBrWPrd:nAt,DATA_QTDEPREV]})
 	_oColumn:SetTitle("Em Previsao") 
 	_oColumn:SetSize(15)
-	_oColumn:SetDecimal(2)
-	_oColumn:SetPicture("@E 9,999,999")
+	_oColumn:SetDecimal(3)
+	_oColumn:SetPicture(PesqPict("ZZP","ZZP_QTELIB"))
 	_oBrWPrd:SetColumns({_oColumn})
 
 	_oColumn := FWBrwColumn():New()
 	_oColumn:SetData({||_aRefPrd[_oBrWPrd:nAt,DATA_SALDOPRD]})
 	_oColumn:SetTitle("Saldo") 
 	_oColumn:SetSize(15)
-	_oColumn:SetDecimal(2)
-	_oColumn:SetPicture("@E 9,999,999")
+	_oColumn:SetDecimal(3)
+	_oColumn:SetPicture(PesqPict("ZZP","ZZP_QTELIB"))
 	_oBrWPrd:SetColumns({_oColumn})
 Return Nil
 
@@ -340,25 +340,25 @@ Local _oColumn
 	_oColumn := FWBrwColumn():New()
 	_oColumn:SetData({||_aRefRes[_oBrWRes:nAt,DATA_QTDEPRD]})
 	_oColumn:SetTitle("Estoque")   
-	_oColumn:SetSize(14)
-	_oColumn:SetDecimal(0)
-	_oColumn:SetPicture("@E 9,999,999")
+	_oColumn:SetSize(15)
+	_oColumn:SetDecimal(3)
+	_oColumn:SetPicture(PesqPict("ZZP","ZZP_QTELIB"))
 	_oBrWRes:SetColumns({_oColumn})
 
 	_oColumn := FWBrwColumn():New()
 	_oColumn:SetData({||_aRefRes[_oBrWRes:nAt,DATA_QTDEPREV]})
 	_oColumn:SetTitle("Em Previsao") 
 	_oColumn:SetSize(15)
-	_oColumn:SetDecimal(2)
-	_oColumn:SetPicture("@E 9,999,999")
+	_oColumn:SetDecimal(3)
+	_oColumn:SetPicture(PesqPict("ZZP","ZZP_QTELIB"))
 	_oBrWRes:SetColumns({_oColumn})
 
 	_oColumn := FWBrwColumn():New()
 	_oColumn:SetData({||_aRefRes[_oBrWRes:nAt,DATA_SALDOPRD]})
 	_oColumn:SetTitle("Saldo") 
 	_oColumn:SetSize(15)
-	_oColumn:SetDecimal(2)
-	_oColumn:SetPicture("@E 9,999,999")
+	_oColumn:SetDecimal(3)
+	_oColumn:SetPicture(PesqPict("ZZP","ZZP_QTELIB"))
 	_oBrWRes:SetColumns({_oColumn})
 Return Nil
 
@@ -1174,7 +1174,6 @@ Local _lAtualiza := .F.
 	If ValType(_AREFCLI) == "A" .And. ValType(_cAliasZF026) == "C" 
 		_nPos := Ascan(_AREFCLI,{|x| x[1]+X[2] == (_cAliasZF026)->ZZP_CODCLI+(_cAliasZF026)->ZZP_LOJCLI})
 		If _nPos > 0 
-			//Tera que ser feito separação pois o browsee é de produtos 
 			_aRet := {}
 			Aadd(_aRet,"CNPJ : "+ _AREFCLI[_nPos, 3] )  //CGC
 			Aadd(_aRet,_AREFCLI[_nPos, 1]+" - "+_AREFCLI[_nPos, 2]+" : "+ _AREFCLI[_nPos, 4] )  //Nome
