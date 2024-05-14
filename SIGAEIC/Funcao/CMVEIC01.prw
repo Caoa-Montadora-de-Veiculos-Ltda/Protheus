@@ -123,6 +123,7 @@ User Function CMVEI01A()
 
 	Private _cChaveLock	:= ""	//GAP081
 	Private _cPoLock	:= ""	//GAP081
+	Private cFilExec    :=  AllTrim(FwCodEmp()) 
 
 	If (nPos:=RAt("\",cDirInicial)) > 0
 		cDirInicial := Subs(cDirInicial,1,nPos)
