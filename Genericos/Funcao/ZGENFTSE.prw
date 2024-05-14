@@ -153,7 +153,7 @@ Local _nOpc			:= 3
 Local _aItemAux   	:= {}
 Local _aItemPV 		:= {}
 Local _aCabPV 		:= ()
-Local _cTipoFre  	:= 'C'
+Local _cTipoFre  	:= 'S'
 Local _cTipoPed 	:= "N"
 
 Local _cNumPV   	
