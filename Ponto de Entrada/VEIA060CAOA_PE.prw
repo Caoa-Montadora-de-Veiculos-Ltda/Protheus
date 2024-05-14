@@ -1,4 +1,7 @@
 #Include "totvs.ch"
+#Include 'Protheus.ch'
+#Include 'Topconn.ch'
+
 /*/{Protheus.doc} VEIA060
 @param  	
 @author 	A.Carlos
@@ -168,6 +171,7 @@ If aParam <> Nil
 // --> Incluso  CRISTIANO  14/12/2021   (*FINAL* ) ----------------------- //
 
     Case cIdPonto == "MODELCOMMITTTS"
+				
 		If VRJ->VRJ_FORPAG $ _cPgNF .AND. VRJ->VRJ_STATUS = 'F' .AND. SE1->E1_PARCELA <> "1" //Forçar a parcela 1 no título p/Atribuição
 		    //SE1->(dbSetOrder(1))
 		    //If SE1->(dbSeek(xFilial("SE1") + '5  ' + cE1NUM  ))
@@ -177,6 +181,10 @@ If aParam <> Nil
 					SE1->(MsUnlock())
 				ENDIF
 			//EndIf
+		EndIf
+		
+		IF VRJ->VRJ_STATUS = 'F'
+			fFinVei() 
 		EndIf
 
 		VRK->(dbSetOrder(1))
@@ -779,4 +787,85 @@ Local cSQLALIAS := "BFEMP"
 	(cSQLAlias)->(dbCloseArea())
 
 Return .T.
-// --> Incluso  Reinaldo Rabelo  03/03/2022   (*FINAL* ) ----------------------- //
+/*
+
+Preenche o campo E1_XFORMA
+
+*/
+Static Function fFinVei()
+Local aArea      := GetArea()	
+Local aAreaSe1   := SE1->(GetArea())
+Local cQuery     := ""
+Local _cTmpAlias := GetNextAlias()
+
+cQuery += CRLF + " select SE1.E1_XFORMA,VRL.VRL_XFORMA,SF2.F2_COND,SE1.R_E_C_N_O_ AS RECNO,
+CqUERY += CRLF + " 	NVL((Select E4_XFORMA FROM " + RetSqlName("SE4") + " SE4 WHERE SE4.E4_FILIAL = '" + xFilial("SE4") + "' AND SE4.E4_CODIGO = SF2.F2_COND AND SE4.D_E_L_E_T_ = ' '),' ') AS E4_XFORMA 
+cQuery += CRLF + " from " + RetSqlName("VRL") + " VRL "
+cQuery += CRLF + " INNER  JOIN " + RetSqlName("VRK") + " VRK "
+cQuery += CRLF + "     ON  VRK.VRK_PEDIDO = VRL.VRL_PEDIDO "
+cQuery += CRLF + "     AND VRK.VRK_FILIAL = VRL.VRL_FILIAL "
+cQuery += CRLF + "     AND VRK.VRK_ITEPED = VRL.VRL_ITEPED "
+cQuery += CRLF + "     AND VRK.D_E_L_E_T_ = ' ' "
+cQuery += CRLF + " INNER JOIN " + RetSqlName("VV0") + " VV0 "
+cQuery += CRLF + "     ON  VV0.VV0_FILIAL = '" + xFilial("VV0") + "' "
+cQuery += CRLF + "	   AND VV0.VV0_NUMTRA = VRK.VRK_NUMTRA "
+cQuery += CRLF + "     AND VV0.VV0_CODCLI = VRL.VRL_E1CLIE "
+cQuery += CRLF + "     AND VV0.VV0_LOJA   = VRL.VRL_E1LOJA "
+cQuery += CRLF + "     AND VV0.D_E_L_E_T_ = ' ' "
+cQuery += CRLF + " INNER JOIN  " + RetSqlName("SD2") + " SD2 "
+cQuery += CRLF + "     ON  SD2.D2_FILIAL  = '" + xFilial("SD2") + "' "
+cQuery += CRLF + "     AND SD2.D2_CLIENTE = VRL.VRL_E1CLIE "
+cQuery += CRLF + "     AND SD2.D2_LOJA    = VRL.VRL_E1LOJA "
+cQuery += CRLF + "     AND SD2.D2_DOC     = VV0.VV0_NUMNFI "
+cQuery += CRLF + "     AND SD2.D2_SERIE   = VV0.VV0_SERNFI "
+cQuery += CRLF + "     AND SD2.D_E_L_E_T_ = ' ' "
+cQuery += CRLF + " INNER JOIN " + RetSqlName("SF2") + " SF2 "
+cQuery += CRLF + "     ON  SF2.F2_FILIAL  = SD2.D2_FILIAL "
+cQuery += CRLF + "     AND SF2.F2_DOC     = SD2.D2_DOC "
+cQuery += CRLF + "     AND SF2.F2_SERIE   = SD2.D2_SERIE "
+cQuery += CRLF + "     AND SF2.F2_CLIENTE = SD2.D2_CLIENTE "
+cQuery += CRLF + "     AND SF2.F2_LOJA    = SD2.D2_LOJA "
+cQuery += CRLF + "     AND SF2.D_E_L_E_T_ = ' ' "
+cQuery += CRLF + " INNER JOIN " + RetSqlName("SE1") + " SE1 "
+cQuery += CRLF + "     ON  SE1.E1_FILIAL = '" + xFilial("SE1") + "' "
+cQuery += CRLF + "     AND SE1.E1_PREFIXO = SD2.D2_SERIE "
+cQuery += CRLF + "     AND SE1.E1_NUM     = SD2.D2_DOC "
+cQuery += CRLF + "     AND SE1.E1_CLIENTE = SD2.D2_CLIENTE "
+cQuery += CRLF + "     AND SE1.E1_LOJA    = SD2.D2_LOJA "
+//cQuery += CRLF + "     AND SE1.E1_VALOR   = VRL.VRL_E1VALO "
+cQuery += CRLF + "     AND SE1.E1_PARCELA = VRL.VRL_E1PARC
+cQuery += CRLF + "     AND SE1.E1_XFORMA  = ' ' "
+cQuery += CRLF + "     AND SE1.D_E_L_E_T_ = ' ' "
+cQuery += CRLF + " where  
+cQuery += CRLF + "         VRL.VRL_FILIAL = '" + xFilial("VRL")  + "' "
+cQuery += CRLF + "	   AND VRL.VRL_E1CLIE = '" + VRJ->VRJ_CODCLI + "' "
+cQuery += CRLF + "     AND VRL.VRL_E1LOJA = '" + VRJ->VRJ_LOJA   + "' "
+cQuery += CRLF + "     AND VRL.D_E_L_E_T_ = ' ' "
+cQuery += CRLF + "     and VRL.VRL_CANCEL = '0' "
+cQuery += CRLF + "     AND VRL.VRL_PEDIDO = '" + VRJ->VRJ_PEDIDO + "' "
+cQuery += CRLF + " ORDER BY VRL.VRL_E1PARC "
+
+If Select(_cTmpAlias) > 0 ;	(_cTmpAlias)->(DbCloseArea()) ; EndIf
+
+dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), _cTmpAlias , .F., .T. )
+
+DbSelectArea("SE1")
+
+While (_cTmpAlias)->(!EOF())
+	SE1->(DbGoTo((_cTmpAlias)->RECNO))
+
+	if EMPTY(SE1->E1_XFORMA)
+	
+		RecLock('SE1',.f.)
+		SE1->E1_XFORMA := IIF(!EMPTY((_cTmpAlias)->E4_XFORMA) ,(_cTmpAlias)->E4_XFORMA,(_cTmpAlias)->VRL_XFORMA)
+		SE1->(MsUnlock())
+	
+	Endif
+	(_cTmpAlias)->(DbSkip())
+
+EndDo
+
+RestArea(aAreaSe1)
+RestArea(aArea)
+
+Return
