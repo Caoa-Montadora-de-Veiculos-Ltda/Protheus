@@ -918,6 +918,9 @@ Static Function ZPECF036FT(_cPedido, _cPicking, _cNota, _cSerie, _cTitulo, _aReg
 		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 		// CHAMADA DO MATA410 COM OS DADOS DA INTEGRACAO #
 		_cSerie := ""
+		
+		//Início - OneGate001 - nova empresa 90 | HMB
+		/*
 		If FWFilial() == "2001" //Barueri CD
 			If VS1->VS1_XMARCA $ "HYU"
 				_cSerie := AllTrim(_cSerieHYU)
@@ -927,6 +930,20 @@ Static Function ZPECF036FT(_cPedido, _cPicking, _cNota, _cSerie, _cTitulo, _aReg
 				_cSerie := AllTrim(_cSerieSBR)
 			Endif
 		Endif
+		*/
+		If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Franco da Rocha | Caoa
+			If VS1->VS1_XMARCA $ "HYU"
+				_cSerie := AllTrim(_cSerieHYU)
+			ElseIf VS1->VS1_XMARCA $ "CHE"
+				_cSerie := AllTrim(_cSerieCHE)
+			ElseIf VS1->VS1_XMARCA $ "SBR"
+				_cSerie := AllTrim(_cSerieSBR)
+			Endif
+		ElseIF ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //Empresa Franco da Rocha | HMB Hyundai
+			_cSerie := AllTrim(_cSerieHYU) //Apenas HYU
+		Endif	
+		//Fim - OneGate001 - nova empresa 90 | HMB
+		
 		If Empty(_cSerie)
 			Aadd(_aMsg, "Problemas com Série não foi possivel faturar")
 			Break

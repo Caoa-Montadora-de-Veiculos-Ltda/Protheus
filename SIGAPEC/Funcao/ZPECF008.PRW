@@ -170,6 +170,20 @@ User Function ZPECF008()
 		Endif
 		_cAglutina 	:= ""
 		_aMensAglu	:= {}
+
+		//Início - OneGate001 - nova empresa 90 | HMB
+		If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+			If AllTrim(_aRet[10]) == "HYU" //Não Pode Hyundai
+				Help( , ,OemToAnsi(STR0028),,"Marca HYU bloqueada na empresa 02 | Franco da Rocha",4,1) //Atenção / Necessário informar os parâmetros 
+				Break 
+			EndIf
+		ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
+			If ( AllTrim(_aRet[10]) == "CHE" .Or. AllTrim(_aRet[10]) == "SBR" )
+				Help( , ,OemToAnsi(STR0028),,"Marca CHE/SBR bloqueada na empresa 90 | HMB",4,1) //Atenção / Necessário informar os parâmetros 
+				Break 
+			EndIf
+		EndIf
+		//Fim - OneGate001 - nova empresa 90 | HMB
 		//Carregar processo
 		For _nPos := 1 To Len(_aArmazem)
 			NNR->(DbSetOrder(1)) //NNR_FILIAL+NNR_CODIGO                                                                                                                                           

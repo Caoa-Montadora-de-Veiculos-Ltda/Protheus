@@ -3753,18 +3753,28 @@ User Function zSaldoWis(_cProduto, _cMarca, _cArmazem)
 	//cQryWis := " SELECT NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) AS QTDE_EST "
 	cQryWis += " FROM " + _cConectWis + " ESTWIS "
     cQryWis += " WHERE RTRIM(LTRIM(ESTWIS.CD_PRODUTO)) = '" + AllTrim(_cProduto) + "' "
-
-	If AllTrim(_cMarca) $ "HYU_SBR"
-    	cQryWis += " AND CD_EMPRESA = 1006 " //-- HYU SBR
-	ElseIf AllTrim(_cMarca) $ "CHE"  
-    	cQryWis += " AND CD_EMPRESA = 1002 " //-- CHE
+	
+	//Início - OneGate001 - nova empresa 90 | HMB
+    If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+   		If AllTrim(_cMarca) =="CHE"
+			cQryWis += " AND ESTWIS.CD_EMPRESA = 1002 "
+        ElseIf AllTrim(_cMarca) == "SBR"
+			cQryWis += " AND ESTWIS.CD_EMPRESA = 1006 "
+        ElseIf AllTrim(_cMarca) =="HYU"
+            cQryWis += " AND ESTWIS.CD_EMPRESA = 1006 "
+        EndIf
+    ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
+    	If AllTrim(_cMarca) =="HYU"
+        	cQryWis += " AND ESTWIS.CD_EMPRESA = 1008 "
+        EndIf
 	EndIf
- 	
+	//Fim - OneGate001 - nova empresa 90 | HMB
+	
 	If _lVlLocWis	
 		If _cArmazem == "01" //BARUERI
-			cQryWis += " AND ARMAZEM = 'BAR' " //-- Armazenagem BARUERI.
+			cQryWis += " AND ESTWIS.ARMAZEM = 'BAR' " //-- Armazenagem BARUERI.
 		ElseIf _cArmazem == "11" //FRANCO DA ROCHA
-			cQryWis += " AND ARMAZEM = 'FDR' " //-- Armazenagem FRANCO DA ROCHA
+			cQryWis += " AND ESTWIS.ARMAZEM = 'FDR' " //-- Armazenagem FRANCO DA ROCHA
 		EndIf
 	Endif
  
@@ -3929,11 +3939,11 @@ Return _cNumRet
 
 
 /*/{Protheus.doc} zTpOper
-//Verifica informaÃƒÂ§ÃƒÂµes de campos obrigatÃƒÂ³rios 
+//Verifica informações de campos obrigatórios 
 @author Evandro Mariano
 @since 06/05/2022
 @version undefined
-@param _aMsg, array, descriÃƒÂ§ÃƒÂ£o
+@param _aMsg, array, descrição
 @type function
 /*/
 User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
@@ -3946,7 +3956,7 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 	//Local lGRTrib			:= .F.
 	Local _cRet 			:= " "
 	Local _aAreaSA1			:= SA1->(GetArea())
-	Local _cTipoOrc			:= AllTrim(Posicione("VX5", 1, XFilial("VX5") + "Z02" + PadR( AllTrim(_cTipoPed), TamSX3("VX5_CODIGO")[1] ), "VX5_DESCRI")) //Tipo do OrÃƒÂ§amento (Venda/Transferencia/Remessa)
+	Local _cTipoOrc			:= AllTrim(Posicione("VX5", 1, XFilial("VX5") + "Z02" + PadR( AllTrim(_cTipoPed), TamSX3("VX5_CODIGO")[1] ), "VX5_DESCRI")) //Tipo do Orçamento (Venda/Transferencia/Remessa)
 	Local _cCnpjTransf  	:= AllTrim(SuperGetMV( "CMV_WSR019"  ,,"03471344"))	//Raiz CNPJ de transferencia
 
 	//Local _cZFVenda		:= AllTrim(SuperGetMV( "CMV_WSR021"  ,,"AC|93;AP|92;AM|93;RO|93;RR|93"))	//Zona Franca - Venda
@@ -3956,28 +3966,28 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 	//Local _cGRTrib			:= AllTrim(SuperGetMV( "CMV_WSR052"  ,,"100;200"))	//Zona Franca
 
 	Local _cBxInter 		:= AllTrim(SuperGetMV( "CMV_WSR039"  ,,"011"))		//Codigo Baixa Interna
-	Local _cOpUsoInt		:= AllTrim(SuperGetMV( "CMV_WSR043"  ,,"75"))		//OperaÃƒÂ§ÃƒÂ£o Uso Interno
+	Local _cOpUsoInt		:= AllTrim(SuperGetMV( "CMV_WSR043"  ,,"75"))		//Operação Uso Interno
 
 	Local _cBxScrap			:= AllTrim(SuperGetMV( "CMV_WSR027"  ,,"013"))		//Codigo Scrap
-	Local _cOpRefugo		:= AllTrim(SuperGetMV( "CMV_WSR022"  ,,"59"))		//OperaÃƒÂ§ÃƒÂ£o Refugo
+	Local _cOpRefugo		:= AllTrim(SuperGetMV( "CMV_WSR022"  ,,"59"))		//Operação Refugo
 
 	Local _cBxTfUso			:= AllTrim(SuperGetMV( "CMV_WSR040"  ,,"014"))		//Codigo Transferencia Uso
-	Local _cOpTfUso			:= AllTrim(SuperGetMV( "CMV_WSR044"  ,,"98"))		//OperaÃƒÂ§ÃƒÂ£o Transferencia Uso
+	Local _cOpTfUso			:= AllTrim(SuperGetMV( "CMV_WSR044"  ,,"98"))		//Operação Transferencia Uso
 
 	Local _cBxRemAr			:= AllTrim(SuperGetMV( "CMV_WSR046"  ,,"015"))		//Codigo Remessa Armazenamento
-	Local _cOpRemAr			:= AllTrim(SuperGetMV( "CMV_WSR048"  ,,"XA"))		//OperaÃƒÂ§ÃƒÂ£o Remessa Armazenamento
+	Local _cOpRemAr			:= AllTrim(SuperGetMV( "CMV_WSR048"  ,,"XA"))		//Operação Remessa Armazenamento
 
 	Local _cBxRemTs			:= AllTrim(SuperGetMV( "CMV_WSR047"  ,,"016"))		//Codigo Remessa Teste
-	Local _cOpRemTs			:= AllTrim(SuperGetMV( "CMV_WSR049"  ,,"XB"))		//OperaÃƒÂ§ÃƒÂ£o Remessa Teste
+	Local _cOpRemTs			:= AllTrim(SuperGetMV( "CMV_WSR049"  ,,"XB"))		//Operação Remessa Teste
 
-	Local _cOpTransf		:= AllTrim(SuperGetMV( "CMV_WSR020"  ,,"81"))		//OperaÃƒÂ§ÃƒÂ£o Transferencia
-	Local _cOpVenda			:= AllTrim(SuperGetMV( "CMV_WSR023"  ,,"90"))		//OperaÃƒÂ§ÃƒÂ£o Venda
-	Local _cOpVdUso			:= AllTrim(SuperGetMV( "CMV_WSR041"  ,,"XX"))		//OperaÃƒÂ§ÃƒÂ£o Venda/uso
-	Local _cOpRemessa		:= AllTrim(SuperGetMV( "CMV_WSR025"  ,,"77"))		//OperaÃƒÂ§ÃƒÂ£o Remessa
+	Local _cOpTransf		:= AllTrim(SuperGetMV( "CMV_WSR020"  ,,"81"))		//Operação Transferencia
+	Local _cOpVenda			:= AllTrim(SuperGetMV( "CMV_WSR023"  ,,"90"))		//Operação Venda
+	Local _cOpVdUso			:= AllTrim(SuperGetMV( "CMV_WSR041"  ,,"XX"))		//Operação Venda/uso
+	Local _cOpRemessa		:= AllTrim(SuperGetMV( "CMV_WSR025"  ,,"77"))		//Operação Remessa
 
-	Local _cOpVEndaZF		:= AllTrim(SuperGetMV( "CMV_WSR021"  ,,"ZF|93;ZD|92"))		//OperaÃƒÂ§ÃƒÂ£o Venda/uso ZF
-	Local _cOpVdUsoZF		:= AllTrim(SuperGetMV( "CMV_WSR042"  ,,"ZF|xx;ZD|xy"))		//OperaÃƒÂ§ÃƒÂ£o Venda/uso ZF
-	Local _cOpRemessaZF		:= AllTrim(SuperGetMV( "CMV_WSR024"  ,,"ZF|77;ZD|77"))		//OperaÃƒÂ§ÃƒÂ£o Venda/uso ZF
+	Local _cOpVEndaZF		:= AllTrim(SuperGetMV( "CMV_WSR021"  ,,"ZF|93;ZD|92"))		//Operação Venda/uso ZF
+	Local _cOpVdUsoZF		:= AllTrim(SuperGetMV( "CMV_WSR042"  ,,"ZF|xx;ZD|xy"))		//Operação Venda/uso ZF
+	Local _cOpRemessaZF		:= AllTrim(SuperGetMV( "CMV_WSR024"  ,,"ZF|77;ZD|77"))		//Operação Venda/uso ZF
 
 	Local _cOpVendaZFFM     := ' '
 	Local _cUFCliente		:= ' '
@@ -5182,7 +5192,7 @@ Begin sequence  //Ajuste Select não estava dentro do Begin GAP002  DAC 09/08/202
 			If (!(_cXREGFI = "T") .and. !(_cTESVS3 = cTES) .and. !Empty(cTES))
 				VS1->(RecLock("VS1",.F.))
 				VS3->(RecLock("VS3",.F.))
-				_cMens += "O produto " +_cCodIte+ " teve a TES " +_cTESVS3+ " alterada para " +cTES+ " conforme OperaÃ§Ã£o " +_cOperVS3+ " no momento do faturamento em " +DtoC(date()) + " Ã s " + Time() + CRLF
+				_cMens += "O produto " +_cCodIte+ " teve a TES " +_cTESVS3+ " alterada para " +cTES+ " conforme Operação " +_cOperVS3+ " no momento do faturamento em " +DtoC(date()) + " Ã s " + Time() + CRLF
 				VS1->VS1_OBSAGL	:= Upper(_cMens) + CRLF + AllTrim(VS1->VS1_OBSAGL)
 				VS3->VS3_CODTES := cTES
 				VS3->VS3_SITTRI := U_XFUNSITT(cTES, VS3->VS3_CODITE, VS3->VS3_GRUITE)
@@ -5200,7 +5210,7 @@ Begin sequence  //Ajuste Select não estava dentro do Begin GAP002  DAC 09/08/202
 			Endif 
 			Conout(_cMens) 
 		Endif 
-		U_ORCCALFIS(VS1->VS1_NUMORC,.F./*atualiza o preÃ§o*/)
+		U_ORCCALFIS(VS1->VS1_NUMORC,.F./*atualiza o preço*/)
 	EndDo
 	
 	/*
@@ -5224,7 +5234,7 @@ Begin sequence  //Ajuste Select não estava dentro do Begin GAP002  DAC 09/08/202
 					If (!(_cXREGFI = "T") .and. !(_cTESVS3 = cTES) .and. !Empty(cTES))
 						VS1->(RecLock("VS1",.F.))
 						VS3->(RecLock("VS3",.F.))
-						_cMens += "O produto " +_cCodIte+ " teve a TES " +_cTESVS3+ " alterada para " +cTES+ " conforme OperaÃ§Ã£o " +_cOperVS3+ " no momento do faturamento em " +DtoC(date()) + " Ã s " + Time() + CRLF
+						_cMens += "O produto " +_cCodIte+ " teve a TES " +_cTESVS3+ " alterada para " +cTES+ " conforme Operação " +_cOperVS3+ " no momento do faturamento em " +DtoC(date()) + " Ã s " + Time() + CRLF
 						VS1->VS1_OBSAGL	:= Upper(_cMens) + CRLF + AllTrim(VS1->VS1_OBSAGL)
 						VS3->VS3_CODTES := cTES
 						VS3->VS3_SITTRI := U_XFUNSITT(cTES, VS3->VS3_CODITE, VS3->VS3_GRUITE)
@@ -5349,9 +5359,9 @@ Mostrar Orçamento
 @since 31/05/2023
 @version 2.0
 @project	PEC044 - Revitalização Consulta Peças - Abri consulta Orçamento
-@Obs		Devido a forma de tratamento oficna/peÃ§as não é possivel chamar a 
+@Obs		Devido a forma de tratamento oficna/peças não é possivel chamar a 
 			consulta de oramentos a não ser passando por esta função MILAXTABELA
-			caso não passe ai ira tratar CNPJs que estÃ£o hard cold no programa
+			caso não passe ai ira tratar CNPJs que estão hard cold no programa
 /*/
 
 USER Function MILAXTABELA(_nRegVS1)

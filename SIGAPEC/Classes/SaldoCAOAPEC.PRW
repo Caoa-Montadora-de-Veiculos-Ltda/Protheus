@@ -258,12 +258,28 @@ Method RetSaldoWIS() class SaldoCAOAPEC
 		cQryWis += " FROM " + cConectWis + " ESTWIS "
 		cQryWis += " WHERE RTRIM(LTRIM(ESTWIS.CD_PRODUTO)) = '" + AllTrim(cCodProd) + "' "
 
+		//Início - OneGate001 - nova empresa 90 | HMB
+		If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+			If AllTrim(_cMarca) =="CHE"
+				cQryWis += " AND ESTWIS.CD_EMPRESA = 1002 "
+			ElseIf AllTrim(_cMarca) == "SBR"
+				cQryWis += " AND ESTWIS.CD_EMPRESA = 1006 "
+			ElseIf AllTrim(_cMarca) =="HYU"
+				cQryWis += " AND ESTWIS.CD_EMPRESA = 1006 "
+			EndIf
+		ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
+			If AllTrim(_cMarca) =="HYU"
+				cQryWis += " AND ESTWIS.CD_EMPRESA = 1008 "
+			EndIf
+		EndIf
+		/*
 		If AllTrim(cMarca) $ "HYU_SBR"
 			cQryWIS += " AND CD_EMPRESA = 1006 " //-- HYU SBR
 		ElseIf AllTrim(cMarca) $ "CHE"  
 			cQryWIS += " AND CD_EMPRESA = 1002 " //-- CHE
 		EndIf
-		
+		*/
+		//Fim - OneGate001 - nova empresa 90 | HMB
 		If lVlLocWIS	
 			If cArmazem == "01" //BARUERI
 				cQryWIS += " AND ARMAZEM = 'BAR' " //-- Armazenagem BARUERI.

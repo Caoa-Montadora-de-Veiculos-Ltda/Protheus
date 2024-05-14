@@ -35,13 +35,11 @@ Default _cPicking	 := ""
 		If !_lRet
 			Return Nil
 		EndIf
-		IF FWCodEmp() <> '2020' //Verificar Empresa Barueri
+		//Início - OneGate001 - nova empresa 90 | HMB
+		IF !( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 		    RETURN Nil
 		ENDIF
-
-		IF FWFilial() <> '2001' //Verificar Filial Barueri
-	   	 	RETURN Nil
-		ENDIF
+		//Fim - OneGate001 - nova empresa 90 | HMB
 	Endif
 	FWMsgRun( ,{|| TelaUnit(_cFilPicking, _cPicking, _lConsultaExt) } ,"Carregando dados..." ,"Por favor aguarde...")
 Return

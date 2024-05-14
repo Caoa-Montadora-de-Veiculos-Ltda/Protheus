@@ -12,7 +12,7 @@ Solicitante:            Faturamento/Pecas
 Uso......:              
 Obs......:              
 @history    DAC Denilso - 06/04/2023	        
-            GRUPO CAOA GAP FIN108 - Revitalizção Credito [ Montadora ]
+            GRUPO CAOA GAP FIN108 - Revitalização Credito [ Montadora ]
             Unificação Peças com Montadora
 =====================================================================================
 */
@@ -76,15 +76,16 @@ User Function ZFATF014(_cCliFat, _cTpCred, _cLoja, _lZera)
 			_nValAbe 	:= ZFATF14TAB(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Titulos Em Aberto
 			//Na questão BO foi necessario separar pois é verificado VS1 para peças e SC6 para Fabrica
 			//para Fabrica
-			If FWCodEmp() == "2010"
+			//Início - OneGate001 - nova empresa 90 | HMB
+			If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 				_nValBo  	:= ZFATF14TBF(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Pedidos Em Bo
 				_nValPed 	:= ZFATF14TPF(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Pedidos Em Reserva/Em Faturamento/Em Separação
 				//Para Peças
-			ElseIf FWCodEmp() == "2020"
+			ElseIf ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 				_nValBo  	:= ZFATF14TBP(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Pedidos Em Bo
 				_nValPed 	:= ZFATF14TPP(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Pedidos Em Reserva/Em Faturamento/Em Separação
 			Endif
-
+			//Fim - OneGate001 - nova empresa 90 | HMB
 			/*  Caso incluam credito avaliar se tem NCC para retornar crédito, Financeiro CAOA informou que atualmente não calcula o crédito para L.C.
 			_nValCred 	:= ZProc040(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA)
 			*/
@@ -162,7 +163,8 @@ Static Function ZFATF14TAT(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPg
 			_cWhereSF2 += " 	AND SF2.F2_COND NOT IN  "+ FormatIn(_cPgNAval,";")
 		Endif
 		//verificar pelo tipo de operação utilizado em Anapolis
-		If !Empty(_cTpOper) .and. FWCodEmp() == "2010"  //somente para Anapolis
+		//OneGate001 - nova empresa 90 | HMB
+		If !Empty(_cTpOper) .and. ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 			_cWhereSE1 += " AND SE1.E1_PEDIDO = (SELECT C6_NUM "
 			_cWhereSE1 += "						FROM "+ RetSQLName('SC6') +" SC6 "
 			_cWhereSE1 += "						WHERE  	SC6.C6_FILIAL 	= '"+FwXFilial("SC6")+"' "
@@ -170,7 +172,8 @@ Static Function ZFATF14TAT(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPg
 			_cWhereSE1 += "							AND SC6.C6_OPER IN "+ FormatIn(_cTpOper,";") + " "
 			_cWhereSE1 += "							AND SC6.D_E_L_E_T_ 	= ' '
 			_cWhereSE1 += "							GROUP BY SC6.C6_NUM )"
-		ElseIf !Empty(_cTpOper) .and. FWCodEmp() == "2020"  //somente para
+		//OneGate001 - nova empresa 90 | HMB
+		ElseIf !Empty(_cTpOper) .and. ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 			_cWhereSF2 += " AND SF2.F2_DOC 	= ( SELECT VS1.VS1_NUMNFI "
 			_cWhereSF2 += "						FROM "+ RetSQLName('VS1') +" VS1 "
 			_cWhereSF2 += "						JOIN "+ RetSQLName('VS3') +" VS3 "
@@ -259,7 +262,8 @@ Static Function ZFATF14TAB(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPg
 			_cWhereSF2 += " 	AND SF2.F2_COND NOT IN  "+ FormatIn(_cPgNAval,";")
 		Endif
 		//verificar pelo tipo de operação utilizado em Anapolis
-		If !Empty(_cTpOper) .and. FWCodEmp() == "2010"  //somente para Anapolis
+		//OneGate001 - nova empresa 90 | HMB
+		If !Empty(_cTpOper) .and. ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 			_cWhereSE1 += " AND SE1.E1_PEDIDO = (SELECT C6_NUM "
 			_cWhereSE1 += "						FROM "+ RetSQLName('SC6') +" SC6 "
 			_cWhereSE1 += "						WHERE  	SC6.C6_FILIAL 	= '"+FwXFilial("SC6")+"' "
@@ -267,7 +271,8 @@ Static Function ZFATF14TAB(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPg
 			_cWhereSE1 += "							AND SC6.C6_OPER IN "+ FormatIn(_cTpOper,";") + " "
 			_cWhereSE1 += "							AND SC6.D_E_L_E_T_ 	= ' '
 			_cWhereSE1 += "							GROUP BY SC6.C6_NUM )"
-		ElseIf !Empty(_cTpOper) .and. FWCodEmp() == "2020"  //somente para
+		//OneGate001 - nova empresa 90 | HMB
+		ElseIf !Empty(_cTpOper) .and. ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 			_cWhereSF2 += " AND SF2.F2_DOC 	= ( SELECT VS1.VS1_NUMNFI "
 			_cWhereSF2 += "						FROM "+ RetSQLName('VS1') +" VS1 "
 			_cWhereSF2 += "						JOIN "+ RetSQLName('VS3') +" VS3 "
@@ -706,7 +711,8 @@ Static Function ZFATF14SA1(_cCliFat, _cTpCred, _nValAtr, _nValAbe, _nValBo, _nVa
 				_cRet := "2"
 
 			Else
-				If FWCodEmp() == "2010"
+				//OneGate001 - nova empresa 90 | HMB
+				If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 					_nSaldo := ( SA1->A1_XLC - ( _nValAbe  ) )
 				Else
 					_nSaldo := ( SA1->A1_XLC - ( _nValAbe + _nValBo + _nValPed ) )
