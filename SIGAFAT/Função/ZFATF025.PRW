@@ -865,6 +865,7 @@ Begin Sequence
     _cQuery += CRLF + " 						, SC6.C6_XMODVEI "
     _cQuery += CRLF + " 						, SC6.C6_XFABMOD "
 	_cQuery += CRLF + " 						, SC6.C6_XPRCTAB "
+	_cQuery += CRLF + " 						, SC6.C6_CHASSI "
     _cQuery += CRLF + " 						, SC6.R_E_C_N_O_ AS NREGSC6  "
 
     _cQuery += CRLF +  "        FROM  " + RetSqlName("SC6") + " SC6 " 
@@ -921,9 +922,10 @@ Begin Sequence
     _cQuery += CRLF + "         AND SC6.C6_BLQ     	= ' ' "
 	_cQuery += CRLF + " 		AND SC6.C6_XFILPVR 	= ' ' "
 	_cQuery += CRLF + " 		AND SC6.C6_XCODPVR 	= ' ' "
+	//Atualização realizada pela Totvs, acrescentada na lógica DAC 14/05/2024
+	_cQuery += CRLF + " 	    AND SC6.C6_CHASSI    = ' ' "  //<=====
 	_cQuery += CRLF + " 		AND SC6.D_E_L_E_T_ 	= ' ' "
-
-
+	
     _cQuery += CRLF + "          )"       
 
     _cQuery += CRLF + " SELECT PEDIDOS_FAT.* "
@@ -940,6 +942,8 @@ Begin Sequence
     _cQuery += CRLF + "     ON  VRK.VRK_FILIAL = '" + FWxFilial("VRK") + "' "
     _cQuery += CRLF + "     AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
     _cQuery += CRLF + "     AND VRK.VRK_ITEPED = LPad(PEDIDOS_FAT.C6_ITEM,3,'0') "
+	//Atualização realizada pela Totvs, acrescentada na lógica DAC 14/05/2024
+    _cQuery += CRLF + "     AND VRK.VRK_CHASSI = PEDIDOS_FAT.C6_CHASSI "
     _cQuery += CRLF + "     AND VRK.VRK_ITETRA = ' ' "
     _cQuery += CRLF + "     AND VRK.D_E_L_E_T_ = ' ' "
 	_cQuery += CRLF + " ORDER BY  C6_CLI, C6_LOJA, C6_PRODUTO, C6_XMODVEI, C6_XFABMOD

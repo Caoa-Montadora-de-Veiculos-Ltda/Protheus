@@ -81,6 +81,7 @@ Local aTamSx3       As Array
 Local aValidCmp     As Array
 //Local dDatIni       := Date()
 //Local dDatfin       := Date()
+//Local nChassi       := 0
 //GAP167  Previsao de Faturamento
 Local _lPrevFat    := FWIsInCallStack("U_XZFAT9FT") 
 
@@ -91,6 +92,8 @@ Default cOrderTab   := "SC6.C6_FILIAL,SC6.C6_PEDCLI,SC6.C6_ITEM,SC5.C5_CLIENTE,S
 
 Private cCabAlias   As Character
 Private cIteAlias   As Character
+Private nLimChassi  As Numeric
+
 Private aParamBox   As Array
 Private aBrwCli     As Array
 Private aBrwPrd     As Array
@@ -1237,6 +1240,7 @@ Local _cLocal       As Character
 Local _cNum         As Character
 Local _cItem        As Character
 Local _cCC_STATUS   As Character
+Local nLinhas       As Numeric
 
 Private lMsHelpAuto As Logical
 Private lMsErroAuto As Logical
@@ -1261,6 +1265,12 @@ aArea       := GetArea()
 nY          := 1
 nOPc        := 4
 lRetorno    := .T.
+//Atualização realizada pela Totvs, acrescentada na lógica DAC 14/05/2024
+nLinhas     := 1
+if nLimChassi == 0
+    nLimChassi := (cCabALias)->(LastRec())
+EndIf
+
 
 If !Empty(Alltrim(cNumPed))
     (cCabAlias)->(DbSetFilter( { || C6_NUM == cNumPed }, 'C6_NUM == "'+cNumPed+'"' ) )
@@ -1269,8 +1279,9 @@ EndIf
 (cCabAlias)->(DbGoTop())
 
 _lPrevisao := FWIsInCallStack("U_XZFAT9EP") 
-
-While (cCabAlias)->(!Eof())
+//Atualização realizada pela Totvs, acrescentada na lógica DAC 14/05/2024
+//While (cCabAlias)->(!Eof())
+While (cCabAlias)->(!Eof()) .and. nLinhas <= nLimChassi
     
     oSay:SetText("Preparando pedido: " + (cCabAlias)->C6_NUM+" ...")
    	ProcessMessage()
@@ -1402,7 +1413,8 @@ While (cCabAlias)->(!Eof())
         For nY := 1 To Len(aCampos)
             cQuery += CrLf + aCampos[nY]
         Next
-        
+
+       	//Atualização realizada pela Totvs, acrescentada na lógica DAC 14/05/2024
         cQuery += CrLf + "         (SELECT MAX(SDB.DB_NUMSEQ) "
         cQuery += CrLf + "          FROM " + RetSqlName("SDB") + " SDB"
         cQuery += CrLf + "          WHERE  SDB.DB_FILIAL       = '"+xFilial("SDB")+"'"
@@ -1413,7 +1425,7 @@ While (cCabAlias)->(!Eof())
         cQuery += CrLf + "             AND SDB.DB_NUMSERI      = SBF.BF_NUMSERI"
         cQuery += CrLf + "             AND SDB.DB_PRODUTO      = SBF.BF_PRODUTO"
         cQuery += CrLf + "             AND SDB.D_E_L_E_T_      = ' ') DB_NUMSEQ,"
-    
+
         cQuery += CrLf + "             NVL((SELECT VB0_DATDES FROM " + RetSqlName("VB0") + "  VB0 "
         cQuery += CrLf + "                  WHERE VB0.VB0_DATBLO||VB0.VB0_HORBLO =( "
         cQuery += CrLf + "                                                     SELECT max(VB0A.VB0_DATBLO||VB0A.VB0_HORBLO) as DATBLOQ "
@@ -1423,10 +1435,10 @@ While (cCabAlias)->(!Eof())
         cQuery += CrLf + "                                                          AND VB0A.D_E_L_E_T_ = ' ') "
         cQuery += CrLf + "                 AND VB0.VB0_FILIAL = '" + xFilial("VB0") + "' "
         cQuery += CrLf + "                 AND VB0.VB0_CHAINT = VV1.VV1_CHAINT "
-        cQuery += CrLf + "                 AND VB0.D_E_L_E_T_ = ' '),'99999999') AS VB0_DATDES "
-    
+        cQuery += CrLf + "                 AND VB0.D_E_L_E_T_ = ' '),'99999999') AS VB0_DATDES, "
+        cQuery += CrLf + "             NVL(VRK.VRK_CHASSI,'OK' ) AS CHASSI
         cQuery += CrLf + " FROM " + RetSqlName("VV1") + " VV1 "
-        
+
         cQuery += CrLf + "      INNER JOIN " + RetSqlName("SBF") + " SBF "
         cQuery += CrLf + "          ON  SBF.BF_FILIAL  = '" + xFilial("SBF") + "'"
         cQuery += CrLf + "          AND SBF.BF_NUMSERI = VV1.VV1_CHASSI "
@@ -1435,18 +1447,22 @@ While (cCabAlias)->(!Eof())
         cQuery += CrLf + "          AND SBF.BF_EMPENHO = 0 "
         cQuery += CrLf + "          AND SBF.BF_PRODUTO = '" + (cCabAlias)->C6_PRODUTO + "' "
         cQuery += CrLf + "          AND SBF.BF_LOCAL   = '" + (cCabAlias)->C6_LOCAL   + "' "
-        
+
         If !Empty(Alltrim(cNumSerie))
             cQuery += CrLf + " AND SBF.BF_NUMSERI      = '" + cNumSerie + "' "
         EndIf
-            
-        cQuery += CrLf + " WHERE   VV1.VV1_FILIAL      = '" + xFilial("VV1") + "' "
-        cQuery += CrLf + "     AND VV1.VV1_SITVEI      = '0' "
-        cQuery += CrLf + "     AND VV1.VV1_IMOBI       = '0' "
-        cQuery += CrLf + "     AND VV1.D_E_L_E_T_      = ' ') A "
-        cQuery += CrLf + "     WHERE A.VB0_DATDES > '        ' "
+        cQuery += CrLf + "      LEFT JOIN " + RetSqlName("VRK") + " VRK "
+        cQuery += CrLf + "          ON  VRK.VRK_FILIAL  = '" + xFilial("VRK") + "' "
+        cQuery += CrLf + "          AND VRK.VRK_CHASSI = VV1.VV1_CHASSI "
+        cQuery += CrLf + "          AND VRK.D_E_L_E_T_ = ' ' "
+        cQuery += CrLf + "      WHERE   VV1.VV1_FILIAL      = '" + xFilial("VV1") + "' "
+        cQuery += CrLf + "          AND VV1.VV1_SITVEI      = '0' "
+        cQuery += CrLf + "          AND VV1.VV1_IMOBI       = '0' "
+        cQuery += CrLf + "          AND VV1.D_E_L_E_T_      = ' ') A "
+        cQuery += CrLf + " WHERE A.VB0_DATDES > '        ' "
+        cQuery += CrLf + "   AND A.CHASSI     = 'OK' " 
         cQuery += CrLf + " ORDER BY A.VV1_FILIAL,A.BF_PRODUTO,A.DB_NUMSEQ,A.VV1_CHASSI "
-        
+        //fim alteração        
         If Select(cTmpAlias) <> 0 ; (cTmpAlias)->(DbCloseArea()) ; EndIf
         
         DbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cTmpAlias, .F., .T. )
@@ -1695,6 +1711,7 @@ While (cCabAlias)->(!Eof())
                 EndIf
 
                 DBCommitAll()
+                nLinhas ++      //	//Atualização realizada pela Totvs, acrescentada na lógica DAC 14/05/2024
             //Else
                 //DisarmTransaction()
             EndIf
@@ -4037,6 +4054,7 @@ User Function XZFAT9PA(_aRet, _lCarrega)
 Local _aParamBox    := {}
 Local _dDatIni      := Date() - 360
 Local _dDatfin      := Date()
+Local nChassi       := 0
 Local _bRet         := {||.T.}
 //Local _bBloco     
 //Local _bEnquanto  
@@ -4069,12 +4087,14 @@ Default _aRet       := {}
     Aadd(_aParamBox, {1, "Cor Externa Ate"     ,Space(TamSx3("C6_XCOREXT")[01]), "@!",,        ,, 040	, .F.	})
     Aadd(_aParamBox, {1, "Data De"             ,_dDatIni                       , "@D",,        ,, 060	, .F.	})
     Aadd(_aParamBox, {1, "Data Ate"            ,_dDatfin                       , "@D",,        ,, 060	, .F.	})
+    Aadd(aParamBox,  {1, "Quant.Chassi"        , nChassi                       , "@E 99999","Positivo()",        ,".T.", 060 , .F.   }) // 26
+
     //Carregar e abrir perguntas
     If _lCarrega
         _bRet := ParamBox(_aParamBox, "Parametros para seleção dos dados"	, @_aRet, , , .T. /*lCentered*/, 0, 0, , , .T. /*lCanSave*/, .T. /*lUserSave*/)
         If !_bRet
-         ApMsgStop("Rotina cancelada!", "Atencao")
-         Return(.F.)
+            ApMsgStop("Rotina cancelada!", "Atencao")
+            Return(.F.)
         EndIf
     Else 
     //somente retorna o resultado do paramentro zerado
@@ -4083,7 +4103,8 @@ Default _aRet       := {}
         //_bBloco     := {|x| nCnt++, Aadd(_aRet,_aParamBox[nCnt,2])}
         //_bEnquanto  := {||.T.}
         //_bRet       := DbEval(_bBloco, , _bEnquanto)
-    Endif     
+    Endif   
+    nLimChassi := aRet[26]  
 Return _bRet
 
 //GAP167  Previsao de Faturamento
@@ -4091,7 +4112,8 @@ Return _bRet
 //Utilizado no ZFAT025
 
 User Function XZFAT9QY(_cSelect, _cOrderTab, _aRet, _cWhere, _cWhereAll, _cJoin, _cGroup)
-Local _cQuery := ""
+Local _cQuery   := ""
+Local _lPrevFat := FWIsInCallStack("U_ZFATF025") 
 
 Default _cSelect    := "*"
 Default _cOrderTab  := "" 
@@ -4125,6 +4147,7 @@ Default _cGroup     := ""
     _cQuery += CrLf + "     ON  VRK.VRK_FILIAL = '" + xFilial("VRK") + "' "
     _cQuery += CrLf + "     AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
     _cQuery += CrLf + "     AND VRK.VRK_ITEPED = LPad(SC6.C6_ITEM,3,'0') "
+    _cQuery += CrLf + "     AND VRK.VRK_CHASSI = SC6.C6_CHASSI "
     _cQuery += CrLf + "     AND VRK.VRK_ITETRA = ' ' "
     _cQuery += CrLf + "     AND VRK.D_E_L_E_T_ = ' ' "
 
@@ -4180,6 +4203,11 @@ Default _cGroup     := ""
         _cQuery += CrLf + "     AND SC6.C6_PEDCLI    <> ' ' "
         _cQuery += CrLf + "     AND SC6.C6_NOTA      = '" + Space(9) + "' "
         _cQuery += CrLf + "     AND SC6.C6_BLQ       = ' ' "
+       	//Atualização realizada pela Totvs, acrescentada na lógica DAC 14/05/2024
+        //A Previsão ja vem com o chassi informado
+        If !_lPrevFat  
+            _cQuery += CrLf + " 	AND SC6.C6_CHASSI    = ' ' "
+        Endif
     Endif
     //Verifica se existe mais condicionais para where
      If !Empty(_cWhere)
