@@ -2745,7 +2745,13 @@ If cTipo == "1"
 									cMsgFci	:= "Resolucao do Senado Federal nº 13/12"
 									cInfAdic  += cMsgFci + ", Numero da FCI " + Alltrim((cAliasSD2)->D2_FCICOD) + "."
 								EndIf
-								
+							//Ajuste realizado para atender a venda dos HR para a HMB
+							ElseIf AllTrim((cAliasSD2)->D2_TES) == '802' .And. AllTrim((cAliasSD2)->D2_CLIENTE) == '000008' .And. AllTrim((cAliasSD2)->D2_LOJA) == '05'
+								If AllTrim((cAliasSD2)->D2_COD) $ 'HEH76B858DBLEESWAS'
+
+									aadd(aFCI,{"D4746E77-0A66-4782-B107-864BBEBE3A68"}) 
+									
+								EndIf
 							Else
 								aadd(aFCI,{})
 							EndIf
