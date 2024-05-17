@@ -94,9 +94,11 @@ Begin Sequence
          //Serviço de integração  para integração clientes, fornecedores e transportadoras com execauto RGLOG
     		U_ZWSR006("C", _cCodCli , _cLoja )
         EndIf
-        If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Franco da Rocha | Caoa
+        
+        If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" )
             U_ZF10GENSAP("SA1", _cCodCli+_cLoja, "A1_XCDSAP", _nOpcx)    //Lê tabela SZ7 para envio SAP
         EndIf
+        
     Endif    
     FwMsgRun(,{ || U_ZFATF014(_cCodCli, _cTpCred, _cLoja, .T.) }, 'Limite Crédito','Atualizando Limite de Crédito Caoa, aguarde...')  
 End Sequence
