@@ -434,8 +434,10 @@ Begin Sequence
 			//Qtde utilizada na previsão (com Chassi) e qtde empenho Disponivel
 			_nQtdeChassi := ZFATF026AV(ZZP->ZZP_CODPRD, ZZP->ZZP_CODPRV, _nQtdeLZZP, _nQtdeLib, @_nQtdEmpenho) 
 			If _nQtdeChassi >= _nQtdeCalc 	
-				ZFATF26EMP( 1, ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, ZZP->ZZP_CODCLI, ZZP->ZZP_LOJCLI, ZZP->ZZP_CODPRD, _nQtdeCalc, /*_lMens*/ )
-				_nQtde	:= _nQtdeCalc + _nQtdeLZZP
+				_lRet := ZFATF26EMP( 1, ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, ZZP->ZZP_CODCLI, ZZP->ZZP_LOJCLI, ZZP->ZZP_CODPRD, _nQtdeCalc, /*_lMens*/ )
+				If _lRet
+					_nQtde	:= _nQtdeCalc + _nQtdeLZZP
+				Endif 	
 			Else 
 				MSGINFO( "Quantidade de chassi nao Empenhada  "+AllTrim(Str(_nQtdeChassi))+" disponivel, nao atende a necessidade ", "Atencao" )
 				_lRet 	:= .F. 
@@ -520,6 +522,7 @@ Begin Sequence
 				, SA1.A1_NOME
 				, ISNULL(SUM(ZZP.ZZP_QTEPED),0) TOTAL_CLI
 				, ISNULL(SUM(ZZP.ZZP_QTELIB),0) TOTAL_LIB 
+				, ISNULL(SUM(ZZP.ZZP_QTEFAT),0) TOTAL_FAT 
 				, ISNULL(SUM(ZZP.ZZP_QTELIB * ZZP.ZZP_VLRTAB),0) VALOR_TOT
 		FROM %Table:ZZP% ZZP		
 		LEFT JOIN %Table:SA1% SA1 
@@ -537,6 +540,7 @@ Begin Sequence
 	If (_cAlias)->(!Eof()) 
 		//Verificar os itens dos KITs para saber se tem algun zerado caso tenha nÃ£o ira utilizar o kit
 		While (_cAlias)->(!Eof())
+			//_nTotaFat 	:= If((_cAlias)->TOTAL_TOTFAT > 0, (_cAlias)->TOTAL_TOTFAT*(_cAlias)->TOTAL_LIB,0)
 			Aadd(_ARETCLI,{	;
 							(_cAlias)->ZZP_CODCLI,;
 							(_cAlias)->ZZP_LOJCLI,;
@@ -580,11 +584,12 @@ Begin Sequence
 		//Verificar os itens dos KITs para saber se tem algun zerado caso tenha nÃ£o ira utilizar o kit
 		While (_cAlias)->(!Eof())
 			_nQtdeChassi := ZFATF026QChassi((_cAlias)->ZZP_CODPRD)  //Verifica quantos chassis tem disponiveis
-			_nQtdeTotal	 := _nQtdeChassi 	//- (_cAlias)->TOTAL_LIB	 	//solicitado para não deixar numetro negativo no total 
+			_nQtdeChassi += (_cAlias)->TOTAL_LIB  //Somo pois querem ver o total disponivel no Chassi na Previsao ainda não foi faturado mas se existem itens liberados estão presos os chassis a estes itens
+			_nQtdeTotal	 := _nQtdeChassi - (_cAlias)->TOTAL_LIB 	//- (_cAlias)->TOTAL_LIB	 	//solicitado para não deixar numetro negativo no total 
 			Aadd(_ARETPRD,{	;
 							(_cAlias)->ZZP_CODPRD,;
 							(_cAlias)->B1_DESC,;
-							_nQtdeChassi + (_cAlias)->TOTAL_LIB,;   //demonstrr saldo total estoque com previsao
+							_nQtdeChassi ,;   							
 							(_cAlias)->TOTAL_LIB,;
 							If(_nQtdeTotal > 0, _nQtdeTotal,0) ;    //saldo disponivel 
 							})
@@ -714,6 +719,7 @@ Local _cWhere		:= ""
 Local _cJoin 		:= ""
 Local _nRow			:= 0 
 Local _aCampos 		:= {}
+Local _aPrevisao 	:= {}
 Local _nPos
 
 Default _nOpcEmp	:= 0
@@ -735,7 +741,7 @@ Begin Sequence
 		Break 
 	Endif
 
-	_aCampos 	:=   U_XZFAT9CP()
+	_aCampos 	:=   U_XZFT19CP()
 	_cCampos 	:= CRLF +" 'F' AS LUPD "
 	For _nPos := 1 To Len( _aCampos )	
 		If SubsTr(_aCampos[_nPos],1,3) == "C6_"
@@ -818,9 +824,13 @@ Begin Sequence
 		Break 
 	Endif  
 	If _nOpcEmp == 1
-		U_XZFAT9EP(_cAliasEmp)   //localizado em ZFATF019
+		_aPrevisao := U_XZFT19EP(_cAliasEmp)   //localizado em ZFATF019
+		If Len(_aPrevisao) == 0 
+	    	ApMsgStop("Não foi possivel realizar empenho XZFT19EP, verificar com ADM Sistemas", "Previsao Faturamento")
+			_lRet := .F. 
+		Endif  
 	ElseIf _nOpcEmp == 2
-		U_XZFAT9ET(_cAliasEmp)   //localizado em ZFATF019
+		U_XZFT19ET(_cAliasEmp)   //localizado em ZFATF019
 	Endif
 End Sequence
 If Select(_cAliasEmp) <> 0
@@ -836,7 +846,8 @@ Local _cAlias 		:= GetNextAlias()
 Local _cQuery 		:= ""
 Local _nQtdeChassi  := 0
 
-	_cQuery  := U_XZFT25CH(_cCodProd)
+	//_cQuery  := U_XZFT25CH(_cCodProd)
+	_cQuery  := U_XZFT19CH(_cCodProd, /*_cLocal*/, /*_cNumSerie*/, /*_aCampos*/)
 	TcQuery _cQuery new alias (_cAlias)
 	DbSelectArea(_cAlias)
 	If (_cAlias)->(!Eof())
@@ -862,7 +873,7 @@ Default _cCodPrev 	:= ""
 Default	_lCancel    := .F. 
 
 	If _nOpc <= 0 .Or. Empty(_cCodPrev)
-	    ApMsgStop("Ptoblemas com parametros ZFATF026End, verificar com ADM Sistemas", "Previsao Faturamento")
+	    ApMsgStop("Problemas com parametros ZFATF026End, verificar com ADM Sistemas", "Previsao Faturamento")
 		Return .F.
 	Endif
 	If _nOpc == 2  //Vizualizar

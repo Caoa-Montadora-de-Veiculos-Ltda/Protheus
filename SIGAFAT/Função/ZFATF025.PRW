@@ -729,7 +729,7 @@ Local _nRegZZN
 		//	_oBrowseZZP:Refresh()
 		//Endif
 	ElseIf _nOpc ==  1
-		FwMsgRun(,{ |_oSay| U_XZFAT9FT(_cFilPrev, _cCodPrev, @_oSay) }, "Selecionando dados", "Aguarde...")  
+		FwMsgRun(,{ |_oSay| U_XZFT19FT(_cFilPrev, _cCodPrev, @_oSay) }, "Selecionando dados", "Aguarde...")  
 	Else	
 		FwMsgRun(,{ |_oSay| U_ZFATF026(_nOpc, _cFilPrev, _cCodPrev , @_oSay ) }, "Selecionando dados", "Aguarde...")  
 	Endif
@@ -768,7 +768,7 @@ Local _oSay
 
 Begin Sequence
 	//Parametro encontra na função ZFATF019
-	If !U_XZFAT9PA(@_aRet)
+	If !U_XZFT19PA(@_aRet)
     	_lRet := .F. 
 		Break
 	Endif
@@ -1122,7 +1122,7 @@ Endif
 Return _lRet
 
 
-
+/* substituido por U_XZFAT9CH
 //Verifica se existem  chassis ver função [fAtuPeds ZFATF018]
 User Function XZFT25CH(_cProduto, _cLocal)
 Local _cQuery 		:= ""
@@ -1170,6 +1170,7 @@ Default _cLocal 	:= ""
 	_cQuery += "         															AND VB0.D_E_L_E_T_ = ' '             "	+CRLF
 	_cQuery += "         														),'99999999' "	+CRLF
 	_cQuery += "         				) AS VB0_DATDES "						+CRLF
+
 	_cQuery += "		FROM VV1010 VV1 "										+CRLF
 	_cQuery += "		INNER JOIN SBF010 SBF "									+CRLF
 	_cQuery += "  			ON  SBF.BF_FILIAL  = '"+FwXFilial("SBF") +"' " 		+CRLF
@@ -1197,4 +1198,4 @@ Default _cLocal 	:= ""
 		_cQuery += "				ON SQLPRD.BF_PRODUTO = SC6.C6_PRODUTO "  	+CRLF
 	Endif
 Return _cQuery
-
+*/
