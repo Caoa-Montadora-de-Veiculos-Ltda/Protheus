@@ -62,12 +62,13 @@ Static Function fReportDef()
                             "Entradas",;    // --Título da tela de parâmetros
                             ,;              // --Grupo de perguntas na SX1, ao invés das pereguntas estou usando Parambox
                             {|oReport|  ReportPrint(oReport)},;
-                            "Este relatorio apresenta o cabeçalho das NFs de Entradas") // --Descrição do relatório
+                            "Este relatório apresenta o cabeçalho das NFs de Entradas") // --Descrição do relatório
    
     oReport:DisableOrientation() //--Desabilita a seleção da Orientação
     oReport:SetLandScape(.T.)    //--Orientação do relatório como paisagem.
 	oReport:HideParamPage()      //--Desabilita a impressao da pagina de parametros.
     oReport:HideHeader()         //--Define que não será impresso o cabeçalho padrão da página
+    oReport:lHeaderVisible := .T. //--Oculta o cabeçalho e as quebras de página
     oReport:HideFooter()         //--Define que não será impresso o rodapé padrão da página
     oReport:SetPreview(.T.)      //--Define se será apresentada a visualização do relatório antes da impressão física
     oReport:SetEnvironment(2)    //--Ambiente: 1-Server e 2-Client
@@ -116,7 +117,7 @@ Static Function fReportDef()
     TRCell():New( oSection1, "F3_BASECF3", cAliasTMP, "COF ST ZFM"       , PesqPict("SF3", "F3_BASECF3"), TamSx3("F3_BASECF3")[1] , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
     TRCell():New( oSection1, "F3_VALCF3" , cAliasTMP, "VAL COFST ZFM"    , PesqPict("SF3", "F3_VALCF3") , TamSx3("F3_VALCF3")[1]  , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
     TRCell():New( oSection1, "F3_OBSERV" , cAliasTMP, "OBSERVACAO"       , PesqPict("SF3", "F3_OBSERV") , TamSx3("F3_OBSERV")[1]  , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-    TRCell():New( oSection1, "F3_DTCANC" , cAliasTMP, "DATA CANCEL"      , PesqPict("SF3", "F3_DTCANC") , TamSx3("F3_DTCANC")[1]  , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+    //TRCell():New( oSection1, "F3_DTCANC" , cAliasTMP, "DATA CANCEL"      , PesqPict("SF3", "F3_DTCANC") , TamSx3("F3_DTCANC")[1]  , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 
     oSection2 := TRSection():New(oReport    ,"NF canceladas"    ,{cAliasTMP}) 
     
@@ -157,7 +158,7 @@ Static Function fReportDef()
     TRCell():New( oSection2, "F3_BASECF3", cAliasTMP, "COF ST ZFM"      , PesqPict("SF3", "F3_BASECF3"), TamSx3("F3_BASECF3")[1] , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
     TRCell():New( oSection2, "F3_VALCF3" , cAliasTMP, "VAL COFST ZFM"   , PesqPict("SF3", "F3_VALCF3") , TamSx3("F3_VALCF3")[1]  , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
     TRCell():New( oSection2, "F3_OBSERV" , cAliasTMP, "OBSERVACAO"      , PesqPict("SF3", "F3_OBSERV") , TamSx3("F3_OBSERV")[1]  , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-    TRCell():New( oSection2, "F3_DTCANC" , cAliasTMP, "DATA CANCEL"     , PesqPict("SF3", "F3_DTCANC") , TamSx3("F3_DTCANC")[1]  , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+    //TRCell():New( oSection2, "F3_DTCANC" , cAliasTMP, "DATA CANCEL"     , PesqPict("SF3", "F3_DTCANC") , TamSx3("F3_DTCANC")[1]  , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 
 
     //oReport:PrintDialog()
@@ -172,6 +173,8 @@ Static Function  ReportPrint(oReport)
     Local oSection1  := Nil
     Local oSection2  := Nil
     Local cQuery    := ""
+    Local nAtual	:= 0
+	Local nTotal	:= 0
     
     oSection1  := oReport:Section(1)
     oSection2  := oReport:Section(2)
@@ -262,20 +265,25 @@ Static Function  ReportPrint(oReport)
     // Executa a consulta.
 	DbUseArea( .T., "TOPCONN", TcGenQry(,,cQuery), cAliasTMP, .T., .T. )
 
-	oReport:SetMeter( Contar(cAliasTMP,"!Eof()") )
+	 //Setando o total da régua.
+	Count to nTotal
+	oReport:SetMeter( nTotal )
 	// Secção 1
 	oSection1:Init()
 
     DbSelectArea((cAliasTMP))
     (cAliasTMP)->(dbGoTop())
     While (cAliasTMP)->(!EoF()) .And. !oReport:Cancel()
+        //Incrementando a regua
+		nAtual++
 
         // Incrementa a mensagem na régua.
+        oReport:SetMsgPrint("Imprimindo registo " + cValToChar(nAtual) + " de " + cValToChar(nTotal) + " ...")
         oReport:IncMeter()
 
         oSection1:Cell("DT_EMIS"):SetValue(StoD((cAliasTMP)->DT_EMIS))
         oSection1:Cell("DT_ENTR"):SetValue(StoD((cAliasTMP)->DT_ENTR))
-        oSection1:Cell("F3_DTCANC"):SetValue(StoD((cAliasTMP)->F3_DTCANC))
+        //oSection1:Cell("F3_DTCANC"):SetValue(StoD((cAliasTMP)->F3_DTCANC))
         
         //Imprimindo a linha atual
         oSection1:PrintLine()	
@@ -283,7 +291,7 @@ Static Function  ReportPrint(oReport)
         If (cAliasTMP)->F3_DTCANC != ' '
             oSection2:Init()
 
-            oSection2:Cell("F3_DTCANC"):SetValue(StoD((cAliasTMP)->F3_DTCANC))
+            //oSection2:Cell("F3_DTCANC"):SetValue(StoD((cAliasTMP)->F3_DTCANC))
 
             oSection2:PrintLine()	
             oSection2:Finish()	  
