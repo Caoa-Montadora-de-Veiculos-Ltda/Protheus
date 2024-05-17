@@ -113,7 +113,6 @@ Static Function ZPECF033PR(_aRet, _cCodProd, _oSay )
         Aadd( _aCpoCab, {"SB1", "CODPROD"   , "C","Produto"         , Len(SB1->B1_COD)   , 0, "@!",.F.})
         Aadd( _aCpoCab, {"SB1", "DESCRIC"   , "C","Descrição"       , Len(SB1->B1_DESC)  , 0, "@!",.F.})
         
-        aAdd( _aCpoCab, {"SD2", "EMISSAO"   , "D","Emissão"         , 08, 0, "@D",.T.})
         aAdd( _aCpoCab, {"SD1", "DIGITACAO" , "D","Digitação"       , 08, 0, "@D",.T.})
         
         aAdd( _aCpoCab, {"SB1", "LOCAL"     , "C","Armazém"         , Len(SB1->B1_LOCPAD)   , 0, "@!",.T.})
@@ -134,10 +133,10 @@ Static Function ZPECF033PR(_aRet, _cCodProd, _oSay )
         aAdd( _aCpoCab, {"SA1", "NFANT_CF"  , "C","Nome Fant For/Cli"    , Len(SA1->A1_NREDUZ)  , 0, "@!",.T.})
         aAdd( _aCpoCab, {"SF4", "DESC_CFOP" , "C","Descrição CFOP"       , Len(SF4->F4_TEXTO)   , 0, "@!",.T.})
         aAdd( _aCpoCab, {"SA1", "NOME_CF"   , "C","Fornecedor/Cliente"   , Len(SA1->A1_NOME)    , 0, "@!",.T.})
+        aAdd( _aCpoCab, {"SD2", "EMISSAO"   , "D","Emissão"         , 08, 0, "@D",.T.})
         aAdd( _aCpoCab, {"SD2", "NRECNO"    , "N","Recno NF"             , 10, 0, "@!",.F. /*não ncluir no browse*/})
         aAdd( _aCpoCab, {"SD2", "SALDO"     , _aTamSx3[03],"Saldo"  , _aTamSx3[01]   , _aTamSx3[02], PesqPict("SD2","D2_TOTAL"),.F.})
-        
-
+       
         _aBrwCab    := {}
         _aStru      := {}  //Estrutura do Banco
         For _nPos := 1 To Len(_aCpoCab)
@@ -155,7 +154,7 @@ Static Function ZPECF033PR(_aRet, _cCodProd, _oSay )
 
         _oTable := FWTemporaryTable():New()
         _oTable:SetFields(_aStru)
-        _oTable:AddIndex("INDEX1", {"DIGITACAO", "CODPROD"} )
+        _oTable:AddIndex("INDEX1", {"EMISSAO", "CODPROD"} )
         _oTable:Create()
         _cAliasPesq := _oTable:GetAlias()
 
@@ -180,8 +179,7 @@ Static Function ZPECF033PR(_aRet, _cCodProd, _oSay )
         _cQuery += " ( "                                                    + CRLF
         _cQuery += "     SELECT SD1.D1_COD          CODPROD "               + CRLF                    
         _cQuery += "            , SB1.B1_DESC       DESCRI "                + CRLF 
-        _cQuery += "            , SD1.D1_DTDIGIT  	DIGITACAO  "            + CRLF                     
-        _cQuery += "            , SD1.D1_EMISSAO    EMISSAO "               + CRLF                
+        _cQuery += "            , SD1.D1_DTDIGIT  	DIGITACAO  "            + CRLF                               
         _cQuery += "     		, SD1.D1_LOCAL      LOCAL "                 + CRLF                     
         _cQuery += "     		, NNR.NNR_DESCRI    DESC_LOCAL "            + CRLF                     
         _cQuery += "     		, SD1.D1_DOC        DOC "                   + CRLF                         
@@ -198,6 +196,7 @@ Static Function ZPECF033PR(_aRet, _cCodProd, _oSay )
         _cQuery += "     		, SA2.A2_NREDUZ     NFANT_CF "              + CRLF                    
         _cQuery += "     		, SF4D1.F4_TEXTO    DESC_CFOP "             + CRLF                                   
         _cQuery += "     		, SA2.A2_NOME       NOME_CF "               + CRLF                    
+        _cQuery += "            , SD1.D1_EMISSAO    EMISSAO "               + CRLF
         _cQuery += "            , SF1.R_E_C_N_O_    AS  NRECNO "            + CRLF           
         _cQuery += "            ,' '                AS  D_E_L_E_T_ "        + CRLF       
         _cQuery += "            , SD1.R_E_C_N_O_    AS  R_E_C_N_O_ "        + CRLF        
@@ -240,8 +239,7 @@ Static Function ZPECF033PR(_aRet, _cCodProd, _oSay )
         _cQuery += "     	UNION "                                                 + CRLF
         _cQuery += "     	SELECT SD2.D2_COD       CODPROD "                       + CRLF                     
         _cQuery += "            , SB1.B1_DESC       DESCRI "                        + CRLF                      
-        _cQuery += "     		, SD2.D2_EMISSAO    DIGITACAO "                     + CRLF  
-        _cQuery += "     		, SD2.D2_EMISSAO    EMISSAO "                       + CRLF                
+        _cQuery += "     		, SD2.D2_EMISSAO    DIGITACAO "                     + CRLF            
         _cQuery += "     		, SD2.D2_LOCAL      LOCAL "                         + CRLF                     
         _cQuery += "     		, NNR.NNR_DESCRI    DESC_LOCAL "                    + CRLF                     
         _cQuery += "      		, SD2.D2_DOC        DOC "                           + CRLF
@@ -258,6 +256,7 @@ Static Function ZPECF033PR(_aRet, _cCodProd, _oSay )
         _cQuery += "     		, SA1.A1_NREDUZ     NFANT_CF "                      + CRLF                    
         _cQuery += "     		, SF4D2.F4_TEXTO    DESC_CFOP "                     + CRLF                                    
         _cQuery += "     		, SA1.A1_NOME       NOME_CF  "                      + CRLF                   
+        _cQuery += "     		, SD2.D2_EMISSAO    EMISSAO "                       + CRLF      
         _cQuery += "            , SD2.R_E_C_N_O_    AS  NRECNO "                    + CRLF           
         _cQuery += "            ,' '                AS  D_E_L_E_T_  "               + CRLF      
         _cQuery += "            , SD2.R_E_C_N_O_    AS  R_E_C_N_O_  "               + CRLF        
@@ -290,8 +289,7 @@ Static Function ZPECF033PR(_aRet, _cCodProd, _oSay )
             _cQuery += "     	UNION "                                             + CRLF
             _cQuery += "     	SELECT SB9.B9_COD   CODPROD "                       + CRLF                     
             _cQuery += "            , SB1.B1_DESC   DESCRI "                        + CRLF 
-            _cQuery += "            , SB9.B9_DATA 	DIGITACAO "                     + CRLF                    
-            _cQuery += "     		, SB9.B9_DATA   EMISSAO "                       + CRLF                
+            _cQuery += "            , SB9.B9_DATA 	DIGITACAO "                     + CRLF                                   
             _cQuery += "     		, 'ND'          LOCAL "                         + CRLF                     
             _cQuery += "     		, 'ND'          DESC_LOCAL "                    + CRLF                     
             _cQuery += "      		, 'ND'          DOC "                           + CRLF
@@ -302,12 +300,13 @@ Static Function ZPECF033PR(_aRet, _cCodProd, _oSay )
             _cQuery += "     		, SB9.B9_QINI   QTDE_MOV "                      + CRLF              
             _cQuery += "     		, 0             CUSTO_UNI "                     + CRLF                 
             _cQuery += "     		, 0             CUSTO_TOT "                     + CRLF                 
-        // _cQuery += "     		, 'ND' PENTREGA "+ CRLF                          
+            // _cQuery += "     		, 'ND' PENTREGA "+ CRLF                          
             _cQuery += "     		, 'ND'          CLIFOR "                        + CRLF                  
             _cQuery += "     		, 'ND'          LOJA  "                         + CRLF                      
             _cQuery += "     		, 'ND'          NFANT_CF "                      + CRLF                    
             _cQuery += "     		, 'ND'          DESC_CFOP "                     + CRLF                                    
-            _cQuery += "     		, 'ND'          NOME_CF "                       + CRLF                   
+            _cQuery += "     		, 'ND'          NOME_CF "                       + CRLF
+            _cQuery += "     		, SB9.B9_DATA   EMISSAO "                       + CRLF                   
             _cQuery += "            , MAX(SB9.R_E_C_N_O_)     AS  NRECNO "          + CRLF           
             _cQuery += "            ,' '            AS  D_E_L_E_T_  "               + CRLF      
             _cQuery += "            , MAX(SB9.R_E_C_N_O_)     AS  R_E_C_N_O_  "     + CRLF        
