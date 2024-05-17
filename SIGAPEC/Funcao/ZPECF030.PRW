@@ -79,29 +79,29 @@ Static cSayDescPrd 	:= ""
 //====================================
 
 User Function ZPECF030
-Begin Sequence
-	Private FreWindow := FreAcWindow():New("SB1")	
-	Private _cAliasPlan := ""
-	Private _aFil     	 := {}
-	//Private _OBrPlaneja
-	Private oArea    
-	Private oPanelVis
-	Private _oBrRelac   
-	Private	_aPrdREL 
-	Private _oBrEstVenda   
-	Private	_aPrdEstVenda
-	Private _oBrDetalhe   
-	Private	_aDetalhe
+	Begin Sequence
+		Private FreWindow := FreAcWindow():New("SB1")	
+		Private _cAliasPlan := ""
+		Private _aFil     	 := {}
+		//Private _OBrPlaneja
+		Private oArea    
+		Private oPanelVis
+		Private _oBrRelac   
+		Private	_aPrdREL 
+		Private _oBrEstVenda   
+		Private	_aPrdEstVenda
+		Private _oBrDetalhe   
+		Private	_aDetalhe
 
-	//lPanel := .T.
-	
-	FreWindow:Init()
-	FreWindow:Show()
-End Sequence
-If Select(_cAliasPlan) <> 0
-	(_cAliasPlan)->(DbCloseArea())
-	Ferase(_cAliasPlan+GetDBExtension())
-Endif      
+		//lPanel := .T.
+		
+		FreWindow:Init()
+		FreWindow:Show()
+	End Sequence
+	If Select(_cAliasPlan) <> 0
+		(_cAliasPlan)->(DbCloseArea())
+		Ferase(_cAliasPlan+GetDBExtension())
+	Endif      
 Return .T.
 
 
@@ -1494,8 +1494,8 @@ Return Nil
 /*/
 Static Function ZPECF30KIT(_lCarrega)
 Local _cCodItem		:= MV_PAR01
-Local _cCodKit 		:= ""  	//verificar se o codigo do kit será o mesmo código com final KIT - CONFORME ALINHADO COM ZÉ SERA INCLUÍDO NO CADASTRO COM MESMO CÓDIGO DE PRODUTO ACRESCENTANDO NO FINAL KIT
-Local _cGrupoKit	:= ""	//verificar se o grupo do kit sera o mesmo do grupo do produto normal - CONFORME ALINHADO COM ZÉ SIM DEVERÁ SER O MESMO GRUPO DO PRODUTO ORIGINAL	
+Local _cCodKit 		:= ""  	//verificar se o codigo do kit será o mesmo código com final KIT - CONFORME ALINHADO COM ZÉ SERA INCLUÝDO NO CADASTRO COM MESMO CÓDIGO DE PRODUTO ACRESCENTANDO NO FINAL KIT
+Local _cGrupoKit	:= ""	//verificar se o grupo do kit sera o mesmo do grupo do produto normal - CONFORME ALINHADO COM ZÉ SIM DEVERÝ SER O MESMO GRUPO DO PRODUTO ORIGINAL	
 Local _cTipo		:= "" 	//"1"  //tipo VEH = ITEM
 Local _cWhere		:= ""
 Local _cAliasPesq	:= GetNextAlias()
@@ -1511,8 +1511,8 @@ Begin Sequence
 	Endif		
 	SB1->(DbSetOrder(1))
 	SB1->(DbSeek(XFilial("SB1")+AllTrim(_cCodItem)))
-	_cCodKit 	:= AllTrim(_cCodItem) //+"KIT"  	//verificar se o codigo do kit será o mesmo código com final KIT - CONFORME ALINHADO COM ZÉ SERA INCLUÍDO NO CADASTRO COM MESMO CÓDIGO DE PRODUTO ACRESCENTANDO NO FINAL KIT
- 	_cGrupoKit	:= SB1->B1_GRUPO								//verificar se o grupo do kit sera o mesmo do grupo do produto normal - CONFORME ALINHADO COM ZÉ SIM DEVERÁ SER O MESMO GRUPO DO PRODUTO ORIGINAL	
+	_cCodKit 	:= AllTrim(_cCodItem) //+"KIT"  	//verificar se o codigo do kit será o mesmo código com final KIT - CONFORME ALINHADO COM ZÉ SERA INCLUÝDO NO CADASTRO COM MESMO CÓDIGO DE PRODUTO ACRESCENTANDO NO FINAL KIT
+ 	_cGrupoKit	:= SB1->B1_GRUPO								//verificar se o grupo do kit sera o mesmo do grupo do produto normal - CONFORME ALINHADO COM ZÉ SIM DEVERÝ SER O MESMO GRUPO DO PRODUTO ORIGINAL	
 
 	//_aPrdREL	:= {{Space(Len(SB1->B1_FILIAL)),Space(Len(SB1->B1_COD)),Space(Len(SB1->B1_DESC)),Space(Len(SB1->B1_GRUPO))}}
 	_cWhere 	:= ""
@@ -2084,9 +2084,9 @@ Return Nil
 @type Static function
 /*/
 Static Function ZPECF30KAR()
-Local _cCodProd     := MV_PAR01
-	U_ZPECF033(_cCodProd) 
-	MV_PAR01 		:= _cCodProd
+	Local _cCodProd     := MV_PAR01
+		U_ZPECF033(_cCodProd) 
+		MV_PAR01 		:= _cCodProd
 Return Nil
 
 
