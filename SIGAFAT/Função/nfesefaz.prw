@@ -2551,7 +2551,10 @@ If cTipo == "1"
 							cMunPres := ConvType(aUF[aScan(aUF,{|x| x[1] == aDest[09]})][02]+aDest[07])
 						EndIf
 						// Tags xPed e nItemPed (controle de B2B) para nota de saída
-						If SC6->(FieldPos("C6_NUMPCOM")) > 0 .And. SC6->(FieldPos("C6_ITEMPC")) > 0
+						//Ajuste realizado para atender a venda dos HR para a HMB
+						If AllTrim(SC6->C6_TES) == '802' .And. AllTrim(SC6->C6_CLI) == '000008' .And. AllTrim(SC6->C6_LOJA) == '05'
+							aadd(aPedCom,{"5500012312","10"})
+						ElseIf SC6->(FieldPos("C6_NUMPCOM")) > 0 .And. SC6->(FieldPos("C6_ITEMPC")) > 0
 							If !Empty(SC6->C6_NUMPCOM) .And. !Empty(SC6->C6_ITEMPC) 
 								aadd(aPedCom,{SC6->C6_NUMPCOM,SC6->C6_ITEMPC})
 							Else
@@ -2560,6 +2563,8 @@ If cTipo == "1"
 						Else
 							aadd(aPedCom,{})
 						EndIf
+
+						
 						
 						//Conforme Decreto RICM, N 43.080/2002 valido somente em MG deduzir o
 						//imposto dispensado na operação
