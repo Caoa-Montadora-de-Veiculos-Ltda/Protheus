@@ -95,7 +95,9 @@ User Function ZFATF014(_cCliFat, _cTpCred, _cLoja, _lZera)
 				ZF014ZERLC( _cCliFat , _cLoja, _cTpCred)
 			EndIf
 		End Sequence
-		
+		  
+		MsgInfo("Rotina lockada")
+
 		AADD(_aRet, _cRet)
 		AADD(_aRet, _nValAtr)
 		AADD(_aRet, _nValAbe)
@@ -658,7 +660,7 @@ Static Function ZFATF14SA1(_cCliFat, _cTpCred, _nValAtr, _nValAbe, _nValBo, _nVa
 	Local _nSaldo		:= 0
 	Local _cAliasPesq 	:= GetNextAlias()
 	Local _aGrvLog		:= {}
-//Local _nPos
+	//Local _nPos
 
 	Begin Sequence
 		//No caso de não estar informada a loja

@@ -36,7 +36,6 @@ User Function ZWSR007(_cAglutina, _cPicking, _lDataEnv, _cEmpresa, _cFilial, _aM
 	Default _cEmpresa  	:= "02"
 	Default _cFilial   	:= "2020012001"
 
-
 	Private oJsRet		:= Nil
 	Begin Sequence
 		//se não For pro JOB	
@@ -80,6 +79,8 @@ Static Function ZWSR007PRC(_cAglutina, _cPicking, _lDataEnv, _oSay, _lJob)
 	Local _cObs
 	Local _lProcessou
 	Local _nPos
+	Private _cEmpWis		:= ""
+	Private _cDepWis		:= ""
 
 	Default _cAglutina	:= ""
 	Default _cPicking	:= ""
@@ -137,7 +138,7 @@ Static Function ZWSR007PRC(_cAglutina, _cPicking, _lDataEnv, _oSay, _lJob)
 			//	AND VS1.VS1_XAGLU   = %Exp:_cAglutina%
 			//VS1.VS1_XTPPED, VS1.VS1_XTPTRA, VS1.VS1_CLIFAT, VS1.VS1_LOJA, VS1.VS1_FORPAG, VS1_XDATOS, VS1_XHOROS
 			//GROUP BY A1.A1_CGC, VS1.VS1_FORPAG, VS1.VS1_XTPPED, VS1.VS1_XTPTRA, VS3.VS3_CODITE, VS3.VS3_QTDITE--, B2.B2_QATU -- TIPOS_MODAIS.TIPO_MODAL,
-			//ORDER BY VS1.VS1_XTPPED, VS1.VS1_XTPTRA	
+			//ORDER BY VS1.VS1_XTPPED, VS1.VS1_XTPTRA
 			/*
 
 			*/
@@ -191,7 +192,27 @@ Static Function ZWSR007PRC(_cAglutina, _cPicking, _lDataEnv, _oSay, _lJob)
 			Else
 				StartJob("U_XFUNIPOSTO",GetEnvServer(),.F.,VS1->VS1_NUMORC, cEmpAnt, cFilAnt, /*_nReprocessado*/, /*_oSay*/)
 			Endif
-			
+
+			_cEmpWis := ""
+			_cDepWis := ""
+			If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+				If AllTrim(VS1->VS1_XMARCA) =="CHE"
+					_cEmpWis := "1002"
+					_cDepWis := "PREP"
+				ElseIf AllTrim(VS1->VS1_XMARCA) =="SBR"
+					_cEmpWis := "1006"
+					_cDepWis := "RGLOG"
+				ElseIf AllTrim(VS1->VS1_XMARCA) =="HYU"
+					_cEmpWis := "1006"
+					_cDepWis := "RGLOG"
+				EndIf
+			ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
+				If AllTrim(VS1->VS1_XMARCA) =="HYU"
+					_cEmpWis := "1008"
+					_cDepWis := "RGLOG"
+				EndIf
+			EndIf
+
 			FreeObj(_oJson)
 			_oJson 				:= JsonObject():new()
 			_oJson['usuario']	:= _cUsuario
@@ -199,7 +220,7 @@ Static Function ZWSR007PRC(_cAglutina, _cPicking, _lDataEnv, _oSay, _lJob)
 			_oJson['pedido'] 	:= JSonObject():New()
 			_oJson['pedido'] ['nu_pedido']			:= _cPicking
 			_oJson['pedido'] ['cd_cliente']			:= Val(SA1->A1_CGC) //Conversão para inteiro - Alteração solicitada por Sidney em 31/01/2022
-			_oJson['pedido'] ['cd_empresa']			:= "1"	//SM0->M0_CGC Sidnei ira verificar e retornar será código fixo
+			_oJson['pedido'] ['cd_empresa']			:= _cEmpWis //"1"	//SM0->M0_CGC Sidnei ira verificar e retornar será código fixo
 			_oJson['pedido'] ['cd_situacao']		:= _nSituacao
 			_oJson['pedido'] ['dt_addrow']			:= ""  	//DtoC(Date())+" "+SubsTr(time(),1,8)
 			_oJson['pedido'] ['id_processado']		:= "N"
@@ -231,7 +252,7 @@ Static Function ZWSR007PRC(_cAglutina, _cPicking, _lDataEnv, _oSay, _lJob)
 			_oJson['pedido'] ['nu_seq_entrega']		:= 0
 			_oJson['pedido'] ['qt_itens']			:= ""
 			_oJson['pedido'] ['id_cross_docking']	:= ""
-			_oJson['pedido'] ['cd_deposito']		:= If(VS1->VS1_XMARCA == "CHE","PREP", "RGLOG") //conforme solicitação JC DAC 13/04/2022	//AllTrim(VS1->VE1_XDEPWS)   //DEFINIDO PELO ZE (ESTARA NA VE1 CAMPO CUSTOMIZADO) VE1_XDEPWS (DEPOSITO)
+			_oJson['pedido'] ['cd_deposito']		:= _cDepWis//If(VS1->VS1_XMARCA == "CHE","PREP", "RGLOG") //conforme solicitação JC DAC 13/04/2022	//AllTrim(VS1->VE1_XDEPWS)   //DEFINIDO PELO ZE (ESTARA NA VE1 CAMPO CUSTOMIZADO) VE1_XDEPWS (DEPOSITO)
 			_oJson['pedido'] ['cd_roteiro']			:= ""
 			_oJson['pedido'] ['nu_agenda']			:= ""
 			_oJson['pedido'] ['ds_placa']			:= SA1->A1_EST	//"" alterado conforme solicitação Sidnei RG LOG tem que ser UF do cliente  DAC 16/02/2022
@@ -361,7 +382,7 @@ Begin Sequence
     	_nSeq := _nPos //Val((_cAliasPesq)->VS3_SEQUEN) //Len(_aItens)
     	_aItens[_nPos] ['nu_pedido'] 			:= _cPicking
     	_aItens[_nPos] ['cd_cliente'] 			:= Val(SA1->A1_CGC) //Conversão para inteiro - Alteração solicitada por Sidney em 31/01/2022
-    	_aItens[_nPos] ['cd_empresa'] 			:= "1"
+    	_aItens[_nPos] ['cd_empresa'] 			:= _cEmpWis //"1"
 		_aItens[_nPos] ['cd_produto'] 			:= AllTrim((_cAliasPesq)->VS3_CODITE)
 		_aItens[_nPos] ['cd_faixa'] 			:= ""
 		_aItens[_nPos] ['nu_seq_pedido'] 		:= _nSeq
@@ -388,7 +409,7 @@ Begin Sequence
 		_aItens[_nPos] ['cd_registro'] 			:= ""
 		_aItens[_nPos] ['id_processado'] 		:= "N"
 		_aItens[_nPos] ['nu_doc_erp'] 			:= ""
-		_aItens[_nPos] ['cd_deposito'] 			:= If(VS1->VS1_XMARCA == "CHE","PREP", "RGLOG") //conforme solicitação JC DAC 13/04/2022
+		_aItens[_nPos] ['cd_deposito'] 			:= _cDepWis//If(VS1->VS1_XMARCA == "CHE","PREP", "RGLOG") //conforme solicitação JC DAC 13/04/2022
 		_aItens[_nPos] ['cd_roteiro'] 			:= ""
 		_aItens[_nPos] ['nu_seq_entrega'] 		:= ""
 		_aItens[_nPos] ['nu_agenda'] 			:= ""
