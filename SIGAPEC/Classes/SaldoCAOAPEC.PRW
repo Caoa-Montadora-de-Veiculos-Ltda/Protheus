@@ -260,15 +260,15 @@ Method RetSaldoWIS() class SaldoCAOAPEC
 
 		//Início - OneGate001 - nova empresa 90 | HMB
 		If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
-			If AllTrim(_cMarca) =="CHE"
+			If AllTrim(cMarca) =="CHE"
 				cQryWis += " AND ESTWIS.CD_EMPRESA = 1002 "
-			ElseIf AllTrim(_cMarca) == "SBR"
+			ElseIf AllTrim(cMarca) == "SBR"
 				cQryWis += " AND ESTWIS.CD_EMPRESA = 1006 "
-			ElseIf AllTrim(_cMarca) =="HYU"
+			ElseIf AllTrim(cMarca) =="HYU"
 				cQryWis += " AND ESTWIS.CD_EMPRESA = 1006 "
 			EndIf
 		ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
-			If AllTrim(_cMarca) =="HYU"
+			If AllTrim(cMarca) =="HYU"
 				cQryWis += " AND ESTWIS.CD_EMPRESA = 1008 "
 			EndIf
 		EndIf

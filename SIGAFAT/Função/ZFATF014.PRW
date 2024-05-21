@@ -56,7 +56,7 @@ User Function ZFATF014(_cCliFat, _cTpCred, _cLoja, _lZera)
 	EndIf
 
 	If _lRet
-		//Begin Sequence
+		
 		Begin Sequence
 			//Tem que vir informando o Cliente
 			If Empty(_cCliFat)
@@ -96,7 +96,7 @@ User Function ZFATF014(_cCliFat, _cTpCred, _cLoja, _lZera)
 			EndIf
 		End Sequence
 		  
-		MsgInfo("Rotina lockada")
+		MsgInfo("Rotina lockada") //Retirar essa linha antes de subir em produção.
 
 		AADD(_aRet, _cRet)
 		AADD(_aRet, _nValAtr)
