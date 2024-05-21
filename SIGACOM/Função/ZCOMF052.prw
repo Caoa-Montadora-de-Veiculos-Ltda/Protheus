@@ -20,8 +20,9 @@ User Function ZCOMF052()
 	FOR	i := 1 To Len(aCols)
 
 		IF acols[i,len(acols[i])] = .T.
+
+ 		ELSEIF acols[i,len(acols[i])] = .F.
             k = k+1
-		ELSEIF acols[i,len(acols[i])] = .F.
 			aCols[I][1] := StrZero(k,4)
 		ENDIF
 
