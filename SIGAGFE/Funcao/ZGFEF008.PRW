@@ -64,6 +64,7 @@ Static Function ModelDef()
 	oStruPai:SetProperty('F2_EMISSAO' , MODEL_FIELD_WHEN,{|| .F. })
 	oStruPai:SetProperty('F2_VALBRUT' , MODEL_FIELD_WHEN,{|| .F. })
 	oStruPai:SetProperty('F2_CHVNFE'  , MODEL_FIELD_WHEN,{|| .F. })
+	oStruPai:SetProperty('F2_PBRUTO'  , MODEL_FIELD_WHEN,{|| .F. })
 
 	//Bloqueia alteração no campo (deixa cinza).
 	oStruFilho:SetProperty('GW8_SEQ'  , MODEL_FIELD_WHEN,{|| .F. })
@@ -92,7 +93,7 @@ Return oModel
 Static Function ViewDef()
 
 	Local oModel     := FWLoadModel("ZGFEF008")
-	Local oStruPai   := FWFormStruct(2, cTabPai  , { |x| Alltrim(x) $ 'F2_DOC, F2_SERIE, F2_CLIENTE, F2_LOJA, F2_EMISSAO, F2_CHVNFE, F2_VALBRUT, F2_XPESOC , F2_PBRUTO'})
+	Local oStruPai   := FWFormStruct(2, cTabPai  , { |x| Alltrim(x) $ 'F2_DOC, F2_SERIE, F2_CLIENTE, F2_LOJA, F2_EMISSAO, F2_CHVNFE, F2_VALBRUT, F2_PBRUTO, F2_XPESOC '})
 	Local oStruFilho := FWFormStruct(2, cTabFilho, { |x| Alltrim(x) $ 'GW8_SEQ, GW8_ITEM, GW8_DSITEM, GW8_PESOR, GW8_PESOC, GW8_VALOR'})
 	Local oView 	 := Nil
 
@@ -122,8 +123,9 @@ Static Function ViewDef()
 	oStruPai:SetProperty('F2_EMISSAO' 	, MVC_VIEW_ORDEM , '05')
 	oStruPai:SetProperty('F2_CHVNFE' 	, MVC_VIEW_ORDEM , '06')
 	oStruPai:SetProperty('F2_VALBRUT' 	, MVC_VIEW_ORDEM , '07')
-	oStruPai:SetProperty('F2_XPESOC' 	, MVC_VIEW_ORDEM , '08')
-	oStruPai:SetProperty('F2_PBRUTO' 	, MVC_VIEW_ORDEM , '09')
+	oStruPai:SetProperty('F2_PBRUTO' 	, MVC_VIEW_ORDEM , '08')
+	oStruPai:SetProperty('F2_XPESOC' 	, MVC_VIEW_ORDEM , '09')
+	
 	
 	//Definindo que não irá usar o botão "Salvar e Criar Novo"
     oView:SetCloseOnOk({|| .T.})	
@@ -139,16 +141,16 @@ User Function fCommit()
 	Local oModelAtiv := FWModelActive()
 	Local oModelCad  := oModelAtiv:GetModel('SF2MASTER')
 	Local oModelGrid := oModelAtiv:GetModel('GW8GRID')
-	Local cPBOrig 	 := SF2->F2_PBRUTO 	//Peso Bruto Original
+	//Local cPBOrig 	 := SF2->F2_PBRUTO 	//Peso Bruto Original
 	Local cPCOrig 	 := SF2->F2_XPESOC 	//Peso Cubado Original
 	Local nVlrTot 	 := SF2->F2_VALBRUT	//Valor Bruto Original 
-	Local nPBNovo 	 := oModelCad:GetValue('F2_PBRUTO')  //Peso Bruto Novo
+	//Local nPBNovo 	 := oModelCad:GetValue('F2_PBRUTO')  //Peso Bruto Novo
 	Local nPCNovo 	 := oModelCad:GetValue('F2_XPESOC')  //Peso Cubado Novo
 	Local lRet 	  	 := .F.
 	Local cMsg    	 := " "
 	Local nLin  	 := 0
 	Local aPesoCub   := {}
-	Local aPesoBrt   := {}
+	//Local aPesoBrt   := {}
 	Local nRec 		 := 0
 	Local cTpDoc 	 := " "
 	Local cDtEmiss 	 := " "
@@ -158,7 +160,7 @@ User Function fCommit()
 
 	cMsg += "Alterações: " + CRLF
 	cMsg += CRLF + "Peso Cubado Total de: " + Alltrim(cValToChar(cPCOrig))  + " para: " + Alltrim(cValtoChar(nPCNovo)) + " " + CRLF
-	cMsg += "Peso Bruto Total de: " + Alltrim(cValToChar(cPBOrig))  + " para: " + Alltrim(cValToChar(nPBNovo)) + " " + CRLF 
+	//cMsg += "Peso Bruto Total de: " + Alltrim(cValToChar(cPBOrig))  + " para: " + Alltrim(cValToChar(nPBNovo)) + " " + CRLF 
 
 	If MsgYesNo(cMsg,"Deseja continuar?")
 		//Tratanto cada linha da grid.			
@@ -186,7 +188,7 @@ User Function fCommit()
 				//aPesoCub ou aPesoBrt [3] == Valor do item GW8
 				//aPesoCub ou aPesoBrt [4] == nRec := GW8->( Recno() )
 				AAdd(aPesoCub, {oModelGrid:GetValue("GW8_ITEM") ,oModelGrid:GetValue("GW8_PESOC"), oModelGrid:GetValue("GW8_VALOR"), nRec })
-				AAdd(aPesoBrt, {oModelGrid:GetValue("GW8_ITEM") ,oModelGrid:GetValue("GW8_PESOR"), oModelGrid:GetValue("GW8_VALOR"), nRec })
+				//AAdd(aPesoBrt, {oModelGrid:GetValue("GW8_ITEM") ,oModelGrid:GetValue("GW8_PESOR"), oModelGrid:GetValue("GW8_VALOR"), nRec })
 			EndIf
 			
 		Next
@@ -203,6 +205,7 @@ User Function fCommit()
 		EndIf
 		
 		//Faz rateiro do peso BRUTO
+		/*
 		If !(empty(aPesoBrt))
 			//Distribui os valos de Peso Cubado na Grid e grava na GW8
 			lRet := fRateioPB(aPesoBrt, nPBNovo, nVlrTot)
@@ -212,7 +215,9 @@ User Function fCommit()
 				cMsg += CRLF + "Rateio de peso bruto falhou, verifique com ADM sistemas." + CRLF
 			EndIf
 		EndIf
+		*/
 		FWAlertInfo(cMsg, "Informações gravadas.")
+		
 	Else
 		lRet := .F.
 		Help("",1,"ZGFEF008",,"Dados não alterados.",1) // "Preencher o campo Loja do Prospect." 
@@ -264,7 +269,7 @@ Static Function fRateioPC(aPesoCub, nPCNovo, nVlrTot)
 
 Return lRet
 
-
+/* //Alteração de peso bruto retirada a pedido da analista Micaellen.
 //Distribui os valores de peso BRUTO na grid e grava na tabela GW8 via RecLock
 Static Function fRateioPB(aPesoBrt, nPBNovo, nVlrTot)
 	Local nLin 		:= 0
@@ -307,3 +312,4 @@ Static Function fRateioPB(aPesoBrt, nPBNovo, nVlrTot)
 	EndIf	
 
 Return lRet
+*/
