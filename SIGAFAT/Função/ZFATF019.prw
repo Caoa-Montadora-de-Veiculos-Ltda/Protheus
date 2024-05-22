@@ -1871,6 +1871,9 @@ Local   _aPrev      As Array
 Local   _lPrevFat   As Logical
 Local   _nRegSC6    As Numeric 
 Local   _cSeq       As Character
+Local   _cTransp    As Character    
+Local   _cTpFre     AS Character
+Local   _aTransp    AS Array 
 
 Private cSerie      As Character
 Private cNotaSer    As Character
@@ -1906,6 +1909,8 @@ If !lContinua
 EndIf
 
 lContinua := Sx5NumNota(@cSerie,SuperGetMV("MV_TPNRNFS"),,,,@cSerieId,dDataBase ) // O parametro cSerieId deve ser passado para funcao Sx5NumNota afim de tratar a existencia ou nao do mesmo numero na funcao VldSx5Num do MATXFUNA.PRX
+//GAP179 Ajuste no frete do documento de carga DAC 20/05/2024
+_cTransp := AllTrim(SuperGetMV( "MV_FAT19TR" , ,"" ))   //Parâmetro para indicação código transportadora e tipo de Frete
 
 (cCabAlias)->(DbGotop())
 While (cCabAlias)->(!Eof()) .And. lContinua
@@ -1969,6 +1974,20 @@ While (cCabAlias)->(!Eof()) .And. lContinua
 		
 	                Aadd( aPVlNFs, aClone(aTmpPVl))
                     _nRegSC6 := SC6->(Recno())
+
+                    //GAP179 | Ajuste no frete do documento de carga DAC 20/05/2024
+                    If !Empty(_cTransp)
+     	                _aTransp := StrTokArr(_cTransp,";")
+                        If Len(_aTransp) > 0
+                            _cTransp := _aTransp[1]
+                            _cTpFre := If(Len(_aTransp) > 1,_aTransp[2], "C")  //Caso não localize trazer tipo de Frete como CIF  
+                            If SC5->(RecLock("SC5",.F.))
+                                SC5->C5_TRANSP :=  _cTransp
+                                SC5->C5_TPFRETE:=  _cTpFre
+                                SC5->(MsUnlock())
+                            Endif
+                        Endif 
+                    Endif 
 	                /*
                     *****************************
 	                *'Gera nota fiscal de saída.'*
