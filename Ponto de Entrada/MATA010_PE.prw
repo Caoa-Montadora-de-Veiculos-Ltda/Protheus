@@ -241,7 +241,7 @@ Return xRet
 
 User Function MTA010MNU()
 //----------------------------------------------------------------------------------------------------------
-// [n][1] - Nome da Funcionalidade  (ZZN) - Log
+// [n][1] - Nome da Funcionalidade  (ZZ4) - Log
 // [n][2] - Função de usuário
 // [n][3] - Operação (1-Pesquisa; 2-Visualização; 3-Inclusão; 4-Alteração; 5-Exclusão)
 // [n][4] - Acesso relacionado a rotina, se esta posição não for informada nenhum acesso será validado

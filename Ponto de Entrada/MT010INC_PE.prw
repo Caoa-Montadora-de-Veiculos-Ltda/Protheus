@@ -25,22 +25,22 @@ User Function MT010INC()
     SB1->(MsUnlock())
     //Atualiza a tabela de log de alteração/inclusão de produtos
     IF FWCodEmp() <> "2010"
-        RecLock('ZZN', .T.)
-        ZZN_FILIAL := xFILIAL("ZZN")
-        ZZN_COD    := SB1->B1_COD
-        ZZN_DESCR  := SB1->B1_DESC
-        ZZN_DATA   := DATE()
-        ZZN_HORA   := TIME()
-        ZZN_INIC   := "*"
-        ZZN_FINAL  := "*"
-        ZZN_USUR   := __cUserID + " - " + cUserName
-        ZZN_CAMPO  := "TODOS CAMPOS"
+        RecLock('ZZ4', .T.)
+        ZZ4_FILIAL := xFILIAL("ZZ4")
+        ZZ4_COD    := SB1->B1_COD
+        ZZ4_DESCR  := SB1->B1_DESC
+        ZZ4_DATA   := DATE()
+        ZZ4_HORA   := TIME()
+        ZZ4_INIC   := "*"
+        ZZ4_FINAL  := "*"
+        ZZ4_USUR   := __cUserID + " - " + cUserName
+        ZZ4_CAMPO  := "TODOS CAMPOS"
         IF FWIsInCallStack("FIMPEXCEL")
-           ZZN_MOVTO  := "CARGA EM MASSA DE PRODUTO"
+           ZZ4_MOVTO  := "CARGA EM MASSA DE PRODUTO"
         ELSE
-           ZZN_MOVTO  := "INCLUSAO/COPIA MANUAL DE PRODUTO"
+           ZZ4_MOVTO  := "INCLUSAO/COPIA MANUAL DE PRODUTO"
         ENDIF
-        ZZN->(MsUnlock())
+        ZZ4->(MsUnlock())
     ENDIF
   
 Return .t.

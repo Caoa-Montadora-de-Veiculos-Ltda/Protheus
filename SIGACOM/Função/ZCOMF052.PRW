@@ -43,9 +43,9 @@ Begin Sequence
 		Endif 
 		//_cProduto := SB1->B1_COD
 		SetFunName('ZCOMF052')
-		DBSELECTAREA('ZZN')	// Cadastro monitor
+		DBSELECTAREA('ZZ4')	// Cadastro monitor
 		_oBrw := FWMBrowse():New()
-		_oBrw:SetAlias("ZZN")
+		_oBrw:SetAlias("ZZ4")
 		_oBrw:SetMenuDef("ZCOMF052")
 		_oBrw:SetDescription(_cTitulo) 
 		_oBrw:SetUseFilter(.T.)
@@ -53,7 +53,7 @@ Begin Sequence
 		_oBrw:DisableDetails()
 		_oBrw:SetAmbiente(.F.)
 		_oBrw:SetWalkThru(.F.)	
-		//_oBrw:SetFilterDefault( "ZZN_COD == '" +_cProduto+"'" ) 
+		//_oBrw:SetFilterDefault( "ZZ4_COD == '" +_cProduto+"'" ) 
 		_oBrw:Activate()
 
 End Sequence 
@@ -74,14 +74,14 @@ Defini√ß√£o do interface
 Static Function ViewDef()
 Local _oView
 Local _oModel := ModelDef()
-Local _oStr1:= FWFormStruct(2, 'ZZN')
+Local _oStr1:= FWFormStruct(2, 'ZZ4')
 Begin Sequence	
 	// Cria o objeto de View
 	_oView := FWFormView():New()
 	// Define qual o Modelo de dados ser√° utilizado
 	_oView:SetModel(_oModel)
 	//Adiciona no nosso View um controle do tipo FormFields(antiga enchoice)
-	_oView:AddField('Formulario' , _oStr1,'CamposZZN' )
+	_oView:AddField('Formulario' , _oStr1,'CamposZZ4' )
     //Remove os campos que n√£o ir√£o aparecer	
 	//_oStr1:RemoveField( 'SZ2_' )	
 	// Criar um "box" horizontal para receber algum elemento da view
@@ -104,7 +104,7 @@ Defini√ß√£o do modelo de Dados
 //-------------------------------------------------------------------
 Static Function ModelDef()
 Local _oModel
-Local _oStr1:= FWFormStruct( 1, 'ZZN', /*bAvalCampo*/,/*lViewUsado*/ ) // Constru√ß√£o de uma estrutura de dados
+Local _oStr1:= FWFormStruct( 1, 'ZZ4', /*bAvalCampo*/,/*lViewUsado*/ ) // Constru√ß√£o de uma estrutura de dados
 Begin Sequence	
 	//Cria o objeto do Modelo de Dados
     //Irie usar uma fun√ß√£o QCP1VLD que ser√° acionada quando eu clicar no bot√£o "Confirmar"
@@ -112,11 +112,11 @@ Begin Sequence
 	_oModel:SetDescription('Log AlteraÁ„o Produto')
 	//oStr1:RemoveField( 'ZA2_FILIAL' )
 	// Adiciona ao modelo uma estrutura de formul√°rio de edi√ß√£o por campo
-	_oModel:addFields('CamposZZN',,_oStr1,{|_oModel|ZCOMF052(_oModel)},,)
+	_oModel:addFields('CamposZZ4',,_oStr1,{|_oModel|ZCOMF052(_oModel)},,)
 	//Define a chave primaria utilizada pelo modelo
 	_oModel:SetPrimaryKey({'R_E_C_N_O_' })
 	// Adiciona a descricao do Componente do Modelo de Dados
-	_oModel:getModel('CamposZZN'):SetDescription('Cadastro IntegraÁ„o/AteraÁ„o')
+	_oModel:getModel('CamposZZ4'):SetDescription('Cadastro IntegraÁ„o/AteraÁ„o')
 End Begin	
 Return _oModel
 
