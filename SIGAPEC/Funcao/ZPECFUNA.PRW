@@ -3497,9 +3497,10 @@ User Function XVERCANFe( _cDoc, _cSerie,  _cCli,  _cLoja, _cMens)
 			Break
 		Endif	
 		//tem que estar nestes status para cancelar
-		If  !SF2->F2_FIMP $ "T_S" //verificacao apenas da especie como SPED e notas que foram transmitidas ou impressao DANFE
+		If  !(SF2->F2_FIMP) $ "D|N|S" //verificacao apenas da especie como SPED e notas que foram transmitidas ou impressao DANFE
+			//If  !SF2->F2_FIMP $ "D|T|S" //verificacao apenas da especie como SPED e notas que foram transmitidas ou impressao DANFE
 			_lRet	 := .F.
-			_cMens 	 := "NFe "+ _cDoc +" serie "+ _cSerie +" do Cliente "+ _cCli +" loja "+ _cLoja +" não possui status para excluisão, Status atual"+If(Empty(SF2->F2_FIMP),"não enviada [",SF2->F2_FIMP)+"] !"						
+			_cMens 	 := "NFe "+ _cDoc +" serie "+ _cSerie +" do Cliente "+ _cCli +" loja "+ _cLoja +" n�o possui status para exclus�o, Status atual: "+If(Empty(SF2->F2_FIMP),"n�o enviada [ ",SF2->F2_FIMP)+" ] !"						
 			Break  //não é NFE e ou ainda não foi transmitida posso sair
 		Endif
 		If !Empty(SF2->F2_CODNFE) .Or. !Empty(SF2->F2_CHVNFE)	
@@ -5161,4 +5162,3 @@ Local _aArea := GetArea()
     //SetFunName(_cFunName)
 RestArea(_aArea)
 Return Nil
-       
