@@ -481,7 +481,9 @@ DEFINE DIALOG oNwFat001 TITLE "Faturamento Atacado" FROM aCords[ 1 ], aCords[ 2 
     oBrwCab:aColumns[08]:XF3 := 'SED' //ok
     oBrwCab:aColumns[25]:XF3 := 'DJ'  //ok
     oBrwCab:aColumns[26]:XF3 := 'SF4' //ok
-
+    If _lPrevFat
+        FMark( oBrwCab )
+    Endif
     oBrwCab:Activate()
     oBrwCab:Refresh()
 
@@ -1824,28 +1826,32 @@ If !_lPrevisao
     If !Empty(Alltrim(cNumPed))
      (cCabAlias)->(DBClearFilter())
     EndIf
-    TcRefresh(oCabTable:GetTableNameForQuery())
-
-    If ValType(oBrwCab) <> "U"
-        nAt     := oBrwCab:nAt
-        nLinPos := nAt
-        oBrwCab:GoTop(.T.)
-        oBrwCab:LineRefresh(nAt)
-        //oBrwCab:GoTop(.T.)
-        oBrwCab:GoTo(nAt)
-        oBrwCab:Refresh()
-        /*
-	    oBrwCab:GoTo(nAt)
-	    oBrwCab:LineRefresh() //só refaz a linha
-        oBrwCab:GoTop(.T.)
-        oBrwCab:UpdateBrowse() //reconstroi tudo	
-        oBrwCab:Refresh()
-        oBrwCab:GoTo(nAt)
-        oBrwCab:Refresh()
-        oNwFat001:Refresh()
-        */
-    EndIf
 Endif 
+If Type("oCabTable") == "O"
+    TcRefresh(oCabTable:GetTableNameForQuery())
+Endif
+//If ValType(oBrwCab) <> "U"
+If Type("oBrwCab") == "O"
+    nAt     := oBrwCab:nAt
+    nLinPos := nAt
+    oBrwCab:GoTop(.T.)
+    oBrwCab:LineRefresh(nAt)
+    //oBrwCab:GoTop(.T.)
+    oBrwCab:GoTo(nAt)
+    oBrwCab:Refresh()
+    /*
+    oBrwCab:GoTo(nAt)
+    oBrwCab:LineRefresh() //só refaz a linha
+    oBrwCab:GoTop(.T.)
+    oBrwCab:UpdateBrowse() //reconstroi tudo	
+    oBrwCab:Refresh()
+    oBrwCab:GoTo(nAt)
+    oBrwCab:Refresh()
+    oNwFat001:Refresh()
+    */
+EndIf
+
+
 Return()
 
 /*
