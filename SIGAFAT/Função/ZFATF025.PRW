@@ -867,6 +867,7 @@ Begin Sequence
 	_cQuery += CRLF + " 						, SC6.C6_XPRCTAB "
 	_cQuery += CRLF + " 						, SC6.C6_CHASSI "
     _cQuery += CRLF + " 						, SC6.R_E_C_N_O_ AS NREGSC6  "
+	_cQuery += CRLF + " 						, VV2.VV2_CODMAR "
 
     _cQuery += CRLF +  "        FROM  " + RetSqlName("SC6") + " SC6 " 
     _cQuery += CRLF + "         JOIN " + RetSqlName("SC5") + " SC5 
@@ -907,7 +908,8 @@ Begin Sequence
     _cQuery += CRLF + "         AND SC6.C6_LOJA    	BETWEEN '" +      _aRet[02]  + "' AND '" +      _aRet[04]  + "' "
     _cQuery += CRLF + "         AND SC6.C6_PRODUTO 	BETWEEN '" +      _aRet[05]  + "' AND '" +      _aRet[06]  + "' "
     _cQuery += CRLF + "         AND SC6.C6_PEDCLI  	BETWEEN '" +      _aRet[08]  + "' AND '" +      _aRet[09]  + "' "
-    _cQuery += CRLF + "         AND SC6.C6_XCODMAR 	BETWEEN '" +      _aRet[10]  + "' AND '" +      _aRet[11]  + "' "
+    //_cQuery += CRLF + "         AND SC6.C6_XCODMAR 	BETWEEN '" +      _aRet[10]  + "' AND '" +      _aRet[11]  + "' "
+    _cQuery += CRLF + "         AND VV2.VV2_CODMAR 	BETWEEN '" +      _aRet[10]  + "' AND '" +      _aRet[11]  + "' "
     _cQuery += CRLF + "         AND SC6.C6_XGRPMOD 	BETWEEN '" +      _aRet[12]  + "' AND '" +      _aRet[13]  + "' "
     _cQuery += CRLF + "         AND SC6.C6_XMODVEI 	BETWEEN '" +      _aRet[14]  + "' AND '" +      _aRet[15]  + "' "
     //_cQuery += CRLF +     "     AND SC6.C6_XSEGMOD   BETWEEN '" +      _aRet[16]  + "' AND '" +      _aRet[17]  + "' "
@@ -929,7 +931,9 @@ Begin Sequence
     _cQuery += CRLF + "          )"       
 
     _cQuery += CRLF + " SELECT PEDIDOS_FAT.* "
-    _cQuery += CRLF +"	, VRJ.VRJ_PEDIDO "
+    _cQuery += CRLF +"		, VRJ.VRJ_PEDIDO "
+	_cQuery += CRLF + " 	, VRK.VRK_MODVEI "
+	_cQuery += CRLF + " 	, VRK.VRK_FABMOD "
     _cQuery += CRLF + " FROM PEDIDOS_FAT  "    
 
     _cQuery += CRLF + " JOIN " + RetSqlName("VRJ") + " VRJ "
@@ -976,15 +980,15 @@ Begin Sequence
 		_cProduto 	:= (_cAliasPesq)->C6_PRODUTO  
 		_nVlrVen  	:= (_cAliasPesq)->C6_XPRCTAB   //C6_PRCVEN
 		_nVlrUnit  	:= (_cAliasPesq)->C6_PRUNIT
-		_cModelo 	:= (_cAliasPesq)->C6_XMODVEI
-		_cFabAno 	:= (_cAliasPesq)->C6_XFABMOD
+		_cModelo 	:= iF( !Empty((_cAliasPesq)->C6_XMODVEI), (_cAliasPesq)->C6_XMODVEI, (_cAliasPesq)->VRK_MODVEI)
+		_cFabAno 	:= If( !Empty((_cAliasPesq)->C6_XFABMOD), (_cAliasPesq)->C6_XFABMOD, (_cAliasPesq)->VRK_FABMOD)
 		_nQtVen		:= 0
 		_aRegSC6	:= {}
 		While (_cAliasPesq)->(!Eof()) .And. _cCliente 	== (_cAliasPesq)->C6_CLI 	.And. ;
 											_cLoja 		== (_cAliasPesq)->C6_LOJA 	.And. ;
 											_cProduto 	== (_cAliasPesq)->C6_PRODUTO	.And. ;
-											_cModelo 	== (_cAliasPesq)->C6_XMODVEI	.And. ;
-											_cFabAno 	== (_cAliasPesq)->C6_XFABMOD
+											(_cModelo 	== (_cAliasPesq)->C6_XMODVEI .Or. _cModelo 	== (_cAliasPesq)->VRK_MODVEI)	.And. ;
+											(_cFabAno 	== (_cAliasPesq)->C6_XFABMOD .Or. _cFabAno 	== (_cAliasPesq)->VRK_FABMOD)
 			_nQtdeLidos ++
 			_oSay:SetText("Aguarde Montando Previsão lidos "+StrZero(_nQtdeLidos,6)+" de "+StrZero(_nQtdeReg,6)+" registros ... ")
 			ProcessMessage()
@@ -1063,12 +1067,8 @@ Begin Sequence
 		ZZP->ZZP_USUINC := RetCodUsr()
 		ZZP->ZZP_DTALT  := Date()
 		ZZP->ZZP_USUALT := RetCodUsr()
-		If ZZP->(FieldPos("ZZP_MODVEI")) > 0
-			ZZP->ZZP_MODVEI	:= _cModelo
-		Endif
-		If ZZP->(FieldPos("ZZP_FABMOD")) > 0
-			ZZP->ZZP_FABMOD	:= _cFabAno
-		Endif
+		ZZP->ZZP_MODVEI	:= _cModelo
+		ZZP->ZZP_FABMOD	:= _cFabAno
 		ZZP->(MsUnlock())
 		
 		//Atualizar SC6

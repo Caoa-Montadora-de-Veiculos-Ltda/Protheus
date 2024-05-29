@@ -397,10 +397,12 @@ Local _nQtdeLib
 Local _nQtdePed
 Local _nRegZZP
 Local _nQtdeLZZP
+Local _nQtdeFat
 
 Begin Sequence
 	_nQtdeLib	:= _xConteudo
 	_nQtdePed 	:= (_cAliasZF026)->(FieldGet(FieldPos("ZZP_QTEPED")))
+	_nQtdeFat	:= (_cAliasZF026)->(FieldGet(FieldPos("ZZP_QTEFAT"))) 
 	_nRegZZP	:= (_cAliasZF026)->(FieldGet(FieldPos("NREGZZP")))
 	
 	//Verificar quantidades para avaliar se possui chassis
@@ -417,6 +419,12 @@ Begin Sequence
 		_lRet 	:= .F.
 		Break  
 	Endif 
+	If _nQtdeLib > (_nQtdePed - _nQtdeFat)
+		MSGINFO( "Quantidade liberada não pode ser maior que quantidade do Pedido menos quantidade Faturada", "Atencao" )
+		_lRet 	:= .F.
+		Break  
+	Endif 
+
 	//Caso seja o mesmo valor  não precisa alterar
 	If _nQtdeLZZP == _nQtdeLib
 		Return .T.
@@ -710,7 +718,6 @@ Return _nQtdeChassi  //Qtde de chacssi disponivel para gerar empenho
 //Realiza o Empenho 
 //_nOpc == 1 Criar Empenho
 //_nOpc == 2 Retirar Empenho
-
 Static Function ZFATF26EMP( _nOpcEmp, _cFilPrev, _cCodPrev, _cCodCli, _cLojaCli, _cCodProd,  _nQtde, _lMens )
 Local _cAliasEmp	:= GetNextAlias()
 Local _lRet 		:= .T.
