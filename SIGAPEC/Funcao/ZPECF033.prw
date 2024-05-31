@@ -15,7 +15,7 @@ Listagem ENTRADA E SAIDA
 @obs        Tela esta relacionada com a funcionalidade ZPECF030 a mesma poderá ser colocada também no menu com a chamada ZPECF032 caso seja necessário adaptar parametros para a procura  
 /*/
 
-User Function ZPECF033(_cCodProd) //R-5801387616  TESTE         
+User Function ZPECF033(_cCodProd)    
     Local _aArea        := GetArea()
     Local _cCodProdDe   := Space(Len(SB1->B1_COD))  
     Local _cCodProdAte  := Space(Len(SB1->B1_COD)) 
@@ -33,7 +33,7 @@ User Function ZPECF033(_cCodProd) //R-5801387616  TESTE
 
     Default _cCodProd   := Space(Len(SB1->B1_COD))
 
-    //Begin Sequence TESTE
+    Begin Sequence
         //quando não informado cod produto solicitar de / ate
         If !Empty(_cCodProd)
             aAdd(_aPar,{1,OemToAnsi("Data Inicial   : ") ,_dDataDe		    ,"@D"		,".T."	,	    ,".T."	,100,.F.}) 
@@ -75,7 +75,7 @@ User Function ZPECF033(_cCodProd) //R-5801387616  TESTE
         Endif
         FwMsgRun(,{ |_oSay| ZPECF033PR(_aPerg, _cCodProd, _oSay ) }, "Selecionando dados para a Montagem Listagem Entrada e Saida", "Aguarde...")  
         RestArea(_aArea)
-    //End Sequence TESTE
+    End Sequence
 Return Nil
 
 
@@ -103,7 +103,7 @@ Static Function ZPECF033PR(_aRet, _cCodProd, _oSay )
     Local _cQuery
 
    
-    //Begin Sequence
+    Begin Sequence
         //Caso tenha optado por saldo inicial devera trazer todo o movimento
         If _lSaldoIni
             _dDataDe  := CtoD(Space(08))
@@ -190,7 +190,7 @@ Static Function ZPECF033PR(_aRet, _cCodProd, _oSay )
         _cQuery += "     		, SD1.D1_QUANT      QTDE_MOV "              + CRLF                   
         _cQuery += "     		, SD1.D1_TOTAL / SD1.D1_QUANT CUSTO_UNI "   + CRLF                  
         _cQuery += "     		, SD1.D1_TOTAL      CUSTO_TOT "             + CRLF                  
-    // _cQuery += "     		, SC7.C7_DATPRF PENTREGA "+ CRLF                         
+     // _cQuery += "     		, SC7.C7_DATPRF PENTREGA "+ CRLF                         
         _cQuery += "     		, SD1.D1_FORNECE    CLIFOR "                + CRLF                  
         _cQuery += "     		, SD1.D1_LOJA       LOJA "                  + CRLF                       
         _cQuery += "     		, SA2.A2_NREDUZ     NFANT_CF "              + CRLF                    
@@ -250,7 +250,7 @@ Static Function ZPECF033PR(_aRet, _cCodProd, _oSay )
         _cQuery += "     		, (SD2.D2_QUANT*-1) QTDE_MOV "                      + CRLF              
         _cQuery += "     		, SD2.D2_TOTAL/SD2.D2_QUANT CUSTO_UNI "             + CRLF                 
         _cQuery += "     		, SD2.D2_TOTAL      CUSTO_TOT "                     + CRLF                 
-    // _cQuery += "     		, '  ' PENTREGA "+ CRLF                          
+        // _cQuery += "     		, '  ' PENTREGA "+ CRLF                          
         _cQuery += "     		, SD2.D2_CLIENTE    CLIFOR "                        + CRLF                  
         _cQuery += "     		, SD2.D2_LOJA       LOJA  "                         + CRLF                      
         _cQuery += "     		, SA1.A1_NREDUZ     NFANT_CF "                      + CRLF                    
@@ -340,7 +340,7 @@ Static Function ZPECF033PR(_aRet, _cCodProd, _oSay )
 
         ZPECF033BW(_cCodProd,  _dDataDe, _dDataAte, _cAliasPesq, _aBrwCab)
 
-    //End Sequence TESTE
+    End Sequence
     If Select((_cAliasPesq)) <> 0
         (_cAliasPesq)->(DbCloseArea())
         //Ferase(_cTable+GetDBExtension())
@@ -361,7 +361,7 @@ Static Function ZPECF033BW(_cCodProd,  _dDataDe, _dDataAte, _cAliasPesq, _aBrwCa
     Local _cTitulo      := "Listagem Entrada e Saida de "+DtoC(_dDataDe)+" a "+DtoC(_dDataAte)
     Local _oBrw
 
-    //Begin Sequence TESTE
+    Begin Sequence
 
         //implemento com o nome e o codigo do produto 
         If !Empty(_cCodProd)
@@ -403,7 +403,7 @@ Static Function ZPECF033BW(_cCodProd,  _dDataDe, _dDataAte, _cAliasPesq, _aBrwCa
         //Ativamos a classe
         _ObrW:Refresh(.T.)
         _ObrW:Activate()
-    //End Sequence TESTE
+    End Sequence
 Return Nil
 
 
