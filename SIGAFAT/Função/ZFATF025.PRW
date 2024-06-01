@@ -913,7 +913,10 @@ Begin Sequence
     _cQuery += CRLF + "         AND SC6.C6_XGRPMOD 	BETWEEN '" +      _aRet[12]  + "' AND '" +      _aRet[13]  + "' "
     _cQuery += CRLF + "         AND SC6.C6_XMODVEI 	BETWEEN '" +      _aRet[14]  + "' AND '" +      _aRet[15]  + "' "
     //_cQuery += CRLF +     "     AND SC6.C6_XSEGMOD   BETWEEN '" +      _aRet[16]  + "' AND '" +      _aRet[17]  + "' "
+ 
+	//MUDAR PARA VRK DAC***
     _cQuery += CRLF + "         AND SC6.C6_XFABMOD 	BETWEEN '" +      _aRet[18]  + "' AND '" +      _aRet[19]  + "' "
+
     //_cQuery += CRLF +     "     AND SC6.C6_XCORINT   BETWEEN '" +      _aRet[20]  + "' AND '" +      _aRet[21]  + "' "
     //_cQuery += CRLF +     "     AND SC6.C6_XCOREXT   BETWEEN '" +      _aRet[22]  + "' AND '" +      _aRet[23]  + "' "
     _cQuery += CRLF + "         AND SC5.C5_EMISSAO 	BETWEEN '" + DtoS(_aRet[24]) + "' AND '" + DtoS(_aRet[25]) + "' "
