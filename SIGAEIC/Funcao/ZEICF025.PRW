@@ -80,8 +80,8 @@ Private cPassword   := SuperGetMV("CMV_EIC005",,"bRTxqzUyJwN5BnT")     // type h
 
 Default _cChave := " "                    ///"SHA23090924"          //informações como numero da House
 
-Default _cUrlFH	:= "https://apihomolog.asiashipping.com.br"      // GETMV("CMV_EIC001")   ///"https://api.asiashipping.com.br/followup/House"
-
+Default _cUrlFH	:= "https://api.asiashipping.com.br"      // GETMV("CMV_EIC001")   ///"https://api.asiashipping.com.br/followup/House"
+//apihomolog.asiashipping.com.br base homologação
 //Default _cUrlFS	:= "https://api.asiashipping.com.br/followup/Shipment"
 //Default _cUrlOR	:= "https://api.asiashipping.com.br/bot/OrderRef"
 //esses 03 últimos URL necessitam de Token
