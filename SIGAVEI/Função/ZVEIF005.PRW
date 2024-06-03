@@ -398,12 +398,13 @@ Else
 
 		lRet := .f.
 		//cChaInt:= VV1->VV1_CHAINT
-		//cPesqV := left(SC6->C6_CHASSI + space(30), 30)
+		cPesqV := left(SC6->C6_CHASSI + space(30), 30)
         cPesqV   := cChassi
 
 		cQuery := "SELECT               "    //Chassi interno   VV1.VV1_CHAINT
 		cQuery += "       SC6.C6_CHASSI "    //VV1.VV1_CHASSI
 		cQuery += "     , SC6.C6_XCODMAR"    //VV1.VV1_CODMAR
+		cQuery += "     , VV1.VV1_CHAINT"    //Chassi Interno 
 		cQuery += "     , VV1.VV1_SITVEI"    //Situação         VV1.VV1_SITVEI
 		cQuery += "     , VV1.VV1_PLAVEI"    //Número da Placa  VV1.VV1_PLAVEI
 		cQuery += "     , SC6.C6_XFABMOD"    //VV1.VV1_FABMOD
@@ -500,11 +501,12 @@ Else
 
 	If lRet
 		// Levantamento do Codigo no SB1 //
+		// 		cQuery += "   AND SB1.B1_CODITE  = '"+left(cChaInt+space(30),len(SB1->B1_CODITE))+"'"
 		cQuery := "SELECT SB1.B1_COD "
-		cQuery += "  FROM "+RetSqlName("SB1")+" SB1 "
-		cQuery += " WHERE SB1.B1_FILIAL  = '"+xFilial("SB1")+"'"
-		cQuery += "   AND SB1.B1_GRUPO   = '"+cGruVei+"'"
-		cQuery += "   AND SB1.B1_CODITE  = '"+left(cChaInt+space(30),len(SB1->B1_CODITE))+"'"
+		cQuery += "  FROM "+RetSqlName("SB1") + " SB1 "
+		cQuery += " WHERE SB1.B1_FILIAL  = '" + xFilial("SB1") + "'"
+		cQuery += "   AND SB1.B1_GRUPO   = '" + cGruVei +"'"
+		cQuery += "   AND SB1.B1_CHASSI  = '" + cChassi +"' "
 		cQuery += "   AND SB1.D_E_L_E_T_ = ' '"
 		dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cQAlSB1 , .F., .T. )
 		If !( cQAlSB1 )->( Eof() )
@@ -525,14 +527,14 @@ Else
 				// Rubens - 07/08/2009
 				// Se a VV1 for exclusiva, deve pesquisar pelo CHASSI do Veiculo
 				cQuery := "SELECT SB2.B2_FILIAL "
-				cQuery += "  FROM "+cNamSB2+" SB2 "
-				cQuery += " WHERE SB2.B2_FILIAL  = '"+xFilial("SB2")+ "'"
-				cQuery += "   AND SB2.B2_COD     = '"+cB1COD+"'"
+				cQuery += "  FROM " + cNamSB2 + " SB2 "
+				cQuery += " WHERE SB2.B2_FILIAL   = '" + xFilial("SB2") + "'"
+				cQuery += "   AND SB2.B2_COD      = '" + cB1COD + "'"
 				cQuery += "   AND SB2.B2_QATU > 0 " // Somente Registros com Estoque
-				cQuery += "   AND SB2.D_E_L_E_T_ = ' '"
+				cQuery += "   AND SB2.D_E_L_E_T_  = ' '"
 				dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cQAlSB2 , .F., .T. )
 				If !( cQAlSB2 )->( Eof() )
-					cFilAtu := "Em estoque na filial" +( cQAlSB2 )->( B2_FILIAL )  // Em estoque na filial
+					cFilAtu := "Em estoque na filial" + ( cQAlSB2 )->( B2_FILIAL )  // Em estoque na filial
 					nTam := aScan(aFil,{|x| x[1] == cFilAnt })
 					If nTam > 0
 						cFilAtu += "-"+left(aFil[nTam,2]+space(20),20)
