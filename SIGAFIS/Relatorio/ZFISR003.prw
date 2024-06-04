@@ -223,12 +223,13 @@ Static Function  ReportPrint(oReport)
         cLogInc 	:= ""
         cLogAlt		:= ""
         cDtLogAlt 	:= "" 
+        /* teste de performace
         If SF1->(dbSeek( (cAliasTMP)->D1_FILIAL + (cAliasTMP)->D1_DOC + (cAliasTMP)->D1_SERIE + (cAliasTMP)->D1_FORNECE + (cAliasTMP)->D1_LOJA ))
             cLogInc		:= FWLeUserLg("F1_USERLGI")
             cLogAlt		:= FWLeUserLg("F1_USERLGA")
             cDtLogAlt	:= FWLeUserLg("F1_USERLGA", 2)
         EndIf
-
+        */
         // Busca o Status da Nota Fiscal.
         cSituacao	:= ""
         Do Case
@@ -307,7 +308,7 @@ Static Function  ReportPrint(oReport)
                 cCodNatur := ""
                 If SE1->( DbSeek( FWxFilial('SE1') + (cAliasTMP)->( D1_FORNECE + D1_LOJA + D1_SERIE + D1_DOC  ) ) )
                     //--Posiciono no primeiro registro lógico porque mesmo que existam parcelas a natureza ira se repetir nos demais registros
-                    SE1->( DbGoTop() )
+                    //SE1->( DbGoTop() )
                     cCodNatur := SE1->E1_NATUREZ
                 EndIf
 
@@ -353,7 +354,7 @@ Static Function  ReportPrint(oReport)
                 cCodNatur := ""
                 If SE2->( DbSeek( FWxFilial('SE2') + (cAliasTMP)->( D1_FORNECE + D1_LOJA + D1_SERIE + D1_DOC  ) ) )
                     //--Posiciono no primeiro registro lógico porque mesmo que existam parcelas a natureza ira se repetir nos demais registros
-                    SE2->( DbGoTop() )
+                    //SE2->( DbGoTop() )
                     cCodNatur := SE2->E2_NATUREZ
                 EndIf 
                 
@@ -410,9 +411,9 @@ Static Function  ReportPrint(oReport)
          oSection:Cell( "D1_TOTAL"  ):SetValue( (cAliasTMP)->D1_TOTAL                                                                                       ) //--Valor Total Item
          oSection:Cell( "D1_CF"     ):SetValue( (cAliasTMP)->D1_CF                                                                                          ) //--Cfop
          oSection:Cell( "FT_VALCONT"):SetValue( (cAliasTMP)->FT_VALCONT                                                                                     ) //--Valor Contábil
-         oSection:Cell( "FT_BASEICM"):SetValue( iif( Alltrim((cAliasTMP)->F1_ESPECIE) <> "RPS", (cAliasTMP)->FT_BASEICM , 0)                                ) //(cAliasTMP)->FT_BASEICM   ) //--Base ICMS
-         oSection:Cell( "FT_ALIQICM"):SetValue( iif( Alltrim((cAliasTMP)->F1_ESPECIE) <> "RPS", (cAliasTMP)->FT_ALIQICM , 0)                                ) //(cAliasTMP)->FT_ALIQICM   ) //--Aliq. ICMS
-         oSection:Cell( "FT_VALICM" ):SetValue( iif( Alltrim((cAliasTMP)->F1_ESPECIE) <> "RPS", (cAliasTMP)->FT_VALICM  , 0)                                )//(cAliasTMP)->FT_VALICM     ) //--Valor ICMS
+         oSection:Cell( "FT_BASEICM"):SetValue( iif( !Alltrim((cAliasTMP)->F1_ESPECIE) $ "RPS|NFS", (cAliasTMP)->FT_BASEICM , 0)                            ) //(cAliasTMP)->FT_BASEICM   ) //--Base ICMS
+         oSection:Cell( "FT_ALIQICM"):SetValue( iif( !Alltrim((cAliasTMP)->F1_ESPECIE) $ "RPS|NFS", (cAliasTMP)->FT_ALIQICM , 0)                            ) //(cAliasTMP)->FT_ALIQICM   ) //--Aliq. ICMS
+         oSection:Cell( "FT_VALICM" ):SetValue( iif( !Alltrim((cAliasTMP)->F1_ESPECIE) $ "RPS|NFS", (cAliasTMP)->FT_VALICM  , 0)                            )//(cAliasTMP)->FT_VALICM     ) //--Valor ICMS
          oSection:Cell( "VlCom"     ):SetValue( IIF( (cAliasTMP)->F1_TIPO $ "B|D" , nVlCom , 0 )                                                            ) //--Comissão
          oSection:Cell( "FT_BASEIPI"):SetValue( (cAliasTMP)->FT_BASEIPI                                                                                     ) //--Base IPI					
          oSection:Cell( "FT_ALIQIPI"):SetValue( (cAliasTMP)->FT_ALIQIPI                                                                                     ) //--Aliq. IPI			
@@ -443,7 +444,7 @@ Static Function  ReportPrint(oReport)
          oSection:Cell( "F4_IPI"    ):SetValue( (cAliasTMP)->F4_IPI                                                                                         ) //--Calcula IPI
          oSection:Cell( "F4_CREDIPI"):SetValue( (cAliasTMP)->F4_CREDIPI                                                                                     ) //--Credita IPI
          oSection:Cell( "D1_DOC"    ):SetValue( (cAliasTMP)->D1_DOC                                                                                         ) //--Nota Fiscal
-         oSection:Cell( "NfPref"    ):SetValue( IIF( AllTrim( (cAliasTMP)->F1_ESPECIE ) == "NFS", (cAliasTMP)->D1_DOC, "")                                  ) //--Nf. Prefeitura
+         oSection:Cell( "NfPref"    ):SetValue( IIF( !AllTrim( (cAliasTMP)->F1_ESPECIE ) $ "RPS|NFS", (cAliasTMP)->D1_DOC, "")                                  ) //--Nf. Prefeitura
          oSection:Cell( "D1_SERIE"  ):SetValue( (cAliasTMP)->D1_SERIE                                                                                       ) //--Série
          oSection:Cell( "F1_ESPECIE"):SetValue( (cAliasTMP)->F1_ESPECIE                                                                                     ) //--Espécie
          oSection:Cell( "ModNot"    ):SetValue( AModNot( (cAliasTMP)->F1_ESPECIE )                                                                          ) //--Modelo
