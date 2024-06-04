@@ -157,83 +157,96 @@ User Function fCommit()
 	Local cSerDc 	 := " "
 	Local cNrDc 	 := " "
 	Local cSeq 		 := ""
-	local lok := .F.
+	local lok 		 := .F.
 
-	//O valor de peso bruto da SF2 não pode ser alterado.
-	lok := oModelCad:SetValue("F2_PBRUTO", cPBOrig)
+	Begin Transaction
+		//O valor de peso bruto da SF2 não pode ser alterado.
+		lok := oModelCad:SetValue("F2_PBRUTO", cPBOrig)
 
-	If ! lok
-		lRet := lok	
-		FWAlertInfo("Problemas ao alterar peso bruto, contate ADM.", "Informações gravadas.")
-		Return lRet
-		//Break
-	EndIF
+		If ! lok
+			lRet := lok	
+			FWAlertInfo("Problemas ao alterar peso bruto, contate ADM.", "Informações gravadas.")
+			Return lRet //Retirar isso
+			//Disarmtransaction()
+		EndIF
 
-	cMsg += "Alterações: " + CRLF
-	cMsg += CRLF +  "Peso Cubado Total -> De: " + Alltrim(cValToChar(cPCOrig))  + " para: " + Alltrim(cValtoChar(nPCNovo)) + " " + CRLF
-	cMsg += 		"Peso Bruto Total  -> De: " + Alltrim(cValToChar(cPBOrig))  + " para: " + Alltrim(cValToChar(nPBNovo)) + " " + CRLF  
-	
-	cMsg += CRLF + "[ ATENÇÃO ] - O peso bruto será alterado apenas no rateio dos itens (GW8), não será alterado nas informações da nota (SF2)." + CRLF 
-	
-	If MsgYesNo(cMsg,"Deseja continuar?")
-		//Tratanto cada linha da grid.			
-		For nLin := 1 To oModelGrid:Length()
-			
-			//Posicionando na linha
-			oModelGrid:GoLine(nLin)
-
-			//Se a linha não estiver deletada
-			If ! oModelGrid:IsDeleted()
+		cMsg += "Alterações: " + CRLF
+		cMsg += CRLF +  "Peso Cubado Total -> De: " + Alltrim(cValToChar(cPCOrig))  + " para: " + Alltrim(cValtoChar(nPCNovo)) + " " + CRLF
+		cMsg += 		"Peso Bruto Total  -> De: " + Alltrim(cValToChar(cPBOrig))  + " para: " + Alltrim(cValToChar(nPBNovo)) + " " + CRLF  
+		
+		cMsg += CRLF + "[ ATENÇÃO ] - O peso bruto será alterado apenas no rateio dos itens (GW8), não será alterado nas informações da nota (SF2)." + CRLF 
+		
+		If MsgYesNo(cMsg,"Deseja continuar?")
+			//Tratanto cada linha da grid.			
+			For nLin := 1 To oModelGrid:Length()
 				
-				cTpDoc 		:= oModelGrid:GetValue("GW8_CDTPDC")
-				cDtEmiss 	:= oModelGrid:GetValue("GW8_EMISDC")
-				cSerDc 		:= oModelGrid:GetValue("GW8_SERDC")
-				cNrDc 		:= oModelGrid:GetValue("GW8_NRDC")
-				cSeq 		:= oModelGrid:GetValue("GW8_SEQ")
+				//Posicionando na linha
+				oModelGrid:GoLine(nLin)
 
-				DbSelectArea("GW8")
-				GW8->(DbSetOrder(2))  //GW8_FILIAL+GW8_CDTPDC+GW8_EMISDC+GW8_SERDC+GW8_NRDC+GW8_SEQ                                                                                                     
-				GW8->(DbSeek(FWxFilial("GW8") + cTpDoc + cDtEmiss + cSerDc + cNrDc + cSeq))                                                                         
-				nRec := GW8->( Recno() )
+				//Se a linha não estiver deletada
+				If ! oModelGrid:IsDeleted()
+					
+					cTpDoc 		:= oModelGrid:GetValue("GW8_CDTPDC")
+					cDtEmiss 	:= oModelGrid:GetValue("GW8_EMISDC")
+					cSerDc 		:= oModelGrid:GetValue("GW8_SERDC")
+					cNrDc 		:= oModelGrid:GetValue("GW8_NRDC")
+					cSeq 		:= oModelGrid:GetValue("GW8_SEQ")
 
-				//  aPesoCub ou aPesoBrt [1] == Nome do item
-				//  aPesoCub ou aPesoBrt [2] == Peso CUBADO do item | Peso BRUTO do item
-				//  aPesoCub ou aPesoBrt [3] == Valor do item GW8
-				//  aPesoCub ou aPesoBrt [4] == nRec := GW8->( Recno() )
-				AAdd(aPesoCub, {oModelGrid:GetValue("GW8_ITEM") ,oModelGrid:GetValue("GW8_PESOC"), oModelGrid:GetValue("GW8_VALOR"), nRec })
-				AAdd(aPesoBrt, {oModelGrid:GetValue("GW8_ITEM") ,oModelGrid:GetValue("GW8_PESOR"), oModelGrid:GetValue("GW8_VALOR"), nRec })
+					DbSelectArea("GW8")
+					GW8->(DbSetOrder(2))  //GW8_FILIAL+GW8_CDTPDC+GW8_EMISDC+GW8_SERDC+GW8_NRDC+GW8_SEQ                                                                                                     
+					GW8->(DbSeek(FWxFilial("GW8") + cTpDoc + cDtEmiss + cSerDc + cNrDc + cSeq))                                                                         
+					nRec := GW8->( Recno() )
+
+					//  aPesoCub ou aPesoBrt [1] == Nome do item
+					//  aPesoCub ou aPesoBrt [2] == Peso CUBADO do item | Peso BRUTO do item
+					//  aPesoCub ou aPesoBrt [3] == Valor do item GW8
+					//  aPesoCub ou aPesoBrt [4] == nRec := GW8->( Recno() )
+					AAdd(aPesoCub, {oModelGrid:GetValue("GW8_ITEM") ,oModelGrid:GetValue("GW8_PESOC"), oModelGrid:GetValue("GW8_VALOR"), nRec })
+					AAdd(aPesoBrt, {oModelGrid:GetValue("GW8_ITEM") ,oModelGrid:GetValue("GW8_PESOR"), oModelGrid:GetValue("GW8_VALOR"), nRec })
+				EndIf
+				
+			Next
+
+			//Faz rateio do peso CUBADO.
+			If !(empty(aPesoCub))
+				//Distribui os valos de Peso Cubado na Grid e grava na GW8
+				lRet := fRateioPC(aPesoCub, nPCNovo, nVlrTot)
+				If lRet
+					cMsg += CRLF + "Rateio de peso cubado gravado com sucesso." + CRLF
+				else
+					cMsg += CRLF + "Rateio de peso cubado falhou, verifique com ADM sistemas." + CRLF
+				EndIf
 			EndIf
 			
-		Next
+			//Faz rateiro do peso BRUTO -- SEM ALTERAR A SF2
+			If !(empty(aPesoBrt))
+				//Distribui os valos de Peso Cubado na Grid e grava na GW8
+				lRet := fRateioPB(aPesoBrt, nPBNovo, nVlrTot)
+				If lRet
+					cMsg += "Rateio de peso bruto gravado com sucesso." + CRLF
+				else
+					cMsg += "Rateio de peso bruto falhou, verifique com ADM sistemas." + CRLF
+				EndIf
+			EndIf
+			
+			cMsg += CRLF + "Usuário: " + Upper(FwGetUserName(RetCodUsr())) + CRLF 
+			cMsg += "Data: " + DtoC(Date()) + "" + CRLF
+			FWAlertInfo(cMsg, "Informações gravadas.")
+			
+			lRet := .F.
+			If lRet
+				GW8->(DbGoto(_aRegVS1[_nPos]))
+				GW8->(RecLock("GW8",.F.))
+				GW8->GW8_XOBSAL := Upper(cMsg) + CRLF + GW8->GW8_XOBSAL
+				GW8->(MsUnLock())
+			EndIf
+			lRet := .T.
+		Else
+			lRet := .F.
+			Help("",1,"ZGFEF008",,"Dados não alterados.",1) 
+		EndIf
 
-		//Faz rateio do peso CUBADO.
-		If !(empty(aPesoCub))
-			//Distribui os valos de Peso Cubado na Grid e grava na GW8
-			lRet := fRateioPC(aPesoCub, nPCNovo, nVlrTot)
-			If lRet
-				cMsg += CRLF + "Rateio de peso cubado gravado com sucesso." + CRLF
-			else
-				cMsg += CRLF + "Rateio de peso cubado falhou, verifique com ADM sistemas." + CRLF
-			EndIf
-		EndIf
-		
-		//Faz rateiro do peso BRUTO -- SEM ALTERAR A SF2
-		If !(empty(aPesoBrt))
-			//Distribui os valos de Peso Cubado na Grid e grava na GW8
-			lRet := fRateioPB(aPesoBrt, nPBNovo, nVlrTot)
-			If lRet
-				cMsg += CRLF + "Rateio de peso bruto gravado com sucesso." + CRLF
-			else
-				cMsg += CRLF + "Rateio de peso bruto falhou, verifique com ADM sistemas." + CRLF
-			EndIf
-		EndIf
-		
-		FWAlertInfo(cMsg, "Informações gravadas.")
-		
-	Else
-		lRet := .F.
-		Help("",1,"ZGFEF008",,"Dados não alterados.",1) 
-	EndIf
+	End Transaction
 	
 	RestArea(aArea)
 Return lRet
@@ -250,7 +263,7 @@ Static Function fRateioPC(aPesoCub, nPCNovo, nVlrTot)
 	Default nVlrTot := 0
 	Default nPCNovo := 0
 
-	//Begin transaction
+	Begin transaction
 		For nLin := 1 To Len(aPesoCub)		
 			nResult :=  (nPCNovo / nVlrTot) * (aPesoCub[nLin][3])
 			Aadd(aPCItem, nResult)
@@ -277,9 +290,9 @@ Static Function fRateioPC(aPesoCub, nPCNovo, nVlrTot)
 		Else 
 			FWAlertError("Houve um problema ao calcular o novo peso, consulta ADM sistemas.", "Atenção")
 			lRet := .F.
-			//Disarmtransaction()
+			Disarmtransaction()
 		EndIf	
-	//End Transaction
+	End Transaction
 
 Return lRet
 
@@ -296,7 +309,7 @@ Static Function fRateioPB(aPesoBrt, nPBNovo, nVlrTot)
 	Default nVlrTot := 0
 	Default nPBNovo := 0
 
-	//Begin Transaction
+	Begin Transaction
 		For nLin := 1 To Len(aPesoBrt)		
 			nResult :=  (nPBNovo / nVlrTot) * (aPesoBrt[nLin][3])
 			Aadd(aPBItem, nResult)
@@ -323,10 +336,10 @@ Static Function fRateioPB(aPesoBrt, nPBNovo, nVlrTot)
 		Else 
 			FWAlertError("Houve um problema ao calcular o novo peso, consulta ADM sistemas.", "Atenção")
 			lRet := .F.
-			//Disarmtransaction()
+			Disarmtransaction()
 		EndIf	
 	
-	//End transaction
+	End transaction
 
 Return lRet
 
