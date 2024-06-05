@@ -168,8 +168,8 @@ aCabCol := {}
 For nY := 02 To Len(aCabStru)
 
     //Columas Cabeçalho
-    If !aCabStru[nY][1] $ "C6_FILIAL|CC_STATUS|C9_SEQUEN|C9_NFISCAL|C9_SERIENF|C6_PRUNIT|C6_XGRPMOD|C6_XDGRMOD|C6_XCORINT|C6_XCOREXT|C5_XTIPVEN|C6_NUMSERI|C5_XMENSER|VRJ_PEDIDO|VRJ_STATUS|LUPD|LINHA"
-
+    //If !aCabStru[nY][1] $ "C6_FILIAL|CC_STATUS|C9_SEQUEN|C9_NFISCAL|C9_SERIENF|C6_PRUNIT|C6_XGRPMOD|C6_XDGRMOD|C6_XCORINT|C6_XCOREXT|C5_XTIPVEN|C6_NUMSERI|C5_XMENSER|VRJ_PEDIDO|VRJ_STATUS|LUPD|LINHA"
+    If !aCabStru[nY][1] $ "C6_FILIAL|CC_STATUS|C9_SEQUEN|C9_NFISCAL|C9_SERIENF|C6_PRUNIT|C6_XGRPMOD|C6_XDGRMOD|VRK_CORINT|VRK_COREXT|C5_XTIPVEN|C6_NUMSERI|C5_XMENSER|VRJ_PEDIDO|VRJ_STATUS|LUPD|LINHA"
         cTipCpo    := GetSx3Cache(aCabStru[nY][1], "X3_TIPO" )
         cPictAlias := "S"+Left(aCabStru[nY][1],2)
         
@@ -289,38 +289,14 @@ If (cCabAlias)->(Eof())
 EndIf
 
 //GAP167  Previsao de Faturamento
+//Implementar calculo automatico da TES para garantir que esteja correto conforme solicitação Montiha - DAC 28/05/2024
+//GAP167  Previsao de Faturamento
 If !_lPrevFat
     fAtuPeds(cCabAlias,oSay,cCabTable,oCabTable,"")
+    _lAvalia := .F.
 Endif 
     
 fTabBackup(aCabStru)
-
-//GAP167  Previsao de Faturamento
-//Implementar calculo automatico da TES para garantir que esteja correto conforme solicitação Montiha - DAC 28/05/2024
-
-_lAvalia := .t.
-If _lAvalia
-    (cCabAlias)->(DbGoTop())
-    While (cCabAlias)->(!Eof())
-        fVldCampo( cCabAlias , oSay , cCabTable , oCabTable, "C6_OPER", (cCabAlias)->C6_OPER)
-        //Atualizar outros campos para garantir que esteja igual ao Pedido Veiculo conforme alinhado com Reinaldo Totvs - DAC 31/05/2024    
-        SC6->(DbSetOrder(1))  
-        If SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
-            SC6->(RecLock("SC6"),.F.)
-            SC6->C6_XCODMAR	:= (cCabAlias)->VRK_CODMAR  
-            SC6->C6_XDESMAR	:= (cCabAlias)->VE1_DESMAR
-            SC6->C6_XCORINT	:= (cCabAlias)->VRK_CORINT
-            SC6->C6_XCOREXT	:= (cCabAlias)->VRK_COREXT 
-            SC6->C6_XMODVEI	:= (cCabAlias)->VRK_MODVEI
-            SC6->C6_XDESMOD	:= (cCabAlias)->VV2_DESMOD
-            SC6->C6_XSEGMOD	:= (cCabAlias)->VRK_SEGMOD 
-            SC6->C6_XDESSEG	:= (cCabAlias)->VVX_DESSEG
-            SC6->C6_XFABMOD	:= (cCabAlias)->VRK_FABMOD
-            SC6->(MsUnLock())
-        Endif    
-        (cCabAlias)->(DbSkip())
-    Enddo    
-Endif
 
 /*********************************************************************************************************************************************/
 DEFINE DIALOG oNwFat001 TITLE "Faturamento Atacado" FROM aCords[ 1 ], aCords[ 2 ] TO (aCords[3]*nLinha), (aCords[ 4 ]*nColuna) PIXEL
@@ -410,15 +386,21 @@ DEFINE DIALOG oNwFat001 TITLE "Faturamento Atacado" FROM aCords[ 1 ], aCords[ 2 
     //oNwFat001:Activate()
 ACTIVATE DIALOG oNwFat001 ON INIT EnchoiceBar(oNwFat001, { || FWMsgRun(, {|oSay| fGeraDocs(cCabAlias,cIteAlias,oSay,cIteTable) },;
                                                                        "Faturamento", "Processando geração de notas"),lOk := .T. ,oNwFat001:End() }, ;
+{ || lOk := .F.,oNwFat001:End() },,{{"BMPINCLUIR",{|| MsgRun('Visualizando Pedido','Consulta' ,{|oSay| fVisuPed(cCabAlias,aRotina,2,oSay,cCabTable,oCabTable) })},"Consulta" },;
+                         {"BMPINCLUIR",{|| MsgRun('Inclusão Pedido'    ,'Inclusão' ,{|oSay| fVisuPed(cCabAlias,aRotina,3,oSay,cCabTable,oCabTable) })},"Inclusão" },;
+                         {"BMPALTERAR",{|| MsgRun('Alteração Pedido'   ,'Alteração',{|oSay| fVisuPed(cCabAlias,aRotina,4,oSay,cCabTable,oCabTable) })},"Alteração"},;
+                         {"BMPEXCLUIR",{|| MsgRun('Exclusão Pedido'    ,'Exclusão' ,{|oSay| fVisuPed(cCabAlias,aRotina,5,oSay,cCabTable,oCabTable) })},"Exclusão" },;
+                         {"BMPEXCLUIR",{|| MsgRun('Boleto'             ,'Boleto'   ,{|oSay| Boleto(cCabAlias)                                      })},"Boleto"   }},,,,,.F.) CENTERED
+FwMsgRun(,{ |_oSay| fAtuEmp(oSay,cCabAlias,cIteAlias,lOk) }, "Estornando Empenhos", "Aguarde...")  
+
+/*
 { || lOk := .F.,oNwFat001:End() },,{{"BMPINCLUIR",{|| MsgRun('Visualizando Pedido','Consulta' ,{|| fVisuPed(cCabAlias,aRotina,2,oSay,cCabTable,oCabTable) })},"Consulta" },;
-                         {"BMPINCLUIR",{|| MsgRun('Inclusão Pedido'    ,'Inclusão' ,{|| fVisuPed(cCabAlias,aRotina,3,oSay,cCabTable,oCabTable) })},"Inclusão" },;
-                         {"BMPALTERAR",{|| MsgRun('Alteração Pedido'   ,'Alteração',{|| fVisuPed(cCabAlias,aRotina,4,oSay,cCabTable,oCabTable) })},"Alteração"},;
-                         {"BMPEXCLUIR",{|| MsgRun('Exclusão Pedido'    ,'Exclusão' ,{|| fVisuPed(cCabAlias,aRotina,5,oSay,cCabTable,oCabTable) })},"Exclusão" },;
-                         {"BMPEXCLUIR",{|| MsgRun('Boleto'             ,'Boleto'   ,{|| Boleto(cCabAlias)                                      })},"Boleto"   }},,,,,.F.) CENTERED
-
-
-MsgRun('Estornando Empenhos','Processo' ,{|| fAtuEmp(oSay,cCabAlias,cIteAlias,lOk) })
-
+                         {"BMPINCLUIR",{|| MsgRun('Inclusão Pedido'    ,'Inclusão' ,{|oSay| fVisuPed(cCabAlias,aRotina,3,oSay,cCabTable,oCabTable) })},"Inclusão" },;
+                         {"BMPALTERAR",{|| MsgRun('Alteração Pedido'   ,'Alteração',{|oSay| fVisuPed(cCabAlias,aRotina,4,oSay,cCabTable,oCabTable) })},"Alteração"},;
+                         {"BMPEXCLUIR",{|| MsgRun('Exclusão Pedido'    ,'Exclusão' ,{|oSay| fVisuPed(cCabAlias,aRotina,5,oSay,cCabTable,oCabTable) })},"Exclusão" },;
+                         {"BMPEXCLUIR",{|| MsgRun('Boleto'             ,'Boleto'   ,{|oSay| Boleto(cCabAlias)                                      })},"Boleto"   }},,,,,.F.) CENTERED
+//MsgRun('Estornando Empenhos','Processo' ,{|oSay| fAtuEmp(oSay,cCabAlias,cIteAlias,lOk) })
+*/
 If Select(cCabAlias) <> 0 ; (cCabAlias)->(DbCloseArea()) ; EndIf
 If Select(cIteAlias) <> 0 ; (cIteAlias)->(DbCloseArea()) ; EndIf
 
@@ -456,7 +438,10 @@ Local nPosOper  As Numeric
 Local nPosTes   As Numeric
 Local nPosMvt   As Numeric 
 Local nPosVda   As Numeric 
+Local _cChassi  As Caracter
+Local _aPrevisao   As Array
 Local _lPrevFat    := FWIsInCallStack("U_XZFT19FT") 
+Local _lCancela    := FWIsInCallStack("fCanNotas")
 
 Default lOk := .T.
 
@@ -465,9 +450,9 @@ If _lPrevFat
     Return .t.
 Endif
 
-cCamPed := "C5_NUM|C5_TIPO|C5_CLIENTE|C5_LOJACLI|C5_LOJAENT|C5_CONDPAG"
-
-nOPc  := 4
+_aPrevisao  := {}  //DAC Selecionar os registros que irão ser canceladoss conforme funcionalida fCanNotas
+cCamPed     := "C5_NUM|C5_TIPO|C5_CLIENTE|C5_LOJACLI|C5_LOJAENT|C5_CONDPAG"
+nOPc        := 4
 (cCabAlias)->(DbGoTop())
 
 if !lOk
@@ -519,7 +504,8 @@ While (cCabAlias)->(!Eof())
 
         aItePed := {}
         aLinha  := {}
-       
+
+        _cChassi := SC6->C6_CHASSI       
         if lOk
             Aadd( aLinha , { "LINPOS"     , "C6_ITEM"               , SC6->C6_ITEM } )
             Aadd( aLinha , { "AUTDELETA"  , "N"                     , Nil          } )
@@ -569,7 +555,22 @@ While (cCabAlias)->(!Eof())
         Else
             SC6->(DbSetOrder(1))        
             SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
-           
+
+            //Adiciono dados relativos a Prevsão caso seja Cancelamento 
+            If _lCancela .And. !Empty(SC6->C6_XCODPVR) 
+                Aadd ( aPrevisao, { SC6->C6_XFILPVR, ;
+                                    SC6->C6_XCODPVR, ;
+                                    SC6->C6_CLI, ;
+                                    SC6->C6_LOJA, ;
+                                    SC6->C6_PRODUTO, ; 
+                                    SC6->C6_XFABMOD, ;
+                                    SC6->C6_QTDVEN, ;
+                                    SC6->C6_NUM, ;
+                                    SC6->C6_ITEM, ; 
+                                    SC6->C6_PEDCLI } )
+
+            Endif
+
             cQuery := " UPDATE " + RetSqlName("SC6")
             cQuery += " SET C6_LOCALIZ = '" + Criavar("C6_LOCALIZ") + "' "
             cQuery += "    ,C6_CHASSI  = '" + Criavar("C6_CHASSI" ) + "' "
@@ -620,6 +621,10 @@ While (cCabAlias)->(!Eof())
     (cCabAlias)->(DbSkip())
 EndDo
 
+//Caso após o cancelamento carregos dados referente a previsão cancelar a previzão
+If Len(_aPrevisao) > 0 
+    //XZFAT9CPRV(_aPrevisao)
+Endif
 Return(.T.)
 
 /*
@@ -654,7 +659,7 @@ Descricao / Objetivo:  Faz a Validação dos campos e atualizandu-os
 =======================================================================================
 */
 
-Static Function fVldCampo(cCabAlias,oSay,cCabTable,oCabTable, cCampo, cConteudo )
+Static Function fVldCampo(cCabAlias,oSay,cCabTable,oCabTable)
 
 Local bAction1
 Local bAction2
@@ -665,9 +670,9 @@ Local lRetorno  As Logical
 
 Local cAliPed   As Character
 Local cArqQry   As Character
-//Local cCampo    As Character
+Local cCampo    As Character
 Local cCodMar   As Character
-//Local cConteudo As Character
+Local cConteudo As Character
 Local cModVei   As Character
 Local cQuery    As Character
 Local cRetTES   As Character
@@ -685,15 +690,14 @@ Local aSC5Area  As Array
 Local aSC6Area  As Array
 Local aNoFields As Array
 
-Default cConteudo := &( ReadVar())
-Default cCampo    := ReadVar()
-
 Private N         As Numeric
 Private aHeader	  As Array
 Private oGrade    As Object
 Private Altera    As Logical
 Private Inclui    As Logical
 
+cConteudo := &( ReadVar())
+cCampo    := ReadVar()
 lRetorno := .t.
 
     RecLock( cCabAlias,.F. )
@@ -703,7 +707,7 @@ lRetorno := .t.
 
 If Upper(Alltrim(cCampo)) == "C5_CONDPAG"
 
-    SE4->(DbSetOrder(1)) ; lRetorno := SE4->( DbSeek( xFilial("SE4") + cConteudo ) )
+    SE4->(DbSetOrder(1)) ; lRetorno := SaldoSBFSE4->( DbSeek( xFilial("SE4") + cConteudo ) )
 
 ElseIf Upper(Alltrim(cCampo)) == "C5_NATUREZ"
 
@@ -749,14 +753,6 @@ ElseIf Upper(Alltrim(cCampo)) $ "C6_XVLRPRD|C6_TES|C6_XVLRMVT|C6_OPER"
                 (cCabAlias)->C6_OPER := cConteudo
                 (cCabAlias)->C6_TES  := cRetTES
                 (cCabAlias)->(MsUnLock())
-                //Atualizar SC6 para garantir GAP167  Previsao de Faturamento DAC - 28/05/2024    
-                SC6->(DbSetOrder(1))  
-                If SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
-                    SC6->(RecLock("SC6"),.F.)
-                    SC6->C6_OPER := cConteudo
-                    SC6->C6_TES  := cRetTES
-                    SC6->(MsUnLock())
-                Endif    
             EndIf
 
         EndIf
@@ -1167,9 +1163,9 @@ Local nRecno        As Numeric
 Local lLibPed       As Logical
 Local lRetorno      As Logical
 Local _lPrevisao    As Logical
-Local _cLocal       As Character
-Local _cNum         As Character
-Local _cItem        As Character
+//Local _cLocal       As Character
+//Local _cNum         As Character
+//Local _cItem        As Character
 Local _cCC_STATUS   As Character
 Local nLinhas       As Numeric
 
@@ -1319,7 +1315,6 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
                 RecLock(cCabAlias,.F.)
                 (cCabAlias)->C5_XMENSER := If(!Empty(Alltrim(SC5->C5_XMENSER)),SC5->C5_XMENSER,Space(8000))
                 (cCabAlias)->(MsUnLock())        
-
             EndIf
         Endif
 
@@ -1358,7 +1353,13 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
         EndIf
         //GAP167  Previsao de Faturamento  DAC 16/05/2024
         // CARREGA DADOS DA QUERY
-       	cQuery  := U_XZFT19CH((cCabAlias)->C6_PRODUTO, (cCabAlias)->C6_LOCAL, cNumSerie, (cCabAlias)->VRK_CHASSI, (cCabAlias)->VRK_FABMOD, aCampos)
+       	cQuery  := U_XZFT19CH(  (cCabAlias)->C6_PRODUTO,; 
+                                (cCabAlias)->C6_LOCAL,;
+                                cNumSerie,; 
+                                (cCabAlias)->VRK_CHASSI,; 
+                                (cCabAlias)->VRK_FABMOD,; 
+                                aCampos)
+
         If Select(cTmpAlias) <> 0 ; (cTmpAlias)->(DbCloseArea()) ; EndIf
        
         DbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cTmpAlias, .F., .T. )
@@ -1396,16 +1397,44 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
 
             SC6->(DbSetOrder(1))        
             SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
-            
-            SC6->(RecLock("SC6",.F.))
+            //Atualizar  a operação 
+            If RecLock("SC6",.F.)
                 SC6->C6_QTDLIB  := 1
                 SC6->C6_LOTECTL := CriaVar("C6_LOTECTL")
                 SC6->C6_DTVALID := CriaVar("C6_DTVALID")
                 SC6->C6_NUMSERI := Alltrim((cTmpAlias)->VV1_CHASSI)
                 SC6->C6_CHASSI  := Alltrim((cTmpAlias)->VV1_CHASSI)
                 SC6->C6_LOCALIZ := Alltrim((cTmpAlias)->BF_LOCALIZ)
-            SC6->(MsUnLock())
-            
+                //Atualizar dados  referente  a cabeçalho neste caso tenho que testar pois em alguns casos não virão campos para esta atualização sendo uma subrotina aproveitada
+                If (cCabAlias)->(FieldPos("VRK_CODMAR")) > 0
+                    SC6->C6_XCODMAR	:= (cCabAlias)->VRK_CODMAR  
+                Endif     
+                If (cCabAlias)->(FieldPos("VE1_DESMAR")) > 0
+                    SC6->C6_XDESMAR	:= (cCabAlias)->VE1_DESMAR
+                Endif    
+                If (cCabAlias)->(FieldPos("VRK_CORINT")) > 0
+                    SC6->C6_XCORINT	:= (cCabAlias)->VRK_CORINT
+                Endif    
+                If (cCabAlias)->(FieldPos("VRK_COREXT")) > 0
+                    SC6->C6_XCOREXT	:= (cCabAlias)->VRK_COREXT 
+                Endif    
+                If (cCabAlias)->(FieldPos("VRK_MODVEI")) > 0
+                    SC6->C6_XMODVEI	:= (cCabAlias)->VRK_MODVEI
+                Endif    
+                If (cCabAlias)->(FieldPos("VV2_DESMOD")) > 0
+                    SC6->C6_XDESMOD	:= (cCabAlias)->VV2_DESMOD
+                Endif    
+                If (cCabAlias)->(FieldPos("VRK_SEGMOD")) > 0
+                    SC6->C6_XSEGMOD	:= (cCabAlias)->VRK_SEGMOD 
+                Endif    
+                If (cCabAlias)->(FieldPos("VVX_DESSEG")) > 0
+                    SC6->C6_XDESSEG	:= (cCabAlias)->VVX_DESSEG
+                Endif    
+                If (cCabAlias)->(FieldPos("VRK_FABMOD")) > 0
+                    SC6->C6_XFABMOD	:= (cCabAlias)->VRK_FABMOD
+                Endif     
+                SC6->(MsUnLock())
+            Endif
             n_RecnoSc6 := SC6->(Recno())
 
             SB1->(DbSeek(xFilial("SB1")+SC6->C6_PRODUTO))
@@ -1416,19 +1445,26 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
             *******************************
             /*/
             nQtdLib   := SC6->C6_QTDLIB
-            //GAP167  Previsao de Faturamento
-            //no caso de previsão não locar temporario
-            //If !_lPrevisao
-                nQtdLib   := MaLibDoFat(SC6->(RecNo()),nQtdLib,@lCredito,@lEstoque,lAvCred,lAvEst,lLiber,lTrans)
-            //Endif        
+            nQtdLib   := MaLibDoFat(SC6->(RecNo()),nQtdLib,@lCredito,@lEstoque,lAvCred,lAvEst,lLiber,lTrans)
 
-            _cLocal := If(_lPrevisao,SC6->C6_LOCAL  , (cCabAlias)->C6_LOCAL )    
-            _cNum   := If(_lPrevisao,SC6->C6_NUM    , (cCabAlias)->C6_NUM )
-            _cItem  := If(_lPrevisao,SC6->C6_ITEM   , (cCabAlias)->C6_ITEM )  
+            //_cLocal := If(_lPrevisao,SC6->C6_LOCAL  , (cCabAlias)->C6_LOCAL )    
+            //_cNum   := If(_lPrevisao,SC6->C6_NUM    , (cCabAlias)->C6_NUM )
+            //_cItem  := If(_lPrevisao,SC6->C6_ITEM   , (cCabAlias)->C6_ITEM )  
 
             SDC->(DbSetOrder(1))
             SDC->(DbGoTop())
+            If SDC->(DbSeek(xFilial("SDC")+(cCabAlias)->C6_PRODUTO;
+                                          +(cCabAlias)->C6_LOCAL  ;
+                                          +"SC6"                  ;
+                                          +(cCabAlias)->C6_NUM    ;
+                                          +(cCabAlias)->C6_ITEM   ;
+                                          +SC9->C9_SEQUEN         ;
+                                          +CriaVar("DC_LOTECTL")  ;
+                                          +CriaVar("DC_NUMLOTE")  ;
+                                          +(cTmpAlias)->BF_LOCALIZ;
+                                          +(cTmpAlias)->VV1_CHASSI))
 
+/*
             If SDC->(DbSeek(xFilial("SDC")+(cCabAlias)->C6_PRODUTO;
                                               +_cLocal                ;  //+(cCabAlias)->C6_LOCAL  ;
                                               +"SC6"                  ;
@@ -1439,7 +1475,7 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
                                               +CriaVar("DC_NUMLOTE")  ;
                                               +(cTmpAlias)->BF_LOCALIZ;
                                               +(cTmpAlias)->VV1_CHASSI))
-        
+*/        
                 /*  // Não executo esta query pois ja esta trazendo no select dados da VRK vonforme informado são os dados que são validos devido a chassis antigos não pegar na VV1
                     // incluido dados da VRK no Select para ja trazer na abertura do Browser DAC 31/05/2024
                 cQuery := ""
@@ -1518,30 +1554,51 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
                     ElseIf SC9->C9_BLWMS  == "07" ; _cCC_STATUS  := "E"
                 EndIf
 
-                If !_lPrevisao
-                    (cCabAlias)->(RecLock(cCabAlias,.F.))
-                    //Tabela SCC não é gerada 
-                    (cCabAlias)->CC_STATUS  := _cCC_STATUS
-                    (cCabAlias)->C6_CHASSI  := (cTmpAlias)->VV1_CHASSI 
-                    (cCabAlias)->C6_NUMSERI := (cTmpAlias)->VV1_CHASSI
-                    (cCabAlias)->C6_LOCALIZ := (cTmpAlias)->BF_LOCALIZ 
-                    (cCabAlias)->C9_SEQUEN  := SC9->C9_SEQUEN
-                    //NÃO SERA MAIS NECESSÁRIO CARREGAR ESTES DADOS JA ESTÃO NA QUERY INICIAL XZFT19QY DAC 31/05/2024
-                    //(cCabAlias)->C6_XCODMAR	:= (cTrbAlias)->MARCA      
-                    //(cCabAlias)->C6_XDESMAR := (cTrbAlias)->DESCMAR 
-                    //(cCabAlias)->C6_XCORINT	:= (cTrbAlias)->CORINT     
-                    //(cCabAlias)->C6_XCOREXT := (cTrbAlias)->COREXT 
-                    //(cCabAlias)->C6_XMODVEI := (cTrbAlias)->MODVEI     
-                    //(cCabAlias)->C6_XDESMOD := (cTrbAlias)->DESCMOD
-                    //(cCabAlias)->C6_XSEGMOD	:= (cTrbAlias)->SEGMOD     
-                    //(cCabAlias)->C6_XDESSEG := (cTrbAlias)->DESCSEG
-                    //(cCabAlias)->C6_XFABMOD	:= (cTrbAlias)->FABMOD     
-                    (cCabAlias)->C6_XGRPMOD := ""
-                    (cCabAlias)->C6_XDGRMOD := ""                      
-                    (cCabAlias)->C9_NFISCAL := CriaVar("C9_NFISCAL")
-                    (cCabAlias)->C9_SERIENF := CriaVar("C9_SERIENF")
-                    (cCabAlias)->CC_STATUS  := _cCC_STATUS
-                    (cCabAlias)->(MsUnLock())
+                If ! _lPrevisao
+                    If RecLock(cCabAlias,.F.)
+                        //Tabela SCC não é gerada 
+                        If (cCabAlias)->(FieldPos(">CC_STATUS")) > 0
+                            (cCabAlias)->CC_STATUS  := _cCC_STATUS
+                        Endif    
+                        (cCabAlias)->C6_CHASSI  := (cTmpAlias)->VV1_CHASSI 
+                        (cCabAlias)->C6_NUMSERI := (cTmpAlias)->VV1_CHASSI
+                        (cCabAlias)->C6_LOCALIZ := (cTmpAlias)->BF_LOCALIZ 
+                        (cCabAlias)->C9_SEQUEN  := SC9->C9_SEQUEN
+                        //Atualizar temporario pois neste momento ja passei
+                        (cCabAlias)->C6_XCODMAR := (cCabAlias)->VRK_CODMAR 
+                        If (cCabAlias)->(FieldPos("VE1_DESMAR")) > 0
+                            (cCabAlias)->C6_XDESMAR := (cCabAlias)->VE1_DESMAR 
+                        Endif     
+                        (cCabAlias)->C6_XCORINT := (cCabAlias)->VRK_CORINT  
+                        (cCabAlias)->C6_XCOREXT := (cCabAlias)->VRK_COREXT  
+                        (cCabAlias)->C6_XMODVEI := (cCabAlias)->VRK_MODVEI  
+                        If (cCabAlias)->(FieldPos("VV2_DESMOD")) > 0
+                            (cCabAlias)->C6_XDESMOD := (cCabAlias)->VV2_DESMOD  
+                        Endif    
+                        (cCabAlias)->C6_XSEGMOD := (cCabAlias)->VRK_SEGMOD  
+                        If (cCabAlias)->(FieldPos("VVX_DESSEG")) > 0
+                            (cCabAlias)->C6_XDESSEG := (cCabAlias)->VVX_DESSEG  
+                        Endif    
+                        (cCabAlias)->C6_XFABMOD := (cCabAlias)->VRK_FABMOD  
+                        //NÃO SERA MAIS NECESSÁRIO CARREGAR ESTES DADOS JA ESTÃO NA QUERY INICIAL XZFT19QY DAC 31/05/2024
+                        //(cCabAlias)->C6_XCODMAR	:= (cTrbAlias)->MARCA      
+                        //(cCabAlias)->C6_XDESMAR := (cTrbAlias)->DESCMAR 
+                        //(cCabAlias)->C6_XCORINT	:= (cTrbAlias)->CORINT     
+                        //(cCabAlias)->C6_XCOREXT := (cTrbAlias)->COREXT 
+                        //(cCabAlias)->C6_XMODVEI := (cTrbAlias)->MODVEI     
+                        //(cCabAlias)->C6_XDESMOD := (cTrbAlias)->DESCMOD
+                        //(cCabAlias)->C6_XSEGMOD	:= (cTrbAlias)->SEGMOD     
+                        //(cCabAlias)->C6_XDESSEG := (cTrbAlias)->DESCSEG
+                        //(cCabAlias)->C6_XFABMOD	:= (cTrbAlias)->FABMOD     
+                        (cCabAlias)->C6_XGRPMOD := ""
+                        (cCabAlias)->C6_XDGRMOD := ""                      
+                        (cCabAlias)->C9_NFISCAL := CriaVar("C9_NFISCAL")
+                        (cCabAlias)->C9_SERIENF := CriaVar("C9_SERIENF")
+                        If (cCabAlias)->(FieldPos("VVX_DESSEG")) > 0
+                            (cCabAlias)->CC_STATUS  := _cCC_STATUS
+                        Endif    
+                        (cCabAlias)->(MsUnLock())
+                    Endif    
                 Endif 
                 /* DAC***
                 //Será valido ano fabri da VRK devido inconsistências de liberação Fabrica DAC/Reinaldo 31/05/2024 
@@ -1595,43 +1652,46 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
                 EndIf
 
                 DBCommitAll()
-                Aadd(_aPrevisao,SC6->(Recno()))
+                Aadd(_aPrevisao,n_RecnoSc6)
                 nLinhas ++      //	//Atualização realizada pela Totvs, acrescentada na lógica DAC 14/05/2024
             //Else
                 //DisarmTransaction()
             EndIf
             //End Transaction
+
+            If !_lPrevisao
+                //If ! lLibPed 
+                If ! lLibPed .And. (!Empty(SC6->C6_LOTECTL) .Or. !Empty(SC6->C6_NUMSERI) .Or. !Empty(SC6->C6_CHASSI) )
+                    SC6->(RecLock("SC6",.F.))
+                        SC6->C6_LOTECTL := CriaVar("C6_LOTECTL")
+                        SC6->C6_DTVALID := CriaVar("C6_DTVALID")
+                        SC6->C6_NUMSERI := CriaVar("C6_NUMSERI")
+                        SC6->C6_CHASSI  := CriaVar("C6_CHASSI" )
+                        SC6->C6_LOCALIZ := CriaVar("C6_LOCALIZ")
+                        //Não retirar informações do pedido de veiculos DAC 03/06/2024
+                        //SC6->C6_XCODMAR := CriaVar("C6_XCODMAR")
+                        //SC6->C6_XDESMAR	:= CriaVar("C6_XDESMAR")
+                        //SC6->C6_XGRPMOD := CriaVar("C6_XGRPMOD")
+                        //SC6->C6_XDGRMOD := CriaVar("C6_XDGRMOD")
+                        //SC6->C6_XMODVEI	:= CriaVar("C6_XMODVEI")
+                        //SC6->C6_XDESMOD	:= CriaVar("C6_XDESMOD")
+                        //SC6->C6_XSEGMOD	:= CriaVar("C6_XSEGMOD")
+                        //SC6->C6_XDESSEG	:= CriaVar("C6_XDESSEG")
+                        //SC6->C6_XFABMOD	:= CriaVar("C6_XFABMOD")
+                        //SC6->C6_XCORINT	:= CriaVar("C6_XCORINT")
+                        //SC6->C6_XCOREXT	:= CriaVar("C6_XCOREXT")
+                    SC6->(MsUnLock())
+                    (cCabAlias)->(RecLock(cCabAlias,.F.))
+                        (cCabAlias)->C6_CHASSI  := CriaVar("C6_CHASSI" )
+                        (cCabAlias)->C6_NUMSERI := CriaVar("C6_NUMSERI")
+                        (cCabAlias)->C6_LOCALIZ := CriaVar("C6_LOCALIZ")
+                    (cCabAlias)->(MsUnLock())
+
+                    DBCommitAll()
+                EndIf
+            Endif    
         EndIf
 
-        If !_lPrevisao
-            If !lLibPed
-                SC6->(RecLock("SC6",.F.))
-                    SC6->C6_LOTECTL := CriaVar("C6_LOTECTL")
-                    SC6->C6_DTVALID := CriaVar("C6_DTVALID")
-                    SC6->C6_NUMSERI := CriaVar("C6_NUMSERI")
-                    SC6->C6_CHASSI  := CriaVar("C6_CHASSI" )
-                    SC6->C6_LOCALIZ := CriaVar("C6_LOCALIZ")
-                    SC6->C6_XCODMAR := CriaVar("C6_XCODMAR")
-                    SC6->C6_XDESMAR	:= CriaVar("C6_XDESMAR")
-                    SC6->C6_XGRPMOD := CriaVar("C6_XGRPMOD")
-                    SC6->C6_XDGRMOD := CriaVar("C6_XDGRMOD")
-                    SC6->C6_XMODVEI	:= CriaVar("C6_XMODVEI")
-                    SC6->C6_XDESMOD	:= CriaVar("C6_XDESMOD")
-                    SC6->C6_XSEGMOD	:= CriaVar("C6_XSEGMOD")
-                    SC6->C6_XDESSEG	:= CriaVar("C6_XDESSEG")
-                    SC6->C6_XFABMOD	:= CriaVar("C6_XFABMOD")
-                    SC6->C6_XCORINT	:= CriaVar("C6_XCORINT")
-                    SC6->C6_XCOREXT	:= CriaVar("C6_XCOREXT")
-                SC6->(MsUnLock())
-                (cCabAlias)->(RecLock(cCabAlias,.F.))
-                    (cCabAlias)->C6_CHASSI  := CriaVar("C6_CHASSI" )
-                    (cCabAlias)->C6_NUMSERI := CriaVar("C6_NUMSERI")
-                    (cCabAlias)->C6_LOCALIZ := CriaVar("C6_LOCALIZ")
-                (cCabAlias)->(MsUnLock())
-
-                DBCommitAll()
-            EndIf
-        Endif    
     EndIf
     (cCabAlias)->(DbSkip())
 EndDo
@@ -1653,17 +1713,18 @@ If !_lPrevisao
                 SC6->C6_NUMSERI := CriaVar("C6_NUMSERI")
                 SC6->C6_CHASSI  := CriaVar("C6_CHASSI" ) 
                 SC6->C6_LOCALIZ := CriaVar("C6_LOCALIZ") 
-                SC6->C6_XCODMAR := CriaVar("C6_XCODMAR")
-                SC6->C6_XDESMAR	:= CriaVar("C6_XDESMAR")
-                SC6->C6_XGRPMOD := CriaVar("C6_XGRPMOD")
-                SC6->C6_XDGRMOD := CriaVar("C6_XDGRMOD")
-                SC6->C6_XMODVEI	:= CriaVar("C6_XMODVEI") 
-                SC6->C6_XDESMOD	:= CriaVar("C6_XDESMOD")
-                SC6->C6_XSEGMOD	:= CriaVar("C6_XSEGMOD")
-                SC6->C6_XDESSEG	:= CriaVar("C6_XDESSEG") 
-                SC6->C6_XFABMOD	:= CriaVar("C6_XFABMOD")
-                SC6->C6_XCORINT	:= CriaVar("C6_XCORINT")
-                SC6->C6_XCOREXT	:= CriaVar("C6_XCOREXT")
+                //Não retirar informações do pedido de veiculos DAC 03/06/2024
+                //SC6->C6_XCODMAR := CriaVar("C6_XCODMAR")
+                //SC6->C6_XDESMAR	:= CriaVar("C6_XDESMAR")
+                //SC6->C6_XGRPMOD := CriaVar("C6_XGRPMOD")
+                //SC6->C6_XDGRMOD := CriaVar("C6_XDGRMOD")
+                //SC6->C6_XMODVEI	:= CriaVar("C6_XMODVEI") 
+                //SC6->C6_XDESMOD	:= CriaVar("C6_XDESMOD")
+                //SC6->C6_XSEGMOD	:= CriaVar("C6_XSEGMOD")
+                //SC6->C6_XDESSEG	:= CriaVar("C6_XDESSEG") 
+                //SC6->C6_XFABMOD	:= CriaVar("C6_XFABMOD")
+                //SC6->C6_XCORINT	:= CriaVar("C6_XCORINT")
+                //SC6->C6_XCOREXT	:= CriaVar("C6_XCOREXT")
             SC6->(MsUnLock())
 
             (cCabAlias)->(RecLock(cCabAlias,.F.))
@@ -3352,9 +3413,9 @@ Local lRet    := .F.
     //GAP167  Previsao de Faturamento
     Default _cWhere := ""
     //Quando for chamado pela função ZFAT025 e não estiver preenchido o Where não permitir que apague registros com previsão
-    If !FWIsInCallStack("ZFAT025") .And. Empty(_cWhere)
-        _cWhere := " AND SC6.C6_XCODPVR = ' ' "   //somente tratar registros que não sao previsão
-    Endif
+    //If !FWIsInCallStack("ZFAT025") .And. Empty(_cWhere)
+    //    _cWhere := " AND SC6.C6_XCODPVR = ' ' "   //somente tratar registros que não sao previsão
+    //Endif
 
     cQuery += CrLf + " SELECT  '  ' C6_OK    , "
     cQuery += CrLf + "        ' '   C6_STATUS,  "
@@ -3397,6 +3458,12 @@ Local lRet    := .F.
     cQuery += CrLf + "        SC6.C6_XVLRPRD,  "
     cQuery += CrLf + "        SC6.C6_XVLRMVT,  "
     cQuery += CrLf + "        SC6.C6_XBASST,  "
+    If SC6->(FieldPos("C6_XCODPVR")) > 0
+        cQuery += CrLf + "        SC6.C6_XFILPVR,  " 
+        cQuery += CrLf + "        SC6.C6_XCODPVR,  "
+        cQuery += CrLf + "        SC6.C6_XFABMOD,  "  
+        cQuery += CrLf + "        VRK.VRK_FABMOD,  "
+    Endif
     cQuery += CrLf + "        SC5.C5_XTIPVEN,
     cQuery += CrLf +"         VRJ.VRJ_PEDIDO, "
     cQuery += CrLf +"         'F'  as lupd, "
@@ -3457,13 +3524,10 @@ Local lRet    := .F.
     DbUseArea(.T.,"TOPCONN",TCGENQRY(,,cQuery),cTabela,.T.,.T.)
 
     While (cTabela)->(!EOF())
-
         if Empty((cTabela)->VRK_CHASSI)
-
             fLimpaChassi(cTabela) // Limpa campo de Chassi da Tabela SC6, pois a casos do chassi ser estornado e ficar não apagar o campo C6_CHASSI
             lRet := .T.
         EndIf
-
         (cTabela)->(DbSkip())
     EndDo
 
@@ -4141,7 +4205,9 @@ Default _cGroup     := ""
        	//Atualização realizada pela Totvs, acrescentada na lógica DAC 14/05/2024
         //A Previsão ja vem com o chassi informado
         If !_lPrevFat  
-            _cQuery += CrLf + " 	AND SC6.C6_CHASSI    = ' ' "
+	        _cQuery += CrLf + "     AND SC6.C6_XFILPVR  = ' ' " + CrLf 
+	        _cQuery += CrLf + "     AND SC6.C6_XCODPVR  = ' ' " + CrLf
+            _cQuery += CrLf + " 	AND SC6.C6_CHASSI   = ' ' "
         Endif
     Endif
     //Verifica se existe mais condicionais para where
@@ -4475,7 +4541,7 @@ Begin Sequence
      //Preparo as mensagens obs
     _cObs := ""
     For _nPos := 1 To Len(_aMsg)
-        _cObs += Upper(AllTrim(_aMsg)) + CrLf
+        _cObs += Upper(AllTrim(_aMsg[_nPos])) + CrLf
     Next _nPos
    
     ZZN->(DbGoto((_cAliasPesq)->NREGZZN))
@@ -4501,6 +4567,78 @@ Endif
 
 Return _lRet  
 
+/*
+//Efetuar a atualização da Previsão após o cancelamento da Nota  DAC 05/06/2024
+aPrevisao,  {   SC6->C6_XFILPVR, ;
+                SC6->C6_XCODPVR, ;
+                SC6->C6_CLI, ;
+                SC6->C6_LOJA, ;
+                SC6->C6_PRODUTO, ; 
+                SC6->C6_XFABMOD, ;
+                SC6->C6_QTDVEN, ;
+                SC6->C6_NUM, ;
+                SC6->C6_ITEM, ; 
+                SC6->C6_PEDCLI } )
+*/
+Static Function XZFAT9CPRV(_aPrevisao)
+Local _cChave := "" 
+Local _nQtde  := 0
+Local _nPos
+Local _nCount
+
+Begin Sequence 
+    //Organizo para cria uma chave e atualização para tabela ZPP
+	aSort( _aPrevisao , , , { |x,y| x[1]+x[2]+x[3]+x[4]+x[5]+x[6] > y[1]+y[2]+y[3]+y[4]+y[5]+y[6] } )  //para organiar previsão
+    
+    For _nPos := 1 To Len(_aPrevisao)
+        If _nPos == Len(_aPrevisao) .Or. _cChave <> _aPrevisao[_nPos,1]+_aPrevisao[_nPos,2]+_aPrevisao[_nPos,3]+_aPrevisao[_nPos,4]+_aPrevisao[_nPos,5]+_aPrevisao[_nPos,6]
+            If !Empty(_cChave)
+                _nCount := If(_nPos > 1, _nPos-1,1 )
+                XZFAT9CPV2(_nQtde, _aPrevisao[_nCount,1],_aPrevisao[_nCount,2],_aPrevisao[_nCount,3],_aPrevisao[_nCount,4],_aPrevisao[_nCount,5],_aPrevisao[_nCount,6]) //atualizar zzpp
+                _nQtde  := 0
+            Endif  
+            _cChave := _aPrevisao[_nPos,1]+_aPrevisao[_nPos,2]+_aPrevisao[_nPos,3]+_aPrevisao[_nPos,4]+_aPrevisao[_nPos,5]+_aPrevisao[_nPos,6]
+            _nQtde  += _aPrevisao[_nPos,7]
+        Endif    
+
+    Next 
+End Sequence 
+Return Nil
+
+
+//Atualizar tabela ZZP quando do cancelamento DAC 05/06/2024
+Static Function XZFAT9CPV2(_nQtde, _cFilPrev, _cCodPrev, _cCodCli, _cLoja, _cCodProd, _cFabMod) //atualizar zzpp
+Local _cAliasPesq   := GetNextAlias()
+
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+        %NoParser%
+        WITH PREVSQL AS (   SELECT COALESCE(SUM(ZZP.ZZP_QTELIB),0) AS QTDE_LIB
+                                   ZZP.R_E_C_N_O_ AS NREGZZP 
+		                    FROM %Table:ZZP% ZZP
+		                    WHERE   ZZP.%notDel%	 
+			                    AND ZZP.ZZP_FILIAL = %Exp:_cFilPrev%
+                                AND ZZP.ZZP_CODPRV = %Exp:_cCodPrev% 
+                                AND ZZP.ZZP_CODCLI = %Exp:_cCodCli%
+		                        AND ZZP.ZZP_LOJCLI = %Exp:_cLoja%
+                                AND ZZP.ZZP_CODPRD = %Exp:_cCodProd%
+                                AND ZZP.ZZP_FABMOD = %Exp:_cFabMod%
+                            GROUP BY ZZP.R_E_C_N_O_    
+                        )
+        SELECT  PREVSQL.QTDE_LIB.
+                PREVSQL.NREGZZP 
+        FROM    PREVSQL
+ 	EndSql
+    (_cAliasPesq)->(DbGotop())
+    If  (_cAliasPesq)->(Eof())
+        ApMsgStop("Não encontrada Previsao "+_cFilPrev+"-"+_cCodPrev+", verificar com ADM Sistemas ", "Previsão Faturamento")
+        _lRet :=  .F.    
+        Break
+    Endif    
+If Select((_cAliasPesq)) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif 
+Return Nil
 
 
 //Cabeçalho

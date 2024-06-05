@@ -868,7 +868,7 @@ Begin Sequence
 	_cQuery += CRLF + " 						, SC6.C6_CHASSI "
     _cQuery += CRLF + " 						, SC6.R_E_C_N_O_ AS NREGSC6  "
 	_cQuery += CRLF + " 						, VV2.VV2_CODMAR "
-
+	_cQuery += CRLF + " 						, VV2.VV2_DESMOD "
     _cQuery += CRLF +  "        FROM  " + RetSqlName("SC6") + " SC6 " 
     _cQuery += CRLF + "         JOIN " + RetSqlName("SC5") + " SC5 
     _cQuery += CRLF + "             ON  SC5.C5_FILIAL  = '" + FwxFilial("SC5") + "' "
@@ -930,13 +930,19 @@ Begin Sequence
 	//Atualização realizada pela Totvs, acrescentada na lógica DAC 14/05/2024
 	_cQuery += CRLF + " 	    AND SC6.C6_CHASSI    = ' ' "  //<=====
 	_cQuery += CRLF + " 		AND SC6.D_E_L_E_T_ 	= ' ' "
-	
     _cQuery += CRLF + "          )"       
 
     _cQuery += CRLF + " SELECT PEDIDOS_FAT.* "
     _cQuery += CRLF +"		, VRJ.VRJ_PEDIDO "
 	_cQuery += CRLF + " 	, VRK.VRK_MODVEI "
 	_cQuery += CRLF + " 	, VRK.VRK_FABMOD "
+ 	_cQuery += CRLF + " 	, VRK.VRK_CODMAR "
+ 	_cQuery += CRLF + " 	, VRK.VRK_CORINT "
+ 	_cQuery += CRLF + " 	, VRK.VRK_COREXT "
+ 	_cQuery += CRLF + " 	, VRK.VRK_SEGMOD "
+ 	_cQuery += CRLF + " 	, VVX.VVX_DESSEG "
+ 	_cQuery += CRLF + " 	, VE1.VE1_DESMAR "
+   
     _cQuery += CRLF + " FROM PEDIDOS_FAT  "    
 
     _cQuery += CRLF + " JOIN " + RetSqlName("VRJ") + " VRJ "
@@ -953,6 +959,18 @@ Begin Sequence
     _cQuery += CRLF + "     AND VRK.VRK_CHASSI = PEDIDOS_FAT.C6_CHASSI "
     _cQuery += CRLF + "     AND VRK.VRK_ITETRA = ' ' "
     _cQuery += CRLF + "     AND VRK.D_E_L_E_T_ = ' ' "
+
+    _cQuery += CRLF + " LEFT JOIN " + RetSqlName("VE1") + " VE1  "
+    _cQuery += CRLF + "      ON  VE1.VE1_FILIAL  = '" + xFilial("VE1") + "'  "
+    _cQuery += CRLF + "      AND VE1.VE1_CODMAR  = VRK.VRK_CODMAR   "
+    _cQuery += CRLF + "      AND VE1.D_E_L_E_T_  = ' ' "
+
+    _cQuery += CRLF + " LEFT JOIN " + RetSqlName("VVX") + " VVX  "
+    _cQuery += CRLF + "      ON  VVX.VVX_FILIAL  = '" + xFilial("VVX") + "' "
+    _cQuery += CRLF + "      AND VVX.VVX_CODMAR  = VRK.VRK_CODMAR "
+    _cQuery += CRLF + "      AND VVX.VVX_SEGMOD  = VRK.VRK_SEGMOD "
+    _cQuery += CRLF + "      AND VVX.D_E_L_E_T_  = ' ' "
+
 	_cQuery += CRLF + " ORDER BY  C6_CLI, C6_LOJA, C6_PRODUTO, C6_XMODVEI, C6_XFABMOD
     
 	//Realizar o Select
@@ -983,15 +1001,15 @@ Begin Sequence
 		_cProduto 	:= (_cAliasPesq)->C6_PRODUTO  
 		_nVlrVen  	:= (_cAliasPesq)->C6_XPRCTAB   //C6_PRCVEN
 		_nVlrUnit  	:= (_cAliasPesq)->C6_PRUNIT
-		_cModelo 	:= iF( !Empty((_cAliasPesq)->C6_XMODVEI), (_cAliasPesq)->C6_XMODVEI, (_cAliasPesq)->VRK_MODVEI)
-		_cFabAno 	:= If( !Empty((_cAliasPesq)->C6_XFABMOD), (_cAliasPesq)->C6_XFABMOD, (_cAliasPesq)->VRK_FABMOD)
+		_cModelo 	:= (_cAliasPesq)->VRK_MODVEI //iF( !Empty((_cAliasPesq)->C6_XMODVEI), (_cAliasPesq)->C6_XMODVEI, (_cAliasPesq)->VRK_MODVEI)
+		_cFabAno 	:= (_cAliasPesq)->VRK_FABMOD //If( !Empty((_cAliasPesq)->C6_XFABMOD), (_cAliasPesq)->C6_XFABMOD, (_cAliasPesq)->VRK_FABMOD)
 		_nQtVen		:= 0
 		_aRegSC6	:= {}
-		While (_cAliasPesq)->(!Eof()) .And. _cCliente 	== (_cAliasPesq)->C6_CLI 	.And. ;
-											_cLoja 		== (_cAliasPesq)->C6_LOJA 	.And. ;
+		While (_cAliasPesq)->(!Eof()) .And. _cCliente 	== (_cAliasPesq)->C6_CLI 		.And. ;
+											_cLoja 		== (_cAliasPesq)->C6_LOJA 		.And. ;
 											_cProduto 	== (_cAliasPesq)->C6_PRODUTO	.And. ;
-											(_cModelo 	== (_cAliasPesq)->C6_XMODVEI .Or. _cModelo 	== (_cAliasPesq)->VRK_MODVEI)	.And. ;
-											(_cFabAno 	== (_cAliasPesq)->C6_XFABMOD .Or. _cFabAno 	== (_cAliasPesq)->VRK_FABMOD)
+											_cModelo 	== (_cAliasPesq)->VRK_MODVEI	.And. ;
+											_cFabAno 	== (_cAliasPesq)->VRK_FABMOD
 			_nQtdeLidos ++
 			_oSay:SetText("Aguarde Montando Previsão lidos "+StrZero(_nQtdeLidos,6)+" de "+StrZero(_nQtdeReg,6)+" registros ... ")
 			ProcessMessage()
@@ -1019,12 +1037,24 @@ Begin Sequence
 			Endif 
 			_nQtVen			+= SC6->C6_QTDVEN
 			Aadd(_aRegSC6, (_cAliasPesq)->NREGSC6)
-			(_cAliasPesq)->(DbSkip())
+			//Atualizar descrições
+            If SC6->(RecLock("SC6",.F.))
+            	SC6->C6_XCODMAR	:= (_cAliasPesq)->VRK_CODMAR  
+            	SC6->C6_XDESMAR	:= (_cAliasPesq)->VE1_DESMAR
+            	SC6->C6_XCORINT	:= (_cAliasPesq)->VRK_CORINT
+            	SC6->C6_XCOREXT	:= (_cAliasPesq)->VRK_COREXT 
+            	SC6->C6_XMODVEI	:= (_cAliasPesq)->VRK_MODVEI
+            	SC6->C6_XDESMOD	:= (_cAliasPesq)->VV2_DESMOD
+            	SC6->C6_XSEGMOD	:= (_cAliasPesq)->VRK_SEGMOD 
+            	SC6->C6_XDESSEG	:= (_cAliasPesq)->VVX_DESSEG
+            	SC6->C6_XFABMOD	:= (_cAliasPesq)->VRK_FABMOD
+            	SC6->(MsUnLock())
+				(_cAliasPesq)->(DbSkip())
+			Endif
 		EndDo 	
 
-		If !_lRet  
-			_lRet := .F.
-		Endif
+		//If !_lRet  
+		//Endif
 		//Não encontrou nenhum
 		If _nQtVen == 0 .Or. Len(_aRegSC6) == 0
 			Loop
