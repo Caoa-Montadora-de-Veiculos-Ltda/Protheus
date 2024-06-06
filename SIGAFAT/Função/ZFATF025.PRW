@@ -807,8 +807,11 @@ Local _lRet 		:= .T.
 //Local _lPergunta	:= .T.
 Local _cNumPrev		:= ""
 Local _cQuery 		:= ""
+Local _cWhere 		:= ""
+Local _cJoin 		:= ""
 Local _aMsg 		:= {}
-//Local _nPos 
+
+Local _nPos 
 Local _cCliente 	
 Local _cLoja   
 Local _cCGC 	
@@ -819,9 +822,11 @@ Local _nQtVen
 Local _cModelo
 Local _cFabAno 
 Local _aRegSC6
-Local _nPos
 Local _nQtdeReg
 Local _nQtdeLidos
+Local _aSelect
+Local _cSelect
+Local _cOrderTab  
 
 Default _aRet 		:= {}
 
@@ -849,6 +854,49 @@ Begin Sequence
 		(_cAliasPesq)->(DbCloseArea())
 	Endif
 	
+	//pREPARAR CAMPOS DO sELECT
+	_aSelect	:= {}		    
+	Aadd(_aSelect,"C6_OK")
+	Aadd(_aSelect,"C6_FILIAL" )
+	Aadd(_aSelect,"C6_CLI")
+	Aadd(_aSelect,"C6_LOJA")
+	Aadd(_aSelect,"A1_CGC")
+	Aadd(_aSelect,"C6_PRODUTO")
+	Aadd(_aSelect,"B1_DESC")
+	Aadd(_aSelect,"C6_QTDVEN")
+	Aadd(_aSelect,"C6_PRCVEN")
+	Aadd(_aSelect,"C6_PRUNIT")
+	Aadd(_aSelect,"C6_PEDCLI")
+	Aadd(_aSelect,"C6_ITEM")
+	Aadd(_aSelect,"C6_CHASSI")
+	Aadd(_aSelect,"VRK_MODVEI")
+	Aadd(_aSelect,"VRK_FABMOD")
+	Aadd(_aSelect,"VRK_VALTAB")
+	Aadd(_aSelect,"VRK_CODMAR")
+	Aadd(_aSelect,"VV2_DESMOD")
+	Aadd(_aSelect,"VRJ_PEDIDO")
+	Aadd(_aSelect,"VRK_MODVEI")
+	Aadd(_aSelect,"VRK_CORINT")
+	Aadd(_aSelect,"VRK_COREXT")
+	Aadd(_aSelect,"VRK_SEGMOD")
+	Aadd(_aSelect,"VVX_DESSEG")
+
+	Aadd(_aSelect,"VRK_VALTAB")  	//Valor de Tabela          
+	Aadd(_aSelect,"VRK_VALPRE") 	//Valor Pretendido         
+	Aadd(_aSelect,"VRK_VALMOV") 	//VALOR DO MOVIMENTO
+	Aadd(_aSelect,"VRK_XBASST") 	//Valor Base ICMS ST	
+	Aadd(_aSelect,"VRK_VALVDA") 	//vALOR DA vENDA          
+
+	Aadd(_aSelect,"VE1_DESMAR")
+
+	_cSelect := CRLF +" SELECT "
+	For _nPos := 1 To Len(_aSelect)
+		_cSelect += CRLF +If(_nPos > 1,", "," ")+_aSelect[_nPos]+" "
+	Next
+	_cSelect += CRLF +", SC6.R_E_C_N_O_ AS NREGSC6 "
+	_cSelect += CRLF +", VRK.R_E_C_N_O_ AS NREGVRK "
+	
+	/*
     _cQuery += CRLF + " WITH PEDIDOS_FAT AS ( 	SELECT "
     _cQuery += CRLF + " 						SC6.C6_OK " 
     _cQuery += CRLF + " 						, SC6.C6_FILIAL "
@@ -883,7 +931,7 @@ Begin Sequence
     _cQuery += CRLF + "             and VV2.VV2_OPCION  BETWEEN '" + _aRet[16] + "' AND '" + _aRet[17] + "' "
     _cQuery += CRLF + "             AND VV2.VV2_CORINT  BETWEEN '" + _aRet[20] + "' AND '" + _aRet[21] + "' "
     _cQuery += CRLF + "             AND VV2.VV2_COREXT  BETWEEN '" + _aRet[22] + "' AND '" + _aRet[23] + "' " 
-    _cQuery += CRLF + "             AND VV2.D_E_L_E_T_  = ' '
+    _cQuery += CRLF + "             AND VV2.D_E_L_E_T_  = ' ' "
 
     _cQuery += CRLF + "         JOIN " + RetSqlName("SF4") + " SF4 "
     _cQuery += CRLF + "             ON  SF4.F4_FILIAL  =  '" + FwxFilial("SF4") + "' "
@@ -972,7 +1020,17 @@ Begin Sequence
     _cQuery += CRLF + "      AND VVX.D_E_L_E_T_  = ' ' "
 
 	_cQuery += CRLF + " ORDER BY  C6_CLI, C6_LOJA, C6_PRODUTO, C6_XMODVEI, C6_XFABMOD
-    
+*/    
+
+	//Tem que estar sem chassis e sem previsão
+	_cWhere := CRLF + " 		AND SC6.C6_XFILPVR 	= ' ' "
+	_cWhere += CRLF + " 		AND SC6.C6_XCODPVR 	= ' ' "
+	_cWhere += CRLF + " 	    AND SC6.C6_CHASSI    = ' ' "  
+	//Ordem do Select 
+	_cOrderTab   := "SC6.C6_FILIAL, SC6.C6_PEDCLI, SC6.C6_ITEM, SC5.C5_CLIENTE, SC5.C5_LOJACLI, SC6.C6_PRODUTO"
+
+	_cQuery := U_XZFT19QY(_cSelect, _cOrderTab, _aRet, _cWhere, /*_cWhereAll*/, _cJoin, /*_cGroup*/)
+
 	//Realizar o Select
 	_oSay:SetText("Aguarde Selecionando registros ... Hora: "+Time() )
 	ProcessMessage()
@@ -999,7 +1057,7 @@ Begin Sequence
 		_cLoja    	:= (_cAliasPesq)->C6_LOJA
 		_cCGC 		:= (_cAliasPesq)->A1_CGC
 		_cProduto 	:= (_cAliasPesq)->C6_PRODUTO  
-		_nVlrVen  	:= (_cAliasPesq)->C6_XPRCTAB   //C6_PRCVEN
+		_nVlrVen  	:= (_cAliasPesq)->VRK_VALTAB	//C6_XPRCTAB   //C6_PRCVEN
 		_nVlrUnit  	:= (_cAliasPesq)->C6_PRUNIT
 		_cModelo 	:= (_cAliasPesq)->VRK_MODVEI //iF( !Empty((_cAliasPesq)->C6_XMODVEI), (_cAliasPesq)->C6_XMODVEI, (_cAliasPesq)->VRK_MODVEI)
 		_cFabAno 	:= (_cAliasPesq)->VRK_FABMOD //If( !Empty((_cAliasPesq)->C6_XFABMOD), (_cAliasPesq)->C6_XFABMOD, (_cAliasPesq)->VRK_FABMOD)
@@ -1015,6 +1073,7 @@ Begin Sequence
 			ProcessMessage()
 
 			SC6->(DbGoto((_cAliasPesq)->NREGSC6))
+			VRK->(DbGoto((_cAliasPesq)->NREGVRK))
 			_cMens := ""
 			//somente incluir se tiver quantidade
 			If SC6->C6_QTDVEN <= 0
@@ -1048,6 +1107,13 @@ Begin Sequence
             	SC6->C6_XSEGMOD	:= (_cAliasPesq)->VRK_SEGMOD 
             	SC6->C6_XDESSEG	:= (_cAliasPesq)->VVX_DESSEG
             	SC6->C6_XFABMOD	:= (_cAliasPesq)->VRK_FABMOD
+				SC6->C6_XPRCTAB := (_cAliasPesq)->VRK_VALTAB	//Valor de Tabela          
+				SC6->C6_XVLRPRD := (_cAliasPesq)->VRK_VALPRE  	//Valor Pretendido         
+				SC6->C6_XVLRMVT := (_cAliasPesq)->VRK_VALMOV  	//VALOR DO MOVIMENTO
+				SC6->C6_XBASST 	:= (_cAliasPesq)->VRK_XBASST	//Valor Base ICMS ST	
+        		SC6->C6_XVLRVDA  = (_cAliasPesq)->VRK_VALVDA  	//vALOR DA vENDA          
+
+
             	SC6->(MsUnLock())
 				(_cAliasPesq)->(DbSkip())
 			Endif

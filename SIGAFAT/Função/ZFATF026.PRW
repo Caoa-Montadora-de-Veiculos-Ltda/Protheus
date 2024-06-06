@@ -393,6 +393,8 @@ Local _nPos := (_cAliasZF026)->(Recno())
 Local _xRead    	:= TRIM(READVAR())
 Local _xConteudo	:= &_xRead
 Local _nQtdEmpenho	:= 0
+Local _nQtde		:= 0
+
 Local _nQtdeLib    
 Local _nQtdePed
 Local _nRegZZP
@@ -460,6 +462,8 @@ End Sequence
 //Sempre deixar atualiza com a quantidade
 If !_lRet  //Caso de problemas na atualização voltar a qtde anterior 
 	_nQtde 	:= _nQtdeLZZP
+ElseIf ValType(_nQtde) <> "N"  //pode não passar pelas definições acima
+	_nQtde := _nQtdeLib
 Endif 
 If RecLock(_cAliasZF026,.F.)
 	(_cAliasZF026)->(FieldPut(FieldPos("ZZP_QTELIB"),_nQtde))
@@ -468,7 +472,7 @@ Endif
 ZZP->( DbGoto(_nRegZZP) )
 //Grava tabela Principal pelo motivo de estar empenhando direto
 If RecLock("ZZP",.F.)
-	ZZP->(FieldPut(FieldPos("ZZP_QTELIB"),_nQtde))
+	ZZP->(FieldPut(FieldPos("ZZP_QTELIB"), _nQtde))
 	ZZP->(MsUnLock())
 Endif
 
@@ -693,13 +697,13 @@ Default _nQtdeLZZP	:= 0
 				, SC6.C6_XFABMOD
 				, SUM(SC6.C6_QTDVEN)  	AS NQTDEVEN
 				, SUM(SC6.C6_QTDEMP) 	AS NQTDEEMP
-				
 		FROM  	%Table:SC6% SC6 
 		WHERE SC6.%notDel%	
 			AND SC6.C6_FILIAL 	= %xFilial:SC6%
 			AND SC6.C6_PRODUTO  = %Exp:_cCodProd%
 			AND SC6.C6_XCODPVR 	= %Exp:_cCodPrev%
 			AND SC6.C6_CHASSI  <> ' '
+			AND SC6.C6_XFABMOD = %Exp:_cFabMod%
 		GROUP BY SC6.C6_PRODUTO, SC6.C6_XFABMOD 	
 	EndSql
 	iF (_cAlias)->(!Eof()) .and. (_cAlias)->NQTDEVEN > 0  
