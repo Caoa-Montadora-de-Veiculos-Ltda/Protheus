@@ -584,7 +584,8 @@ While (cCabAlias)->(!Eof())
                                     SC6->C6_QTDVEN, ;
                                     SC6->C6_NUM, ;
                                     SC6->C6_ITEM, ; 
-                                    SC6->C6_PEDCLI } )
+                                    SC6->C6_PEDCLI,; 
+                                    SC6->(Recno())} )
 
             Endif
 
@@ -592,7 +593,8 @@ While (cCabAlias)->(!Eof())
             cQuery += " SET C6_LOCALIZ = '" + Criavar("C6_LOCALIZ") + "' "
             cQuery += "    ,C6_CHASSI  = '" + Criavar("C6_CHASSI" ) + "' "
             cQuery += "    ,C6_NUMSERI = '" + Criavar("C6_NUMSERI") + "' "
-            cQuery += " WHERE  C6_NUM      = '" + (cCabAlias)->C6_NUM + "' "
+            cQuery += " WHERE  C6_FILIAL = '"+FwxFilial("SC6")+"' "
+            cQuery += "    AND C6_NUM      = '" + (cCabAlias)->C6_NUM + "' "
             cQuery += "    AND C6_NOTA     = '        ' "
             cQuery += "    AND C6_SERIE    = '   ' "
             cQuery += "    AND D_E_L_E_T_  = ' ' "
@@ -4506,11 +4508,13 @@ Aadd(_aPrev,{   SC6->C6_XFILPVR, ;  //01
 //DAC 09/05/2024
 */
 Static Function XZFAT9ATPV(_aPrev)
-Local _lRet         := .T.
 Local _cAliasPesq   := GetNextAlias()
+Local _lRet         := .T.
 Local _aMsg         := {} 
 Local _cMens        := ""
-Local _cObs         := ""
+Local _cStatus      := "F"  //Status a pesquisar no ZZP não poderá existir
+Local _cStatusNew   := "F"  //Status a alterar no ZZN
+Local _nOper        := 1    //Faturamento
 Local _nPos 
 Local _cFilPrev
 Local _cCodPrev
@@ -4565,53 +4569,9 @@ Begin Sequence
         _lRet := .F. 
         Break
 	EndIf
-
     //Após o Faturamento atualizar tabela ZZN
-	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
-        %NoParser%
-        WITH PREVSQL AS (   SELECT COALESCE(COUNT(ZZP.ZZP_STATUS),0) AS NTOTZZP
-		                    FROM %Table:ZZP% ZZP
-		                    WHERE   ZZP.%notDel%	 
-			                    AND ZZP.ZZP_FILIAL = %Exp:_cFilPrev%
-			                    AND ZZP.ZZP_CODPRV = %Exp:_cCodPrev% 
-		                        AND ZZP.ZZP_STATUS <> 'F'
-		                )
-        SELECT  PREVSQL.NTOTZZP
-                , ZZN.R_E_C_N_O_ AS NREGZZN
-        FROM    PREVSQL
-                , %Table:ZZN% ZZN   
-        WHERE   ZZN.%notDel% 
-            AND ZZN.ZZN_FILIAL 	= %Exp:_cFilPrev%
-			AND ZZN.ZZN_CODPRV  = %Exp:_cCodPrev%
-	EndSql
-    (_cAliasPesq)->(DbGotop())
-    If  (_cAliasPesq)->(Eof())
-        ApMsgStop("Não encontrada Previsao "+_cFilPrev+"-"+_cCodPrev+", verificar com ADM Sistemas ", "Previsão Faturamento")
-        _lRet :=  .F.    
-        Break
-    Endif    
+    XZFAT9ZZNC(_cStatus, _cStatusNew, _cFilPrev, _cCodPrev, _nOper, _aMsg, .T. /*_lMens*/)
 
-     //Preparo as mensagens obs
-    _cObs := ""
-    For _nPos := 1 To Len(_aMsg)
-        _cObs += Upper(AllTrim(_aMsg[_nPos])) + CrLf
-    Next _nPos
-   
-    ZZN->(DbGoto((_cAliasPesq)->NREGZZN))
-    If !RecLock("ZZN",.F.) 
-        Break 
-    Endif
-    //Se atuualizou todo  o ZPP posso gravar como Faturado
-    If  (_cAliasPesq)->NTOTZZP == 0
-        _cMens := "FATURAMENTO REALIZADO EM "+DtoC(Date())+" AS "+Substr(time(),1,5)+" Usuario "+RetCodUsr()  
-        ZZN->ZZN_OBS    := ZZN->ZZN_OBS +CrLf+  Upper(_cObs)
-        ZZN->ZZN_STATUS := "F"
-    Endif 
-    //na funcao XZFAT9ATPV carrego esta matriz
-    If !Empty(_cObs)
-        ZZN->ZZN_OBS := ZZN->ZZN_OBS +CrLf+  _cObs
-    Endif
-    ZZN->(MsUnlock())
 End Sequence 
 If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
@@ -4622,50 +4582,72 @@ Return _lRet
 
 /*
 //Efetuar a atualização da Previsão após o cancelamento da Nota  DAC 05/06/2024
-aPrevisao,  {   SC6->C6_XFILPVR, ;
-                SC6->C6_XCODPVR, ;
-                SC6->C6_CLI, ;
-                SC6->C6_LOJA, ;
-                SC6->C6_PRODUTO, ; 
-                SC6->C6_XFABMOD, ;
-                SC6->C6_QTDVEN, ;
-                SC6->C6_NUM, ;
-                SC6->C6_ITEM, ; 
-                SC6->C6_PEDCLI } )
+ _aPrevisao, { SC6->C6_XFILPVR, ;
+              SC6->C6_XCODPVR, ;
+              SC6->C6_CLI, ;
+              SC6->C6_LOJA, ;
+              SC6->C6_PRODUTO, ; 
+              SC6->C6_XFABMOD, ;
+              SC6->C6_QTDVEN, ;
+              SC6->C6_NUM, ;
+              SC6->C6_ITEM, ; 
+              SC6->C6_PEDCLI,; 
+              SC6->(Recno())} )
 */
 Static Function XZFAT9CPRV(_aPrevisao)
-Local _cChave := "" 
-Local _nQtde  := 0
+Local _cChave   := "" 
+Local _nQtde    := 0
+Local _aRegSC6  := {} 
 Local _nPos
-Local _nCount
+Local _cFilPrev 
+Local _cCodPrev
+Local _cCodCli 
+Local _cLoja
+Local _cCodProd
+Local _cFabMod
 
 Begin Sequence 
     //Organizo para cria uma chave e atualização para tabela ZPP
 	aSort( _aPrevisao , , , { |x,y| x[1]+x[2]+x[3]+x[4]+x[5]+x[6] > y[1]+y[2]+y[3]+y[4]+y[5]+y[6] } )  //para organiar previsão
-    For _nPos := 1 To Len(_aPrevisao)
-        _nQtde  += _aPrevisao[_nPos,7]
-        If _nPos == Len(_aPrevisao) .Or. _cChave <> _aPrevisao[_nPos,1]+_aPrevisao[_nPos,2]+_aPrevisao[_nPos,3]+_aPrevisao[_nPos,4]+_aPrevisao[_nPos,5]+_aPrevisao[_nPos,6]
-            If !Empty(_cChave)
-                _nCount := If(_nPos > 1, _nPos-1,1 )
-                XZFAT9CPV2(_nQtde, _aPrevisao[_nCount,1],_aPrevisao[_nCount,2],_aPrevisao[_nCount,3],_aPrevisao[_nCount,4],_aPrevisao[_nCount,5],_aPrevisao[_nCount,6]) //atualizar zzpp
-                _nQtde  := 0
+    //Carrego pois vai ser validado no inico
+    For _nPos := 1 To Len(_aPrevisao)   
+        If _cChave <> _aPrevisao[_nPos,1]+_aPrevisao[_nPos,2]+_aPrevisao[_nPos,3]+_aPrevisao[_nPos,4]+_aPrevisao[_nPos,5]+_aPrevisao[_nPos,6]
+            If !Empty(_cChave)  //primeira vez que efetua a carga não executar a funcionalidade
+                XZFAT9CPV2(_nQtde, _cFilPrev, _cCodPrev, _cCodCli, _cLoja, _cCodProd, _cFabMod, _aRegSC6) //atualizar zzpp
+                _nQtde      := 0
+                _aRegSC6    := {}
             Endif  
-            _cChave := _aPrevisao[_nPos,1]+_aPrevisao[_nPos,2]+_aPrevisao[_nPos,3]+_aPrevisao[_nPos,4]+_aPrevisao[_nPos,5]+_aPrevisao[_nPos,6]
+            _cChave     := _aPrevisao[_nPos,1]+_aPrevisao[_nPos,2]+_aPrevisao[_nPos,3]+_aPrevisao[_nPos,4]+_aPrevisao[_nPos,5]+_aPrevisao[_nPos,6]
+            _cFilPrev   := _aPrevisao[_nPos,1]
+            _cCodPrev   := _aPrevisao[_nPos,2]
+            _cCodCli    := _aPrevisao[_nPos,3]
+            _cLoja      := _aPrevisao[_nPos,4]
+            _cCodProd   := _aPrevisao[_nPos,5]
+            _cFabMod    := _aPrevisao[_nPos,6]
         Endif    
+        _nQtde  += _aPrevisao[_nPos,7]
+        Aadd(_aRegSC6,_aPrevisao[_nPos,11])
     Next 
+    //Tem que executar pois o ultimo sai do next sem validar chave
+    XZFAT9CPV2(_nQtde, _cFilPrev, _cCodPrev, _cCodCli, _cLoja, _cCodProd, _cFabMod, _aRegSC6) //atualizar zzpp
+
 End Sequence 
 Return Nil
 
 
 //Atualizar tabela ZZP quando do cancelamento DAC 05/06/2024
-Static Function XZFAT9CPV2(_nQtde, _cFilPrev, _cCodPrev, _cCodCli, _cLoja, _cCodProd, _cFabMod, _lMens ) //atualizar zzpp
-Local _lRet         := .T.
+Static Function XZFAT9CPV2(_nQtde, _cFilPrev, _cCodPrev, _cCodCli, _cLoja, _cCodProd, _cFabMod, _aRegSC6, _lMens ) //atualizar zzpp
 Local _cAliasPesq   := GetNextAlias()
+Local _lRet         := .T.
+Local _nOper        := 2    //Cancelamento
 Local _nCancela     := 0
-Local _cStatus      := "C"  //Cancelar
+Local _aObs         := {}
+Local _cStatus      := "C"  //Status a pesquisar no ZZP não poderá existir CANCELAR
+Local _cStatusNew   := "C"  //Status a alterar no ZZN
+Local _lDiverge     := .F.
 Local _cMens
+Local _nPos 
 Local _nCount
-Local _lDiverge
 
 Default _lMens      := .F.
 
@@ -4685,10 +4667,10 @@ Begin Sequence
  	EndSql
     (_cAliasPesq)->(DbGotop())
     If  (_cAliasPesq)->(Eof())
-        _cMens := "Não encontrada Previsao "+_cFilPrev+"-"+_cCodPrev+", verificar com ADM Sistemas "
+        _cMens := "Não encontrada Tabela ZZP Previsao "+_cFilPrev+"-"+_cCodPrev+", verificar com ADM Sistemas "
         Conout("*** ZFATF019 - XZFAT9CPV2 "+_cMens)
         If _lMens
-            ApMsgStop(_cMens, "Previsão Faturamento")
+            ApMsgStop(_cMens, "ZFATF019 - XZFAT9CPV2")
         Endif     
         _lRet :=  .F.    
         Break
@@ -4701,8 +4683,8 @@ Begin Sequence
         _lDiverge := .T.
     Endif
     _cMens :=   "Cancelamento de Nota, estornando as previsões para Canceladas em "+DtoC(Date())+" as "+SubsTr(Time(),1,5)+" Usuario "+RetCodUsr()    
-    _cMens :=   "Na funcionalidade de Cancelamento de Notas foi cancelado itens da Previsso "+_cFilPrev+"-"+_cCodPrev+" "
-    _cMens +=   "Qtde do cancelamento notas "+AllTim(Str(_nQtde))+", Qtde Previsão cancelada "+AllTim(Str(_nCancela))+" "
+    _cMens +=   "Na funcionalidade de Cancelamento de Notas foi cancelado itens da Previsso "+_cFilPrev+"-"+_cCodPrev+" "
+    _cMens +=   "Qtde do cancelamento notas "+AllTrim(Str(_nQtde))+", Qtde Previsão cancelada "+AllTrim(Str(_nCancela))+" "
     _cMens +=   If(_lDiverge,"Com divergencia quantidade cancelada maior que a da previsao ","") 
     _cMens +=   "Chave de cancelamento "+_cFilPrev+"|"+ _cCodPrev+"|"+_cCodCli+"|"+_cLoja+"|"+_cCodProd+"|"+_cFabMod+"| "
     _nCount := _nCancela
@@ -4713,7 +4695,7 @@ Begin Sequence
                 ZZP->ZZP_QTELIB -= _nCount   //BAIXO PARCIAL         
                 _cMens += "Registro "+AllTrim(Str((_cAliasPesq)->NREGZZP))+" cancelado parcialmente, valor anterior "+AllTrim(Str(ZZP->ZZP_QTELIB))    
             Else //Baixo total 
-                ZZP->STATUS     := _cStatus  //Cancela total registro
+                ZZP->ZZP_STATUS     := _cStatus  //Cancela total registro
                 _cMens += "Registro "+AllTrim(Str((_cAliasPesq)->NREGZZP))+" cancelado total, valor anterior "+AllTrim(Str(ZZP->ZZP_QTELIB))    
             Endif 
             ZZP->ZZP_OBS    := ZZP->ZZP_OBS +CrLf+ Upper(_cMens)
@@ -4726,12 +4708,138 @@ Begin Sequence
         Endif     
         (_cAliasPesq)->(DbSkip())
     EndDo
+
+    //Atualizo o SC6 pelo numero de registros do mesmo
+    For _nPos := 1 To Len(_aRegSC6)
+        SC6->(DbGoto(_aRegSC6[_nPos]))
+        If SC6->( RecLock( "SC6",.F. ))
+            SC6->C6_XFILPVR  := " "
+            SC6->C6_XCODPVR  := " "
+            SC6->(MsUnlock())
+        Endif 
+        _cMens := "Liberado Pedido "+SC6->C6_NUM+" pedido Cliente "+SC6->C6_PEDCLI+"iTEM "+SC6->C6_ITEM+" Produto "+AllTrim(SC6->C6_PRODUTO)+ " "
+        _cMens += "Devido cancelamento da Nota Fiscal conforme Previsao "+_cCodPrev+" "
+        Aadd(_aObs, _cMens)
+    Next
+End Sequence
+If Select((_cAliasPesq)) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif 
+//Chamar funcionalidade para verificar se encerrara aPrevisao ZZN
+XZFAT9ZZNC(_cStatus, _cStatusNew, _cFilPrev, _cCodPrev, _nOper, _aObs, _lMens)
+Return _lRet
+
+
+//Função para verificar os Status ZZP se estão finalizados e atualizar ZZN
+//Após o Faturamento atualizar tabela ZZN
+//Após o cancelamento de nota atualizar tabela ZZN
+//_nOper : 1=Faturamento, 2= Cancelamento de Nota, 3=Devolução de Nota
+Static Function XZFAT9ZZNC( _cStatus, _cStatusNew, _cFilPrev,_cCodPrev, _nOper, _aObs, _lMens )
+Local _cAliasPesq   := GetNextAlias()
+Local _lRet         := .T.
+Local _lAtualiza    := .T.
+Local _cObs
+Local _cOper
+Local _nPos
+
+Default _lMens      := .F.
+Default _nOper      := 0
+Default _aObs       := {}
+Default _cStatus    := ""
+Default _cStatusNew := ""
+
+Begin Sequence
+    If Empty(_cStatus) .Or. Empty(_cStatusNew) .Or. _nOper == 0
+        _cMens := "Problemas encontrados nos parametors para atualizar Previsao "+_cFilPrev+"-"+_cCodPrev+", verificar com ADM Sistemas "
+        Conout("*** ZFATF019 - XZFAT9ZZNC "+_cMens)
+        If _lMens
+            ApMsgStop(_cMens, "ZFATF019 - XZFAT9ZZNC")
+        Endif     
+        _lRet :=  .F.    
+        Break
+    Endif
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+        %NoParser%
+        WITH PREVSQL AS (   SELECT COALESCE(COUNT(ZZP.ZZP_STATUS),0) AS NTOTZZP
+		                    FROM %Table:ZZP% ZZP
+		                    WHERE   ZZP.%notDel%	 
+			                    AND ZZP.ZZP_FILIAL = %Exp:_cFilPrev%
+			                    AND ZZP.ZZP_CODPRV = %Exp:_cCodPrev% 
+		                        AND ZZP.ZZP_STATUS <> %Exp:_cStatus%
+		                )
+        SELECT  PREVSQL.NTOTZZP
+                , ZZN.R_E_C_N_O_ AS NREGZZN
+        FROM    PREVSQL
+                , %Table:ZZN% ZZN   
+        WHERE   ZZN.%notDel% 
+            AND ZZN.ZZN_FILIAL 	= %Exp:_cFilPrev%
+			AND ZZN.ZZN_CODPRV  = %Exp:_cCodPrev%
+	EndSql
+    (_cAliasPesq)->(DbGotop())
+    If  (_cAliasPesq)->(Eof())
+        _cMens := "Não encontrada Tabela ZZN Previsao "+_cFilPrev+"-"+_cCodPrev+", verificar com ADM Sistemas "
+        Conout("*** ZFATF019 - XZFAT9ZZNC "+_cMens)
+        If _lMens
+            ApMsgStop(_cMens, "ZFATF019 - XZFAT9ZZNC")
+        Endif     
+        _lRet :=  .F.    
+        Break
+    Endif    
+    //Se atuualizou todo  o ZPP ira retornar zerado posso gravar como Faturado
+    If  (_cAliasPesq)->NTOTZZP > 0
+        _lAtualiza := .F.  
+    Endif 
+    //posicionar 
+    ZZN->(DbGoto((_cAliasPesq)->NREGZZN))
+     //Preparo as mensagens obs caso seja enviado para Gravar
+    _cObs := ""
+    If Len(_aObs) > 0
+        For _nPos := 1 To Len(_aObs)
+            _cObs += CrLf + Upper(AllTrim(_aObs[_nPos])) 
+        Next _nPos
+    Endif 
+    //Informar o processo
+    _cOper := ""
+    If _nOper == 1
+        _cOper := "Faturamento"
+    ElseIf _nOper == 2
+        _cOper := "Cancelamento"
+    ElseIf _nOper == 3
+        _cOper := "Devolucao"
+    Endif
+    If !Empty( _cOper )
+        _cOper += " realizado em "+DtoC(Date())+" as "+Substr(time(),1,5)+" Usuario "+RetCodUsr()   
+        _cObs := _cOper +CrLf+ _cObs
+    Endif 
+    //Caso não conseguiu finalizar
+    If !_lAtualiza
+        _cOper := "Não foi finalizado Processo existem registros na tabela item Previsao (ZZP) em aberto"
+        _cObs := _cOper +CrLf+ _cObs
+    Endif
+
+    If !RecLock("ZZN",.F.) 
+        _lRet   := .F.
+        Break 
+    Endif
+    If !Empty(_cObs)
+        ZZN->ZZN_OBS    := AllTrim(ZZN->ZZN_OBS) +CrLf+  Upper(_cObs)
+    Endif
+    //somente finalizar se atualiza esta ok
+    If _lAtualiza 
+        ZZN->ZZN_STATUS      := _cStatusNew
+    Endif    
+    ZZN->(MsUnlock())
+
+   
 End Sequence
 If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif 
 Return _lRet
+ 
+
 
 
 //Cabeçalho

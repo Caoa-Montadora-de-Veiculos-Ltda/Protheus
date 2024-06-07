@@ -770,8 +770,8 @@ Begin Sequence
 		ElseIf SubsTr(_aCampos[_nPos],1,4) == "VRK_"
 			_cCampos += CRLF + ", "+_aCampos[_nPos]
 		Endif
-
 	Next _nPos
+	_cCampos += CRLF
 	_cCampos := "%"+_cCampos+"%"
 
 	//If  _nOpcEmp == 2
@@ -782,19 +782,34 @@ Begin Sequence
 		_cJoin 	+= " AND SC5.C5_NUM 		= SC6.C6_NUM "
 		_cJoin 	:= "%"+_cJoin+"%"
 	*/
-		_cJoin 	+=  CRLF +" JOIN " + RetSqlName("VRJ") + " VRJ "
-		_cJoin 	+=  CRLF +"		ON  VRJ.VRJ_FILIAL = '" + xFilial("VRJ") + "' "
-		_cJoin 	+=  CRLF +" 	AND VRJ.VRJ_PEDCOM = SC6.C6_PEDCLI "
-		_cJoin 	+= 	CRLF +"		AND VRJ.VRJ_STATUS in ('A','F') "
-		_cJoin 	+= 	CRLF +"		AND VRJ.D_E_L_E_T_ = ' ' "
 
-    	_cJoin 	+= CRLF + " JOIN " + RetSqlName("VRK") + " VRK "
-    	_cJoin 	+= CRLF + "     ON  VRK.VRK_FILIAL = '" + FWxFilial("VRK") + "' "
-    	_cJoin 	+= CRLF + "     AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
-    	_cJoin 	+= CRLF + "     AND VRK.VRK_ITEPED = LPad(SC6.C6_ITEM,3,'0') "
-		If !Empty(_cFabMod)
-    		_cJoin 	+= CRLF + "     AND VRK.VRK_FABMOD = '"+_cFabMod+"'"
-		Endif
+	_cJoin 	+=  CRLF +" JOIN " + RetSqlName("VRJ") + " VRJ "
+	_cJoin 	+=  CRLF +"		ON  VRJ.VRJ_FILIAL = '" + xFilial("VRJ") + "' "
+	_cJoin 	+=  CRLF +" 	AND VRJ.VRJ_PEDCOM = SC6.C6_PEDCLI "
+	_cJoin 	+= 	CRLF +"		AND VRJ.VRJ_STATUS in ('A','F') "
+	_cJoin 	+= 	CRLF +"		AND VRJ.D_E_L_E_T_ = ' ' "
+
+    _cJoin 	+= CRLF + " JOIN " + RetSqlName("VRK") + " VRK "
+    _cJoin 	+= CRLF + "     ON  VRK.VRK_FILIAL = '" + FWxFilial("VRK") + "' "
+    _cJoin 	+= CRLF + "     AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
+    _cJoin 	+= CRLF + "     AND VRK.VRK_ITEPED = LPad(SC6.C6_ITEM,3,'0') "
+	If !Empty(_cFabMod)
+    	_cJoin 	+= CRLF + "     AND VRK.VRK_FABMOD = '"+_cFabMod+"' "
+	Endif
+	_cJoin 	+= 	CRLF +"		AND VRK.D_E_L_E_T_ = ' ' "
+
+    _cJoin 	+= CRLF + " JOIN " + RetSqlName("ZZP") + " ZZP "
+    _cJoin 	+= CRLF + "     ON  ZZP.ZZP_FILIAL = C6_XFILPVR "
+    _cJoin 	+= CRLF + "     AND ZZP.ZZP_CODPRV = SC6.C6_XCODPVR " 
+    _cJoin 	+= CRLF + "     AND ZZP.ZZP_CODCLI = SC6.C6_CLI " 
+    _cJoin 	+= CRLF + "     AND ZZP.ZZP_LOJCLI = SC6.C6_LOJA " 
+    _cJoin 	+= CRLF + "     AND ZZP.ZZP_CODPRD = C6_PRODUTO " 
+	If !Empty(_cFabMod)
+    	_cJoin 	+= CRLF + "     AND ZZP.ZZP_FABMOD = '"+_cFabMod+"' "  
+	Endif
+	_cJoin 	+= 	CRLF +"		AND ZZP.D_E_L_E_T_ = ' ' "
+
+	_cJoin 	+= CRLF 
 	//Endif 
 	_cJoin 	:= "%"+_cJoin+"%"
 
@@ -824,8 +839,11 @@ Begin Sequence
 	If _nQtde > 0
 		_nRow		:= AllTrim(Str(_nQtde + 1))
 		//_nRow 		:= "%"+_nRow+"%"
-		_cWhere	+= CRLF + " AND ROWNUM 	< "+_nRow
+		_cWhere	+= CRLF + " AND ROWNUM 	<  "+_nRow
 	Endif 
+	If !Empty(_cWhere)
+		_cWhere	+= CRLF
+	Endif
 	_cWhere := "%"+_cWhere+"%"
 
 	BeginSql Alias _cAliasEmp //Define o nome do alias temporário 
