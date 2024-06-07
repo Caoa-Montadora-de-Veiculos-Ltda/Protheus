@@ -141,6 +141,7 @@ Local _cGrpTrib     := AllTrim(SuperGetMV("CMV_JSA103",.F.,"FID"))  		//Grupo de
 
 Local _cLoja
 Local _cCnPjCpf
+Local _cTamCnPj
 Local _cIERG
 Local _cEndereco
 Local _cMunicipio
@@ -177,6 +178,8 @@ Begin Sequence
 		Break
 	Endif
 
+	_cTamCnPj := Len(_cCnPjCpf)
+
 	SA1->(dbSetOrder(3))
     If SA1->( dbSeek( xFilial("SA1")+Padr( AllTrim(_cCnPjCpf), TamSX3("A1_CGC")[1] ) ) ) //Já existe o CNPJ cadastrado, somente altera
 		_cCodCli	:= SA1->A1_COD
@@ -195,11 +198,15 @@ Begin Sequence
 		cQrySA1 += " SELECT TMP.A1_COD, TMP.A1_LOJA FROM ( 											"
 		cQrySA1 += " 	SELECT * FROM " +  RetSQLName("SA1") +" SA1 								"
 		cQrySA1 += " 	WHERE SA1.A1_FILIAL = '" + FWxFilial('SA1') + "'							"
-		cQrySA1 += " 	AND SUBSTR(SA1.A1_CGC,1,8) = '" + Substring(_cCnPjCpf,1,8) + "' 			"
+		cQrySA1 += "    CASE WHEN _cTamCnPj = 08                                                    "
+		cQrySA1 += " 	    AND SUBSTR(SA1.A1_CGC,1,8) = '" + Substring(_cCnPjCpf,1,8) + "' 		"
+		cQrySA1 += " 	ELSE                                                                        "
+		cQrySA1 += " 	    AND SA1.A1_CGC = '" + _cCnPjCpf + "' 	                        	    "
+		cQrySA1 += " 	END                                                                         "
 		cQrySA1 += " 	AND SA1.D_E_L_E_T_ = ' ' 													"
 		cQrySA1 += " 	ORDER BY SA1.A1_LOJA DESC 													"
 		cQrySA1 += " )TMP 																			"
-		cQrySA1 += " WHERE ROWNUM = 1 																"
+		cQrySA1 += " WHERE ROWNUM = 1                                                               "	
 
 		// Executa a consulta.
 		DbUseArea( .T., "TOPCONN", TcGenQry(,,cQrySA1), _cAliasPesq, .T., .T. )
