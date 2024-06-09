@@ -4378,11 +4378,11 @@ Default _aCampos    := { 	"VV1.VV1_FILIAL",;
     If !Empty(Alltrim(_cNumSerie))
         _cQuery += CrLf + "         AND SBF.BF_NUMSERI      = '" + _cNumSerie + "' "
     EndIf
-    // Retirado pois ja esta sendo carregado na query o pedido veiculo VRK
 	_cQuery += CrLf + "      LEFT JOIN " + RetSqlName("VRK") + " VRK "
     _cQuery += CrLf + "          ON  VRK.VRK_FILIAL  = '" + xFilial("VRK") + "' "
     _cQuery += CrLf + "          AND VRK.VRK_CHASSI  = VV1.VV1_CHASSI "
     _cQuery += CrLf + "          AND VRK.D_E_L_E_T_ = ' ' "
+ 
     _cQuery += CrLf + "      WHERE   VV1.VV1_FILIAL      = '" + xFilial("VV1") + "' "
     //_cQuery += CrLf + "          AND VV1.VV1_CHASSI      = '" +cChassi+ "' "
     _cQuery += CrLf + "          AND VV1.VV1_SITVEI      = '0' "

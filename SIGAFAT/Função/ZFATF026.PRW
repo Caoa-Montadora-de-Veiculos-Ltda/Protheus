@@ -73,6 +73,7 @@ Begin Sequence
 	DbSelectArea(_cAliasZF026)
 	Define MsDialog _oDlgPrev Title _cTitulo From _aCoors[1], _aCoors[2] To _aCoors[3], _aCoors[4] Pixel
 		
+	_oDlgPrev:lEscClose := .F.
 	//-- Cria o conteiner
 	_oFWLayer := FWLayer():New()
 	_oFWLayer:Init( _oDlgPrev, .F.)
@@ -196,7 +197,8 @@ Begin Sequence
     //_oDlgPrev:Activate()
 	_aButtons := {}
 	Activate MsDialog _oDlgPrev On Init EnchoiceBar(_oDlgPrev,{	|| ZFATF026End(_nOpc, _cFilPrev, _cCodPrev), _oDlgPrev:End() },;
-																{||If(ZFATF026End(_nOpc, _cFilPrev, _cCodPrev, .T.),_oDlgPrev:End(), .T.)},,_aButtons)
+																{||If(ZFATF026End(_nOpc, _cFilPrev, _cCodPrev, .T.),;
+																_oDlgPrev:End(), .T.)},,_aButtons)
 
 End Sequence
 If ValType(_cAliasZF026) == "C" .And. Select((_cAliasZF026)) <> 0
@@ -272,6 +274,7 @@ Begin Sequence
     Aadd( _aCpoCab, {"ZZP", "ZZP_CODPRD"  	,.T.}) 		//cod produto
     Aadd( _aCpoCab, {"SB1", "B1_DESC"  	    ,.T.}) 		//descricao produto
     Aadd( _aCpoCab, {"ZZP", "ZZP_MODVEI"  	,.T.}) 		//modelo do veiculo
+    Aadd( _aCpoCab, {"ZZP", "ZZP_SEGMOD"  	,.T.}) 		//Segmento modelo do veiculo
     Aadd( _aCpoCab, {"ZZP", "ZZP_FABMOD"  	,.T.}) 		//Ano do veiculo
     Aadd( _aCpoCab, {"ZZP", "ZZP_QTEPED"  	,.T.}) 		//qtde pedido
     Aadd( _aCpoCab, {"ZZP", "ZZP_QTELIB"  	,.T.}) 		//qtde liberada
