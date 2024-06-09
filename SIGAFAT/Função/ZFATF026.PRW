@@ -36,7 +36,6 @@ User Function ZFATF026(_nOpc, _cFilPrev, _cCodPrev)
 Local _aArea        := GetArea()
 Local _cTitulo      := "Previsão Faturamento "
 Local _aCoors 		:= FWGetDialogSize( oMainWnd )
-Local _cAliasZF026  := ""
 Local _aEdit  		:= {}
 Local _oDlgPrev
 Local _oFWLayer
