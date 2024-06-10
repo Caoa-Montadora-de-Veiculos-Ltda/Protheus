@@ -32,6 +32,8 @@ User Function ZGFEF005()
     Local cPritDf   := ""
     Local lRet      := .F.
     Local cTpDoc    := ""
+    Local cConta    := ""
+    Local cItemCC   := ""
 
     GW4->( DbSetOrder( 1 ) ) //--GW4_FILIAL + GW4_EMISDF + GW4_CDESP + GW4_SERDF + GW4_NRDF + DTOS(GW4_DTEMIS) + GW4_EMISDC + GW4_SERDC + GW4_NRDC + GW4_TPDC
     VS1->( DbSetOrder( 3 ) ) //--VS1_FILIAL + VS1_NUMNFI + VS1_SERNFI
@@ -284,13 +286,17 @@ User Function ZGFEF005()
             lRet := !Empty(cCusto)
 
             If lRet
+                
+                cConta  := Posicione('SB1' , 1 , xFilial('SB1') + cPritDf , "B1_CONTA"  )
+                cItemCC := Posicione('SB1' , 1 , xFilial('SB1') + cPritDf , "B1_ITEMCC" )
+                
                 RecLock("GW3", .F.)
                 GW3->GW3_CC     := cCusto 
                 GW3->GW3_PRITDF := cPritDf
-                If cPritDf == "FR003"
-                    GW3->GW3_CONTA  := "5111101025" 
-                    GW3->GW3_ITEMCT := "MT"
-                EndIf
+                //If cPritDf == "FR003"
+                GW3->GW3_CONTA  := cConta  //"5111101025" 
+                GW3->GW3_ITEMCT := cItemCC //"MT"
+                //EndIf
                 GW3->(MsUnlock())
             EndIf
 
@@ -306,12 +312,15 @@ User Function ZGFEF005()
             lRet := !Empty(cPritDf)
             
             If lRet
+                cConta  := Posicione('SB1' , 1 , xFilial('SB1') + cPritDf , "B1_CONTA"  )
+                cItemCC := Posicione('SB1' , 1 , xFilial('SB1') + cPritDf , "B1_ITEMCC" )
+                
                 RecLock("GW3", .F.)
                 GW3->GW3_PRITDF := cPritDf
-                If cPritDf == "FR003"
-                    GW3->GW3_CONTA  := "5111101025" 
-                    GW3->GW3_ITEMCT := "MT"
-                EndIf
+                //If cPritDf == "FR003"
+                GW3->GW3_CONTA  := cConta  //"5111101025" 
+                GW3->GW3_ITEMCT := cItemCC //"MT"
+                //EndIf
                 GW3->(MsUnlock())
             EndIf
 

@@ -14,20 +14,19 @@
 //==================================================================================================
 User Function DPCTB102GR()
 
-	Local _cEmp    	:= FWCodEmp()
 	Local _lRet	   	:= .T.
 	Local aArea	   	:= GetArea()
 	Local aPar      := {}
 	local nOpc 		:= PARAMIXB[1]
 
-	If _cEmp == "2010" //Executa o p.e. Anapolis.
+	If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 		If Findfunction("U_CMVSAP09")
 			FwMsgRun(, { || _lRet := U_CMVSAP09(nOpc) },,"Aguarde... Grava Lançamento Contábil para ser enviado ao SAP...")
 		EndIf
 		If FindFunction("U_CMVSAP08") .and. FunName() <> "CMVCTBROF" //Ignorar o envio Para o SAP quando for rateio, será enviado peloo JOB posteriormente
 			FwMsgRun(, { || U_CMVSAP08( aPar ) },,"Aguarde... Executando a Integração Contábil com SAP...")
 		EndIf
-	Else
+	ElseIf ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Franco da Rocha | Caoa
 		If Findfunction("U_ZSAPF009")
 			FwMsgRun(, { || _lRet := U_ZSAPF009(nOpc) },,"Aguarde... Grava Lançamento Contábil para ser enviado ao SAP...")
 		EndIf

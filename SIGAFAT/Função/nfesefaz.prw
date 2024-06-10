@@ -505,9 +505,8 @@ Private lCustoEntr	:= .F.	//Tratamento para atender o DECRETO Nº 35.679, de 13 d
 Private lDifal		:= .F.
 Private lDifer		:= .F.
 Private lTagProduc	:= .F.
-Private _cEmp  	  	:= FWCodEmp()
 
-If _cEmp == "2010" //Executa o p.e. Anapolis.
+If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 	lPe01Nfe := ExistBlock("ZCMV_NFESEFAZ")
 Else
 	lPe01Nfe := ExistBlock("ZCSP_NFESEFAZ")
@@ -2552,7 +2551,10 @@ If cTipo == "1"
 							cMunPres := ConvType(aUF[aScan(aUF,{|x| x[1] == aDest[09]})][02]+aDest[07])
 						EndIf
 						// Tags xPed e nItemPed (controle de B2B) para nota de saída
-						If SC6->(FieldPos("C6_NUMPCOM")) > 0 .And. SC6->(FieldPos("C6_ITEMPC")) > 0
+						//Ajuste realizado para atender a venda dos HR para a HMB
+						If AllTrim(SC6->C6_TES) == '802' .And. AllTrim(SC6->C6_CLI) == '000008' .And. AllTrim(SC6->C6_LOJA) == '05'
+							aadd(aPedCom,{"5500012312","10"})
+						ElseIf SC6->(FieldPos("C6_NUMPCOM")) > 0 .And. SC6->(FieldPos("C6_ITEMPC")) > 0
 							If !Empty(SC6->C6_NUMPCOM) .And. !Empty(SC6->C6_ITEMPC) 
 								aadd(aPedCom,{SC6->C6_NUMPCOM,SC6->C6_ITEMPC})
 							Else
@@ -2561,6 +2563,8 @@ If cTipo == "1"
 						Else
 							aadd(aPedCom,{})
 						EndIf
+
+						
 						
 						//Conforme Decreto RICM, N 43.080/2002 valido somente em MG deduzir o
 						//imposto dispensado na operação
@@ -2746,7 +2750,13 @@ If cTipo == "1"
 									cMsgFci	:= "Resolucao do Senado Federal nº 13/12"
 									cInfAdic  += cMsgFci + ", Numero da FCI " + Alltrim((cAliasSD2)->D2_FCICOD) + "."
 								EndIf
-								
+							//Ajuste realizado para atender a venda dos HR para a HMB
+							ElseIf AllTrim((cAliasSD2)->D2_TES) == '802' .And. AllTrim((cAliasSD2)->D2_CLIENTE) == '000008' .And. AllTrim((cAliasSD2)->D2_LOJA) == '05'
+								If AllTrim((cAliasSD2)->D2_COD) $ 'HEH76B858DBLEESWAS'
+
+									aadd(aFCI,{"D4746E77-0A66-4782-B107-864BBEBE3A68"}) 
+									
+								EndIf
 							Else
 								aadd(aFCI,{})
 							EndIf
@@ -3703,7 +3713,7 @@ If cTipo == "1"
 
 						// Tratamento para que o valor de PISST, COFINSST sejam somados ao valor total da nota.
 
-						If _cEmp == "2010" //Executa Montadora.
+						If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 							lSomaPISST	  := Len(aPISST[1]) >= 7 .And. aPISST[1,7] == "1" .And. !retNT2005()
 							lSomaCOFINSST := Len(aCOFINSST[1]) >= 7 .And. aCOFINSST[1,7] == "1" .And. !retNT2005()
 						Else
@@ -3803,7 +3813,7 @@ If cTipo == "1"
 							nValBse += SF3->F3_VALOBSE
 							SF3->(DbSkip ())
 	   				EndDo
-					If _cEmp == "2010" //Executa Montadora.		
+					If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 						If !SF2->F2_DESCZFR == 0 .or. ( lInfAdZF .and. nValBse > 0 )//Desnecessario seek redundante na SF3 pois o campo F2_DESCZFR ja possui os valores de ZFR de toda a venda
 							If Len(cMensFis) > 0 .And. SubStr(cMensFis, Len(cMensFis), 1) <> " "
 							cMensFis += " "
@@ -4658,7 +4668,7 @@ Else
 				cField  +=",D1_FCICOD"						    
 			EndIF
 			
-			If _cEmp <> "2010" //Executa o p.e. para CaoaSp.
+			If !( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 				If SD1->(ColumnPos("D1_XCASE"))<>0
 					cField  +=",D1_XCASE"						    
 				EndIF
@@ -6276,7 +6286,7 @@ Else
 				*/
 				aTotal[01] += (cAliasSD1)->D1_DESPESA + nIcmsST + nCrdPres + If(retNT2005(), 0, (cAliasSD1)->D1_VALPS3 + (cAliasSD1)->D1_VALCF3)
 												
-				If _cEmp == "2010" //Executa Montadora.
+				If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 					lSomaPISST	  := Len(aPISST[1]) >= 7 .And. aPISST[1,7] == "1" .And. !retNT2005()	//retNT2005()
 					lSomaCOFINSST := Len(aCOFINSST[1]) >= 7 .And. aCOFINSST[1,7] == "1" .And. !retNT2005()	//retNT2005()
 				Else
@@ -6446,7 +6456,7 @@ IF lPe01Nfe
 
 	aParam := {aProd,cMensCli,cMensFis,aDest,aNota,aInfoItem,aDupl,aTransp,aEntrega,aRetirada,aVeiculo,aReboque,aNfVincRur,aEspVol,aNfVinc,aDetPag,aObsCont,aProcRef,aMed,aLote}
 
-	If _cEmp == "2010" //Executa o p.e. Anapolis.
+	If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 		aParam := ExecBlock("ZCMV_NFESEFAZ",.F.,.F.,aParam)
 	Else
 		aParam := ExecBlock("ZCSP_NFESEFAZ",.F.,.F.,aParam)

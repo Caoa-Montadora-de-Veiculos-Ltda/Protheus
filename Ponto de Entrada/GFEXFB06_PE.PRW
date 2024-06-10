@@ -8,6 +8,9 @@ Criar variável
 /*/
 User Function GFEXFB06()
 
-	Public _nQtdG := 0
+	Public _nQtdG  := 0
+	Public _nTRT   := 0
+	Public _nPasso := 0
+	Public _nDif   := SUPERGETMV("CMV_GEN004",.T.,31.32)
 
 Return()

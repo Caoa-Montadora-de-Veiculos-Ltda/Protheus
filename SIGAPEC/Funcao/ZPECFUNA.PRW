@@ -3497,9 +3497,10 @@ User Function XVERCANFe( _cDoc, _cSerie,  _cCli,  _cLoja, _cMens)
 			Break
 		Endif	
 		//tem que estar nestes status para cancelar
-		If  !SF2->F2_FIMP $ "T_S" //verificacao apenas da especie como SPED e notas que foram transmitidas ou impressao DANFE
+		If  !(SF2->F2_FIMP) $ "D|N|S" //verificacao apenas da especie como SPED e notas que foram transmitidas ou impressao DANFE
+			//If  !SF2->F2_FIMP $ "D|T|S" //verificacao apenas da especie como SPED e notas que foram transmitidas ou impressao DANFE
 			_lRet	 := .F.
-			_cMens 	 := "NFe "+ _cDoc +" serie "+ _cSerie +" do Cliente "+ _cCli +" loja "+ _cLoja +" não possui status para excluisão, Status atual"+If(Empty(SF2->F2_FIMP),"não enviada [",SF2->F2_FIMP)+"] !"						
+			_cMens 	 := "NFe "+ _cDoc +" serie "+ _cSerie +" do Cliente "+ _cCli +" loja "+ _cLoja +" n�o possui status para exclus�o, Status atual: "+If(Empty(SF2->F2_FIMP),"n�o enviada [ ",SF2->F2_FIMP)+" ] !"						
 			Break  //não é NFE e ou ainda não foi transmitida posso sair
 		Endif
 		If !Empty(SF2->F2_CODNFE) .Or. !Empty(SF2->F2_CHVNFE)	
@@ -3741,17 +3742,25 @@ User Function zSaldoWis(_cProduto, _cMarca, _cArmazem)
 	cQryWis += " FROM " + _cConectWis + " ESTWIS "
     cQryWis += " WHERE RTRIM(LTRIM(ESTWIS.CD_PRODUTO)) = '" + AllTrim(_cProduto) + "' "
 
-	If AllTrim(_cMarca) $ "HYU_SBR"
-    	cQryWis += " AND CD_EMPRESA = 1006 " //-- HYU SBR
-	ElseIf AllTrim(_cMarca) $ "CHE"  
-    	cQryWis += " AND CD_EMPRESA = 1002 " //-- CHE
+    If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+   		If AllTrim(_cMarca) =="CHE"
+			cQryWis += " AND ESTWIS.CD_EMPRESA = 1002 "
+        ElseIf AllTrim(_cMarca) == "SBR"
+			cQryWis += " AND ESTWIS.CD_EMPRESA = 1006 "
+        ElseIf AllTrim(_cMarca) =="HYU"
+            cQryWis += " AND ESTWIS.CD_EMPRESA = 1006 "
+        EndIf
+    ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
+    	If AllTrim(_cMarca) =="HYU"
+        	cQryWis += " AND ESTWIS.CD_EMPRESA = 1008 "
+        EndIf
 	EndIf
  	
 	If _lVlLocWis	
 		If _cArmazem == "01" //BARUERI
-			cQryWis += " AND ARMAZEM = 'BAR' " //-- Armazenagem BARUERI.
+			cQryWis += " AND ESTWIS.ARMAZEM = 'BAR' " //-- Armazenagem BARUERI.
 		ElseIf _cArmazem == "11" //FRANCO DA ROCHA
-			cQryWis += " AND ARMAZEM = 'FDR' " //-- Armazenagem FRANCO DA ROCHA
+			cQryWis += " AND ESTWIS.ARMAZEM = 'FDR' " //-- Armazenagem FRANCO DA ROCHA
 		EndIf
 	Endif
  
@@ -5153,4 +5162,3 @@ Local _aArea := GetArea()
     //SetFunName(_cFunName)
 RestArea(_aArea)
 Return Nil
-       

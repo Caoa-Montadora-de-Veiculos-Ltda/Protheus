@@ -35,11 +35,7 @@ User Function ZPECF028(_cProduto)
     Private cTitulo	   := "Gerenciamento de BOs"
     Private aRotina    := MenuDef() 
 
-    IF FWCodEmp() <> '2020' //Verificar Empresa Barueri
-	    RETURN Nil
-	ENDIF
-
-	IF FWFilial() <> '2001' //Verificar Filial Barueri
+    IF !( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 	    RETURN Nil
 	ENDIF
 

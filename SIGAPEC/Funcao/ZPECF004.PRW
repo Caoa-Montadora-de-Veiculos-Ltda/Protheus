@@ -9,7 +9,7 @@ Local  _cCodItem    := ""                        // Substr(M->VS3_CODITE,1,23)
 //Local  _cAtivo		:= '1'
 Local  _nRet        := 0 //IF(INCLUI, M->VS3_VALPEC, VS3->VS3_VALPEC)
 
-IF FWCodEmp() = '2020' .AND. FWFilial() = '2001'
+IF ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 
 	IF (Upper(FunName()) <> "OFIOC520")
 		

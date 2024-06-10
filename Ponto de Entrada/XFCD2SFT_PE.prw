@@ -14,9 +14,7 @@ Obs......:
 */
 User Function XFCD2SFT()
 
-	Local _cEmp  := FWCodEmp()
-
-	If _cEmp == "2010" //Executa o p.e. somente para Anapolis.
+	If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 		zFMontadora()
 	EndIf
 

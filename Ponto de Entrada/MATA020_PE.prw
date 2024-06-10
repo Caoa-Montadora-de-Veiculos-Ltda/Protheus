@@ -13,11 +13,10 @@ Uso......:
 */
 User Function CUSTOMERVENDOR()
 
-	Local _cEmp    := FWCodEmp()
 	Local _lRet	  := .T.
 	Local aArea	  := GetArea()
 
-	If _cEmp == "2010" //Executa o p.e. Anapolis.
+	If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 		_lRet := zMontadora()
 	Else
 		_lRet := zCaoaSp() //Executa o p.e. CaoaSp
@@ -85,7 +84,7 @@ Static Function zCaoaSp()
     If cIdPonto == 'FORMCOMMITTTSPOS'
 		If nOpcx == 3  .or. nOpcx == 4 .or. nOpcx == 5   //Inclusão ou Alteração Exclusão
            	
-        	IF FWCodEmp() = '2020' .AND. FWFilial() = '2001'
+        	IF ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 			    U_ZF10GENSAP("SA2",M->A2_COD+M->A2_LOJA,"A2_XCDSAP",nOpcx)
 		        U_ZWSR014( M->A2_COD, M->A2_LOJA )
 			EndIf

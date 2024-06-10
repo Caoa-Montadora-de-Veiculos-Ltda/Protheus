@@ -13,13 +13,12 @@ No Parametro informar no parâmetro MV_NFAPROV o número do grupo de aprovação par
 
 User Function  A103BLOQ()
    
-   Local _cEmp    := FWCodEmp()
    Local _lRet	   := PARAMIXB[1] 
    Local aArea	   := GetArea()
 
-   If _cEmp == "2010" //Executa o p.e. Anapolis.
+   If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
       _lRet	   := zMontadora()
-   Else
+   ElseIf ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
       _lRet  := zCaoaSp() //Executa o p.e. Barueri
    EndIf
 

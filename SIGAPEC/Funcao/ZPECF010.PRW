@@ -624,6 +624,10 @@ Begin Sequence
 				//_cCodTes := _cCodTesMVA
 			//EndIf 
 			//localizar sittrib
+
+			SB1->( DbSetOrder(1))
+			SB1->( DbSeek(XFilial("SB1")+_cCodProd) )
+			
 			SF4->( DbSetOrder(1) )		//F4_FILIAL + F4_CODIGO
 			If !Empty(_cCodTes) .and. SF4->( DbSeek(xFilial("SF4") + _cCodTes) )
 				_cSitTrib := SubsTr(SB1->B1_ORIGEM,1,1)+SubsTr(SF4->F4_SITTRIB,1,2)

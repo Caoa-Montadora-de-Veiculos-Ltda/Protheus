@@ -26,7 +26,6 @@ Historico:
 
 User Function MT089CD()//As variaveis foram carregada com paramixb somente para verificar o conteudo original.
 
-	Local _cEmp  	:= FWCodEmp()
 	Local _aRet 	:= {}
 	
 //PARAMIXB[1] //Condicao que avalia os campos do SFM
@@ -35,7 +34,7 @@ User Function MT089CD()//As variaveis foram carregada com paramixb somente para 
 //PARAMIXB[4] //Conteudo a ser acrescentado no array
 //PARAMIXB[6]  //Tipo de Operação
 
-	If _cEmp == "2010" //Executa o p.e. somente para Anapolis.
+	If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 		_aRet := zFMontadora()
     Else
         //Retorna os valores padrões quando Barueri

@@ -139,6 +139,13 @@ User Function ZPECF008()
 		_cAglutina 	:= ""
 		_aMensAglu	:= {}
 		_cObsPrc    := ""
+
+		If ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
+			If ( AllTrim(_aRet[10]) == "CHE" .Or. AllTrim(_aRet[10]) == "SBR" )
+				Help( , ,OemToAnsi(STR0028),,"Marca CHE/SBR bloqueada na empresa 90 | HMB",4,1) //Atenção / Necessário informar os parâmetros 
+				Break 
+			EndIf
+		EndIf
 		//Carregar processo
 		If _lJob
 			ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _cLocal,/*indica FDR*/ , @_cObsPrc )

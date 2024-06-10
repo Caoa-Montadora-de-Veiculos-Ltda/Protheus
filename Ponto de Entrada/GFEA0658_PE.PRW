@@ -12,9 +12,8 @@ quando a chamada for realizada pela rotina GFEA067 - Integrar Doc Frete
 */
 User Function GFEA0658()
 	Local cRet      := ""
-	Local _cEmp		:= FWCodEmp()
 
-	If _cEmp == "2020" //Executa o p.e. Anapolis.
+	If ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
         /* A utilização deste PE foi necessaria porque a rotina GFEA067 não aciona o 
         modelo GFEA065 inviabilizando a utilização do PE MVC GFEA065_PE */
         If FWIsInCallStack("GFEA067") 	

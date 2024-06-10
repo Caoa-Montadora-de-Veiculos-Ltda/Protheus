@@ -48,19 +48,9 @@ Private mv_par04    := " "
 Private mv_par05    := " "
 Private mv_par06    := " "
 
-IF FWCodEmp() <> '2020' 
+IF !( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
    RETURN Nil
 ENDIF
-
-IF FWFilial() <> '2001'
-   RETURN Nil
-ENDIF
-
-//ValidPerg(_cPerg)
-
-//if !Pergunte(_cPerg,.T.)
-//	Return
-//endif
 
 //旼컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴커
 //� Envia controle para a funcao SETPRINT                        �

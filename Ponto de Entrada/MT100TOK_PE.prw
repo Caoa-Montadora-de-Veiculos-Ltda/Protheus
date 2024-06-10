@@ -17,22 +17,17 @@
 
 User Function MT100TOK()
 
-	Local _cEmp    := FWCodEmp()
 	Local _lRet	  := .T.
 	Local aArea	  := GetArea()
 
-	If _cEmp == "2020" //Executa o p.e. Anapolis.
+	If ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 
 		Begin Sequence
 
-			IF FWFilial() = '2001'
-
-				//Verificar validade Inmetro
-				If FunName() = "MATA103"
-					_lRet := U_ZPECF005()
-				Endif
-
-			ENDIF
+			//Verificar validade Inmetro
+			If FunName() = "MATA103"
+				_lRet := U_ZPECF005()
+			Endif
 
 		End Sequence
 	EndIf

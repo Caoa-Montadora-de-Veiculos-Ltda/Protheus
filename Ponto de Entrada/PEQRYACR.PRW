@@ -14,14 +14,13 @@
 /*/	
 User Function PEQRYACR()
     
-    Local _cEmp		        := FWCodEmp()
 	Local aArea		        := GetArea()
     Private cAliasFiltro    := ""
     Private cQuery          := ""
     Private cCliente        := ""
     Private cLoja           := ""
 
-    If _cEmp == "2020" //Executa o p.e. Anapolis.
+    If ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 
         cQuery := U_ZPECF018()
     

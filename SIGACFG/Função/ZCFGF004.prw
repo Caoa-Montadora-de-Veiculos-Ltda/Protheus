@@ -434,17 +434,20 @@ Static function ZUpdTable()
 Local aTabelas  := {}
 Local _cUpdate  := " "
 Local nAtual    := 0
-Local _cEmp    := FWCodEmp()
 
-If _cEmp == "2010" //Executa o p.e. Anapolis.
+If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
     //Adiciona as tabelas que irão sofrer o pack
     aAdd(aTabelas, "SA1010")
     aAdd(aTabelas, "SA2010")
     aAdd(aTabelas, "SA4010")
-Else
+ElseIf ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Franco da Rocha | Caoa
     aAdd(aTabelas, "SA1020")
     aAdd(aTabelas, "SA2020")
     aAdd(aTabelas, "SA4020")
+ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //Empresa Franco da Rocha | Hyundai
+    aAdd(aTabelas, "SA1900")
+    aAdd(aTabelas, "SA2900")
+    aAdd(aTabelas, "SA4900")
 EndIf
 
 ProcRegua(Len(aTabelas))
