@@ -27,8 +27,8 @@ User Function zSpedXML(cDocumento, cSerie, cArqXML, lMostra)
     Local oWebServ
     Local cIdEnt       := RetIdEnti()
     Local cTextoXML    := ""
-    Default cDocumento := "000123517"
-    Default cSerie     := "9"
+    Default cDocumento := "000502204"
+    Default cSerie     := "5"
     Default cArqXML    := GetTempPath()+"arquivo_"+cSerie+cDocumento+".xml"
     Default lMostra    := .T.
         
