@@ -106,7 +106,7 @@ Begin Sequence
         Break
 	Endif
 	*/
-	//Verificar se existe cadastro Gornecedor , o Genérico não sendo 
+	//Verificar se existe cadastro fornecedor , o Genérico não sendo 
 	SA2->(DbSetOrder(3))  //FILIAL + CGC
 	// Valida os dados do oJson
 	If !SA2->(DbSeek(FWxFilial("SA2")+_cResp))  //.And. _cResp <> STRZero(0,8)  //Deixar passar com tudo zero para validaçoes
@@ -138,6 +138,7 @@ Local _lNovo    	:= .T.
 Local _cCodSegmento := AllTrim(SuperGetMV("CMV_JSA101",.F.,"06"))  			//"06 - PADRÃO"  //Código do Segmento Cliente
 Local _cConta 		:= AllTrim(SuperGetMV("CMV_JSA102",.F.,"1120101001"))  	//Conta Contabil Padrão
 Local _cGrpTrib     := AllTrim(SuperGetMV("CMV_JSA103",.F.,"FID"))  		//Grupo de Tributação Padrão
+Local _cWhere		:= ""
 
 Local _cLoja
 Local _cCnPjCpf
@@ -173,7 +174,7 @@ Begin Sequence
 		Break
 	Endif
 
-	If Empty(_cCnPjCpf)
+	If Empty(_cCnPjCpf) .Or. Len(_cCnPjCpf) < 8
 		U_ZRETMsgJson("cnpjcpf","CNPJ e CPF do Cliente nao informado")
 		Break
 	Endif
@@ -193,7 +194,7 @@ Begin Sequence
 		If Select( (_cAliasPesq) ) > 0
 			(_cAliasPesq)->(DbCloseArea())
 		EndIf
-
+		/*
 		cQrySA1 := ""
 		cQrySA1 += " SELECT TMP.A1_COD, TMP.A1_LOJA FROM ( 											"
 		cQrySA1 += " 	SELECT * FROM " +  RetSQLName("SA1") +" SA1 								"
@@ -213,6 +214,25 @@ Begin Sequence
 
 		DbSelectArea((_cAliasPesq))
 		(_cAliasPesq)->(dbGoTop())  
+		*/
+		
+		_cWhere := ''
+		If Len(_cCnPjCpf) < 14
+			_cWhere := "AND SA1.A1_CGC = '"+_cCnPjCpf+"' "
+		Else 
+			_cWhere := "AND SUBSTR(SA1.A1_CGC,1,8) = '"+SubsTr(_cCnPjCpf,1,8)+"' "
+		Endif 
+		_cWhere := "%"+_cWhere+"%"
+		BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+			SELECT 	SA1.A1_COD 
+					,MAX(SA1.A1_LOJA) AS LOJA
+			FROM %Table:SA1% SA1		
+			WHERE 	SA1.%notDel% 
+				AND	SA1.A1_FILIAL 	=  %xFilial:SA1% 
+				%Exp:_cWhere%
+			GROUP BY A1_COD
+		EndSql 	
+		//	SUBSTR(SA1.A1_CGC,1,8) = %Exp:_cPesqCnpj%
 
 		If (_cAliasPesq)->(Eof()) 	
 			_cCodCli    := GetSxeNum("SA1","A1_COD")
@@ -220,15 +240,13 @@ Begin Sequence
 		Else 
 			//SA1->(DbGoto((_cAliasPesq)->NREGSA1))
 			_cCodCli	:= (_cAliasPesq)->A1_COD
-			_cLoja		:= Soma1((_cAliasPesq)->A1_LOJA)	
+			_cLoja		:= Soma1((_cAliasPesq)->LOJA)	
 			_cBloqueio  := "1"
 		Endif
-
 		_cBloqueio  := "1"
 		_lNovo      := .T.
 		_cContrib   := "1"   //Verificar se é exportação testar quem é contribuinte 
-
-		(_cAliasPesq)->(DbCloseArea())
+		//(_cAliasPesq)->(DbCloseArea())
 	EndIf
 
 	_cCnPjCpf	:= AllTrim(_oJson:GetJsonText("cnpjcpf"))  
@@ -369,7 +387,10 @@ Else
 		Aadd(_aMsg,_aMsgRet[_nPos,2])
 	Next
 Endif 
-
+If Select((_cAliasPesq)) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif 
 Return _lRet 
 
 //Valida campos enviados no REST

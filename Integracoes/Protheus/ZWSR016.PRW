@@ -24,7 +24,7 @@ R  - resT OU W WebServer
 010- Sequencial
 /*/
 
-WSRESTFUL ZWSR016 DESCRIPTION "Integração Cadastro de Clientes" FORMAT APPLICATION_JSON 
+WSRESTFUL ZWSR016 DESCRIPTION "Integração Cadastro de Clientes !" FORMAT APPLICATION_JSON 
 	WSMETHOD POST ; 
 	        DESCRIPTION "Incluir Cadastro de Clientes";
 	        WSSYNTAX "/ZWSR016"
@@ -55,7 +55,7 @@ Begin Sequence
 	_cUser 	:= AllTrim( superGetMv( "CAOA_RES01"	, , ""	) )	// Usuario para autenticacao no WS 
 	_cPass 	:= AllTrim( superGetMv( "CAOA_RES02"	, , ""	) )	// Senha para autenticao no WS 
 	If Empty(_cUser) .Or. Empty(_cPass)
-		_aRet := {302,"Nao Autorizado Parametros"}
+		_aRet := {302,"Nao Autorizado [Parametros]"}
 	Else
 		 _cChave := _cUser+":"+_cPass
 		If _cChave == Decode64(_cAuthorization)
