@@ -96,7 +96,7 @@ User Function ZFATF014(_cCliFat, _cTpCred, _cLoja, _lZera)
 			EndIf
 		End Sequence
 		  
-		MsgInfo("Rotina lockada") //Retirar essa linha antes de subir em produção.
+		//MsgInfo("Rotina lockada") //Retirar essa linha antes de subir em produção.
 
 		AADD(_aRet, _cRet)
 		AADD(_aRet, _nValAtr)

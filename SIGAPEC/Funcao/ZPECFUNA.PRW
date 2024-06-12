@@ -3375,7 +3375,7 @@ User Function XMOVA261(_cNumOrc, _cCodProd, _cArmorig, _cArmdes, _nQtde, _nRegvs
 		aadd(_aLinha,{"D3_DTVALID"	, ''						, Nil}) //data validade Destino
 		aadd(_aLinha,{"D3_ITEMGRD"	,""							, Nil})	//Item Grade 
 
-	/*
+		/*
 		aadd(_aLinha,{"D3_NUMLOTE"	, ""						, Nil}) //sublote destino
 		aadd(_aLinha,{"D3_NUMSEQ"	, ""						, Nil}) // Numero sequencia D3_NUMSEQ
 
@@ -3395,7 +3395,7 @@ User Function XMOVA261(_cNumOrc, _cCodProd, _cArmorig, _cArmdes, _nQtde, _nRegvs
 		aadd(_aLinha,{"D3_CC"		, cCC						, Nil}) //centro custo produto 
 
 		aadd(_aLinha,{"D3_STATUS"	,"SERVICO NAO EXECUTADO"	, Nil}) //SATATUS registro
-	*/
+		*/
 		aAdd(_aAuto, _aLinha)
 
 		_nOpcAuto := 3   //Inclusao

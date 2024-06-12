@@ -172,6 +172,7 @@ User Function ZPECF008()
 		_aMensAglu	:= {}
 
 		//Início - OneGate001 - nova empresa 90 | HMB
+		/*
 		If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
 			If AllTrim(_aRet[10]) == "HYU" //Não Pode Hyundai
 				Help( , ,OemToAnsi(STR0028),,"Marca HYU bloqueada na empresa 02 | Franco da Rocha",4,1) //Atenção / Necessário informar os parâmetros 
@@ -183,6 +184,7 @@ User Function ZPECF008()
 				Break 
 			EndIf
 		EndIf
+		*/
 		//Fim - OneGate001 - nova empresa 90 | HMB
 		//Carregar processo
 		For _nPos := 1 To Len(_aArmazem)
