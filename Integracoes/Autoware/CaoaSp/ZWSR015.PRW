@@ -171,8 +171,9 @@ Valida os dados do oJson
 @type function
 /*/
 Static Function ValidOJson(cJson, _cDoc, _cSerie)
-Local _cQuery := ' '
-Local qryNF   := ' '
+Local qryNF     := ' '
+Local _cQuery   := ' '
+Local _lHmb     := AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1"
 
     qryNF := GetNextAlias()
 
@@ -210,7 +211,11 @@ Local qryNF   := ' '
         IF UsaColaboracao("1")
             cXmlNf:= XML_COL((qryNF)->RECF2)
         Else
-            cXmlNf:= fConsXml((qryNF)->F2_DOC, (qryNF)->F2_SERIE, (qryNF)->F2_EMISSAO, (qryNF)->A1_CGC)
+            If _lHmb
+                cXmlNf := MProcDanfe( _oSay )
+            Else      
+                cXmlNf := fConsXml((qryNF)->F2_DOC, (qryNF)->F2_SERIE, (qryNF)->F2_EMISSAO, (qryNF)->A1_CGC)
+            Endif
         EndIF
 
         //U_CAOA_MONITOR( cFilant  ,cRet,'001','004',cErro, Alltrim(qryNF->F2_DOC+qryNF->F2_SERIE) ,'0',cSoap ,qryNF->RECF2)
@@ -268,6 +273,217 @@ Local cqxml  := GetNextAlias()
     Endif 
 
 Return(cXMLnf)
+
+
+/////////////////////////====================
+
+/*/{Protheus.doc} MProcDanfe
+Processar a Danfe e enviar e-mail
+@author 
+@since 
+@version 1.0
+@Obs
+@History
+/*/
+Static Function MProcDanfe( _oSay )
+Local nA         	:= 0
+//Local cMensagem  	:= ""
+Local cDir       	:= SuperGetMV('MV_RELT',,"\SPOOL\")
+Local cNomeArquivo  := ""
+//Local _aEnvia		:= {}
+Local _lRet 
+
+Private cPegaXml   := ""  //Obtido dentro da rotina da Danfe (danfeii.prw - PrtNfeSef). tem que existir uma variavel Private nestga função
+Private cXMensagem := ""
+
+Begin Sequence
+    If  FindFunction("ColUsaColab")
+        lUsaColab := ColUsaColab("1")
+    EndIf
+    //
+    XSpedDanfe(0/*nTipo*/, 2/*nPar*/, @cNomeArquivo, @cDir)
+    If  !File(cDir + cNomeArquivo + ".pdf")
+    	Do  While (++nA < 5)
+        	Sleep(1000)  //espera pelo pdf
+        	If  File(cDir + cNomeArquivo + ".pdf")
+            	Exit
+        	EndIf
+    	EndDo
+	Endif
+    If  !( File(cDir + cNomeArquivo + ".pdf") )
+		_cMens := If(!Empty(cXMensagem), cXMensagem, "Problemas para gerar o arquivo "+cNomeArquivo+" na pasta "+cDir+" ref. a NF/SERIE  "+SF2-F2_DOC+"/"+SF2->F2_SERIE+ " ! ")
+		_lRet := .F.
+        Break
+    EndIf
+
+End Sequence
+Return cPegaXml
+
+
+
+/*/{Protheus.doc} XSpedDanfe
+Adaptado para gerar o pdf da Danfe via job.
+@author Antonio C Ferreira
+@since 24/06/2021
+@version 1.0
+Obs
+History
+/*/
+STATIC Function XSpedDanfe(nTipo, nPar, cFilePrint, cDir, _cPasta)
+Local cIdEnt 		:= ""
+Local aIndArq   	:= {}
+Local aDevice  		:= {}
+Local cSession  	:= GetPrinterSession()
+//Local nRet 			:= 0
+Local lUsaColab		:= ColUsaColab("1")
+local cBarra		:= ""
+local nX 			:= 0
+local lJob			:= .T. //isBlind()
+local lDanfeII		:= findfunction("u_PrtNfeSef")
+local lDanfeIII		:= findfunction("u_DANFE_P1")
+local cMsgVld		:= ""
+Local oDanfe
+Local oSetup
+
+Default nTipo		:= 0
+Default nPar		:= 0
+Default cFilePrint	:= ""
+Default cDir 		:= SuperGetMV('MV_RELT',,"\SPOOL\")
+
+Private lNaoPreview := .T.  //Para nao abrir o pdf.
+Private oXTemLog    := Nil
+
+	/*
+	If findfunction("U_DANFE_V") .and. if(lJob, nPar == 1, .T.)
+		nRet := U_Danfe_v()
+	Elseif findfunction("U_DANFE_VI") .and. if(lJob, nPar == 2, .T.)// Incluido esta validaþÒo pois o cliente informou que nÒo utiliza o DANFEII
+		nRet := U_Danfe_vi()
+	EndIf
+	*/
+	AADD(aDevice,"DISCO") // 1
+	AADD(aDevice,"SPOOL") // 2
+	AADD(aDevice,"EMAIL") // 3
+	AADD(aDevice,"EXCEL") // 4
+	AADD(aDevice,"HTML" ) // 5
+	AADD(aDevice,"PDF"  ) // 6
+
+	cIdEnt := RetIdEnti(lUsaColab)
+	cFilePrint := "DANFE_"+AllTrim(SF2->F2_DOC)+Dtos(MSDate())+StrTran(Time(),":","")
+	nLocal       	:= If(fwGetProfString(cSession,"LOCAL","SERVER",.T.)=="SERVER",1,2 )
+	nOrientation 	:= If(fwGetProfString(cSession,"ORIENTATION","PORTRAIT",.T.)=="PORTRAIT",1,2)
+	cDevice     	:= If(Empty(fwGetProfString(cSession,"PRINTTYPE","SPOOL",.T.)),"PDF",fwGetProfString(cSession,"PRINTTYPE","SPOOL",.T.))
+	nPrintType      := aScan(aDevice,{|x| x == cDevice })
+	//+-------------------------------------------+
+	//|Ajuste no pergunte NFSIGW                  |
+	//+-------------------------------------------+
+	//AjustaSX1()
+
+	cBarra := "\"
+	if IsSrvUnix()
+		cBarra := "/"
+	Endif
+	If  CTIsReady(,,,lUsaColab)
+		dbSelectArea("SF2")
+		RetIndex("SF2")
+		dbClearFilter()
+		//+------------------------------------------------------------------------+
+		//|Obtem o codigo da entidade                                              |
+		//+------------------------------------------------------------------------+
+		If  .T. //nRet >= 20100824
+			If Empty(cDir)
+				cDir := SuperGetMV('MV_RELT',,"\SPOOL\")
+			Endif 
+
+			if !empty(cDir) .and. !ExistDir(cDir)
+				aDir := StrTokArr(cDir, cBarra)
+				cDir := ""
+				for nX := 1 to len(aDir)
+					cDir += aDir[nX] + cBarra
+					if !ExistDir(cDir)
+						MakeDir(cDir)
+					endif
+				next
+			Endif
+			If  (nTipo <> 1)
+				lAdjustToLegacy := .F. // Inibe legado de resoluþÒo com a TMSPrinter
+				oDanfe := FWMSPrinter():New(cFilePrint, IMP_PDF, lAdjustToLegacy, cDir /*cPathInServer*/, .T. )
+				//cFilePrint := cDir + cFilePrint
+				//File2Printer( cFilePrint, "PDF" )
+				oDanfe:cPathPDF := cDir
+
+				if  lJob
+					oDanfe:SetViewPDF(.F.)
+					oDanfe:lInJob := .T.
+				endif
+				// ----------------------------------------------
+				// Cria e exibe tela de Setup Customizavel
+				// OBS: Utilizar include "FWPrintSetup.ch"
+				// ----------------------------------------------
+				//nFlags := PD_ISTOTVSPRINTER+ PD_DISABLEORIENTATION + PD_DISABLEPAPERSIZE + PD_DISABLEPREVIEW + PD_DISABLEMARGIN
+				nFlags := PD_ISTOTVSPRINTER + PD_DISABLEPAPERSIZE + PD_DISABLEPREVIEW + PD_DISABLEMARGIN
+				If ( !oDanfe:lInJob )
+					oSetup := FWPrintSetup():New(nFlags, "DANFE")
+					// ----------------------------------------------
+					// Define saida
+					// ----------------------------------------------
+					oSetup:SetPropert(PD_PRINTTYPE   , nPrintType)
+					oSetup:SetPropert(PD_ORIENTATION , nOrientation)
+					oSetup:SetPropert(PD_DESTINATION , nLocal)
+					oSetup:SetPropert(PD_MARGIN      , {60,60,60,60})
+					oSetup:SetPropert(PD_PAPERSIZE   , 2)
+
+					If ExistBlock( "SPNFESETUP" )
+						Execblock( "SPNFESETUP" , .F. , .F. , {oDanfe, oSetup} )
+					Endif
+				EndIf
+				// ----------------------------------------------
+				// Pressionado botÒo OK na tela de Setup
+				// ----------------------------------------------
+				If lJob .or. oSetup:Activate() == PD_OK // PD_OK =1
+					//+-------------------------------------------+
+					//|Salva os Parametros no Profile             |
+					//+-------------------------------------------+
+					fwWriteProfString( cSession, "LOCAL"      , if( lJob, "SERVER"		, If(oSetup:GetProperty(PD_DESTINATION)==1 ,"SERVER"    ,"CLIENT"    )), .T. )
+					fwWriteProfString( cSession, "PRINTTYPE"  , if( lJob, "PDF"		, If(oSetup:GetProperty(PD_PRINTTYPE)==2   ,"SPOOL"     ,"PDF"       )), .T. )
+					fwWriteProfString( cSession, "ORIENTATION", if( lJob, "PORTRAIT"	, If(oSetup:GetProperty(PD_ORIENTATION)==1 ,"PORTRAIT"  ,"LANDSCAPE" )), .T. )
+					// Configura o objeto de impressÒo com o que foi configurado na interface.
+					oDanfe:setCopies( val( if( lJob, "1", oSetup:cQtdCopia )) )
+	                //oXTemLog := XTemLog():New("001")
+					If  .T. //( lJob .and. nPar == 1 ) .or. ( !lJob .and. oSetup:GetProperty(PD_ORIENTATION) == 1 )
+						//+-------------------------------------------+
+						//|Danfe Retrato DANFEII.PRW                  |
+						//+-------------------------------------------+
+						if(lDanfeII, u_PrtNfeSef(cIdEnt ,/*cVal1*/ ,/*cVal2*/ ,oDanfe ,oSetup ,cFilePrint , .T./*lIsLoja*/, /*nTipo*/), cMsgVld := "Fonte de impressÒo de DANFE nÒo compilado !")
+					ElseIf ( lJob .and. nPar == 2 ) .or. !lJob
+						//+-------------------------------------------+
+						//|Danfe Paisagem DANFEIII.PRW                |
+						//+-------------------------------------------+
+						if(lDanfeIII, u_DANFE_P1(cIdEnt ,/*cVal1*/ ,/*cVal2*/ ,oDanfe ,oSetup ,/*lIsLoja*/ ), cMsgVld := "Fonte de impressÒo de DANFE nÒo compilado !" )
+					EndIf
+				Endif
+			ElseIf nTipo == 1
+				if(lDanfeII, U_PrtNfeSef(cIdEnt ,/*cVal1*/ ,/*cVal2*/ , , , ,/*lIsLoja*/, 1), cMsgVld := "Fonte de impressÒo de DANFE nÒo compilado !")
+			EndIf
+		Else
+			if(lDanfeII, U_PrtNfeSef(cIdEnt ,/*cVal1*/ ,/*cVal2*/ , , , ,/*lIsLoja*/), cMsgVld := "Fonte de impressÒo de DANFE nÒo compilado !")
+		EndIf
+		if !lJob
+			if !empty(cMsgVld)
+				Help(NIL, NIL, "RDMAKE", NIL, cMsgVld, 1, 0, NIL, NIL, NIL, NIL, NIL, {"Acesse o portal do cliente baixe os fontes DANFEII.PRW, DANFEIII.PRW e compile em seu ambiente"})
+			endif
+			Pergunte("NFSIGW",.F.) 
+			if  .F. //len(aFilBrw) > 0
+				bFiltraBrw := {|| FilBrowse(aFilBrw[1],@aIndArq,@aFilBrw[2])}
+				Eval(bFiltraBrw)
+			endif
+		EndIf
+	EndIf
+oDanfe := Nil
+oSetup := Nil
+//Limpa arquivos temporarios .rel da pasta MV_RELT
+//SpedCleRelt()
+Return .T.
+
 
 
 //Modelo do JSon
