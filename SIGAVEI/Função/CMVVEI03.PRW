@@ -31,7 +31,7 @@ User function CMVVEI03()
 				CD9->CD9_TPOPER := "0" // ou "3" 0=Venda concessionária;3=Venda da concessionária 
 				CD9->CD9_CHASSI := VV1->VV1_CHASSI //Chassi
 				CD9->CD9_CORDE  := AllTrim( GetAdvFVal("VVC","VVC_GRUCOR",xFilial( "VVC" ) + VV1->VV1_CODMAR + VV1->VV1_CORVEI,1,"") ) //Código da Cor segundo as regras de pré-cadastro do DENATRAN.
-				CD9->CD9_CODCOR := AllTrim( GetAdvFVal("VVC","VVC_GRUCOR",xFilial( "VVC" ) + VV1->VV1_CODMAR + VV1->VV1_CORVEI,1,"") ) //Codigo da cor definido pela montadora
+				CD9->CD9_CODCOR := ALLTRIM(VV2->VV2_COREXT) + SUBSTR(VV2->VV2_CORINT,1,1) //AllTrim( GetAdvFVal("VVC","VVC_GRUCOR",xFilial( "VVC" ) + VV1->VV1_CODMAR + VV1->VV1_CORVEI,1,"") ) //Codigo da cor definido pela montadora
 				CD9->CD9_DSCCOR := AllTrim( GetAdvFVal("VVC","VVC_DESCRI",xFilial( "VVC" ) + VV1->VV1_CODMAR + VV1->VV1_CORVEI,1,"") ) //Descrição da Cor
 				CD9->CD9_POTENC := cValToChar( VV2->VV2_POTMOT ) //Potência máxima do motor do veículo em cavalo vapor (CV - potência veículo).
 				CD9->CD9_CM3POT := VV2->VV2_CM3 //Capacidade voluntária do motor expressa em centímetros cúbicos (CC - cilindradas).
