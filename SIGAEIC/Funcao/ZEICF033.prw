@@ -132,7 +132,7 @@ IF SF1->F1_EST= 'EX'
 		    VV2.VV2_PESLIQ AS CD9_PESOLI, VV2.VV2_PESBRU AS CD9_PESOBR, VV2.VV2_CAPTRA AS CD9_TRACAO,VV2.VV2_CM3 AS CD9_CM3,;
 		    VV2.VV2_DISEIX AS CD9_DISTEI, VV2.VV2_TIPVEI AS CD9_TPVEIC, VV2.VV2_MODFAB AS CD9_CODMOD,VV2_ESPVEI AS CD9_ESPVEI,;
 			VV2.VV2_QTDPAS AS CD9_LOTAC,  VV2.VV2_CILMOT AS CD9_CILIND, VV2.VV2_COMVEI AS CD9_COMBUS,VV2.VV2_QTDPAS AS CD9_QTDPAS,;
-			VV2.VV2_CODMAR AS CD9_CODMAR, VV2.VV2_COREXT AS CD9_COREXT, VVE.VVE_ESPREN AS CD9_ESPEVEI
+			VV2.VV2_CODMAR AS CD9_CODMAR, VV2.VV2_COREXT AS CD9_COREXT, VVE.VVE_ESPREN AS CD9_ESPEVEI,VV2.VV2_CORINT AS CD9_CORINT 
 		FROM %table:VV1% VV1 
 		LEFT JOIN %table:SD1% SD1 ON SD1.%NotDel% 
 			AND SUBSTR(SD1.D1_FILIAL,1,6) = SUBSTR(VV1.VV1_FILIAL,1,6)  
@@ -181,7 +181,7 @@ IF SF1->F1_EST= 'EX'
 			CD9->CD9_CONVEI := '1'
 			CD9->CD9_RESTR  := '0'
 			CD9->CD9_TPPINT := (cAliasCD9)->cCD9_TPPINT 
-			CD9->CD9_CODCOR := (cAliasCD9)->CD9_CODCOR                 //Codigo da cor definido pela montadora
+			CD9->CD9_CODCOR := ALLTRIM((cAliasCD9)->CD9_COREXT) + SUBSTR((cAliasCD9)->CD9_CORINT,1,1)//(cAliasCD9)->CD9_CODCOR                 //Codigo da cor definido pela montadora
 			CD9->CD9_DSCCOR := (cAliasCD9)->CD9_DSCCOR                 //Descrição da Cor
 			CD9->CD9_POTENC := cValToChar( (cAliasCD9)->CD9_POTENC )  //Potência máxima do motor do veículo em cavalo vapor (CV - potência veículo).
 			CD9->CD9_CM3POT := (cAliasCD9)->CD9_CM3                   //Capacidade voluntária do motor expressa em centímetros cúbicos (CC - cilindradas).
