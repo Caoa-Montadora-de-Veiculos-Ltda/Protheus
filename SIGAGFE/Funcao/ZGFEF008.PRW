@@ -233,14 +233,6 @@ User Function fCommit()
 			cMsg += "Data: " + DtoC(Date()) + "" + CRLF
 			FWAlertInfo(cMsg, "Informações gravadas.")
 			
-			lRet := .F.
-			If lRet
-				GW8->(DbGoto(_aRegVS1[_nPos]))
-				GW8->(RecLock("GW8",.F.))
-				GW8->GW8_XOBSAL := Upper(cMsg) + CRLF + GW8->GW8_XOBSAL
-				GW8->(MsUnLock())
-			EndIf
-			lRet := .T.
 		Else
 			lRet := .F.
 			Help("",1,"ZGFEF008",,"Dados não alterados.",1) 
