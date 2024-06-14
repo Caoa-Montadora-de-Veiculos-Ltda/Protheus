@@ -244,7 +244,9 @@ Static Function ZPEC11GPIK(_oJson, _cTipo, _aRegVS1, _lDivergencia )
 	Local _aMsgCAOA		:= {}
 	Local _aOrc			:= {}
 	Local _lFatAutomaTico  := SuperGetMV( "CMV_PEC045"  ,,.F.)  //"WIS.T_DET_PEDIDO_SAIDA@DBLINK_WISHML"
-
+	
+	Local _lBloqInv := .F.
+	
 	Local _nPos
 
 	Local _lProcessa := .F.
@@ -289,7 +291,7 @@ Static Function ZPEC11GPIK(_oJson, _cTipo, _aRegVS1, _lDivergencia )
 
 		//Controlar a gravação dos dados do orçamento caso tenha 
 		Begin Transaction 
-			_lRet := ZPEC11VWIS(_cPicking, @_lDivergencia)
+			_lRet := ZPEC11VWIS(_cPicking, @_lDivergencia, @_lBloqInv)
 			//DAC Selecionar processo VS5 e VS6 de carregamento e efetuar baixa
 			//SE NÃO TIVER PASSAR PARA PROXIMO REGISTRO
 			If _lRet 
@@ -345,7 +347,7 @@ Static Function ZPEC11GPIK(_oJson, _cTipo, _aRegVS1, _lDivergencia )
 
 			If _lProcessa
 				//Após receber tenho que tentar faturar, porém caso ocorra problemas os mesmos não retornarão para RGLOG pois ja foi recebido o picking
-				If _lRet  .And. _lFatAutomaTico
+				If _lRet  .And. _lFatAutomaTico .And. !_lBloqInv 
 					_aOrc := {}
 					//a funcionalidade de faturamento somente recebe dados relativos ao numero de orçamento
 					For _nPos := 1 To Len(_aRegVS1)
@@ -511,47 +513,47 @@ Recebe 		Verificar se ja existe picking processado na tabela SZK
 @history      
 /*/
 Static Function ZPEC11LPIK(_cPicking )
-Local _lRet			:= .T.
-Local _cAliasPesq	:= GetNextAlias()
-Begin Sequence
-	BeginSql Alias _cAliasPesq
-		SELECT 	SZK.R_E_C_N_O_ NREGSZK
-       	FROM %table:SZK% SZK
-      	WHERE SZK.ZK_FILIAL  	= %XFilial:SZK%
-			AND SZK.ZK_XPICKI 	= %Exp:_cPicking%
-		  	AND SZK.%notDel%		  
-	EndSql      
-	//Alterado GAP002 28/03/2023
-	//		AND SZK.ZK_STREG	<> ' '
-	//If (_cAliasPesq)->(!Eof()) .or. (_cAliasPesq)->NREGSZK > 0
-	//Caso existam registros preenchidos não é a carga inicial e não pode receber da RG
-	If (_cAliasPesq)->(Eof()) .or. (_cAliasPesq)->NREGSZK == 0
-		ZPEC11RMsg("nu_pedido","Pedido "+_cPicking+" Picking não localizado, não sera processado !")
-		_lRet	:= .F.
-		Break
-	Endif
-	While (_cAliasPesq)->(!Eof())  
-		SZK->(DbGoto((_cAliasPesq)->NREGSZK)) 
-		//não processar faturado, bloqueado, Cancelado e Divergência 
-		If !SZK->ZK_STATUS $ 'E_R'  //SZK->ZK_STATUS $ 'B_C_F_D'   //GAP002
+	Local _lRet			:= .T.
+	Local _cAliasPesq	:= GetNextAlias()
+	Begin Sequence
+		BeginSql Alias _cAliasPesq
+			SELECT 	SZK.R_E_C_N_O_ NREGSZK
+			FROM %table:SZK% SZK
+			WHERE SZK.ZK_FILIAL  	= %XFilial:SZK%
+				AND SZK.ZK_XPICKI 	= %Exp:_cPicking%
+				AND SZK.%notDel%		  
+		EndSql      
+		//Alterado GAP002 28/03/2023
+		//		AND SZK.ZK_STREG	<> ' '
+		//If (_cAliasPesq)->(!Eof()) .or. (_cAliasPesq)->NREGSZK > 0
+		//Caso existam registros preenchidos não é a carga inicial e não pode receber da RG
+		If (_cAliasPesq)->(Eof()) .or. (_cAliasPesq)->NREGSZK == 0
+			ZPEC11RMsg("nu_pedido","Pedido "+_cPicking+" Picking não localizado, não sera processado !")
 			_lRet	:= .F.
-			_cMens := If(SZK->ZK_STATUS == "B","Bloqueado",If(SZK->ZK_STATUS == "C","Cancelado",If(SZK->ZK_STATUS == "F","Faturado" ,If(SZK->ZK_STATUS == "D","Divergente WIS"," "+SZK->ZK_STATUS ))))
-			ZPEC11RMsg("nu_pedido","Pedido "+_cPicking+" com status "+_cMens+", não sera processado !")
 			Break
 		Endif
-		//o STREG só é atuaiizado após a recepção do registro
-		If !Empty(SZK->ZK_STREG)
-			_lRet	:= .F.
-			ZPEC11RMsg("nu_pedido","Pedido "+_cPicking+" ja consta no cadastro Picking como recebido, não sera processado !")
-			Break
-		Endif
-		(_cAliasPesq)->(DbSkip())
-	EndDo	
-End Sequence	
-If Select((_cAliasPesq)) <> 0
-	(_cAliasPesq)->(DbCloseArea())
-	Ferase(_cAliasPesq+GetDBExtension())
-Endif 
+		While (_cAliasPesq)->(!Eof())  
+			SZK->(DbGoto((_cAliasPesq)->NREGSZK)) 
+			//não processar faturado, bloqueado, Cancelado e Divergência 
+			If !SZK->ZK_STATUS $ 'E_R'  //SZK->ZK_STATUS $ 'B_C_F_D'   //GAP002
+				_lRet	:= .F.
+				_cMens := If(SZK->ZK_STATUS == "B","Bloqueado",If(SZK->ZK_STATUS == "C","Cancelado",If(SZK->ZK_STATUS == "F","Faturado" ,If(SZK->ZK_STATUS == "D","Divergente WIS"," "+SZK->ZK_STATUS ))))
+				ZPEC11RMsg("nu_pedido","Pedido "+_cPicking+" com status "+_cMens+", não sera processado !")
+				Break
+			Endif
+			//o STREG só é atuaiizado após a recepção do registro
+			If !Empty(SZK->ZK_STREG)
+				_lRet	:= .F.
+				ZPEC11RMsg("nu_pedido","Pedido "+_cPicking+" ja consta no cadastro Picking como recebido, não sera processado !")
+				Break
+			Endif
+			(_cAliasPesq)->(DbSkip())
+		EndDo	
+	End Sequence	
+	If Select((_cAliasPesq)) <> 0
+		(_cAliasPesq)->(DbCloseArea())
+		Ferase(_cAliasPesq+GetDBExtension())
+	Endif 
 
 Return _lRet
 
@@ -568,352 +570,398 @@ Return _lRet
 @project	GAP002 | Integração da separação - Informar produto e quantidade da cubagem
 @Obs		
 /*/
-Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)
-Local _cAliasPesq		:= GetNextAlias()   
-Local _nPedido			:= Val(_cPicking)  //é numerico no WIS
-Local _cConectDetWis   	:= AllTrim(SuperGetMV( "CMV_PEC044"  ,,""))  //"WIS.T_DET_PEDIDO_SAIDA@DBLINK_WISHML"
-Local _cConectCabWis   	:= AllTrim(SuperGetMV( "CMV_PEC046"  ,,""))  //"WIS.T_CAB_PEDIDO_SAIDA@DBLINK_WISHML"
-Local _lRet				:= .F.
-Local _aDiverge			:= {}
-Local _aStru			:= {}
-//Local _aMsgRet 	       	:= {}
-Local _aMsg				:= {}
-Local _lAborta 			:= .F.
-Local _lProcessa 		:= .F.
-Local _cErro			:= "" 
-Local _lQtdWIS			:= .F.
-Local _lQtdPRT			:= .F.
-Local _cMens
-Local _nPos
-Local _oTable
-Local _cQuery
+Static Function	ZPEC11VWIS(_cPicking, _lDivergencia, _lBloqInv)
+	Local _cAliasPesq		:= GetNextAlias()   
+	Local _nPedido			:= Val(_cPicking)  //é numerico no WIS
+	Local _cConectDetWis   	:= AllTrim(SuperGetMV( "CMV_PEC044"  ,,""))  //"WIS.T_DET_PEDIDO_SAIDA@DBLINK_WISHML"
+	Local _cConectCabWis   	:= AllTrim(SuperGetMV( "CMV_PEC046"  ,,""))  //"WIS.T_CAB_PEDIDO_SAIDA@DBLINK_WISHML"
+	Local _lRet				:= .F.
+	Local _aDiverge			:= {}
+	Local _aStru			:= {}
+	//Local _aMsgRet 	       	:= {}
+	Local _aMsg				:= {}
+	Local _lAborta 			:= .F.
+	Local _lProcessa 		:= .F.
+	Local _cErro			:= "" 
+	Local _lQtdWIS			:= .F.
+	Local _lQtdPRT			:= .F.
+	Local _cMens
+	Local _nPos
+	Local _oTable
+	Local _cQuery
+	//Local _lBloqInv 		:= .F. //Valida itens do Picking com bloqueio de inventario no armazem original -- se continuar .T. então todos itens estao bloqueados
 
-Default _lDivergencia 	:= .F.
+	Default _lDivergencia 	:= .F.
 
 
-//	--CONSULTA DIVERGENCIA SEPARAÇÃO SIGAPEC X WIS --
-Begin Sequence
-	If Empty(_cConectDetWis)
-		_lRet	:= .F.
-		ZPEC11RMsg("conexaowis","Problemas conexão com WIS, não sera processado !")
-		//Enviar Email
-		ZPEC11EMAI({"Parâmetro CMV_PEC044 de conexão WIS não informado"}, _cPicking )
-		Break
-	Endif
-	If Empty(_cConectCabWis)
-		_lRet	:= .F.
-		ZPEC11RMsg("conexaowis","Problemas conexão com WIS, não sera processado !")
-		//Enviar Email
-		ZPEC11EMAI({"Parâmetro CMV_PEC046 de conexão WIS não informado"}, _cPicking )
-		Break
-	Endif
+	//	--CONSULTA DIVERGENCIA SEPARAÇÃO SIGAPEC X WIS --
+	Begin Sequence
+		If Empty(_cConectDetWis)
+			_lRet	:= .F.
+			ZPEC11RMsg("conexaowis","Problemas conexão com WIS, não sera processado !")
+			//Enviar Email
+			ZPEC11EMAI({"Parâmetro CMV_PEC044 de conexão WIS não informado"}, _cPicking )
+			Break
+		Endif
+		If Empty(_cConectCabWis)
+			_lRet	:= .F.
+			ZPEC11RMsg("conexaowis","Problemas conexão com WIS, não sera processado !")
+			//Enviar Email
+			ZPEC11EMAI({"Parâmetro CMV_PEC046 de conexão WIS não informado"}, _cPicking )
+			Break
+		Endif
 
-	//Não reconhece BeginSQL
-     Aadd(_aStru, { "PED"		, TamSX3("ZK_XPICKI")[3]	, TamSX3("ZK_XPICKI")[1]	, TamSX3("ZK_XPICKI")[2]	, PesqPict("SZK","ZK_XPICKI") })
-     Aadd(_aStru, { "PROD"		, TamSX3("VS3_CODITE")[3]	, TamSX3("VS3_CODITE")[1]	, TamSX3("VS3_CODITE")[2]	, PesqPict("VS3","VS3_CODITE") })
-     Aadd(_aStru, { "QT_PROT"	, TamSX3("VS3_QTDITE")[3]	, TamSX3("VS3_QTDITE")[1]	, TamSX3("VS3_QTDITE")[2]	, PesqPict("VS3","VS3_QTDITE") })
-     Aadd(_aStru, { "QT_WIS"	, TamSX3("VS3_QTDITE")[3]	, TamSX3("VS3_QTDITE")[1]   , TamSX3("VS3_QTDITE")[2]	, PesqPict("VS3","VS3_QTDITE") })
+		//Não reconhece BeginSQL
+		Aadd(_aStru, { "PED"		, TamSX3("ZK_XPICKI")[3]	, TamSX3("ZK_XPICKI")[1]	, TamSX3("ZK_XPICKI")[2]	, PesqPict("SZK","ZK_XPICKI") })
+		Aadd(_aStru, { "PROD"		, TamSX3("VS3_CODITE")[3]	, TamSX3("VS3_CODITE")[1]	, TamSX3("VS3_CODITE")[2]	, PesqPict("VS3","VS3_CODITE") })
+		Aadd(_aStru, { "QT_PROT"	, TamSX3("VS3_QTDITE")[3]	, TamSX3("VS3_QTDITE")[1]	, TamSX3("VS3_QTDITE")[2]	, PesqPict("VS3","VS3_QTDITE") })
+		Aadd(_aStru, { "QT_WIS"		, TamSX3("VS3_QTDITE")[3]	, TamSX3("VS3_QTDITE")[1]   , TamSX3("VS3_QTDITE")[2]	, PesqPict("VS3","VS3_QTDITE") })
+		Aadd(_aStru, { "ARMAZEM"	, TamSX3("VS3_LOCAL")[3]	, TamSX3("VS3_LOCAL")[1]	, TamSX3("VS3_LOCAL")[2]	, PesqPict("VS3","VS3_LOCAL") })
+		Aadd(_aStru, { "DT_INV"	, TamSX3("B2_DTINV")[3]		, TamSX3("B2_DTINV")[1]   	, TamSX3("B2_DTINV")[2]		, PesqPict("SB2","B2_DTINV") })
 
-    _oTable := FWTemporaryTable():New()
-    _oTable:SetFields(_aStru)
-    _oTable:AddIndex("INDEX1", {"PED", "PROD"} )
-    _oTable:Create()
-    _cAliasPesq := _oTable:GetAlias()
 
-    _cTable := _oTable:GetRealName()
+		_oTable := FWTemporaryTable():New()
+		_oTable:SetFields(_aStru)
+		_oTable:AddIndex("INDEX1", {"PED", "PROD"} )
+		_oTable:Create()
+		_cAliasPesq := _oTable:GetAlias()
 
-    _cQuery := " INSERT INTO "+_cTable+"                                                                                    "+(Chr(13)+Chr(10))
-    _cQuery += " ("
-    For _nPos := 01 To Len(_aStru)
-        _cQuery += _aStru[_nPos,1]
-        _cQuery += ","
-    NEXT _nPos
-	_cQuery := SubsTr(_cQuery,1,Len(_cQuery)-1)
-    _cQuery += " ) "+ CRLF
- 
- //Alterado conforme Select enviado por Zé em 31/08/2023 para ajuste de corte 
-//--CONSULTA DIVERGENCIA SEPARAÇÃO SIGAPEC X WIS -- V2
-	//--SEPARAÇÃO_WIS
-    _cQuery += "		WITH SEP_WIS AS" 														+ CRLF
-    _cQuery += "			( "																	+ CRLF
-    _cQuery += "				SELECT CABWIS.NU_PEDIDO PED "									+ CRLF					
-    _cQuery += "						, DETWIS.CD_PRODUTO PROD "								+ CRLF
-    _cQuery += "						, DETWIS.QT_SEPARAR-CASE WHEN (DETWIS.QT_CANCELADA IS NOT NULL OR DETWIS.ID_CORTE = 'X') THEN DETWIS.QT_SEPARAR ELSE 0 END AS CONF " + CRLF
-//    _cQuery += "				FROM WIS.T_DET_PEDIDO_SAIDA@DBLINK_WISHML DETWIS "		+ CRLF
-	_cQuery += " 				FROM " 		 + _cConectDetWis + " DETWIS "						+ CRLF
-//    _cQuery += "				INNER JOIN WIS.T_CAB_PEDIDO_SAIDA@DBLINK_WISHML CABWIS ON CABWIS.CD_EMPRESA=DETWIS.CD_EMPRESA AND DETWIS.NU_PEDIDO = CABWIS.NU_PEDIDO AND CABWIS.CD_CLIENTE = DETWIS.CD_CLIENTE
-	_cQuery += " 				INNER JOIN " + _cConectCabWis + " CABWIS "						+ CRLF
-	_cQuery += "  					ON  CABWIS.CD_EMPRESA	= DETWIS.CD_EMPRESA "				+ CRLF
-	_cQuery += "					AND DETWIS.NU_PEDIDO 	= CABWIS.NU_PEDIDO "				+ CRLF
-	_cQuery += "					AND CABWIS.CD_CLIENTE 	= DETWIS.CD_CLIENTE "				+ CRLF
-    _cQuery += "				WHERE 	DETWIS.DT_UPROW 	>= TO_DATE('2022-05-22','YYYY-MM-DD') " + CRLF
-    _cQuery += "					AND CABWIS.NU_PEDIDO 	= "+ AllTrim(Str(_nPedido))    		+ CRLF 
-    _cQuery += "				ORDER BY PED DESC " 											+ CRLF
-    _cQuery += "			)
+		_cTable := _oTable:GetRealName()
 
-//--SEPARAÇÃO PROTHEUS
-    _cQuery += ", SEP_PROT AS "																	+ CRLF
-    _cQuery += " ( "																			+ CRLF
-    _cQuery += "	SELECT 	VS3.VS3_XPICKI PED "												+ CRLF
-    _cQuery += "			, VS3.VS3_CODITE PROD "												+ CRLF 
-    _cQuery += "			, SUM(VS3.VS3_QTDITE) QT "											+ CRLF	
-    _cQuery += "	FROM "+RetSqlName("VS3")+" VS3  "											+ CRLF
-    _cQuery += "	INNER JOIN "+RetSqlName("VS1")+" VS1  " 									+ CRLF
-    _cQuery += " 		ON  VS1_FILIAL 		= VS3_FILIAL "										+ CRLF
-    _cQuery += "	 	AND VS1_NUMORC 		= VS3_NUMORC "										+ CRLF
-    _cQuery += "		AND VS1.D_E_L_E_T_ 	= ' ' "												+ CRLF
-    _cQuery += "	WHERE VS3.D_E_L_E_T_ 	= ' ' "												+ CRLF
-    _cQuery += "		AND VS3.VS3_FILIAL 	= '"+FwXFilial("VS3")+"' " 							+ CRLF
-    _cQuery += "		AND VS3.VS3_XPICKI 	= '"+_cPicking+"' " 								+ CRLF
-    _cQuery += "		GROUP BY VS3.VS3_XPICKI, VS3.VS3_CODITE "								+ CRLF
-    _cQuery += " ) " 																			+ CRLF										
-
-    _cQuery += " SELECT DISTINCT MRG_PED.* "													+ CRLF
-    _cQuery += "				, NVL(SEP_PROT.QT,0) QT_PROT "									+ CRLF
-	_cQuery += "				, NVL(SEP_WIS.CONF,0) QT_WIS "									+ CRLF
-	_cQuery += " FROM ( "																		+ CRLF
-	_cQuery += "		SELECT 	CAST(DETWIS.NU_PEDIDO AS VARCHAR(8)) PED "						+ CRLF
-	_cQuery += "				,CAST(DETWIS.CD_PRODUTO AS CHAR(27)) PROD "						+ CRLF
-	_cQuery += " 		FROM " 		 + _cConectDetWis + " DETWIS "								+ CRLF
-	_cQuery += "		WHERE DETWIS.DT_UPROW 		>= TO_DATE('2022-05-22','YYYY-MM-DD') " 	+ CRLF
-	_cQuery += "			AND DETWIS.NU_PEDIDO 	= "+ AllTrim(Str(_nPedido))      			+ CRLF	//--AND DETWIS.CD_PRODUTO = 'R-59122SC041'
-	//--VALIDAÇÃO DE PARIDADE DE LINHAS
-	_cQuery += "		UNION "																	+ CRLF	
-	_cQuery += "		SELECT LTRIM(VS3.VS3_XPICKI,0) PED_PROT, VS3.VS3_CODITE PROD_PROT "		+ CRLF
-    _cQuery += "		FROM "+RetSqlName("VS3")+" VS3  "										+ CRLF
-    _cQuery += "		WHERE VS3.D_E_L_E_T_ 	= ' ' "											+ CRLF
-    _cQuery += "			AND VS3.VS3_FILIAL 	= '"+FwXFilial("VS3")+"' " 						+ CRLF
-    _cQuery += "			AND VS3.VS3_XPICKI 	= '"+_cPicking+"' " 							+ CRLF
-    _cQuery += "		GROUP BY VS3.VS3_XPICKI, VS3.VS3_CODITE "								+ CRLF
-    _cQuery += "	 ) MRG_PED "																+ CRLF
-    _cQuery += "LEFT JOIN SEP_WIS "																+ CRLF
-    _cQuery += "	ON LTRIM(RTRIM(SEP_WIS.PROD))=LTRIM(RTRIM(MRG_PED.PROD)) "					+ CRLF
-    _cQuery += "LEFT JOIN SEP_PROT "															+ CRLF
-    _cQuery += "	ON LTRIM(RTRIM(SEP_PROT.PROD))=LTRIM(RTRIM(MRG_PED.PROD)) "					+ CRLF
-//--WHERE NVL(SEP_WIS.CONF,'0') != NVL(SEP_PROT.QT,'0')
-    _cQuery += "ORDER BY MRG_PED.PED "															+ CRLF
-			
-//Alterado conforme acima DAC 31/08/2023
-/* 
-    _cQuery += "		WITH SEP_WIS AS " 												+ CRLF
-    _cQuery += "			(	"														+ CRLF
-    _cQuery += "				SELECT 	DETWIS.NU_PEDIDO PED "							+ CRLF
-    _cQuery += "					, 	CAST(DETWIS.CD_PRODUTO AS CHAR(27)) PROD "		+ CRLF
-    _cQuery += "					, 	CAST(DETWIS.QT_SEPARAR AS NUMBER(38,0)) QT "	+ CRLF	
-//    _cQuery += "				FROM WIS.T_DET_PEDIDO_SAIDA@DBLINK_WISHML DETWIS "		+ CRLF
-										
-	_cQuery += " 				FROM " + _cConectWis + " DETWIS "						+ CRLF
-    _cQuery += "				WHERE DETWIS.NU_PEDIDO = "+ AllTrim(Str(_nPedido))      + CRLF
-    _cQuery += "			) "															+ CRLF
-    _cQuery += "			, SEP_PROT AS "												+ CRLF
-    _cQuery += "			( "															+ CRLF
-    _cQuery += "				SELECT 	VS3.VS3_XPICKI PED "							+ CRLF
-    _cQuery += "					, 	VS3.VS3_CODITE PROD	"							+ CRLF						
-    _cQuery += "					, 	SUM(VS3.VS3_QTDITE) QT	"						+ CRLF
-    _cQuery += "	 			FROM "+RetSqlName("VS3")+" VS3  "						+ CRLF
-    _cQuery += "				INNER JOIN "+RetSqlName("VS1")+" VS1  " 				+ CRLF
-    _cQuery += "					ON	VS1.VS1_FILIAL = VS3.VS3_FILIAL "				+ CRLF
-    _cQuery += "					AND VS1.VS1_NUMORC = VS3.VS3_NUMORC "				+ CRLF
-    _cQuery += "					AND VS1.D_E_L_E_T_ = ' ' "							+ CRLF
-    _cQuery += "				WHERE VS3.D_E_L_E_T_ = ' ' " 							+ CRLF
-    _cQuery += "					AND VS3.VS3_FILIAL = '"+FwXFilial("VS3")+"' " 		+ CRLF
-    _cQuery += "					AND VS3.VS3_XPICKI = '"+_cPicking+"' " 				+ CRLF
-    _cQuery += "				GROUP BY VS3.VS3_XPICKI, VS3.VS3_CODITE	"				+ CRLF
-    _cQuery += "			) "															+ CRLF
-    _cQuery += "		SELECT MRG_PED.* "												+ CRLF
-    _cQuery += "				, NVL(SEP_WIS.QT,0) QT_WIS "							+ CRLF
-    _cQuery += "				, NVL(SEP_PROT.QT,0) QT_PROT "							+ CRLF
-    _cQuery += "		FROM ( "														+ CRLF
-    _cQuery += "				SELECT 	CAST(DETWIS.NU_PEDIDO AS VARCHAR(8)) PED "		+ CRLF		
-    _cQuery += "					, 	CAST(DETWIS.CD_PRODUTO AS CHAR(27)) PROD "		+ CRLF
-    //_cQuery += "				FROM WIS.T_DET_PEDIDO_SAIDA@DBLINK_WISHML DETWIS "		+ CRLF
-	_cQuery += " 				FROM " + _cConectWis + " DETWIS "						+ CRLF
-
-    _cQuery += "				WHERE DETWIS.NU_PEDIDO = "+ AllTrim(Str(_nPedido))      + CRLF 
-    _cQuery += "				UNION "													+ CRLF		
-    _cQuery += "				SELECT LTRIM(VS3.VS3_XPICKI,0) PED_PROT	"				+ CRLF
-    _cQuery += "					, 	VS3.VS3_CODITE PROD_PROT "						+ CRLF
-    _cQuery += "				FROM "+RetSqlName("VS3")+" VS3  " 						+ CRLF
-    _cQuery += "				WHERE VS3.D_E_L_E_T_ = ' ' "							+ CRLF
-    _cQuery += "					AND VS3.VS3_FILIAL = '"+FwXFilial("VS3")+"' "		+ CRLF
-    _cQuery += "					AND VS3.VS3_XPICKI = '"+_cPicking+"' " 				+ CRLF
-    _cQuery += "				GROUP BY VS3.VS3_XPICKI, VS3.VS3_CODITE	"				+ CRLF
-    _cQuery += "	 		) MRG_PED "													+ CRLF
-    _cQuery += "		LEFT JOIN SEP_WIS "												+ CRLF
-    _cQuery += "			ON SEP_WIS.PROD	=	MRG_PED.PROD "							+ CRLF
-    _cQuery += "		LEFT JOIN SEP_PROT "											+ CRLF
-    _cQuery += "			ON SEP_PROT.PROD=MRG_PED.PROD "								+ CRLF
-    _cQuery += "		WHERE NVL(SEP_WIS.QT,0) != NVL(SEP_PROT.QT,0) "					+ CRLF  
-
-*/
-	nStatus := TCSqlExec(_cQuery)
-    If (nStatus < 0)
-		Aadd(_aMsgCAOA, Upper("[ZPECF011] Problemas na Seleção de dados, comunicar ADM SISTEMA"+ CRLF +TCSQLError()) )
-		_cMens := "[ZPEC11VWIS] Erro recebimento picking "+TCSQLError()
-		Conout(_cMens)
-		ZPEC11EMAI({_cMens}, _cPicking)
-        Break    
-    Endif
+		_cQuery := " INSERT INTO "+_cTable+"                                                                                    "+(Chr(13)+Chr(10))
+		_cQuery += " ("
+		For _nPos := 01 To Len(_aStru)
+			_cQuery += _aStru[_nPos,1]
+			_cQuery += ","
+		NEXT _nPos
+		_cQuery := SubsTr(_cQuery,1,Len(_cQuery)-1)
+		_cQuery += " ) "+ CRLF
 	
-    (_cAliasPesq)->(DbGoTop())
-	//não existem inconsistências	
-	If (_cAliasPesq)->(Eof())
-		_lRet := .T.
-		Break	
-	Endif 	
+		//Alterado conforme Select enviado por Zé em 31/08/2023 para ajuste de corte 
+		//--CONSULTA DIVERGENCIA SEPARAÇÃO SIGAPEC X WIS -- V2
+		//--SEPARAÇÃO_WIS
+		_cQuery += "		WITH SEP_WIS AS" 														+ CRLF
+		_cQuery += "			( "																	+ CRLF
+		_cQuery += "				SELECT CABWIS.NU_PEDIDO PED "									+ CRLF					
+		_cQuery += "						, DETWIS.CD_PRODUTO PROD "								+ CRLF
+		_cQuery += "						, DETWIS.QT_SEPARAR-CASE WHEN (DETWIS.QT_CANCELADA IS NOT NULL OR DETWIS.ID_CORTE = 'X') THEN DETWIS.QT_SEPARAR ELSE 0 END AS CONF " + CRLF
+		//    _cQuery += "				FROM WIS.T_DET_PEDIDO_SAIDA@DBLINK_WISHML DETWIS "		+ CRLF
+		_cQuery += " 				FROM " 		 + _cConectDetWis + " DETWIS "						+ CRLF
+		//    _cQuery += "				INNER JOIN WIS.T_CAB_PEDIDO_SAIDA@DBLINK_WISHML CABWIS ON CABWIS.CD_EMPRESA=DETWIS.CD_EMPRESA AND DETWIS.NU_PEDIDO = CABWIS.NU_PEDIDO AND CABWIS.CD_CLIENTE = DETWIS.CD_CLIENTE
+		_cQuery += " 				INNER JOIN " + _cConectCabWis + " CABWIS "						+ CRLF
+		_cQuery += "  					ON  CABWIS.CD_EMPRESA	= DETWIS.CD_EMPRESA "				+ CRLF
+		_cQuery += "					AND DETWIS.NU_PEDIDO 	= CABWIS.NU_PEDIDO "				+ CRLF
+		_cQuery += "					AND CABWIS.CD_CLIENTE 	= DETWIS.CD_CLIENTE "				+ CRLF
+		_cQuery += "				WHERE 	DETWIS.DT_UPROW 	>= TO_DATE('2022-05-22','YYYY-MM-DD') " + CRLF
+		_cQuery += "					AND CABWIS.NU_PEDIDO 	= "+ AllTrim(Str(_nPedido))    		+ CRLF 
+		_cQuery += "				ORDER BY PED DESC " 											+ CRLF
+		_cQuery += "			)
 
-	_aDiverge 	:= {}
-	_aMsgCAOA	:= {}
-	_lAborta 	:= .F.
-	_lProcessa 	:= .F.
-	_cErro		:= "" 
-	_lQtdWIS	:= .F.
-	_lQtdPRT	:= .F.
-   	While (_cAliasPesq)->(!Eof())
+		//--SEPARAÇÃO PROTHEUS
+		_cQuery += ", SEP_PROT AS "																	+ CRLF
+		_cQuery += " ( "																			+ CRLF
+		_cQuery += "	SELECT 	VS3.VS3_XPICKI PED "												+ CRLF
+		_cQuery += "			, VS3.VS3_CODITE PROD "												+ CRLF 
+		_cQuery += "			, SUM(VS3.VS3_QTDITE) QT "											+ CRLF	
+			//--ADICIONADO P/ VALIDAR BLOQ INVENTARIO -- NICOLAS GAP098
+		_cQuery += "			, VS3.VS3_LOCAL ARMAZ "												+ CRLF	
+		_cQuery += "			, SB2.B2_DTINV DT_INV "												+ CRLF	
+		
+		_cQuery += "	FROM "+RetSqlName("VS3")+" VS3  "											+ CRLF
+		_cQuery += "	INNER JOIN "+RetSqlName("VS1")+" VS1  " 									+ CRLF
+		_cQuery += " 		ON  VS1_FILIAL 		= VS3_FILIAL "										+ CRLF
+		_cQuery += "	 	AND VS1_NUMORC 		= VS3_NUMORC "										+ CRLF
+		_cQuery += "		AND VS1.D_E_L_E_T_ 	= ' ' "												+ CRLF
+			//--ADICIONADO P/ VALIDAR BLOQ INVENTARIO -- NICOLAS GAP098
+		_cQuery += "	LEFT JOIN "+RetSqlName("SB2")+" SB2  " 										+ CRLF
+		_cQuery += " 		ON  SB2.B2_FILIAL 	= '"+FwXFilial("SB2")+"' "							+ CRLF
+		_cQuery += "	 	AND SB2.B2_COD 		= VS3.VS3_CODITE "									+ CRLF
+		_cQuery += "		AND SB2.B2_LOCAL 	= VS3.VS3_LOCAL "									+ CRLF
+		_cQuery += "		AND SB2.D_E_L_E_T_  = ' ' "												+ CRLF
+
+		_cQuery += "	WHERE VS3.D_E_L_E_T_ 	= ' ' "												+ CRLF
+		_cQuery += "		AND VS3.VS3_FILIAL 	= '"+FwXFilial("VS3")+"' " 							+ CRLF
+		_cQuery += "		AND VS3.VS3_XPICKI 	= '"+_cPicking+"' " 								+ CRLF
+		_cQuery += "		GROUP BY VS3.VS3_XPICKI, VS3.VS3_CODITE, VS3.VS3_LOCAL, SB2.B2_DTINV "	+ CRLF
+		_cQuery += " ) " 																			+ CRLF										
+
+		_cQuery += " SELECT DISTINCT MRG_PED.* "													+ CRLF
+		_cQuery += "				, NVL(SEP_PROT.QT,0) QT_PROT "									+ CRLF
+		_cQuery += "				, NVL(SEP_WIS.CONF,0) QT_WIS "									+ CRLF
+		_cQuery += "				, SEP_PROT.ARMAZ ARMAZEM "									    + CRLF
+		_cQuery += "				, SEP_PROT.DT_INV DT_INV "									    + CRLF
+		_cQuery += " FROM ( "																		+ CRLF
+		_cQuery += "		SELECT 	CAST(DETWIS.NU_PEDIDO AS VARCHAR(8)) PED "						+ CRLF
+		_cQuery += "				,CAST(DETWIS.CD_PRODUTO AS CHAR(27)) PROD "						+ CRLF
+		_cQuery += " 		FROM " 		 + _cConectDetWis + " DETWIS "								+ CRLF
+		_cQuery += "		WHERE DETWIS.DT_UPROW 		>= TO_DATE('2022-05-22','YYYY-MM-DD') " 	+ CRLF
+		_cQuery += "			AND DETWIS.NU_PEDIDO 	= "+ AllTrim(Str(_nPedido))      			+ CRLF	//--AND DETWIS.CD_PRODUTO = 'R-59122SC041'
+		//--VALIDAÇÃO DE PARIDADE DE LINHAS
+		_cQuery += "		UNION "																	+ CRLF	
+		_cQuery += "		SELECT LTRIM(VS3.VS3_XPICKI,0) PED_PROT, VS3.VS3_CODITE PROD_PROT "		+ CRLF
+		_cQuery += "		FROM "+RetSqlName("VS3")+" VS3  "										+ CRLF
+		_cQuery += "		WHERE VS3.D_E_L_E_T_ 	= ' ' "											+ CRLF
+		_cQuery += "			AND VS3.VS3_FILIAL 	= '"+FwXFilial("VS3")+"' " 						+ CRLF
+		_cQuery += "			AND VS3.VS3_XPICKI 	= '"+_cPicking+"' " 							+ CRLF
+		_cQuery += "		GROUP BY VS3.VS3_XPICKI, VS3.VS3_CODITE "								+ CRLF
+		_cQuery += "	 ) MRG_PED "																+ CRLF
+		_cQuery += "LEFT JOIN SEP_WIS "																+ CRLF
+		_cQuery += "	ON LTRIM(RTRIM(SEP_WIS.PROD))=LTRIM(RTRIM(MRG_PED.PROD)) "					+ CRLF
+		_cQuery += "LEFT JOIN SEP_PROT "															+ CRLF
+		_cQuery += "	ON LTRIM(RTRIM(SEP_PROT.PROD))=LTRIM(RTRIM(MRG_PED.PROD)) "					+ CRLF
+		//--WHERE NVL(SEP_WIS.CONF,'0') != NVL(SEP_PROT.QT,'0')
+		_cQuery += "ORDER BY MRG_PED.PED "															+ CRLF
+				
+		//Alterado conforme acima DAC 31/08/2023
+		/* 
+			_cQuery += "		WITH SEP_WIS AS " 												+ CRLF
+			_cQuery += "			(	"														+ CRLF
+			_cQuery += "				SELECT 	DETWIS.NU_PEDIDO PED "							+ CRLF
+			_cQuery += "					, 	CAST(DETWIS.CD_PRODUTO AS CHAR(27)) PROD "		+ CRLF
+			_cQuery += "					, 	CAST(DETWIS.QT_SEPARAR AS NUMBER(38,0)) QT "	+ CRLF	
+			//    _cQuery += "				FROM WIS.T_DET_PEDIDO_SAIDA@DBLINK_WISHML DETWIS "		+ CRLF
+												
+			_cQuery += " 				FROM " + _cConectWis + " DETWIS "						+ CRLF
+			_cQuery += "				WHERE DETWIS.NU_PEDIDO = "+ AllTrim(Str(_nPedido))      + CRLF
+			_cQuery += "			) "															+ CRLF
+			_cQuery += "			, SEP_PROT AS "												+ CRLF
+			_cQuery += "			( "															+ CRLF
+			_cQuery += "				SELECT 	VS3.VS3_XPICKI PED "							+ CRLF
+			_cQuery += "					, 	VS3.VS3_CODITE PROD	"							+ CRLF						
+			_cQuery += "					, 	SUM(VS3.VS3_QTDITE) QT	"						+ CRLF
+			_cQuery += "	 			FROM "+RetSqlName("VS3")+" VS3  "						+ CRLF
+			_cQuery += "				INNER JOIN "+RetSqlName("VS1")+" VS1  " 				+ CRLF
+			_cQuery += "					ON	VS1.VS1_FILIAL = VS3.VS3_FILIAL "				+ CRLF
+			_cQuery += "					AND VS1.VS1_NUMORC = VS3.VS3_NUMORC "				+ CRLF
+			_cQuery += "					AND VS1.D_E_L_E_T_ = ' ' "							+ CRLF
+			_cQuery += "				WHERE VS3.D_E_L_E_T_ = ' ' " 							+ CRLF
+			_cQuery += "					AND VS3.VS3_FILIAL = '"+FwXFilial("VS3")+"' " 		+ CRLF
+			_cQuery += "					AND VS3.VS3_XPICKI = '"+_cPicking+"' " 				+ CRLF
+			_cQuery += "				GROUP BY VS3.VS3_XPICKI, VS3.VS3_CODITE	"				+ CRLF
+			_cQuery += "			) "															+ CRLF
+			_cQuery += "		SELECT MRG_PED.* "												+ CRLF
+			_cQuery += "				, NVL(SEP_WIS.QT,0) QT_WIS "							+ CRLF
+			_cQuery += "				, NVL(SEP_PROT.QT,0) QT_PROT "							+ CRLF
+			_cQuery += "		FROM ( "														+ CRLF
+			_cQuery += "				SELECT 	CAST(DETWIS.NU_PEDIDO AS VARCHAR(8)) PED "		+ CRLF		
+			_cQuery += "					, 	CAST(DETWIS.CD_PRODUTO AS CHAR(27)) PROD "		+ CRLF
+			//_cQuery += "				FROM WIS.T_DET_PEDIDO_SAIDA@DBLINK_WISHML DETWIS "		+ CRLF
+			_cQuery += " 				FROM " + _cConectWis + " DETWIS "						+ CRLF
+
+			_cQuery += "				WHERE DETWIS.NU_PEDIDO = "+ AllTrim(Str(_nPedido))      + CRLF 
+			_cQuery += "				UNION "													+ CRLF		
+			_cQuery += "				SELECT LTRIM(VS3.VS3_XPICKI,0) PED_PROT	"				+ CRLF
+			_cQuery += "					, 	VS3.VS3_CODITE PROD_PROT "						+ CRLF
+			_cQuery += "				FROM "+RetSqlName("VS3")+" VS3  " 						+ CRLF
+			_cQuery += "				WHERE VS3.D_E_L_E_T_ = ' ' "							+ CRLF
+			_cQuery += "					AND VS3.VS3_FILIAL = '"+FwXFilial("VS3")+"' "		+ CRLF
+			_cQuery += "					AND VS3.VS3_XPICKI = '"+_cPicking+"' " 				+ CRLF
+			_cQuery += "				GROUP BY VS3.VS3_XPICKI, VS3.VS3_CODITE	"				+ CRLF
+			_cQuery += "	 		) MRG_PED "													+ CRLF
+			_cQuery += "		LEFT JOIN SEP_WIS "												+ CRLF
+			_cQuery += "			ON SEP_WIS.PROD	=	MRG_PED.PROD "							+ CRLF
+			_cQuery += "		LEFT JOIN SEP_PROT "											+ CRLF
+			_cQuery += "			ON SEP_PROT.PROD=MRG_PED.PROD "								+ CRLF
+			_cQuery += "		WHERE NVL(SEP_WIS.QT,0) != NVL(SEP_PROT.QT,0) "					+ CRLF  
+
+		*/
+		nStatus := TCSqlExec(_cQuery)
+		If (nStatus < 0)
+			Aadd(_aMsgCAOA, Upper("[ZPECF011] Problemas na Seleção de dados, comunicar ADM SISTEMA"+ CRLF +TCSQLError()) )
+			_cMens := "[ZPEC11VWIS] Erro recebimento picking "+TCSQLError()
+			Conout(_cMens)
+			ZPEC11EMAI({_cMens}, _cPicking)
+			Break    
+		Endif
+		
+		(_cAliasPesq)->(DbGoTop())
+		//não existem inconsistências	
+		If (_cAliasPesq)->(Eof())
+			_lRet := .T.
+			Break	
+		Endif 	
+
+		_aDiverge 	:= {}
+		_aMsgCAOA	:= {}
+		_lAborta 	:= .F.
+		_lProcessa 	:= .F.
 		_cErro		:= "" 
-		_lLibera 	:= .F.
-		//Caso a quantidade WIS e Protheus esteja igual a Zero não processar
-		If  (_cAliasPesq)->QT_WIS  == 0 .And. (_cAliasPesq)->QT_PROT  == 0
-			_cErro := "divergencia"
-			_cMens := "Pedido " 			+ _cPicking +" | "
-			_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
-			_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+" | "
-			_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
-			_cMens += "Qtde zerado no WIS e Protheus"			
-			Aadd(_aMsgCAOA, Upper(_cMens) )
-		//No caso do Qtde WIS for maior que o Protheus não prosseguir 	
-		ElseIf (_cAliasPesq)->QT_WIS > (_cAliasPesq)->QT_PROT
-			_cErro := "divergencia"
-			_cMens := "Pedido " 			+ _cPicking +" | "
-			_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
-			_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+" | "
-			_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
-			_cMens += "Qtde maior no WIS"	+" | "
-			_cMens += "Picking sera cancelado"			
-			AAdd(_aMsgCAOA, _cMens)
-			_lAborta 		:= .T.
-			Exit	
-		//No caso de a quantidade WIS for maior que a quantidade Protheus deixar Prosseguir 
-		ElseIf  (_cAliasPesq)->QT_WIS  == 0
-			_cErro := "divergewis"
-			_cMens := "Pedido " 			+ _cPicking +" | "
-			_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
-			_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+" | "
-			_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
-			_cMens += "Qtde zerado no WIS zerado"			
-			AAdd(_aMsgCAOA, _cMens)
-			_lProcessa	:= .T.  //indico que irei processar pelo menos um registro
-			_lQtdPRT	:= .T.
-		//No caso de a quantidade Protheus for maior que a quantidade WIS não deixar Prosseguir 
-		ElseIf  (_cAliasPesq)->QT_PROT  == 0
-			_cErro := "divergewis"   //abortar somente o item
-			_cMens := "Pedido " 			+ _cPicking +" | "
-			_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
-			_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+" | "
-			_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
-			_cMens += "Qtde zerado no Protheus zerado"			
-			AAdd(_aMsgCAOA, _cMens)
-			_lQtdWIS 	:= .T. 
-		//Caso seja maior do que no Protheus devo criar um backorder do processo
-		ElseIf  (_cAliasPesq)->QT_WIS > 0 .And. (_cAliasPesq)->QT_WIS < (_cAliasPesq)->QT_PROT
-			_cErro := "divergewis"
-			_cMens := "Pedido " 			+ _cPicking +" | "
-			_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
-			_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+" | "
-			_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
-			_cMens += "Será processado parcialmente devido Qtde maior no WIS, mas contendo Qtde no Protheus"			
-			AAdd(_aMsgCAOA, _cMens)
-			_lProcessa	:= .T.  //indico que irei processar pelo menos um registro
-			_lQtdWIS    := .T.
-		//Caso seja maior do que no Protheus devo criar um backorder do processo
-		ElseIf  (_cAliasPesq)->QT_PROT > 0 .And. (_cAliasPesq)->QT_PROT > (_cAliasPesq)->QT_WIS 
-			_cErro := "divergewis"
-			_cMens := "Pedido " 			+ _cPicking +" | "
-			_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
-			_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+" | "
-			_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
-			_cMens += "Será processado parcialmente devido Qtde a menor no WIS"			
-			AAdd(_aMsgCAOA, _cMens)
-			_lProcessa	:= .T.  //indico que irei processar pelo menos um registro
-			_lQtdWprt 	:= .T.
-		Else
-			_lProcessa 	:= .T.
-			_lQtdWIS 	:= .T.
-			_lQtdprt 	:= .T. 
-		Endif
-		If !Empty(_cErro)
-			//Carregar os valores em uma matriz para processamento posterior
-			_nPosCpo := Ascan(_aDiverge, {|x| x[2]==(_cAliasPesq)->PROD})  
-			If _nPosCpo > 0 
-				_aDiverge[_nPosCpo, 2] += (_cAliasPesq)->QT_WIS
-				_aDiverge[_nPosCpo, 3] += (_cAliasPesq)->QT_PROT
+		_lQtdWIS	:= .F.
+		_lQtdPRT	:= .F.
+		While (_cAliasPesq)->(!Eof())
+			_cErro		:= "" //Limpa var para avaliar prox item
+			_lLibera 	:= .F.
+			
+			//Caso a quantidade WIS e Protheus esteja igual a Zero não processar
+			If  (_cAliasPesq)->QT_WIS  == 0 .And. (_cAliasPesq)->QT_PROT  == 0
+				_cErro := "divergencia"
+				_cMens := "Pedido " 			+ _cPicking +" | "
+				_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
+				_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+" | "
+				_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
+				_cMens += "Qtde zerado no WIS e Protheus"			
+				//_lBloqInv 	:= .F.
+				Aadd(_aMsgCAOA, Upper(_cMens) )
+			//No caso do Qtde WIS for maior que o Protheus não prosseguir 	
+			ElseIf (_cAliasPesq)->QT_WIS > (_cAliasPesq)->QT_PROT
+				_cErro := "divergencia"
+				_cMens := "Pedido " 			+ _cPicking +" | "
+				_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
+				_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+" | "
+				_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
+				_cMens += "Qtde maior no WIS"	+" | "
+				_cMens += "Picking sera cancelado"			
+				AAdd(_aMsgCAOA, _cMens)
+				_lAborta 		:= .T.
+				Exit	
+			//No caso de a quantidade WIS for maior que a quantidade Protheus deixar Prosseguir 
+			ElseIf  (_cAliasPesq)->QT_WIS  == 0
+				_cErro := "divergewis"
+				_cMens := "Pedido " 			+ _cPicking +" | "
+				_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
+				_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+" | "
+				_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
+				_cMens += "Qtde zerado no WIS zerado"			
+				AAdd(_aMsgCAOA, _cMens)
+				_lProcessa	:= .T.  //indico que irei processar pelo menos um registro
+				_lQtdPRT	:= .T.
+			//No caso de a quantidade Protheus for maior que a quantidade WIS não deixar Prosseguir 
+			ElseIf  (_cAliasPesq)->QT_PROT  == 0
+				_cErro := "divergewis"   //abortar somente o item
+				_cMens := "Pedido " 			+ _cPicking +" | "
+				_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
+				_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+" | "
+				_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
+				_cMens += "Qtde zerado no Protheus zerado"			
+				AAdd(_aMsgCAOA, _cMens)
+				_lQtdWIS 	:= .T. 
+			//Caso seja maior do que no Protheus devo criar um backorder do processo
+			ElseIf  (_cAliasPesq)->QT_WIS > 0 .And. (_cAliasPesq)->QT_WIS < (_cAliasPesq)->QT_PROT
+				_cErro := "divergewis"
+				_cMens := "Pedido " 			+ _cPicking +" | "
+				_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
+				_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+" | "
+				_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
+				_cMens += "Será processado parcialmente devido Qtde maior no WIS, mas contendo Qtde no Protheus"			
+				AAdd(_aMsgCAOA, _cMens)
+				_lProcessa	:= .T.  //indico que irei processar pelo menos um registro
+				_lQtdWIS    := .T.
+			//Caso seja maior do que no Protheus devo criar um backorder do processo
+			ElseIf  (_cAliasPesq)->QT_PROT > 0 .And. (_cAliasPesq)->QT_PROT > (_cAliasPesq)->QT_WIS 
+				_cErro := "divergewis"
+				_cMens := "Pedido " 			+ _cPicking +" | "
+				_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
+				_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+" | "
+				_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
+				_cMens += "Será processado parcialmente devido Qtde a menor no WIS"			
+				AAdd(_aMsgCAOA, _cMens)
+				_lProcessa	:= .T.  //indico que irei processar pelo menos um registro
+				_lQtdWprt 	:= .T.
 			Else
-				Aadd(_aDiverge,{ _cPicking,; 
-								(_cAliasPesq)->PROD,; 
-								(_cAliasPesq)->QT_WIS,;  
-								(_cAliasPesq)->QT_PROT,;
-								_cErro}) 
+				_lProcessa 	:= .T.
+				_lQtdWIS 	:= .T.
+				_lQtdprt 	:= .T. 
+			Endif
+
+			//Caso o produto esteja bloqueado por inventario e tenha outros erros, cancela o picking.
+			If   (!Empty(_cErro) .and. _lBloqInv) ;
+			.or. (!Empty(_cErro) .and. dtoc((_cAliasPesq)->DT_INV) != "  /  /  ") //Caso tenha outros erros, cancela picking. 
+				_cMens := " Item com bloqueio de inventario e inconsistencia em quantidade, verificar com ADM sistemas."
+				_cMens += " Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
+				_cMens += " Armazem " 		   	+ AllTrim((_cAliasPesq)->ARMAZEM)+" | "
+				AAdd(_aMsgCAOA, _cMens)
+				_lBloqInv := .T. 
+				_lAborta  := .T.
+				Exit
+			ElseIf  dtoc((_cAliasPesq)->DT_INV) != "  /  /  " //Caso o produto esteja só bloqueado por inventario, nao fatura automatico.
+				//_cErro := "divergewis" //abortar somente o item
+				_cMens := " Item com bloqueio de inventario"
+				_cMens += " Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
+				_cMens += " Armazem " 		   	+ AllTrim((_cAliasPesq)->ARMAZEM)+" | "
+				AAdd(_aMsgCAOA, _cMens)
+				_lBloqInv := .T. 
+			EndIF
+
+			If !Empty(_cErro)
+				//Carregar os valores em uma matriz para processamento posterior
+				_nPosCpo := Ascan(_aDiverge, {|x| x[2]==(_cAliasPesq)->PROD})  
+				If _nPosCpo > 0 
+					_aDiverge[_nPosCpo, 2] += (_cAliasPesq)->QT_WIS
+					_aDiverge[_nPosCpo, 3] += (_cAliasPesq)->QT_PROT
+				Else
+					Aadd(_aDiverge,{ _cPicking,; 
+									(_cAliasPesq)->PROD,; 
+									(_cAliasPesq)->QT_WIS,;  
+									(_cAliasPesq)->QT_PROT,;
+									_cErro}) 
+				Endif	
+			Endif
+			(_cAliasPesq)->(DbSkip())
+		EndDo
+		
+		//Se tem bloqueio de invetario + erro para gerar BO, cancelar o picking (nao da pra gerar BO com bloq de inventario)
+		If !Empty(_cErro) .and. _lBloqInv 
+			_lAborta  := .T.
+			Break
+		EndIF
+
+		//caso seja para abortar processo   1 Abortar pois qtde WIS maior que PRT
+		//									2 Sair pois todas as qtdes WIS estão zeradas
+		//									3 Sair pois todas as quantidades Prothes estão Zeradas	
+		If _lAborta .Or. ! _lQtdWIS .Or. ! _lQtdPRT 
+			//1 Abortar pois qtde WIS maior que PRT 	
+			If _lAborta
+				_cMens 		:= _aMsgCAOA[Len(_aMsgCAOA)]
+				//_aMsgCAOA	:= {_cMens}  //posso gerar as demais mensagens pois será enviado para RG
+				ZPEC11RMsg("divergencia",_cMens)  //divergewis deverá ser utilizada esta tag somente se ocorrer este processo
+				//AAdd(_aMsgCAOA,_cMens)  
+				//ZPEC11EMAI({_cMens}, _cPicking, (_cAliasPesq)->QT_PROT)  //Envio e-mail
+			Else 
+				_cMens		:= "Todos os itens estao com quantidades zeradas para WIS ou Protheus,  Picking nao será processado e status dos orçamentos voltarão ao status inicial, Picking sera cancelado"
+				ZPEC11RMsg("divergewis",_cMens)  //divergewis deverá ser utilizada esta tag somente se ocorrer este processo
+				AAdd(_aMsgCAOA,_cMens)   
+				//rotina para cancelar picking
+				//Deixar continuar pois ira verificar todos os itens e enviar via e-mail
 			Endif	
-		Endif
-		(_cAliasPesq)->(DbSkip())
-	EndDo
-	//caso seja para abortar processo   1 Abortrar pois qtde WIS maior que PRT
- 	//									2 Sair  pois todas as qtdes WIS estão zeradas
-	//									3 Sair pois todas as quantidades Prothes estão Zeradas	
-	If _lAborta .Or. ! _lQtdWIS .Or. ! _lQtdPRT 
-		//1 Abortrar pois qtde WIS maior que PRT 	
-		If _lAborta
-			_cMens 		:= _aMsgCAOA[Len(_aMsgCAOA)]
-			//_aMsgCAOA	:= {_cMens}  //posso gerar as demais mensagens pois será enviado para RG
-			ZPEC11RMsg("divergencia",_cMens)  //divergewis deverá ser utilizada esta tag somente se ocorrer este processo
-			//AAdd(_aMsgCAOA,_cMens)  
-			//ZPEC11EMAI({_cMens}, _cPicking, (_cAliasPesq)->QT_PROT)  //Envio e-mail
-		Else 
-			_cMens		:= "Todos os itens estao com quantidades zeradas para WIS ou Protheus,  Picking nao será processado e status dos orçamentos voltarão ao status inicial, Picking sera cancelado"
+			_lDivergencia 	:= .T.
+			//montar processo de calcelamento do Picking 
+			_aMsg := {}
+			If Len(_aMsg)
+				For _nPos := 1 To Len(_aMsg)
+					Aadd( _aMsgCAOA, _aMsg[_nPos] ) 
+				Next _nPos 
+			Endif
+			Break
+		Endif 
+
+		If ! _lProcessa
+			_cMens		:= "Não foi possivel processar Pedido "+_cPicking
 			ZPEC11RMsg("divergewis",_cMens)  //divergewis deverá ser utilizada esta tag somente se ocorrer este processo
-			AAdd(_aMsgCAOA,_cMens)   
-			//rotina para cancelr picking
-			//Deixar continuar pois ira verificar todos os itens e enviar via e-mail
-		Endif	
-		_lDivergencia 	:= .T.
-		//montar processo de calcelamento do Picking 
-		_aMsg := {}
-		If Len(_aMsg)
-			For _nPos := 1 To Len(_aMsg)
-				Aadd( _aMsgCAOA, _aMsg[_nPos] ) 
-			Next _nPos 
+			_AAdd(aMsgCAOA, _cMens)  //posso gerar as demais mensagens pois será enviado para RG
+			Break  //Deixar continuar pois estara gravado histórico em _aMsgCaoa
 		Endif
-		Break
+
+		//Caso esteja preenchido pedidos divergentes
+		If Len(_aDiverge) > 0
+			_lRet := ZPEC11BKOR( _aDiverge )
+			If ! _lRet
+				_cMens		:= "Não foi possivel desmembrar Pedido "+_cPicking
+				ZPEC11RMsg("divergencia",_cMens)  //divergewis deverá ser utilizada esta tag somente se ocorrer este processo
+				Break 
+			Endif 
+		Endif
+		_lRet := .T.
+	End Sequence 
+
+	If Len(_aMsgCAOA) > 0
+		ZPEC11EMAI(_aMsgCAOA, _cPicking, /*_cCodProd*/)
 	Endif 
 
-	If ! _lProcessa
-		_cMens		:= "Não foi possivel processar Pedido "+_cPicking
-		ZPEC11RMsg("divergewis",_cMens)  //divergewis deverá ser utilizada esta tag somente se ocorrer este processo
-		_AAdd(aMsgCAOA, _cMens)  //posso gerar as demais mensagens pois será enviado para RG
-		Break  //Deixar continuar pois estara gravado histórico em _aMsgCaoa
-	Endif
-
-	//Caso esteja preenchido pedidos divergentes
-	If Len(_aDiverge) > 0
-		_lRet := ZPEC11BKOR( _aDiverge )
-		If ! _lRet
-			_cMens		:= "Não foi possivel desmembrar Pedido "+_cPicking
-			ZPEC11RMsg("divergencia",_cMens)  //divergewis deverá ser utilizada esta tag somente se ocorrer este processo
-			Break 
-		Endif 
-	Endif
-	_lRet := .T.
-End Sequence 
-
-If Len(_aMsgCAOA) > 0
-	ZPEC11EMAI(_aMsgCAOA, _cPicking, /*_cCodProd*/)
-Endif 
-
-If Select((_cAliasPesq)) <> 0
-	(_cAliasPesq)->(DbCloseArea())
-	//Ferase(_cTable+GetDBExtension())
-    _oTable:Delete()
-Endif      
+	If Select((_cAliasPesq)) <> 0
+		(_cAliasPesq)->(DbCloseArea())
+		//Ferase(_cTable+GetDBExtension())
+		_oTable:Delete()
+	Endif      
 Return _lRet
 
 
