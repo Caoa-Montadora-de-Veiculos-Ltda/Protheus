@@ -245,7 +245,7 @@ Static Function ZPEC11GPIK(_oJson, _cTipo, _aRegVS1, _lDivergencia )
 	Local _aOrc			:= {}
 	Local _lFatAutomaTico  := SuperGetMV( "CMV_PEC045"  ,,.F.)  //"WIS.T_DET_PEDIDO_SAIDA@DBLINK_WISHML"
 	
-	Local _lBloqInv := .F.
+	//Local _lBloqInv := .F.
 	
 	Local _nPos
 
@@ -291,7 +291,7 @@ Static Function ZPEC11GPIK(_oJson, _cTipo, _aRegVS1, _lDivergencia )
 
 		//Controlar a gravação dos dados do orçamento caso tenha 
 		Begin Transaction 
-			_lRet := ZPEC11VWIS(_cPicking, @_lDivergencia, @_lBloqInv)
+			_lRet := ZPEC11VWIS(_cPicking, @_lDivergencia)//, @_lBloqInv)
 			//DAC Selecionar processo VS5 e VS6 de carregamento e efetuar baixa
 			//SE NÃO TIVER PASSAR PARA PROXIMO REGISTRO
 			If _lRet 
@@ -347,7 +347,7 @@ Static Function ZPEC11GPIK(_oJson, _cTipo, _aRegVS1, _lDivergencia )
 
 			If _lProcessa
 				//Após receber tenho que tentar faturar, porém caso ocorra problemas os mesmos não retornarão para RGLOG pois ja foi recebido o picking
-				If _lRet  .And. _lFatAutomaTico .And. !_lBloqInv 
+				If _lRet  .And. _lFatAutomaTico //.And. !_lBloqInv 
 					_aOrc := {}
 					//a funcionalidade de faturamento somente recebe dados relativos ao numero de orçamento
 					For _nPos := 1 To Len(_aRegVS1)
@@ -570,7 +570,7 @@ Return _lRet
 @project	GAP002 | Integração da separação - Informar produto e quantidade da cubagem
 @Obs		
 /*/
-Static Function	ZPEC11VWIS(_cPicking, _lDivergencia, _lBloqInv)
+Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
 	Local _cAliasPesq		:= GetNextAlias()   
 	Local _nPedido			:= Val(_cPicking)  //é numerico no WIS
 	Local _cConectDetWis   	:= AllTrim(SuperGetMV( "CMV_PEC044"  ,,""))  //"WIS.T_DET_PEDIDO_SAIDA@DBLINK_WISHML"
@@ -800,7 +800,6 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia, _lBloqInv)
 				_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+" | "
 				_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
 				_cMens += "Qtde zerado no WIS e Protheus"			
-				//_lBloqInv 	:= .F.
 				Aadd(_aMsgCAOA, Upper(_cMens) )
 			//No caso do Qtde WIS for maior que o Protheus não prosseguir 	
 			ElseIf (_cAliasPesq)->QT_WIS > (_cAliasPesq)->QT_PROT
@@ -863,24 +862,26 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia, _lBloqInv)
 				_lQtdprt 	:= .T. 
 			Endif
 
-			//Caso o produto esteja bloqueado por inventario e tenha outros erros, cancela o picking.
-			If   (!Empty(_cErro) .and. _lBloqInv) ;
-			.or. (!Empty(_cErro) .and. dtoc((_cAliasPesq)->DT_INV) != "  /  /  ") //Caso tenha outros erros, cancela picking. 
-				_cMens := " Item com bloqueio de inventario e inconsistencia em quantidade, verificar com ADM sistemas."
-				_cMens += " Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
-				_cMens += " Armazem " 		   	+ AllTrim((_cAliasPesq)->ARMAZEM)+" | "
-				AAdd(_aMsgCAOA, _cMens)
-				_lBloqInv := .T. 
-				_lAborta  := .T.
-				Exit
-			ElseIf  dtoc((_cAliasPesq)->DT_INV) != "  /  /  " //Caso o produto esteja só bloqueado por inventario, nao fatura automatico.
-				//_cErro := "divergewis" //abortar somente o item
-				_cMens := " Item com bloqueio de inventario"
-				_cMens += " Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
-				_cMens += " Armazem " 		   	+ AllTrim((_cAliasPesq)->ARMAZEM)+" | "
-				AAdd(_aMsgCAOA, _cMens)
-				_lBloqInv := .T. 
-			EndIF
+			/* AJUSTE DE BLOQUEIO DE INVENTÁRIO
+				//Caso o produto esteja bloqueado por inventario e tenha outros erros, cancela o picking.
+				If   (!Empty(_cErro) .and. _lBloqInv) ;
+				.or. (!Empty(_cErro) .and. dtoc((_cAliasPesq)->DT_INV) != "  /  /  ") //Caso tenha outros erros, cancela picking. 
+					_cMens := " Item com bloqueio de inventario e inconsistencia em quantidade, verificar com ADM sistemas."
+					_cMens += " Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
+					_cMens += " Armazem " 		   	+ AllTrim((_cAliasPesq)->ARMAZEM)+" | "
+					AAdd(_aMsgCAOA, _cMens)
+					_lBloqInv := .T. 
+					_lAborta  := .T.
+					Exit
+				ElseIf  dtoc((_cAliasPesq)->DT_INV) != "  /  /  " //Caso o produto esteja só bloqueado por inventario, nao fatura automatico.
+					//_cErro := "divergewis" //abortar somente o item
+					_cMens := " Item com bloqueio de inventario"
+					_cMens += " Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
+					_cMens += " Armazem " 		   	+ AllTrim((_cAliasPesq)->ARMAZEM)+" | "
+					AAdd(_aMsgCAOA, _cMens)
+					_lBloqInv := .T. 
+				EndIF
+			*/
 
 			If !Empty(_cErro)
 				//Carregar os valores em uma matriz para processamento posterior
