@@ -7,7 +7,7 @@
 Programa.:              CMVEIC01
 Autor....:              Atilio Amarilla / Marcelo Haro Sanches / Marcelo Carneiro
 Data.....:              20/12/2018 / 10/04/2019
-Descricao / Objetivo:   Inclus√£o de bot√¥es adicionais na rotina EIVEV100
+Descricao / Objetivo:   Inclus„o de bot√¥es adicionais na rotina EIVEV100
 Doc. Origem:            GAP
 Solicitante:            Cliente
 Uso......:              CAOA Montadora de Veiculos - GAP EIC004
@@ -389,7 +389,7 @@ Static Function ValidTela() //ValidaÁ„o de todas as informa√ß√µes do CSV
 					aEspaco	    := AllTrim(Subs(cLinhaIT,214,046)) // 214 a 260 - Espaco
 
 					if empty(cProforma)
-						MsgStop("A Planilha " + cINTCSV + " contÈm campos dos N˙meros das Proformas, que est„o em branco!")
+						MsgStop("A Planilha " + cINTCSV + " contÈm campos dos N˙mero das Proformas, que est„o em branco!")
 						lRet := .F.
 					Endif
 					
@@ -734,7 +734,7 @@ Static Function IntegraInv()
 			Processa( {|| lErroGer := !(U_ZEICF021(cINTCSV,cPoNum,nLayout))}, "Lendo Arquivo de IntegraÁ„o...", OemToAnsi("Lendo dados do arquivo..."),.F.)
 			UnLockByName(_cChaveLock ,.T.,.T.) //VERIFICAR ONDE COLOCAR ISSO, ALTERAR A VARI√ùVEL
 		Else 
-			MsgStop("IntegraÁ„o n„o pode ser concluÌda." + CRLF + "J· existe um processo em andamento.","Erro",1,0,1)
+			MsgStop("IntegraÁ„o n„o pode ser concluÌda." + CRLF + "j· existe um processo em andamento.","Erro",1,0,1)
 			Return
 		EndIf 
 	
@@ -813,44 +813,18 @@ Static Function MontaWork1()
 	AADD(aStrut1, {"EW5_XHOUSE", "C", TamSx3("EW4_XHOUSE")[1], 0})
 	AADD(aStrut1, {"EW5_XCHAV2", "C", 100, 0})
 
-	cArqEW5 := CriaTrab(aStrut1, .T.)
-	if FWCodEmp() <> cFilExec
-		If File(cArqEW5_2+OrdBagExt())
-			fErase(cArqEW5_2+OrdBagExt())
-		EndIf
-	
-		cArqEW5_2 := CriaTrab(Nil, .F.)
-		dbUseArea(.t.,,cArqEW5,cWKEW5,.f.,.f.)
-		IndRegua(cWKEW5,cArqEW5+OrdBagExt(),"EW5_INVOIC+EW5_PO_NUM+EW5_COD_I+EW5_SI_NUM+EW5_POSICA")
-		IndRegua(cWKEW5,cArqEW5_2+OrdBagExt(),"EW5_INVOIC+EW5_CC+EW5_SI_NUM+EW5_PO_NUM+EW5_POSICA+EW5_COD_I+EW5_XCASE")
-	// ordena WKEW5 igual a tela padrao de invoice antecipada, para poder enumerar os itens corretamente
-		
-		SET INDEX TO (cArqEW5)
-		SET INDEX TO (cArqEW5_2) ADDITIVE
-	else
-		If File(cArqEW5_1+OrdBagExt())
-			fErase(cArqEW5_1+OrdBagExt())
-		EndIf
-	
-		If File(cArqEW5_2+OrdBagExt())
-			fErase(cArqEW5_2+OrdBagExt())
-		EndIf
-		cArqEW5_1 := CriaTrab(Nil, .F.)
-		cArqEW5_2 := CriaTrab(Nil, .F.)
-		dbUseArea(.t.,,cArqEW5,cWKEW5,.T.,.F.)
+	//************* Inicio - Ajustes Referente ao GAP195 - Adicionado por Cintia Araujo em 13/06/24
+	oTempTable := FWTemporaryTable():New( cWKEW5 )
+	oTempTable:SetFields( aStrut1 )
+	oTempTable:AddIndex("indice1", {"EW5_INVOIC", "EW5_PO_NUM", "EW5_COD_I", "EW5_SI_NUM", "EW5_POSICA"}  )
+	oTempTable:AddIndex("indice2", {"EW5_INVOIC", "EW5_CC", "EW5_SI_NUM", "EW5_PO_NUM", "EW5_POSICA", "EW5_COD_I", "EW5_XCASE"} )
+	oTempTable:Create()
 
-
-		(cWKEW5)->(DBClearIndex() )
-  		DBCreateIndex(cWKEW5+'1', "EW5_INVOIC+EW5_PO_NUM+EW5_COD_I+EW5_SI_NUM+EW5_POSICA" , {|| EW5_INVOIC+EW5_PO_NUM+EW5_COD_I+EW5_SI_NUM+EW5_POSICA })
-		DBCreateIndex(cWKEW5+'2', "EW5_INVOIC+EW5_CC+EW5_SI_NUM+EW5_PO_NUM+EW5_POSICA+EW5_COD_I+EW5_XCASE", {|| EW5_INVOIC+EW5_CC+EW5_SI_NUM+EW5_PO_NUM+EW5_POSICA+EW5_COD_I+EW5_XCASE})
-	
-	EndIf
-
-
+	DbSelectArea(cWKEW5)
 	(cWKEW5)->(dbSetOrder(1))
+	//************* Fim - Ajustes Referente ao GAP195 - Adicionado por Cintia Araujo em 13/06/24
 
 	dbSelectArea(nArea)
-
 Return
 
 //----------------------------------------------------------------------------------
@@ -1106,7 +1080,7 @@ Static Function LerDados(cINTCSV)
 			[06] Opcional
 			[07] Chave / KeyNo
 			[08] T/MNO - Valor Total
-			// 10/10/2019 - AlteraÁ„o de layout. Inclus√£o de colunas Invoice, Ano Fab e Ano Mod
+			// 10/10/2019 - AlteraÁ„o de layout. Inclus„o de colunas Invoice, Ano Fab e Ano Mod
 			[09] Invoice
 			[10] Ano Fab
 			[11] Ano Mod    */
@@ -3418,7 +3392,7 @@ Static function zLayouts() //ConfiguraÁ„o dos Layouts
 	cmd += CRLF + "	[04] EX"
 	cmd += CRLF + "	[05] CODIGO PRODUTO"
 	cmd += CRLF + "	[06] QUANTIDADE"
-	cmd += CRLF + "	[07] VALOR UNIT√ùRIO"
+	cmd += CRLF + "	[07] VALOR UNIT¡RIO"
 	cmd += CRLF + "	[08] CONTAINER"
 	cmd += CRLF + "	[09] CAIXA"
 	cmd += CRLF + "	[10] PESO LIQUIDO"
