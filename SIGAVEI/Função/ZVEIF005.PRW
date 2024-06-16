@@ -7,7 +7,7 @@
 ±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
 ±±³Funcao    ³ ZVEIF005 ³ Autor ³  A.Carlos             ³ Data ³ 21/05/24 ³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descricao ³ Consulta Movimentacao dos Veiculos                         ³±±
+±±³Descricao ³ Consulta Movimentacao dos Veiculos    VEIVC140             ³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
 ±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
@@ -410,9 +410,9 @@ Else
 		cQuery += "     , SC6.C6_XFABMOD"    //VV1.VV1_FABMOD
 		cQuery += "     , SC6.C6_XDESMOD"    //VV2.VV2_DESMOD
 		cQuery += "     , SC6.C6_XCOREXT"
-		If lVV1_MSBLQL
+		//If lVV1_MSBLQL
 			cQuery += " , SC6.C6_BLOQUEI"    //VV1.VV1_MSBLQL
-		EndIf
+		//EndIf
 		cQuery += " FROM " + RetSqlName("SC6") + " SC6 "
 		/*cQuery +=        " JOIN " + RetSqlName("VV2") + " VV2 "
 		cQuery +=               " ON VV2.VV2_FILIAL = '" + xFilial("VV2") + "'"
@@ -947,11 +947,21 @@ Else
 		cFilAnt := cBkpFilAnt
 		FS_NFCANC('M',cGruVei,cNamSB1,cNamSD1,cNamSD2,cNamSA1,cNamSA2) // Monta Vetor das NF's Canceladas
 	Else
-		MsgStop("Veiculo nao encontrado!","Atenção") //Veiculo nao encontrado! # Atencao
+
+        VEIVC140(cChassi, )
+	
+		//MsgStop("Veiculo nao encontrado!","Atenção") //Veiculo nao encontrado! # Atencao
 		cPesqV := space(30) // Pesquisa VEICULO
-		If nTip > 0
+		nTip   :=  0
+		
+		IF TYPE ("oPesq") == "U"
+		alert ("Jah existe")
+		endif
+
+		//If nTip > 0
 			oPesq:Refresh()
-		EndIf
+		//EndIf
+	
 	EndIf
 EndIf
 //
@@ -1484,3 +1494,228 @@ ElseIf nTip == 2
 	oLbBlV140:Refresh()
 EndIf
 Return()
+
+
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Funcao   ³FG_POSVEI(x,y)³ Autor ³ Andre Luis Almeida ³ Data ³ 06/10/08 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descricao³ Posicionamento do veiculo de diversas maneiras no cad. VV1  ³±±
+±±³         ³ x - variavel para posicionamento. ex:"M->VVG_CHASSI"        ³±±
+±±³         ³ y - campo de retorno para variavel "x". ex:"VV1->VV1_CHASSI"³±±
+±±ÃÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Sequencia³ 1 - Placa ou Chassi ou Frota ( VV1_PLAVEI / VV1_CHASSI /...)³±±
+±±³   da    ³ 2 - Chassi Interno ( VV1_CHAINT )                           ³±±
+±±³Pesquisa ³ 3 - Serie ( VV1_SERMOT )                                    ³±±
+±±³         ³ 4 - Nome do Cliente                                         ³±±
+±±³         ³ 5 - Modelo do Veiculo                                       ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+*/
+Static Function FG_POSVEI(cCampo,cRet)
+	Local lRet     := .f. // Retorno Funcao
+	Local lVerMod  := .t. // Verifica Modelo
+	Local cQAlVV1  := "SQLVV1"
+	Local cQAlSA1  := "SQLSA1"
+	Local cQAlVV2  := "SQLVV2"
+	Local cQuery   := ""
+	Local cQuerySA1:= ""
+	Local cQueryVV2:= ""
+	Local cQuerAux := ""
+	Local lAchouVV1:= .f.
+	Local aVV1     := {}
+	Local cPesq    := &(cCampo)
+	Local _cPlaVei := ""
+	Local _cChassi := ""
+	Local _cCodFro := ""
+	Local _cChaInt := ""
+	Local _cSerMot := ""
+	Local nTam     := 0
+	Local aSA1     := {}
+	Local aVV2     := {}
+
+	Default cRet   := "VV1->VV1_CHASSI"
+	If Empty(cPesq)
+		Return(.t.)
+	EndIf
+	//
+	nTam := TamSX3("VV1_CHASSI")[1]
+	_cChassi := left(Alltrim(cPesq)+space(nTam),nTam)
+	//
+	nTam := TamSX3("VV1_PLAVEI")[1]
+	If nTam >= Len(Alltrim(cPesq))
+		_cPlaVei := left(Alltrim(cPesq)+space(nTam),nTam)
+	Else
+		_cPlaVei := ".f."
+	EndIf
+	nTam := TamSX3("VV1_CODFRO")[1]
+	If nTam >= Len(Alltrim(cPesq))
+		_cCodFro := left(Alltrim(cPesq)+space(nTam),nTam)
+	Else
+		_cCodFro := ".f."
+	EndIf
+	nTam := TamSX3("VV1_CHAINT")[1]
+	If nTam >= Len(Alltrim(cPesq))
+		_cChaInt := left(Alltrim(cPesq)+space(nTam),nTam)
+	Else
+		_cChaInt := ".f."
+	EndIf
+	nTam := TamSX3("VV1_SERMOT")[1]
+	If nTam >= Len(Alltrim(cPesq))
+		_cSerMot := left(Alltrim(cPesq)+space(nTam),nTam)
+	Else
+		_cSerMot := ".f."
+	EndIf
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	cQuerAux := "SELECT DISTINCT VV1.VV1_CHASSI , VV1.VV1_CHAINT , VV1.VV1_PLAVEI , VV1.VV1_FABMOD , VV1.VV1_CODFRO , VV1.VV1_SERMOT , VV1.VV1_SITVEI , "
+	cQuerAux += "VV1.VV1_CODMAR , VV1.VV1_MODVEI , VV2.VV2_DESMOD , VV1.VV1_CORVEI , VVC.VVC_DESCRI , VV1.VV1_PROATU , VV1.VV1_LJPATU , SA1.A1_NOME "
+	cQuerAux += "FROM "+RetSqlName("VV1")+" VV1 "
+	cQuerAux += "LEFT JOIN "+RetSqlName("VV2")+" VV2 ON ( VV2.VV2_FILIAL='"+xFilial("VV2")+"' AND VV2.VV2_CODMAR=VV1.VV1_CODMAR AND VV2.VV2_MODVEI=VV1.VV1_MODVEI AND VV2.VV2_SEGMOD=VV1.VV1_SEGMOD AND VV2.D_E_L_E_T_=' ' ) "
+	cQuerAux += "LEFT JOIN "+RetSqlName("SA1")+" SA1 ON ( SA1.A1_FILIAL='"+xFilial("SA1")+"' AND SA1.A1_COD=VV1.VV1_PROATU AND SA1.A1_LOJA=VV1.VV1_LJPATU AND SA1.D_E_L_E_T_=' ' ) "
+	cQuerAux += "LEFT JOIN "+RetSqlName("VVC")+" VVC ON ( VVC.VVC_FILIAL='"+xFilial("VVC")+"' AND VVC.VVC_CODMAR=VV1.VV1_CODMAR AND VVC.VVC_CORVEI=VV1.VV1_CORVEI AND VVC.D_E_L_E_T_=' ' ) "
+	cQuerAux += "WHERE VV1.VV1_FILIAL='"+xFilial("VV1")+"' AND VV1.D_E_L_E_T_=' 'AND "
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////
+	// Pesquisa pela Placa ou Chassi ou Frota   //
+	//////////////////////////////////////////////
+	SBM->(DbSetOrder(1))
+	SBM->(MsSeek( xFilial("SBM") + left(Alltrim(GetNewPar("MV_GRUVEI","VEI"))+space(4),4) ))
+	cQuery := cQuerAux + "( "
+	If _cPlaVei <> ".f."
+		cQuery += "VV1.VV1_PLAVEI='"+_cPlaVei+"' OR "
+	EndIf
+	cQuery += "VV1.VV1_CHASSI='"+_cChassi+"' OR "
+	If SBM->BM_LENREL # 99
+		cQuery += "VV1.VV1_CHASSI LIKE '%"+Alltrim(cPesq)+"' OR VV1.VV1_CHASSI LIKE '%"+Alltrim(cPesq)+" %' "
+	Else
+		cQuery += "VV1.VV1_CHASSI LIKE '%"+Alltrim(cPesq)+"%' "
+	EndIf
+	If _cCodFro <> ".f."
+		cQuery += " OR VV1.VV1_CODFRO='"+_cCodFro+"' "
+	EndIf
+	cQuery += ") "
+	dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cQAlVV1, .F., .T. )
+	If ( cQAlVV1 )->( Eof())
+		( cQAlVV1 )->( dbCloseArea() )
+	Else
+		lAchouVV1 := .t.
+	EndIf
+	If !lAchouVV1 .and. _cChaInt <> ".f." // caso nao encontre
+		//////////////////////////////////////////
+		// Pesquisa pelo Chassi Interno         //
+		//////////////////////////////////////////
+		cQuery := cQuerAux + " VV1.VV1_CHAINT='"+_cChaInt+"' "
+		dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cQAlVV1, .F., .T. )
+		If ( cQAlVV1 )->( Eof())
+			( cQAlVV1 )->( dbCloseArea() )
+		Else
+			lAchouVV1 := .t.
+		EndIf
+	EndIf
+	If !lAchouVV1 .and. _cSerMot <> ".f." // caso nao encontre
+		//////////////////////////////////////////
+		// Pesquisa pela Serie Motor            //
+		//////////////////////////////////////////
+		cQuery := cQuerAux + " VV1.VV1_SERMOT='"+_cSerMot+"' "
+		dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cQAlVV1, .F., .T. )
+		If ( cQAlVV1 )->( Eof())
+			( cQAlVV1 )->( dbCloseArea() )
+		Else
+			lAchouVV1 := .t.
+		EndIf
+	EndIf
+	If !lAchouVV1 // caso nao encontre
+		//////////////////////////////////////////
+		// Pesquisa pelo Nome do Cliente        //
+		//////////////////////////////////////////
+		cQuerySA1 := "SELECT SA1.A1_COD , SA1.A1_LOJA , SA1.A1_NOME , SA1.A1_CGC, "
+		cQuerySA1 += "A1_END, A1_MUN CIDADE, A1_EST UF "
+		cQuerySA1 += "FROM "+RetSqlName("SA1")+" SA1 "
+		cQuerySA1 += "WHERE SA1.A1_FILIAL='"+xFilial("SA1")+"' AND SA1.A1_NOME LIKE '%"+Alltrim(cPesq)+"%' AND SA1.D_E_L_E_T_=' ' ORDER BY SA1.A1_NOME"
+		dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuerySA1 ), cQAlSA1, .F., .T. )
+		Do While !( cQAlSA1 )->( Eof())
+			Aadd(aSA1,{;
+				( cQAlSA1 )->( A1_COD ),;
+				( cQAlSA1 )->( A1_LOJA ),;
+				AllTrim(( cQAlSA1 )->( A1_NOME )),;
+				Transform(( cQAlSA1 )->( A1_CGC ),IIf(Len(Alltrim(( cQAlSA1 )->( A1_CGC )))>12,"@R 99.999.999/9999-99","@R 999.999.999-99")),;
+				AllTrim(( cQAlSA1 )->( A1_END )),;
+				AllTrim(( cQAlSA1 )->( CIDADE )),;
+				( cQAlSA1 )->( UF )})
+			( cQAlSA1 )->( DbSkip() )
+		EndDo
+		( cQAlSA1 )->( dbCloseArea() )
+		If len(aSA1)>0
+			If FG_POSSA1(aSA1)
+				lVerMod := .f.
+				DbSelectarea("SA1")
+				cQuery := cQuerAux + "VV1.VV1_PROATU='"+SA1->A1_COD+"' AND VV1.VV1_LJPATU='"+SA1->A1_LOJA+"'"
+				dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cQAlVV1, .F., .T. )
+				If ( cQAlVV1 )->( Eof())
+					( cQAlVV1 )->( dbCloseArea() )
+				Else
+					lAchouVV1 := .t.
+				EndIf
+			EndIf
+		EndIf
+	EndIf
+	If !lAchouVV1 .and. lVerMod // caso nao encontre
+		//////////////////////////////////////////
+		// Pesquisa pelo Modelo do Veiculo      //
+		//////////////////////////////////////////
+		cQueryVV2 := "SELECT VV2.VV2_CODMAR , VV2.VV2_MODVEI , VV2.VV2_DESMOD FROM "+RetSqlName("VV2")+" VV2 WHERE VV2.VV2_FILIAL='"+xFilial("VV2")+"' AND VV2.VV2_DESMOD LIKE '%"+Alltrim(cPesq)+"%' AND VV2.D_E_L_E_T_=' ' ORDER BY VV2.VV2_CODMAR , VV2.VV2_DESMOD"
+		dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQueryVV2 ), cQAlVV2, .F., .T. )
+		Do While !( cQAlVV2 )->( Eof())
+			Aadd(aVV2,{ ( cQAlVV2 )->( VV2_CODMAR ) , ( cQAlVV2 )->( VV2_MODVEI ) , ( cQAlVV2 )->( VV2_DESMOD ) })
+			( cQAlVV2 )->( DbSkip() )
+		EndDo
+		( cQAlVV2 )->( dbCloseArea() )
+		If len(aVV2)>0
+			If FG_POSVV2(aVV2)
+				dbSelectarea("VV2")
+				cQuery := cQuerAux + "VV1.VV1_CODMAR='"+VV2->VV2_CODMAR+"' AND VV1.VV1_MODVEI='"+VV2->VV2_MODVEI+"' AND VV1.VV1_SEGMOD='"+VV2->VV2_SEGMOD+"'"
+				dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cQAlVV1, .F., .T. )
+				If ( cQAlVV1 )->( Eof())
+					( cQAlVV1 )->( dbCloseArea() )
+				Else
+					lAchouVV1 := .t.
+				EndIf
+			EndIf
+		EndIf
+	EndIf
+	If lAchouVV1
+		/////////////////////////////////////////////
+		// Monta Vetor com os Veiculos encontrados //
+		/////////////////////////////////////////////
+		Do While !( cQAlVV1 )->( Eof())
+			Aadd(aVV1,{	( cQAlVV1 )->( VV1_CHAINT ),;
+			( cQAlVV1 )->( VV1_PLAVEI ),;
+			( cQAlVV1 )->( VV1_CHASSI ),;
+			( cQAlVV1 )->( VV1_CODMAR )+" "+IIf(!Empty(( cQAlVV1 )->( VV2_DESMOD )),( cQAlVV1 )->( VV2_DESMOD ),( cQAlVV1 )->( VV1_MODVEI )),;
+			left(IIf(!Empty(( cQAlVV1 )->( VVC_DESCRI )),( cQAlVV1 )->( VVC_DESCRI ),( cQAlVV1 )->( VV1_CORVEI )),12),;
+			( cQAlVV1 )->( VV1_FABMOD ),;
+			X3CBOXDESC("VV1_SITVEI",( cQAlVV1 )->( VV1_SITVEI )),;
+			( cQAlVV1 )->( VV1_CODFRO ),;
+			( cQAlVV1 )->( VV1_SERMOT ),;
+			( cQAlVV1 )->( VV1_PROATU )+"-"+( cQAlVV1 )->( VV1_LJPATU )+" "+left(( cQAlVV1 )->( A1_NOME ),25)})
+			( cQAlVV1 )->( DbSkip() )
+		EndDo
+		( cQAlVV1 )->( dbCloseArea() )
+	EndIf
+	DbSelectArea("VV1")
+	DbSetOrder(1)
+	If Len(aVV1) > 0
+		If Len(aVV1)==1
+			DBSeek(xFilial("VV1")+aVV1[1,1])
+			lRet := .t.
+		Else
+			lRet := FG_POSVV1(aVV1)
+		EndIf
+	EndIf
+	If lRet
+		&(cCampo) := &(cRet)
+	EndIf
+Return(lRet)
