@@ -62,6 +62,7 @@ Private lBuscChaInt:= .F.
 Private oHelperFil := DMS_FilialHelper():New()
 Private aSM0Ver    := {} // Filiais Permitidas para o usuario VER linhas das Movimentacoes
 Private aSM0Clic   := {} // Filiais Permitidas para o usuario CLICAR na linha da Movimentacao
+
 Default cParCHASSI := cPesqV
 Default cParChaInt := cChaInt
 
@@ -950,6 +951,14 @@ Else
 
         VEIVC140(cChassi, )
 	
+		DbSelectArea("VV1")
+
+		Return lRet
+
+    EndIf
+
+
+
 		//MsgStop("Veiculo nao encontrado!","Atenção") //Veiculo nao encontrado! # Atencao
 		cPesqV := space(30) // Pesquisa VEICULO
 		nTip   :=  0
@@ -962,9 +971,8 @@ Else
 			oPesq:Refresh()
 		//EndIf
 	
-	EndIf
 EndIf
-//
+
 
 If len(aMov) <= 0
 	Aadd(aMov,{ ctod("") , "" , "   " , "" , "" , "" , "" , 0 , "" , "" , "", 0, -1 , "" , "" })
