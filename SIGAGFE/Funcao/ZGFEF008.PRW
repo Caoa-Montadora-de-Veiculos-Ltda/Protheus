@@ -16,7 +16,7 @@ Data.....:              05/01/24
 Descricao / Objetivo:   Tela para alterar peso cubado e peso bruto de NF emitida.
 Doc. Origem:            GAP032
 Solicitante:            Micaellen Leal
-Uso......:              
+Uso......:              Caoa            
 Obs......:              
 =====================================================================================
 */
