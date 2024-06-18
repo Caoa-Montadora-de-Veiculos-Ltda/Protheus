@@ -7,7 +7,6 @@
 Static cTitulo      := "Ajuste de Peso - Notas Fiscas"
 Static cTabPai      := "SF2" //Cabeçalho de NF.
 Static cTabFilho    := "GW8" //Itens do documento de carga.
-
 /*
 =====================================================================================
 Programa.:              ZGFEF008.PRW
