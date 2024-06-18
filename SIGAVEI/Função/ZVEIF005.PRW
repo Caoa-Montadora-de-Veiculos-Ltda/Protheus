@@ -16,21 +16,21 @@ User Function ZVEIF005(cParCHASSI, cParChaInt)
 Local aObjects  := {}, aInfo := {}, aPos := {}
 Local aSizeHalf := MsAdvSize(.f.)  // Tamanho Maximo da Janela (.t.=TOOLBAR,.f.=SEM TOOLBAR)
 //
-Local cBkpFilAnt  := cFilAnt
+Local c005FilAnt  := cFilAnt
 Local nCont       := 0
 Local nRadio      := 1
 Local aVeiAux     := {}
 Local lPEVC140VEI := ExistBlock("VC140VEI")
 Local cVMvOutFil  := "0" // 0 = Sem Permissao ( Não Ver Movimentacoes de Filiais se o usuario nao tem acesso )
 //
-Private cPesqV   := space(30) // Pesquisa VEICULO
-Private cChaInt  := space(6) // ChaInt VEICULO
+Private cpesqv5   := space(30) // Pesquisa VEICULO
+Private cChaInt005 := space(6) // ChaInt005VEICULO
 Private cChassi  := "" // Chassi VEICULO
 Private cPlaVei  := "" // Placa VEICULO
 Private cFilAtu  := ""
-Private aMov     := {} // Movimentacao Externa
-Private aInt     := {} // Movimentacao Interna
-Private aAte     := {} // Atendimentos
+Private aMov005    := {} // Movimentacao Externa
+Private aInt005    := {} // Movimentacao Interna
+Private aAte005    := {} // Atendimentos
 Private aVei     := {} // Informações Chassi - Descricao VEICULO
 Private cAte     := "01/11" // VV0_OPEMOV ( 0-Venda / 1-Simulacao ) / VV0_SITNFI ( 1-Valida )
 Private cSitVei  := ""
@@ -63,8 +63,8 @@ Private oHelperFil := DMS_FilialHelper():New()
 Private aSM0Ver    := {} // Filiais Permitidas para o usuario VER linhas das Movimentacoes
 Private aSM0Clic   := {} // Filiais Permitidas para o usuario CLICAR na linha da Movimentacao
 
-Default cParCHASSI := cPesqV
-Default cParChaInt := cChaInt
+Default cParCHASSI := cpesqv5
+Default cParChaInt005:= cChaInt005
 
 If VAI->(FieldPos("VAI_PERRAS")) > 0 // Movimentacoes em Filiais onde o usuario nao tem acesso
 	VAI->(dbSetOrder(4))
@@ -87,26 +87,26 @@ aSM0Clic := oHelperFil:GetAllFil( ( cVMvOutFil == "2" ) ) // .t. = Retorna todas
 Endif*/
 
 if !Empty(cParChaInt)
-	lBuscChaInt := .T.
-	cPesqV := cParChaInt
-	cChaInt := cParChaInt
+	lBuscChaInt:= .T.
+	cpesqv5 := cParChaInt
+	cChaInt005:= cParChaInt
 elseif ! Empty(cParCHASSI)
-	cPesqV := left(cParCHASSI+space(30),30)
+	cpesqv5 := left(cParCHASSI+space(30),30)
 end
 //
 For nCont := 1 to Len(aSM0Ver)
 
-	cFilAnt := aSM0Ver[nCont]
-	aAdd(aFil,{ cFilAnt , FWFilialName() })
+	cFilAnt5 := aSM0Ver[nCont]
+	aAdd(aFil,{ cFilAnt5 , FWFilialName() })
 
 Next
-cFilAnt := cBkpFilAnt
+cFilAnt5 := c005FilAnt
 //
 
 // Arrays Listbox
-Aadd(aMov, { ctod("") , "" , "   " , "" , "" , "" , "" , 0 ,   "" , "" , "", 0, -1 , "" , "" })
-Aadd(aInt, { ctod("") , "" , "" , "" , "" })
-Aadd(aAte, { "O" , ctod("") , "" , "" , "" , 0 , "" })
+Aadd(aMov005, { ctod("") , "" , "   " , "" , "" , "" , "" , 0 ,   "" , "" , "", 0, -1 , "" , "" })
+Aadd(aInt005, { ctod("") , "" , "" , "" , "" })
+Aadd(aAte005, { "O" , ctod("") , "" , "" , "" , 0 , "" })
 
 // Ponto de Entrada para retorno de informações customizadas do Veículo
 // Retorna: títulos das colunas e tamanhos das colunas
@@ -140,109 +140,109 @@ aAdd( aObjects, { 0 , 80 , .T. , .F. } ) // ListBox Movimentacoes Internas / Ate
 aAdd( aObjects, { 0 , 35 , .T. , .F. } ) // Rodape
 aPos := MsObjSize( aInfo, aObjects )
 
-DEFINE MSDIALOG oMov140 FROM aSizeHalf[7],0 TO aSizeHalf[6],aSizeHalf[5] TITLE ("Movimentos") OF oMainWnd;
+DEFINE MSDIALOG oMov005 FROM aSizeHalf[7],0 TO aSizeHalf[6],aSizeHalf[5] TITLE ("Movimentos") OF oMainWnd;
 	PIXEL STYLE DS_MODALFRAME STATUS //Movimentos / Atendimentos do Veiculo
 
-	oMov140:lEscClose := .F.
+	oMov005:lEscClose := .F.
 
 	// ------- //
 	// Veículo //
 	// ------- //
-	@ aPos[1,1] - 003, aPos[1,2] + 001 TO aPos[1,1] + 015, aPos[1,4] - 055 LABEL (" " + "Veiculo" + " ") OF oMov140 PIXEL // Veiculo
-	@ aPos[1,1] + 004, aPos[1,2] + 006 SAY "Chassi" SIZE 30,08 OF oMov140 PIXEL COLOR CLR_BLUE // Chassi:
+	@ aPos[1,1] - 003, aPos[1,2] + 001 TO aPos[1,1] + 015, aPos[1,4] - 055 LABEL (" " + "Veiculo" + " ") OF oMov005 PIXEL // Veiculo
+	@ aPos[1,1] + 004, aPos[1,2] + 006 SAY "Chassi" SIZE 30,08 OF oMov005 PIXEL COLOR CLR_BLUE // Chassi:
 
-	@ aPos[1,1] + 003, aPos[1,2] + 027 MSGET oPesq VAR cPesqV VALID FS_PESQVEI(1, aPos, lPEVC140VEI) .and. FS_ORDEM(nRadio) PICTURE "@!";
-		F3 "VV1" SIZE 80,06 OF oMov140 PIXEL COLOR CLR_BLUE WHEN Empty(cParCHASSI)
+	@ aPos[1,1] + 003, aPos[1,2] + 027 MSGET oPesq VAR cpesqv5 VALID FS_PESQVEI(1, aPos, lPEVC140VEI) .and. FS_ORDEM(nRadio) PICTURE "@!";
+		F3 "VV1" SIZE 80,06 OF oMov005 PIXEL COLOR CLR_BLUE WHEN Empty(cParCHASSI)
 
-	@ aPos[1,1] + 004, aPos[1,2] + 113 SAY ( cSitVei + " " + IIf(!lReqOS, cFilAtu, "") ) SIZE 400,08 OF oMov140 PIXEL COLOR CLR_BLUE
-	@ aPos[1,1] + 004, aPos[1,2] + 350 SAY cBloqVei SIZE 100,08 OF oMov140 PIXEL COLOR CLR_RED
-	@ aPos[1,1] + 004, aPos[1,4] - 097 SAY "<< " + cChaInt + " >>" SIZE 50,08 OF oMov140 PIXEL COLOR CLR_RED
-	@ aPos[1,1] + 003, aPos[1,4] - 050 BUTTON oGrpSair PROMPT "SAIR" OF oMov140 SIZE 50,10 PIXEL ACTION oMov140:End() //SAIR
+	@ aPos[1,1] + 004, aPos[1,2] + 113 SAY ( cSitVei + " " + IIf(!lReqOS, cFilAtu, "") ) SIZE 400,08 OF oMov005 PIXEL COLOR CLR_BLUE
+	@ aPos[1,1] + 004, aPos[1,2] + 350 SAY cBloqVei SIZE 100,08 OF oMov005 PIXEL COLOR CLR_RED
+	@ aPos[1,1] + 004, aPos[1,4] - 097 SAY "<< " + cChaInt005+ " >>" SIZE 50,08 OF oMov005 PIXEL COLOR CLR_RED
+	@ aPos[1,1] + 003, aPos[1,4] - 050 BUTTON o005Sair PROMPT "SAIR" OF oMov005 SIZE 50,10 PIXEL ACTION oMov005:End() //SAIR
 	// Fim Veículo
 
 	// --------------------- //
 	// Movimentações Fiscais // 
 	// --------------------- //
-	@ aPos[2,1] - 003, aPos[2,2] TO aPos[2,3], aPos[2,4] + 001 LABEL (" " + "Movimentacoes Fiscais" + " ") OF oMov140 PIXEL // Movimentacoes Fiscais
+	@ aPos[2,1] - 003, aPos[2,2] TO aPos[2,3], aPos[2,4] + 001 LABEL (" " + "Movimentacoes Fiscais" + " ") OF oMov005 PIXEL // Movimentacoes Fiscais
 
-	@ aPos[2,1] + 005, aPos[2,2] + 003 CHECKBOX oVNFCanc VAR lVNFCanc PROMPT "Exibir NFs Canceladas" OF oMov140 ON CLICK ( FS_PESQVEI(1, aPos, lPEVC140VEI) );
-		SIZE 200,08 PIXEL WHEN !Empty(cPesqV) // Exibir NFs Canceladas
+	@ aPos[2,1] + 005, aPos[2,2] + 003 CHECKBOX oVNFCanc VAR lVNFCanc PROMPT "Exibir NFs Canceladas" OF oMov005 ON CLICK ( FS_PESQVEI(1, aPos, lPEVC140VEI) );
+		SIZE 200,08 PIXEL WHEN !Empty(cpesqv5) // Exibir NFs Canceladas
 
-	@ aPos[2,1] + 015, aPos[2,2] + 003 CHECKBOX oVNFComp VAR lVNFComp PROMPT "Exibir NFs de complemento em linhas separadas" OF oMov140 ON CLICK ( FS_PESQVEI(1, aPos, lPEVC140VEI) );
-		SIZE 200,08 PIXEL WHEN !Empty(cPesqV) // Exibir NFs de complemento em linhas separadas
+	@ aPos[2,1] + 015, aPos[2,2] + 003 CHECKBOX oVNFComp VAR lVNFComp PROMPT "Exibir NFs de complemento em linhas separadas" OF oMov005 ON CLICK ( FS_PESQVEI(1, aPos, lPEVC140VEI) );
+		SIZE 200,08 PIXEL WHEN !Empty(cpesqv5) // Exibir NFs de complemento em linhas separadas
 
-	@ aPos[2,1] + 025, aPos[2,2] + 003 CHECKBOX oVNFFret VAR lVNFFret PROMPT "Exibir NFs de frete em linhas separadas" OF oMov140 ON CLICK ( FS_PESQVEI(1, aPos, lPEVC140VEI) );
-		SIZE 200,08 PIXEL WHEN !Empty(cPesqV) // Exibir NFs de frete em linhas separadas
+	@ aPos[2,1] + 025, aPos[2,2] + 003 CHECKBOX oVNFFret VAR lVNFFret PROMPT "Exibir NFs de frete em linhas separadas" OF oMov005 ON CLICK ( FS_PESQVEI(1, aPos, lPEVC140VEI) );
+		SIZE 200,08 PIXEL WHEN !Empty(cpesqv5) // Exibir NFs de frete em linhas separadas
 
-	@ aPos[2,1] + 008, aPos[2,2] + 165 SAY "Ordem" SIZE 50,08 OF oMov140 PIXEL
-	@ aPos[2,1] + 007, aPos[2,2] + 185 RADIO oRadio VAR nRadio PROMPT "Cronológica", "Cronológica Inversa" 3D OF oMov140 PIXEL SIZE 075,10 // Cronológica / Cronológica Inversa
+	@ aPos[2,1] + 008, aPos[2,2] + 165 SAY "Ordem" SIZE 50,08 OF oMov005 PIXEL
+	@ aPos[2,1] + 007, aPos[2,2] + 185 RADIO oRadio VAR nRadio PROMPT "Cronológica", "Cronológica Inversa" 3D OF oMov005 PIXEL SIZE 075,10 // Cronológica / Cronológica Inversa
 	oRadio:bChange := {|| FS_ORDEM(nRadio) }
 
 	// Listbox Movimentações Fiscais
-	oLbMov140 := TWBrowse():New( aPos[2,1]+035, aPos[2,2]+001, aPos[2,4]-4, aPos[2,3]-(aPos[2,1]+36),,,,oMov140 ,,,,,,,,,,,,.F.,,.T.,,.F.,,, )
-	oLbMov140:AddColumn( TCColumn():New( "Data"                          , { || Transform(aMov[oLbMov140:nAt,1], "@D")                } ,,,,"LEFT",  025 ,.F.,.F.,,,,.F.,) )
-	oLbMov140:AddColumn( TCColumn():New( "Filial"                        , { || aMov[oLbMov140:nAt,2]                                 } ,,,,"LEFT",  027 ,.F.,.F.,,,,.F.,) )
-	oLbMov140:AddColumn( TCColumn():New( "Tipo"                          , { || substr(aMov[oLbMov140:nAt,3], 3)                      } ,,,,"LEFT",  023 ,.F.,.F.,,,,.F.,) )
-	oLbMov140:AddColumn( TCColumn():New( "Operação"                      , { || aMov[oLbMov140:nAt,4]                                 } ,,,,"LEFT",  042 ,.F.,.F.,,,,.F.,) )
-	oLbMov140:AddColumn( TCColumn():New( AllTrim(RetTitle("VVF_TIPDOC")) , { || aMov[oLbMov140:nAt,14]                                } ,,,,"LEFT",  042 ,.F.,.F.,,,,.F.,) )
-	oLbMov140:AddColumn( TCColumn():New( "TES"                           , { || aMov[oLbMov140:nAt,5]                                 } ,,,,"LEFT",  045 ,.F.,.F.,,,,.F.,) )
-	oLbMov140:AddColumn( TCColumn():New( "Status"                        , { || aMov[oLbMov140:nAt,6]                                 } ,,,,"LEFT",  023 ,.F.,.F.,,,,.F.,) )
-	oLbMov140:AddColumn( TCColumn():New( "NF/Série"                      , { || aMov[oLbMov140:nAt,7]                                 } ,,,,"LEFT",  043 ,.F.,.F.,,,,.F.,) )
-	oLbMov140:AddColumn( TCColumn():New( "Valor"                         , { || Transform(aMov[oLbMov140:nAt, 8], "@E 99,999,999.99") } ,,,,"RIGHT", 042 ,.F.,.F.,,,,.F.,) )
-	oLbMov140:AddColumn( TCColumn():New( "Custo+Frete"                   , { || Transform(aMov[oLbMov140:nAt,12], "@E 99,999,999.99") } ,,,,"RIGHT", 042 ,.F.,.F.,,,,.F.,) )
-	oLbMov140:AddColumn( TCColumn():New( "Fornecedor/Clisnte"            , { || aMov[oLbMov140:nAt,9]                                 } ,,,,"LEFT",  120 ,.F.,.F.,,,,.F.,) )
-	oLbMov140:AddColumn( TCColumn():New( "Transação/Atendimento"         , { || aMov[oLbMov140:nAt,10]                                } ,,,,"LEFT",  040 ,.F.,.F.,,,,.F.,) )
+	oLbMov005 := TWBrowse():New( aPos[2,1]+035, aPos[2,2]+001, aPos[2,4]-4, aPos[2,3]-(aPos[2,1]+36),,,,oMov005 ,,,,,,,,,,,,.F.,,.T.,,.F.,,, )
+	oLbMov005:AddColumn( TCColumn():New( "Data"                          , { || Transform(aMov005[oLbMov005:nAt,1], "@D")                } ,,,,"LEFT",  025 ,.F.,.F.,,,,.F.,) )
+	oLbMov005:AddColumn( TCColumn():New( "Filial"                        , { || aMov005[oLbMov005:nAt,2]                                 } ,,,,"LEFT",  027 ,.F.,.F.,,,,.F.,) )
+	oLbMov005:AddColumn( TCColumn():New( "Tipo"                          , { || substr(aMov005[oLbMov005:nAt,3], 3)                      } ,,,,"LEFT",  023 ,.F.,.F.,,,,.F.,) )
+	oLbMov005:AddColumn( TCColumn():New( "Operação"                      , { || aMov005[oLbMov005:nAt,4]                                 } ,,,,"LEFT",  042 ,.F.,.F.,,,,.F.,) )
+	oLbMov005:AddColumn( TCColumn():New( AllTrim(RetTitle("VVF_TIPDOC")) , { || aMov005[oLbMov005:nAt,14]                                } ,,,,"LEFT",  042 ,.F.,.F.,,,,.F.,) )
+	oLbMov005:AddColumn( TCColumn():New( "TES"                           , { || aMov005[oLbMov005:nAt,5]                                 } ,,,,"LEFT",  045 ,.F.,.F.,,,,.F.,) )
+	oLbMov005:AddColumn( TCColumn():New( "Status"                        , { || aMov005[oLbMov005:nAt,6]                                 } ,,,,"LEFT",  023 ,.F.,.F.,,,,.F.,) )
+	oLbMov005:AddColumn( TCColumn():New( "NF/Série"                      , { || aMov005[oLbMov005:nAt,7]                                 } ,,,,"LEFT",  043 ,.F.,.F.,,,,.F.,) )
+	oLbMov005:AddColumn( TCColumn():New( "Valor"                         , { || Transform(aMov005[oLbMov005:nAt, 8], "@E 99,999,999.99") } ,,,,"RIGHT", 042 ,.F.,.F.,,,,.F.,) )
+	oLbMov005:AddColumn( TCColumn():New( "Custo+Frete"                   , { || Transform(aMov005[oLbMov005:nAt,12], "@E 99,999,999.99") } ,,,,"RIGHT", 042 ,.F.,.F.,,,,.F.,) )
+	oLbMov005:AddColumn( TCColumn():New( "Fornecedor/Clisnte"            , { || aMov005[oLbMov005:nAt,9]                                 } ,,,,"LEFT",  120 ,.F.,.F.,,,,.F.,) )
+	oLbMov005:AddColumn( TCColumn():New( "Transação/Atendimento"         , { || aMov005[oLbMov005:nAt,10]                                } ,,,,"LEFT",  040 ,.F.,.F.,,,,.F.,) )
 	If VVF->(FieldPos("VVF_NUMOP")) <> 0
-		oLbMov140:AddColumn( TCColumn():New( AllTrim(RetTitle("VVF_NUMOP")) , { || aMov[oLbMov140:nAt,15]                              } ,,,,"LEFT",  042 ,.F.,.F.,,,,.F.,) )
+		oLbMov005:AddColumn( TCColumn():New( AllTrim(RetTitle("VVF_NUMOP")) , { || aMov005[oLbMov005:nAt,15]                              } ,,,,"LEFT",  042 ,.F.,.F.,,,,.F.,) )
 	EndIf
-	oLbMov140:bLDblClick := { |nRow,nCol,nFlags| FS_DRILLIN(aMov[oLbMov140:nAt,13],aMov[oLbMov140:nAt,3],Left(aMov[oLbMov140:nAt,2],Len(cFilAnt))) }
-	oLbMov140:SetArray(aMov)
+	oLbMov005:bLDblClick := { |nRow,nCol,nFlags| FS_DRILLIN(aMov005[oLbMov005:nAt,13],aMov005[oLbMov005:nAt,3],Left(aMov005[oLbMov005:nAt,2],Len(cFilAnt5))) }
+	oLbMov005:SetArray(aMov005)
 	// Fim Listbox Movimentações Fiscais
 	// Fim Movimentações Fiscais
 
 	// Movimentações Internas
-	@ aPos[3,1] - 003, aPos[3,2] TO aPos[3,3], (aPos[3,4] * 0.3) + 002 LABEL (" " + "Movimentacoes Internas" + " ") OF oMov140 PIXEL // Movimentacoes Internas
+	@ aPos[3,1] - 003, aPos[3,2] TO aPos[3,3], (aPos[3,4] * 0.3) + 002 LABEL (" " + "Movimentacoes Internas" + " ") OF oMov005 PIXEL // Movimentacoes Internas
 
 	// Listbox Movimentações Internas
-	@ aPos[3,1] + 004, aPos[3,2] + 001 LISTBOX oLbInt140 FIELDS HEADER "Data", "Filial", "Arm", "Localizacao" COLSIZES 25, 27, 15, 60; //Data # Filial # Arm. # Localizacao
-		SIZE ((aPos[3,4] - aPos[3,2]) * 0.3) - 2, aPos[3,3] - aPos[3,1] - 5 OF oMov140 PIXEL
+	@ aPos[3,1] + 004, aPos[3,2] + 001 LISTBOX oLbInt005 FIELDS HEADER "Data", "Filial", "Arm", "Localizacao" COLSIZES 25, 27, 15, 60; //Data # Filial # Arm. # Localizacao
+		SIZE ((aPos[3,4] - aPos[3,2]) * 0.3) - 2, aPos[3,3] - aPos[3,1] - 5 OF oMov005 PIXEL
 
-	oLbInt140:SetArray(aInt)
-	oLbInt140:bLine := { || {  Transform(aInt[oLbInt140:nAt,1], "@D"),;
-							aInt[oLbInt140:nAt,2],                 ;
-							aInt[oLbInt140:nAt,3],                 ;
-							aInt[oLbInt140:nAt,4] }}
+	oLbInt005:SetArray(aInt005)
+	oLbInt005:bLine := { || {  Transform(aInt005[oLbInt005:nAt,1], "@D"),;
+							aInt005[oLbInt005:nAt,2],                 ;
+							aInt005[oLbInt005:nAt,3],                 ;
+							aInt005[oLbInt005:nAt,4] }}
 	// Fim Listbox Movimentações Internas
 	// Fim Movimentações Internas
 
 	// Atendimentos Não Finalizados
-	@ aPos[3,1] - 003, aPos[3,2] + (aPos[3,4] * 0.3) TO aPos[3,3], aPos[3,4] + 001 LABEL (" " + "Atendimentos Nao Finalizados" + " ") OF oMov140 PIXEL // Atendimentos Nao Finalizados
+	@ aPos[3,1] - 003, aPos[3,2] + (aPos[3,4] * 0.3) TO aPos[3,3], aPos[3,4] + 001 LABEL (" " + "Atendimentos Nao Finalizados" + " ") OF oMov005 PIXEL // Atendimentos Nao Finalizados
 
 	// Listbox Atendimentos Não Finalizados
-	@ aPos[3,1] + 004, aPos[3,2] + 001 + (aPos[3,4] * 0.3) LISTBOX oLbAte140 FIELDS HEADER "", "Data", "Filial", "Atendimento", "TES",; // Data # Filial # Atendimento # TES
+	@ aPos[3,1] + 004, aPos[3,2] + 001 + (aPos[3,4] * 0.3) LISTBOX oLbAte005 FIELDS HEADER "", "Data", "Filial", "Atendimento", "TES",; // Data # Filial # Atendimento # TES
 		"Valor", "Cliente" COLSIZES 10, 25, 27, 35, 45, 45, 150 SIZE ((aPos[3,4] - aPos[3,2]) * 0.7) - 2, aPos[3,3] - aPos[3,1] - 5; // Valor # Cliente
-			OF oMov140 PIXEL ON DBLCLICK FS_VERATEND(aAte[oLbAte140:nAt,3], aAte[oLbAte140:nAt,4])
+			OF oMov005 PIXEL ON DBLCLICK FS_VERATEND(aAte005[oLbAte005:nAt,3], aAte005[oLbAte005:nAt,4])
 
-	oLbAte140:SetArray(aAte)
-	oLbAte140:bLine := { || {  IIf(aAte[oLbAte140:nAt,1] == "A", oBR_VERDE,                      ;
-								IIf(aAte[oLbAte140:nAt,1] == "X", oBR_OCEAN,                  ;
-								IIf(aAte[oLbAte140:nAt,1] == "F", oBR_PRETO,                  ;
-								IIf(aAte[oLbAte140:nAt,1] == "P", oBR_AMARELO,                ;
-								IIf(aAte[oLbAte140:nAt,1] == "R", oBR_LARANJA,                ;
-								IIf(aAte[oLbAte140:nAt,1] == "O", oBR_BRANCO,                 ;
-								IIf(aAte[oLbAte140:nAt,1] == "L", oBR_AZUL,                   ;
+	oLbAte005:SetArray(aAte005)
+	oLbAte005:bLine := { || {  IIf(aAte005[oLbAte005:nAt,1] == "A", oBR_VERDE,                      ;
+								IIf(aAte005[oLbAte005:nAt,1] == "X", oBR_OCEAN,                  ;
+								IIf(aAte005[oLbAte005:nAt,1] == "F", oBR_PRETO,                  ;
+								IIf(aAte005[oLbAte005:nAt,1] == "P", oBR_AMARELO,                ;
+								IIf(aAte005[oLbAte005:nAt,1] == "R", oBR_LARANJA,                ;
+								IIf(aAte005[oLbAte005:nAt,1] == "O", oBR_BRANCO,                 ;
+								IIf(aAte005[oLbAte005:nAt,1] == "L", oBR_AZUL,                   ;
 								oBR_VERMELHO))))))),                                       ;
-							Transform(aAte[oLbAte140:nAt,2], "@D"),                           ;
-							aAte[oLbAte140:nAt,3],                                            ;
-							aAte[oLbAte140:nAt,4],                                            ;
-							aAte[oLbAte140:nAt,5],                                            ;
-							FG_AlinVlrs(Transform(aAte[oLbAte140:nAt,6], "@E 99,999,999.99")),;
-							aAte[oLbAte140:nAt,7] }}
+							Transform(aAte005[oLbAte005:nAt,2], "@D"),                           ;
+							aAte005[oLbAte005:nAt,3],                                            ;
+							aAte005[oLbAte005:nAt,4],                                            ;
+							aAte005[oLbAte005:nAt,5],                                            ;
+							FG_AlinVlrs(Transform(aAte005[oLbAte005:nAt,6], "@E 99,999,999.99")),;
+							aAte005[oLbAte005:nAt,7] }}
 	// Fim Listbox Atendimentos Não Finalizados
 	// Fim Atendimentos Não Finalizados
 
 	// Informações Chassi
-	@ aPos[4,1] - 003, aPos[4,2] TO aPos[4,3] + 003, aPos[4,4] - 125 LABEL (" " + "Informações Chassi" + " ") OF oMov140 PIXEL // Informações Chassi
+	@ aPos[4,1] - 003, aPos[4,2] TO aPos[4,3] + 003, aPos[4,4] - 125 LABEL (" " + "Informações Chassi" + " ") OF oMov005 PIXEL // Informações Chassi
 
 	// Listbox Informações Chassi
 	FS_OLBVEI(0, aPos)
@@ -250,17 +250,17 @@ DEFINE MSDIALOG oMov140 FROM aSizeHalf[7],0 TO aSizeHalf[6],aSizeHalf[5] TITLE (
 	// Fim Informações Chassi
 
 	// Botões
-	@ aPos[4,1] + 005, aPos[4,4] - 120 BUTTON oGrpDesBlo PROMPT ("Veículo Desbloqueado" + CHR(13) + CHR(10) + "Visualiza Histórico") OF oMov140 SIZE 65,25 PIXEL ACTION FS_BLOQVEI() // Veículo Desbloqueado / Visualiza Histórico
-	oGrpDesBlo:lVisible := lBotDesB
+	@ aPos[4,1] + 005, aPos[4,4] - 120 BUTTON o005DesBlo PROMPT ("Veículo Desbloqueado" + CHR(13) + CHR(10) + "Visualiza Histórico") OF oMov005 SIZE 65,25 PIXEL ACTION FS_BLOQVEI() // Veículo Desbloqueado / Visualiza Histórico
+	o005DesBlo:lVisible := lBotDesB
 
-	@ aPos[4,1] + 005, aPos[4,4] - 120 BUTTON oGrpBloque PROMPT ("Veículo Bloqueado" + CHR(13) + CHR(10) + "Visualiza Histórico") OF oMov140 SIZE 65,25 PIXEL ACTION FS_BLOQVEI() // Veículo Bloqueado / Visualiza Histórico
-	oGrpBloque:lVisible := lBotBloq
+	@ aPos[4,1] + 005, aPos[4,4] - 120 BUTTON o005Bloque PROMPT ("Veículo Bloqueado" + CHR(13) + CHR(10) + "Visualiza Histórico") OF oMov005 SIZE 65,25 PIXEL ACTION FS_BLOQVEI() // Veículo Bloqueado / Visualiza Histórico
+	o005Bloque:lVisible := lBotBloq
 
-	@ aPos[4,1] + 005, aPos[4,4] - 050 BUTTON oGrpNFCanc PROMPT "NFs Canceladas" OF oMov140 SIZE 50,10 PIXEL ACTION FS_NFCANC('V') WHEN ( len(aNFCanE) > 0 .or. len(aNFCanS) > 0 ) //NFs Canceladas
-	@ aPos[4,1] + 020, aPos[4,4] - 050 BUTTON oGrpLegend PROMPT "Legenda" OF oMov140 SIZE 50,10 PIXEL ACTION VXA018LEG() //Legenda
+	@ aPos[4,1] + 005, aPos[4,4] - 050 BUTTON o005NFCanc PROMPT "NFs Canceladas" OF oMov005 SIZE 50,10 PIXEL ACTION FS_NFCANC('V') WHEN ( len(aNFCanE) > 0 .or. len(aNFCanS) > 0 ) //NFs Canceladas
+	@ aPos[4,1] + 020, aPos[4,4] - 050 BUTTON o005Legend PROMPT "Legenda" OF oMov005 SIZE 50,10 PIXEL ACTION VXA018LEG() //Legenda
 	// Fim Botões
 
-ACTIVATE MSDIALOG oMov140
+ACTIVATE MSDIALOG oMov005
 
 DbSelectArea("VV1")
 Return
@@ -273,14 +273,14 @@ Return
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Descricao ³ Levantamento do Nome do Cliente 			                  ³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Parametros³ nTip = Tipo de Chamada (0 - Inicial / 1 - Pesquisa)        ³±±
+±±³Parametros³ nTip005 = Tipo de Chamada (0 - Inicial / 1 - Pesquisa)        ³±±
 ±±³          ³ aPos = Posição do objeto na tela principal                 ³±±
 ±±³          ³ lPEVC140VEI = Existência do Ponto de Entrada VC140VEI      ³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
 ±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 */
-Static Function FS_PESQVEI(nTip, aPos, lPEVC140VEI)
+Static Function FS_PESQVEI(nTip005, aPos, lPEVC140VEI)
 Local aRet      := {}
 Local lRet      := .f.
 Local nTam      := 0
@@ -298,7 +298,7 @@ Local cQAlSD2   := "SQLSD2"  // SD2
 Local cQAlSD3   := "SQLSD3"  // SD3
 Local cSTATUS   := ""
 Local aVV1      := {}
-Local cGetKey   := Alltrim(cPesqV)
+Local cGetKey   := Alltrim(cpesqv5)
 Local cNroNF    := ""
 Local cSerNF    := ""
 Local cB1COD    := ""
@@ -333,7 +333,7 @@ Local cFilSF4   := ""
 Local cAgrDes   := ""
 Local cDescTES  := ""
 //
-Local cBkpFilAnt := cFilAnt
+Local c005FilAnt := cFilAnt5
 Local cAuxEmpresa := ""
 //
 Local nRECVOO   := 0
@@ -350,32 +350,32 @@ Local aVeiAux := {} // Informações Chassi - Descricao VEICULO (Customizado)
 //
 Local lFuncFrete := FindFunction("VA1800111_LevantaTodasNFsFretes")
 //
-aMov     := {}
-aInt     := {}
-aAte     := {}
-//cChaInt  := left(cPesqV,len(SC6->C6_CHAINT))
-cChassi  := left(cPesqV,len(SC6->C6_CHASSI))
-//cPlaVei  := left(cPesqV,len(SC6->C6_PLAVEI))
+aMov005     := {}
+aInt005    := {}
+aAte005     := {}
+//cChaInt005 := left(cpesqv5,len(SC6->C6_CHAINT))
+cChassi  := left(cpesqv5,len(SC6->C6_CHASSI))
+//cPlaVei  := left(cpesqv5,len(SC6->C6_PLAVEI))
 cSitVei  := ""
 cBloqVei := ""
 cFilAtu  := ""
 lBotDesB := .f.
 lBotBloq := .f.
-If nTip > 0
-	oGrpDesBlo:lVisible := .f.
-	oGrpBloque:lVisible := .f.
+If nTip005 > 0
+	o005DesBlo:lVisible := .f.
+	o005Bloque:lVisible := .f.
 EndIf
-If Empty(cPesqV)
+If Empty(cpesqv5)
 	lRet := .t.
 Else
 
-	if lBuscChaInt // se chaint foi passado por parametro
+	if lBuscChaInt// se chaint005foi passado por parametro
 		dbSelectArea('VV1')
 		dbSetOrder(1)
-		lRet := dbSeek( xFilial('VV1') + cChaInt )
-		lBuscChaInt := .f.
+		lRet := dbSeek( xFilial('VV1') + cChaInt005)
+		lBuscChaInt:= .f.
 	else
-		lRet := FG_POSVEI("cPesqV",)
+		lRet := FG_POSVEI("cpesqv5",)
 	end
 
 	If lRet
@@ -383,15 +383,15 @@ Else
 			aRet := VM060VEIBLO(VV1->VV1_CHAINT,"B") // Verifica se o Veiculo esta Bloqueado.
 		    If len(aRet) > 0
 				lBotBloq := .t.
-				If nTip > 0
-					oGrpBloque:lVisible := .t.
+				If nTip005 > 0
+					o005Bloque:lVisible := .t.
 				EndIf
 		 	Else
 				aRet := VM060VEIBLO(VV1->VV1_CHAINT,"D") // Verifica se o Veiculo esta Desbloqueado.
 			    If len(aRet) > 0
 					lBotDesB := .t.
-					If nTip > 0
-						oGrpDesBlo:lVisible := .t.
+					If nTip005 > 0
+						o005DesBlo:lVisible := .t.
 					EndIf
 		 		EndIf
 		 	EndIf
@@ -399,8 +399,8 @@ Else
 
 		lRet := .f.
 		//cChaInt:= VV1->VV1_CHAINT
-		cPesqV := left(SC6->C6_CHASSI + space(30), 30)
-        cPesqV   := cChassi
+		cpesqv5 := left(SC6->C6_CHASSI + space(30), 30)
+        cpesqv5   := cChassi
 
 		cQuery := "SELECT               "    //Chassi interno   VV1.VV1_CHAINT
 		cQuery += "       SC6.C6_CHASSI "    //VV1.VV1_CHASSI
@@ -430,14 +430,14 @@ Else
 		cQuery +=               " ON VV1.VV1_FILIAL = '" + xFilial("VV1") + "'"
 		cQuery +=              " AND VV1.VV1_CHASSI = SC6.C6_CHASSI "
 		cQuery += "WHERE SC6.C6_FILIAL = '" + xFilial("SC6") + " ' "
-		cQuery += "  AND SC6.C6_CHASSI = '" + cPesqV + "' "    //AND VV1.VV1_CHAINT = '" + cChaInt + "' "
+		cQuery += "  AND SC6.C6_CHASSI = '" + cpesqv5 + "' "    //AND VV1.VV1_CHAINT= '" + cChaInt+ "' "
 		cQuery += "  AND SC6.D_E_L_E_T_ = ' ' "
 		dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cQAlSC6, .F., .T. )
 
 		If !( cQAlSC6 )->( Eof() )
 			lRet := .t.
 			cChassi := ( cQAlSC6 )->( C6_CHASSI )
-			cChaInt := ( cQAlSC6 )->( VV1_CHAINT )
+			cChaInt005:= ( cQAlSC6 )->( VV1_CHAINT)
 			cPlaVei := ( cQAlSC6 )->( VV1_PLAVEI )
 
 			// Informações Chassi - Descricao VEICULO (Padrão)
@@ -451,7 +451,7 @@ Else
 			////If lPEVC140VEI
 				////nTamPadrao := 5 // Tamanho padrão do vetor "aVei" (Informações Chassi - Descricao VEICULO)
 
-				/*aVeiAux := ExecBlock("VC140VEI", .f., .f., { 1, cChassi, cChaInt })*/
+				/*aVeiAux := ExecBlock("VC140VEI", .f., .f., { 1, cChassi, cChaInt})*/
 
 				// Colunas customizadas pelo Ponto de Entrada referente ao Veículo
 				////For nCont := 1 to Len(aVeiAux)
@@ -459,7 +459,7 @@ Else
 				////Next
 			////EndIf
 
-			cPesqV   := left(( cQAlSC6 )->( C6_CHASSI )+space(30),30)
+			cpesqv5   := left(( cQAlSC6 )->( C6_CHASSI )+space(30),30)
 			cSitVei := "Situacao: "+X3CBOXDESC("VV1_SITVEI",( cQAlSC6 )->( VV1_SITVEI ))+space(5) // Situacao:
 			lVendid := .f.
 			lReqOS  := .f.
@@ -517,7 +517,7 @@ Else
 
 		For nCont := 1 to Len(aSM0Ver)
 
-			cFilAnt := aSM0Ver[nCont]
+			cFilAnt5 := aSM0Ver[nCont]
 
 			cFilSA1 := xFilial("SA1")
 			cFilSA2 := xFilial("SA2")
@@ -536,7 +536,7 @@ Else
 				dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cQAlSB2 , .F., .T. )
 				If !( cQAlSB2 )->( Eof() )
 					cFilAtu := "Em estoque na filial" + ( cQAlSB2 )->( B2_FILIAL )  // Em estoque na filial
-					nTam := aScan(aFil,{|x| x[1] == cFilAnt })
+					nTam := aScan(aFil,{|x| x[1] == cFilAnt5 })
 					If nTam > 0
 						cFilAtu += "-"+left(aFil[nTam,2]+space(20),20)
 					EndIf
@@ -563,7 +563,7 @@ Else
 				While !( cQAlSD3 )->( Eof() )
 					cFilMov := ""
 
-					nTam := aScan(aFil,{|x| x[1] == cFilAnt })
+					nTam := aScan(aFil,{|x| x[1] == cFilAnt5 })
 					If nTam > 0
 						cFilMov += "-"+left(aFil[nTam,2]+space(20),20)
 					EndIf
@@ -572,7 +572,7 @@ Else
 
 						Aadd(aInt,{;
 							stod(( cQAlSD3 )->( D3_EMISSAO )),;
-							cFilAnt+cFilMov,;
+							cFilAnt5+cFilMov,;
 							( cQAlSD3 )->( D3_LOCAL ),;
 							( cQAlSD3 )->( D3_LOCALIZ ),;
 							( cQAlSD3 )->( D3_NUMSEQ ) })
@@ -585,9 +585,9 @@ Else
 							DbGoTo(nRECVOO)
 
 							// SD3/VOO 
-							Aadd(aMov,{;
+							Aadd(aMov005,{;
 									stod(( cQAlSD3 )->( D3_EMISSAO )) , ; // 01
-									cFilAnt+cFilMov , ; // 02
+									cFilAnt5+cFilMov , ; // 02
 									"3-"+"Despesa" , ; // "Despesa" // 03
 									"Interna" , ; // "Interna" // 04
 									( cQAlSD3 )->( D3_TM ) + "-" + ( cQAlSD3 )->( F5_TEXTO ) , ; // 05
@@ -628,7 +628,7 @@ Else
 			cQuery +=             " AND VVF.VVF_TRACPA = VVG.VVG_TRACPA "
 			cQuery +=             " AND VVF.D_E_L_E_T_=' ' "
 			cQuery += "WHERE VVG.VVG_FILIAL = '" + xFilial("VVG") + "' AND "
-			cQuery +=      " VVG.VVG_CHAINT = '"+cChaInt+"' AND "
+			cQuery +=      " VVG.VVG_CHAINT= '"+cChaInt+"' AND "
 			If !lVNFCanc // Nao mostrar NFs Canceladas
 				cQuery +=   " VVF.VVF_SITNFI <> '0' AND "
 			EndIf
@@ -660,7 +660,7 @@ Else
 				EndIf
 
 				cFilMov := ""
-				nTam := aScan(aFil,{|x| x[1] == cFilAnt })
+				nTam := aScan(aFil,{|x| x[1] == cFilAnt5 })
 				If nTam > 0
 					cFilMov += "-"+left(aFil[nTam,2]+space(20),20)
 				EndIf
@@ -677,9 +677,9 @@ Else
 				EndIf
 
 				// ENTRADA 
-				Aadd(aMov,{	;
+				Aadd(aMov005,{	;
 					stod(( cQAlVVFG )->( VVF_DATMOV )) , ; // 01
-					cFilAnt+cFilMov , ; // 02
+					cFilAnt5+cFilMov , ; // 02
 					"0-"+"OP" , ; // 03  str(30)
 					cOpeVVF , ; // 04
 					cDescTES , ; // 05
@@ -716,9 +716,9 @@ Else
 					While !( cQAlSD1 )->( Eof() )
 						
 						// COMPLEMENTO 
-						Aadd(aMov,{;
+						Aadd(aMov005,{;
 							stod(( cQAlSD1 )->( D1_DTDIGIT )) , ; //  01
-							cFilAnt+cFilMov , ; //  02
+							cFilAnt5+cFilMov , ; //  02
 							"2-"+"Entrada" , ; //  03 STR0030
 							" " , ; //  04  STR0050
 							( cQAlSD1 )->( D1_TES )+"-"+left(FM_SQL("SELECT F4_TEXTO FROM "+cNamSF4+" WHERE F4_FILIAL='"+cFilSF4+"' AND F4_CODIGO='"+( cQAlSD1 )->( D1_TES )+"' AND D_E_L_E_T_=' '"),18) , ; //  05
@@ -766,9 +766,9 @@ Else
 						dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cQAlSD1 , .F., .T. )
 						While !( cQAlSD1 )->( Eof() )
 							// Frete
-							Aadd(aMov,{;
+							Aadd(aMov005,{;
 								xOrd01 , ; // 01
-								cFilAnt+cFilMov , ; // 02
+								cFilAnt5+cFilMov , ; // 02
 								"2-"+"Entrada" , ; // 03  STR0030
 								" " , ; // 04 STR0025
 								( cQAlSD1 )->( D1_TES )+"-"+left(FM_SQL("SELECT F4_TEXTO FROM "+cNamSF4+" WHERE F4_FILIAL='"+cFilSF4+"' AND F4_CODIGO='"+( cQAlSD1 )->( D1_TES )+"' AND D_E_L_E_T_=' '"),18) , ; // 05
@@ -813,7 +813,7 @@ Else
 			cQuery +=            " AND VV9.VV9_NUMATE = VVA.VVA_NUMTRA "
 			cQuery +=            " AND VV9.D_E_L_E_T_=' ' "
 			cQuery += " WHERE VVA.VVA_FILIAL = '"+xFilial("VVA")+"' AND "
-			cQuery +=       " VVA.VVA_CHAINT = '"+cChaInt+"' AND "
+			cQuery +=       " VVA.VVA_CHAINT= '"+cChaInt+"' AND "
 			If !lVNFCanc // Nao mostrar NFs Cacneladas
 				cQuery += "VV0.VV0_SITNFI <> '0' AND "
 			EndIf
@@ -837,7 +837,7 @@ Else
 				EndIf
 
 				cFilMov := ""
-				nTam := aScan(aFil,{|x| x[1] == cFilAnt })
+				nTam := aScan(aFil,{|x| x[1] == cFilAnt5 })
 				If nTam > 0
 					cFilMov += "-"+left(aFil[nTam,2]+space(20),20)
 				EndIf
@@ -872,19 +872,19 @@ Else
 				EndIf
 
 				If cSTATUS <> "F" .and. Empty( cNroNF+cSerNF ) .and. ( ( cQAlVV0A )->( VV0_OPEMOV )+( cQAlVV0A )->( VV0_SITNFI ) ) $ cAte
-					Aadd(aAte,{ ;
+					Aadd(aAte005,{ ;
 						cSTATUS,;
 						stod(( cQAlVV0A )->( VV0_DATMOV )),;
-						cFilAnt+cFilMov,;
+						cFilAnt5+cFilMov,;
 						( cQAlVV0A )->( VV0_NUMTRA ),;
 						( cQAlVV0A )->( VVA_CODTES )+"-"+left(FM_SQL("SELECT F4_TEXTO FROM "+cNamSF4+" WHERE F4_FILIAL='"+cFilSF4+"' AND F4_CODIGO='"+( cQAlVV0A )->( VVA_CODTES )+"' AND D_E_L_E_T_=' '"),18),;
 						( cQAlVV0A )->( VVA_VALVDA ),;
 						( cQAlVV0A )->( VV0_CODCLI )+"-"+( cQAlVV0A )->( VV0_LOJA )+" " + cNome })
 				Else
 					// SAIDA
-					Aadd(aMov,{ ;
+					Aadd(aMov005,{ ;
 						stod(( cQAlVV0A )->( VV0_DATMOV )) ,; // 01
-						cFilAnt+cFilMov ,; // 02
+						cFilAnt5+cFilMov ,; // 02
 						"1-"+"Saída" ,; // 03 STR0029
 						cOpeVV0 ,; // 04
 						cDescTES ,; // 05
@@ -918,9 +918,9 @@ Else
 						While !( cQAlSD2 )->( Eof() )
 
 							// COMPLEMENTO 
-							Aadd(aMov,{	;
+							Aadd(aMov005,{	;
 								stod(( cQAlSD2 )->( D2_EMISSAO )) , ; // 01
-								cFilAnt+cFilMov , ; // 02
+								cFilAnt5+cFilMov , ; // 02
 								"1-"+"Saída" , ; // 03 STR0029
 								" " , ; // 04 STR0050
 								( cQAlSD2 )->( D2_TES )+"-"+left(FM_SQL("SELECT F4_TEXTO FROM "+cNamSF4+" WHERE F4_FILIAL='"+cFilSF4+"' AND F4_CODIGO='"+( cQAlSD2 )->( D2_TES )+"' AND D_E_L_E_T_=' '"),18) , ; // 05
@@ -945,95 +945,86 @@ Else
 			EndDo
 			( cQAlVV0A )->( dbCloseArea() )
 		Next nCont
-		cFilAnt := cBkpFilAnt
+		cFilAnt5 := c005FilAnt
 		FS_NFCANC('M',cGruVei,cNamSB1,cNamSD1,cNamSD2,cNamSA1,cNamSA2) // Monta Vetor das NF's Canceladas
 	Else
 
         VEIVC140(cChassi, )
-	
-		DbSelectArea("VV1")
-
-		Return lRet
-
-    EndIf
-
-
 
 		//MsgStop("Veiculo nao encontrado!","Atenção") //Veiculo nao encontrado! # Atencao
-		cPesqV := space(30) // Pesquisa VEICULO
-		nTip   :=  0
+		cpesqv5 := space(30) // Pesquisa VEICULO
+		cChassi := ""
+		nTip005   :=  0
 		
-		IF TYPE ("oPesq") == "U"
-		alert ("Jah existe")
-		endif
-
-		//If nTip > 0
+		If nTip005 > 0
 			oPesq:Refresh()
-		//EndIf
+		EndIf
 	
+    Endif
+
 EndIf
 
 
-If len(aMov) <= 0
-	Aadd(aMov,{ ctod("") , "" , "   " , "" , "" , "" , "" , 0 , "" , "" , "", 0, -1 , "" , "" })
+If len(aMov005) <= 0
+	Aadd(aMov005,{ ctod("") , "" , "   " , "" , "" , "" , "" , 0 , "" , "" , "", 0, -1 , "" , "" })
 Else
-	aSort(aMov,1,,{|x,y| dtos(x[1]) + substr(x[11],10,8) + x[10] < dtos(y[1]) + substr(y[11],10,8) + y[10] })
+	aSort(aMov005,1,,{|x,y| dtos(x[1]) + substr(x[11],10,8) + x[10] < dtos(y[1]) + substr(y[11],10,8) + y[10] })
 EndIf
 
-If len(aInt) <= 0
-	Aadd(aInt,{ ctod("") , "" , "" , "" , "" })
+If len(aInt005) <= 0
+	Aadd(aInt005,{ ctod("") , "" , "" , "" , "" })
 Else
-	aSort(aInt,1,,{|x,y| x[5] < y[5] })
+	aSort(aInt005,1,,{|x,y| x[5] < y[5] })
 	If !Empty(cFilAtu) .and. substr(cFilAtu,len("Filial")+1,len(SB2->B2_FILIAL)) == substr(aInt[len(aInt),2],1,len(SD3->D3_FILIAL))                   //subtrisn + filial
-		cFilAtu += " ( "+aInt[len(aInt),3]+" - "+aInt[len(aInt),4]+" )"
+		cFilAtu += " ( "+aInt005[len(aInt005),3]+" - "+aInt005[len(aInt005),4]+" )"
 	EndIf
 EndIf
 
-If len(aAte) <= 0
-	Aadd(aAte,{ "O" , ctod("") , "" , "" , "" , 0 , "" })
+If len(aAte005) <= 0
+	Aadd(aAte005,{ "O" , ctod("") , "" , "" , "" , 0 , "" })
 Else
-	aSort(aAte,1,,{|x,y| dtos(x[2])+x[4]+x[3] < dtos(y[2])+y[4]+y[3] })
+	aSort(aAte005,1,,{|x,y| dtos(x[2])+x[4]+x[3] < dtos(y[2])+y[4]+y[3] })
 EndIf
 
-If nTip > 0
+If nTip005 > 0
 	// Listbox Movimentações Fiscais
-	oLbMov140:nAt := 1
-	oLbMov140:SetArray(aMov)
-	oLbMov140:SetFocus()
-	oLbMov140:Refresh()
+	oLbMov005:nAt := 1
+	oLbMov005:SetArray(aMov005)
+	oLbMov005:SetFocus()
+	oLbMov005:Refresh()
 	// Fim Listbox Movimentações Fiscais
 
 	// Listbox Movimentações Internas
-	oLbInt140:nAt := 1
-	oLbInt140:SetArray(aInt)
-	oLbInt140:bLine := { || {  Transform(aInt[oLbInt140:nAt,1], "@D"),;
-							aInt[oLbInt140:nAt,2],                 ;
-							aInt[oLbInt140:nAt,3],                 ;
-							aInt[oLbInt140:nAt,4] }}
-	oLbInt140:SetFocus()
-	oLbInt140:Refresh()
+	oLbInt005:nAt := 1
+	oLbInt005:SetArray(aInt005)
+	oLbInt005:bLine := { || {  Transform(aInt005[oLbInt005:nAt,1], "@D"),;
+							aInt005[oLbInt005:nAt,2],                 ;
+							aInt005[oLbInt005:nAt,3],                 ;
+							aInt005[oLbInt005:nAt,4] }}
+	oLbInt005:SetFocus()
+	oLbInt005:Refresh()
 	// Listbox Movimentações Internas
 
 	// Listbox Atendimentos Não Finalizados
-	oLbAte140:nAt := 1
-	oLbAte140:SetArray(aAte)
-	oLbAte140:bLine := { || {  IIF(aAte[oLbAte140:nAt,1] == "A", oBR_VERDE,                      ;
-								IIF(aAte[oLbAte140:nAt,1] == "X", oBR_OCEAN,                  ;
-								IIF(aAte[oLbAte140:nAt,1] == "F", oBR_PRETO,                  ;
-								IIF(aAte[oLbAte140:nAt,1] == "P", oBR_AMARELO,                ;
-								IIF(aAte[oLbAte140:nAt,1] == "R", oBR_LARANJA,                ;
-								IIF(aAte[oLbAte140:nAt,1] == "O", oBR_BRANCO,                 ;
-								IIF(aAte[oLbAte140:nAt,1] == "L", oBR_AZUL,                   ;
+	oLbAte005:nAt := 1
+	oLbAte005:SetArray(aAte005)
+	oLbAte005:bLine := { || {  IIF(aAte005[oLbAte005:nAt,1] == "A", oBR_VERDE,                      ;
+								IIF(aAte005[oLbAte005:nAt,1] == "X", oBR_OCEAN,                  ;
+								IIF(aAte005[oLbAte005:nAt,1] == "F", oBR_PRETO,                  ;
+								IIF(aAte005[oLbAte005:nAt,1] == "P", oBR_AMARELO,                ;
+								IIF(aAte005[oLbAte005:nAt,1] == "R", oBR_LARANJA,                ;
+								IIF(aAte005[oLbAte005:nAt,1] == "O", oBR_BRANCO,                 ;
+								IIF(aAte005[oLbAte005:nAt,1] == "L", oBR_AZUL,                   ;
 								oBR_VERMELHO))))))),                                       ;
-							Transform(aAte[oLbAte140:nAt,2], "@D"),                           ;
-							aAte[oLbAte140:nAt,3],                                            ;
-							aAte[oLbAte140:nAt,4],                                            ;
-							aAte[oLbAte140:nAt,5],                                            ;
-							FG_AlinVlrs(Transform(aAte[oLbAte140:nAt,6], "@E 99,999,999.99")),;
-							aAte[oLbAte140:nAt,7] }}
-	oLbAte140:SetFocus()
-	oLbAte140:Refresh()
-	oLbMov140:SetFocus()
+							Transform(aAte005[oLbAte005:nAt,2], "@D"),                           ;
+							aAte005[oLbAte005:nAt,3],                                            ;
+							aAte005[oLbAte005:nAt,4],                                            ;
+							aAte005[oLbAte005:nAt,5],                                            ;
+							FG_AlinVlrs(Transform(aAte005[oLbAte005:nAt,6], "@E 99,999,999.99")),;
+							aAte005[oLbAte005:nAt,7] }}
+	oLbAte005:SetFocus()
+	oLbAte005:Refresh()
+	oLbMov005:SetFocus()
 	// Fim Listbox Atendimentos Não Finalizados
 
 	// Listbox Informações Chassi
@@ -1065,7 +1056,7 @@ Local cFilSD2    := ""
 Local cFilSB1    := ""
 Local nTam       := 0
 Local cQuery     := ""
-Local cBkpFilAnt := cFilAnt
+Local c005FilAnt := cFilAnt5
 Local cAuxEmpresa
 Local nCont
 Default cGruVei  := ""
@@ -1082,7 +1073,7 @@ If cTip == 'M' // Monta Vetor das NF's Canceladas
 
 	For nCont := 1 to Len(aSM0Ver)
 
-		cFilAnt := aSM0Ver[nCont]
+		cFilAnt5 := aSM0Ver[nCont]
 
 		cFilSB1 := xFilial("SB1")
 
@@ -1101,7 +1092,7 @@ If cTip == 'M' // Monta Vetor das NF's Canceladas
 		dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cQAlSD1 , .F., .T. )
 		While !( cQAlSD1 )->( Eof() )
 			cFilSD1 := ( cQAlSD1 )->( D1_FILIAL )
-			nTam    := aScan(aFil,{|x| x[1] == cFilAnt })
+			nTam    := aScan(aFil,{|x| x[1] == cFilAnt5 })
 			If nTam > 0
 				cFilSD1 += "-"+left(aFil[nTam,2]+space(20),20)
 			EndIf
@@ -1125,7 +1116,7 @@ If cTip == 'M' // Monta Vetor das NF's Canceladas
 		dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cQAlSD2 , .F., .T. )
 		While !( cQAlSD2 )->( Eof() )
 			cFilSD2 := ( cQAlSD2 )->( D2_FILIAL )
-			nTam    := aScan(aFil,{|x| x[1] == cFilAnt })
+			nTam    := aScan(aFil,{|x| x[1] == cFilAnt5 })
 			If nTam > 0
 				cFilSD2 += "-"+left(aFil[nTam,2]+space(20),20)
 			EndIf
@@ -1135,7 +1126,7 @@ If cTip == 'M' // Monta Vetor das NF's Canceladas
 		( cQAlSD2 )->( dbCloseArea() )
 
 	Next nCont
-    cFilAnt := cBkpFilAnt
+    cFilAnt5 := c005FilAnt
 
 Else// cTip == 'V' // Visualiza Tela com NF's Canceladas
 	If len(aNFCanE) <= 0
@@ -1300,7 +1291,7 @@ Return
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 */
 Static Function FS_VERATEND(cEmpFil,cAtend)
-Local cFilSALVA := cFilAnt
+Local cFilSALVA := cFilAnt5
 Local cFilAtend := left(cEmpFil,len(VV9->VV9_FILIAL))
 Private Inclui  := .f. // Variavel INTERNA utilizada no VEIVM011
 Private Altera  := .f. // Variavel INTERNA utilizada no VEIVM011
@@ -1324,7 +1315,7 @@ If aScan(aSM0Clic,cFilAtend) <= 0
 	Return
 EndIf
 //
-cFilAnt := cFilAtend
+cFilAnt5 := cFilAtend
 DbSelectArea("VV9")
 DbSetOrder(1)
 If DbSeek( xFilial("VV9") + cAtend )
@@ -1332,7 +1323,7 @@ If DbSeek( xFilial("VV9") + cAtend )
 		VEIXX002(NIL,NIL,NIL,2,)
 	EndIf
 EndIf
-cFilAnt := cFilSALVA
+cFilAnt5 := cFilSALVA
 Return
 
 /*
@@ -1347,7 +1338,7 @@ Return
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 */
 Static Function FS_DRILLIN(nRECNO, cTipo, cParFil)
-Local cFilBkp := cFilAnt
+Local cFilBkp := cFilAnt5
 If nRECNO <= 0
 	Return
 endif
@@ -1362,7 +1353,7 @@ aRotina := {{ "" ,"" , 0 , 1},;	// Pesquisar
 			{ "" ,"" , 0 , 5},;	// Cancelar
 			{ "" ,"" , 0 , 6},;	// Legenda
 			{ "" ,"" , 0 , 1}}	// Pesquisa Avancada ( S-Saida por 0-Venda )
-cFilAnt := cParFil
+cFilAnt5 := cParFil
 Do Case
 	Case Left(cTipo,1) == "0" // VVF
 		cCadastro := "Entrada" // Entrada
@@ -1399,7 +1390,7 @@ Do Case
 		OFIOC060(.T.)*/
 EndCase
 cCadastro := "Atendimentos de Veiculo - VOLTA cCadastro" //Atendimentos de Veiculo - VOLTA cCadastro
-cFilAnt := cFilBkp
+cFilAnt5 := cFilBkp
 Return
 
 /*
@@ -1415,11 +1406,11 @@ Return
 */
 Static Function FS_ORDEM(nRadio)
 if nRadio == 1
-	aSort(aMov,1,,{|x,y| dtos(x[1])+substr(x[11],10,8) < dtos(y[1])+substr(y[11],10,8) })
+	aSort(aMov005,1,,{|x,y| dtos(x[1])+substr(x[11],10,8) < dtos(y[1])+substr(y[11],10,8) })
 Else
-	aSort(aMov,1,,{|x,y| dtos(x[1])+substr(x[11],10,8) > dtos(y[1])+substr(y[11],10,8) })
+	aSort(aMov005,1,,{|x,y| dtos(x[1])+substr(x[11],10,8) > dtos(y[1])+substr(y[11],10,8) })
 Endif
-oLbMov140:Refresh()
+oLbMov005:Refresh()
 Return(.t.)
 
 /*
@@ -1430,24 +1421,24 @@ Return(.t.)
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Descricao ³ Listbox da Descrição do Veículo                            ³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Parametros³ nTip = Tipo de Chamada (0 - Inicial / 1 - Pesquisa)        ³±±
+±±³Parametros³ nTip005 = Tipo de Chamada (0 - Inicial / 1 - Pesquisa)        ³±±
 ±±³          ³ aPos = Posição dos objetos nas telas (Principal /          ³±±
 ±±³          ³        NFCanceladas / Histórico Bloqueio/Desbloqueio )     ³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
 ±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 */
-Static Function FS_OLBVEI(nTip, aPos)
+Static Function FS_OLBVEI(nTip005, aPos)
 Local nCont := 0
 
-If nTip == 0
+If nTip005 == 0
 	// ZVEIF005() / FS_PESQVEI()
 	// Destruir o objeto
 	oLbVei140 := Nil
 
 	// Criar novamente o objeto Listbox (Informações Chassi)
 	oLbVei140 := TWBrowse():New(aPos[4,1] + 004, aPos[4,2] + 001, (aPos[4,4] - 130), (aPos[4,3] - aPos[4,1] - 002);
-		,,,, oMov140,,,,, { || },,,,,,, .F.,, .T.,, .F.,,,)
+		,,,, oMov005,,,,, { || },,,,,,, .F.,, .T.,, .F.,,,)
 
 	// Array
 	For nCont := 1 To Len(aVei)
@@ -1458,7 +1449,7 @@ If nTip == 0
 	oLbVei140:SetArray(aVei)
 	oLbVei140:SetFocus()
 	oLbVei140:Refresh()
-ElseIf nTip == 1
+ElseIf nTip005 == 1
 	// FS_NFCANC()
 	// Destruir o objeto
 	oLbNFV140 := Nil
@@ -1468,7 +1459,7 @@ ElseIf nTip == 1
 		,,,, oNFCan140,,,,, { || },,,,,,, .F.,, .T.,, .F.,,,)
 
 	// Chassi
-	oLbNFV140:addColumn( TCColumn():New( "Chassi", &("{ || cPesqV }"),,,, "LEFT", 50, .F., .F.,,,, .F.,) ) // Chassi
+	oLbNFV140:addColumn( TCColumn():New( "Chassi", &("{ || cpesqv5 }"),,,, "LEFT", 50, .F., .F.,,,, .F.,) ) // Chassi
 
 	// Array
 	For nCont := 1 To Len(aVei)
@@ -1479,7 +1470,7 @@ ElseIf nTip == 1
 	oLbNFV140:SetArray(aVei)
 	oLbNFV140:SetFocus()
 	oLbNFV140:Refresh()
-ElseIf nTip == 2
+ElseIf nTip005 == 2
 	// FS_BLOQVEI()
 	// Destruir o objeto
 	oLbBlV140 := Nil
@@ -1489,7 +1480,7 @@ ElseIf nTip == 2
 		,,,, oBloq140,,,,, { || },,,,,,, .F.,, .T.,, .F.,,,)
 
 	// Chassi
-	oLbBlV140:addColumn( TCColumn():New( "Chassi", &("{ || cPesqV }"),,,, "LEFT", 50, .F., .F.,,,, .F.,) ) // Chassi
+	oLbBlV140:addColumn( TCColumn():New( "Chassi", &("{ || cpesqv5 }"),,,, "LEFT", 50, .F., .F.,,,, .F.,) ) // Chassi
 
 	// Array
 	For nCont := 1 To Len(aVei)
@@ -1515,7 +1506,7 @@ Return()
 ±±³         ³ y - campo de retorno para variavel "x". ex:"VV1->VV1_CHASSI"³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Sequencia³ 1 - Placa ou Chassi ou Frota ( VV1_PLAVEI / VV1_CHASSI /...)³±±
-±±³   da    ³ 2 - Chassi Interno ( VV1_CHAINT )                           ³±±
+±±³   da    ³ 2 - Chassi Interno ( VV1_CHAINT)                           ³±±
 ±±³Pesquisa ³ 3 - Serie ( VV1_SERMOT )                                    ³±±
 ±±³         ³ 4 - Nome do Cliente                                         ³±±
 ±±³         ³ 5 - Modelo do Veiculo                                       ³±±
@@ -1539,7 +1530,7 @@ Static Function FG_POSVEI(cCampo,cRet)
 	Local _cPlaVei := ""
 	Local _cChassi := ""
 	Local _cCodFro := ""
-	Local _cChaInt := ""
+	Local _cChaInt005:= ""
 	Local _cSerMot := ""
 	Local nTam     := 0
 	Local aSA1     := {}
@@ -1567,9 +1558,9 @@ Static Function FG_POSVEI(cCampo,cRet)
 	EndIf
 	nTam := TamSX3("VV1_CHAINT")[1]
 	If nTam >= Len(Alltrim(cPesq))
-		_cChaInt := left(Alltrim(cPesq)+space(nTam),nTam)
+		_cChaInt005:= left(Alltrim(cPesq)+space(nTam),nTam)
 	Else
-		_cChaInt := ".f."
+		_cChaInt005:= ".f."
 	EndIf
 	nTam := TamSX3("VV1_SERMOT")[1]
 	If nTam >= Len(Alltrim(cPesq))
@@ -1578,7 +1569,7 @@ Static Function FG_POSVEI(cCampo,cRet)
 		_cSerMot := ".f."
 	EndIf
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	cQuerAux := "SELECT DISTINCT VV1.VV1_CHASSI , VV1.VV1_CHAINT , VV1.VV1_PLAVEI , VV1.VV1_FABMOD , VV1.VV1_CODFRO , VV1.VV1_SERMOT , VV1.VV1_SITVEI , "
+	cQuerAux := "SELECT DISTINCT VV1.VV1_CHASSI , VV1.VV1_CHAINT, VV1.VV1_PLAVEI , VV1.VV1_FABMOD , VV1.VV1_CODFRO , VV1.VV1_SERMOT , VV1.VV1_SITVEI , "
 	cQuerAux += "VV1.VV1_CODMAR , VV1.VV1_MODVEI , VV2.VV2_DESMOD , VV1.VV1_CORVEI , VVC.VVC_DESCRI , VV1.VV1_PROATU , VV1.VV1_LJPATU , SA1.A1_NOME "
 	cQuerAux += "FROM "+RetSqlName("VV1")+" VV1 "
 	cQuerAux += "LEFT JOIN "+RetSqlName("VV2")+" VV2 ON ( VV2.VV2_FILIAL='"+xFilial("VV2")+"' AND VV2.VV2_CODMAR=VV1.VV1_CODMAR AND VV2.VV2_MODVEI=VV1.VV1_MODVEI AND VV2.VV2_SEGMOD=VV1.VV1_SEGMOD AND VV2.D_E_L_E_T_=' ' ) "
@@ -1611,7 +1602,7 @@ Static Function FG_POSVEI(cCampo,cRet)
 	Else
 		lAchouVV1 := .t.
 	EndIf
-	If !lAchouVV1 .and. _cChaInt <> ".f." // caso nao encontre
+	If !lAchouVV1 .and. _cChaInt005<> ".f." // caso nao encontre
 		//////////////////////////////////////////
 		// Pesquisa pelo Chassi Interno         //
 		//////////////////////////////////////////
@@ -1699,7 +1690,7 @@ Static Function FG_POSVEI(cCampo,cRet)
 		// Monta Vetor com os Veiculos encontrados //
 		/////////////////////////////////////////////
 		Do While !( cQAlVV1 )->( Eof())
-			Aadd(aVV1,{	( cQAlVV1 )->( VV1_CHAINT ),;
+			Aadd(aVV1,{	( cQAlVV1 )->( VV1_CHAINT),;
 			( cQAlVV1 )->( VV1_PLAVEI ),;
 			( cQAlVV1 )->( VV1_CHASSI ),;
 			( cQAlVV1 )->( VV1_CODMAR )+" "+IIf(!Empty(( cQAlVV1 )->( VV2_DESMOD )),( cQAlVV1 )->( VV2_DESMOD ),( cQAlVV1 )->( VV1_MODVEI )),;
