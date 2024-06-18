@@ -234,19 +234,39 @@ Begin Sequence
 		EndSql 	
 		//	SUBSTR(SA1.A1_CGC,1,8) = %Exp:_cPesqCnpj%
 
-		If (_cAliasPesq)->(Eof()) 	
+		If (_cAliasPesq)->(Eof()) .Or. 	(_cAliasPesq)->LOJA = ' '
 			_cCodCli    := GetSxeNum("SA1","A1_COD")
 			_cLoja   	:= StrZero(1,Len(SA1->A1_LOJA))
+			//Caso ocorra fato de localizar numeração pois pode estar com problema no SXE 
+			SA1->(dbSetOrder(1))
+    		If SA1->( DbSeek( FWxFilial("SA1")+_cCodCli+_cLoja )) //Já existe o CNPJ cadastrado, somente altera
+				If Select( (_cAliasPesq) ) > 0
+					(_cAliasPesq)->(DbCloseArea())
+				EndIf
+				BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+					SELECT 	MAX(SA1.A1_COD) CODIGO  
+					FROM %Table:SA1% SA1		
+					WHERE 	SA1.%notDel% 
+						AND	SA1.A1_FILIAL 	=  %xFilial:SA1% 
+				EndSql 	
+				If (_cAliasPesq)->(Eof())
+					_cCodCli := StrZero(1,Len(SA1->A1_COD))
+				Else 
+					_cCodCli := StrZero(Val((_cAliasPesq)->CODIGO)+1,Len(SA1->A1_COD))
+				Endif	
+			Endif 	
 		Else 
-			//SA1->(DbGoto((_cAliasPesq)->NREGSA1))
 			_cCodCli	:= (_cAliasPesq)->A1_COD
 			_cLoja		:= Soma1((_cAliasPesq)->LOJA)	
-			_cBloqueio  := "1"
 		Endif
+
+
 		_cBloqueio  := "1"
 		_lNovo      := .T.
 		_cContrib   := "1"   //Verificar se é exportação testar quem é contribuinte 
 		//(_cAliasPesq)->(DbCloseArea())
+
+
 	EndIf
 
 	_cCnPjCpf	:= AllTrim(_oJson:GetJsonText("cnpjcpf"))  
