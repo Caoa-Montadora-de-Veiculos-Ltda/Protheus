@@ -15,7 +15,7 @@ Obs......:
 */
 User Function ZFATF001(cParam01, cParam02)
 
-Local cIdEnt     	:= ""
+	Local cIdEnt     	:= ""
 Local cURL       	:= PadR(GetNewPar("MV_SPEDURL","http://"),250)
 Local cAviso		:= ""
 Local cSerie		:= cParam01
