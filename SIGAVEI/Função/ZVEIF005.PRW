@@ -628,7 +628,7 @@ Else
 			cQuery +=             " AND VVF.VVF_TRACPA = VVG.VVG_TRACPA "
 			cQuery +=             " AND VVF.D_E_L_E_T_=' ' "
 			cQuery += "WHERE VVG.VVG_FILIAL = '" + xFilial("VVG") + "' AND "
-			cQuery +=      " VVG.VVG_CHAINT= '"+cChaInt+"' AND "
+			cQuery +=      " VVG.VVG_CHAINT= '"+cChaInt005+"' AND "
 			If !lVNFCanc // Nao mostrar NFs Canceladas
 				cQuery +=   " VVF.VVF_SITNFI <> '0' AND "
 			EndIf
@@ -813,7 +813,7 @@ Else
 			cQuery +=            " AND VV9.VV9_NUMATE = VVA.VVA_NUMTRA "
 			cQuery +=            " AND VV9.D_E_L_E_T_=' ' "
 			cQuery += " WHERE VVA.VVA_FILIAL = '"+xFilial("VVA")+"' AND "
-			cQuery +=       " VVA.VVA_CHAINT= '"+cChaInt+"' AND "
+			cQuery +=       " VVA.VVA_CHAINT= '"+cChaInt005+"' AND "
 			If !lVNFCanc // Nao mostrar NFs Cacneladas
 				cQuery += "VV0.VV0_SITNFI <> '0' AND "
 			EndIf
@@ -951,6 +951,8 @@ Else
 
         VEIVC140(cChassi, )
 
+         oMov005:End()
+
 		//MsgStop("Veiculo nao encontrado!","Atenção") //Veiculo nao encontrado! # Atencao
 		cpesqv5 := space(30) // Pesquisa VEICULO
 		cChassi := ""
@@ -1086,7 +1088,7 @@ If cTip == 'M' // Monta Vetor das NF's Canceladas
 		cQuery += " JOIN "+cNamSA2+" SA2 ON ( SA2.A2_FILIAL='"+xFilial("SA2")+"' AND SA2.A2_COD=SD1.D1_FORNECE AND SA2.A2_LOJA=SD1.D1_LOJA AND SA2.D_E_L_E_T_=' ' ) "
 		cQuery += " WHERE SB1.B1_FILIAL='"+cFilSB1+"' "
 		cQuery += "   AND SB1.B1_GRUPO='"+cGruVei+"' "
-		cQuery += "   AND SB1.B1_CODITE='"+left(cChaInt+space(30),len(SB1->B1_CODITE))+"' "
+		cQuery += "   AND SB1.B1_CODITE='"+left(cChaInt005+space(30),len(SB1->B1_CODITE))+"' "
 		cQuery += "   AND SB1.D_E_L_E_T_=' ' "
 		cQuery += " ORDER BY SD1.D1_NUMSEQ"
 		dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cQAlSD1 , .F., .T. )
@@ -1110,7 +1112,7 @@ If cTip == 'M' // Monta Vetor das NF's Canceladas
 		cQuery += " JOIN "+cNamSA1+" SA1 ON ( SA1.A1_FILIAL='"+xFilial("SA1")+"' AND SA1.A1_COD=SD2.D2_CLIENTE AND SA1.A1_LOJA=SD2.D2_LOJA AND SA1.D_E_L_E_T_=' ' ) "
 		cQuery += " WHERE SB1.B1_FILIAL='" + cFilSB1 + "' "
 		cQuery += "   AND SB1.B1_GRUPO='"+cGruVei+"' "
-		cQuery += "   AND SB1.B1_CODITE='"+left(cChaInt+space(30),len(SB1->B1_CODITE))+"' "
+		cQuery += "   AND SB1.B1_CODITE='"+left(cChaInt005+space(30),len(SB1->B1_CODITE))+"' "
 		cQuery += "   AND SB1.D_E_L_E_T_=' ' "
 		cQuery += " ORDER BY SD2.D2_NUMSEQ"
 		dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cQAlSD2 , .F., .T. )
