@@ -1,8 +1,9 @@
+#Include "PROTHEUS.CH"
 #INCLUDE "TOTVS.CH"
 #INCLUDE "RESTFUL.CH"
 #INCLUDE "TOPCONN.CH"
 #INCLUDE "TBICONN.CH"
-#Define CRLF  CHAR(13) + CHAR(10)
+//#Define CRLF  CHAR(13) + CHAR(10)
 
 /*/{Protheus.doc} ZWSR015
 Serviço de integração  Autoware 
@@ -20,6 +21,7 @@ WS - Modulo
 R  - resT OU W WebServer
 010- Sequencial
 /*/
+/*
 WSRESTFUL ZWSR015 DESCRIPTION "Integração Autoware XML - NF" FORMAT APPLICATION_JSON 
    WSDATA empresa 		As String
 	WSDATA filial 		As String
@@ -36,12 +38,25 @@ END WSRESTFUL
 WSMETHOD POST;
 WSRECEIVE empresa, filial, token, cnpj, doc, serie;
 WSSERVICE ZWSR015
+*/
 
+WSRESTFUL ZWSR015 DESCRIPTION "Integração Autoware XML - NF" FORMAT APPLICATION_JSON 
+	WSMETHOD POST ; 
+	        DESCRIPTION "XML de NF enviada por Autoware";
+	        WSSYNTAX "/ZWSR015"
+END WSRESTFUL
+
+
+WSMETHOD POST WSSERVICE ZWSR015
 Local oJsonRet 	  := JsonObject():New()
-Local cJSON 	  := Self:GetContent()     // –> Pega a string do JSON
-Local oParseJSON  := Nil
+//Local cJSON 	  := Self:GetContent()     // –> Pega a string do JSON
+//Local oParseJSON  := Nil
 Local _cUsuario   := ""
 Local _cSenha     := ""
+Local _oJson
+Local _cCodEmp 
+Local _cCodFil 
+
 
 Private aAuto	  := {}
 Private _aRet	  := {}
@@ -54,6 +69,10 @@ Private cXmlNf    := ""
     Conout("ZWSR015 - integraçao XML de NF Autoware POST - Inicio "+DtoC(date())+" "+Time())
     ::SetContentType('application/json')
 
+    _oJson := JsonObject():new()
+    _oJson:fromJson(DecodeUTF8(Self:GetContent(,.T.)))  //Correto
+
+/*
     // –> Deserializa a string JSON
 	FWJsonDeserialize(cJson, @oParseJSON)
     If Empty(oParseJSON:cdEmpresa) .Or. Empty(oParseJSON:cdFilial)
@@ -61,7 +80,6 @@ Private cXmlNf    := ""
 		SetRestFault(400, cErro)
 		Return .T.
 	EndIf
-
 	//-- Tratar abertura da empresa conforme enviado no parametro
 	If cEmpAnt <> AllTrim(oParseJSON:cdEmpresa) .or. cFilAnt <> AllTrim(oParseJSON:cdFilial)
     	RpcClearEnv() 
@@ -69,13 +87,28 @@ Private cXmlNf    := ""
         //RpcSetEnv(_cEmpresa, cxFilial,,,,GetEnvServer(),{ })
     	RpcSetEnv(AllTrim(oParseJSON:cdEmpresa),AllTrim(oParseJSON:cdFilial),,,,GetEnvServer(),{ })
 	EndIf
+*/
+	_cCodEmp := _oJson:GetJsonText("cdEmpresa")
+	_cCodFil := _oJson:GetJsonText("cdFilial")
+    If Empty( _cCodEmp ) .Or. Empty( _cCodFil ) .Or. _cCodEmp == "null" .Or. _cCodFil  == "null"
+ 		cErro := "Necessario informar os parametros empresa e filial, por favor, verifique!"
+		SetRestFault(400, cErro)
+		Return .T.
+	EndIf
+	//-- Tratar abertura da empresa conforme enviado no parametro
+	If cEmpAnt <> AllTrim(_cCodEmp) .or. cFilAnt <> AllTrim(_cCodFil)
+    	RpcClearEnv() 
+    	RPCSetType(3) 
+        //RpcSetEnv(_cEmpresa, cxFilial,,,,GetEnvServer(),{ })
+    	RpcSetEnv(AllTrim(_cCodEmp),AllTrim(_cCodFil),,,,GetEnvServer(),{ })
+	EndIf
 
-    _cDoc     := oParseJSON:cdDocumento
-    _cSerie   := oParseJSON:cdSerie
-    _cCNPJ    := oParseJSON:cdCNPJ
-    _cToken   := oParseJSON:Token
-    _cUsuario := oParseJSON:usuario
-    _cSenha   := oParseJSON:senha
+    _cDoc     := _oJson:GetJsonText("cdDocumento")	
+    _cSerie   := _oJson:GetJsonText("cdSerie")
+    _cCNPJ    := _oJson:GetJsonText("cdCNPJ")
+    _cToken   := _oJson:GetJsonText("Token")
+    _cUsuario := _oJson:GetJsonText("usuario")
+    _cSenha   := _oJson:GetJsonText("senha")
 
 	If Empty(_cUsuario) .or. AllTrim(_cUsuario) <> "caoa.totvs"
         oJsonRet['errorCode']	:= 400
@@ -116,22 +149,18 @@ Private cXmlNf    := ""
         If _cCNPJ <> '03471344000509' //CNPJ Caoa | Franco da Rocha
             oJsonRet['errorCode']	:= 400
             oJsonRet['errors']		:= 'CNPJ não pertencente a Caoa | Franco da Rocha !'
-            ::SetResponse( oJsonRet:ToJson() )
-            Break
  	    EndIf
     ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //Empresa Franco da Rocha | HMB Hyundai
         If _cCNPJ <> '10394422000657' //CNPJ HMB | Franco da Rocha
             oJsonRet['errorCode']	:= 400
             oJsonRet['errors']		:= 'CNPJ não pertencente a HMB | Franco da Rocha !'
-            ::SetResponse( oJsonRet:ToJson() )
-            Break
  	    EndIf
+	Else 
+    	ValidOJson(_oJson, _cDoc, _cSerie, @oJsonRet)     
     EndIf
 
-    _aRet := ValidOJson(cJson, _cDoc, _cSerie)     
-
+/*
     IF !Empty(cXmlNf)
-
         oJsonRet['xml']	:= cXmlNf
         oJsonRet['errorCode']	:= 200
         oJsonRet['Message'] 	:= "XML de NF recebida com sucesso!"
@@ -142,7 +171,7 @@ Private cXmlNf    := ""
         oJsonRet['errors']		:= 'Não foi possivel gerar o  XML !'
         ::SetResponse( oJsonRet:ToJson() )
     EndIF
-
+*/
 	//Erro no programa
   	/*If Len(_aRet) == 0 
 		//SetRestFault(999,"Problemas em relação ao retorno Rest, verificar com administrador !")
@@ -155,7 +184,7 @@ Private cXmlNf    := ""
             
         Break
 	EndIf*/
-
+    ::SetResponse( oJsonRet:ToJson() )
     Conout("ZWSR015 - integraçao XML de NF Autoware POST - Final "+DtoC(date())+" "+Time())
 
 Return .T.
@@ -170,63 +199,82 @@ Valida os dados do oJson
 @param cMsg, characters, descricao
 @type function
 /*/
-Static Function ValidOJson(cJson, _cDoc, _cSerie)
+Static Function ValidOJson(_oJson, _cDoc, _cSerie, oJsonRet)
 Local qryNF     := ' '
 Local _cQuery   := ' '
 Local _lHmb     := AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1"
-
+Local cXmlNf	:= ""
     qryNF := GetNextAlias()
-
     //While ( Select(qryNF) <> 0 )
     //    dbSelectArea(qryNF)
     //    (qryNF)->(dbCloseArea())
     //    qryNF := GetNextAlias()
     //EndDo
-
-	_cQuery := "SELECT F2.*, F2.R_E_C_N_O_ RECF2, VS1_FILIAL, VS1_NUMNFI, VS1_SERNFI, VS1_CLIFAT, VS1_LOJA, VS1_XTPPED, VS1_NUMPED,A1_CGC" + CRLF
-	_cQuery += "FROM "+ RetSQLname("SF2") +" F2," + RetSQLname("VS1") +" VS1 " + CRLF    
-	_cQuery += "INNER JOIN "+ RetSQLname("SA1") +" A1 "
-    _cQuery += " ON VS1.VS1_CLIFAT  = A1.A1_COD "
-    _cQuery += " AND VS1.VS1_LOJA   = A1.A1_LOJA"
-    _cQuery += " AND A1.D_E_L_E_T_  =   ' '     "
-	_cQuery += "WHERE VS1.D_E_L_E_T_  = ' '     "                  + CRLF
-    _cQuery += "   AND VS1.VS1_FILIAL = '" + xfilial("VS1") + "'"  + CRLF
-	_cQuery += "   AND VS1.VS1_NUMNFI = '" + _cDoc          + "'"  + CRLF
-	_cQuery += "   AND VS1.VS1_SERNFI = '" + _cSerie        + "'"  + CRLF
-	_cQuery += "   AND F2.F2_CLIENTE  = VS1.VS1_CLIFAT   "         + CRLF
-	_cQuery += "   AND F2.F2_LOJA     = VS1.VS1_LOJA     "         + CRLF
-    _cQuery += "   AND F2.F2_DOC      = VS1.VS1_NUMNFI   "         + CRLF
-    _cQuery += "   AND F2.F2_SERIE    = VS1.VS1_SERNFI   "         + CRLF
-	_cQuery += "   AND F2_CHVNFE      <> ' '       "               + CRLF
-	_cQuery += "   AND F2_FIMP        = 'S'        "               + CRLF
- 	_cQuery += "   AND F2.D_E_L_E_T_ = ' '         "               + CRLF 
-	_cQuery += "  ORDER BY F2.F2_EMISSAO desc      "               + CRLF
+	_cQuery := "SELECT SF2.R_E_C_N_O_ NRECF2 " 							+ CRLF
+	_cQuery += "		, VS1.VS1_FILIAL " 								+ CRLF
+	_cQuery += "		, VS1.VS1_NUMNFI " 								+ CRLF
+	_cQuery += "		, VS1.VS1_SERNFI " 								+ CRLF
+	_cQuery += "		, VS1.VS1_CLIFAT " 								+ CRLF
+	_cQuery += "		, VS1.VS1_LOJA " 								+ CRLF
+	_cQuery += "		, VS1.VS1_XTPPED " 								+ CRLF
+	_cQuery += "		, VS1.VS1_NUMPED "								+ CRLF
+	_cQuery += "		, SA1.A1_CGC " 									+ CRLF
+	_cQuery += "FROM "+ RetSQLname("SF2") +" SF2 " 						+ CRLF 
+	_cQuery += "JOIN "+ RetSQLname("VS1") +" VS1 " 						+ CRLF	
+    _cQuery += " 	ON  VS1.D_E_L_E_T_  =   ' '  "  					+ CRLF
+    _cQuery += " 	AND VS1.VS1_FILIAL	= '" + FwXFilial("VS1") + "' "	+ CRLF
+	_cQuery += "   	AND VS1.VS1_NUMNFI 	= '" + _cDoc            + "' "  + CRLF
+	_cQuery += "   	AND VS1.VS1_SERNFI 	= '" + _cSerie         	+ "' "  + CRLF
+	_cQuery += "JOIN "+ RetSQLname("SA1") +" SA1 " 						+ CRLF
+    _cQuery += " 	ON  SA1.D_E_L_E_T_  =   ' '  "  					+ CRLF
+    _cQuery += " 	AND SA1.A1_FILIAL	= '" + FwXFilial("SA1") + "' "  + CRLF
+    _cQuery += " 	AND SA1.A1_COD 		= VS1.VS1_CLIFAT " 				+ CRLF
+    _cQuery += " 	AND SA1.A1_LOJA		= VS1.VS1_LOJA " 				+ CRLF
+	_cQuery += "WHERE SF2.D_E_L_E_T_  	= ' '     "                  	+ CRLF
+    _cQuery += "	AND SF2.F2_FILIAL	= '" + FwXFilial("SF2") + "' "  + CRLF
+	_cQuery += "   	AND SF2.F2_CLIENTE  = VS1.VS1_CLIFAT   "       		+ CRLF
+	_cQuery += "   	AND SF2.F2_LOJA     = VS1.VS1_LOJA     "    		+ CRLF
+    _cQuery += "   	AND SF2.F2_DOC      = VS1.VS1_NUMNFI   "    		+ CRLF
+    _cQuery += "   	AND SF2.F2_SERIE    = VS1.VS1_SERNFI   "   			+ CRLF
+	_cQuery += "   	AND SF2.F2_CHVNFE 	<> ' '       "        			+ CRLF
+	_cQuery += "   	AND SF2.F2_FIMP  	= 'S'        "         			+ CRLF
+	_cQuery += "  	ORDER BY SF2.F2_EMISSAO DESC      "       			+ CRLF
 	_cQuery := ChangeQuery(_cQuery)
 	dbUseArea(.T.,"TOPCONN",TcGenQry(,,_cQuery),qryNF,.T.,.T.)
-
+	If (qryNF)->(EOF())
+        oJsonRet['errorCode']	:= 400
+        oJsonRet['errors']		:= "Nao localizado nota "+_cDoc+"/"+_cSerie+" !"
+		Return cXmlNf
+	Endif
     While (qryNF)->(!EOF())
-
-		cFilAnt := (qryNF)->F2_FILIAL
- 
+		SF2->(DbGoto((qryNF)->NRECF2))
+		cFilAnt := SF2->F2_FILIAL
         IF UsaColaboracao("1")
-            cXmlNf:= XML_COL((qryNF)->RECF2)
+            cXmlNf:= XML_COL((qryNF)->NRECF2)
         Else
             If _lHmb
                 cXmlNf := MProcDanfe( _oSay )
             Else      
-                cXmlNf := fConsXml((qryNF)->F2_DOC, (qryNF)->F2_SERIE, (qryNF)->F2_EMISSAO, (qryNF)->A1_CGC)
+                cXmlNf := fConsXml(SF2->F2_DOC, SF2->F2_SERIE, SF2->F2_EMISSAO, (qryNF)->A1_CGC)
             Endif
         EndIF
-
         //U_CAOA_MONITOR( cFilant  ,cRet,'001','004',cErro, Alltrim(qryNF->F2_DOC+qryNF->F2_SERIE) ,'0',cSoap ,qryNF->RECF2)
         (qryNF)->(dbSkip())
-
 	EndDo
-
     If Select(qryNF) <> 0
 	    (qryNF)->(DbCloseArea())
 	    Ferase(qryNF+GetDBExtension())
     Endif 
+
+    IF !Empty(cXmlNf)
+        oJsonRet['xml']	:= cXmlNf
+        oJsonRet['errorCode']	:= 200
+        oJsonRet['Message'] 	:= "XML de NF recebida com sucesso!"
+    Else
+        oJsonRet['errorCode']	:= 400
+        oJsonRet['errors']		:= 'Nao foi possivel gerar o  XML !'
+    EndIF
+
 
 Return(cXmlNf)
 
