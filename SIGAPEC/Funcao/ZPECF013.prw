@@ -1363,47 +1363,12 @@ Pergunte(cPerg,.T.)
 */
 Begin Sequence
 	
-	_lControla := fValSZK(_cUsuario)
-	if !(_lControla)
+	
+	if !(fValSZK(_cUsuario))
+		_lControla := .F.
 		Break
 	endIF
 	
-	/*If SZK->ZK_STATUS == "C"
-   		MSGINFO( "Picking Cancelado !!! ", "[ZPECF013_MANUTENCAO] - Atenção" )
-		_lControla := .F.  //para não retirar controle ainda não acessou o mesmo
-		Break
-	Endif	
-
-	If SZK->ZK_STATUS == "F"
-   		MSGINFO( "Já possui indicação de nota fiscal, não pode ser alterado !!! ", "[ZPECF013_MANUTENCAO] - Atenção" )
-		_lControla := .F.  //para não retirar controle ainda não acessou o mesmo
-		Break
-	Endif	
-
-	If SZK->ZK_STATUS == "B"
-   		MSGINFO( "Picking Bloqueado !!! ", "[ZPECF013_MANUTENCAO] - Atenção" )
-		_lControla := .F.  //para não retirar controle ainda não acessou o mesmo
-		Break
-	Endif	
-
-	If !Empty(SZK->ZK_NF)
-   		MSGINFO( "Já possui nota fiscal, não pode ser alterado !!! ", "[ZPECF013_MANUTENCAO] - Atenção" )
-		_lControla := .F.  //para não retirar controle ainda não acessou o mesmo
-		Break
-	Endif	
-
-	If !Empty(SZK->ZK_NF) 
-   		MSGINFO( "Picking ja possui Nota Fical !!! ", "[ZPECF013_MANUTENCAO] - Atenção" )
-		_lControla := .F.  //para não retirar controle ainda não acessou o mesmo
-		Break
-	Endif	
-
-	If Empty(SZK->ZK_STREG) .or. AllTrim(SZK->ZK_USURECP) <> _cUsuario
-   		MSGINFO( "Ainda não foi realizada a Separação pela Logistica, não podendo ser faturado !!! ", "[ZPECF013_MANUTENCAO] - Atenção" )
-		_lControla := .F.  //para não retirar controle ainda não acessou o mesmo
-		Break
-	Endif
-	*/
 	aAdd(_aIntCab, 	{"NUMERO"        , "C" , 60 , "@!"               }) // Número  ORÇAMENTO
 	aAdd(_aIntCab, 	{"TIPO"          , "C" , 60 , "@!"               }) // Tipo          "
 	aAdd(_aIntCab, 	{"DATA ABERTURA" , "D" , 50 , "@D"               }) // Data Abertura
@@ -1469,7 +1434,7 @@ Begin Sequence
 	//Garantir que o processamento seja unico
 	If _lControla
 
-		If !LockByName(_cChave+_cMarca,.T.,.T.)  
+		If !LockByName(_cChave + _cMarca + cFilAnt,.T.,.F.)  
 
 			_lControla := .F.
 			
@@ -1477,7 +1442,7 @@ Begin Sequence
 				
 				MsAguarde({|| Sleep(3000) }, "Faturamento.", "Aguarde... Seu faturamento em breve será concluido.")	
 				
-				If LockByName(_cChave+_cMarca,.T.,.T.)
+				If LockByName(_cChave+_cMarca + cFilAnt,.T.,.F.)
 					_lControla := .T.
 					Exit
 				EndIf
@@ -1506,7 +1471,7 @@ Begin Sequence
 	
 	//Atualiza TES Inteligente
 	if !(U_ZPECREGFI(cZK_XPICKI)) //cZK_XPICKI _cPedido
-		if !MsgYesNo("Erro na atualização da TES INTELIGENTE no Picking: "+cZK_XPICKI+" Deseja Faturar assim mesmo?")
+		if !MsgYesNo("Erro na atualização da TES INTELIGENTE no Picking: " + cZK_XPICKI + " Deseja Faturar assim mesmo?")
 			lRet = .F.
 			Break
 		EndIf
@@ -1798,7 +1763,7 @@ Begin Sequence
 End Sequence
 
 If _lControla 
-	UnLockByName(_cChave+_cMarca,.T.,.T.)
+	UnLockByName(_cChave + _cMarca + cFilAnt,.T.,.F.)
 Endif	
 
 If Select(_cAliasPesq) <> 0
@@ -1819,7 +1784,8 @@ Endif
 //SZK->(DbGoto(_nRegSZK))
 SZK->(dbGotop())
 VS3->(DbGotop())
-oBrowseLeft:SetFilterDefault(" VS3_FILIAL== '" + xFilial("VS3") + "' .And. VS3_XPICKI== '" + SZK->ZK_XPICKI + "'" )
+oBrowseLeft:SetFilterDefault(" VS3_FILIAL== '" + xFilial("VS3") + "' .And. VS3_XPICKI== '" + SZK->ZK_XPICKI + "'" )//"+ZPECF13FIT(xFilial("VS3"), SZK->ZK_XPICKI) )//"
+oBrowseLeft:cOriginalFilter := " "
 oBrowseUp:Refresh()
 oBrowseLeft:Refresh()
 
