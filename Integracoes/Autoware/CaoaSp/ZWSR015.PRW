@@ -3,6 +3,9 @@
 #INCLUDE "RESTFUL.CH"
 #INCLUDE "TOPCONN.CH"
 #INCLUDE "TBICONN.CH"
+#INCLUDE "RPTDEF.CH"
+#INCLUDE "FWPrintSetup.ch" 
+
 //#Define CRLF  CHAR(13) + CHAR(10)
 
 /*/{Protheus.doc} ZWSR015
@@ -145,16 +148,18 @@ Private cXmlNf    := ""
         Break
  	EndIf
 
-    If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Franco da Rocha | Caoa
-        If _cCNPJ <> '03471344000509' //CNPJ Caoa | Franco da Rocha
-            oJsonRet['errorCode']	:= 400
-            oJsonRet['errors']		:= 'CNPJ não pertencente a Caoa | Franco da Rocha !'
- 	    EndIf
-    ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //Empresa Franco da Rocha | HMB Hyundai
-        If _cCNPJ <> '10394422000657' //CNPJ HMB | Franco da Rocha
-            oJsonRet['errorCode']	:= 400
-            oJsonRet['errors']		:= 'CNPJ não pertencente a HMB | Franco da Rocha !'
- 	    EndIf
+    //If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Franco da Rocha | Caoa
+    //    If _cCNPJ <> '03471344000509' //CNPJ Caoa | Franco da Rocha
+    If  AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" .And. _cCNPJ <> '03471344000509' //Empresa Franco da Rocha | Caoa //CNPJ Caoa | Franco da Rocha
+        oJsonRet['errorCode']	:= 400
+        oJsonRet['errors']		:= 'CNPJ não pertencente a Caoa | Franco da Rocha !'
+ 	    //EndIf
+    //ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //Empresa Franco da Rocha | HMB Hyundai
+    //    If _cCNPJ <> '10394422000657' //CNPJ HMB | Franco da Rocha
+    ElseIf  AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" .And. _cCNPJ <> '10394422000657' //Empresa Franco da Rocha | HMB Hyundai
+        oJsonRet['errorCode']	:= 400
+        oJsonRet['errors']		:= 'CNPJ não pertencente a HMB | Franco da Rocha !'
+ 	    //EndIf
 	Else 
     	ValidOJson(_oJson, _cDoc, _cSerie, @oJsonRet)     
     EndIf
@@ -211,34 +216,36 @@ Local cXmlNf	:= ""
     //    qryNF := GetNextAlias()
     //EndDo
 	_cQuery := "SELECT SF2.R_E_C_N_O_ NRECF2 " 							+ CRLF
-	_cQuery += "		, VS1.VS1_FILIAL " 								+ CRLF
-	_cQuery += "		, VS1.VS1_NUMNFI " 								+ CRLF
-	_cQuery += "		, VS1.VS1_SERNFI " 								+ CRLF
-	_cQuery += "		, VS1.VS1_CLIFAT " 								+ CRLF
-	_cQuery += "		, VS1.VS1_LOJA " 								+ CRLF
-	_cQuery += "		, VS1.VS1_XTPPED " 								+ CRLF
-	_cQuery += "		, VS1.VS1_NUMPED "								+ CRLF
+	//_cQuery += "		, VS1.VS1_FILIAL " 								+ CRLF
+	//_cQuery += "		, VS1.VS1_NUMNFI " 								+ CRLF
+	//_cQuery += "		, VS1.VS1_SERNFI " 								+ CRLF
+	//_cQuery += "		, VS1.VS1_CLIFAT " 								+ CRLF
+	//_cQuery += "		, VS1.VS1_LOJA " 								+ CRLF
+	//_cQuery += "		, VS1.VS1_XTPPED " 								+ CRLF
+	//_cQuery += "		, VS1.VS1_NUMPED "								+ CRLF
 	_cQuery += "		, SA1.A1_CGC " 									+ CRLF
 	_cQuery += "FROM "+ RetSQLname("SF2") +" SF2 " 						+ CRLF 
-	_cQuery += "JOIN "+ RetSQLname("VS1") +" VS1 " 						+ CRLF	
+	_cQuery += "LEFT JOIN "+ RetSQLname("VS1") +" VS1 " 						+ CRLF	
     _cQuery += " 	ON  VS1.D_E_L_E_T_  =   ' '  "  					+ CRLF
     _cQuery += " 	AND VS1.VS1_FILIAL	= '" + FwXFilial("VS1") + "' "	+ CRLF
 	_cQuery += "   	AND VS1.VS1_NUMNFI 	= '" + _cDoc            + "' "  + CRLF
 	_cQuery += "   	AND VS1.VS1_SERNFI 	= '" + _cSerie         	+ "' "  + CRLF
-	_cQuery += "JOIN "+ RetSQLname("SA1") +" SA1 " 						+ CRLF
+	_cQuery += "JOIN "+ RetSQLname("SA1") +" SA1 " 				+ CRLF
     _cQuery += " 	ON  SA1.D_E_L_E_T_  =   ' '  "  					+ CRLF
     _cQuery += " 	AND SA1.A1_FILIAL	= '" + FwXFilial("SA1") + "' "  + CRLF
-    _cQuery += " 	AND SA1.A1_COD 		= VS1.VS1_CLIFAT " 				+ CRLF
-    _cQuery += " 	AND SA1.A1_LOJA		= VS1.VS1_LOJA " 				+ CRLF
+    _cQuery += " 	AND SA1.A1_COD 		= SF2.F2_CLIENTE " 				+ CRLF
+    _cQuery += " 	AND SA1.A1_LOJA		= SF2.F2_LOJA " 				+ CRLF
 	_cQuery += "WHERE SF2.D_E_L_E_T_  	= ' '     "                  	+ CRLF
     _cQuery += "	AND SF2.F2_FILIAL	= '" + FwXFilial("SF2") + "' "  + CRLF
-	_cQuery += "   	AND SF2.F2_CLIENTE  = VS1.VS1_CLIFAT   "       		+ CRLF
-	_cQuery += "   	AND SF2.F2_LOJA     = VS1.VS1_LOJA     "    		+ CRLF
-    _cQuery += "   	AND SF2.F2_DOC      = VS1.VS1_NUMNFI   "    		+ CRLF
-    _cQuery += "   	AND SF2.F2_SERIE    = VS1.VS1_SERNFI   "   			+ CRLF
+	//_cQuery += "   	AND SF2.F2_CLIENTE  = VS1.VS1_CLIFAT   "       		+ CRLF
+	//_cQuery += "   	AND SF2.F2_LOJA     = VS1.VS1_LOJA     "    		+ CRLF
+    //_cQuery += "   	AND SF2.F2_DOC      = VS1.VS1_NUMNFI   "    		+ CRLF
+    //_cQuery += "   	AND SF2.F2_SERIE    = VS1.VS1_SERNFI   "   			+ CRLF
+    _cQuery += "   	AND SF2.F2_DOC      = '" + _cDoc            + "' "  + CRLF
+    _cQuery += "   	AND SF2.F2_SERIE    = '" + _cSerie         	+ "' "  + CRLF
 	_cQuery += "   	AND SF2.F2_CHVNFE 	<> ' '       "        			+ CRLF
 	_cQuery += "   	AND SF2.F2_FIMP  	= 'S'        "         			+ CRLF
-	_cQuery += "  	ORDER BY SF2.F2_EMISSAO DESC      "       			+ CRLF
+	_cQuery += "ORDER BY SF2.F2_EMISSAO DESC      "       				+ CRLF
 	_cQuery := ChangeQuery(_cQuery)
 	dbUseArea(.T.,"TOPCONN",TcGenQry(,,_cQuery),qryNF,.T.,.T.)
 	If (qryNF)->(EOF())
@@ -253,7 +260,7 @@ Local cXmlNf	:= ""
             cXmlNf:= XML_COL((qryNF)->NRECF2)
         Else
             If _lHmb
-                cXmlNf := MProcDanfe( _oSay )
+                cXmlNf := XZWSR15DNF(  )
             Else      
                 cXmlNf := fConsXml(SF2->F2_DOC, SF2->F2_SERIE, SF2->F2_EMISSAO, (qryNF)->A1_CGC)
             Endif
@@ -325,7 +332,7 @@ Return(cXMLnf)
 
 /////////////////////////====================
 
-/*/{Protheus.doc} MProcDanfe
+/*/{Protheus.doc} XZWSR15DNF
 Processar a Danfe e enviar e-mail
 @author 
 @since 
@@ -333,7 +340,7 @@ Processar a Danfe e enviar e-mail
 @Obs
 @History
 /*/
-Static Function MProcDanfe( _oSay )
+Static Function XZWSR15DNF(  )
 Local nA         	:= 0
 //Local cMensagem  	:= ""
 Local cDir       	:= SuperGetMV('MV_RELT',,"\SPOOL\")
@@ -359,7 +366,7 @@ Begin Sequence
     	EndDo
 	Endif
     If  !( File(cDir + cNomeArquivo + ".pdf") )
-		_cMens := If(!Empty(cXMensagem), cXMensagem, "Problemas para gerar o arquivo "+cNomeArquivo+" na pasta "+cDir+" ref. a NF/SERIE  "+SF2-F2_DOC+"/"+SF2->F2_SERIE+ " ! ")
+		_cMens := If(!Empty(cXMensagem), cXMensagem, "Problemas para gerar o arquivo "+cNomeArquivo+" na pasta "+cDir+" ref. a NF/SERIE  "+SF2->F2_DOC+"/"+SF2->F2_SERIE+ " ! ")
 		_lRet := .F.
         Break
     EndIf
@@ -531,6 +538,44 @@ oSetup := Nil
 //Limpa arquivos temporarios .rel da pasta MV_RELT
 //SpedCleRelt()
 Return .T.
+
+
+/*  SELECT UTILIZANDO ANTERIORMENTE
+	_cQuery := "SELECT SF2.R_E_C_N_O_ NRECF2 " 							+ CRLF
+	//_cQuery += "		, VS1.VS1_FILIAL " 								+ CRLF
+	//_cQuery += "		, VS1.VS1_NUMNFI " 								+ CRLF
+	//_cQuery += "		, VS1.VS1_SERNFI " 								+ CRLF
+	//_cQuery += "		, VS1.VS1_CLIFAT " 								+ CRLF
+	//_cQuery += "		, VS1.VS1_LOJA " 								+ CRLF
+	//_cQuery += "		, VS1.VS1_XTPPED " 								+ CRLF
+	//_cQuery += "		, VS1.VS1_NUMPED "								+ CRLF
+	_cQuery += "		, SA1.A1_CGC " 									+ CRLF
+	_cQuery += "FROM "+ RetSQLname("SF2") +" SF2 " 						+ CRLF 
+	_cQuery += "JOIN "+ RetSQLname("VS1") +" VS1 " 						+ CRLF	
+    _cQuery += " 	ON  VS1.D_E_L_E_T_  =   ' '  "  					+ CRLF
+    _cQuery += " 	AND VS1.VS1_FILIAL	= '" + FwXFilial("VS1") + "' "	+ CRLF
+	_cQuery += "   	AND VS1.VS1_NUMNFI 	= '" + _cDoc            + "' "  + CRLF
+	_cQuery += "   	AND VS1.VS1_SERNFI 	= '" + _cSerie         	+ "' "  + CRLF
+	_cQuery += "JOIN "+ RetSQLname("SA1") +" SA1 " 						+ CRLF
+    _cQuery += " 	ON  SA1.D_E_L_E_T_  =   ' '  "  					+ CRLF
+    _cQuery += " 	AND SA1.A1_FILIAL	= '" + FwXFilial("SA1") + "' "  + CRLF
+    _cQuery += " 	AND SA1.A1_COD 		= VS1.VS1_CLIFAT " 				+ CRLF
+    _cQuery += " 	AND SA1.A1_LOJA		= VS1.VS1_LOJA " 				+ CRLF
+	_cQuery += "WHERE SF2.D_E_L_E_T_  	= ' '     "                  	+ CRLF
+    _cQuery += "	AND SF2.F2_FILIAL	= '" + FwXFilial("SF2") + "' "  + CRLF
+	_cQuery += "   	AND SF2.F2_CLIENTE  = VS1.VS1_CLIFAT   "       		+ CRLF
+	_cQuery += "   	AND SF2.F2_LOJA     = VS1.VS1_LOJA     "    		+ CRLF
+    _cQuery += "   	AND SF2.F2_DOC      = VS1.VS1_NUMNFI   "    		+ CRLF
+    _cQuery += "   	AND SF2.F2_SERIE    = VS1.VS1_SERNFI   "   			+ CRLF
+	_cQuery += "   	AND SF2.F2_CHVNFE 	<> ' '       "        			+ CRLF
+	_cQuery += "   	AND SF2.F2_FIMP  	= 'S'        "         			+ CRLF
+	_cQuery += "ORDER BY SF2.F2_EMISSAO DESC      "       				+ CRLF
+	_cQuery := ChangeQuery(_cQuery)
+	dbUseArea(.T.,"TOPCONN",TcGenQry(,,_cQuery),qryNF,.T.,.T.)
+
+
+*/
+
 
 
 
