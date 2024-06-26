@@ -225,7 +225,7 @@ Local cXmlNf	:= ""
 	//_cQuery += "		, VS1.VS1_NUMPED "								+ CRLF
 	_cQuery += "		, SA1.A1_CGC " 									+ CRLF
 	_cQuery += "FROM "+ RetSQLname("SF2") +" SF2 " 						+ CRLF 
-	_cQuery += "LEFT JOIN "+ RetSQLname("VS1") +" VS1 " 						+ CRLF	
+	_cQuery += "JOIN "+ RetSQLname("VS1") +" VS1 " 						+ CRLF	
     _cQuery += " 	ON  VS1.D_E_L_E_T_  =   ' '  "  					+ CRLF
     _cQuery += " 	AND VS1.VS1_FILIAL	= '" + FwXFilial("VS1") + "' "	+ CRLF
 	_cQuery += "   	AND VS1.VS1_NUMNFI 	= '" + _cDoc            + "' "  + CRLF
