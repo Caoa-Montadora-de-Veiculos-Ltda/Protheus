@@ -8,7 +8,7 @@
 @version  	P12.1.23
 @since  	29/08/2022
 @return  	NIL
-@obs        Ponto de entrada VEIA060_CAOA chamado pelo VEIA060
+@obs        Ponto de entrada VEIA060CAOA_PE chamado pelo VEIA060
 @project
 @history    25/03/2024 - Incluído cinco campos de comissão de vendas 
 */
@@ -789,29 +789,55 @@ Local cSQLALIAS := "BFEMP"
 Return .T.
 /*
 
-Preenche o campo E1_XFORMA
+Preenche o campo E1_XFORMA e reordena as Parcelas nas Tabelas SE1, VS9 e VRL
 
 */
 Static Function fFinVei()
 Local aArea      := GetArea()	
 Local aAreaSe1   := SE1->(GetArea())
+Local aAreaVRL   := VRL->(GetArea())
+Local aAreaVS9   := VS9->(GetArea())
 Local cQuery     := ""
 Local _cTmpAlias := GetNextAlias()
+local aKeySe1	 := {}
+Local _cParcela  := "Z0"
+Local x 		 := 0
 
-cQuery += CRLF + " select SE1.E1_XFORMA,VRL.VRL_XFORMA,SF2.F2_COND,SE1.R_E_C_N_O_ AS RECNO,
-CqUERY += CRLF + " 	NVL((Select E4_XFORMA FROM " + RetSqlName("SE4") + " SE4 WHERE SE4.E4_FILIAL = '" + xFilial("SE4") + "' AND SE4.E4_CODIGO = SF2.F2_COND AND SE4.D_E_L_E_T_ = ' '),' ') AS E4_XFORMA 
+cQuery += CRLF + " select "
+cQuery += CRLF + "     SE1.E1_XFORMA, "
+cQuery += CRLF + "     VRL.VRL_XFORMA, "
+cQuery += CRLF + "     SF2.F2_COND, "
+cQuery += CRLF + "     VS9.VS9_PARCEL, "
+cQuery += CRLF + "     SE1.E1_PARCELA, "
+cQuery += CRLF + "     VS9.VS9_SEQUEN, "
+cQuery += CRLF + "     SE1.R_E_C_N_O_ AS E1RECNO,  "
+cQuery += CRLF + "     VRL.R_E_C_N_O_ AS VRLRECNO, "
+cQuery += CRLF + "     VS9.R_E_C_N_O_ AS VS9RECNO, "
+cQuery += CRLF + "     SE1.E1_VALOR , "
+cQuery += CRLF + "     VRL.VRL_E1VALO, "
+cQuery += CRLF + "     SE1.E1_NUM, "
+cQuery += CRLF + "     VRL.VRL_E1PREF, "
+cQuery += CRLF + "     VRL.VRL_E1NUM, "
+cQuery += CRLF + "     VRL.VRL_E1PARC, "
+cQuery += CRLF + "     VRL.VRL_E1TIPO, "
+cQuery += CRLF + "     SE1.E1_EMISSAO, "
+cQuery += CRLF + "     VRL.VRL_E1DTVE,  "
+CqUERY += CRLF + " 	   NVL((Select E4_XFORMA FROM " + RetSqlName("SE4") + " SE4 WHERE SE4.E4_FILIAL = '" + xFilial("SE4") + "' AND SE4.E4_CODIGO = SF2.F2_COND AND SE4.D_E_L_E_T_ = ' '),' ') AS E4_XFORMA 
 cQuery += CRLF + " from " + RetSqlName("VRL") + " VRL "
+
 cQuery += CRLF + " INNER  JOIN " + RetSqlName("VRK") + " VRK "
 cQuery += CRLF + "     ON  VRK.VRK_PEDIDO = VRL.VRL_PEDIDO "
 cQuery += CRLF + "     AND VRK.VRK_FILIAL = VRL.VRL_FILIAL "
 cQuery += CRLF + "     AND VRK.VRK_ITEPED = VRL.VRL_ITEPED "
 cQuery += CRLF + "     AND VRK.D_E_L_E_T_ = ' ' "
+
 cQuery += CRLF + " INNER JOIN " + RetSqlName("VV0") + " VV0 "
 cQuery += CRLF + "     ON  VV0.VV0_FILIAL = '" + xFilial("VV0") + "' "
 cQuery += CRLF + "	   AND VV0.VV0_NUMTRA = VRK.VRK_NUMTRA "
 cQuery += CRLF + "     AND VV0.VV0_CODCLI = VRL.VRL_E1CLIE "
 cQuery += CRLF + "     AND VV0.VV0_LOJA   = VRL.VRL_E1LOJA "
 cQuery += CRLF + "     AND VV0.D_E_L_E_T_ = ' ' "
+
 cQuery += CRLF + " INNER JOIN  " + RetSqlName("SD2") + " SD2 "
 cQuery += CRLF + "     ON  SD2.D2_FILIAL  = '" + xFilial("SD2") + "' "
 cQuery += CRLF + "     AND SD2.D2_CLIENTE = VRL.VRL_E1CLIE "
@@ -819,6 +845,7 @@ cQuery += CRLF + "     AND SD2.D2_LOJA    = VRL.VRL_E1LOJA "
 cQuery += CRLF + "     AND SD2.D2_DOC     = VV0.VV0_NUMNFI "
 cQuery += CRLF + "     AND SD2.D2_SERIE   = VV0.VV0_SERNFI "
 cQuery += CRLF + "     AND SD2.D_E_L_E_T_ = ' ' "
+
 cQuery += CRLF + " INNER JOIN " + RetSqlName("SF2") + " SF2 "
 cQuery += CRLF + "     ON  SF2.F2_FILIAL  = SD2.D2_FILIAL "
 cQuery += CRLF + "     AND SF2.F2_DOC     = SD2.D2_DOC "
@@ -826,6 +853,7 @@ cQuery += CRLF + "     AND SF2.F2_SERIE   = SD2.D2_SERIE "
 cQuery += CRLF + "     AND SF2.F2_CLIENTE = SD2.D2_CLIENTE "
 cQuery += CRLF + "     AND SF2.F2_LOJA    = SD2.D2_LOJA "
 cQuery += CRLF + "     AND SF2.D_E_L_E_T_ = ' ' "
+
 cQuery += CRLF + " INNER JOIN " + RetSqlName("SE1") + " SE1 "
 cQuery += CRLF + "     ON  SE1.E1_FILIAL = '" + xFilial("SE1") + "' "
 cQuery += CRLF + "     AND SE1.E1_PREFIXO = SD2.D2_SERIE "
@@ -833,9 +861,17 @@ cQuery += CRLF + "     AND SE1.E1_NUM     = SD2.D2_DOC "
 cQuery += CRLF + "     AND SE1.E1_CLIENTE = SD2.D2_CLIENTE "
 cQuery += CRLF + "     AND SE1.E1_LOJA    = SD2.D2_LOJA "
 //cQuery += CRLF + "     AND SE1.E1_VALOR   = VRL.VRL_E1VALO "
-cQuery += CRLF + "     AND SE1.E1_PARCELA = VRL.VRL_E1PARC
+//cQuery += CRLF + "     AND SE1.E1_PARCELA = VRL.VRL_E1PARC
 cQuery += CRLF + "     AND SE1.E1_XFORMA  = ' ' "
 cQuery += CRLF + "     AND SE1.D_E_L_E_T_ = ' ' "
+
+cQuery += CRLF + "	INNER JOIN " + RetSqlName("VS9") + " VS9  "
+cQuery += CRLF + "	    ON  VS9.VS9_FILIAL = '" + xFilial("VS9")  + "' "
+cQuery += CRLF + "	    AND VS9.VS9_NUMIDE = VRK.VRK_NUMTRA "
+cQuery += CRLF + "	    AND VS9.VS9_SEQUEN = VRL.VRL_E1PARC "
+cQuery += CRLF + "	    AND VS9.VS9_PARCEL = SE1.E1_PARCELA "
+cQuery += CRLF + "	    AND VS9.D_E_L_E_T_ = ' ' "
+
 cQuery += CRLF + " where  
 cQuery += CRLF + "         VRL.VRL_FILIAL = '" + xFilial("VRL")  + "' "
 cQuery += CRLF + "	   AND VRL.VRL_E1CLIE = '" + VRJ->VRJ_CODCLI + "' "
@@ -850,21 +886,75 @@ If Select(_cTmpAlias) > 0 ;	(_cTmpAlias)->(DbCloseArea()) ; EndIf
 dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), _cTmpAlias , .F., .T. )
 
 DbSelectArea("SE1")
+DbSelectArea("VRL")
+DbSelectArea("VS9")
+SE1->(dbSetOrder(1))
 
-While (_cTmpAlias)->(!EOF())
-	SE1->(DbGoTo((_cTmpAlias)->RECNO))
+Begin Transaction
+	While (_cTmpAlias)->(!EOF())
+		
+		SE1->(DbGoTo((_cTmpAlias)->E1RECNO))
+		
+		AADD(aKeySe1,{(_cTmpAlias)->VRL_E1PREF, (_cTmpAlias)->VRL_E1NUM, (_cTmpAlias)->VRL_E1PARC, (_cTmpAlias)->VRL_E1TIPO,(_cTmpAlias)->VS9_PARCEL,0})
+		
+		if EMPTY(SE1->E1_XFORMA)
+			//Ajusto a Forma de Recebimento dos Titulos criados pelo Faturamento
+			RecLock('SE1',.f.)
+				SE1->E1_XFORMA := IIF(!EMPTY((_cTmpAlias)->E4_XFORMA) ,(_cTmpAlias)->E4_XFORMA,(_cTmpAlias)->VRL_XFORMA)
+			SE1->(MsUnlock())
+		
+		Endif
+		
+		VS9->(DbGoTo((_cTmpAlias)->VS9RECNO))
+		IF VS9->(!EOF()) .AND. VS9->VS9_PARCEL <> VS9->VS9_SEQUEN
+			//Ajusto as Parcelas da Negociação conforme os Titulos Gerados pelo Faturamento
+			RecLock('VS9',.f.)
+				VS9->VS9_SEQUEN := VS9->VS9_PARCEL
+			VS9->(MsUnlock())
+		
+		EndIf
 
-	if EMPTY(SE1->E1_XFORMA)
-	
-		RecLock('SE1',.f.)
-		SE1->E1_XFORMA := IIF(!EMPTY((_cTmpAlias)->E4_XFORMA) ,(_cTmpAlias)->E4_XFORMA,(_cTmpAlias)->VRL_XFORMA)
-		SE1->(MsUnlock())
-	
-	Endif
-	(_cTmpAlias)->(DbSkip())
+		VRL->(DbGoTo((_cTmpAlias)->VRLRECNO))
+		IF VRL->(!EOF()) .AND. VRL->VRL_E1PARC <> VS9->VS9_SEQUEN
+			//Ajusto as Parcelas da Negociação conforma as Geradas pelo Faturamento
+			RecLock('VRL',.f.)
+				VRL->VRL_E1PARC := VS9->VS9_PARCEL 
+			VRL->(MsUnlock())
+		
+		EndIf
+		x := Len(aKeySe1)
+		if SE1->(DbSeek(xFilial('SE1')+aKeySe1[x,1]+aKeySe1[x,2]+aKeySe1[x,3]+aKeySe1[x,4]))
+			//Altera as Parcelas da Negociação do Financeiro temporariamente para evitar Chave Duplicada
+			
+			aKeySe1[x,6] := SE1->(Recno())
+			_cParcela    := SOMA1(_cParcela)  //Para evitar chave duplicada, altero para Z1,Z2,Z3,...
+			RecLock('SE1',.f.)
+				SE1->E1_PARCELA := _cParcela
+			SE1->(MsUnlock())
 
-EndDo
+		EndIf
+		(_cTmpAlias)->(DbSkip())
 
+	EndDo
+
+	For x:= 1 To Len(aKeySe1)
+
+		if aKeySe1[x,6] > 0
+			SE1->(DbGoTo(aKeySe1[x,6]))
+			
+			//Agora confirmo a nova sequencia das Parcela da Negociação
+			RecLock('SE1',.f.)
+				SE1->E1_PARCELA := aKeySe1[x,5] 
+			SE1->(MsUnlock())
+
+		EndIf
+
+	Next x
+
+End Transaction
+
+RestArea(aAreaVS9)
+RestArea(aAreaVRL)
 RestArea(aAreaSe1)
 RestArea(aArea)
 
