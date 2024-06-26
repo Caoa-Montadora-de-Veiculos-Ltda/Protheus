@@ -2938,7 +2938,7 @@ Descricao / Objetivo:   Itens Notas Fiscais Mercadorias e Produtos
 */
 
 Static Function fSAFX08()
-	Local cLP := '610-002'
+	Local cLP := SuperGetMV("CMV_LPSFAT", .F., "610-002")
 	Local cConta := ""
 	Local cChave := ""
 
@@ -3072,10 +3072,23 @@ Static Function fSAFX08()
 					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_UM")
 					nPosCmpCab:=PosCabArray(aItens,"COD_NBM")						
 					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_POSIPI")
+
+					//******* INC0113339 25/06/24 Cintia Araujo
 					nPosCmpCab:=PosCabArray(aItens,"VLR_UNIT")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_PRCUNIT")
+					If SFT->FT_DESCZFR > 0
+						aItens[Len(aItens)][nPosCmpCab][2] := (SFT->FT_PRCUNIT+(SFT->FT_DESCZFR/SD2->D2_QUANT))*(10**TamSZR(cTab)[2])
+					Else
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_PRCUNIT")
+					EndIf
 					nPosCmpCab:=PosCabArray(aItens,"VLR_ITEM")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_TOTAL")
+					If SFT->FT_DESCZFR > 0
+						aItens[Len(aItens)][nPosCmpCab][2] := (SFT->FT_TOTAL+SFT->FT_DESCZFR)*(10**TamSZR(cTab)[2])
+					Else
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_TOTAL")
+					EndIf
+					//******* INC0113339 25/06/24 Cintia Araujo
+
+
 					nPosCmpCab:=PosCabArray(aItens,"VLR_DESCONTO")
 					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_DESCONT")
 					nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_A")
