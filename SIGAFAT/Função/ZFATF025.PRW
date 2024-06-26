@@ -8,7 +8,7 @@
 #Include "TbiConn.CH"
 
 // identificadores de layout
-#define LAYOUT_AR "layout_ar"
+#define LAYOUT_AR "layout_ar" 
 
 // identificadores de coluna
 #define COL_RIGHT  			"column_right"
@@ -228,6 +228,7 @@ Contas a Receber, Contas a Pagar ou Tesouraria:
 Method CreateLeftColumn() Class TelAcWindow
 
 Begin Sequence
+	ZZN->(DbSetOrder(1))
 	Self:oArea:AddCollumn(COL_LEFT , 30, .T.)
 	Self:oArea:SetColSplit(COL_LEFT, CONTROL_ALIGN_RIGHT)
 	// cria a janela de search
@@ -258,11 +259,13 @@ Begin Sequence
 	Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) = 'C'  "  ,"RED"       ,"Cancelado")
 	Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) <> ' '  " ,"GRAY"      ,"Pendente")
 
-	Self:_oBrowseZZN:AddButton("Incluir"	, { || Self:MenuPrev(3)	})
-	Self:_oBrowseZZN:AddButton("Alterar"	, { || Self:MenuPrev(4)	})
-	Self:_oBrowseZZN:AddButton("Faturar"	, { || Self:MenuPrev(1)	})
-	Self:_oBrowseZZN:AddButton("Cancelar"	, { || Self:MenuPrev(5)	})
-	Self:_oBrowseZZN:AddButton("Visualizar",  { || Self:MenuPrev(2)	})
+	Self:_oBrowseZZN:AddButton("Incluir"		, { || Self:MenuPrev(3)	})
+	Self:_oBrowseZZN:AddButton("Alterar"		, { || Self:MenuPrev(4)	})
+	Self:_oBrowseZZN:AddButton("Faturar"		, { || Self:MenuPrev(1)	})
+	Self:_oBrowseZZN:AddButton("Cancelar"		, { || Self:MenuPrev(5)	})
+	Self:_oBrowseZZN:AddButton("Visualizar"		, { || Self:MenuPrev(2)})
+	Self:_oBrowseZZN:AddButton("Importar CSV"	, { || Self:MenuPrev(6)})
+
 	//mudanca de linha
 	Self:_oBrowseZZN:setChange({||  Self:ZFT25Change(), Self:RefreshPrev()})
 	//Self:SetDadosTitle('Consulta Previsao')
@@ -705,31 +708,25 @@ Local _nRegZZN
 	Endif 
 	
 	//somente liberado para visualizar e ou incluir 
-	If (_nOpc < 2 .Or. _nOpc > 3) .And. ZZN->ZZN_STATUS == "C"
+	If (_nOpc == 1 .Or. _nOpc == 4 .Or. _nOpc == 5 ) .And. ZZN->ZZN_STATUS == "C"   //(_nOpc < 2 .Or. _nOpc > 3) .And. ZZN->ZZN_STATUS == "C"  	
         MsgStop("Previsao cancelada", "PREVISAO")
 		Return Nil
 	Endif 
-	//Se for inclusão
-	If _nOpc ==  3
+	
+	If _nOpc ==  1  	//Faturamento
+		FwMsgRun(,{ |_oSay| U_XZFT19FT(_cFilPrev, _cCodPrev, @_oSay) }, "Selecionando dados", "Aguarde...")  
+	ElseIf _nOpc ==  3  //inclusão
 		_nRegZZN := 0
 		ZFATF025Inclui(@_nRegZZN)
-		//If ValType(_nRegZZN) == "N"
-		//	ZZN->(DbGoto(_nRegZZN))
-		//	_cFilPrev := ZZN->ZZN_FILIAL
-		//	_cCodPrev := ZZN->ZZN_CODPRV
-		//Endif	
-		//_nRegZZN := ZZN->(Recno())
 		Self:_oBrowseZZN:GoTop(.T.)
 		Self:_oBrowseZZN:Refresh(.T.)
-		//ZZN->(DbSetOrder(1))
-		//ZZN->(DbSeek(_cFilPrev+_cCodPrev))
 		ZFAT025Total( ZZN->ZZN_FILIAL, ZZN->ZZN_CODPRV,  /*_lCarrega*/)
-		//If ZFATF025Inclui()
-		//	_oBrowseZZN:Refresh()
-		//	_oBrowseZZP:Refresh()
-		//Endif
-	ElseIf _nOpc ==  1
-		FwMsgRun(,{ |_oSay| U_XZFT19FT(_cFilPrev, _cCodPrev, @_oSay) }, "Selecionando dados", "Aguarde...")  
+	ElseIf _nOpc ==  6 	//Importar CSV
+		_nRegZZN := 0
+		ZFATF025ICSV(@_nRegZZN)
+		Self:_oBrowseZZN:GoTop(.T.)
+		Self:_oBrowseZZN:Refresh(.T.)
+		ZFAT025Total( ZZN->ZZN_FILIAL, ZZN->ZZN_CODPRV,  /*_lCarrega*/)
 	Else	
 		FwMsgRun(,{ |_oSay| U_ZFATF026(_nOpc, _cFilPrev, _cCodPrev , @_oSay ) }, "Selecionando dados", "Aguarde...")  
 	Endif
@@ -804,7 +801,6 @@ Return _lRet
 Static Function ZFATF025Qry( _aRet, _nRegZZN, _oSay )
 Local _cAliasPesq 	:= GetNextAlias()
 Local _lRet 		:= .T.
-//Local _lPergunta	:= .T.
 Local _cNumPrev		:= ""
 Local _cQuery 		:= ""
 Local _cWhere 		:= ""
@@ -820,6 +816,7 @@ Local _nVlrVen
 Local _nVlrUnit  	
 Local _nQtVen		
 Local _cModelo
+Local _cSegMod
 Local _cFabAno 
 Local _aRegSC6
 Local _nQtdeReg
@@ -880,15 +877,14 @@ Begin Sequence
 	Aadd(_aSelect,"VRK_COREXT")
 	Aadd(_aSelect,"VRK_SEGMOD")
 	Aadd(_aSelect,"VVX_DESSEG")
-
 	Aadd(_aSelect,"VRK_VALTAB")  	//Valor de Tabela          
 	Aadd(_aSelect,"VRK_VALPRE") 	//Valor Pretendido         
 	Aadd(_aSelect,"VRK_VALMOV") 	//VALOR DO MOVIMENTO
 	Aadd(_aSelect,"VRK_XBASST") 	//Valor Base ICMS ST	
 	Aadd(_aSelect,"VRK_VALVDA") 	//vALOR DA vENDA          
-
 	Aadd(_aSelect,"VE1_DESMAR")
 
+	//Montagem campos para select
 	_cSelect := CRLF +" SELECT "
 	For _nPos := 1 To Len(_aSelect)
 		_cSelect += CRLF +If(_nPos > 1,", "," ")+_aSelect[_nPos]+" "
@@ -896,138 +892,13 @@ Begin Sequence
 	_cSelect += CRLF +", SC6.R_E_C_N_O_ AS NREGSC6 "
 	_cSelect += CRLF +", VRK.R_E_C_N_O_ AS NREGVRK "
 	
-	/*
-    _cQuery += CRLF + " WITH PEDIDOS_FAT AS ( 	SELECT "
-    _cQuery += CRLF + " 						SC6.C6_OK " 
-    _cQuery += CRLF + " 						, SC6.C6_FILIAL "
-    _cQuery += CRLF + " 						, SC6.C6_CLI "
-    _cQuery += CRLF + " 						, SC6.C6_LOJA "
-    _cQuery += CRLF + " 						, SA1.A1_CGC "
-    _cQuery += CRLF + " 						, SC6.C6_PRODUTO "
-    _cQuery += CRLF + " 						, SB1.B1_DESC "
-    _cQuery += CRLF + " 						, SC6.C6_QTDVEN "
-    _cQuery += CRLF + " 						, SC6.C6_PRCVEN "
-    _cQuery += CRLF + " 						, SC6.C6_PRUNIT "
-    _cQuery += CRLF + " 						, SC6.C6_PEDCLI "
-    _cQuery += CRLF + " 						, SC6.C6_ITEM "
-    _cQuery += CRLF + " 						, SC6.C6_XMODVEI "
-    _cQuery += CRLF + " 						, SC6.C6_XFABMOD "
-	_cQuery += CRLF + " 						, SC6.C6_XPRCTAB "
-	_cQuery += CRLF + " 						, SC6.C6_CHASSI "
-    _cQuery += CRLF + " 						, SC6.R_E_C_N_O_ AS NREGSC6  "
-	_cQuery += CRLF + " 						, VV2.VV2_CODMAR "
-	_cQuery += CRLF + " 						, VV2.VV2_DESMOD "
-    _cQuery += CRLF +  "        FROM  " + RetSqlName("SC6") + " SC6 " 
-    _cQuery += CRLF + "         JOIN " + RetSqlName("SC5") + " SC5 
-    _cQuery += CRLF + "             ON  SC5.C5_FILIAL  = '" + FwxFilial("SC5") + "' "
-    _cQuery += CRLF + "             AND SC5.C5_NUM     = SC6.C6_NUM "
-    _cQuery += CRLF + "             AND SC5.C5_CLIENTE = SC6.C6_CLI "
-    _cQuery += CRLF + "             AND SC5.C5_LOJACLI = SC6.C6_LOJA "
-    _cQuery += CRLF + "             AND SC5.D_E_L_E_T_ = ' ' "
-
-    _cQuery += CRLF + "         JOIN " + RetSqlName("VV2") + "  VV2 "
-    _cQuery += CRLF + "             ON  VV2.VV2_FILIAL  = '" + FwxFilial("VV2") + "' "
-    _cQuery += CRLF + "             AND VV2.VV2_PRODUT  = SC6.C6_PRODUTO
-    _cQuery += CRLF + "             and VV2.VV2_OPCION  BETWEEN '" + _aRet[16] + "' AND '" + _aRet[17] + "' "
-    _cQuery += CRLF + "             AND VV2.VV2_CORINT  BETWEEN '" + _aRet[20] + "' AND '" + _aRet[21] + "' "
-    _cQuery += CRLF + "             AND VV2.VV2_COREXT  BETWEEN '" + _aRet[22] + "' AND '" + _aRet[23] + "' " 
-    _cQuery += CRLF + "             AND VV2.D_E_L_E_T_  = ' ' "
-
-    _cQuery += CRLF + "         JOIN " + RetSqlName("SF4") + " SF4 "
-    _cQuery += CRLF + "             ON  SF4.F4_FILIAL  =  '" + FwxFilial("SF4") + "' "
-    _cQuery += CRLF + "             AND SF4.F4_CODIGO  = SC6.C6_TES "
-    _cQuery += CRLF + "             AND SF4.F4_DUPLIC  = 'S' "
-    _cQuery += CRLF + "             AND SF4.D_E_L_E_T_ = ' ' "
-
-    _cQuery += CRLF + "         JOIN " + RetSqlName("SA1") + " SA1 "
-    _cQuery += CRLF + "             ON  SA1.A1_FILIAL  = '" + FwxFilial("SA1") + "' "
-    _cQuery += CRLF + "             AND SA1.A1_COD     = SC6.C6_CLI "
-    _cQuery += CRLF + "             AND SA1.A1_LOJA    = SC6.C6_LOJA "
-    _cQuery += CRLF + "             AND SA1.D_E_L_E_T_ = ' ' "
-
-    _cQuery += CRLF + "         JOIN " + RetSqlName("SB1") + " SB1 "
-    _cQuery += CRLF + "             ON  SB1.B1_FILIAL  = '" + xFilial("SB1") + "' "
-    _cQuery += CRLF + "             AND SB1.B1_COD     = SC6.C6_PRODUTO "
-    _cQuery += CRLF + "             AND SB1.B1_GRUPO   = 'VEIA' "
-    _cQuery += CRLF + "             AND SB1.D_E_L_E_T_ = ' ' "
-
-    _cQuery += CRLF + "     WHERE SC6.C6_FILIAL	= '" + xFilial("SC6") + "' "  
-    _cQuery += CRLF + "         AND SC6.C6_CLI     	BETWEEN '" +      _aRet[01]  + "' AND '" +      _aRet[03]  + "' "
-    _cQuery += CRLF + "         AND SC6.C6_LOJA    	BETWEEN '" +      _aRet[02]  + "' AND '" +      _aRet[04]  + "' "
-    _cQuery += CRLF + "         AND SC6.C6_PRODUTO 	BETWEEN '" +      _aRet[05]  + "' AND '" +      _aRet[06]  + "' "
-    _cQuery += CRLF + "         AND SC6.C6_PEDCLI  	BETWEEN '" +      _aRet[08]  + "' AND '" +      _aRet[09]  + "' "
-    //_cQuery += CRLF + "         AND SC6.C6_XCODMAR 	BETWEEN '" +      _aRet[10]  + "' AND '" +      _aRet[11]  + "' "
-    _cQuery += CRLF + "         AND VV2.VV2_CODMAR 	BETWEEN '" +      _aRet[10]  + "' AND '" +      _aRet[11]  + "' "
-    _cQuery += CRLF + "         AND SC6.C6_XGRPMOD 	BETWEEN '" +      _aRet[12]  + "' AND '" +      _aRet[13]  + "' "
-    _cQuery += CRLF + "         AND SC6.C6_XMODVEI 	BETWEEN '" +      _aRet[14]  + "' AND '" +      _aRet[15]  + "' "
-    //_cQuery += CRLF +     "     AND SC6.C6_XSEGMOD   BETWEEN '" +      _aRet[16]  + "' AND '" +      _aRet[17]  + "' "
- 
-	//MUDAR PARA VRK DAC***
-    _cQuery += CRLF + "         AND SC6.C6_XFABMOD 	BETWEEN '" +      _aRet[18]  + "' AND '" +      _aRet[19]  + "' "
-
-    //_cQuery += CRLF +     "     AND SC6.C6_XCORINT   BETWEEN '" +      _aRet[20]  + "' AND '" +      _aRet[21]  + "' "
-    //_cQuery += CRLF +     "     AND SC6.C6_XCOREXT   BETWEEN '" +      _aRet[22]  + "' AND '" +      _aRet[23]  + "' "
-    _cQuery += CRLF + "         AND SC5.C5_EMISSAO 	BETWEEN '" + DtoS(_aRet[24]) + "' AND '" + DtoS(_aRet[25]) + "' "
-    _cQuery += CRLF + "         AND SC6.C6_QTDVEN 	> SC6.C6_QTDENT "
-    _cQuery += CRLF + "         AND SC5.C5_TIPO   	= 'N' "
-    _cQuery += CRLF + "         AND SC6.C6_PEDCLI  	<> ' ' "
-    _cQuery += CRLF + "         AND SC6.C6_NOTA    	= '" + Space(9) + "' "
-    _cQuery += CRLF + "         AND SC6.C6_BLQ     	= ' ' "
-	_cQuery += CRLF + " 		AND SC6.C6_XFILPVR 	= ' ' "
-	_cQuery += CRLF + " 		AND SC6.C6_XCODPVR 	= ' ' "
-	//Atualização realizada pela Totvs, acrescentada na lógica DAC 14/05/2024
-	_cQuery += CRLF + " 	    AND SC6.C6_CHASSI    = ' ' "  //<=====
-	_cQuery += CRLF + " 		AND SC6.D_E_L_E_T_ 	= ' ' "
-    _cQuery += CRLF + "          )"       
-
-    _cQuery += CRLF + " SELECT PEDIDOS_FAT.* "
-    _cQuery += CRLF +"		, VRJ.VRJ_PEDIDO "
-	_cQuery += CRLF + " 	, VRK.VRK_MODVEI "
-	_cQuery += CRLF + " 	, VRK.VRK_FABMOD "
- 	_cQuery += CRLF + " 	, VRK.VRK_CODMAR "
- 	_cQuery += CRLF + " 	, VRK.VRK_CORINT "
- 	_cQuery += CRLF + " 	, VRK.VRK_COREXT "
- 	_cQuery += CRLF + " 	, VRK.VRK_SEGMOD "
- 	_cQuery += CRLF + " 	, VVX.VVX_DESSEG "
- 	_cQuery += CRLF + " 	, VE1.VE1_DESMAR "
-   
-    _cQuery += CRLF + " FROM PEDIDOS_FAT  "    
-
-    _cQuery += CRLF + " JOIN " + RetSqlName("VRJ") + " VRJ "
-    _cQuery += CRLF + "     ON  VRJ.VRJ_FILIAL = '" + FWxFilial("VRJ") + "' "
-    _cQuery += CRLF + "     AND VRJ.VRJ_PEDCOM = PEDIDOS_FAT.C6_PEDCLI "
-    _cQuery += CRLF + "     AND VRJ.VRJ_STATUS in ('A','F') "
-    _cQuery += CRLF + "     AND VRJ.D_E_L_E_T_ = ' ' "
-
-    _cQuery += CRLF + " JOIN " + RetSqlName("VRK") + " VRK "
-    _cQuery += CRLF + "     ON  VRK.VRK_FILIAL = '" + FWxFilial("VRK") + "' "
-    _cQuery += CRLF + "     AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
-    _cQuery += CRLF + "     AND VRK.VRK_ITEPED = LPad(PEDIDOS_FAT.C6_ITEM,3,'0') "
-	//Atualização realizada pela Totvs, acrescentada na lógica DAC 14/05/2024
-    _cQuery += CRLF + "     AND VRK.VRK_CHASSI = PEDIDOS_FAT.C6_CHASSI "
-    _cQuery += CRLF + "     AND VRK.VRK_ITETRA = ' ' "
-    _cQuery += CRLF + "     AND VRK.D_E_L_E_T_ = ' ' "
-
-    _cQuery += CRLF + " LEFT JOIN " + RetSqlName("VE1") + " VE1  "
-    _cQuery += CRLF + "      ON  VE1.VE1_FILIAL  = '" + xFilial("VE1") + "'  "
-    _cQuery += CRLF + "      AND VE1.VE1_CODMAR  = VRK.VRK_CODMAR   "
-    _cQuery += CRLF + "      AND VE1.D_E_L_E_T_  = ' ' "
-
-    _cQuery += CRLF + " LEFT JOIN " + RetSqlName("VVX") + " VVX  "
-    _cQuery += CRLF + "      ON  VVX.VVX_FILIAL  = '" + xFilial("VVX") + "' "
-    _cQuery += CRLF + "      AND VVX.VVX_CODMAR  = VRK.VRK_CODMAR "
-    _cQuery += CRLF + "      AND VVX.VVX_SEGMOD  = VRK.VRK_SEGMOD "
-    _cQuery += CRLF + "      AND VVX.D_E_L_E_T_  = ' ' "
-
-	_cQuery += CRLF + " ORDER BY  C6_CLI, C6_LOJA, C6_PRODUTO, C6_XMODVEI, C6_XFABMOD
-*/    
-
 	//Tem que estar sem chassis e sem previsão
 	_cWhere := CRLF + " 		AND SC6.C6_XFILPVR 	= ' ' "
 	_cWhere += CRLF + " 		AND SC6.C6_XCODPVR 	= ' ' "
-	_cWhere += CRLF + " 	    AND SC6.C6_CHASSI    = ' ' "  
+	_cWhere += CRLF + " 	    AND SC6.C6_CHASSI   = ' ' "  
 	//Ordem do Select 
-	_cOrderTab   := "SC6.C6_FILIAL, SC6.C6_PEDCLI, SC6.C6_ITEM, SC5.C5_CLIENTE, SC5.C5_LOJACLI, SC6.C6_PRODUTO"
+	//_cOrderTab   := "SC6.C6_FILIAL, SC6.C6_PEDCLI, SC6.C6_ITEM, SC5.C5_CLIENTE, SC5.C5_LOJACLI, SC6.C6_PRODUTO "
+	_cOrderTab   := "SC6.C6_FILIAL, SC5.C5_CLIENTE, SC5.C5_LOJACLI, SC6.C6_PRODUTO, VRK.VRK_FABMOD, VRK.VRK_MODVEI, VRK.VRK_SEGMOD,  SC6.C6_PEDCLI, SC6.C6_ITEM
 
 	_cQuery := U_XZFT19QY(_cSelect, _cOrderTab, _aRet, _cWhere, /*_cWhereAll*/, _cJoin, /*_cGroup*/)
 
@@ -1060,6 +931,7 @@ Begin Sequence
 		_nVlrVen  	:= (_cAliasPesq)->VRK_VALTAB	//C6_XPRCTAB   //C6_PRCVEN
 		_nVlrUnit  	:= (_cAliasPesq)->C6_PRUNIT
 		_cModelo 	:= (_cAliasPesq)->VRK_MODVEI //iF( !Empty((_cAliasPesq)->C6_XMODVEI), (_cAliasPesq)->C6_XMODVEI, (_cAliasPesq)->VRK_MODVEI)
+		_cSegMod 	:= (_cAliasPesq)->VRK_SEGMOD
 		_cFabAno 	:= (_cAliasPesq)->VRK_FABMOD //If( !Empty((_cAliasPesq)->C6_XFABMOD), (_cAliasPesq)->C6_XFABMOD, (_cAliasPesq)->VRK_FABMOD)
 		_nQtVen		:= 0
 		_aRegSC6	:= {}
@@ -1067,6 +939,7 @@ Begin Sequence
 											_cLoja 		== (_cAliasPesq)->C6_LOJA 		.And. ;
 											_cProduto 	== (_cAliasPesq)->C6_PRODUTO	.And. ;
 											_cModelo 	== (_cAliasPesq)->VRK_MODVEI	.And. ;
+											_cSegMod 	== (_cAliasPesq)->VRK_SEGMOD	.And. ;
 											_cFabAno 	== (_cAliasPesq)->VRK_FABMOD
 			_nQtdeLidos ++
 			_oSay:SetText("Aguarde Montando Previsão lidos "+StrZero(_nQtdeLidos,6)+" de "+StrZero(_nQtdeReg,6)+" registros ... ")
@@ -1112,8 +985,6 @@ Begin Sequence
 				SC6->C6_XVLRMVT := (_cAliasPesq)->VRK_VALMOV  	//VALOR DO MOVIMENTO
 				SC6->C6_XBASST 	:= (_cAliasPesq)->VRK_XBASST	//Valor Base ICMS ST	
         		SC6->C6_XVLRVDA  = (_cAliasPesq)->VRK_VALVDA  	//vALOR DA vENDA          
-
-
             	SC6->(MsUnLock())
 				(_cAliasPesq)->(DbSkip())
 			Endif
@@ -1167,6 +1038,7 @@ Begin Sequence
 		ZZP->ZZP_DTALT  := Date()
 		ZZP->ZZP_USUALT := RetCodUsr()
 		ZZP->ZZP_MODVEI	:= _cModelo
+		ZZP->ZZP_SEGMOD	:= _cSegMod
 		ZZP->ZZP_FABMOD	:= _cFabAno
 		ZZP->(MsUnlock())
 		
@@ -1217,8 +1089,230 @@ Endif
 If _lRet
     ApMsgStop("Gerada previsao "+_cNumPrev, "Previsão Faturamento")
 Endif 
-
 Return _lRet
+
+//Importar CSV ja Montado
+Static Function ZFATF025ICSV(_nRegZZN)
+Local _cTitulo1  := "Selecione o arquivo para Carga "
+Local _cExtens   := "Arquivo CSV | *.CSV"
+Local _cMainPath := Nil //"C:\"
+Local _cFileOpen := ""
+Local _oSay
+
+Begin Sequence 
+
+	//If U_ZGENUSER( RetCodUsr() ,"ZFATF025IC" ,.T.)
+	//	Break 
+	//Endif
+    
+    _cFileOpen := cGetFile(_cExtens, _cTitulo1, , _cMainPath, .T.)
+	If Empty(_cFileOpen)
+		Break 
+	Endif 
+    If !File(_cFileOpen)
+	    ApMsgStop("Não localizado arquivo "+_cFileOpen, "Previsão Faturamento")
+		Break 
+	Endif	
+	FwMsgRun(,{ |_oSay| ZFATF025Ler(_cFileOpen, _oSay) }, "Selecionando dados", "Aguarde...")  
+End Sequence 
+//apagar arquivo para não permitir utilizar o mesmo
+//	        fErase(_nAqr+GetDbExtension())
+//	        fErase(cSysPath+AllTrim(_nAqr))
+Return Nil
+
+//Ler o arquivo CSv
+Static Function ZFATF025Ler(_cFileOpen, _oSay)
+Local _cLinha      	:= ""
+Local _cSeparador	:= ";"  // Separador do arquivo 
+Local _aDados 		:= {}   // Array dos dados da linha do laco
+Local _aDadosZZP  	:= {}	
+Local _nLinha		:= 0
+Local _nLinTot		:= 0
+Local _aEstruCSV	
+Local _nPos
+
+	//adiciono a estrutura do CSV 
+	_aEstruCSV 	:= {}
+	Aadd(_aEstruCSV,{"ZZP_CNPJCP", "SA1", "A1_CGC"	, .T.})
+	Aadd(_aEstruCSV,{"ZZP_CODPRD", "SB1", "B1_COD"	, .T.})
+	Aadd(_aEstruCSV,{"ZZP_MODVEI", 		,			, .T.})
+	Aadd(_aEstruCSV,{"ZZP_SEGMOD", 		,			, .T.})
+	Aadd(_aEstruCSV,{"ZZP_DESPRD", 		,			, .F.})
+	Aadd(_aEstruCSV,{"ZZP_FABMOD", 		,			, .T.})
+	Aadd(_aEstruCSV,{"ZZP_QTELIB", 		,			, .T.})
+   
+    FT_FUSE(_cFileOpen)
+    FT_FGOTOP()
+    FT_FSKIP()
+    _nLinTot 	:= FT_FLastRec()-1      //total de linhas do arquivo
+    FT_FGOTOP()
+    FT_FSKIP(1)  //Linhas a saltar
+
+	While !FT_FEOF()
+    	_nLinha ++
+		_oSay:SetText("Aguarde Lendo linha "+StrZero(_nLinha,5)+" de "+ StrZero(_nLinha,_nLinTot))
+		ProcessMessage()
+	    _cLinha := FT_FREADLN()
+        _aDados := Separa(_cLinha, _cSeparador)
+		//Verificar se os dados estão consistentes
+		ZValidCSV(_aDados, _aEstruCSV, _nLin, @_aMsgErro)
+		Aadd(_aDadosZZP, _aDados)
+        FT_FSKIP(1)
+    END
+    FT_FUSE()
+
+    ProcRegua( Len(_aDadosZZP) )
+    Begin Transaction
+        For _nPos := 1 To Len(_aDadosZZP)
+			_oSay:SetText("Aguarde Efetuando gravação linha "+StrZero(nPos,5)+" de "+ StrZero(_nLinha,_nLinTot))
+			ProcessMessage()
+        Next
+		//Gravar o nome do arquivo recebido na mensagem ZZP para poder ser validado posteriormente
+    End Transaction
+			/*
+            cProduto := StrTran(AllTrim(aDadosLi[nI][6]),"-","")
+
+            If SB1->( DbSeek( FwXFilial("SB1") + Padr(cProduto, TamSX3("B1_COD")[1]) ) )
+
+                If ZZH->( DbSeek( FwXFilial("ZZH") +;
+                        PadR(aDadosLi[nI][2]    ,TamSX3("ZZH_CODBID")[1])   +;
+                        PadR(aDadosLi[nI][5]    ,TamSX3("ZZH_CODBOX")[1])   +;
+                        PadR(cProduto           ,TamSX3("ZZH_PRODUT")[1])   +;
+                        PadR(aDadosLi[nI][7]    ,TamSX3("ZZH_QTD")[1]) ) )
+
+                    cLog := "Registro Cod. Bar. Unit: " + aDadosLi[nI][2] +;
+                            " Cod. Bar. Box: " + aDadosLi[nI][5] +;
+                            " Produto: " + cProduto +;
+                            " Qtd: " + aDadosLi[nI][7] +;
+                            " ja existe no sistema!"
+                    GrvLog(cArqLog, cLog)
+                Else
+                    //-- Gravação dos dados	
+                    RecLock("ZZH",.T.)
+                        ZZH->ZZH_FILIAL :=  FwXFilial()
+                        ZZH->ZZH_CONTAI :=  aDadosLi[nI][1]
+                        ZZH->ZZH_CODBID :=  aDadosLi[nI][2]
+                        ZZH->ZZH_IDUNIT :=  aDadosLi[nI][3]
+                        ZZH->ZZH_BOX    :=  aDadosLi[nI][4] 
+                        ZZH->ZZH_CODBOX :=  aDadosLi[nI][5]
+                        ZZH->ZZH_PRODUT :=  cProduto
+                        ZZH->ZZH_QTD    :=  Val(aDadosLi[nI][7]) 
+                        ZZH->ZZH_RANGE	:=  SB1->B1_XRANGE
+                        ZZH->ZZH_DESPRD :=  SB1->B1_DESC
+                        ZZH->ZZH_DATA   :=  dDataBase
+                        ZZH->ZZH_HORA   :=  Time()
+                        ZZH->ZZH_USRIMP :=  cUserName
+                    ZZH->( MsUnLock() )	
+
+                EndIf
+
+            Else
+                cLog := "Produto " + cProduto + " não foi localizado no Protheus!"
+                GrvLog(cArqLog, cLog)
+            EndIf
+			*/
+		/*
+        If !Empty(cLog)
+            MsgAlert("Falha na importação dos registros, por favor, consulte arquivo de log!")
+            Disarmtransaction()
+        EndIf
+		*/
+Return Nil 
+
+//Validar CSV
+Static Function ZValidCSV(_aDados, _aEstruCSV, _nLin, _aMsgErro)
+Local _lRet	:= .F.
+Local _cAliasPesq	:= GetNextAlias()
+Local _nPos
+Local _cMens
+Local _nPosCpo
+Local _cAlias  
+Local _cCond 
+Local _cCond2 
+Local _aTamSx3
+
+Default _aDados 	:= {}
+Default _aEstruCSV 	:= {}
+
+Begin Sequence 
+	If Len(_aDados)  == 0
+		_cMens := "Linha "+StrZero(_nLin,5)+" não preenchida com as informações"
+		Aadd(_aMsgErro, _cMens)
+		Break
+	Endif 
+
+	If Len(_aDados)  <> Len(_aEstruCSV)  == 0
+		_cMens := "Linha "+StrZero(_nLin,5)+" com tamanho diferente da estrutura, estrutura "+StrZero(Len(_aEstruCSV),2) + " posicoes e Linha "+StrZero(Len(_aDados),2)+" posicoes"
+		Aadd(_aMsgErro,_cMens)
+		Break
+	Endif 
+
+	//Validar existencisas do campo
+	For _nPos := 1 To Len(_aDados)
+		_cAlias := "" 
+		_cCond 	:= ""
+        _aTamSx3 := TamSX3(_aStruct[_nPos])
+		If _aTamSx3 == "N" .And. Val(_aDados[_nPos]) == 0 .And. Len(_aEstruCSV[_nPos])  
+			_cMens := "Linha "+StrZero(_nLin,5)+" Campo "+_aEstruCSV[_nPos,1]+" obrigatorio preenchimento"
+			Aadd(_aMsgErro,_cMens)
+			Loop
+		ElseIf Empty(_aDados[_nPos]) .And. Len(_aEstruCSV[_nPos])  
+			_cMens := "Linha "+StrZero(_nLin,5)+" Campo "+_aEstruCSV[_nPos,1]+" obrigatorio preenchimento"
+			Aadd(_aMsgErro,_cMens)
+			Loop
+		//Validar tamanho do campo recebido	
+		ElseIf Len(_aDados[_nPos]) > _aTamSx3[01]   
+			_cMens := "Linha "+StrZero(_nLin,5)+" Campo "+_aEstruCSV[_nPos,1]+" com tamanho maior que na base de dados"
+			Aadd(_aMsgErro,_cMens)
+			Loop
+		Endif 
+
+		If ValType(_aEstruCSV[_nPos,2]) == "C" 
+			_cAlias := _aEstruCSV[_nPos,2]
+		Endif 
+		If ValType(_aEstruCSV[_nPos,3]) == "C" 
+			_cCond 	:= _aEstruCSV[_nPos,3] 
+			_cCond2	:= _aDados[_nPos]
+			_nPosCpo:= At("_",_cCond)
+			_cFilial:= SubsTr(_cCond,1,_nPosCpo)+"FILIAL"
+		Endif 
+
+		//Valida Existencia do Processo
+		If !Empty(_cAlias) .And. !Empty(_cCond)
+			If Select((_cAliasPesq)) <> 0
+				(_cAliasPesq)->(DbCloseArea())
+			Endif
+			BeginSql Alias _cAliasPesq //Define o nome do alias temporÃ¡rio 
+				SELECT  %Exp:_cCond%
+				FROM %Table:%Exp:_cAlias%%		
+				WHERE 	%notDel%
+					AND %Exp:_cFilial%  = %xFilial:%Exp:_cAlias%%
+					AND	%Exp:_cCond%  	= %Exp:__cCond2%
+			EndSql
+			If (_cAliasPesq)->(Eof())
+				_cMens := "Linha "+StrZero(_nLin,5)+" não localizado na tabela de relacionamento a chave "+_cCond
+				Aadd(_aMsgErro,_cMens)
+				Break
+			Endif 
+		Endif
+	Next
+	If Len(_aMsgErro)  
+		Break 
+	Endif 
+	_lRet := .T.
+End Sequence 
+If Select((_cAliasPesq)) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif 
+Return _lRet
+
+
+
+
+
+
+
 
 
 /* substituido por U_XZFAT9CH
