@@ -89,7 +89,7 @@ Static Function fReportDef()
     TRCell():New( oSection1, "SERIE"            , cAliasTMP, "SERIE"              , PesqPict("SF1","F1_SERIE")   , TamSx3("F1_SERIE")[1]   , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
     TRCell():New( oSection1, "ESPECIE"          , cAliasTMP, "ESPECIE"            , PesqPict("SF3","F3_ESPECIE") , TamSx3("F3_ESPECIE")[1] , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
     TRCell():New( oSection1, "CFOP"             , cAliasTMP, "CFOP"               , PesqPict("SF3","F3_CFO")     , TamSx3("F3_CFO")[1]     , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
-    TRCell():New( oSection1, "DT_EMISSAO"       , cAliasTMP, "EMISSAO"            , PesqPict("SF3", "F3_EMISSAO"), TamSx3("F3_EMISSAO")[1] , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+    TRCell():New( oSection1, "DT_ENTRADA"       , cAliasTMP, "ENTRADA"            , PesqPict("SF3", "F3_ENTRADA"), TamSx3("F3_ENTRADA")[1] , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
     TRCell():New( oSection1, "DT_LANC"          , cAliasTMP, "DT LANC"            , PesqPict("SF3", "F3_ENTRADA"), TamSx3("F3_ENTRADA")[1] , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
     TRCell():New( oSection1, "VALOR_CONTABIL"   , cAliasTMP, "VALOR"              , PesqPict("SF3", "F3_VALCONT"), TamSx3("F3_VALCONT")[1] , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
     TRCell():New( oSection1, "BASE_ICMS"        , cAliasTMP, "BASE ICMS"          , PesqPict("SF3", "F3_BASEICM"), TamSx3("F3_BASEICM")[1] , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
@@ -114,7 +114,7 @@ Static Function fReportDef()
     TRCell():New( oSection1, "COF_ST_ZFM"       , cAliasTMP, "COF ST ZFM"         , PesqPict("SF3", "F3_BASECF3"), TamSx3("F3_BASECF3")[1] , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
     TRCell():New( oSection1, "VAL_COFST_ZFM"    , cAliasTMP, "VAL COFST ZFM"      , PesqPict("SF3", "F3_VALCF3") , TamSx3("F3_VALCF3")[1]  , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
     TRCell():New( oSection1, "OBSERVACAO"       , cAliasTMP, "OBSERVACAO"         , PesqPict("SF3", "F3_OBSERV") , TamSx3("F3_OBSERV")[1]  , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-    
+    TRCell():New( oSection2, "INCLUSAO/ALTERACAO"   , cAliasTMP, "INCLUSAO/ALTERACAO"       , PesqPict("SF1", "F1_USERLGI,F1_USERLGA") , TamSx3("F1_USERLGI,F1_USERLGA")[1]  , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
     oSection2 := TRSection():New(oReport    ,"NF canceladas"    ,{cAliasTMP}) 
     
 
@@ -129,7 +129,7 @@ Static Function fReportDef()
     TRCell():New( oSection2, "SERIE"            , cAliasTMP, "SERIE"              , PesqPict("SF1","F1_SERIE")   , TamSx3("F1_SERIE")[1]   , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
     TRCell():New( oSection2, "ESPECIE"          , cAliasTMP, "ESPECIE"            , PesqPict("SF3","F3_ESPECIE") , TamSx3("F3_ESPECIE")[1] , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
     TRCell():New( oSection2, "CFOP"             , cAliasTMP, "CFOP"               , PesqPict("SF3","F3_CFO")     , TamSx3("F3_CFO")[1]     , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
-    TRCell():New( oSection2, "DT_EMISSAO"       , cAliasTMP, "EMISSAO"            , PesqPict("SF3", "F3_EMISSAO"), TamSx3("F3_EMISSAO")[1] , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
+    TRCell():New( oSection2, "DT_ENTRADA"       , cAliasTMP, "DATA DA ENTRADA"    , PesqPict("SF3", "F3_ENTRADA"), TamSx3("F3_ENTRADA")[1] , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
     TRCell():New( oSection2, "DT_LANC"          , cAliasTMP, "DT LANC"            , PesqPict("SF3", "F3_ENTRADA"), TamSx3("F3_ENTRADA")[1] , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
     TRCell():New( oSection2, "VALOR_CONTABIL"   , cAliasTMP, "VALOR"              , PesqPict("SF3", "F3_VALCONT"), TamSx3("F3_VALCONT")[1] , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
     TRCell():New( oSection2, "BASE_ICMS"        , cAliasTMP, "BASE ICMS"          , PesqPict("SF3", "F3_BASEICM"), TamSx3("F3_BASEICM")[1] , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
@@ -154,7 +154,7 @@ Static Function fReportDef()
     TRCell():New( oSection2, "COF_ST_ZFM"       , cAliasTMP, "COF ST ZFM"         , PesqPict("SF3", "F3_BASECF3"), TamSx3("F3_BASECF3")[1] , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
     TRCell():New( oSection2, "VAL_COFST_ZFM"    , cAliasTMP, "VAL COFST ZFM"      , PesqPict("SF3", "F3_VALCF3") , TamSx3("F3_VALCF3")[1]  , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
     TRCell():New( oSection2, "OBSERVACAO"       , cAliasTMP, "OBSERVACAO"         , PesqPict("SF3", "F3_OBSERV") , TamSx3("F3_OBSERV")[1]  , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
-    
+    TRCell():New( oSection2, "INCLUSAO/ALTERACAO"   , cAliasTMP, "INCLUSAO/ALTERACAO"       , PesqPict("SF1", "F1_USERLGI,F1_USERLGA") , TamSx3("F1_USERLGI,F1_USERLGA")[1]  , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 
     //oReport:PrintDialog()
 
@@ -184,14 +184,15 @@ Static Function  ReportPrint(oReport)
     cQuery += "         SF1.F1_FILIAL    AS FILIAL "                    + CRLF
     cQuery += "         , SA2.A2_CGC   	 AS CNPJ "                      + CRLF
     cQuery += "         , SA2.A2_INSCR 	 AS INS_EST "                   + CRLF
-    cQuery += "         , SA2.A2_COD   	 AS CODIGO "                + CRLF  
+    cQuery += "         , SA2.A2_COD   	 AS CODIGO "                    + CRLF  
     cQuery += "         , SA2.A2_LOJA  	 AS LOJA "                      + CRLF       
     cQuery += "         , SA2.A2_NOME    AS FORNECEDOR "                + CRLF
     cQuery += "         , SA2.A2_EST     AS ESTADO "                    + CRLF
     cQuery += "         , SF1.F1_DOC     AS NOTA_FISCAL "               + CRLF 
     cQuery += "         , SF1.F1_SERIE   AS SERIE "                     + CRLF
-    cQuery += "         , SF1.F1_EMISSAO AS DT_EMISSAO "                + CRLF
+    cQuery += "         , SF1.F1_EMISSAO AS DT_ENTRADA "                + CRLF
     cQuery += "         , SF1.F1_CHVNFE  AS CHAVE "                     + CRLF
+    cQuery += "         , SF1.F1_USERLGI,F1_USERLGA" 		            + CRLF
     cQuery += "         , SD1.D1_CF      AS CFOP "                      + CRLF
     cQuery += "         , SUM(FT_VALPIS) AS VALOR_PIS "                 + CRLF
     cQuery += "         , SUM(FT_VALCOF) AS VALOR_COF "                 + CRLF
@@ -205,7 +206,7 @@ Static Function  ReportPrint(oReport)
     cQuery += "     ON SD1.D1_FILIAL  = '" + FWxFilial('SD1') + "' "    + CRLF
     cQuery += "    AND SD1.D1_DOC     = SF1.F1_DOC"                     + CRLF
     cQuery += "    AND SD1.D1_SERIE   = SF1.F1_SERIE"                   + CRLF
-    cQuery += "    AND SD1.D1_FORNECE = SF1.F1_FORNECE"                    + CRLF
+    cQuery += "    AND SD1.D1_FORNECE = SF1.F1_FORNECE"                 + CRLF
     cQuery += "    AND SD1.D1_LOJA    = SF1.F1_LOJA"                    + CRLF
     cQuery += "    AND SD1.D1_EMISSAO = SF1.F1_EMISSAO"                 + CRLF
     cQuery += "    AND SD1.D_E_L_E_T_ = ' ' "	                        + CRLF
