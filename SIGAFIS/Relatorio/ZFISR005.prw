@@ -82,6 +82,7 @@ User Function ZFISR005()
     TRCell():New( oSection  ,"ModNot"      ,cAliasTMP  ,"Modelo"						)
     TRCell():New( oSection  ,"D2_EMISSAO"  ,cAliasTMP  ,"Dt. de Emissão"				)
     TRCell():New( oSection  ,"D2_CLIENTE"  ,cAliasTMP  ,"Cliente\Fornecedor"			)
+    TRCell():New( oSection  ,"GRP_TRIB"    ,cAliasTMP  ,'Grupo Tributario'             ) 
     TRCell():New( oSection  ,"D2_LOJA"     ,cAliasTMP  ,"Loja"							)
     TRCell():New( oSection  ,"CliFor"      ,cAliasTMP  ,"Nome"							)
     TRCell():New( oSection  ,"C6_CHASSI"   ,cAliasTMP  ,"Chassi"						)
@@ -187,6 +188,7 @@ Static Function ReportPrint(oReport)
 	Local cCodMun		:= ""
 	Local cTpCliFor		:= ""
 	Local cTpPessoa		:= ""
+    Local cGRPTRIB    := ""
 	Local cTpNF			:= ""
 	Local cNumPed 		:= ""
 	Local cMenNota		:= ""
@@ -268,6 +270,7 @@ Static Function ReportPrint(oReport)
         cDescTipo	:= ""
         cTpCliFor	:= ""
         cTpPessoa	:= ""
+        cGRPTRIB    := ""
         If (cAliasTMP)->F2_TIPO $ "B|D" // Benefeciamento ou devolução
             If SA2->(DbSeek( xFilial("SA2") + (cAliasTMP)->D2_CLIENTE + (cAliasTMP)->D2_LOJA ))
                 cCliFor		:= SA2->A2_NOME
@@ -276,7 +279,7 @@ Static Function ReportPrint(oReport)
                 cEstCli 	:= SA2->A2_EST
                 cCodMun		:= SA2->A2_COD_MUN
                 cTpCliFor	:= "Fornecedor"
-
+                cGRPTRIB    := SA1->A1_GRPTRIB
                 // Busca o Tipo do Fornecedor.
                 If SA2->A2_TIPO == "J"
                     cDescTipo := "Juridico"
@@ -299,6 +302,7 @@ Static Function ReportPrint(oReport)
                 cCodMun		:= ""
                 cTpCliFor	:= "Fornecedor"
                 cTpPessoa	:= ""
+                cGRPTRIB    := ""
             EndIf
         Else
             If SA1->(DbSeek( xFilial("SA1") + (cAliasTMP)->D2_CLIENTE + (cAliasTMP)->D2_LOJA ))
@@ -308,7 +312,7 @@ Static Function ReportPrint(oReport)
                 cEstCli		:= SA1->A1_EST
                 cCodMun		:= SA1->A1_COD_MUN
                 cTpCliFor	:= "Cliente"
-
+                cGRPTRIB    := SA1->A1_GRPTRIB
                 If SA1->A1_PESSOA == "J"
                     cTpPessoa := "Juridico"
                 ElseIf SA1->A1_PESSOA == "F"
@@ -342,6 +346,7 @@ Static Function ReportPrint(oReport)
                 cCodMun		:= ""
                 cTpCliFor	:= "Cliente"
                 cTpPessoa	:= ""
+                cGRPTRIB    := ""
             EndIf
         EndIf
 
@@ -479,6 +484,7 @@ Static Function ReportPrint(oReport)
         oSection:Cell( "ModNot"      ):SetValue( AModNot( (cAliasTMP)->F2_ESPECIE ) ) //--Modelo
         oSection:Cell( "D2_EMISSAO"  ):SetValue( IIF( Empty( SToD( (cAliasTMP)->D2_EMISSAO ) ), "", SToD( (cAliasTMP)->D2_EMISSAO ) ) ) //--Dt. de Emissão
         oSection:Cell( "D2_CLIENTE"  ):SetValue( (cAliasTMP)->D2_CLIENTE ) //--Cliente\Fornecedor
+        oSection:Cell( "GRP_TRIB"   ):SetValue( cGRPTRIB                 ) //--Nome
         oSection:Cell( "D2_LOJA"     ):SetValue( (cAliasTMP)->D2_LOJA    ) //--Loja
         oSection:Cell( "CliFor"      ):SetValue( cCliFor                 ) //--Nome
         oSection:Cell( "C6_CHASSI"   ):SetValue( AllTrim( (cAliasTMP)->C6_CHASSI ) ) //--Chassi

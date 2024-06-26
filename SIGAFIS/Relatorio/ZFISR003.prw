@@ -79,6 +79,7 @@ oSection := TRSection():New(oReport    ,"Colunas"    ,{cAliasTMP})
     TRCell():New( oSection  ,"D1_DTDIGIT"   ,cAliasTMP  ,'Dt. de Entrada'              )
     TRCell():New( oSection  ,"D1_EMISSAO"   ,cAliasTMP  ,'Dt. de Emissão'              )
     TRCell():New( oSection  ,"D1_FORNECE"   ,cAliasTMP  ,'Fornecedor\Cliente'          )
+    TRCell():New( oSection  ,"GRP_TRIB"     ,cAliasTMP  ,'Grupo Tributario'            )
     TRCell():New( oSection  ,"D1_LOJA"      ,cAliasTMP  ,'Loja'                        )
     TRCell():New( oSection  ,"CliFor"       ,cAliasTMP  ,'Nome'                        )
     TRCell():New( oSection  ,"Chassi"       ,cAliasTMP  ,'Chassi'                      )
@@ -183,12 +184,14 @@ Static Function  ReportPrint(oReport)
 	Local cModVei		:= ""
 	Local cDesMod		:= ""
 	Local cCliFor		:= ""
+    Local cGRPTRIB      := ""
 	Local cCgcCpf		:= ""
 	Local cIncEst		:= ""
 	Local cEstCli		:= ""
 	Local cCodMun		:= ""
 	Local cTpCliFor		:= ""
 	Local cTpPessoa		:= ""
+
 	Local cTpNF			:= ""
 	Local nVlIPIRegi	:= 0
 	Local nVlIPIPres	:= 0
@@ -271,6 +274,7 @@ Static Function  ReportPrint(oReport)
         cDescTipo	:= ""
         cTpCliFor	:= ""
         cTpPessoa	:= ""
+        cGRPTRIB    := ""
         If (cAliasTMP)->F1_TIPO $ "B|D" // Benefeciamento ou devolução
             If SA1->(DbSeek( xFilial("SA1") + (cAliasTMP)->D1_FORNECE + (cAliasTMP)->D1_LOJA ))
                 cCliFor		:= SA1->A1_NOME
@@ -279,7 +283,7 @@ Static Function  ReportPrint(oReport)
                 cEstCli 	:= SA1->A1_EST
                 cCodMun		:= SA1->A1_COD_MUN
                 cTpCliFor	:= "Cliente"
-
+                cGRPTRIB    := SA1->A1_GRPTRIB
                 If SA1->A1_PESSOA == "J"
                     cTpPessoa := "Juridico"
                 ElseIf SA1->A1_PESSOA == "F"
@@ -327,6 +331,7 @@ Static Function  ReportPrint(oReport)
                 cCodMun		:= ""
                 cTpCliFor	:= "Cliente"
                 cTpPessoa	:= ""
+                cGRPTRIB    := ""
             EndIf
         Else
             If SA2->(DbSeek( xFilial("SA2") + (cAliasTMP)->D1_FORNECE + (cAliasTMP)->D1_LOJA ))
@@ -336,7 +341,7 @@ Static Function  ReportPrint(oReport)
                 cEstCli		:= SA2->A2_EST
                 cCodMun		:= SA2->A2_COD_MUN
                 cTpCliFor	:= "Fornecedor"
-
+                cGRPTRIB    := SA2->A2_GRPTRIB
                 // Busca o Tipo do Fornecedor.
                 If SA2->A2_TIPO == "J"
                     cDescTipo := "Juridico"
@@ -367,6 +372,7 @@ Static Function  ReportPrint(oReport)
                 cCodMun		:= ""
                 cTpCliFor	:= "Fornecedor"
                 cTpPessoa	:= ""
+                cGRPTRIB    := ""
             EndIf
         EndIf
 
@@ -451,6 +457,7 @@ Static Function  ReportPrint(oReport)
          oSection:Cell( "D1_DTDIGIT"):SetValue( IIF( Empty( SToD( (cAliasTMP)->D1_DTDIGIT ) ), "", SToD( (cAliasTMP)->D1_DTDIGIT ) )                        ) //--Dt. de Entrada
          oSection:Cell( "D1_EMISSAO"):SetValue( IIF( Empty( SToD( (cAliasTMP)->D1_EMISSAO ) ), "", SToD( (cAliasTMP)->D1_EMISSAO ) )                        ) //--Dt. de Emissão
          oSection:Cell( "D1_FORNECE"):SetValue( (cAliasTMP)->D1_FORNECE                                                                                     ) //--Fornecedor\Cliente
+         oSection:Cell( "GRP_TRIB"   ):SetValue( cGRPTRIB                                                                                       ) //--Loja
          oSection:Cell( "D1_LOJA"   ):SetValue( (cAliasTMP)->D1_LOJA                                                                                        ) //--Loja
          oSection:Cell( "CliFor"    ):SetValue( cCliFor                                                                                                     ) //--Nome
          oSection:Cell( "Chassi"    ):SetValue( IIF( (cAliasTMP)->F1_TIPO $ "B|D" , cCodChassi ,AllTrim( (cAliasTMP)->D1_CHASSI ) )                         ) //--Chassi

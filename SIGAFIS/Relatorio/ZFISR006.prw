@@ -31,6 +31,7 @@ User Function ZFISR006()
     TRCell():New( oSection  ,"F3_NFISCAL" ,cAliasTMP  ,"Nota Fiscal"    )
     TRCell():New( oSection  ,"F3_SERIE"   ,cAliasTMP  ,"Serie"		    )
     TRCell():New( oSection  ,"F3_CLIEFOR" ,cAliasTMP  ,"Cliente"		)
+    TRCell():New( oSection  ,"A1_GRPTRIB" ,cAliasTMP  ,"GRP. TRIB"		)
     TRCell():New( oSection  ,"F3_LOJA"    ,cAliasTMP  ,"Loja/Cli"		)
     TRCell():New( oSection  ,"F3_EMISSAO" ,cAliasTMP  ,"Emissão"		)
     TRCell():New( oSection  ,"F3_ENTRADA" ,cAliasTMP  ,"Dt Digitação"	)
@@ -68,6 +69,7 @@ Static Function  ReportPrint(oReport)
         oSection:Cell( "F3_NFISCAL" ):SetValue( Alltrim( (cAliasTMP)->F3_NFISCAL   ) ) //--Nota Fiscal
         oSection:Cell( "F3_SERIE"   ):SetValue( Alltrim( (cAliasTMP)->F3_SERIE     ) ) //--Serie
         oSection:Cell( "F3_CLIEFOR" ):SetValue( Alltrim( (cAliasTMP)->F3_CLIEFOR   ) ) //--Cliente
+        oSection:Cell( "A1_GRPTRIB" ):SetValue( Alltrim( (cAliasTMP)->A1_GRPTRIB   ) )   //--Cliente   
         oSection:Cell( "F3_LOJA"    ):SetValue( Alltrim( (cAliasTMP)->F3_LOJA      ) ) //--Loja/Cli
         oSection:Cell( "F3_EMISSAO" ):SetValue( IIF( Empty( SToD( (cAliasTMP)->F3_EMISSAO ) ), "", SToD( (cAliasTMP)->F3_EMISSAO ) ) ) //--Emissão
         oSection:Cell( "F3_ENTRADA" ):SetValue( IIF( Empty( SToD( (cAliasTMP)->F3_ENTRADA ) ), "", SToD( (cAliasTMP)->F3_ENTRADA ) ) ) //--Dt Digitação
@@ -90,9 +92,9 @@ Static Function zTmpRadio4()
     
 	If Select( cAliasTMP ) > 0
 		(cAliasTMP)->(DbCloseArea())
-	EndIf
+	EndIf 
 
-    cQuery := " SELECT F3_FILIAL, F3_OBSERV, F3_ESPECIE, F3_NFISCAL, F3_SERIE, F3_CLIEFOR, F3_LOJA, "	+ CRLF
+    cQuery := " SELECT F3_FILIAL, F3_OBSERV, F3_ESPECIE, F3_NFISCAL, F3_SERIE, F3_CLIEFOR, F3_LOJA, A1_GRPTRIB,"	+ CRLF
     cQuery += " F3_EMISSAO, F3_CHVNFE, F3_DESCRET, F3_ENTRADA, C6_CHASSI "											+ CRLF
     cQuery += " FROM " + RetSQLName( 'SF3' ) + " SF3 " 													+ CRLF
     cQuery += " INNER JOIN " + RetSQLName( 'SF2' ) + " SF2 "											+ CRLF
@@ -129,6 +131,13 @@ Static Function zTmpRadio4()
 	cQuery += "		AND SC6.C6_PRODUTO = SD2.D2_COD "		 															    + CRLF
 	cQuery += "     AND SC6.D_E_L_E_T_ = ' '   " 																		    + CRLF
 
+    cQuery += " INNER JOIN " + RetSQLName("SA1") + " SA1 " 												+ CRLF
+    cQuery += "		ON SA1.A1_FILIAL = '" + FWxFilial('SA1') + "' "									    + CRLF
+    cQuery += "		AND SA1.A1_COD = SF3.F3_CLIEFOR  "	 												+ CRLF
+    cQuery += "		AND SA1.A1_LOJA = SF3.F3_LOJA "	 									    			+ CRLF    
+    cQuery += "		AND SA1.D_E_L_E_T_ = ' ' " 															+ CRLF
+
+
     cQuery += " INNER JOIN " + RetSQLName("SB1") + " SB1 " 												+ CRLF
     cQuery += "		ON SB1.B1_FILIAL = '" + FWxFilial('SB1') + "' "									    + CRLF
     cQuery += "		AND SB1.B1_COD = SD2.D2_COD   "	 													+ CRLF
@@ -156,7 +165,7 @@ Static Function zTmpRadio4()
     
     cQuery += " 	AND SF3.D_E_L_E_T_ = ' '   " 														+ CRLF
 
-    cQuery += " GROUP BY F3_FILIAL, F3_OBSERV, F3_ESPECIE, F3_NFISCAL, F3_SERIE, F3_CLIEFOR, F3_LOJA, " + CRLF
+    cQuery += " GROUP BY F3_FILIAL, F3_OBSERV, F3_ESPECIE, F3_NFISCAL, F3_SERIE, F3_CLIEFOR, F3_LOJA, A1_GRPTRIB, " + CRLF
     cQuery += " F3_EMISSAO, F3_CHVNFE, F3_DESCRET, F3_ENTRADA, C6_CHASSI  "										+ CRLF
 
     cQuery += " ORDER BY SF3.F3_FILIAL, SF3.F3_NFISCAL, SF3.F3_SERIE, SF3.F3_CLIEFOR, SF3.F3_LOJA "		+ CRLF	
