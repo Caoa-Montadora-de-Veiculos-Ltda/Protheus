@@ -6,6 +6,7 @@ User Function ZFISR004()
     Local oReport,  oSection
 
     Private cAliasTMP := GetNextAlias()
+    Private __cSelNfs := ""
 
 	oReport:= TReport():New("ZFISR004",;
                             "Entradas Canc.",;
@@ -21,7 +22,7 @@ User Function ZFISR004()
     //oReport:SetEdit(.T.) 
 	
 	//Verifica os parâmetros selecionados via Pergunte
-    Pergunte(oReport:GetParam(),.F.)
+    Pergunte(oReport:GetParam(),.T.)
 	
 	oSection := TRSection():New(oReport    ,"Colunas"    ,{cAliasTMP}) 
 
@@ -88,7 +89,11 @@ Return
 //----------------------------------------------------------
 Static Function zTmpRadio2()
     Local cQuery    	:= ""
-    
+
+    If MV_PAR25 == 1
+	  zSelNfs4()
+    EndIf	
+
 	If Select( cAliasTMP ) > 0
 		(cAliasTMP)->(DbCloseArea())
 	EndIf
@@ -103,10 +108,6 @@ Static Function zTmpRadio2()
     cQuery += " 	AND SF1.F1_FORNECE = SF3.F3_CLIEFOR "												+ CRLF
     cQuery += " 	AND SF1.F1_LOJA = SF3.F3_LOJA "														+ CRLF
 
-    If !Empty( MV_PAR19 )
-        cQuery += " 	AND SF1.F1_EST = '" + MV_PAR19 + "' " 											+ CRLF
-    EndIf
-
     cQuery += " INNER JOIN " + RetSQLName( 'SD1' ) + " SD1 "											+ CRLF
     cQuery += " 	ON SD1.D1_FILIAL = '" + FWxFilial('SD1') + "' "	 								    + CRLF
     cQuery += " 	AND SD1.D1_DOC = SF3.F3_NFISCAL "													+ CRLF
@@ -114,14 +115,6 @@ Static Function zTmpRadio2()
     cQuery += " 	AND SD1.D1_FORNECE = SF3.F3_CLIEFOR "												+ CRLF
     cQuery += " 	AND SD1.D1_LOJA = SF3.F3_LOJA "														+ CRLF
     cQuery += " 	AND SD1.D1_COD BETWEEN '" + MV_PAR15 + "' AND '" + MV_PAR16 + "' " 					+ CRLF
-
-    If !Empty( MV_PAR17 )
-        cQuery += " 	AND SD1.D1_TES = '" + MV_PAR17 + "' " 											+ CRLF
-    EndIf
-
-    If !Empty( MV_PAR18 )
-        cQuery += " 	AND SD1.D1_CF = '" + MV_PAR18 + "' " 											+ CRLF
-    EndIf
 
     cQuery += " INNER JOIN " + RetSQLName("SA2") + " SA2 " 												+ CRLF
     cQuery += "		ON SA2.A2_FILIAL = '" + FWxFilial('SA2') + "' "									    + CRLF
@@ -135,18 +128,6 @@ Static Function zTmpRadio2()
     cQuery += "		AND SB1.B1_COD = SD1.D1_COD   "	 													+ CRLF
     cQuery += "		AND SB1.D_E_L_E_T_ = ' ' " 															+ CRLF
 
-    If !Empty( MV_PAR20 )
-        cQuery += " 	AND SB1.B1_GRUPO = '" + MV_PAR20 + "' "											+ CRLF
-    EndIf
-
-    If !Empty( MV_PAR21 )
-        cQuery += " 	AND SB1.B1_POSIPI = '" + MV_PAR21 + "' "										+ CRLF
-    EndIf
-    
-    If !Empty( MV_PAR23) .OR. !Empty( MV_PAR24 )
-       cQuery += " 	AND SD1.D1_CHASSI BETWEEN '" + MV_PAR23 + "' AND '" + MV_PAR24 + "' " 
-    ENDIF
-    
     cQuery += " WHERE  SF3.F3_FILIAL BETWEEN '" + MV_PAR01 + "' AND '" + MV_PAR02 + "' "				+ CRLF
     cQuery += " 	AND SF3.F3_ESPECIE BETWEEN '" + MV_PAR03 + "' AND '" + MV_PAR04 + "' "				+ CRLF
     cQuery += " 	AND SF3.F3_NFISCAL BETWEEN '" + MV_PAR05 + "' AND '" + MV_PAR06 + "' "				+ CRLF
@@ -156,6 +137,37 @@ Static Function zTmpRadio2()
     cQuery += " 	AND SF3.F3_EMISSAO BETWEEN '" + DToS(MV_PAR13) + "' AND '" + DToS(MV_PAR14) + "' " 	+ CRLF
     cQuery += " 	AND SF3.F3_DTCANC != ' ' " 															+ CRLF
     cQuery += " 	AND SF3.D_E_L_E_T_ = ' '   " 														+ CRLF
+
+    If !Empty( MV_PAR17 )
+        cQuery += " 	AND SD1.D1_TES = '" + MV_PAR17 + "' " 											+ CRLF
+    EndIf
+
+    If !Empty( MV_PAR18 )
+        cQuery += " 	AND SD1.D1_CF = '" + MV_PAR18 + "' " 											+ CRLF
+    EndIf
+
+
+    If !Empty( MV_PAR19 )
+        cQuery += " 	AND SF1.F1_EST = '" + MV_PAR19 + "' " 											+ CRLF
+    EndIf
+
+    If !Empty( MV_PAR20 )
+        cQuery += " 	AND SB1.B1_GRUPO = '" + MV_PAR20 + "' "											+ CRLF
+    EndIf
+
+    If !Empty( MV_PAR21 )
+        cQuery += " 	AND SB1.B1_POSIPI = '" + MV_PAR21 + "' "										+ CRLF
+    EndIf
+
+    If !Empty( __cSelNfs )
+		cQuery += " AND SD1.D1_DOC IN " + FormatIn(__cSelNfs, ";")   	+ CRLF
+    Else
+    	cQuery += " 	AND SD1.D1_DOC     BETWEEN '" +       MV_PAR05   + "' AND '" +       MV_PAR06   + "' " 												
+	EndIf
+    
+    If !Empty( alltrim(MV_PAR23)) .OR. !Empty( alltrim(MV_PAR24) )
+       cQuery += " 	AND SD1.D1_CHASSI BETWEEN '" + MV_PAR23 + "' AND '" + MV_PAR24 + "' " 
+    ENDIF
 
     cQuery += " GROUP BY F3_FILIAL, F3_OBSERV, F3_ESPECIE, F3_NFISCAL, F3_SERIE, F3_CLIEFOR, F3_LOJA, A2_GRPTRIB ," + CRLF
     cQuery += " F3_EMISSAO, F3_CHVNFE, F3_DESCRET, F3_ENTRADA, D1_CHASSI "											+ CRLF
@@ -168,3 +180,84 @@ Static Function zTmpRadio2()
 	DbUseArea( .T., "TOPCONN", TcGenQry(,,cQuery), cAliasTMP, .T., .T. )
 
 Return
+
+/*
+=======================================================================================
+Programa.:              zSelNfs4
+Autor....:              CAOA - Sandro Ferreira
+Data.....:              26/06/2024
+Descricao / Objetivo:   Monta markbrowse para seleção de notas fiscais   
+Solicitante:			Thaynara
+Gap:					    
+=======================================================================================
+*/
+Static Function zSelNfs4()
+    Local oMarkBrw  := Nil
+    Local cMark     := GetMark()
+	Local cAliasQry	:= GetNextAlias()
+
+    oMarkBrw := FWMarkBrowse():New()
+    oMarkBrw:SetDescription("Selecionar Notas Fiscais")
+    oMarkBrw:SetAlias("SF3")
+    oMarkBrw:SetFieldMark( "F3_OK" )
+    oMarkBrw:SetMark( cMark, "SF3", "F3_OK" )
+    oMarkBrw:SetMenuDef('')
+	oMarkBrw:SetFilterDefault("@"+zFilNf4())
+    oMarkBrw:DisableReport()
+    oMarkBrw:AddButton( "Confirmar", {|| Self:End()} )
+    oMarkBrw:Activate()
+
+    BeginSql Alias cAliasQry
+        SELECT R_E_C_N_O_ AS RECSF3, F3_NFISCAL
+        FROM %Table:SF3% SF3
+        WHERE SF3.F3_OK = %Exp:cMark%
+        AND SF3.%NotDel%
+    EndSql
+    
+    (cAliasQry)->( DbGoTop() )
+    While (cAliasQry)->( !Eof() )
+
+		//--Carrega notas fiscais selecionadas
+        If Empty(__cSelNfs)
+            __cSelNfs := AllTrim( ( cAliasQry )->F3_NFISCAL )
+        Else
+            __cSelNfs := __cSelNfs + ";" + AllTrim( ( cAliasQry )->F3_NFISCAL )
+        EndIf
+        
+        //--Limpa marcação
+        SF3->( DbGoTo( ( cAliasQry )->RECSF3 ) )
+        RecLock("SF3", .F.)
+        SF3->F3_OK := ""
+        SF3->( MsUnLock() )
+
+        (cAliasQry)->( DbSkip() )
+
+    EndDo
+
+    (cAliasQry)->( DbCloseArea() )
+    oMarkBrw:DeActivate()
+
+Return
+
+/*
+=======================================================================================
+Programa.:              zFilNf4
+Autor....:              CAOA - Sandro Ferreira
+Data.....:              26/06/2024
+Descricao / Objetivo:   Filtra notas fiscais
+=======================================================================================
+*/
+Static Function zFilNf4()
+	Local cFiltro := ""
+
+	cFiltro  +=  "      F3_FILIAL  BETWEEN  '" + MV_PAR01         + "'  AND '" + MV_PAR02        + "' " + CRLF
+	cFiltro  +=  "  AND F3_ESPECIE BETWEEN  '" + MV_PAR03         + "'  AND '" + MV_PAR04        + "' " + CRLF
+   	cFiltro  +=  "  AND F3_NFISCAL BETWEEN  '" + MV_PAR05         + "'  AND '" + MV_PAR06        + "' " + CRLF
+	cFiltro  +=  "  AND F3_SERIE   BETWEEN  '" + MV_PAR07         + "'  AND '" + MV_PAR08        + "' " + CRLF
+	cFiltro  +=  "  AND F3_CLIEFOR BETWEEN  '" + MV_PAR09         + "'  AND '" + MV_PAR10        + "' " + CRLF
+	cFiltro  +=  "	AND F3_ENTRADA BETWEEN '" + DToS( MV_PAR11 )  + "' AND '" + DToS( MV_PAR12 )  + "' " +CRLF
+	cFiltro  +=  "	AND F3_EMISSAO BETWEEN '" + DToS( MV_PAR13 )  + "' AND '" + DToS( MV_PAR14 )  + "' " +CRLF
+    cFiltro  += " 	AND F3_DTCANC != ' ' "
+ 	cFiltro  +=  "	AND D_E_L_E_T_ = ' ' " + CRLF
+
+Return cFiltro
