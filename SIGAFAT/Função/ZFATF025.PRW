@@ -1126,13 +1126,16 @@ Local _cLinha      	:= ""
 Local _cSeparador	:= ";"  // Separador do arquivo 
 Local _aDados 		:= {}   // Array dos dados da linha do laco
 Local _aDadosZZP  	:= {}	
+Local _aMsgErro		:= {}
 Local _nLinha		:= 0
 Local _nLinTot		:= 0
 Local _aEstruCSV	
 Local _nPos
 
 	//adiciono a estrutura do CSV 
+	//Nome;CNPJ;Cod Produto;Modelo;Segmento Modelo;Descri‡Æo;Ano/Mod;Qtd Liberada
 	_aEstruCSV 	:= {}
+	Aadd(_aEstruCSV,{"ZZP_RAZSOC", 		,			, .F.})
 	Aadd(_aEstruCSV,{"ZZP_CNPJCP", "SA1", "A1_CGC"	, .T.})
 	Aadd(_aEstruCSV,{"ZZP_CODPRD", "SB1", "B1_COD"	, .T.})
 	Aadd(_aEstruCSV,{"ZZP_MODVEI", 		,			, .T.})
@@ -1150,21 +1153,25 @@ Local _nPos
 
 	While !FT_FEOF()
     	_nLinha ++
-		_oSay:SetText("Aguarde Lendo linha "+StrZero(_nLinha,5)+" de "+ StrZero(_nLinha,_nLinTot))
+		_oSay:SetText("Aguarde Lendo linha "+StrZero(_nLinha,5)+" de "+ StrZero(_nLinTot,5))
 		ProcessMessage()
 	    _cLinha := FT_FREADLN()
         _aDados := Separa(_cLinha, _cSeparador)
 		//Verificar se os dados estão consistentes
-		ZValidCSV(_aDados, _aEstruCSV, _nLin, @_aMsgErro)
-		Aadd(_aDadosZZP, _aDados)
+		If ZValidCSV(_aDados, _aEstruCSV, _nLinha, @_aMsgErro)
+			Aadd(_aDadosZZP, _aDados)
+		Endif 
         FT_FSKIP(1)
     END
     FT_FUSE()
 
+	If Len(_aDadosZZP) == 0
+		Return Nil
+	Endif 
     ProcRegua( Len(_aDadosZZP) )
     Begin Transaction
         For _nPos := 1 To Len(_aDadosZZP)
-			_oSay:SetText("Aguarde Efetuando gravação linha "+StrZero(nPos,5)+" de "+ StrZero(_nLinha,_nLinTot))
+			_oSay:SetText("Aguarde Efetuando gravação linha "+StrZero(_nPos,5)+" de "+ StrZero(_nLinha,_nLinTot))
 			ProcessMessage()
         Next
 		//Gravar o nome do arquivo recebido na mensagem ZZP para poder ser validado posteriormente
@@ -1220,7 +1227,7 @@ Local _nPos
 Return Nil 
 
 //Validar CSV
-Static Function ZValidCSV(_aDados, _aEstruCSV, _nLin, _aMsgErro)
+Static Function ZValidCSV(_aDados, _aEstruCSV, _nLinha, _aMsgErro)
 Local _lRet	:= .F.
 Local _cAliasPesq	:= GetNextAlias()
 Local _nPos
@@ -1236,13 +1243,13 @@ Default _aEstruCSV 	:= {}
 
 Begin Sequence 
 	If Len(_aDados)  == 0
-		_cMens := "Linha "+StrZero(_nLin,5)+" não preenchida com as informações"
+		_cMens := "Linha "+StrZero(_nLinha,5)+" não preenchida com as informações"
 		Aadd(_aMsgErro, _cMens)
 		Break
 	Endif 
 
-	If Len(_aDados)  <> Len(_aEstruCSV)  == 0
-		_cMens := "Linha "+StrZero(_nLin,5)+" com tamanho diferente da estrutura, estrutura "+StrZero(Len(_aEstruCSV),2) + " posicoes e Linha "+StrZero(Len(_aDados),2)+" posicoes"
+	If Len(_aDados)  <> Len(_aEstruCSV)  
+		_cMens := "Linha "+StrZero(_nLinha,5)+" com tamanho diferente da estrutura, estrutura "+StrZero(Len(_aEstruCSV),2) + " posicoes e Linha "+StrZero(Len(_aDados),2)+" posicoes"
 		Aadd(_aMsgErro,_cMens)
 		Break
 	Endif 
@@ -1251,22 +1258,22 @@ Begin Sequence
 	For _nPos := 1 To Len(_aDados)
 		_cAlias := "" 
 		_cCond 	:= ""
-        _aTamSx3 := TamSX3(_aStruct[_nPos])
-		If _aTamSx3 == "N" .And. Val(_aDados[_nPos]) == 0 .And. Len(_aEstruCSV[_nPos])  
-			_cMens := "Linha "+StrZero(_nLin,5)+" Campo "+_aEstruCSV[_nPos,1]+" obrigatorio preenchimento"
+        _aTamSx3 := TamSX3(_aEstruCSV[_nPos,1])
+		If _aTamSx3[3] == "N" .And. Val(_aDados[_nPos]) == 0 .And. Len(_aEstruCSV[_nPos])  //a ultima posição de _aEstruCSV indica se o campo vai ser ou não utiizado
+			_cMens := "Linha "+StrZero(_nLinha,5)+" Campo "+_aEstruCSV[_nPos,1]+" obrigatorio preenchimento"
 			Aadd(_aMsgErro,_cMens)
 			Loop
-		ElseIf Empty(_aDados[_nPos]) .And. Len(_aEstruCSV[_nPos])  
-			_cMens := "Linha "+StrZero(_nLin,5)+" Campo "+_aEstruCSV[_nPos,1]+" obrigatorio preenchimento"
+		ElseIf Empty(_aDados[_nPos]) .And. Len(_aEstruCSV[_nPos])  //se estiver vazio e o uso for obrigatório
+			_cMens := "Linha "+StrZero(_nLinha,5)+" Campo "+_aEstruCSV[_nPos,1]+" obrigatorio preenchimento"
 			Aadd(_aMsgErro,_cMens)
 			Loop
 		//Validar tamanho do campo recebido	
 		ElseIf Len(_aDados[_nPos]) > _aTamSx3[01]   
-			_cMens := "Linha "+StrZero(_nLin,5)+" Campo "+_aEstruCSV[_nPos,1]+" com tamanho maior que na base de dados"
+			_cMens := "Linha "+StrZero(_nLinha,5)+" Campo "+_aEstruCSV[_nPos,1]+" com tamanho maior que na base de dados"
 			Aadd(_aMsgErro,_cMens)
 			Loop
 		Endif 
-
+		//Verificar tabelas relacionadas
 		If ValType(_aEstruCSV[_nPos,2]) == "C" 
 			_cAlias := _aEstruCSV[_nPos,2]
 		Endif 
@@ -1276,7 +1283,6 @@ Begin Sequence
 			_nPosCpo:= At("_",_cCond)
 			_cFilial:= SubsTr(_cCond,1,_nPosCpo)+"FILIAL"
 		Endif 
-
 		//Valida Existencia do Processo
 		If !Empty(_cAlias) .And. !Empty(_cCond)
 			If Select((_cAliasPesq)) <> 0
@@ -1287,10 +1293,10 @@ Begin Sequence
 				FROM %Table:%Exp:_cAlias%%		
 				WHERE 	%notDel%
 					AND %Exp:_cFilial%  = %xFilial:%Exp:_cAlias%%
-					AND	%Exp:_cCond%  	= %Exp:__cCond2%
+					AND	%Exp:_cCond%  	= %Exp:_cCond2%
 			EndSql
 			If (_cAliasPesq)->(Eof())
-				_cMens := "Linha "+StrZero(_nLin,5)+" não localizado na tabela de relacionamento a chave "+_cCond
+				_cMens := "Linha "+StrZero(_nLinha,5)+" não localizado na tabela de relacionamento a chave "+_cCond
 				Aadd(_aMsgErro,_cMens)
 				Break
 			Endif 

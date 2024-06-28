@@ -4832,8 +4832,6 @@ Begin Sequence
         ZZN->ZZN_STATUS      := _cStatusNew
     Endif    
     ZZN->(MsUnlock())
-
-   
 End Sequence
 If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
