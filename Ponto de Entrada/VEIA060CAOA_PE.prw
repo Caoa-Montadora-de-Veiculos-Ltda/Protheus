@@ -806,6 +806,8 @@ Local x 		 := 0
 cQuery += CRLF + " select "
 cQuery += CRLF + "     SE1.E1_XFORMA, "
 cQuery += CRLF + "     VRL.VRL_XFORMA, "
+cQuery += CRLF + "	   VRL.VRL_XDECRE, "
+cQuery += CRLF + "	   VRL.VRL_XPLACA, "
 cQuery += CRLF + "     SF2.F2_COND, "
 cQuery += CRLF + "     VS9.VS9_PARCEL, "
 cQuery += CRLF + "     SE1.E1_PARCELA, "
@@ -897,10 +899,12 @@ Begin Transaction
 		
 		AADD(aKeySe1,{(_cTmpAlias)->VRL_E1PREF, (_cTmpAlias)->VRL_E1NUM, (_cTmpAlias)->VRL_E1PARC, (_cTmpAlias)->VRL_E1TIPO,(_cTmpAlias)->VS9_PARCEL,0})
 		
-		if EMPTY(SE1->E1_XFORMA)
+		if EMPTY(SE1->E1_XFORMA) .OR. !Empty((_cTmpAlias)->VRL_XPLACA) .OR. (_cTmpAlias)->VRL_XDECRE > 0
 			//Ajusto a Forma de Recebimento dos Titulos criados pelo Faturamento
 			RecLock('SE1',.f.)
-				SE1->E1_XFORMA := IIF(!EMPTY((_cTmpAlias)->E4_XFORMA) ,(_cTmpAlias)->E4_XFORMA,(_cTmpAlias)->VRL_XFORMA)
+				SE1->E1_XFORMA  := IIF(!EMPTY((_cTmpAlias)->E4_XFORMA) ,(_cTmpAlias)->E4_XFORMA,(_cTmpAlias)->VRL_XFORMA)
+				SE1->E1_DECRESC := (_cTmpAlias)->VRL_XDECRE
+				SE1->E1_XPLACA  := (_cTmpAlias)->VRL_XPLACA
 			SE1->(MsUnlock())
 		
 		Endif
@@ -917,7 +921,7 @@ Begin Transaction
 		VRL->(DbGoTo((_cTmpAlias)->VRLRECNO))
 		IF VRL->(!EOF()) .AND. VRL->VRL_E1PARC <> VS9->VS9_SEQUEN
 			//Ajusto as Parcelas da Negociação conforma as Geradas pelo Faturamento
-			RecLock('VRL',.f.)
+			RecLock('VRL',.F.)
 				VRL->VRL_E1PARC := VS9->VS9_PARCEL 
 			VRL->(MsUnlock())
 		
@@ -928,7 +932,7 @@ Begin Transaction
 			
 			aKeySe1[x,6] := SE1->(Recno())
 			_cParcela    := SOMA1(_cParcela)  //Para evitar chave duplicada, altero para Z1,Z2,Z3,...
-			RecLock('SE1',.f.)
+			RecLock('SE1',.F.)
 				SE1->E1_PARCELA := _cParcela
 			SE1->(MsUnlock())
 
