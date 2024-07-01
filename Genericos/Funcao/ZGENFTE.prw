@@ -94,7 +94,7 @@ Local _cSerieori   	:= _aRet[05]
 Local _cTES     	:= _aRet[06]
 Local _cCCusto     	:= _aRet[07]
 Local _cCPgto     	:= _aRet[08]
-//Local _cLocal     	:= _aRet[09]
+Local _cLocal     	:= _aRet[09] // retornado variavel por Cintia Araujo em 26/06/24
 Local _cCodFor     	:= _aRet[10]
 Local _cLojaFor    	:= _aRet[11]
 Local _cSerie		:= ""
@@ -161,14 +161,15 @@ Begin Sequence
 		AND SF2.F2_SERIE   = %Exp:_cSerieori%
 		AND SF2.F2_CLIENTE = %Exp:_cCodCli%
 		AND SF2.F2_LOJA    = %Exp:_cLoja%
-		AND SF2.F2_FIMP    = 'S'
-		AND SF2.F2_XINT90 <> 'S'
 		AND	SF2.%notDel%
 		ORDER BY SF2.F2_CLIENTE,SF2.F2_LOJA,SF2.F2_DOC,SF2.F2_SERIE,SD2.D2_ITEM
 	EndSql
-
+/*
+		AND SF2.F2_FIMP    = 'S'
+		AND SF2.F2_XINT90 <> 'S'
+*/
 	If (_cAliasPesq)->(Eof())
-		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Não existem notas a integrarem para o Fornecdor."),4,1)   
+		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Não existem notas a integrarem para o Fornecedor."),4,1)   
 		Break 
 	EndIf	
 
@@ -220,7 +221,7 @@ Begin Sequence
 
 		//Faz update na SB1 para trocar o local de recebimento.
 		cUpdSB1P01 := ""
-		cUpdSB1P01 := "UPDATE " + RetSQLName('SB1') + " SB1 SET B1_LOCREC = '11' "
+		cUpdSB1P01 := "UPDATE " + RetSQLName('SB1') + " SB1 SET B1_LOCREC = '"+_cLocal+"' "
 		cUpdSB1P01 += "WHERE SB1.B1_FILIAL = '" + FWxFilial("SB1") + "' "
 		cUpdSB1P01 += "AND SB1.B1_COD IN ( SELECT D2_COD FROM ABDHDU_PROT.SD2020 SD2 "
 		cUpdSB1P01 += "						WHERE SD2.D2_FILIAL = '2020012001' "
@@ -250,7 +251,7 @@ Begin Sequence
 			Aadd(_aItemNFE,	{"D1_COD"		, (_cAliasPesq)->D2_COD   	,NIL})
 			Aadd(_aItemNFE,	{"D1_UM"    	, (_cAliasPesq)->D2_UM    	,NIL})
 			Aadd(_aItemNFE,	{"D1_CC"        , _cCCusto   				,Nil})    //_cCusto
-			Aadd(_aItemNFE,	{"D1_LOCAL"		, "11"	        	        ,NIL})
+			Aadd(_aItemNFE,	{"D1_LOCAL"		, _cLocal	       	        ,NIL})
 			Aadd(_aItemNFE,	{"D1_QUANT"		, (_cAliasPesq)->D2_QUANT	,NIL})
 			Aadd(_aItemNFE,	{"D1_VUNIT"		, (_cAliasPesq)->D2_PRCVEN	,NIL})
 			Aadd(_aItemNFE,	{"D1_TOTAL"		, (_cAliasPesq)->D2_TOTAL	,NIL})
