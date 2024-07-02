@@ -819,6 +819,45 @@ Else
 			EndIf
 			cQuery +=       " VVA.D_E_L_E_T_ = ' '"
 			dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cQAlVV0A , .F., .T. )
+           
+		    IF ( cQAlVV0A )->( Eof() )
+				// Movimentacao Externa -> Saidas //
+				// Saulo - 01/07/2024
+				// Se não encontra VV0 e VV9, deve pesquisar pelo CHASSI do Veiculo na SD2
+				cQuery := "SELECT SD2.D2_FILIAL , 
+				SD2.D2_EMISSAO , SD2.D2_NUMTRA , 
+				SD2.D2_OPEMOV , SD2.D2_SITNFI , 
+				SD2.D2_DATMOV , SD2.D2_CLIFOR , 
+				SD2.D2_CODTES , SD2.D2_TIPFAT , 
+				SD2.D2_STATUS , "
+				cQuery +=       " SD2.D2_NUMNFI , 
+				SD2.D2_SERNFI , SD2.D2_NNFFDI , 
+				SD2.D2_SNFFDI , SD2.D2_CODCLI , 
+				SD2.D2_LOJA , SD2.D2_VALVDA , 
+				SD2.D2_VCAVEI , SD2.D2_VALFRE , 
+				SD2.D2.R_E_C_N_O_ RECVV0 "
+				cQuery += "     , VV0.VV0_TIPDOC "
+				If lTIPMOV
+					cQuery += ", VV0.VV0_TIPMOV "
+				EndIf
+				cQuery += " FROM "+cNamSD2+" VVA "
+				cQuery +=        " JOIN "+cNamVV0+" VV0 "
+				cQuery +=             " ON VV0.VV0_FILIAL = VVA.VVA_FILIAL "
+				cQuery +=            " AND VV0.VV0_NUMTRA = VVA.VVA_NUMTRA "
+				cQuery +=            " AND VV0.D_E_L_E_T_=' ' "
+				cQuery +=  " LEFT JOIN "+cNamVV9+" VV9 "
+				cQuery +=             " ON VV9.VV9_FILIAL = VVA.VVA_FILIAL "
+				cQuery +=            " AND VV9.VV9_NUMATE = VVA.VVA_NUMTRA "
+				cQuery +=            " AND VV9.D_E_L_E_T_=' ' "
+				cQuery += " WHERE VVA.VVA_FILIAL = '"+xFilial("VVA")+"' AND "
+				cQuery +=       " VVA.VVA_CHAINT= '"+cChaInt005+"' AND "
+				cQuery +=       " VVA.D_E_L_E_T_ = ' '"
+				dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQueSD2 ), cQAlSD2 , .F., .T. )
+
+
+
+            ENDIF
+
 			While !( cQAlVV0A )->( Eof() )
 			
 				cSitVV0 := left(X3CBOXDESC("VV0_SITNFI",( cQAlVV0A )->( VV0_SITNFI ))+space(15),15)
