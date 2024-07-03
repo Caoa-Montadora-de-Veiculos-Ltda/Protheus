@@ -2,7 +2,7 @@
 Classe para localizar saldo WIS e retornar saldo valido entre WIS e Prothes
 @author DAC - Denilso
 @since 
-@version 
+@version V.03
 @return ${return}, ${return_description}
 @type Class
 @history  substitui a função U_XSLDCAOAEstoque   

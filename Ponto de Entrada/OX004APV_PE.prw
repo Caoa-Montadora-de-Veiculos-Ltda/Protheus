@@ -9,7 +9,7 @@ Descricao / Objetivo:
 Doc. Origem:
 Solicitante:            
 Uso......:              
-Obs......:              
+Obs......:              V.03             
 ===============================================================================================
 */
 User Function OX004APV

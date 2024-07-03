@@ -9,7 +9,7 @@
 Geração do Faturamento a partir do recebimento do Picking
 @author     DAC - Denilso 
 @since      20/08/2023
-@version    1.0
+@version    V.03
 @obs        Esta funcionalidade poderá ser utilizada para o faturamento do SIGAPEC
 /*/
 

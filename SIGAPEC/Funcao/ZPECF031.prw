@@ -11,7 +11,7 @@
 Visualizar Picking de itens 
 @author     DAC - Denilso 
 @since      26/05/2023
-@version    1.0
+@version    V.03
 @obs        Tela esta relacionada com a funcionalidade ZPECF030 a mesma poderá ser colocada também no menu com a chamada ZPECF032 caso seja necessário adaptar parametros para a procura  
 
 /*/

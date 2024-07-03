@@ -12,7 +12,7 @@ Serviço de integração RECEBIMENTO SEPARAÇÃO DE PEDIDOS rg log
 Atualização da separação dos orçamentos baixando conforme informaçção recebida
 @author 	DAC 
 @since 		17/12/2021
-@version 	undefined
+@version 	V.03
 @param		Não utilizado
 @type 		User Function
 @client   	CAOA BARUERI

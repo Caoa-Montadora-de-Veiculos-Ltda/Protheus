@@ -4,7 +4,7 @@
 Ponto de entrada referente a gravação SC6, recebe matriz para execauto
 @author     DAC - Denilso 
 @since      20/09/2023
-@version    1.0
+@version    V.03
 @obs        Esta funcionalidade foi criada para manter a padronização do Faturamento  realizado pela função OFIXX004
 			O item (VS3) tem que estar aberto neste momento
 /*/

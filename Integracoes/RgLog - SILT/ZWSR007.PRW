@@ -9,7 +9,7 @@ Static _aMsgRet := {}				//carregar msg de errp
 Interface de Pedido a Separar Envio
 @author     DAC
 @since      07/12/2021
-@version    undefined
+@version    V.03
 @param    
 @type       class
 @return   	lRet			, caracter, JSON com tabelas.

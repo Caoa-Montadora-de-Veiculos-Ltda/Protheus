@@ -21,7 +21,7 @@ Static oZPEC08Peca  := DMS_Peca():New()
 Liberar orçamento verifica se esta disponível para separação e grava separação
 @author 	DAC-Denilso
 @since 		01/11/2021
-@version 	undefined
+@version 	V.03
 @param 		_cNumOrc 	- Numero orçamento 
 @project    MIT044-GAP_PECCD07-08-09 Aglutinar  V3
 @type 		user function
