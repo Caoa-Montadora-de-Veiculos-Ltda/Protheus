@@ -824,22 +824,21 @@ Else
 				// Movimentacao Externa -> Saidas //
 				// Saulo - 01/07/2024
 				// Se não encontra VV0 e VV9, deve pesquisar pelo CHASSI do Veiculo na SD2
-				cQuery := "SELECT SD2.D2_FILIAL , 
-				SD2.D2_EMISSAO , SD2.D2_NUMTRA , 
-				SD2.D2_OPEMOV , SD2.D2_SITNFI , 
-				SD2.D2_DATMOV , SD2.D2_CLIFOR , 
-				SD2.D2_CODTES , SD2.D2_TIPFAT , 
-				SD2.D2_STATUS , "
-				cQuery +=       " SD2.D2_NUMNFI , 
-				SD2.D2_SERNFI , SD2.D2_NNFFDI , 
-				SD2.D2_SNFFDI , SD2.D2_CODCLI , 
-				SD2.D2_LOJA , SD2.D2_VALVDA , 
-				SD2.D2_VCAVEI , SD2.D2_VALFRE , 
-				SD2.D2.R_E_C_N_O_ RECVV0 "
-				cQuery += "     , VV0.VV0_TIPDOC "
-				If lTIPMOV
-					cQuery += ", VV0.VV0_TIPMOV "
-				EndIf
+				cQuery := "SELECT SD2.D2_FILIAL VV0_FILIAL, 
+				SD2.D2_EMISSAO VV0_DTHEMI, SD2.D2_DOC VV0_NUMTRA , 
+				SD2.D2_TIPO OPEMOV , SD2.D2_SITNFI , 
+				SD2.D2_EMISSAO VV0DATMOV , "C" CLIFOR , 
+				SD2.D2_TES VV0_CODTES , "2" VV0_TIPFAT , 
+				"A" VV0_STATUS , "
+				SD2.D2_DOC VV0_NUMNFI , 
+				SD2.D2_SERIE VV0_SERNFI , SD2.D2_DOC VV0_NNFFDI , 
+				SD2.D2_SERIE VV0_SNFFDI , SF2.F2_CLIENTE VV0_CODCLI, 
+				SF2.F2_LOJA VV0_LOJA, SF2.F2_VALBRUT VV0_VALVDA , 
+				SD2.D2_CUSTOS VV0VCAVEI , SD2.D2_VALFET VV0_VALFRE, 
+				SD2.D2.R_E_C_N_O_ RECVV0 ,
+				SD2.D2.R_E_C_D_E_L_ VV0_SITNFI,
+				"1" VV0.VV0_TIPDOC ,  VV0.VV0_TIPMOV "
+				
 				cQuery += " FROM "+cNamSD2+" VVA "
 				cQuery +=        " JOIN "+cNamVV0+" VV0 "
 				cQuery +=             " ON VV0.VV0_FILIAL = VVA.VVA_FILIAL "
