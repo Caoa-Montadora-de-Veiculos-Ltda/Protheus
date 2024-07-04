@@ -2,7 +2,6 @@
 #INCLUDE "FWMVCDEF.CH"
 #include "Totvs.ch"
 #include "Topconn.ch"
-//#include "PROTHEUS.CH" 
 #include "ZPECF008.CH"
 
 #define CRLF chr(13) + chr(10)
@@ -170,22 +169,6 @@ User Function ZPECF008()
 		Endif
 		_cAglutina 	:= ""
 		_aMensAglu	:= {}
-
-		//Início - OneGate001 - nova empresa 90 | HMB
-		/*
-		If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
-			If AllTrim(_aRet[10]) == "HYU" //Não Pode Hyundai
-				Help( , ,OemToAnsi(STR0028),,"Marca HYU bloqueada na empresa 02 | Franco da Rocha",4,1) //Atenção / Necessário informar os parâmetros 
-				Break 
-			EndIf
-		ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
-			If ( AllTrim(_aRet[10]) == "CHE" .Or. AllTrim(_aRet[10]) == "SBR" )
-				Help( , ,OemToAnsi(STR0028),,"Marca CHE/SBR bloqueada na empresa 90 | HMB",4,1) //Atenção / Necessário informar os parâmetros 
-				Break 
-			EndIf
-		EndIf
-		*/
-		//Fim - OneGate001 - nova empresa 90 | HMB
 		//Carregar processo
 		For _nPos := 1 To Len(_aArmazem)
 			NNR->(DbSetOrder(1)) //NNR_FILIAL+NNR_CODIGO                                                                                                                                           
@@ -295,7 +278,7 @@ Begin Sequence
 	_cFasePrd := SubsTr(_cFaseOrc, 1, _nPosCpo -1)+ " "
 
 	//Verificar informações passadas no pergunte 
-	If _nTodos <> 1   //Caso não esteudas
+	If _nTodos <> 1   //Caso não esteja informado todas as alternativas  devo avaliar as altenativas selecionadas
 		//Verificarei nos itens contidos no VX5 e acrescentados nas perguntas
 		For _nPos := 1 To Len(_aChave)
 			//Verifico se esta marcado com Sim
@@ -650,7 +633,7 @@ Begin Sequence
 								EndIf
 							EndIf	
 						EndIf	
-					Endif   //Fim tratamento por tipo pedido transferencia FDR				
+					Endif   //Fim tratamento por tipo pedido transferencia FDR
 					
 					//Atualiza fase para Separação e se necessário gera Backorder
 					//Retorno para o registro VS1 pode ter sido disposicionado DAC 20/06/2022
@@ -659,7 +642,7 @@ Begin Sequence
 					If _lRet .and. !ZPECF08CAR(VS1->VS1_NUMORC, @_aBackOrder, @_aSeqVS3,(_cAliasTRB)->NREGVS1, @_aVS3Reg, _cLocal)
 						_lRet := .F.
            				Disarmtransaction()
-					EndIf			
+					EndIf	
 					//Cria separação e faz reserva
 					If _lRet  .And. VS1->VS1_STATUS <> "3"  //somente deixar criar se não for bloqueio de credito
 						_lRet := U_XOFUNLIB(VS1->VS1_NUMORC, _aSeqVS3, _aVS3Reg) 
@@ -671,7 +654,7 @@ Begin Sequence
 					//	_lRet	:= .F._cObs
            			//	Disarmtransaction()
 					//EndIf
-				End Transaction //TESTE NICOLAS 04/03
+				End Transaction
 			EndIf	
 			//Retorno para o registro VS1 pode ter sido disposicionado DAC 20/06/2022
 			VS1->(DbGoto((_cAliasTRB)->NREGVS1))
@@ -1677,28 +1660,20 @@ Static Function ZPECF8KITBakOrder( _aBak, _nRegVS3 )
 Return _lRet
 
 
-//Avaliar se pode realizar fechamento
+//Avaliar se pode realizar fechamnto
 Static Function ZPECF08CAR(_cNumOrc, _aBackOrder, _aSeqVS3, _nRegVS1, _aVS3Reg, _cLocal)
 	Local _lRet 		:= .T.
 	Local _cNumSeq
-	//Local _lExisteReserva := .F.
-	//Local _lReserva
-	
-	//Local _nPos
 	//Garantir que esta posicionado no VS1 DAC 20/06/2022
 	Default _nRegVS1 	:= VS1->(Recno()) 
 	Default _cLocal	:= ""
-
-	Private aHeaderP    	:= {} // Variavel utilizada na OX001RESITE
-	//Private aResDel  		:= {} // Variavel utilizada para passar OX001RESITE
-	Private _aReservaCAOA 	:= {} // Variavel utilizada no PE OX001RES
 
 	Begin Sequence
 		//Montar novo orçamento caso tenha inconsistencias em itens DAC 08/02/2022
 		If Len(_aBackOrder) > 0
 			_lRet := U_XOFUNCLO( _cNumOrc, /*_cGrupo*/, /*_cCodProd*/, /*_nQtdeItem*/, /*_lZera*/, /*_aVazioCpo*/, _aBackOrder)
 			If ! _lRet
-				Aadd(_aMensAglu,"Ocorrerão problemas para clonar itens que não possuem status para carregamento aos quais passariam para backorder <ZPECF08CAR> !")
+				Aadd(_aMensAglu,"Ocorrerão problemas para clonar itens que não possuem status para carregamento aos quais passriam para backorder <ZPECF08CAR> !")
 				Break	
 			EndIf
 		EndIf	
@@ -1711,7 +1686,6 @@ Static Function ZPECF08CAR(_cNumOrc, _aBackOrder, _aSeqVS3, _nRegVS1, _aVS3Reg, 
 			Aadd(_aMensAglu,"Não localizado itens do orçamento "+_cNumOrc+" para ajuste parcial (ZPECF08PARC) do produto principal !")
 			Break
 		EndIF	
-
 		//organizar a sequencia
 		_cNumSeq := StrZero(0,Len(VS3->VS3_SEQUEN))
 		_aSeqVS3 := Aclone({})
