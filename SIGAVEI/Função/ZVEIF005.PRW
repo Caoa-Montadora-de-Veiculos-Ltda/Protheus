@@ -833,15 +833,11 @@ Else
 				cQuery += " FROM "+cNamSD2+" VVA "
 				cQuery +=        " JOIN "+cNamSF2+" SF2 "
 				cQuery +=             " ON SF2.F2_FILIAL = SD2.SD2_FILIAL "
-				cQuery +=            " AND SF2.F2_NUMTRA = VVA.VVA_NUMTRA "
-				cQuery +=            " AND VV0.D_E_L_E_T_=' ' "
-				cQuery +=  " LEFT JOIN "+cNamVV9+" VV9 "
-				cQuery +=             " ON VV9.VV9_FILIAL = VVA.VVA_FILIAL "
-				cQuery +=            " AND VV9.VV9_NUMATE = VVA.VVA_NUMTRA "
-				cQuery +=            " AND VV9.D_E_L_E_T_=' ' "
-				cQuery += " WHERE VVA.VVA_FILIAL = '"+xFilial("VVA")+"' AND "
-				cQuery +=       " VVA.VVA_CHAINT= '"+cChaInt005+"' AND "
-				cQuery +=       " VVA.D_E_L_E_T_ = ' '"
+				cQuery +=            " AND SF2.F2_DOC    = VVA.VVA_NUMTRA "
+				//cQuery +=            " AND VV0.D_E_L_E_T_=' ' "
+				cQuery += " WHERE SD2.D2_FILIAL = '"+xFilial("SD2")+"' AND "
+				cQuery +=       " SD2.D2_CHASSI = '"+cChassi+"' "
+				//cQuery +=       " VVA.D_E_L_E_T_ = ' '"
 				dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQueSD2 ), cQAlSD2 , .F., .T. )
 
 
