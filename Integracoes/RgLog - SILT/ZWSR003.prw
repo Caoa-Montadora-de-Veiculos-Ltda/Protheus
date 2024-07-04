@@ -148,12 +148,12 @@ Static Function zProcessa(lJob)
     If !Empty( __cChvCTE )
 
         //--Quando a execução for manual acrescenta a chave do CTe ao nome do arquivo de log
-        __cArqLog := cDirLog +"ZWSR003_"+__cChvCTE+"_"+DTOS(Date())+"_"+StrTran(Time(),":")+".LOG"
+        __cArqLog := cDirLog +"ZWSR003_" + xFilial("GW1") + "_" + __cChvCTE + "_" + DTOS(Date()) + "_" + StrTran(Time(),":") + ".LOG"
         //__cArqOk  := cDirLog +"ZWSR003_"+__cChvCTE+"_"+DTOS(Date())+"_"+StrTran(Time(),":")+"_Ok.LOG"
 
     Else
 
-        __cArqLog := cDirLog +"ZWSR003_Gera_Romaneio_"+DTOS(Date())+"_"+StrTran(Time(),":")+".LOG"
+        __cArqLog := cDirLog +"ZWSR003_" + xFilial("GW1") + "_Gera_Romaneio_"+DTOS(Date())+"_"+StrTran(Time(),":")+".LOG"
         //__cArqOk  := cDirLog +"ZWSR003_Gera_Romaneio_"+DTOS(Date())+"_"+StrTran(Time(),":")+"_Ok.LOG"
 
     EndIf    
