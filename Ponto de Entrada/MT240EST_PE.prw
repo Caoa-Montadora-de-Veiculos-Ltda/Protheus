@@ -15,9 +15,8 @@ User Function MT240EST()
     Local _lRet     := .F.
     Local _aArea    := GetArea()
     Local lUserAut  := .F.
-    Local _cEmp     := FWCodEmp()
      
-    If _cEmp == "2010" //Executa o p.e. Anapolis.
+    If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
         _lRet := .T.
     Else
         lUserAut := U_ZGENUSER( RetCodUsr() ,"MT240EST",.F.)

@@ -327,16 +327,30 @@ Static Function zProcessa(lJob)
                 //Estiver preenchido, não deve gerar o romaneio, pois a Ana coloca manualmente
                 //Para ela ter o controle.
 
-                If _CnpjPag == "03471344000509" .And. _CnpjRem <> "03471344000509" .And. _CnpjDest <> "03471344000509"
-                    _ctpoper := "TRIANGULA"
-                ElseIf _tp_oper $ cFracion
-                    _ctpoper := "FRACIONADO"
-                ElseIf _tp_oper $ cOperImp
-                    //--Consulta tipo de operação na matriz de De/Para
-                    nPos := aScan( aMunOper, { |x| AllTrim( x[1] ) == _MunCol } )
-                    _ctpoper := aMunOper[nPos][2]
-                Else
-                    _ctpoper := _tp_oper
+                If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+                    If _CnpjPag == "03471344000509" .And. _CnpjRem <> "03471344000509" .And. _CnpjDest <> "03471344000509"
+                        _ctpoper := "TRIANGULA"
+                    ElseIf _tp_oper $ cFracion
+                        _ctpoper := "FRACIONADO"
+                    ElseIf _tp_oper $ cOperImp
+                        //--Consulta tipo de operação na matriz de De/Para
+                        nPos := aScan( aMunOper, { |x| AllTrim( x[1] ) == _MunCol } )
+                        _ctpoper := aMunOper[nPos][2]
+                    Else
+                        _ctpoper := _tp_oper
+                    EndIf
+                ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
+                        If _CnpjPag == "10394422000657" .And. _CnpjRem <> "10394422000657" .And. _CnpjDest <> "10394422000657"
+                        _ctpoper := "TRIANGULA"
+                    ElseIf _tp_oper $ cFracion
+                        _ctpoper := "FRACIONADO"
+                    ElseIf _tp_oper $ cOperImp
+                        //--Consulta tipo de operação na matriz de De/Para
+                        nPos := aScan( aMunOper, { |x| AllTrim( x[1] ) == _MunCol } )
+                        _ctpoper := aMunOper[nPos][2]
+                    Else
+                        _ctpoper := _tp_oper
+                    EndIf
                 EndIf
 
                 cMsgLogCte := "Coleta: " + _coleta + " | Chave CT-e : " + _cChaveCTE
@@ -557,7 +571,7 @@ Static Function zGeraRom(_tp_ope_01, _modal_01, _percu_01, cCodTpVei, _codtra_01
     Local aAreaGW1   := GW1->( GetArea() )
     Local aAreaGV5   := GV5->( GetArea() )
     Local aAreaGWU   := GWU->( GetArea() )
-
+    Local aAreaGWF
      Default lJob := .F.
 
     If !Empty( __cMsgLoc )
@@ -592,8 +606,9 @@ Static Function zGeraRom(_tp_ope_01, _modal_01, _percu_01, cCodTpVei, _codtra_01
     For y := 1 to Len(aChvNfs)
         IF GW1->( DBSEEK( aChvNfs[y][1] ) )
             If  RECLOCK("GW1",.F.)
-                GW1->GW1_NRROM := _NroRom
-                GW1->GW1_SIT   := "4" //Embarcado
+                GW1->GW1_NRROM  := _NroRom
+                GW1->GW1_SIT    := "4" //Embarcado
+                GW1->GW1_FILROM := XFilial('GW1')
                 GW1->( MsUnLock() )
             Endif
 
@@ -619,6 +634,23 @@ Static Function zGeraRom(_tp_ope_01, _modal_01, _percu_01, cCodTpVei, _codtra_01
         GFE050CALC(,,,,.F.,)
     EndIf
 
+    aAreaGWF := GWF->(GetArea())
+    
+    GWF->(DbsetOrder(4))
+    GWF->( DbSeek(xFilial('GWF') + _NroRom, .F. ) )
+    
+    WHILE GWF->(!eof()) .AND. GWF->GWF_FILIAL == xFilial('GWF') .AND. GWF->GWF_NRROM == _NroRom
+        
+        IF EMPTY(GWF->GWF_FILROM)
+            RecLock("GWF",.F.)
+                GWF->GWF_FILROM := XFILIAL('GWF')
+            GWF->(MsUnLock())
+        Endif
+
+        GWF->(DbSkip())
+    EndDo
+
+    RestArea( aAreaGWF )
     RestArea( aAreaGUU )
     RestArea( aAreaGV3 )
     RestArea( aAreaGW1 )

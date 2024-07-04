@@ -14,11 +14,10 @@ Obs......:              Regras para o faturamento minímo dos orçamentos por fa
 */
 User Function OX001TOK(nOpcx)
 
-   Local _cEmp    := FWCodEmp()
    Local _lRet	   := .F.
    Local aArea	   := GetArea()
 
-   If _cEmp == "2010" //Executa o p.e. Anapolis.
+   If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
         _lRet	   := .F. 
     Else
       //Executa o p.e. Barueri

@@ -112,12 +112,21 @@ Private cXmlNf    := ""
         Break
  	EndIf
 
-    If _cCNPJ <> '03471344000509' //CD BARUERI - CAOA MONTADORA DE VEICULOS LTDA
-        oJsonRet['errorCode']	:= 400
-        oJsonRet['errors']		:= 'CNPJ não pertencente a Barueri !'
-        ::SetResponse( oJsonRet:ToJson() )
-        Break
- 	EndIf
+    If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Franco da Rocha | Caoa
+        If _cCNPJ <> '03471344000509' //CNPJ Caoa | Franco da Rocha
+            oJsonRet['errorCode']	:= 400
+            oJsonRet['errors']		:= 'CNPJ não pertencente a Caoa | Franco da Rocha !'
+            ::SetResponse( oJsonRet:ToJson() )
+            Break
+ 	    EndIf
+    ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //Empresa Franco da Rocha | HMB Hyundai
+        If _cCNPJ <> '10394422000657' //CNPJ HMB | Franco da Rocha
+            oJsonRet['errorCode']	:= 400
+            oJsonRet['errors']		:= 'CNPJ não pertencente a HMB | Franco da Rocha !'
+            ::SetResponse( oJsonRet:ToJson() )
+            Break
+ 	    EndIf
+    EndIf
 
     _aRet := ValidOJson(cJson, _cDoc, _cSerie)     
 

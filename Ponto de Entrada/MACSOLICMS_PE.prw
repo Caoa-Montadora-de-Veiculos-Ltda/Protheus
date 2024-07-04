@@ -14,17 +14,15 @@ Obs......:
 */
 User Function MACSOLICMS()
 
-Local _cEmp  	:= FWCodEmp()
-Local _cFil  	:= FWCodFil()
 Local _aRet 	:= {}
 Local nBaseSol  	:= ParamIxb[3] //Base de retencao ICMS Solidario
 Local nAliqSol  	:= ParamIxb[4] //Alíquota Solidário
 Local nValsol   	:= ParamIxb[5]  //Valor do ICMS Solidario
 
 _aRet := {nBaseSol,nAliqSol,nValsol}
-If _cEmp == "2010" //Executa para Anapolis.
+If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 	_aRet := zFMontadora()
-ElseIf _cFil == "2020012001" //Executa para Barueri
+ElseIf ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 	_aRet := zFBarueri()
 EndIf
 
@@ -93,10 +91,11 @@ Local lMata410 		:= .F.
 Local lDev 			:= .F.
 Local aDev 			:= {}
 Local _F4MKPSOL		:= ""
+Local lPortalFat    :=  Upper(Alltrim(FunName())) == "ZFATF019" 
 Do Case
 Case FWIsInCallStack("MAPVLNFS") // rotina de documento de saida
 	//Conout(" MACSOLICMS - MAPVLNFS - C6_XBASST - " + SC6->C6_NUM + "-" + SC6->C6_ITEM + "-" + SC6->C6_PRODUTO + " - " +  cValToChar(SC6->C6_VALOR) + "-" + cValToChar(SC6->C6_XBASST))
-	If (isInCallStack("VEIA060") .or. isInCallStack("VEIXX002") .Or. Upper(Alltrim(FunName())) == "ZFATF019" .Or. (SC5->C5_TIPO == "I" .And. SC6->C6_XBASST <> 0)) .And. ;
+	If (isInCallStack("VEIA060") .or. isInCallStack("VEIXX002") .Or. lPortalFat .Or. (SC5->C5_TIPO == "I" .And. SC6->C6_XBASST <> 0)) .And. ;
 		cOperacao == 'S' .And.;
 		nItem > 0  
 			nValIC   := MaFisRet(nItem,"IT_VALICM" )
@@ -151,17 +150,25 @@ Case FWIsInCallStack("U_tstZonaFranca")
 		Endif	
 	EndIf
 
-Case (FWIsInCallStack("VEIA060") .or. FWIsInCallStack("U_CMVAUT01") .or. FWIsInCallStack("WSCAOA_INCLUSAO_PEDIDO_ATACADO")) // rotina de pedido de veiculo do sigavei ou inclusao de pedido de veiculo do autoware
+Case (FWIsInCallStack("VEIA060") .or. FWIsInCallStack("U_CMVAUT01") .Or. lPortalFat .or. FWIsInCallStack("WSCAOA_INCLUSAO_PEDIDO_ATACADO"))  // rotina de pedido de veiculo do sigavei ou inclusao de pedido de veiculo do autoware
 	//Conout(" MACSOLICMS - VRK_XBASST - " + cValToChar(FWFldGet("VRK_XBASST")))
-	If (isInCallStack("VEIA060") .or. FWIsInCallStack("U_CMVAUT01") .or. FWIsInCallStack("WSCAOA_INCLUSAO_PEDIDO_ATACADO")) .And.;
+	If (isInCallStack("VEIA060") .or. FWIsInCallStack("U_CMVAUT01") .Or. lPortalFat .or. FWIsInCallStack("WSCAOA_INCLUSAO_PEDIDO_ATACADO")) .And.;
 		cOperacao == 'S' .And.;
 		nItem > 0  
 			nValIC   := MaFisRet(nItem,"IT_VALICM" )
-			nBaseSol := FWFldGet("VRK_XBASST")
+			
+			if lPortalFat  //pORTAL fATURAMENTO
+				nBaseSol := (cCabAlias)->C6_XBASST
+				nValBaseTab := U_BASSTPortal()
+			Else	
+				nBaseSol := FWFldGet("VRK_XBASST")
+				nValBaseTab := U_BASSTCAOA()
+			EndIF
+			
 			//nBaseSolAnt := nBaseSol
 			lLog := .T.
 			lVeia060 := .T.
-			nValBaseTab := U_BASSTCAOA()
+						
 			// compara base do icms st gravada no campo com valor retornado pela tabela de preco, se forem iguais eh porque a reducao de base ainda nao foi avaliada,
 			// ou nao existe reducao, 
 			// se valores forem diferentes, pode ser devido a base jah ter sido reduzida, neste caso, nao submete novamente a analise da reducao,
@@ -245,7 +252,13 @@ If !Empty(nBaseSol)
 		Endif	
 		If !Empty(nRedBase)
 			nBaseSol := nBaseSol*(nRedBase/100)
-			FWFldPut("VRK_XBASST",nBaseSol)
+			if lPortalFat
+				RecLock(cCabAlias,.f.)
+					(cCabAlias)->C6_XBASST := nBaseSol
+				(cCabAlias)->(MsUnLock())
+			else
+				FWFldPut("VRK_XBASST",nBaseSol)
+			endif
 		Endif
 	Endif
 
@@ -255,7 +268,7 @@ If !Empty(nBaseSol)
 		Endif	
 	Endif	
 
-	If lLog
+	If lLog .and. !lPortalFat
 		Conout(" MACSOLICMS - "+IIf(lVeia060,"Pedido SigaVei: "+FWFldGet("VRK_PEDIDO"),IIf(lMata410,"Pedido SigaFat: "+M->C5_NUM,""))+;
 		" Veiculo: "+MaFisRet(nItem,"IT_PRODUTO")+" Item: "+cValToChar(nItem)+;
 		" - nBaseSol: "+cValToChar(nBaseSol)+" nAliqSol: "+cValToChar(nAliqSol)+" nValsol: "+cValToChar(nValsol))

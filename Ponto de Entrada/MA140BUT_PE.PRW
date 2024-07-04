@@ -13,12 +13,12 @@ LOCAL aBotao := {}
 
 u_ZGENLOG( ProcName() ) //Grava log de execução de fontes     
 
-IF FWCodEmp() <> '2020' .AND. FWFilial() <> '2020012001'
+//IF FWCodEmp() <> '2020' .AND. FWFilial() <> '2020012001'
 
      If FindFunction("U_ZCOMF051") .AND. INCLUI
           Aadd(aBotao, {'', {|| FWMsgRun(, {|| U_ZCOMF051() }, "", "Importar Itens..." ) }, 'Importar Itens'})
      Endif
 
-ENDIF
+//ENDIF
 
 RETURN(aBotao)

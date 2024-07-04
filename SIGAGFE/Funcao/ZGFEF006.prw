@@ -10,7 +10,7 @@ Descricao / Objetivo:   Prepara registros para envio a rotina de gravação dos va
                         bruto na tabela GW8   
 ===========================================================================================
 */
-User Function ZGFEF006( cDoc, cSerie,cTipo cFornece, cLoja )
+User Function ZGFEF006( cDoc, cSerie, cTipo, cFornece, cLoja )
     Local aAreaSF1  :=  SF1->( GetArea() )
     Local aAreaSD1  :=  SD1->( GetArea() )
     Local cAliasSD1 :=  ""

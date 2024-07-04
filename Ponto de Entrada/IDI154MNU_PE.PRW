@@ -11,11 +11,10 @@ Uso......:
 //  User Function IDI154MNU()
 User Function IDI154MNU()
 
-	Local _cEmp	:= FWCodEmp()
 	Local aArea    := GetArea()
 	Local _aRes    := {}
 
-	If _cEmp == "2010" //Executa o p.e. Anapolis.
+	If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 		_aRes := { {"Gerar NF filhas Container (CAOA)", "U_ZEICF015()", 0 , 3} }
 	Else
 		_aRes := zCaoaSp() //Executa o p.e. CaoaSp
@@ -35,12 +34,11 @@ Descricao / Objetivo:   Executa chamada Montadora
 */
 Static Function zCaoaSp()
 
-     Local cFilCaixa := SuperGetMV("CAOAEICCAI", .F., "2020012001")
      Local cMsg := "Container"
      Local aRes  := {}
      Local aSubMenu := {}
 
-     if FWCodFil() $ cFilCaixa //Verifico se a Empresa esta no parametro
+     If ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
           cMsg := "Caixas"
           aadd(aSubMenu , {"Por Container", "U_ZEICF015(.F.)", 0 , 3})
           aadd(aSubMenu , {"Por Caixas"   , "U_ZEICF015(.T.)", 0 , 3})

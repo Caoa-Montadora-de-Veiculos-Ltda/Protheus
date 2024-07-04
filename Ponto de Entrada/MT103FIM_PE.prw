@@ -3,10 +3,9 @@
 
 User function MT103FIM()
 
-   Local _cEmp    := FWCodEmp()
    Local aArea	  := GetArea()
 
-   If _cEmp == "2010" //Executa o p.e. Anapolis.
+   If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
       zMontadora()
    Else
       zCaoaSp() //Executa o p.e. CaoaSp
@@ -115,11 +114,13 @@ Static Function zCaoaSp()
 	EndIf
 	
 	// tratamento para exclusao para o SAP
-	If findfunction("U_ZSAPF014")
-		If PARAMIXB[1] == 5 .and. PARAMIXB[2] == 1 // exclusao e usuario confirmou a operacao
-			U_ZSAPF014("1")
-		Endif	
-	endif
+	If ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
+		If findfunction("U_ZSAPF014")
+			If PARAMIXB[1] == 5 .and. PARAMIXB[2] == 1 // exclusao e usuario confirmou a operacao
+				U_ZSAPF014("1")
+			Endif	
+		Endif
+	EndIf
 
 	If findfunction("U_CMVCOM01")
 		If (PARAMIXB[1] == 3 .or. PARAMIXB[1] == 4) .and. PARAMIXB[2] == 1 // (inclusao ou classificacao da nota) e usuario confirmou a operacao
@@ -128,11 +129,13 @@ Static Function zCaoaSp()
 	Endif	
 
 	// tratamento para gravacao das entidades contabeis
-	If findfunction("U_ZSAPF023")
-		If (PARAMIXB[1] == 3 .or. PARAMIXB[1] == 4) .and. PARAMIXB[2] == 1 // (inclusao ou classificacao da nota) e usuario confirmou a operacao
-			U_ZSAPF023()
-		Endif
-	Endif	
+	If ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
+		If findfunction("U_ZSAPF023")
+			If (PARAMIXB[1] == 3 .or. PARAMIXB[1] == 4) .and. PARAMIXB[2] == 1 // (inclusao ou classificacao da nota) e usuario confirmou a operacao
+				U_ZSAPF023()
+			Endif
+		Endif	
+	EndIf
 	
 	// Insere dados adicionais da nota de entrada quando for nota de importacao cbu
 	// EIC 108
@@ -149,7 +152,7 @@ Static Function zCaoaSp()
 		Endif
 	Endif
 
-	If FWCodEmp() == "2020" .And. FWFilial() == "2001" .And. nConfirma == 1 .And. _cEnvRgLog == "S" //Executa o p.e. somente para Barueri.
+	If ( ( FwCodEmp() == "2020" .And. FwFilial() == "2001" ) .Or. ( FwCodEmp() == "9010" .And. FwFilial() == "HAD1" ) ) .And. nConfirma == 1 .And. _cEnvRgLog == "S" //Executa o p.e. somente para Barueri.
     	If findfunction("U_ZWSR010")
 			Processa({|| U_ZWSR010(SF1->F1_DOC, SF1->F1_SERIE, SF1->F1_FORNECE, SF1->F1_LOJA, .F., SF1->F1_TIPO) }, 'Doc Entrada', 'Envia Integração RgLog')		
 		Endif

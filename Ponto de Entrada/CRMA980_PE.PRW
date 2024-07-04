@@ -8,12 +8,12 @@ Ponto de Entrada para Cadastro de cliente MVC
 @version V.03 
 @project
 @history    DAC Denilso - 24/02/2023 
-            GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (Revitalização Limite de Crédito)
-            Revitalição processo limite de crédito, anteriormente iniciariam o processo com um campo Matriz, após analise
-            não passou a utilizar este campo utilizando o campo XTPPED para o processo
+            GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (RevitalizaÃ§Ã£o Limite de CrÃ©dito)
+            RevitaliÃ§Ã£o processo limite de crÃ©dito, anteriormente iniciariam o processo com um campo Matriz, apÃ³s analise
+            nÃ£o passou a utilizar este campo utilizando o campo XTPPED para o processo
 @history    DAC Denilso - 06/04/2023	        
-            GRUPO CAOA GAP FIN108 - Revitalização Credito [ Montadora ]
-            Unificação Peças com Montadora
+            GRUPO CAOA GAP FIN108 - RevitalizaÃ§Ã£o Credito [ Montadora ]
+            UnificaÃ§Ã£o PeÃ§as com Montadora
 @Obs   
 @tdn        https://tdn.totvs.com/pages/releaseview.action?pageId=616215550
 /*/
@@ -36,18 +36,18 @@ User Function CRMA980()
 		_oObj           := _aParam[1]
 		_cIdPonto       := _aParam[2]
 		_cIdModel       := _aParam[3]
-		_nOpcx          := _oObj:GetOperation() // PEGA A OPERAÇÃO
+		_nOpcx          := _oObj:GetOperation() // PEGA A OPERAÃ‡ÃƒO
 
-		//Na validação total do formulário
+		//Na validaÃ§Ã£o total do formulÃ¡rio
 		//If (_cIdPonto =="FORMPOS")
 		//If (_cIdPonto =="MODELPRE")
-		//Na ativação do modelo.
+		//Na ativaÃ§Ã£o do modelo.
 		If (_cIdPonto =="MODELVLDACTIVE")
 			_lRet := ZCRMA980LC(_nOpcx, .F.)  //Processo antes de Atualizar
 			Break
-			//Após a gravação total do modelo e fora da transação.
+			//ApÃ³s a gravaÃ§Ã£o total do modelo e fora da transaÃ§Ã£o.
 		ElseIf (_cIdPonto =="MODELCOMMITNTTS")
-			If _nOpcx == 3 .or. _nOpcx == 4 //.or. _nOpcx == 5 //Inclusão ou Alteração ou Excluir
+			If _nOpcx == 3 .or. _nOpcx == 4 //.or. _nOpcx == 5 //InclusÃ£o ou AlteraÃ§Ã£o ou Excluir
 				_lRet := ZCRMA980LC(_nOpcx)
 				
 				//If nOper == 5
@@ -56,11 +56,11 @@ User Function CRMA980()
 				
 				Break
 			EndIf
-			//quando exclusão zero a loja para atualizar todos  DAC 03/04/2023
+			//quando exclusÃ£o zero a loja para atualizar todos  DAC 03/04/2023
 			If _nOpcx == 5
 				_cLoja := ""
 			EndIf
-			//Antes da gravação da tabela do formulário.
+			//Antes da gravaÃ§Ã£o da tabela do formulÃ¡rio.
 		ElseIf _cIdPonto == "FORMCOMMITTTSPRE"
 			//Grava log RGLOG
 			//Avalia antes de gravar se foi alterado algum campo customizado para gravar tabela de Log SZ2
@@ -76,23 +76,24 @@ Return(_lRet)
 
 
 /*/{Protheus.doc} ZCRMA980LC
-Processa Limite de Crédito
+Processa Limite de CrÃ©dito
 @author     CAOA DAC - Denilso
 @since      05/05/2023
 @version    1.0
-@project    FIN108- Revitalização L.C
+@project    FIN108- RevitalizaÃ§Ã£o L.C
 @history    
 @Obs   
 @tdn        
 /*/
 Static Function ZCRMA980LC(_nOpcx, _lPrcLog)
+
 	Local _lRet      := .T.
 	Local _cCodCli
 	Local _cLoja
 	Local _cTpCred
-	Local _aRet //Retorno da função ZFATF014
+	Local _aRet //Retorno da funÃ§Ã£o ZFATF014
 
-	Private nOpcx   := _nOpcx   //necessário pois a funcionalidade ZWSR005 espera como private  DAC 03/04/2023
+	Private nOpcx   := _nOpcx   //necessÃ¡rio pois a funcionalidade ZWSR005 espera como private  DAC 03/04/2023
 
 	Default _lPrcLog    := .T.
 
@@ -100,28 +101,29 @@ Static Function ZCRMA980LC(_nOpcx, _lPrcLog)
 		_cCodCli	    := If(Type("M->A1_COD") 	== "C",M->A1_COD	    ,SA1->A1_COD)
 		_cLoja		    := If(Type("M->A1_LOJA") 	== "C",M->A1_LOJA	    ,SA1->A1_LOJA)
 		_cTpCred        := If(Type("M->A1_XTPCRED")	== "C",M->A1_XTPCRED	,SA1->A1_XTPCRED)
-		//Indica se processa Log's, caso não somente processar o calculo do L.C. DAC 10/05/2023
+		//Indica se processa Log's, caso nÃ£o somente processar o calculo do L.C. DAC 10/05/2023
 		If _lPrcLog
 			//OneGate001 - nova empresa 90 | HMB
 			//Executa para 02 | Franco da Rocha e 90 | HMB
         	If ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
-        		//Serviço de integração  para integração clientes, fornecedores e transportadoras com execauto RGLOG
+        		//ServiÃ§o de integraÃ§Ã£o  para integraÃ§Ã£o clientes, fornecedores e transportadoras com execauto RGLOG
 				U_ZWSR006("C", _cCodCli , _cLoja )
 				//ElseIf FWCodEmp() = '2010'
 			EndIf
 			
 			//OneGate001 - nova empresa 90 | HMB
 			If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Franco da Rocha | Caoa
-            	U_ZF10GENSAP("SA1", _cCodCli+_cLoja, "A1_XCDSAP", _nOpcx)    //Lê tabela SZ7 para envio SAP
+            	U_ZF10GENSAP("SA1", _cCodCli+_cLoja, "A1_XCDSAP", _nOpcx)    //LÃª tabela SZ7 para envio SAP
         	EndIf
-			//U_ZF10GENSAP("SA1", _cCodCli+_cLoja, "A1_XCDSAP", _nOpcx)    //Lê tabela SZ7 para envio SAP
+			//U_ZF10GENSAP("SA1", _cCodCli+_cLoja, "A1_XCDSAP", _nOpcx)    //LÃª tabela SZ7 para envio SAP
 		Endif
-		FwMsgRun(,{ || _aRet := U_ZFATF014(_cCodCli, _cTpCred, _cLoja, .T.) }, 'Limite Crédito','Atualizando Limite de Crédito Caoa, aguarde...')
+		FwMsgRun(,{ || _aRet := U_ZFATF014(_cCodCli, _cTpCred, _cLoja, .T.) }, 'Limite CrÃ©dito','Atualizando Limite de CrÃ©dito Caoa, aguarde...')
 	End Sequence
 
 	If ValType(_aRet) <> "A" .or. _aRet == Nil
 		_lRet := .F.
 	EndIF
+
 
 Return(_lRet)
 
@@ -131,7 +133,7 @@ Grava LOG para Limite de Credito ZA2
 @author     CAOA DAC - Denilso
 @since      05/05/2023
 @version    1.0
-@project    FIN108- Revitalização L.C
+@project    FIN108- RevitalizaÃ§Ã£o L.C
 @history    
 @Obs   
 @tdn        

@@ -20,6 +20,8 @@ Local cWsURL  		:= ''
 Local cSoap   		:= ''
 Local lRet    		:= .F.
 Local cRetMsg 		:= ''
+Local cRetStatus    := ""
+Local cRetComp      := ""
 Local cPedVRJ		:= ""
 Local lMsg			:= .F.
 
@@ -85,7 +87,7 @@ If (cAlsVRJ)->(!EOF())
 	If !oWsdl:ParseURL( cWsURL )
 
 		If lMsg
-			MsgInfo( "Erro de conexão com Autoware" + CRLF + CRLF +  "Não foi possivel realizar a conexão com o WS Autoware - Entre em contato com o adm do sistema IMEDIATAMENTE."+ CRLF + CRLF + "URL: "+ALLTRIM(cWsURL)+ CRLF + CRLF + "ERRO: "+AllTrim(oWsdl:cError) , "CMVAUT04" )
+			MsgInfo( "Erro de conexão com Autoware" + CRLF + CRLF +  "Não foi possivel realizar a conexão com o WS Autoware - Entre em contato com o adm do sistema IMEDIATAMENTE."+ CRLF + CRLF + "URL: "+ALLTRIM(cWsURL)+ CRLF + CRLF + "ERRO: "+ AllTrim(oWsdl:cError) , "CMVAUT04" )
 		EndIf
 
 		cRet  := '2'
@@ -146,20 +148,20 @@ If (cAlsVRJ)->(!EOF())
 		EndIf
 
 		cSoap := '<x:Envelope xmlns:x="http://www.w3.org/2003/05/soap-envelope"  xmlns="http://tempuri.org/">'
-		cSoap += "<x:Header/>                                                                                 "
-		cSoap += "<x:Body>                                                                                    "
-		cSoap += "    <Status>                                                                                "
-		cSoap += "        <ListaPedidosVeiculos>                                                              "
-		cSoap += "            <DadosStatusPedidoVeiculo>                                                      "
+		cSoap += "<x:Header/>"
+		cSoap += "<x:Body>"
+		cSoap += "    <Status>"
+		cSoap += "        <ListaPedidosVeiculos>"
+		cSoap += "            <DadosStatusPedidoVeiculo>"
 		cSoap += putTag('CdPedido',          Alltrim((cAlsVRJ)->VRJ_PEDCOM))
 		cSoap += putTag('CdPedidoERP',       Alltrim((cAlsVRJ)->VRJ_PEDIDO))
 		cSoap += putTag('DtAtualizacao',     Substr(DtoS(dDataBase),1,4) + '-' + Substr(DtoS(dDataBase),5,2) + '-' + Substr(DtoS(dDataBase),7,2) )
 		cSoap += putTag('CdStatus',          cCodStatus)
 		cSoap += putTag('DsStatus',          cDescStatus )
-		cSoap += "                <PedidoVeiculoItens>                   "  
+		cSoap += "                <PedidoVeiculoItens>"  
 		If VRK->( DbSeek( (cAlsVRJ)->VRJ_FILIAL + (cAlsVRJ)->VRJ_PEDIDO ) )
 			While  VRK->(!Eof()) .And.  (cAlsVRJ)->VRJ_FILIAL == VRK->VRK_FILIAL  .And. (cAlsVRJ)->VRJ_PEDIDO == VRK->VRK_PEDIDO 
-				cSoap += "               <StatusPedidoVeiculoItem>     "
+				cSoap += "               <StatusPedidoVeiculoItem>"
 				cSoap += putTag('idItem',            Alltrim(STR(VRK->VRK_XID)))
 				cSoap += putTag('CdLinha',          Alltrim(VRK->VRK_GRUMOD ))
 				cSoap += putTag('DsLinha',          AllTrim(GetAdvFVal("VVR","VVR_DESCRI",xFilial('VVR')+VRK->VRK_CODMAR+VRK->VRK_GRUMOD,2,'')))
@@ -204,17 +206,17 @@ If (cAlsVRJ)->(!EOF())
 					cSoap += putTag('DsStatus',     'STATUS NAO ENCONTRADO')
 				EndIf
 				
-				cSoap += "                </StatusPedidoVeiculoItem>                                                  "
+				cSoap += "                </StatusPedidoVeiculoItem>"
 			
 				VRK->(dbSkip())
 			EndDo
 		
 			cSoap += "                </PedidoVeiculoItens>"
-			cSoap += "                </DadosStatusPedidoVeiculo>                                                  "
-			cSoap += "            </ListaPedidosVeiculos>                                                      "
-			cSoap += "        </Status>                                                               "
-			cSoap += "    </x:Body>                                                            "
-			cSoap += "</x:Envelope>                                                            "
+			cSoap += "                </DadosStatusPedidoVeiculo>"
+			cSoap += "            </ListaPedidosVeiculos>"
+			cSoap += "        </Status>"
+			cSoap += "    </x:Body>"
+			cSoap += "</x:Envelope>"
 		
 			lRet := oWsdl:SendSoapMsg(cSoap)
 		
@@ -225,10 +227,11 @@ If (cAlsVRJ)->(!EOF())
 
 			Else
 
-				cRetMsg := oWsdl:GetSoapResponse()
-				cRetMsg := GetSimples( cRetMsg , "<RetornoStatusPedidoVeiculoDados>", "</RetornoStatusPedidoVeiculoDados>" )
-				cCdRet  := GetSimples( cRetMsg , "<CdRetorno>", "</CdRetorno>" )
-				cDsRet  := GetSimples( cRetMsg , "<DsRetorno>", "</DsRetorno>" )
+				cRetMsg 	:= oWsdl:GetSoapResponse()
+				cRetStatus 	:= GetSimples( cRetMsg , "<RetornoStatusPedidoVeiculoDados>", "</RetornoStatusPedidoVeiculoDados>" )
+				cRetComp	:= GetSimples( cRetMsg , "<ComprovanteEntrega>","<ComprovanteEntrega>")
+				cCdRet  	:= GetSimples( cRetMsg , "<CdRetorno>", "</CdRetorno>" )
+				cDsRet  	:= GetSimples( cRetMsg , "<DsRetorno>", "</DsRetorno>" )
 				
 				If Empty(cRetMsg)
 

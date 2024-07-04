@@ -26,7 +26,6 @@ Historico:
 
 User Function MT089CD()//As variaveis foram carregada com paramixb somente para verificar o conteudo original.
 
-	Local _cEmp  	:= FWCodEmp()
 	Local _aRet 	:= {}
 	
 //PARAMIXB[1] //Condicao que avalia os campos do SFM
@@ -35,7 +34,7 @@ User Function MT089CD()//As variaveis foram carregada com paramixb somente para 
 //PARAMIXB[4] //Conteudo a ser acrescentado no array
 //PARAMIXB[6]  //Tipo de Operação
 
-	If _cEmp == "2010" //Executa o p.e. somente para Anapolis.
+	If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 		_aRet := zFMontadora()
     Else
         //Retorna os valores padrões quando Barueri
@@ -80,15 +79,15 @@ Static Function zFMontadora()
 		endif
 		bIRWhile:= {||.T.}
 		bAddTes := {||aAdd(aTes[Len(aTes)],(cAliasSFM)->FM_XORIGEM)}//Acrescento campo a ser considerado na TES Inteligente. 
-	ElseIf cTabela == "" .And. (FunName() == "VEIA060" .or. FunName() == 'RPC')
+	ElseIf cTabela == "" .And. (FunName() == "VEIA060" .or. FunName() == 'RPC' .or. HttpHeadIn->Main <> nil )
 		
-		if FunName() == "RPC"
+		if FunName() == "RPC" .or. HttpHeadIn->Main <> nil
 			_nProd    := SB1->B1_COD
 		else
 			_nProd    := FwFldGet("B1COD") 
 		endif
 		
-		bCond     := {|| SB1->B1_ORIGEM == (cAliasSFM)->FM_XORIGEM .Or. Empty((cAliasSFM)->FM_XORIGEM)  } 
+		bCond     := {|| Posicione("SB1",1,xFilial("SB1") + _nProd , "B1_ORIGEM") == (cAliasSFM)->FM_XORIGEM .Or. Empty((cAliasSFM)->FM_XORIGEM)  } 
 		
 		//Acrescenta compo novo a regra, esse campo devera ser acrescentdo no X2_UNICO do SFM. 
 		if cTpOper $ _cTesInt
@@ -180,7 +179,7 @@ Static Function zFBarueri()
 			
 			EndIf
 		EndIf
-	ElseIf cTabela == "" .And. (FWIsInCallStack("U_ZPECF010") .or. FWIsInCallStack("U_ZPECFUNA") .or. FWIsInCallStack("U_ZPECF011")) .or. FWIsInCallStack("U_ZPECF013")
+	ElseIf cTabela == "" .And. (FWIsInCallStack("U_ZPECF010") .or. FWIsInCallStack("U_ZPECFUNA") .or. FWIsInCallStack("U_ZPECF011") .or. FWIsInCallStack("U_ZPECF013") )
 		
 		if cTpOper $ _cTesInt
 			bSort     := {|x,y| x[14] > y[14]} 

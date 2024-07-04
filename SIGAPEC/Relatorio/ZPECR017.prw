@@ -50,15 +50,17 @@ Obs......:
 
 Static Function zProcRel(_aRetParam)
 
-	Local cQuery	  	:= ""
-	Local cAliasTRB		:= GetNextAlias()
-	Local cArquivo	  	:= GetTempPath()+'Cadproduto_'+SUBSTRING(dtoc(date()),1,2)+SUBSTRING(dtoc(date()),4,2)+SUBSTRING(dtoc(date()),9,2)+'_'+SUBSTRING(time(),1,2) +SUBSTRING(time(),4,2) +SUBSTRING(time(),7,2)+'.xml'
-	Local oFWMsExcel
-	Local oExcel
-  	Local nTotReg		:= 0
-    Local nProc         := 1
-    Local cTxPis        := GETMV("MV_TXPIS")
-    Local cTxCofins     := GETMV("MV_TXCOFIN")
+Local cQuery	  	:= ""
+Local cAliasTRB		:= GetNextAlias()
+Local cArquivo	  	:= GetTempPath()+'Cadproduto_'+SUBSTRING(dtoc(date()),1,2)+SUBSTRING(dtoc(date()),4,2)+SUBSTRING(dtoc(date()),9,2)+'_'+SUBSTRING(time(),1,2) +SUBSTRING(time(),4,2) +SUBSTRING(time(),7,2)+'.xml'
+Local oFWMsExcel
+Local oExcel
+Local nTotReg		:= 0
+Local nProc         := 1
+Local cTxPis        := GETMV("MV_TXPIS")
+Local cTxCofins     := GETMV("MV_TXCOFIN")
+Local _cCFCompra    := AllTrim(SuperGetMV( "CMV_PEC048" , ,"" ))   ///Parâmetro para indicação CF de Compras, para controlar select da curva ABC para notas de Compras
+Local _cCFVenda     := AllTrim(SuperGetMV( "CMV_PEC047" , ,"" ))   //Parâmetro para indicação CF de Venda, para controlar select da curva ABC para notas de saida
 
 //Criando o objeto que irá gerar o conteúdo do Excel
     oFWMsExcel := FWMSExcel():New()
@@ -110,16 +112,16 @@ Static Function zProcRel(_aRetParam)
     cQuery += " SELECT SB1.B1_FILIAL " + CRLF
     cQuery += "         , SB1.B1_COD " + CRLF
     cQuery += "         , SB1.B1_DESC " + CRLF
-    cQuery += " 	    , NVL(SB2SQL.SALDO,0)         	AS SALDO_ESTOQUE " + CRLF
-    cQuery += " 	    , NVL(SB2SQL.CUSTO,0)         	AS CUSTO_MEDIO " + CRLF
+    cQuery += " 	    , NVL( SB2SQL.SALDO , 0 )    AS SALDO_ESTOQUE " + CRLF
+    cQuery += " 	    , NVL( SB2SQL.CUSTO , 0 )    AS CUSTO_MEDIO " + CRLF
     cQuery += "         , SB1.B1_TIPO " + CRLF
-    cQuery += "         , SB5.B5_CODLIN " + CRLF
+    cQuery += "         , NVL( SB5.B5_CODLIN , ' ' )  AS B5_CODLIN" + CRLF
     cQuery += "         , SBM.BM_CODMAR " + CRLF
     cQuery += "         , SBM.BM_GRUPO " + CRLF
     cQuery += "         , SBM.BM_DESC " + CRLF
-    cQuery += "         , SB5.B5_LARG " + CRLF
-    cQuery += "         , SB5.B5_ALTURA " + CRLF
-    cQuery += "         , SB5.B5_COMPR " + CRLF
+    cQuery += "         , NVL( SB5.B5_LARG   , 0 ) AS B5_LARG   " + CRLF
+    cQuery += "         , NVL( SB5.B5_ALTURA , 0 ) AS B5_ALTURA " + CRLF
+    cQuery += "         , NVL( SB5.B5_COMPR  , 0 ) AS B5_COMPR  " + CRLF
     cQuery += "         , SB1.B1_LOTVEN " + CRLF
     cQuery += "         , SB1.B1_ORIGEM " + CRLF
     cQuery += "         , SX5.X5_DESCRI " + CRLF
@@ -130,15 +132,15 @@ Static Function zProcRel(_aRetParam)
     cQuery += "         , SB1.B1_X1VLEG " + CRLF
     cQuery += "         , SB1.B1_XUVLEG " + CRLF
     cQuery += "         , SB1.B1_POSIPI " + CRLF
-    cQuery += "         , SYD.YD_EX_NCM " + CRLF
-    cQuery += "         , SYD.YD_PER_II " + CRLF
-    cQuery += "         , SYD.YD_PER_IPI " + CRLF
+    cQuery += "         , NVL( SYD.YD_EX_NCM  ,'   ' ) AS YD_EX_NCM " + CRLF
+    cQuery += "         , NVL( SYD.YD_PER_II  , 0    ) AS YD_PER_II " + CRLF
+    cQuery += "         , NVL( SYD.YD_PER_IPI , 0    ) AS YD_PER_IPI " + CRLF
     cQuery += "         , SB1.B1_XPRCFOB " + CRLF
     cQuery += "         , SB1.B1_UCOM " + CRLF
     cQuery += "         , SB1.B1_PESO " + CRLF
-    cQuery += "         , SA2.A2_CGC " + CRLF
-    cQuery += "         , SA2.A2_NREDUZ " + CRLF
-    cQuery += "         ,(	SELECT MAX(SD1.D1_DTDIGIT)       " + CRLF
+    cQuery += "         , NVL( SA2.A2_CGC    , '   ') AS A2_CGC " + CRLF
+    cQuery += "         , NVL( SA2.A2_NREDUZ , '   ') AS A2_NREDUZ " + CRLF
+    cQuery += "         ,(	SELECT NVL( MAX(SD1.D1_DTDIGIT) , '        ')  " + CRLF
     cQuery += " 			FROM " +  RetSQLName("SD1") +" SD1 " + CRLF
     cQuery += " 				LEFT JOIN " +  RetSQLName("SF4") +" SF4  " + CRLF
     cQuery += " 				ON SF4.F4_FILIAL = '" + FWxFilial('SF4') + "' " + CRLF
@@ -146,10 +148,13 @@ Static Function zProcRel(_aRetParam)
     cQuery += " 				AND SF4.F4_ESTOQUE = 'S' " + CRLF
     cQuery += " 				AND SF4.D_E_L_E_T_ = ' '  " + CRLF
     cQuery += " 			WHERE SD1.D1_FILIAL = '" + FWxFilial('SD1') + "' " + CRLF
-    cQuery += " 			AND SD1.D1_CF IN ('1102','2102','3102') " + CRLF
+    //Alterado conforme GAP122 manter mesma regra da Curva ABC DAC 30/01/2024
+    //cQuery += " 			AND SD1.D1_CF IN ('1102','2102','3102') " + CRLF
+    cQuery += "  					AND SD1.D1_CF IN "+ FormatIn(_cCFCompra,";") + " "+ CRLF
+
     cQuery += " 			AND SD1.D1_COD = SB1.B1_COD " + CRLF
     cQuery += " 			AND SD1.D_E_L_E_T_ = ' ' ) 		AS DT_ULT_COMPRA " + CRLF
-    cQuery += "         ,(	SELECT MIN(SD1.D1_DTDIGIT)       " + CRLF
+    cQuery += "         ,(	SELECT NVL( MIN(SD1.D1_DTDIGIT), '        ')       " + CRLF
     cQuery += " 			FROM " +  RetSQLName("SD1") +" SD1 " + CRLF
     cQuery += " 				LEFT JOIN " +  RetSQLName("SF4") +" SF4  " + CRLF
     cQuery += " 				ON SF4.F4_FILIAL = '" + FWxFilial('SF4') + "' " + CRLF
@@ -157,10 +162,13 @@ Static Function zProcRel(_aRetParam)
     cQuery += " 				AND SF4.F4_ESTOQUE = 'S' " + CRLF
     cQuery += " 				AND SF4.D_E_L_E_T_ = ' '  " + CRLF
     cQuery += " 			WHERE SD1.D1_FILIAL = '" + FWxFilial('SD1') + "' " + CRLF
-    cQuery += " 			AND SD1.D1_CF IN ('1102','2102','3102') " + CRLF
+    //Alterado conforme GAP122 manter mesma regra da Curva ABC DAC 30/01/2024
+    //cQuery += " 			AND SD1.D1_CF IN ('1102','2102','3102') " + CRLF
+    cQuery += "  					AND SD1.D1_CF IN "+ FormatIn(_cCFCompra,";") + " "+ CRLF
+
     cQuery += " 			AND SD1.D1_COD = SB1.B1_COD " + CRLF
     cQuery += " 			AND SD1.D_E_L_E_T_ = ' ' ) 		AS DT_PRI_COMPRA " + CRLF
-    cQuery += "         , (	SELECT MAX(SD2.D2_EMISSAO)       " + CRLF
+    cQuery += "         , (	SELECT NVL( MAX(SD2.D2_EMISSAO) , '        ')      " + CRLF
     cQuery += " 			FROM " +  RetSQLName("SD2") +" SD2 " + CRLF
     cQuery += " 				LEFT JOIN " +  RetSQLName("SF4") +" SF4  " + CRLF
     cQuery += " 				ON SF4.F4_FILIAL = '" + FWxFilial('SF4') + "' " + CRLF
@@ -168,10 +176,12 @@ Static Function zProcRel(_aRetParam)
     cQuery += " 				AND SF4.F4_ESTOQUE = 'S' " + CRLF
     cQuery += " 				AND SF4.D_E_L_E_T_ = ' '  " + CRLF
     cQuery += " 			WHERE SD2.D2_FILIAL = '" + FWxFilial('SD2') + "' " + CRLF
-    cQuery += " 			AND SD2.D2_CF IN ('5102','5152','5403','6102','6110','6403') " + CRLF
+    //Alterado conforme GAP122 manter mesma regra da Curva ABC DAC 30/01/2024
+    //cQuery += " 			AND SD2.D2_CF IN ('5102','5152','5403','6102','6110','6403') " + CRLF
+    cQuery += " 			AND SD2.D2_CF IN "+ FormatIn(_cCFVenda,";") + " "+ CRLF
     cQuery += " 			AND SD2.D2_COD = SB1.B1_COD " + CRLF
     cQuery += " 			AND SD2.D_E_L_E_T_ = ' ' ) 		AS DT_ULT_VENDA " + CRLF
-    cQuery += "         , (	SELECT MIN(SD2.D2_EMISSAO)       " + CRLF
+    cQuery += "         , (	SELECT NVL( MIN(SD2.D2_EMISSAO), '        ' )       " + CRLF
     cQuery += " 			FROM " +  RetSQLName("SD2") +" SD2 " + CRLF
     cQuery += " 				LEFT JOIN " +  RetSQLName("SF4") +" SF4  " + CRLF
     cQuery += " 				ON SF4.F4_FILIAL = '" + FWxFilial('SF4') + "' " + CRLF
@@ -179,7 +189,9 @@ Static Function zProcRel(_aRetParam)
     cQuery += " 				AND SF4.F4_ESTOQUE = 'S' " + CRLF
     cQuery += " 				AND SF4.D_E_L_E_T_ = ' '  " + CRLF
     cQuery += " 			WHERE SD2.D2_FILIAL = '" + FWxFilial('SD2') + "' " + CRLF
-    cQuery += " 			AND SD2.D2_CF IN ('5102','5152','5403','6102','6110','6403') " + CRLF
+    //Alterado conforme GAP122 manter mesma regra da Curva ABC DAC 30/01/2024
+    //cQuery += " 			AND SD2.D2_CF IN ('5102','5152','5403','6102','6110','6403') " + CRLF
+    cQuery += " 			AND SD2.D2_CF IN "+ FormatIn(_cCFVenda,";") + " "+ CRLF
     cQuery += " 			AND SD2.D2_COD = SB1.B1_COD " + CRLF
     cQuery += " 			AND SD2.D_E_L_E_T_ = ' ' ) 		AS DT_PRI_VENDA " + CRLF
     cQuery += " FROM " +  RetSQLName("SB1") +" SB1 " + CRLF
@@ -208,10 +220,18 @@ Static Function zProcRel(_aRetParam)
     cQuery += "         AND SBM.BM_GRUPO = SB1.B1_GRUPO " + CRLF
     cQuery += "         AND SBM.D_E_L_E_T_ = ' ' " + CRLF
     cQuery += " 	LEFT JOIN ( " + CRLF
-    cQuery += " 				SELECT B2_COD,  CAST(SUM(NVL(B2_QATU,0)) AS NUMBER (8, 2)) AS SALDO, ( SUM(NVL(B2_VATU1,0)) / SUM(NVL(B2_QATU,0)) ) AS CUSTO FROM " +  RetSQLName("SB2") +" " + CRLF
+    cQuery += " 				SELECT B2_COD, " + CRLF
+    cQuery += "                        CAST(SUM(NVL(B2_QATU,0)) AS NUMBER (8, 2)) AS SALDO, " + CRLF
+    cQuery += "                         CASE " + CRLF
+    cQuery += "                             WHEN SUM(NVL(B2_QATU,0)) <> 0 " + CRLF
+    cQuery += "                             THEN SUM(NVL(B2_VATU1,0)) / SUM(abs(NVL(B2_QATU,0))) " + CRLF
+    cQuery += "                             ELSE " + CRLF
+    cQuery += "                             0 " + CRLF
+    cQuery += "                         END AS CUSTO " + CRLF
+    cQuery += "                 FROM " +  RetSQLName("SB2") +" " + CRLF
     cQuery += " 				WHERE B2_FILIAL = '" + FWxFilial('SB2') + "' " + CRLF
-    cQuery += " 				AND D_E_L_E_T_ = ' ' " + CRLF
-    cQuery += " 				AND B2_QATU <> 0 " + CRLF
+    cQuery += " 				    AND D_E_L_E_T_ = ' ' " + CRLF
+    //cQuery += " 				    AND B2_QATU <> 0 " + CRLF
     cQuery += " 				GROUP BY B2_COD " + CRLF
     cQuery += " 			) SB2SQL " + CRLF
     cQuery += " 	ON SB1.B1_COD = SB2SQL.B2_COD " + CRLF

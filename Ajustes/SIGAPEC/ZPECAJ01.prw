@@ -37,7 +37,7 @@ Begin Sequence
 	If !_lRet
 		Break
 	EndIf
-	IF FWCodEmp() <> '2020' //Verificar Empresa Peças, somente rodar em Peças
+	IF !( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Esta rotina não é valida para esta empresa"),4,1)   
 	    Break
 	ENDIF

@@ -1,3 +1,4 @@
+
 /*
 Programa..: IMPCSVSC.PRW
 Objetivo..: GERAR SOLICITACAO DE COMPRAS A PARTIR DA INTEGRACAO DE ARQUIVO .CSV
@@ -5,18 +6,26 @@ Autor.....: LUCIANO CAMPOS DE SANTANA
 Data/Hora.: 10/08/2021 AS 11:00
 Obs.......:
 */
-#INCLUDE "TOTVS.Ch"
+// #INCLUDE "TOTVS.Ch"
 #INCLUDE "Protheus.Ch"
-#INCLUDE 'TOPCONN.CH'
+// #INCLUDE 'TOPCONN.CH'
 
-#DEFINE CRLF  CHAR(13) + CHAR(10)
+// #DEFINE CRLF  CHAR(13) + CHAR(10)
 
 USER FUNCTION IMPCSV()
 	LOCAL oDLG,nBTOP,bOK,bCANCEL,aBUTTONS,cOALIAS,cPICTA,cPICTB,cPICTC,cPICTD,cPICTE,cPICTF,cPICTG,cPICTH,cMASK
+	Local nModOld := nModulo
+	Local cModOld := cModulo
 	PRIVATE cTipoImp,cClaImp,cDESCIMP,aTpNmImp,cFORNC1,cLOJAC1,cDESFOR,nQTDKIT,cUNIDREQ,cCODCOMPR,cMVTIPO,cMOEDAYF,nMOEDAC1,cCC,cMSG,cMARCA,lINVERTE,lMSErroAuto,aArqArq,;
 		aScInc,oLISTBOX,oOK,oNO,lFIRST,cFILSC1,cSC1SOLIC,cFabr,cFabrLoj,cFILVX5,cxSCDe,cxSCAte
 
 	Private _cEmp  	:= FWCodEmp()
+	Private lAtuEst := SuperGetMV('CAOA_C1ES',.F.,.F.) //- PARÂMETRO RESPOSÁVEL POR INDICAR FORÇAR NÃO ATUALIZAR O ESTOQUE DEFAULT .F.
+	Private cMaskL  := "*.txt | *.txt"
+
+	//- força o ajuste de execução do módulo
+	nModulo := 2
+	cModulo := 'COM'
 
 	cOALIAS     := ALIAS()
 	nBTOP       := nMOEDAC1 := 0
@@ -60,20 +69,20 @@ USER FUNCTION IMPCSV()
 
 	If _cEmp == "2010" //Executa o p.e. somente para Anapolis.
 		cMsg	:=	"Os layouts possíveis são:" + Char(13) + Char(10) + Char(13) + Char(10)+;
-					"Kit: - 04 campos:" + Char(13) + Char(10)+;
-					"Cod Prod, Quant, Vl Und, Proforma" + Char(13) + Char(10) + Char(13) + Char(10)+;
-					"Carro - 09 campos:" + Char(13) + Char(10)+;
-					"Cod Base, Ano, Modelo, Opcional, Cor Int, Cor Ext, Quant, Vl Und, Proforma" + Char(13) + Char(10)
-    Else
-        cMsg	:=	"Os layouts possíveis são:" + CRLF + CRLF + ;
-					"Kit: - 04 campos:" + CRLF + ;
-					"Cod Prod, Quant, Vl Und, Proforma" + CRLF + CRLF + ;
-					"Carro - 09 campos:" + CRLF + ;
-					"Cod Base, Ano, Modelo, Opcional, Cor Int, Cor Ext, Quant, Vl Und, Proforma" + CRLF + ;
-					"Peças Barueri - 07 campos:" + CRLF + ;
-					"[01] Código, [02] Descrição, [03] Quantidade, [04] Pç Unitário,[05] Valor Total, [06] Data Receb(dd/mm/aaaa), [07] Núm Pedido Fornecedor"
-    EndIf
-	
+			"Kit: - 04 campos:" + Char(13) + Char(10)+;
+			"Cod Prod, Quant, Vl Und, Proforma" + Char(13) + Char(10) + Char(13) + Char(10)+;
+			"Carro - 09 campos:" + Char(13) + Char(10)+;
+			"Cod Base, Ano, Modelo, Opcional, Cor Int, Cor Ext, Quant, Vl Und, Proforma" + Char(13) + Char(10)
+	Else
+		cMsg	:=	"Os layouts possíveis são:" + CRLF + CRLF + ;
+			"Kit: - 04 campos:" + CRLF + ;
+			"Cod Prod, Quant, Vl Und, Proforma" + CRLF + CRLF + ;
+			"Carro - 09 campos:" + CRLF + ;
+			"Cod Base, Ano, Modelo, Opcional, Cor Int, Cor Ext, Quant, Vl Und, Proforma" + CRLF + ;
+			"Peças Barueri - 07 campos:" + CRLF + ;
+			"[01] Código, [02] Descrição, [03] Quantidade, [04] Pç Unitário,[05] Valor Total, [06] Data Receb(dd/mm/aaaa), [07] Núm Pedido Fornecedor"
+	EndIf
+
 	cFabr := cFabrLoj := cxSCDe := cxSCAte := ""
 	Aadd(aArqArq,{.F.,""})
 	DEFINE MSDIALOG oDLG TITLE "Importacao de Arquivos CSV" FROM 0,0 TO 430, 680 OF oMainWnd PIXEL
@@ -119,18 +128,24 @@ USER FUNCTION IMPCSV()
 	oListBox:BlDblClick := {|| aArqArq[oListBox:nAt, 1] := !aArqArq[oListBox:nAt, 1], oListBox:Refresh()}
 	ACTIVATE MSDIALOG oDLG ON INIT ENCHOICEBAR(oDLG,bOK,bCANCEL,,aBUTTONS) CENTERED
 	If nBTOP == 1
+		//GetTrace(1) //hAbilita Tracer
 		If _cEmp == "2010" //Executa o p.e. somente para Anapolis.
 			Processa( {|| ImpCsv01() }, "Aguarde...","Importação CSV para Sol. Compra",.F.)
 		Else
 			Processa( {|| ImpCsv02() }, "Aguarde...","Importação CSV para Sol. Compra",.F.)
 		EndIf
+		//GetTrace(3) //Desabilita Tracer
 	Endif
 
 	IF ! EMPTY(cOALIAS)
 		DBSELECTAREA(cOALIAS)
 	ENDIF
+	//- reataura o módulo em uso
+	nModulo := nModOld
+	cModulo := cModOld
+
 RETURN(NIL)
-*--------------------------------------------------------------------
+	*--------------------------------------------------------------------
 STATIC FUNCTION FVAL(cP_ACAO,xVar,yVar)
 	LOCAL cOALIAS,lRET,aORD,nX,cKSA2
 	*
@@ -146,7 +161,7 @@ STATIC FUNCTION FVAL(cP_ACAO,xVar,yVar)
 			aORD := {{ZZ8->(INDEXORD()),ZZ8->(RECNO())},{SA2->(INDEXORD()),SA2->(RECNO())}}
 
 			ZZ8->(DBSETORDER(1))
-			IF ! ZZ8->(DBSEEK(fwXFILIAL("ZZ8") + cTipoImp))
+			IF ! ZZ8->(MSSEEK(fwXFILIAL("ZZ8") + cTipoImp))
 				MSGINFO("Tipo de importacao Invalido !","Atencao")
 				lRET := .F.
 			ELSE
@@ -156,7 +171,7 @@ STATIC FUNCTION FVAL(cP_ACAO,xVar,yVar)
 					cLojaC1 	:= ZZ8->ZZ8_LOJA
 					cClaImp   := Alltrim(ZZ8->ZZ8_TIPO)
 					SA2->(DBSETORDER(1))
-					SA2->(DBSEEK(XFILIAL("SA2")+cFORNC1+cLOJAC1))
+					SA2->(MSSEEK(XFILIAL("SA2")+cFORNC1+cLOJAC1))
 					cDesFor 	:= SA2->A2_NOME
 					nQtdKIT  	:= 1
 				ENDIF
@@ -175,7 +190,7 @@ STATIC FUNCTION FVAL(cP_ACAO,xVar,yVar)
 		aORD      := {{SY1->(INDEXORD()),SY1->(RECNO())}}
 		cCODCOMPR := SPACE(LEN(SY1->Y1_COD))
 		SY1->(DBSETORDER(1))
-		IF SY1->(DBSEEK(XFILIAL("SY1")+__cUserID))
+		IF SY1->(MSSEEK(XFILIAL("SY1")+__cUserID))
 			cCODCOMPR := SY1->Y1_COD
 		ENDIF
 		SY1->(DBSETORDER(aORD[1,1])) ; SY1->(DBGOTO(aORD[1,1]))
@@ -195,7 +210,7 @@ STATIC FUNCTION FVAL(cP_ACAO,xVar,yVar)
 		Else
 			cKSA2 := cFORNC1+IF(!EMPTY(cLOJAC1),cLOJAC1,"")
 			SA2->(DBSETORDER(1))
-			IF ! (SA2->(DBSEEK(XFILIAL("SA2")+cKSA2)))
+			IF ! (SA2->(MSSEEK(XFILIAL("SA2")+cKSA2)))
 				MSGINFO("Fornecedor não cadastrado!","Atenção!")
 				lRET := .F.
 			ELSE
@@ -211,7 +226,7 @@ STATIC FUNCTION FVAL(cP_ACAO,xVar,yVar)
 		Else
 			cKSA2 := cFORNC1+cLOJAC1
 			SA2->(DBSETORDER(1))
-			IF ! (SA2->(DBSEEK(XFILIAL("SA2")+cKSA2)))
+			IF ! (SA2->(MSSEEK(XFILIAL("SA2")+cKSA2)))
 				MSGINFO("Fornecedor não cadastrado!","Atenção!")
 				lRET := .F.
 			ELSE
@@ -226,7 +241,7 @@ STATIC FUNCTION FVAL(cP_ACAO,xVar,yVar)
 			lRET := .F.
 		Else
 			SYF->(DBSETORDER(1))
-			IF ! (SYF->(DBSEEK(XFILIAL("SYF")+cMOEDAYF)))
+			IF ! (SYF->(MSSEEK(XFILIAL("SYF")+cMOEDAYF)))
 				MSGINFO("Moeda não encontrada!","Atenção!")
 				lRET := .F.
 			ELSE
@@ -267,7 +282,7 @@ STATIC FUNCTION FVAL(cP_ACAO,xVar,yVar)
 		DBSELECTAREA(cOALIAS)
 	ENDIF
 RETURN(lRET)
-*--------------------------------------------------------------------
+	*--------------------------------------------------------------------
 Static Function xWhenKit(cTipoImp,cMVTipo)
 	LOCAL cOALIAS,lRET
 	*
@@ -280,7 +295,7 @@ Static Function xWhenKit(cTipoImp,cMVTipo)
 		DBSELECTAREA(cOALIAS)
 	ENDIF
 RETURN(lRET)
-*--------------------------------------------------------------------
+	*--------------------------------------------------------------------
 Static Function AtuList()
 	If lFirst
 		aArqArq := {}
@@ -292,14 +307,22 @@ Static Function AtuList()
 		aArqArq[oListBox:nAt][2]}}
 	oListBox:BlDblClick := {|| aArqArq[oListBox:nAt, 1] := !aArqArq[oListBox:nAt, 1], oListBox:Refresh()}
 Return nil
-*--------------------------------------------------------------------
+	*--------------------------------------------------------------------
 Static Function ImpCsv01(oSay)
 	LOCAL nX,nA,nB,aCPLN,cSEP,oFile,cARQ,aLINHAS,nCP,aERROS,nCONT,aCAB,aITEM,cNumSc,lVALID,lKIT,cPRODUTO,cAnoFab,cAnoMod,cOpcion,cCorInt,cCorExt,nQuant,nVlUnit
 	LOCAL cProforma,cLErro,cQRYA,nTOTAL,nI,nQtdMsg,nTotMsg,cNumIt,aCpImp,cNewSc,cSimb,cTextoE
 	Local aRec := {}
 	Local nRec := 0
 	Local lLock := .F.
-
+	Local cA5Bloq := ""
+	local aA5     := aClone(FWSX3Util():GetFieldStruct( "A5_MSBLQL" ) )
+	
+	IF len(aA5) <> 0
+		cA5Bloq	:= "AND SA5.A5_MSBLQL <> '1'"
+	EndIf
+	
+	cA5Bloq := "%" + cA5Bloq + "%"
+	
 	If Vazio(cTipoImp) = .T. .OR. Vazio(cClaImp) = .T.
 		ApMsgInfo("Tipo de importacao não informado.", "IMPCSV")
 		Return
@@ -341,7 +364,7 @@ Static Function ImpCsv01(oSay)
 					EndIf
 
 					If Len(aCpLn) < nCp .OR. WmsVlStr(aCpLn[nCp]) = .F.
-						Aadd(aErros,  {"Arquivo: " + AllTrim(aArqArq[nA,2]) + " invoice contem caracteres especiais na linha " + cValTochar(nB)})
+						Aadd(aErros,  {"Arquivo: " + AllTrim(aArqArq[nA,2]) + " invoice contem caracteres especiais na linha " + cValTochar(nB),""})
 						Loop
 					EndIf
 
@@ -367,53 +390,54 @@ Static Function ImpCsv01(oSay)
 						cProforma := aCPLN[9]
 					Else
 						lValid   := .F.
-						Aadd(aErros,  {"Layout incorreto, verifique a quantidade de campos (4-Kits, 9-Veiculos)"})
+						Aadd(aErros,  {"Layout incorreto, verifique a quantidade de campos (4-Kits, 9-Veiculos)",""})
 					EndIf
 					cLErro   := STRZERO(nCont,5)+" "
 					If lValid
 						cProduto := Alltrim(STRTRAN(cProduto, "-", "" ))
 						cQRYA := "QRYA"
 						BEGINSQL ALIAS cQRYA
-				    SELECT B1_COD,
-					       B1_LOCREC,
-					       A5_FABR,
-						   A5_FALOJA,
-						   VV2_CORINT
-					  FROM %TABLE:SB1% SB1
-					 LEFT JOIN %TABLE:SA5% SA5
-					        ON SA5.%NOTDEL%
-						   AND SA5.A5_FILIAL = %xFilial:SA5%
-						   AND SA5.A5_PRODUTO = SB1.B1_COD
-					       AND SA5.A5_FORNECE = %Exp:cFornC1%
-						   AND SA5.A5_LOJA = %Exp:cLojaC1%
-						   AND SA5.A5_FABR <> ' '
-					 LEFT JOIN %TABLE:VV2% VV2 "
-					        ON VV2.%NOTDEL%
-						   AND VV2.VV2_FILIAL = %xFilial:VV2%
-						   AND VV2.VV2_PRODUT = SB1.B1_COD
-					 WHERE SB1.%NOTDEL%
-					   AND SB1.B1_FILIAL = %xFilial:SB1%
-					   AND SB1.B1_COD = %Exp:cProduto%
-					   AND SB1.B1_IMPORT = 'S'"
+							SELECT B1_COD,
+								B1_LOCREC,
+								ISNULL(A5_FABR, ' ') A5_FABR,
+								ISNULL(A5_FALOJA, ' ') A5_FALOJA,
+								ISNULL(VV2_CORINT, ' ') VV2_CORINT
+							FROM %TABLE:SB1% SB1
+							LEFT JOIN %TABLE:SA5% SA5
+									ON SA5.%NOTDEL%
+								AND SA5.A5_FILIAL = %xFilial:SA5%
+								AND SA5.A5_PRODUTO = SB1.B1_COD
+								AND SA5.A5_FORNECE = %Exp:cFornC1%
+								AND SA5.A5_LOJA = %Exp:cLojaC1%
+								AND SA5.A5_FABR <> ' '
+								%Exp:cA5Bloq%
+							LEFT JOIN %TABLE:VV2% VV2 
+									ON VV2.%NOTDEL%
+								AND VV2.VV2_FILIAL = %xFilial:VV2%
+								AND VV2.VV2_PRODUT = SB1.B1_COD
+							WHERE SB1.%NOTDEL%
+								AND SB1.B1_FILIAL = %xFilial:SB1%
+								AND SB1.B1_COD = %Exp:cProduto%
+								AND SB1.B1_IMPORT = 'S'
 						ENDSQL
 						IF (cQRYA)->(EOF())
 							lValid := .F.
-							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Produto nao cadastrado ou nao esta como importado !"})
+							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Produto nao cadastrado ou nao esta como importado !",AllTrim(cProduto)})
 						ENDIF
-						If ! Empty((cQRYA)->A5_FABR)
+						If !Empty((cQRYA)->A5_FABR)
 							cFabr	 := (cQRYA)->A5_FABR
 							cFabrLoj   := (cQRYA)->A5_FALOJA
 						Else
 							lValid := .F.
-							Aadd(aErros,  {cLErro + AllTrim(cProduto) + " - Nao existe amarracao de fabricante. Fornecedor: " + cFornC1 +" - Loja: " + cLojaC1})
+							Aadd(aErros,  {cLErro + AllTrim(cProduto) + " - Nao existe amarracao de fabricante ou o Produto esta Bloqueado . Fornecedor: " + cFornC1 +" - Loja: " + cLojaC1,AllTrim(cProduto)})
 						EndIf
 						If nQuant <= 0
 							lValid := .F.
-							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Quantidade invalida"})
+							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Quantidade invalida",AllTrim(cProduto)})
 						EndIf
 						If nVlUnit <= 0
 							lValid := .F.
-							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Preco unitario invalido"})
+							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Preco unitario invalido",AllTrim(cProduto)})
 						EndIf
 						If !lKit
 							If lValid
@@ -427,28 +451,28 @@ Static Function ImpCsv01(oSay)
 								EndDo
 								IF ! lVALID
 									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Modelo de Veiculo nao cadastrado ou "+;
-										"cor interna ("+cCORINT+") invalida para este veiculo !"})
+										"cor interna ("+cCORINT+") invalida para este veiculo !",AllTrim(cProduto)})
 								ENDIF
 							EndIf
 							If !Empty(cCorInt)
 								VX5->(dbSetOrder(1))
 								If ! (VX5->(dbSeek(cFILVX5+"066"+cCorInt)))
 									lValid := .F.
-									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Cor interna nao cadastrada: "+AllTrim(cCorInt)})
+									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Cor interna nao cadastrada: "+AllTrim(cCorInt),AllTrim(cProduto)})
 								EndIf
 							EndIf
 							If !Empty(cCorExt)
 								VX5->(dbSetOrder(1))
 								If ! (VX5->(dbSeek(cFILVX5+"067"+cCorExt)))
 									lValid := .F.
-									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Cor externa nao cadastrada: "+AllTrim(cCorExt)})
+									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Cor externa nao cadastrada: "+AllTrim(cCorExt),AllTrim(cProduto)})
 								EndIf
 							EndIf
 							If !Empty(cOpcion)
 								VX5->(dbSetOrder(1))
 								If ! (VX5->(dbSeek(cFILVX5+"068"+cOpcion)))
 									lValid := .F.
-									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Opcional nao cadastrado: "+AllTrim(cOpcion)})
+									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Opcional nao cadastrado: "+AllTrim(cOpcion),AllTrim(cProduto)})
 								EndIf
 							EndIf
 						EndIf
@@ -485,6 +509,9 @@ Static Function ImpCsv01(oSay)
 								Aadd( aCpImp, {"C1_MOEDA"   , nMoedaC1                          , ".T."})  // Moeda
 								Aadd( aCpImp, {"C1_CC"      , cCC		                        , NIL})  // Centro de Custo
 								Aadd( aCpImp, {"C1_APROV"   , "B"		                        , NIL})  // Centro de Custo
+								If !lAtuEst
+									Aadd( aCpImp, {"C1_ESTOQUE" , 'N'                           , NIL})  // Indica se havera atualização estoque
+								EndIf
 								If !EMPTY(cAnoFab)
 									Aadd( aCpImp, {"C1_ANOFAB" , cAnoFab                        , NIL}) // Ano Fabricacao
 								EndIf
@@ -506,12 +533,12 @@ Static Function ImpCsv01(oSay)
 								Aadd( aItem, aCpImp)
 
 								// adicionar aos recnos
-								If Vazio(Posicione("SB2", 1, FwXfilial("SB2") + (cQRYA)->B1_COD + (cQRYA)->B1_LOCREC, "SB2->B2_COD") ) = .F.
-									nRec := Posicione("SB2", 1, FwXfilial("SB2") + (cQRYA)->B1_COD + (cQRYA)->B1_LOCREC, "SB2->(Recno())") 
-									If nRec > 0
-										Aadd(aRec, nRec)
-									EndIf
-								EndIf									
+								// If Vazio(Posicione("SB2", 1, FwXfilial("SB2") + (cQRYA)->B1_COD + (cQRYA)->B1_LOCREC, "SB2->B2_COD") ) = .F.
+								// 	nRec := Posicione("SB2", 1, FwXfilial("SB2") + (cQRYA)->B1_COD + (cQRYA)->B1_LOCREC, "SB2->(Recno())")
+								// 	If nRec > 0
+								// 		Aadd(aRec, nRec)
+								// 	EndIf
+								// EndIf
 
 							Next nI
 						EndIf
@@ -530,31 +557,35 @@ Static Function ImpCsv01(oSay)
 		If Len(aErros) == 0
 			If Len(aItem)>0
 				//Barueri
-				Processa({|| lLock := zChkLock(aRec) }, "Aguarde...", "Salvando Solicitação " + cNUMSC + ", " + Alltrim(Str(nB-1)) + " linha(s)" , .F.)
-				if lLock = .T. 
-					ApMsgInfo("Cancelado pelo usuário", "")
-					Return
-				EndIf
-				Begin Transaction
+				//Processa({|| lLock := zChkLock(aRec) }, "Aguarde...", "Salvando Solicitação " + cNUMSC + ", " + Alltrim(Str(nB-1)) + " linha(s)" , .F.)
+				// if lLock = .T.
+				// 	ApMsgInfo("Cancelado pelo usuário", "")
+				// 	Return
+				// EndIf
+				// Begin Transaction
+				While .T.
 
-				MsExecAuto({|v,x,y,z| MATA110(v,x,y,z)},aCab,aItem,3,.F.)
-				If lMsErroAuto
-					MostraErro()
-					RollBackSx8()
-					DisarmTransaction()
-					Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Inconsistencias na inclusao da solicitacao "})
-				Else
-					//Utilizado no Relatorio variaveis: cxSCDe e cxSCAte
-					If Empty(cxSCDe)
-						cxSCDe := cNumSc
+					MsExecAuto({|v,x,y,z| MATA110(v,x,y,z)},aCab,aItem,3,.F.)
+					If lMsErroAuto
+						MostraErro()
+						RollBackSx8()
+						Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Inconsistencias na inclusao da solicitacao ",""})
+						// DisarmTransaction()
+						// BREAK
+					Else
+						//Utilizado no Relatorio variaveis: cxSCDe e cxSCAte
+						If Empty(cxSCDe)
+							cxSCDe := cNumSc
+						EndIf
+						cxSCAte := cNumSc
+						fGravaSC1(cNumSc,nMoedaC1,cTipoImp,cClaImp)  //Grava informações na SC1, após a inclusão do MsExecAuto.
+						ConfirmSX8()
+						Aadd(aScInc,cNumSc)
 					EndIf
-					cxSCAte := cNumSc
-					fGravaSC1(cNumSc,nMoedaC1,cTipoImp,cClaImp)  //Grava informações na SC1, após a inclusão do MsExecAuto.
-					ConfirmSX8()
-					Aadd(aScInc,cNumSc)
-				EndIf
 
-				End Transaction
+					// End Transaction
+					Exit
+				EndDo
 			Endif
 		Endif
 		If Len(aErros) == 0
@@ -570,6 +601,9 @@ Static Function ImpCsv01(oSay)
 				EndIf
 			EndIf
 		ElseIf Len(aErros) > 0
+			
+			aSort(aErros, ,,{|x,y| x[2]<y[2]})
+			
 			cTextoE := ""
 			cTextoE += "Linha Produto"+chr(13)+chr(10)
 			cTextoE += "----- -------"+chr(13)+chr(10)
@@ -582,19 +616,26 @@ Static Function ImpCsv01(oSay)
 			@ 5,5 Get oMemo Var cTextoE Memo Size 200, 145 Of oDlgMEMO Pixel
 			oMemo:oFont := oFont
 			Define SButton From 153, 175 Type  1 Action oDlgMemo:End() Enable Of oDlgMemo Pixel // Apaga
-			Define SButton From 153, 145 Type 13 Action (cFileL := cGetFile(cMaskL, ""), If(cFileL == "", .T., MemoWrite(cFileL, cTextoE))) Enable Of oDlgMemo Pixel
+			Define SButton From 153, 145 Type 13 Action (cFileL := cGetFile(cMaskL, "",,,.F.,,.F.), If(cFileL == "", .T., MemoWrite(cFileL, cTextoE))) Enable Of oDlgMemo Pixel
 			ACTIVATE MSDIALOG oDlgMemo CENTERED
 		EndIf
 	NEXT
 RETURN(NIL)
-*--------------------------------------------------------------------
+	*--------------------------------------------------------------------
 Static Function ImpCsv02(oSay)
 	LOCAL nX,nA,nB,aCPLN,cSEP,oFile,cARQ,aLINHAS,aERROS,nCONT,aCAB,aITEM,cNumSc,lVALID,lKIT,cPRODUTO,cAnoFab,cAnoMod,cOpcion,cCorInt,cCorExt,nQuant,nVlUnit
 	LOCAL cProforma,cLErro,cQRYA,nTOTAL,nI,nQtdMsg,nTotMsg,cNumIt,aCpImp,cNewSc,cSimb,cTextoE, dDtEntr
-	Local aRec := {}
-	Local nRec := 0
-	Local lLock := .F.
-
+	Local aRec    := {}
+	Local nRec    := 0
+	Local cA5Bloq := ""
+	local aA5     := aClone(FWSX3Util():GetFieldStruct( "A5_MSBLQL" ) )
+	
+	IF len(aA5) <> 0
+		cA5Bloq	:= "AND SA5.A5_MSBLQL <> '1'"
+	EndIf
+	
+	cA5Bloq := "%" + cA5Bloq + "%"
+	
 	If Vazio(cTipoImp) = .T. .OR. Vazio(cClaImp) = .T.
 		ApMsgInfo("Tipo de importacao não informado.", "IMPCSV")
 		Return
@@ -633,14 +674,14 @@ Static Function ImpCsv02(oSay)
 					aCPLN := Separa(aLinhas[nB], cSep)
 
 					lValid := .T.
-					If LEN(aCPLN) == 4 .AND. FWCodEmp() == '2001' // Kits
+					If LEN(aCPLN) == 4 .AND. AllTrim(FWCodEmp()) == '2001' // Kits
 						lKit      := .T.
 						cProduto  := aCPLN[1]
 						cAnoFab   := cAnoMod := cOpcion := cCorInt := cCorExt  := ""
 						nQuant    := Val( StrTran(aCPLN[2],",",".") )
 						nVlUnit   := Val( StrTran(aCPLN[3],",",".") )
 						cProforma := aCPLN[4]
-					ElseIf LEN(aCPLN) == 9 .AND. FWCodEmp() == '2001'
+					ElseIf LEN(aCPLN) == 9 .AND. AllTrim(FWCodEmp()) == '2001'
 						lKit      := .F.
 						nQtdKIT   := 1
 						cProduto  := AllTrim(aCPLN[1])+AllTrim(aCPLN[4])+Alltrim(aCPLN[5])+AllTrim(aCPLN[6])
@@ -652,7 +693,7 @@ Static Function ImpCsv02(oSay)
 						nQuant    := Val( StrTran(aCPLN[7],",",".") )
 						nVlUnit   := Val( StrTran(aCPLN[8],",",".") )
 						cProforma := aCPLN[9]
-					ElseIf LEN(aCPLN) == 7 .AND. FWCodEmp() == '2020'
+					ElseIf LEN(aCPLN) == 7 .AND. ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 						lKit      := .F.
 						cProduto  := aCPLN[1]
 						nQuant    := Val( StrTran(aCPLN[3],",",".") )
@@ -661,18 +702,18 @@ Static Function ImpCsv02(oSay)
 						cProforma := aCPLN[7]
 					Else
 						lValid   := .F.
-						Aadd(aErros,  {"Layout incorreto na linha " + PadL(nB, 5, "0") + " Verifique a quantidade de campos (4-Kits, 9-Veiculos, 7-Peças)"})
+						Aadd(aErros,  {"Layout incorreto na linha " + PadL(nB, 5, "0") + " Verifique a quantidade de campos (4-Kits, 9-Veiculos, 7-Peças)", ""})
 						Loop
 					EndIf
 
 					If WmsVlStr(cProforma) = .F.
-						Aadd(aErros,  {"Arq: " + AllTrim(aArqArq[nA,2]) + ", proforma: " + Alltrim(cProforma) + " contêm caracteres especiais, linha " + cValTochar(nB)})
+						Aadd(aErros,  {"Arq: " + AllTrim(aArqArq[nA,2]) + ", proforma: " + Alltrim(cProforma) + " contêm caracteres especiais, linha " + cValTochar(nB),""})
 						Loop
 					EndIf
 
 					cLErro   := STRZERO(nCont,5)+" "
 					If lValid
-						If FWCodEmp() == '2001'
+						If AllTrim(FWCodEmp()) == '2001'
 							cProduto := Alltrim(STRTRAN(cProduto, "-", "" ))
 						Endif
 						cQRYA := "QRYA"
@@ -680,45 +721,46 @@ Static Function ImpCsv02(oSay)
 							SELECT
 								B1_COD,
 								B1_LOCREC,
-								A5_FABR,
-								A5_FALOJA,
-								VV2_CORINT
+								ISNULL(A5_FABR, '  ') A5_FABR,
+								ISNULL(A5_FALOJA,' ') A5_FALOJA,
+								ISNULL(VV2_CORINT,' ') VV2_CORINT
 							FROM
 								%TABLE:SB1% SB1
 							LEFT JOIN %TABLE:SA5% SA5
-							ON SA5.%NOTDEL%
+								ON  SA5.%NOTDEL%
 								AND SA5.A5_FILIAL = %xFilial:SA5%
 								AND SA5.A5_PRODUTO = SB1.B1_COD
 								AND SA5.A5_FORNECE = %Exp:cFornC1%
 								AND SA5.A5_LOJA = %Exp:cLojaC1%
 								AND SA5.A5_FABR <> ' '
-							LEFT JOIN %TABLE:VV2% VV2 "
-						 ON VV2.%NOTDEL%
-							 AND VV2.VV2_FILIAL = %xFilial:VV2%
-							 AND VV2.VV2_PRODUT = SB1.B1_COD
+								%Exp:cA5Bloq%
+							LEFT JOIN %TABLE:VV2% VV2
+						 		ON  VV2.%NOTDEL%
+							 	AND VV2.VV2_FILIAL = %xFilial:VV2%
+							 	AND VV2.VV2_PRODUT = SB1.B1_COD
 							 WHERE SB1.%NOTDEL%
-							 AND SB1.B1_FILIAL = %xFilial:SB1%
-							 AND SB1.B1_COD = %Exp:cProduto%
-							 AND SB1.B1_IMPORT = 'S'"
+							 	AND SB1.B1_FILIAL = %xFilial:SB1%
+							 	AND SB1.B1_COD = %Exp:cProduto%
+							 	AND SB1.B1_IMPORT = 'S'
 						ENDSQL
 						IF (cQRYA)->(EOF())
 							lValid := .F.
-							Aadd(aErros,  {cLErro+AllTrim(cProduto) + " - Produto não cadastrado ou nao esta como importado !"})
+							Aadd(aErros,  {cLErro+AllTrim(cProduto) + " - Produto não cadastrado ou nao esta como importado !",AllTrim(cProduto)})
 						ENDIF
 						If ! Empty((cQRYA)->A5_FABR)
 							cFabr	 := (cQRYA)->A5_FABR
-							cFabrLoj   := (cQRYA)->A5_FALOJA
+							cFabrLoj := (cQRYA)->A5_FALOJA
 						Else
 							lValid := .F.
-							Aadd(aErros,  {cLErro + AllTrim(cProduto) + " - Não existe amarracao de fabricante. Fornecedor: " + cFornC1 + " - Loja: " + cLojaC1})
+							Aadd(aErros,  {cLErro + AllTrim(cProduto) + " - Não existe amarracao de fabricante ou Produto esta Bloqueado. Fornecedor: " + cFornC1 + " - Loja: " + cLojaC1, AllTrim(cProduto) })
 						EndIf
 						If nQuant <= 0
 							lValid := .F.
-							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Quantidade inválida"})
+							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Quantidade inválida",AllTrim(cProduto)})
 						EndIf
 						If nVlUnit <= 0
 							lValid := .F.
-							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Preço unitário inválido"})
+							Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Preço unitário inválido",AllTrim(cProduto)})
 						EndIf
 						If !lKit
 							If lValid
@@ -731,28 +773,28 @@ Static Function ImpCsv02(oSay)
 									(cQRYA)->(dbSkip())
 								EndDo
 								IF ! lVALID
-									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Modelo de Veiculo nao cadastrado ou cor interna (" + cCORINT + ") invalida para este veiculo !"})
+									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Modelo de Veiculo nao cadastrado ou cor interna (" + cCORINT + ") invalida para este veiculo !",AllTrim(cProduto)})
 								ENDIF
 							EndIf
 							If !Empty(cCorInt)
 								VX5->(dbSetOrder(1))
 								If ! (VX5->(dbSeek(cFILVX5+"066"+cCorInt)))
 									lValid := .F.
-									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Cor interna nao cadastrada: "+AllTrim(cCorInt)})
+									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Cor interna nao cadastrada: "+AllTrim(cCorInt),AllTrim(cProduto)})
 								EndIf
 							EndIf
 							If !Empty(cCorExt)
 								VX5->(dbSetOrder(1))
 								If ! (VX5->(dbSeek(cFILVX5+"067"+cCorExt)))
 									lValid := .F.
-									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Cor externa nao cadastrada: "+AllTrim(cCorExt)})
+									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Cor externa nao cadastrada: "+AllTrim(cCorExt) , AllTrim(cProduto)})
 								EndIf
 							EndIf
 							If !Empty(cOpcion)
 								VX5->(dbSetOrder(1))
 								If ! (VX5->(dbSeek(cFILVX5+"068"+cOpcion)))
 									lValid := .F.
-									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Opcional nao cadastrado: "+AllTrim(cOpcion)})
+									Aadd(aErros,  {cLErro+AllTrim(cProduto)+" - Opcional nao cadastrado: " + AllTrim(cOpcion) , AllTrim(cProduto)})
 								EndIf
 							EndIf
 						EndIf
@@ -790,6 +832,9 @@ Static Function ImpCsv02(oSay)
 								Aadd( aCpImp, {"C1_ORIGEM"  , FunName()                         , NIL})  // Rotina Ger.
 								Aadd( aCpImp, {"C1_MOEDA"   , nMoedaC1                          , ".T."})  // Moeda
 								Aadd( aCpImp, {"C1_CC"      , cCC		                        , NIL})  // Centro de Custo
+								If !lAtuEst 
+									Aadd( aCpImp, {"C1_ESTOQUE" , 'N'                           , NIL})  // Indica NÃO havera atualização estoque
+								EndIf 
 								If !EMPTY(cAnoFab)
 									Aadd( aCpImp, {"C1_ANOFAB" , cAnoFab                        , NIL}) // Ano Fabricacao
 								EndIf
@@ -816,6 +861,7 @@ Static Function ImpCsv02(oSay)
 								Aadd( aItem, aCpImp)
 
 								// adicionar aos recnos
+							
 								If Vazio(Posicione("SB2", 1, FwXfilial("SB2") + (cQRYA)->B1_COD + (cQRYA)->B1_LOCREC, "SB2->B2_COD") ) = .F.
 									nRec := Posicione("SB2", 1, FwXfilial("SB2") + (cQRYA)->B1_COD + (cQRYA)->B1_LOCREC, "SB2->(Recno())")
 									If nRec > 0
@@ -839,33 +885,35 @@ Static Function ImpCsv02(oSay)
 		cNewSc := ""
 		If Len(aErros) == 0
 			If Len(aItem)>0
-			//Anapolis
-			
-				Processa({|| lLock := zChkLock(aRec) }, "Aguarde...", "Salvando Solicitação " + cNUMSC + ", " + Alltrim(Str(nB-1)) + " linha(s)" , .F.)
-				if lLock = .T.
-					ApMsgInfo("Cancelado pelo usuário", "")
-					Return
-				EndIf
-				Begin Transaction
-				
-				MsExecAuto({|v,x,y,z| MATA110(v,x,y,z)},aCab,aItem,3,.F.)
-				If lMsErroAuto
-					MostraErro()
-					RollBackSx8()
-					DisarmTransaction()
-					Aadd(aErros,  { cLErro + AllTrim(cProduto)+" - Inconsistencias na inclusao da solicitacao "})
-				Else
-					//Utilizado no Relatorio variaveis: cxSCDe e cxSCAte
-					If Empty(cxSCDe)
-						cxSCDe := cNumSc
+				//Anapolis
+
+				//Processa({|| lLock := zChkLock(aRec) }, "Aguarde...", "Salvando Solicitação " + cNUMSC + ", " + Alltrim(Str(nB-1)) + " linha(s)" , .F.)
+				// if lLock = .T.
+				// 	ApMsgInfo("Cancelado pelo usuário", "")
+				// 	Return
+				// EndIf
+				// Begin Transaction
+				While .T.
+					MsExecAuto({|v,x,y,z| MATA110(v,x,y,z)},aCab,aItem,3,.F.)
+					If lMsErroAuto
+						MostraErro()
+						RollBackSx8()
+						Aadd(aErros,  { cLErro + AllTrim(cProduto)+" - Inconsistencias na inclusao da solicitacao "," "})
+						// DisarmTransaction()
+						// BREAK
+					Else
+						//Utilizado no Relatorio variaveis: cxSCDe e cxSCAte
+						If Empty(cxSCDe)
+							cxSCDe := cNumSc
+						EndIf
+						cxSCAte := cNumSc
+						fGravaSC1(cNumSc,nMoedaC1,cTipoImp,cClaImp)  //Grava informações na SC1, após a inclusão do MsExecAuto.
+						ConfirmSX8()
+						Aadd(aScInc,cNumSc)
 					EndIf
-					cxSCAte := cNumSc
-					fGravaSC1(cNumSc,nMoedaC1,cTipoImp,cClaImp)  //Grava informações na SC1, após a inclusão do MsExecAuto.
-					ConfirmSX8()
-					Aadd(aScInc,cNumSc)
-					
-				EndIf
-				End Transaction
+					Exit
+				EndDo
+				// End Transaction
 			Endif
 		Endif
 		If Len(aErros) == 0
@@ -881,9 +929,13 @@ Static Function ImpCsv02(oSay)
 				EndIf
 			EndIf
 		ElseIf Len(aErros) > 0
+			
+			aSort(aErros, ,,{|x,y| x[2]<y[2]})
+
 			cTextoE := ""
 			cTextoE += "Linha Produto"+chr(13)+chr(10)
 			cTextoE += "----- -------"+chr(13)+chr(10)
+			
 			For nX:=1 to Len(aErros)
 				cTextoE += aErros[nX,1]+chr(13)+chr(10)
 			Next
@@ -893,12 +945,12 @@ Static Function ImpCsv02(oSay)
 			@ 5,5 Get oMemo Var cTextoE Memo Size 200, 145 Of oDlgMEMO Pixel
 			oMemo:oFont := oFont
 			Define SButton From 153, 175 Type  1 Action oDlgMemo:End() Enable Of oDlgMemo Pixel // Apaga
-			Define SButton From 153, 145 Type 13 Action (cFileL := cGetFile(cMaskL, ""), If(cFileL == "", .T., MemoWrite(cFileL, cTextoE))) Enable Of oDlgMemo Pixel
+			Define SButton From 153, 145 Type 13 Action (cFileL := cGetFile(cMaskL, "",,,.F.,,.F.), If(cFileL == "", .T., MemoWrite(cFileL, cTextoE))) Enable Of oDlgMemo Pixel
 			ACTIVATE MSDIALOG oDlgMemo CENTERED
 		EndIf
 	NEXT
 RETURN(NIL)
-*--------------------------------------------------------------------
+	*--------------------------------------------------------------------
 /*/{Protheus.doc} fGravaSC1
 Função Auxiliar, utilizda para atualizar algumas informações na SC1 após sua inclusão. Força a atualização de algumas informações.
 @author FSW - DWC Consult
@@ -924,14 +976,14 @@ Static Function fGravaSC1(cNum,nMoeda,cTipoImp,cClaImp)
 		FWAlertError("Erro na rotina fGravaSC1(): " + TcSqlError(), "IMPCSVSC" )
 	EndIf
 Return
-*--------------------------------------------------------------------
+	*--------------------------------------------------------------------
 Static Function xSbMoed(nMoed)
 	Local cRet := ""
 	Local cMVPar := "MV_SIMB" + Alltrim(Str(nMoed))
-	
-	cRet := Alltrim(GetMv(cMVPar))
+
+	cRet := Alltrim(SuperGetMv(cMVPar))
 return cRet
-*--------------------------------------------------------------------
+	*--------------------------------------------------------------------
 
 
 /*
@@ -943,11 +995,11 @@ Static Function zChkLock(aRec)
 	Local lLock 	:= .T.
 	Local lCont 	:= .T.
 	Local nCont 	:=	0
-	
+
 	While lCont = .T.
-		
+
 		nCont++
-		
+
 		For i:=1 to 5
 
 			If lLock = .F.
@@ -982,4 +1034,95 @@ Static Function zChkLock(aRec)
 	EndDo
 
 Return lLock
+
+
+/*
+=====================================================================================
+Programa.:              GetTrace
+Autor....:              Reinaldo Rabelo
+Data.....:              18/01/2024
+Descricao / Objetivo:   Gera o arquivo de Log do Trace do DbAccess    
+Doc. Origem:            
+Solicitante:            SIGAPEC
+Uso......:              
+Obs......:
+=====================================================================================
+*/
+
+Static Function GetTrace(nOp,cLog)
+   
+Local cMessage := ""
+Local cArq := "IMPCSVC_" + Dtos(Date()) +"_" + strtran( Time() , ":" )
+Local lTrace := .T.
+DEFAULT cLog := FunName() 
+Default nOp  := 0
+  //TcLink()
+IF lTrace                                   //Variavel de controle para habilitar o log
+	if nOp > 0 .and. nOp < 7 
+		Do Case
+			Case nOp == 1 
+				//Verifica se o SqlReply esta implementado
+				if TCSqlReplay(1, @cMessage) == .F.
+					conout("Não existe a implementação")
+					Return
+				endif
+			
+				// inicia o TCSqlReplay
+				cMessage := "\temp\" + cArq + '_' + cLog + "_Trace.log"
+				TCSqlReplay(2, @cMessage)
+			
+				cMessage := ""
+				//Verifica se foi iniciado
+				if TCSqlReplay(4, @cMessage) == .T.
+					conout("TCSqlReplay foi iniciado")
+				endif
+				// liga o log de rotinas internas para a rotina execurada para  usuario da sessão ativa
+				cMessage := "1"
+				TCSqlReplay(6, @cMessage)
+			
+				// altera o valor de call stack para 5
+				//cMessage := "5"
+				//TCSqlReplay(7, @cMessage)
+			
+			Case nOp == 3
+				// TODO: your code here
+				// Finaliza o TCSqlReplay
+				TCSqlReplay(3, @cMessage)
+					
+					
+			EndCase 
+		else
+			Conout("Parametro invalido ")
+	EndIf   
+EndIf
+  //TcUnlink()
+   
+Return
+
+/*
+=====================================================================================
+Programa.:              GetLog
+Autor....:              Reinaldo Rabelo
+Data.....:              18/01/2024
+Descricao / Objetivo:   Gera o arquivo de Log do Trace do DbAccess    
+Doc. Origem:            
+Solicitante:            SIGAPEC
+Uso......:              
+Obs......:
+=====================================================================================
+*/
+
+
+Static Function GetLog(cLog)
+
+Local cArq := "ZPECF013_" + Dtos(Date()) +"_" + strtran( Time() , ":" )
+DEFAULT cLog := "" 
+
+IF lTrace            //Variavel de controle para habilitar o log
+	MemoWrite("\temp\" + cArq + "_log.Log", cLog)	
+EndIf
+  
+   
+Return
+
 

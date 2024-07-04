@@ -438,7 +438,7 @@ Static Function ImpCad
 		aTipoImpd  := Separa(cLinhad,";",.T.)
 		cTipod     := SUBSTR(aTipoImpd[1],1,2)
 
-		IF !(cTIPOd $('N3/C6/W3'))
+		IF !(cTIPOd $('N3/C6/W3/A5'))
 			MsgAlert('Não é possivel importar a tabela: '+cTipod+ '  !!')
 			Return
 		ENDIF

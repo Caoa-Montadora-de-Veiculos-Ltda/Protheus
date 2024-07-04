@@ -2,10 +2,9 @@
 
 User Function MT120ISC()
 
-	Local _cEmp		:= FWCodEmp()
 	Local aArea		:= GetArea()
 
-	If _cEmp == "2010" //Executa o p.e. Anapolis.
+	If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 		zMontadora()
 	Else
 		zCaoaSp()

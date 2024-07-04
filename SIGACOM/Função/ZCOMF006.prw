@@ -35,7 +35,6 @@ User Function ZCOMF006()
     Private cINTCSV   := ""          
     Private cExt      := ".XLSX"
     Private _cLocal   := ""
-    Private _cEmp  	  := FWCodEmp()
     Private lRet      := .T.
     Public aRetP 	  := {}
     Public cCusto     := Space(15)
@@ -50,7 +49,7 @@ User Function ZCOMF006()
     Public _cMunDes   := GetMv("MV_XMUNDES",.F.,"01108")
     Public _cSerie    := GetMv("CMV_SERCTE",.F.,"1  "  )
 
-    If _cEmp == "2010" //Executa o p.e. somente para Anapolis.
+    If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
         _cLocal := "PRD"
     else
         _cLocal := "55"

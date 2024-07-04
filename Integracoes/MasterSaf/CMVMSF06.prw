@@ -345,7 +345,7 @@ static _VLR_UNIT
 */
 
 User Function CMVMSF06()
-
+ 
 	Local nOpc := 0
 	Local aRet := {}
 	Local aParamBox := {}
@@ -393,6 +393,7 @@ User Function CMVMSF06()
 	Private cCliForAte := ""
 	Private cDocFisDe  := ""
 	Private cDocFisAte := ""
+	Private cValItem   := "099"
 
 	// variaveis para manipular o txt de erros
 	Private cFile      := ""     
@@ -404,7 +405,7 @@ User Function CMVMSF06()
 
 	//--Variavel que carrega as notas fiscais selecionadas via markbrowse
 	Private __cSelNfs := ""
-
+	
 	AAdd( aSay , "Esta Rotina tem como objetivo gerar informações do ERP Protheus " )
 	AAdd( aSay , "para o MasterSAF via arquivo TXT conforme documentação técnica " )
 	//AAdd( aSay , "Project Charter - XXXXXX")   
@@ -2004,7 +2005,7 @@ Descricao / Objetivo:   Rotina de gravacao de registros de erro no arquivo de lo
 
 Static Function MS06GrvLog(cLinha)
 
-	Local cCR := Chr(13)+Chr(10)
+	Local cCR := CRLF
 	Local cReg := ""
 
 	// grava cabecalho no arquivo .txt
@@ -2937,8 +2938,9 @@ Descricao / Objetivo:   Itens Notas Fiscais Mercadorias e Produtos
 */
 
 Static Function fSAFX08()
-	Local cLP := '610-002'
+	Local cLP := SuperGetMV("CMV_LPSFAT", .F., "610-002")
 	Local cConta := ""
+	Local cChave := ""
 
 	cQ := CRLF + " SELECT R_E_C_N_O_ SFT_RECNO "
 	cQ += CRLF + " 	FROM " + RetSqlName("SFT") + " SFT "
@@ -2969,6 +2971,11 @@ Static Function fSAFX08()
 	If !Empty(aCab)
 		While (cAliasTrb)->(!Eof())
 			SFT->(dbGoto((cAliasTrb)->SFT_RECNO))
+
+			if empty(cChave)
+				cChave := SFT->FT_NFISCAL + SFT->FT_SERIE + SFT->FT_CLIEFOR + SFT->FT_LOJA
+			EndIf
+
 			If SFT->(Recno()) == (cAliasTrb)->SFT_RECNO
 				lSA1 := .F.
 				lSA2 := .F.
@@ -3048,7 +3055,7 @@ Static Function fSAFX08()
 					nPosCmpCab:=PosCabArray(aItens,"COD_UND_PADRAO")
 					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_UM")
 					nPosCmpCab:=PosCabArray(aItens,"NUM_ITEM")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_ITEM")
+					aItens[Len(aItens)][nPosCmpCab][2] := fConvItem( SFT->FT_ITEM, cChave )//Eval(bCmpZerado,"SFT->FT_ITEM")
 					nPosCmpCab:=PosCabArray(aItens,"COD_CFO")
 	
 					if alltrim(SF3->F3_ESPECIE) == 'CTE' .and. IIf(lSA1,SA1->A1_EST == cEStFil, SA2->A2_EST == cEStFil) .and. cEmpAnt <> '01'
@@ -3065,14 +3072,27 @@ Static Function fSAFX08()
 					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_UM")
 					nPosCmpCab:=PosCabArray(aItens,"COD_NBM")						
 					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_POSIPI")
+
+					//******* INC0113339 25/06/24 Cintia Araujo
 					nPosCmpCab:=PosCabArray(aItens,"VLR_UNIT")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_PRCUNIT")
+					If SFT->FT_DESCZFR > 0
+						aItens[Len(aItens)][nPosCmpCab][2] := (SFT->FT_PRCUNIT+(SFT->FT_DESCZFR/SD2->D2_QUANT))*(10**TamSZR(cTab)[2])
+					Else
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_PRCUNIT")
+					EndIf
 					nPosCmpCab:=PosCabArray(aItens,"VLR_ITEM")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_TOTAL")
+					If SFT->FT_DESCZFR > 0
+						aItens[Len(aItens)][nPosCmpCab][2] := (SFT->FT_TOTAL+SFT->FT_DESCZFR)*(10**TamSZR(cTab)[2])
+					Else
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_TOTAL")
+					EndIf
+					//******* INC0113339 25/06/24 Cintia Araujo
+
+
 					nPosCmpCab:=PosCabArray(aItens,"VLR_DESCONTO")
 					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_DESCONT")
 					nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_A")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_ORIGEM")
+					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CLASFIS")  //"SB1->B1_ORIGEM")   INC0112420 17/06/24 Cintia Araujo
 					nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_B")
 					aItens[Len(aItens)][nPosCmpCab][2] := IIf((Empty(SFT->FT_CLASFIS) .or. !Len(Alltrim(SFT->FT_CLASFIS)) == 3),"@",Subs(SFT->FT_CLASFIS,2,2))
 					nPosCmpCab:=PosCabArray(aItens,"VLR_FRETE")
@@ -3188,6 +3208,12 @@ Static Function fSAFX08()
 				Endif	
 			Endif
 			(cAliasTrb)->(dbSkip())
+			if cChave <> SFT->FT_NFISCAL + SFT->FT_SERIE + SFT->FT_CLIEFOR + SFT->FT_LOJA
+
+				cChave   := SFT->FT_NFISCAL + SFT->FT_SERIE + SFT->FT_CLIEFOR + SFT->FT_LOJA
+				cValItem := "099"
+
+			EndIf
 		Enddo
 	Else
 		APMsgAlert(cTab+": Estrutura não cadastrada na tabela 'SZR - CAMPOS TABELA MASTERSAF'.Verifique.")
@@ -4205,7 +4231,7 @@ Static Function fSAFX52()
 					aItens[Len(aItens)][nPosCmpCab][2] := "D"
 					//INC0020855 - SAFX52
 					nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_A")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_ORIGEM")
+					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CLASFIS")  //"SB1->B1_ORIGEM")  INC0112420 17/06/24 Cintia Araujo
 					//INC0020855 - SAFX52
 					nPosCmpCab:=PosCabArray(aItens,"IND_MOT_INV")
 					aItens[Len(aItens)][nPosCmpCab][2] := "01"
@@ -4364,8 +4390,8 @@ Descricao / Objetivo:   Ordem de Produção
 */
 
 Static Function fSAFX108()
-	
-	cQ := CRLF + " SELECT DISTINCT C2_FILIAL,C2_NUM,C2_ITEM,C2_SEQUEN,C2_PRODUTO ,D3_CUSTO1,C2_EMISSAO,C2_DATPRI,C2_DATPRF,C2_QUANT,C2_QUJE FROM ( "
+
+	cQ := CRLF + " SELECT DISTINCT C2_FILIAL,C2_NUM,C2_ITEM,C2_SEQUEN,C2_PRODUTO ,D3_CUSTO1,C2_EMISSAO,C2_DATPRI,C2_DATPRF,C2_QUANT,C2_QUJE, D3_QUANT,D3_CUSTOT FROM ( "
 	cQ += CRLF + "	SELECT  "
 	cQ += CRLF + "		(SELECT nvl(SUM(SD3C.D3_CUSTO1),0)*100 D3_CUSTO1  "
 	cQ += CRLF + "			FROM  " + RetSqlName( "SD3" ) + " SD3C  "
@@ -4373,21 +4399,43 @@ Static Function fSAFX108()
 	cQ += CRLF + "				AND SD3C.D3_FILIAL  = SC2.C2_FILIAL  "
 	cQ += CRLF + "				AND SD3C.D3_OP      = SC2.C2_NUM||SC2.C2_ITEM||SC2.C2_SEQUEN "
 	cQ += CRLF + "				AND SD3C.D3_OP      <> ' ' "
-	cQ += CRLF + "				AND SD3C.D3_CF      NOT IN  ('PR0','PR1' ) "
+	cQ += CRLF + "				AND SD3C.D3_CF      IN  ('PR0','PR1' ) "
 	cQ += CRLF + "				AND SD3C.D3_ESTORNO <> 'S' ) as D3_CUSTO1 "
+
+	cQ += CRLF + " 		,(SELECT nvl(SUM(SD3Q.D3_QUANT),0) D3_QUANT   "
+	cQ += CRLF + "			FROM  " + RetSqlName( "SD3" ) + " SD3Q   "
+	cQ += CRLF + "			WHERE   SD3Q.D_E_L_E_T_ = ' '   "
+	cQ += CRLF + "				AND SD3Q.D3_FILIAL  = SC2.C2_FILIAL   "
+	cQ += CRLF + "				AND SD3Q.D3_OP      = SC2.C2_NUM||SC2.C2_ITEM||SC2.C2_SEQUEN  "
+    cQ += CRLF + "          	AND SD3Q.D3_EMISSAO <= '" + dTos( dDataFim ) + "' "
+	cQ += CRLF + "				AND SD3Q.D3_OP      <> ' '  "
+
+	cQ += CRLF + "				AND SD3Q.D3_COD = SC2.C2_PRODUTO "
+    cQ += CRLF + "            	AND SD3Q.D3_ESTORNO <> 'S' ) as D3_QUANT "
+
+	cQ += CRLF + " 		,(SELECT nvl(SUM(SD3T.D3_CUSTO1),0) * 100 AS  D3_CUSTO1   "
+	cQ += CRLF + "			FROM  " + RetSqlName( "SD3" ) + " SD3T   "
+	cQ += CRLF + "			WHERE   SD3T.D_E_L_E_T_ = ' '   "
+	cQ += CRLF + "				AND SD3T.D3_FILIAL  = SC2.C2_FILIAL   "
+	cQ += CRLF + "				AND SD3T.D3_OP      = SC2.C2_NUM||SC2.C2_ITEM||SC2.C2_SEQUEN  "
+    cQ += CRLF + "            	AND SD3T.D3_EMISSAO <= '" + dTos( dDataFim ) + "'"
+	cQ += CRLF + "				AND SD3T.D3_OP      <> ' '  "
+	cQ += CRLF + "				AND SD3T.D3_CF     NOT IN  ('PR0','PR1' )  "
+	cQ += CRLF + "            	AND SD3T.D3_ESTORNO <> 'S' ) as D3_CUSTOT "
+
 	cQ += CRLF + "		,SC2.*  "
-	
-	cQ += CRLF + "	FROM " + RetSqlName( "SC2" ) + " SC2
-	
+
+	cQ += CRLF + "	FROM " + RetSqlName( "SC2" ) + " SC2"
+
 	cQ += CRLF + "  	INNER JOIN " + RetSqlName("SD3") + " SD3  "
 	cQ += CRLF + "  		ON  SD3.D_E_L_E_T_  = ' '  "
 	cQ += CRLF + "  		AND SD3.D3_FILIAL   = SC2.C2_FILIAL  "
 	cQ += CRLF + "  		AND TRIM(SD3.D3_OP) = TRIM(SC2.C2_NUM) || TRIM(SC2.C2_ITEM) || TRIM(SC2.C2_SEQUEN) "
 	cQ += CRLF + "         	AND SD3.D3_ESTORNO  <> 'S' "
 	cQ += CRLF + "         	AND SD3.D3_OP       <> ' '  "
-	cQ += CRLF + "  		AND SD3.D3_CF NOT IN  ('PR0','PR1' ) "
-	cQ += CRLF + "         	AND SD3.D3_TIPO     = 'PA'  "
-	
+	cQ += CRLF + "  		AND SD3.D3_CF       IN  ('PR0','PR1' ) "
+	cQ += CRLF + "         	AND SD3.D3_TIPO     IN  ('PA' ,'PI')  "
+
 	cQ += CRLF + "		WHERE   SC2.D_E_L_E_T_ = ' '  "
 	cQ += CRLF + "			AND SC2.C2_FILIAL BETWEEN '" + cFilDe + "' AND '" + cFilAte + "' "
 	cQ += CRLF + "			AND SC2.C2_DATPRI >= '" + dTos( dDataIni ) + "' "
@@ -4443,15 +4491,15 @@ Static Function fSAFX108()
 				nPosCmpCab:=PosCabArray(aItens,"COD_UND_PADRAO")
 				aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_UM")
 				nPosCmpCab:=PosCabArray(aItens,"QTD_PRODUZIDO")
-				aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"(cAliasTrb)->C2_QUANT")
+				aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"(cAliasTrb)->D3_QUANT" )//Eval(bCmpZerado,"(cAliasTrb)->C2_QUANT")
 				nPosCmpCab:=PosCabArray(aItens,"IND_APUR_CUSTO")
 				aItens[Len(aItens)][nPosCmpCab][2] := "N"
 				nPosCmpCab:=PosCabArray(aItens,"VLR_TOT_CUSTO")
 				aItens[Len(aItens)][nPosCmpCab][2] :=  (cAliasTrb)->D3_CUSTO1 //VlrSD3(SD3->D3_FILIAL,SD3->D3_COD,SD3->D3_OP,"D3_CUSTO1")
 				nPosCmpCab:=PosCabArray(aItens,"QTD_TRANSF")
-				aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"(cAliasTrb)->C2_QUJE")
+				aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"(cAliasTrb)->D3_QUANT" )
 				nPosCmpCab:=PosCabArray(aItens,"VLR_TRANSF")
-				aItens[Len(aItens)][nPosCmpCab][2] :=  (cAliasTrb)->D3_CUSTO1 //VlrSD3(SD3->D3_FILIAL,SD3->D3_COD,SD3->D3_OP,"D3_CUSTO1")
+				aItens[Len(aItens)][nPosCmpCab][2] :=  (cAliasTrb)->D3_CUSTOT //VlrSD3(SD3->D3_FILIAL,SD3->D3_COD,SD3->D3_OP,"D3_CUSTO1")
 				nPosCmpCab:=PosCabArray(aItens,"IND_TP_ORDEM")
 				aItens[Len(aItens)][nPosCmpCab][2] := "1"
 				nPosCmpCab:=PosCabArray(aItens,"QTD_ORIGEM")
@@ -4459,11 +4507,20 @@ Static Function fSAFX108()
 			Endif	
 			
 			(cAliasTrb)->(dbSkip())
+
+			if len(aItens) >= _nLimite  //a cada 1000 linhas é gravado no arquivo para liberar a memória
+				SalvaTXT(aCab,aItens)
+				aItens := {}
+				IF LDebug
+					(cAliasTrb)->(dbCloseArea())
+					RETURN
+				ENDIF
+			ENDIF
 		Enddo
 	Else
 		APMsgAlert(cTab+": Estrutura não cadastrada na tabela 'SZR - CAMPOS TABELA MASTERSAF'.Verifique.")
 	Endif
-	(cAliasTrb)->(dbCloseArea())	
+	(cAliasTrb)->(dbCloseArea())
 Return 
 
 /*
@@ -4500,13 +4557,27 @@ Static Function fSAFX109()
 	cQ += CRLF + "         	AND SD3.D3_ESTORNO <> 'S' "
 	cQ += CRLF + "         	AND SD3.D3_OP      <> ' '  "
 	cQ += CRLF + "  		AND SD3.D3_CF NOT IN  ('PR0','PR1' ) "
-	cQ += CRLF + "         	AND SD3.D3_OP       <> 'PA'  "
 	
 	cQ += CRLF + "  	WHERE SC2.D_E_L_E_T_ = ' '  "
 	cQ += CRLF + "  		AND SC2.C2_FILIAL  BETWEEN '" + cFilDe    + "' AND '" + cFilAte  + "' "
-	cQ += CRLF + "  		AND SC2.C2_DATPRI  >= '" + dTos(dDataIni) + "'   "
-	cQ += CRLF + " 			AND SC2.C2_DATPRF  <= '" + dTos(dDataFim) + "'
-	
+	cQ += CRLF + "  		AND SC2.C2_DATPRI  >= '" + dTos(dDataIni) + "' "
+	cQ += CRLF + " 			AND SC2.C2_DATPRF  <= '" + dTos(dDataFim) + "' "
+	cQ += CRLF + "			AND SC2.C2_NUM||SC2.C2_ITEM||SC2.C2_SEQUEN IN( SELECT  "
+	cQ += CRLF + "					DISTINCT CONCAT(CONCAT(C2_NUM,C2_ITEM),C2_SEQUEN) AS OP "
+	cQ += CRLF + "				FROM " + RetSqlName("SC2") + " SC2A "
+	cQ += CRLF + "			  	INNER JOIN " + RetSqlName("SD3") + " SD3A  
+	cQ += CRLF + "			  		ON  SD3A.D_E_L_E_T_  = ' '  "
+	cQ += CRLF + "			  		AND SD3A.D3_FILIAL   = SC2.C2_FILIAL  "
+	cQ += CRLF + "			  		AND TRIM(SD3A.D3_OP) = TRIM(SC2A.C2_NUM) || TRIM(SC2A.C2_ITEM) || TRIM(SC2A.C2_SEQUEN) "
+	cQ += CRLF + "			       	AND SD3A.D3_ESTORNO  <> 'S' "
+	cQ += CRLF + "			       	AND SD3A.D3_OP       <> ' ' "
+	cQ += CRLF + "			    	AND SD3A.D3_CF       IN  ('PR0','PR1' ) "
+	cQ += CRLF + "			       	AND SD3A.D3_TIPO     = 'PA' "
+	cQ += CRLF + "				WHERE   SC2A.D_E_L_E_T_ = ' ' "
+	cQ += CRLF + "						AND SC2A.C2_FILIAL = SC2.C2_FILIAL  
+	cQ += CRLF + "						AND SC2A.C2_DATPRI >= '" + dTos(dDataIni) + "' " 
+	cQ += CRLF + "						AND SC2A.C2_DATPRF <= '" + dTos(dDataFim) + "' ) "
+
 	cQ += CRLF + "  ORDER BY SC2.C2_FILIAL,SC2.C2_EMISSAO,SC2.C2_NUM ,SD3.D3_COD "
 	
 	If lDebug
@@ -4562,7 +4633,15 @@ Static Function fSAFX109()
 				nPosCmpCab:=PosCabArray(aItens,"NUM_ITEM")
 				aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"(cAliasTrb)->C2_ITEM")
 			Endif	
-		
+			
+			if len(aItens) >= _nLimite  //a cada 1000 linhas é gravado no arquivo para liberar a memória
+				SalvaTXT(aCab,aItens)
+				aItens := {}
+				IF LDebug
+					(cAliasTrb)->(dbCloseArea())
+					RETURN
+				ENDIF
+			ENDIF
 			(cAliasTrb)->(dbSkip())
 		Enddo
 	Else
@@ -6431,4 +6510,26 @@ Default dData    := Date()
 
 Return cContaCred
 
+/*
+=======================================================================================
+Programa.:              fConvItem()
+Autor....:              CAOA -- Reinaldo Rabelo da Silva
+Data.....:              15/12/2023
+Descricao / Objetivo:   Ajusta o numero do item                                 
+=======================================================================================
+*/
 
+Static Function fConvItem(cItem,cChave)
+Local cRet := cItem
+
+If cItem > "99"
+
+	cValItem := Soma1(cValItem)
+	cRet := StrZero(Val(cValItem),4)
+
+else
+	cRet := StrZero(Val(cItem),4)
+endif
+
+
+Return cRet

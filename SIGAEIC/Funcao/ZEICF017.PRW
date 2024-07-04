@@ -26,26 +26,26 @@ USER FUNCTION ZEICF017()
 
      SD1->(dbSeek(SF1->(F1_FILIAL + F1_DOC + F1_SERIE + F1_FORNECE + F1_LOJA)))
 
-     cmd := CRLF + " SELECT DISTINCT "
-     cmd += CRLF + " W2_PO_NUM, W2_TIPO_EM,
-     cmd += CRLF + " W6_DI_NUM, W6_DTREG_D, W6_DT_DESE, W6_LOCAL, "
-     cmd += CRLF + " F1_COND, F1_SERIE, F1_DOC, ZM_INVOICE, W8_HAWB, "
-     cmd += CRLF + " W6_UFDESEM"
-     cmd += CRLF + " FROM " + RetSqlName("SZM") + " SZM "
-     cmd += CRLF + " LEFT JOIN " + RetSqlName("SW8") + " SW8 ON SW8.D_E_L_E_T_ = ' ' AND W8_FILIAL = ZM_FILIAL AND W8_INVOICE = ZM_INVOICE 
-     cmd += CRLF + " LEFT JOIN " + RetSqlName("SW6") + " SW6 ON SW6.D_E_L_E_T_ = ' ' AND W6_FILIAL = W8_FILIAL AND W6_HAWB = W8_HAWB
-     cmd += CRLF + " LEFT JOIN " + RetSqlName("SW2") + " SW2 ON SW2.D_E_L_E_T_ = ' ' AND W6_FILIAL = W2_FILIAL AND W6_PO_NUM = W2_PO_NUM
-     cmd += CRLF + " LEFT JOIN " + RetSqlName("SF1") + " SF1 ON SF1.D_E_L_E_T_ = ' ' AND W8_FILIAL = F1_FILIAL AND W8_FORN = F1_FORNECE AND W8_FORLOJ = F1_LOJA AND F1_HAWB = W8_HAWB
-     cmd += CRLF + " WHERE "
-     cmd += CRLF + " SZM.D_E_L_E_T_ = ' ' "
-     cmd += CRLF + " AND ZM_CONT = '" + SD1->D1_XCONT + "'
-
+     cmd += CRLF + " SELECT DISTINCT  "
+     cmd += CRLF + " W2_PO_NUM, W2_TIPO_EM, "
+     cmd += CRLF + " W6_DI_NUM, W6_DTREG_D, W6_DT_DESE, W6_LOCAL,  "
+     cmd += CRLF + " F1_COND, F1_SERIE, F1_DOC, ZM_INVOICE,W8_INVOICE,ZM_CONT , W8_HAWB,  "
+     cmd += CRLF + " W6_UFDESEM "
+     cmd += CRLF + " FROM " + RetSqlName("SW8") + " SW8 "
+     cmd += CRLF + " LEFT JOIN " + RetSqlName("SW6") + " SW6 ON SW6.D_E_L_E_T_ = ' ' AND W6_FILIAL = W8_FILIAL AND W6_HAWB = W8_HAWB "
+     cmd += CRLF + " LEFT JOIN " + RetSqlName("SW2") + " SW2 ON SW2.D_E_L_E_T_ = ' ' AND W6_FILIAL = W2_FILIAL AND W6_PO_NUM = W2_PO_NUM "
+     cmd += CRLF + " LEFT JOIN " + RetSqlName("SF1") + " SF1 ON SF1.D_E_L_E_T_ = ' ' AND F1_FILIAL = W8_FILIAL AND F1_FORNECE = W8_FORN AND F1_LOJA = W8_FORLOJ AND F1_HAWB = W8_HAWB "
+     cmd += CRLF + " LEFT JOIN " + RetSqlName("SZM") + " SZM ON SZM.D_E_L_E_T_ = ' ' AND ZM_FILIAL = W8_FILIAL AND ZM_INVOICE = W8_INVOICE  "
+     cmd += CRLF + " WHERE  "
+     cmd += CRLF + " SW8.D_E_L_E_T_ = ' '  "
+     cmd += CRLF + " AND W8_HAWB = '" + SD1->D1_XCONHEC + "' "
+     
      TcQuery cmd new alias (cQr)
 
      While (SF1->(F1_FILIAL + F1_DOC + F1_SERIE + F1_FORNECE + F1_LOJA) == SD1->(D1_FILIAL + D1_DOC + D1_SERIE + D1_FORNECE + D1_LOJA)) 
 
 
-          If CD5->(dbSeek(SF1->(F1_FILIAL + F1_DOC + F1_SERIE + F1_FORNECE + F1_LOJA) + SD1->D1_ITEM)) = .T.
+          If CD5->(dbSeek(SF1->(F1_FILIAL + F1_DOC + F1_SERIE + F1_FORNECE + F1_LOJA) + SD1->D1_ITEM)) == .T.
 		     RecLock("CD5", .F.)
 		          CD5->(DbDelete())
 		     CD5->(MsUnLock())

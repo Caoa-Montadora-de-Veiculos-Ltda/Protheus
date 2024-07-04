@@ -1,6 +1,20 @@
 #Include "totvs.ch"
-// ======================================================================= //
+#Include 'Protheus.ch'
+#Include 'Topconn.ch'
+
+/*/{Protheus.doc} VEIA060
+@param  	
+@author 	A.Carlos
+@version  	P12.1.23
+@since  	29/08/2022
+@return  	NIL
+@obs        Ponto de entrada VEIA060CAOA_PE chamado pelo VEIA060
+@project
+@history    25/03/2024 - Inclu√≠do cinco campos de comiss√£o de vendas 
+*/
+ 
 User Function VEIA060()
+
 // ======================================================================= //
 
 	Local aParam     := PARAMIXB
@@ -61,16 +75,16 @@ User Function VEIA060()
 		"Tipo"       (VRL_E1TIPO)
 		"Natureza"   (VRL_E1NATU)
 		"Vlr.Titulo" (VRL_E1VALO)
-	Esta mensagem sÛ ser· exibida para os pedidos com o campo "Tipo Venda" (VRJ_TIPVEN) contido no conte˙do do NOVO par‚metro denominado "MV_ZTPVDCH".
-	O conte˙do deste par‚metro, a principio, est· cadastrado com "03/05/"
+	Esta mensagem s√≥ ser√° exibida para os pedidos com o campo "Tipo Venda" (VRJ_TIPVEN) contido no conte√∫do do NOVO par√¢metro denominado "MV_ZTPVDCH".
+	O conte√∫do deste par√¢metro, a principio, est√° cadastrado com "03/05/"
 	*/
 					If aParam[6] == "VRL_E1PARC" 
 						cTpVdNaoPe := SuperGetMV("MV_ZTPVDCH" , .F. , "03/05/")	// --> Define Tipos de Vendas com obrigatoriedade de CHASSI para gerar financeiro.
 						cTpVdNaoPe := AllTrim(cTpVdNaoPe)
 						If AllTrim(FWFldGet("VRJ_TIPVEN")) $ cTpVdNaoPe 		// --> "03/05/"
 							If Empty(FWFldGet("VRK_CHASSI")) 
-								MsgInfo("O 'Tipo Venda' (VRJ_TIPVEN) est· cadastrado com um desses tipos ["+cTpVdNaoPe+"]  .e.  o campo 'Chassi' (VRK_CHASSI) n„o est· preenchido !!!" + Chr(13)+Chr(10) + Chr(13)+Chr(10) + ;
-										"Ser· necess·rio o preenchimento do campo 'Chassi' para permiss„o da gravaÁ„o do Pedido de Venda.", "VEIA060CAOA_PE.prw - VRL_E1PARC") 
+								MsgInfo("O 'Tipo Venda' (VRJ_TIPVEN) est√° cadastrado com um desses tipos ["+cTpVdNaoPe+"]  .e.  o campo 'Chassi' (VRK_CHASSI) n√£o est√° preenchido !!!" + Chr(13)+Chr(10) + Chr(13)+Chr(10) + ;
+										"Ser√° necess√°rio o preenchimento do campo 'Chassi' para permiss√£o da grava√ß√£o do Pedido de Venda.", "VEIA060CAOA_PE.prw - VRL_E1PARC") 
 							EndIf 
 						EndIf 
 					EndIf 
@@ -79,8 +93,8 @@ User Function VEIA060()
 						cTpVdNaoPe := AllTrim(cTpVdNaoPe) 
 						If AllTrim(FWFldGet("VRJ_TIPVEN")) $ cTpVdNaoPe 		// --> "03/05/"
 							If Empty(FWFldGet("VRK_CHASSI")) 
-								MsgInfo("O 'Tipo Venda' (VRJ_TIPVEN) est· cadastrado com um desses tipos ["+cTpVdNaoPe+"]  .e.  o campo 'Chassi' (VRK_CHASSI) n„o est· preenchido !!!" + Chr(13)+Chr(10) + Chr(13)+Chr(10) + ;
-										"Ser· necess·rio o preenchimento do campo 'Chassi' para permiss„o da gravaÁ„o do Pedido de Venda.", "VEIA060CAOA_PE.prw - VRL_E1TIPO") 
+								MsgInfo("O 'Tipo Venda' (VRJ_TIPVEN) est√° cadastrado com um desses tipos ["+cTpVdNaoPe+"]  .e.  o campo 'Chassi' (VRK_CHASSI) n√£o est√° preenchido !!!" + Chr(13)+Chr(10) + Chr(13)+Chr(10) + ;
+										"Ser√° necess√°rio o preenchimento do campo 'Chassi' para permiss√£o da grava√ß√£o do Pedido de Venda.", "VEIA060CAOA_PE.prw - VRL_E1TIPO") 
 							EndIf 
 						EndIf 
 					EndIf 
@@ -89,8 +103,8 @@ User Function VEIA060()
 						cTpVdNaoPe := AllTrim(cTpVdNaoPe) 
 						If AllTrim(FWFldGet("VRJ_TIPVEN")) $ cTpVdNaoPe 		// --> "03/05/"
 							If Empty(FWFldGet("VRK_CHASSI")) 
-								MsgInfo("O 'Tipo Venda' (VRJ_TIPVEN) est· cadastrado com um desses tipos ["+cTpVdNaoPe+"]  .e.  o campo 'Chassi' (VRK_CHASSI) n„o est· preenchido !!!" + Chr(13)+Chr(10) + Chr(13)+Chr(10) + ;
-										"Ser· necess·rio o preenchimento do campo 'Chassi' para permiss„o da gravaÁ„o do Pedido de Venda.", "VEIA060CAOA_PE.prw - VRL_E1NATU") 
+								MsgInfo("O 'Tipo Venda' (VRJ_TIPVEN) est√° cadastrado com um desses tipos ["+cTpVdNaoPe+"]  .e.  o campo 'Chassi' (VRK_CHASSI) n√£o est√° preenchido !!!" + Chr(13)+Chr(10) + Chr(13)+Chr(10) + ;
+										"Ser√° necess√°rio o preenchimento do campo 'Chassi' para permiss√£o da grava√ß√£o do Pedido de Venda.", "VEIA060CAOA_PE.prw - VRL_E1NATU") 
 							EndIf 
 						EndIf 
 					EndIf 
@@ -99,8 +113,8 @@ User Function VEIA060()
 						cTpVdNaoPe := AllTrim(cTpVdNaoPe) 
 						If AllTrim(FWFldGet("VRJ_TIPVEN")) $ cTpVdNaoPe 		// --> "03/05/"
 							If Empty(FWFldGet("VRK_CHASSI")) 
-								MsgInfo("O 'Tipo Venda' (VRJ_TIPVEN) est· cadastrado com um desses tipos ["+cTpVdNaoPe+"]  .e.  o campo 'Chassi' (VRK_CHASSI) n„o est· preenchido !!!" + Chr(13)+Chr(10) + Chr(13)+Chr(10) + ;
-										"Ser· necess·rio o preenchimento do campo 'Chassi' para permiss„o da gravaÁ„o do Pedido de Venda.", "VEIA060CAOA_PE.prw - VRL_E1VALO") 
+								MsgInfo("O 'Tipo Venda' (VRJ_TIPVEN) est√° cadastrado com um desses tipos ["+cTpVdNaoPe+"]  .e.  o campo 'Chassi' (VRK_CHASSI) n√£o est√° preenchido !!!" + Chr(13)+Chr(10) + Chr(13)+Chr(10) + ;
+										"Ser√° necess√°rio o preenchimento do campo 'Chassi' para permiss√£o da grava√ß√£o do Pedido de Venda.", "VEIA060CAOA_PE.prw - VRL_E1VALO") 
 							EndIf 
 						EndIf 
 					EndIf 
@@ -114,48 +128,49 @@ User Function VEIA060()
 		//	ConOut(cIdModel + " - " + cIdPonto)
 			If cIdModel == "MODEL_VRL"
 				If oObj:GetValue("VRL_XFORMA") == "PUT" .And. Empty(oObj:GetValue("VRL_XPLACA"))
-					Help( Nil , Nil ,"PLACAOBRIGAT" , , "Necess·rio informar campo PLACA quando forma de pagamento for igual a PUT.",1,0,Nil, Nil, Nil, Nil,Nil , {"Informar campo de placa de veÌculo."} ) 
+					Help( Nil , Nil ,"PLACAOBRIGAT" , , "Necess√°rio informar campo PLACA quando forma de pagamento for igual a PUT.",1,0,Nil, Nil, Nil, Nil,Nil , {"Informar campo de placa de ve√≠culo."} ) 
 					Return .F. 
 				EndIf 
 			EndIf 
 
 		Case cIdPonto == "FORMCOMMITTTSPOS"
 			If cIdModel == "MODEL_VRJ" 			// "VEIA060" 
-				If FWIsInCallStack("VA0600183_IntegraVEIXX002") .And. !Empty( AllTrim( FWFldGet("VRJ_PEDCOM") ) )// INTEGRA√á√ÉO DO VEIA060 - AVANCAR PEDIDO.
+				If FWIsInCallStack("VA0600183_IntegraVEIXX002") .And. !Empty( AllTrim( FWFldGet("VRJ_PEDCOM") ) )// INTEGRA√É‚Ä°√É∆íO DO VEIA060 - AVANCAR PEDIDO.
 					oObj:SetValue("VRJ_XINTEG","X") 
 				EndIf 
 			EndIf 
 
 	// --> Incluso  CRISTIANO  14/12/2021   (*INICIO*) ----------------------- //
 	/*
-	Mensagem alerta impeditivo ao tentar gravar um pedido de vendas que n„o possua o "Chassi" (VRK_CHASSI) preenchido  .E.  possua dados 
-	do tÌtulo preenchido em "NegociaÁ„o para o VeÌculo selecionado" (grid com tabela VRL).
-	Esta mensagem/regra impeditiva sÛ ser· considerada para os pedidos com o campo "Tipo Venda" (VRJ_TIPVEN) contido no conte˙do do NOVO 
-	par‚metro denominado "MV_ZTPVDCH".
-	O conte˙do deste par‚metro, a principio, est· cadastrado com "03/05/"
-	E tambÈm, sÛ ser· considerada para as opÁıes (menu) de "Incluir" ou "Alterar". Contempla condicional para n„o passar nesta regra, caso 
-	seja via opÁ„o (meny) de "Faturar Atendimentos".
+	Mensagem alerta impeditivo ao tentar gravar um pedido de vendas que n√£o possua o "Chassi" (VRK_CHASSI) preenchido  .E.  possua dados 
+	do t√≠tulo preenchido em "Negocia√ß√£o para o Ve√≠culo selecionado" (grid com tabela VRL).
+	Esta mensagem/regra impeditiva s√≥ ser√° considerada para os pedidos com o campo "Tipo Venda" (VRJ_TIPVEN) contido no conte√∫do do NOVO 
+	par√¢metro denominado "MV_ZTPVDCH".
+	O conte√∫do deste par√¢metro, a principio, est√° cadastrado com "03/05/"
+	E tamb√©m, s√≥ ser√° considerada para as op√ß√µes (menu) de "Incluir" ou "Alterar". Contempla condicional para n√£o passar nesta regra, caso 
+	seja via op√ß√£o (meny) de "Faturar Atendimentos".
 	*/
 		Case cIdPonto == "MODELPOS" 
-			If !AtIsRotina(Upper("VA0600273_TelaFaturarAtendimentos")) 			// --> N„o entrar se estiver rodando da rotina "Faturar Atendimentos"
+			If !AtIsRotina(Upper("VA0600273_TelaFaturarAtendimentos")) 			// --> N√£o entrar se estiver rodando da rotina "Faturar Atendimentos"
 				cTpVdNaoPe := SuperGetMV( "MV_ZTPVDCH" , .F. , "03/05/" ) 		// --> Define Tipos de Vendas com obrigatoriedade de CHASSI para gerar financeiro.
 				cTpVdNaoPe := AllTrim(cTpVdNaoPe)
 				If AllTrim(FWFldGet("VRJ_TIPVEN")) $ cTpVdNaoPe 				// --> "03/05/"
 					If FWFldGet("VRL_CANCEL") <> "1" 							// --> 1 = Titulo Cancelado 
 						If Empty(FWFldGet("VRK_CHASSI")) 
 							If FWFldGet("VRL_E1VALO") 
-								MsgAlert("O 'Tipo Venda' (VRJ_TIPVEN) est· cadastrado com um dos tipos ["+cTpVdNaoPe+"]  .e.  o campo 'Chassi' (VRK_CHASSI) n„o est· preenchido !!!" + Chr(13)+Chr(10) + Chr(13)+Chr(10) + ;
-										"Preencha o campo 'Chassi' para gravaÁ„o do Pedido de Venda.", "VEIA060CAOA_PE.prw") 
+								MsgAlert("O 'Tipo Venda' (VRJ_TIPVEN) est√° cadastrado com um dos tipos ["+cTpVdNaoPe+"]  .e.  o campo 'Chassi' (VRK_CHASSI) n√£o est√° preenchido !!!" + Chr(13)+Chr(10) + Chr(13)+Chr(10) + ;
+										"Preencha o campo 'Chassi' para grava√ß√£o do Pedido de Venda.", "VEIA060CAOA_PE.prw") 
 								xRet := .F. 
 							EndIf 
 						EndIf 
 					EndIf 
 				EndIf 
 			EndIf 
+
 	// --> Incluso  CRISTIANO  14/12/2021   (*FINAL* ) ----------------------- //
 
 		Case cIdPonto == "MODELCOMMITTTS"
-			If VRJ->VRJ_FORPAG $ _cPgNF .AND. VRJ->VRJ_STATUS = 'F' .AND. SE1->E1_PARCELA <> "1" //ForÁar a parcela 1 no tÌtulo p/AtribuiÁ„o
+			If VRJ->VRJ_FORPAG $ _cPgNF .AND. VRJ->VRJ_STATUS = 'F' .AND. SE1->E1_PARCELA <> "1" //For√ßar a parcela 1 no t√≠tulo p/Atribui√ß√£o
 				//SE1->(dbSetOrder(1))
 				//If SE1->(dbSeek(xFilial("SE1") + '5  ' + cE1NUM  ))
 					IF Empty(SE1->E1_PARCELA) .AND. SE1->(!EOF()) 
@@ -173,6 +188,20 @@ User Function VEIA060()
 Return xRet 
 
 
+/*/{Protheus.doc} nomeStaticFunction
+	(long_description)
+	@type  Static Function
+	@author user
+	@since 06/12/2023
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	@example
+	(examples)
+	@see (links_or_references)
+/*/
+
+
 
 // ======================================================================= //
 User Function VA060CR() 
@@ -180,8 +209,8 @@ User Function VA060CR()
 
 	Local   oModelVRL  := PARAMIXB[1]
 	Local   aSE1       := PARAMIXB[2]
-	Local   cBcoAgCtSb := SuperGetMv("CAOASCBOL"  , , "237,2372,103476,001" )  // Banco Agencia Conta Subconta padr„o para geraÁ„o autom·tica Boletos VeÌculos
-	Local   cFormaBol  := SuperGetMv("CAOAFRMBOL" , , "BOL,FBA,CTE,FIE,LEA" )  // Forma de pagamento (VRL) que geram boleto veÌculo
+	Local   cBcoAgCtSb := SuperGetMv("CAOASCBOL"  , , "237,2372,103476,001" )  // Banco Agencia Conta Subconta padr√£o para gera√ß√£o autom√°tica Boletos Ve√≠culos
+	Local   cFormaBol  := SuperGetMv("CAOAFRMBOL" , , "BOL,FBA,CTE,FIE,LEA" )  // Forma de pagamento (VRL) que geram boleto ve√≠culo
 	Local   cBanco     := "" 
 	Local   cAgencia   := "" 
 	Local   cConta     := "" 
@@ -200,7 +229,7 @@ User Function VA060CR()
 	aAdd( aSE1 , {"E1_XPLACA"  , oModelVRL:GetValue("VRL_XPLACA") , Nil} )
 	aAdd( aSE1 , {"E1_XFORMA"  , oModelVRL:GetValue("VRL_XFORMA") , Nil} )
 
-	// FunÁ„o para gravaÁ„o autom·tica de Boletos em Contas a Receber de Pedido VeÌculos Montadora com as formas E1_XFORMA especificadas 
+	// Fun√ß√£o para grava√ß√£o autom√°tica de Boletos em Contas a Receber de Pedido Ve√≠culos Montadora com as formas E1_XFORMA especificadas 
 	nSep1    := At(cCar, cBcoAgCtSb)
 	nSep2    := At(cCar, SubStr(cBcoAgCtSb,(nSep1+1),(Len(cBcoAgCtSb)-nSep1)))+nSep1
 	nSep3    := RAt(cCar, cBcoAgCtSb)
@@ -434,11 +463,11 @@ Local cE1TIPO
 Local cE1NATUREZ
 Local cE1CLIENTE
 Local cE1LOJA
-Local lRet060F   := .T. 			// --> Incluso  CRISTIANO  14/12/2021 		// --> Apenas para testar via DEBUG, alterando a vari·vel retorno. 
+Local lRet060F   := .T. 			// --> Incluso  CRISTIANO  14/12/2021 		// --> Apenas para testar via DEBUG, alterando a vari√°vel retorno. 
 
 If aParam[1] <> 5 					// --> Cancelamento PV 
- //	Return .T. 						// --> Retirado CRISTIANO  14/12/2021 		// --> Apenas para testar via DEBUG, alterando a vari·vel retorno. 
-	Return lRet060F 				// --> Incluso  CRISTIANO  14/12/2021 		// --> Apenas para testar via DEBUG, alterando a vari·vel retorno. 
+ //	Return .T. 						// --> Retirado CRISTIANO  14/12/2021 		// --> Apenas para testar via DEBUG, alterando a vari√°vel retorno. 
+	Return lRet060F 				// --> Incluso  CRISTIANO  14/12/2021 		// --> Apenas para testar via DEBUG, alterando a vari√°vel retorno. 
 EndIf
 
 cE1PREFIXO := aParam[ 2, aScan( aParam[2], {|x| x[1] == "E1_PREFIXO"}) , 2 ]
@@ -489,11 +518,11 @@ cSQL := " SELECT VV1_CHASSI "                                 + ;
         "   AND  VV1.D_E_L_E_T_ = ' ' "
 cChassi := FM_SQL(cSQL) 
 If Empty(cChassi) 
-	FMX_HELP( "CAOAERR04" , "Chassi n„o encontrado." + CRLF + RetTitle("VV1_CHAINT") + ": " + cChaInt ) 
+	FMX_HELP( "CAOAERR04" , "Chassi n√£o encontrado." + CRLF + RetTitle("VV1_CHAINT") + ": " + cChaInt ) 
 	Return .F. 
 EndIf 
 If ! U_VA060SBF(cChassi) 
-	FMX_HELP( "SaldoChassi" , "VeÌculo sem saldo no estoque por endereÁo/n˙mero de sÈrie." , "Verifique se o chassi est· com saldo na tabela de Saldos por EndereÁo(SBF)." )
+	FMX_HELP( "SaldoChassi" , "Ve√≠culo sem saldo no estoque por endere√ßo/n√∫mero de s√©rie." , "Verifique se o chassi est√° com saldo na tabela de Saldos por Endere√ßo(SBF)." )
 	Return .F. 
 EndIf 
 
@@ -506,7 +535,7 @@ User Function VA06002_Chassi(cChassi)
 // ======================================================================= //
 
 If ! U_VA060SBF(cChassi)
-	FMX_HELP( "SaldoChassi" , "VeÌculo sem saldo no estoque por endereÁo/n˙mero de sÈrie." , "Verifique se o chassi est· com saldo na tabela de Saldos por EndereÁo(SBF)." ) 
+	FMX_HELP( "SaldoChassi" , "Ve√≠culo sem saldo no estoque por endere√ßo/n√∫mero de s√©rie." , "Verifique se o chassi est√° com saldo na tabela de Saldos por Endere√ßo(SBF)." ) 
 	Return .F.
 EndIf
 
@@ -605,13 +634,13 @@ Return
 // ======================================================================= //
 User Function CAWHEVLR() 
 // ======================================================================= //
-/* FunÁ„o para n„o permitir a ALTERA«√O dos dados do tÌtulo, preenchidos 
-   em "NegociaÁ„o para o VeÌculo selecionado" (grid com tabela VRL). 
-   Esta mensagem/regra impeditiva sÛ ser· considerada para os pedidos com 
-   o campo "Tipo Venda" (VRJ_TIPVEN) contido no conte˙do do NOVO par‚metro 
+/* Fun√ß√£o para n√£o permitir a ALTERA√á√ÉO dos dados do t√≠tulo, preenchidos 
+   em "Negocia√ß√£o para o Ve√≠culo selecionado" (grid com tabela VRL). 
+   Esta mensagem/regra impeditiva s√≥ ser√° considerada para os pedidos com 
+   o campo "Tipo Venda" (VRJ_TIPVEN) contido no conte√∫do do NOVO par√¢metro 
    denominado "MV_ZTPVDCH". 
-   O conte˙do deste par‚metro, a principio, est· cadastrado com "03/05/" 
-   Dever· ser inclusa como "U_CAWHEVLR()" no Modo EdiÁ„o (X3_WHEN) dos 
+   O conte√∫do deste par√¢metro, a principio, est√° cadastrado com "03/05/" 
+   Dever√° ser inclusa como "U_CAWHEVLR()" no Modo Edi√ß√£o (X3_WHEN) dos 
    seguintes campos da tabela tabela "VRL" - Financeiro - Montadora:
        VRL_E1PREF , VRL_E1NUM  , VRL_E1PARC , VRL_E1TIPO , VRL_E1NATU , 
        VRL_E1CLIE , VRL_E1LOJA , VRL_E1DTEM , VRL_E1DTVE , VRL_E1DTVR , 
@@ -634,21 +663,21 @@ cTpVdNaoPe := AllTrim(cTpVdNaoPe)
 
 If ALTERA 
 	If VRJ->VRJ_TIPVEN $ cTpVdNaoPe 										// --> MV_ZTPVDCH - "03/05/" 
-		If VRL->( !Eof() )  .And.  ( VRL->VRL_PEDIDO == VRJ->VRJ_PEDIDO )	// --> Existe e est· posicionado no registro da tabela "VRL" 
+		If VRL->( !Eof() )  .And.  ( VRL->VRL_PEDIDO == VRJ->VRJ_PEDIDO )	// --> Existe e est√° posicionado no registro da tabela "VRL" 
 			cVRLE1PREF := VRL->VRL_E1PREF 
 			cVRLE1NUM_ := VRL->VRL_E1NUM 
 			cVRLE1PARC := VRL->VRL_E1PARC
 			nVRLE1VALO := VRL->VRL_E1VALO 
 			If !Empty(cVRLE1PREF)  .Or.  !Empty(cVRLE1NUM_)  .Or.  !Empty(cVRLE1PARC)  .Or.  nVRLE1VALO <> 0 
-				MsgAlert("N„o È permitida a alteraÁ„o dos dados financeiros para este tipo de venda !" , "Especifico") 
+				MsgAlert("N√£o √© permitida a altera√ß√£o dos dados financeiros para este tipo de venda !" , "Especifico") 
 				lRetY := .F. 
 			EndIf 
-		Else 																// --> Caso n„o esteja posicionado na "VRL"... posiciona para certificar se existe.
+		Else 																// --> Caso n√£o esteja posicionado na "VRL"... posiciona para certificar se existe.
 			dbSelectArea("VRL") 											// --> Tabela...: "VRL" - Financeiro - Montadora. 
 			VRL->(dbSetOrder(2)) 											// --> Indice 02: VRL_FILIAL + VRL_PEDIDO + VRL_ITEPED 
 			VRL->(dbSeek(VRJ->VRJ_FILIAL + VRJ->VRJ_PEDIDO)) 
 			If VRL->( Eof() )  .Or.  ( VRL->VRL_PEDIDO <> VRJ->VRJ_PEDIDO )
-				// --> Realmente n„o existe registro gravado na base. Ent„o permite a digitaÁ„o dos campos.  
+				// --> Realmente n√£o existe registro gravado na base. Ent√£o permite a digita√ß√£o dos campos.  
 				lRetY := .T. 
 			EndIf 
 		EndIf 
@@ -662,8 +691,8 @@ Return lRetY
 
 
 // --> Incluso  Reinaldo  03/03/2022   (*INICIO*) ----------------------- //
-//FunÁ„o criada para Liberar os empenhos que possa tem na SBF.
-//Para Prevenir erro na liberaÁ„o de Estoque e trave a Tabla SF2
+//Fun√ß√£o criada para Liberar os empenhos que possa tem na SBF.
+//Para Prevenir erro na libera√ß√£o de Estoque e trave a Tabla SF2
 // ======================================================================= //
 User Function VA060EMP(cChassi)
 // ======================================================================= //
@@ -701,4 +730,179 @@ Local cSQLALIAS := "BFEMP"
 	(cSQLAlias)->(dbCloseArea())
 
 Return .T.
-// --> Incluso  Reinaldo Rabelo  03/03/2022   (*FINAL* ) ----------------------- //
+/*
+
+Preenche o campo E1_XFORMA e reordena as Parcelas nas Tabelas SE1, VS9 e VRL
+
+*/
+Static Function fFinVei()
+Local aArea      := GetArea()	
+Local aAreaSe1   := SE1->(GetArea())
+Local aAreaVRL   := VRL->(GetArea())
+Local aAreaVS9   := VS9->(GetArea())
+Local cQuery     := ""
+Local _cTmpAlias := GetNextAlias()
+local aKeySe1	 := {}
+Local _cParcela  := "Z0"
+Local x 		 := 0
+
+cQuery += CRLF + " select "
+cQuery += CRLF + "     SE1.E1_XFORMA, "
+cQuery += CRLF + "     VRL.VRL_XFORMA, "
+cQuery += CRLF + "	   VRL.VRL_XDECRE, "
+cQuery += CRLF + "	   VRL.VRL_XPLACA, "
+cQuery += CRLF + "     SF2.F2_COND, "
+cQuery += CRLF + "     VS9.VS9_PARCEL, "
+cQuery += CRLF + "     SE1.E1_PARCELA, "
+cQuery += CRLF + "     VS9.VS9_SEQUEN, "
+cQuery += CRLF + "     SE1.R_E_C_N_O_ AS E1RECNO,  "
+cQuery += CRLF + "     VRL.R_E_C_N_O_ AS VRLRECNO, "
+cQuery += CRLF + "     VS9.R_E_C_N_O_ AS VS9RECNO, "
+cQuery += CRLF + "     SE1.E1_VALOR , "
+cQuery += CRLF + "     VRL.VRL_E1VALO, "
+cQuery += CRLF + "     SE1.E1_NUM, "
+cQuery += CRLF + "     VRL.VRL_E1PREF, "
+cQuery += CRLF + "     VRL.VRL_E1NUM, "
+cQuery += CRLF + "     VRL.VRL_E1PARC, "
+cQuery += CRLF + "     VRL.VRL_E1TIPO, "
+cQuery += CRLF + "     SE1.E1_EMISSAO, "
+cQuery += CRLF + "     VRL.VRL_E1DTVE,  "
+CqUERY += CRLF + " 	   NVL((Select E4_XFORMA FROM " + RetSqlName("SE4") + " SE4 WHERE SE4.E4_FILIAL = '" + xFilial("SE4") + "' AND SE4.E4_CODIGO = SF2.F2_COND AND SE4.D_E_L_E_T_ = ' '),' ') AS E4_XFORMA 
+cQuery += CRLF + " from " + RetSqlName("VRL") + " VRL "
+
+cQuery += CRLF + " INNER  JOIN " + RetSqlName("VRK") + " VRK "
+cQuery += CRLF + "     ON  VRK.VRK_PEDIDO = VRL.VRL_PEDIDO "
+cQuery += CRLF + "     AND VRK.VRK_FILIAL = VRL.VRL_FILIAL "
+cQuery += CRLF + "     AND VRK.VRK_ITEPED = VRL.VRL_ITEPED "
+cQuery += CRLF + "     AND VRK.D_E_L_E_T_ = ' ' "
+
+cQuery += CRLF + " INNER JOIN " + RetSqlName("VV0") + " VV0 "
+cQuery += CRLF + "     ON  VV0.VV0_FILIAL = '" + xFilial("VV0") + "' "
+cQuery += CRLF + "	   AND VV0.VV0_NUMTRA = VRK.VRK_NUMTRA "
+cQuery += CRLF + "     AND VV0.VV0_CODCLI = VRL.VRL_E1CLIE "
+cQuery += CRLF + "     AND VV0.VV0_LOJA   = VRL.VRL_E1LOJA "
+cQuery += CRLF + "     AND VV0.D_E_L_E_T_ = ' ' "
+
+cQuery += CRLF + " INNER JOIN  " + RetSqlName("SD2") + " SD2 "
+cQuery += CRLF + "     ON  SD2.D2_FILIAL  = '" + xFilial("SD2") + "' "
+cQuery += CRLF + "     AND SD2.D2_CLIENTE = VRL.VRL_E1CLIE "
+cQuery += CRLF + "     AND SD2.D2_LOJA    = VRL.VRL_E1LOJA "
+cQuery += CRLF + "     AND SD2.D2_DOC     = VV0.VV0_NUMNFI "
+cQuery += CRLF + "     AND SD2.D2_SERIE   = VV0.VV0_SERNFI "
+cQuery += CRLF + "     AND SD2.D_E_L_E_T_ = ' ' "
+
+cQuery += CRLF + " INNER JOIN " + RetSqlName("SF2") + " SF2 "
+cQuery += CRLF + "     ON  SF2.F2_FILIAL  = SD2.D2_FILIAL "
+cQuery += CRLF + "     AND SF2.F2_DOC     = SD2.D2_DOC "
+cQuery += CRLF + "     AND SF2.F2_SERIE   = SD2.D2_SERIE "
+cQuery += CRLF + "     AND SF2.F2_CLIENTE = SD2.D2_CLIENTE "
+cQuery += CRLF + "     AND SF2.F2_LOJA    = SD2.D2_LOJA "
+cQuery += CRLF + "     AND SF2.D_E_L_E_T_ = ' ' "
+
+cQuery += CRLF + " INNER JOIN " + RetSqlName("SE1") + " SE1 "
+cQuery += CRLF + "     ON  SE1.E1_FILIAL = '" + xFilial("SE1") + "' "
+cQuery += CRLF + "     AND SE1.E1_PREFIXO = SD2.D2_SERIE "
+cQuery += CRLF + "     AND SE1.E1_NUM     = SD2.D2_DOC "
+cQuery += CRLF + "     AND SE1.E1_CLIENTE = SD2.D2_CLIENTE "
+cQuery += CRLF + "     AND SE1.E1_LOJA    = SD2.D2_LOJA "
+//cQuery += CRLF + "     AND SE1.E1_VALOR   = VRL.VRL_E1VALO "
+//cQuery += CRLF + "     AND SE1.E1_PARCELA = VRL.VRL_E1PARC
+cQuery += CRLF + "     AND SE1.E1_XFORMA  = ' ' "
+cQuery += CRLF + "     AND SE1.D_E_L_E_T_ = ' ' "
+
+cQuery += CRLF + "	INNER JOIN " + RetSqlName("VS9") + " VS9  "
+cQuery += CRLF + "	    ON  VS9.VS9_FILIAL = '" + xFilial("VS9")  + "' "
+cQuery += CRLF + "	    AND VS9.VS9_NUMIDE = VRK.VRK_NUMTRA "
+cQuery += CRLF + "	    AND VS9.VS9_SEQUEN = VRL.VRL_E1PARC "
+cQuery += CRLF + "	    AND VS9.VS9_PARCEL = SE1.E1_PARCELA "
+cQuery += CRLF + "	    AND VS9.D_E_L_E_T_ = ' ' "
+
+cQuery += CRLF + " where  
+cQuery += CRLF + "         VRL.VRL_FILIAL = '" + xFilial("VRL")  + "' "
+cQuery += CRLF + "	   AND VRL.VRL_E1CLIE = '" + VRJ->VRJ_CODCLI + "' "
+cQuery += CRLF + "     AND VRL.VRL_E1LOJA = '" + VRJ->VRJ_LOJA   + "' "
+cQuery += CRLF + "     AND VRL.D_E_L_E_T_ = ' ' "
+cQuery += CRLF + "     and VRL.VRL_CANCEL = '0' "
+cQuery += CRLF + "     AND VRL.VRL_PEDIDO = '" + VRJ->VRJ_PEDIDO + "' "
+cQuery += CRLF + " ORDER BY VRL.VRL_E1PARC "
+
+If Select(_cTmpAlias) > 0 ;	(_cTmpAlias)->(DbCloseArea()) ; EndIf
+
+dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), _cTmpAlias , .F., .T. )
+
+DbSelectArea("SE1")
+DbSelectArea("VRL")
+DbSelectArea("VS9")
+SE1->(dbSetOrder(1))
+
+Begin Transaction
+	While (_cTmpAlias)->(!EOF())
+		
+		SE1->(DbGoTo((_cTmpAlias)->E1RECNO))
+		
+		AADD(aKeySe1,{(_cTmpAlias)->VRL_E1PREF, (_cTmpAlias)->VRL_E1NUM, (_cTmpAlias)->VRL_E1PARC, (_cTmpAlias)->VRL_E1TIPO,(_cTmpAlias)->VS9_PARCEL,0})
+		
+		if EMPTY(SE1->E1_XFORMA) .OR. !Empty((_cTmpAlias)->VRL_XPLACA) .OR. (_cTmpAlias)->VRL_XDECRE > 0
+			//Ajusto a Forma de Recebimento dos Titulos criados pelo Faturamento
+			RecLock('SE1',.f.)
+				SE1->E1_XFORMA  := IIF(!EMPTY((_cTmpAlias)->E4_XFORMA) ,(_cTmpAlias)->E4_XFORMA,(_cTmpAlias)->VRL_XFORMA)
+				SE1->E1_DECRESC := (_cTmpAlias)->VRL_XDECRE
+				SE1->E1_XPLACA  := (_cTmpAlias)->VRL_XPLACA
+			SE1->(MsUnlock())
+		
+		Endif
+		
+		VS9->(DbGoTo((_cTmpAlias)->VS9RECNO))
+		IF VS9->(!EOF()) .AND. VS9->VS9_PARCEL <> VS9->VS9_SEQUEN
+			//Ajusto as Parcelas da Negocia√ß√£o conforme os Titulos Gerados pelo Faturamento
+			RecLock('VS9',.f.)
+				VS9->VS9_SEQUEN := VS9->VS9_PARCEL
+			VS9->(MsUnlock())
+		
+		EndIf
+
+		VRL->(DbGoTo((_cTmpAlias)->VRLRECNO))
+		IF VRL->(!EOF()) .AND. VRL->VRL_E1PARC <> VS9->VS9_SEQUEN
+			//Ajusto as Parcelas da Negocia√ß√£o conforma as Geradas pelo Faturamento
+			RecLock('VRL',.F.)
+				VRL->VRL_E1PARC := VS9->VS9_PARCEL 
+			VRL->(MsUnlock())
+		
+		EndIf
+		x := Len(aKeySe1)
+		if SE1->(DbSeek(xFilial('SE1')+aKeySe1[x,1]+aKeySe1[x,2]+aKeySe1[x,3]+aKeySe1[x,4]))
+			//Altera as Parcelas da Negocia√ß√£o do Financeiro temporariamente para evitar Chave Duplicada
+			
+			aKeySe1[x,6] := SE1->(Recno())
+			_cParcela    := SOMA1(_cParcela)  //Para evitar chave duplicada, altero para Z1,Z2,Z3,...
+			RecLock('SE1',.F.)
+				SE1->E1_PARCELA := _cParcela
+			SE1->(MsUnlock())
+
+		EndIf
+		(_cTmpAlias)->(DbSkip())
+
+	EndDo
+
+	For x:= 1 To Len(aKeySe1)
+
+		if aKeySe1[x,6] > 0
+			SE1->(DbGoTo(aKeySe1[x,6]))
+			
+			//Agora confirmo a nova sequencia das Parcela da Negocia√ß√£o
+			RecLock('SE1',.f.)
+				SE1->E1_PARCELA := aKeySe1[x,5] 
+			SE1->(MsUnlock())
+
+		EndIf
+
+	Next x
+
+End Transaction
+
+RestArea(aAreaVS9)
+RestArea(aAreaVRL)
+RestArea(aAreaSe1)
+RestArea(aArea)
+
+Return

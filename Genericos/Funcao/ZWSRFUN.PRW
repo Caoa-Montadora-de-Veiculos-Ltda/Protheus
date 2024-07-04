@@ -422,10 +422,10 @@ Begin Sequence
 			If _nPosCpo == 0 .Or. Empty(_cCampo)
 				Loop
 			EndIf
-			If Len(_aCampos) > 1
-				_xValor := _aCampos[_nPos,2]
-				SZ1->(FieldPut(_nPosCpo, _xValor))
-			Endif	
+			//If Len(_aCampos) > 1
+			_xValor := _aCampos[_nPos,2]
+			SZ1->(FieldPut(_nPosCpo, _xValor))
+			//Endif	
 		Next _nPos
 	Endif	
 	SZ1->(MsUnlock())

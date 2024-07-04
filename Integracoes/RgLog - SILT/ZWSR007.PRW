@@ -14,7 +14,7 @@ Interface de Pedido a Separar Envio
 @type       class
 @return   	lRet			, caracter, JSON com tabelas.
 @client   	CAOA BARUERI
-@project 	RGLOG-Senior API-WIS_IntegraÁ„o_Webservices RGLOG vs 40 REV004_ (002)
+@project 	RGLOG-Senior API-WIS_Integra√ß√£o_Webservices RGLOG vs 40 REV004_ (002)
 			   Interface de Pedido a Separar - INT_E_CAB_PEDIDO_SAIDA / INT_E_DET_PEDIDO_SAIDA
 			   http://ipservidor:porta/interfacewis/entrada/pedido
 Z  -Customizado
@@ -38,7 +38,7 @@ User Function ZWSR007(_cAglutina, _cPicking, _lDataEnv, _cEmpresa, _cFilial, _aM
 
 	Private oJsRet		:= Nil
 	Begin Sequence
-		//se n„o For pro JOB	
+		//se n√£o For pro JOB	
 		If _lJob 
 			//Tratar abertura da empresa conforme enviado no parametro
 			Conout("ZWSR007 - Iniciando JOB")
@@ -51,7 +51,7 @@ User Function ZWSR007(_cAglutina, _cPicking, _lDataEnv, _cEmpresa, _cFilial, _aM
 			_lRet := ZWSR007PRC(_cAglutina, _cPicking, _lDataEnv , _oSay, _lJob)
 		Else
 			_nRegVS1	:= VS1->(Recno())
-			FwMsgRun(, {|_oSay| _lRet := ZWSR007PRC(_cAglutina, _cPicking, _lDataEnv , _oSay)}, "Envio de separaÁ„o", "Por favor aguarde...")
+			FwMsgRun(, {|_oSay| _lRet := ZWSR007PRC(_cAglutina, _cPicking, _lDataEnv , _oSay)}, "Envio de separa√ß√£o", "Por favor aguarde...")
 			VS1->(DbGoto(_nRegVS1))
 		EndIf
 		//uma forma de retornar msg caso seja chamado por uma outra funcionalidade DAC 13/07/2022
@@ -65,8 +65,9 @@ User Function ZWSR007(_cAglutina, _cPicking, _lDataEnv, _cEmpresa, _cFilial, _aM
 Return _lRet
 
 
-//Processar aglutinaÁ„o para envio de picking
+//Processar aglutina√ß√£o para envio de picking
 Static Function ZWSR007PRC(_cAglutina, _cPicking, _lDataEnv, _oSay, _lJob)
+
 	Local _cAlias 		:= GetNextAlias()
 	Local _cUsuario		:= SuperGetMV( "CMV_WSR009"  ,,"caoa.totvs" )  //Alltrim(Getmv("CMV_WSR009"))  
 	Local _cSenha	 	:= SuperGetMV( "CMV_WSR010"  ,,"CAgka2694X" )	//Alltrim(Getmv("CMV_WSR010"))  
@@ -92,14 +93,14 @@ Static Function ZWSR007PRC(_cAglutina, _cPicking, _lDataEnv, _oSay, _lJob)
 		EndIf
 		/*
 		If Empty(_cPicking) .and.  Empty(_cAglutina)
-			Aadd(_aMsgRet, {302,"N„o informado Picking e ou Onda para envio SeparaÁ„o "}) 
+			Aadd(_aMsgRet, {302,"N√£o informado Picking e ou Onda para envio Separa√ß√£o "}) 
 			_lRet := .F.
 			Break
 		EndIf
 		*/
 		//Caso tenha sido informado o numero do picking 
-		//foi implementado para posterior reenvio do picking caso seja necess·rio
-		//da forma em que esta o select exige ainda aglutinaÁ„o caso queira reenviar o picking mas È possivel alterar para n„o estar atrelado a aglutinaÁ„o  
+		//foi implementado para posterior reenvio do picking caso seja necess√°rio
+		//da forma em que esta o select exige ainda aglutina√ß√£o caso queira reenviar o picking mas √© possivel alterar para n√£o estar atrelado a aglutina√ß√£o  
 		If !Empty(_cPicking)
 			_cWhere :=  " VS1.VS1_XPICKI = '"+_cPicking+"' "
 		Else
@@ -142,10 +143,10 @@ Static Function ZWSR007PRC(_cAglutina, _cPicking, _lDataEnv, _oSay, _lJob)
 			/*
 
 			*/
-		_lProcessou := .F.  //indica que passou pelo processamento e n„o ser· tratado nas msg de erros acima
+		_lProcessou := .F.  //indica que passou pelo processamento e n√£o ser√° tratado nas msg de erros acima
 		_aMsgRet 	:= {}
 		If (_cAlias)->(Eof())
-			Aadd(_aMsgRet, {200,"N„o localizados registros para envio SeparaÁ„o "}) 
+			Aadd(_aMsgRet, {200,"N√£o localizados registros para envio Separa√ß√£o "}) 
 			_lRet	:= .F.
 			Break
 		EndIf
@@ -162,7 +163,7 @@ Static Function ZWSR007PRC(_cAglutina, _cPicking, _lDataEnv, _oSay, _lJob)
 				Loop
 			EndIf	  	
 			If ! _lDataEnv .and. !Empty(VS1->VS1_XDTEPI)  
-				Aadd(_aMsgRet, {301,"OrÁamento "+VS1->VS1_NUMORC+" com envio j· informado ref, Picking "+_cPicking+" para envio SeparaÁ„o "}) 
+				Aadd(_aMsgRet, {301,"Or√ßamento "+VS1->VS1_NUMORC+" com envio j√° informado ref, Picking "+_cPicking+" para envio Separa√ß√£o "}) 
 				_lRet	:= .F.
 				Break
 			EndIf	
@@ -173,128 +174,117 @@ Static Function ZWSR007PRC(_cAglutina, _cPicking, _lDataEnv, _oSay, _lJob)
 			SZK->(DbSetOrder(1))
 			SZK->(DbGotop())
 			If !SZK->(DbSeek(XFilial("SZK")+_cPicking))
-				Aadd(_aMsgRet, {301,"Problemas no envio RG LOG N„o localizados registros CabeÁalho Picking "+_cPicking+" para envio SeparaÁ„o "}) 
+				Aadd(_aMsgRet, {301,"Problemas no envio RG LOG N√£o localizados registros Cabe√ßalho Picking "+_cPicking+" para envio Separa√ß√£o "}) 
 				_lRet	:= .F.
 				Break
-			EndIf
-			//DAC Alterado o calculo para o retorno do carregamento , verificar com ZÈ 26/09/2022 ---DAC
-			//DAC verificar na revitalizaÁ„o se ira mudar a formula de calculo pois somente chamando em startjob ocasiona erro
-			//Antes de enviar recalcula os impostos DAC 21/07/2022, estava na gravaÁ„o das obs do VS1 alterado para o inicio
-			//quando n„o for chamada pelo JOB, forÁo uma chamada
-			If _lJob
-				If !VS1->(U_ORCCALFIS(VS1->VS1_NUMORC /*_cNumOrc*/,/*_lAtuaPreco*/))
-					//Gravo informaÁ„o no registro
-					Aadd(_aMsgRet, {303,"Problemas no envio RG LOG recalculo valores com registros relacionados aos itens para envio SeparaÁ„o Picking "+_cPicking}) 
-					_lRet	:= .F.
-					Break
-				Endif	
-			//Caso n„o seja processamento em job chamo para liberar o processo de encio	
-			Else
-				StartJob("U_XFUNIPOSTO",GetEnvServer(),.F.,VS1->VS1_NUMORC, cEmpAnt, cFilAnt, /*_nReprocessado*/, /*_oSay*/)
-			Endif
+			Endif	
+		//Caso n√£o seja processamento em job chamo para liberar o processo de encio	
+		Else
+			StartJob("U_XFUNIPOSTO",GetEnvServer(),.F.,VS1->VS1_NUMORC, cEmpAnt, cFilAnt, /*_nReprocessado*/, /*_oSay*/)
+		Endif
 
-			_cEmpWis := ""
-			_cDepWis := ""
-			If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
-				If AllTrim(VS1->VS1_XMARCA) =="CHE"
-					_cEmpWis := "1002"
-					_cDepWis := "PREP"
-				ElseIf AllTrim(VS1->VS1_XMARCA) =="SBR"
-					_cEmpWis := "1006"
-					_cDepWis := "RGLOG"
-				ElseIf AllTrim(VS1->VS1_XMARCA) =="HYU"
-					_cEmpWis := "1006"
-					_cDepWis := "RGLOG"
-				EndIf
-			ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
-				If AllTrim(VS1->VS1_XMARCA) =="HYU"
-					_cEmpWis := "1008"
-					_cDepWis := "RGLOG"
-				EndIf
-			EndIf
+		_cEmpWis := ""
+		_cDepWis := ""
+        If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+            If AllTrim(VS1->VS1_XMARCA) =="CHE"
+                _cEmpWis := "1002"
+			    _cDepWis := "PREP"
+            ElseIf AllTrim(VS1->VS1_XMARCA) =="SBR"
+                _cEmpWis := "1006"
+			    _cDepWis := "RGLOG"
+            ElseIf AllTrim(VS1->VS1_XMARCA) =="HYU"
+                _cEmpWis := "1006"
+			    _cDepWis := "RGLOG"
+            EndIf
+        ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
+            If AllTrim(VS1->VS1_XMARCA) =="HYU"
+                _cEmpWis := "1008"
+			    _cDepWis := "RGLOG"
+            EndIf
+		EndIf
+	
+	    FreeObj(_oJson)
+    	_oJson 				:= JsonObject():new()
+		_oJson['usuario']	:= _cUsuario
+		_oJson['senha']		:= _cSenha
+    	_oJson['pedido'] 	:= JSonObject():New()
+		_oJson['pedido'] ['nu_pedido']			:= _cPicking
+		_oJson['pedido'] ['cd_cliente']			:= Val(SA1->A1_CGC) //Convers√£o para inteiro - Altera√ß√£o solicitada por Sidney em 31/01/2022
+		_oJson['pedido'] ['cd_empresa']			:= _cEmpWis
+		_oJson['pedido'] ['cd_situacao']		:= _nSituacao
+		_oJson['pedido'] ['dt_addrow']			:= ""  	//DtoC(Date())+" "+SubsTr(time(),1,8)
+		_oJson['pedido'] ['id_processado']		:= "N"
+		_oJson['pedido'] ['cd_error']			:= ""
+		_oJson['pedido'] ['dt_processado']		:= ""		//DtoC(Date())+" "+SubsTr(time(),1,8)
+		_oJson['pedido'] ['tp_pedido']			:= zBuscaTp(AllTrim(VS1->VS1_XTPPED)) //"C" 		//AllTrim(VS1->VS1_XTPPED) precisar de uma tabela de /para Cirilo ira passar os c√≥digos DAC 21/12/2021
+		_oJson['pedido'] ['cd_rota']			:= "2"
+		_oJson['pedido'] ['ds_arquivo']			:= ""
+		_oJson['pedido'] ['referencia']			:= ""
+		_oJson['pedido'] ['cd_assunto']			:= ""
+		_oJson['pedido'] ['ds_assunto']			:= ""
+		_oJson['pedido'] ['cd_posto']			:= ""
+		_oJson['pedido'] ['descricao']			:= ""
+		_oJson['pedido'] ['nr_kit']				:= ""
+		_oJson['pedido'] ['cd_linha_montagem']	:= ""
+		_oJson['pedido'] ['nu_interface']		:= ""
+		_oJson['pedido'] ['cd_porta']			:= "1"      	//Verificar valor default sera definido Sidney
+		_oJson['pedido'] ['nu_pedido_origem']	:= _cPicking
+		_oJson['pedido'] ['cd_produto']			:= ""
+		_oJson['pedido'] ['cd_carga']			:= "1"
+		_oJson['pedido'] ['dt_faturamento']		:= ""
+		_oJson['pedido'] ['tp_frete']			:= ""
+		_oJson['pedido'] ['id_cliente_retira']	:= ""
+		_oJson['pedido'] ['cd_onda']			:= ""	
+		_oJson['pedido'] ['cd_transportador']	:= ""
+		_oJson['pedido'] ['ds_transportadora']	:= ""
+		_oJson['pedido'] ['cd_registro']		:= ""
+		_oJson['pedido'] ['ds_cliente']			:= AllTrim(SA1->A1_NOME)
+		_oJson['pedido'] ['nu_seq_entrega']		:= 0
+		_oJson['pedido'] ['qt_itens']			:= ""
+		_oJson['pedido'] ['id_cross_docking']	:= ""
+		_oJson['pedido'] ['cd_deposito']		:= _cDepWis
+		_oJson['pedido'] ['cd_roteiro']			:= ""
+		_oJson['pedido'] ['nu_agenda']			:= ""
+		_oJson['pedido'] ['ds_placa']			:= SA1->A1_EST	//"" alterado conforme solicita√ß√£o Sidnei RG LOG tem que ser UF do cliente  DAC 16/02/2022
+		_oJson['pedido'] ['cd_freteiro']		:= ""
+		_oJson['pedido'] ['nm_municipio']		:= ""
+		_oJson['pedido'] ['dt_liberacao_pedido']:= ""
+		_oJson['pedido'] ['cd_cgc_cliente']		:= Val(SA1->A1_CGC) //Convers√£o para inteiro - Altera√ß√£o solicitada por Sidney em 31/01/2022
+		_oJson['pedido'] ['nm_representante']	:= ""
+		_oJson['pedido'] ['cd_representante']	:= ""
+		_oJson['pedido'] ['ds_bairro']			:= AllTrim(SA1->A1_BAIRRO)
+		_oJson['pedido'] ['ds_cidade']			:= AllTrim(SA1->A1_MUN)
+		_oJson['pedido'] ['ds_endereco']		:= AllTrim(SA1->A1_END)
+		_oJson['pedido'] ['nm_solicitante']		:= ""
+		_oJson['pedido'] ['nm_destinatario']	:= ""
+		_oJson['pedido'] ['nu_picking']			:= _cPicking
+		_oJson['pedido'] ['nu_pedido_referencia']:= ""
+		_oJson['pedido'] ['ds_meio_transp']		:= ""
+    	_oJson['pedido'] ['item']  				:= ZWSR007ITE( _oJson, _cPicking, @_lRet, @_aMsgRet)
 
-			FreeObj(_oJson)
-			_oJson 				:= JsonObject():new()
-			_oJson['usuario']	:= _cUsuario
-			_oJson['senha']		:= _cSenha
-			_oJson['pedido'] 	:= JSonObject():New()
-			_oJson['pedido'] ['nu_pedido']			:= _cPicking
-			_oJson['pedido'] ['cd_cliente']			:= Val(SA1->A1_CGC) //Convers„o para inteiro - AlteraÁ„o solicitada por Sidney em 31/01/2022
-			_oJson['pedido'] ['cd_empresa']			:= _cEmpWis //"1"	//SM0->M0_CGC Sidnei ira verificar e retornar ser· cÛdigo fixo
-			_oJson['pedido'] ['cd_situacao']		:= _nSituacao
-			_oJson['pedido'] ['dt_addrow']			:= ""  	//DtoC(Date())+" "+SubsTr(time(),1,8)
-			_oJson['pedido'] ['id_processado']		:= "N"
-			_oJson['pedido'] ['cd_error']			:= ""
-			_oJson['pedido'] ['dt_processado']		:= ""		//DtoC(Date())+" "+SubsTr(time(),1,8)
-			_oJson['pedido'] ['tp_pedido']			:= zBuscaTp(AllTrim(VS1->VS1_XTPPED)) //"C" 		//AllTrim(VS1->VS1_XTPPED) precisar de uma tabela de /para Cirilo ira passar os cÛdigos DAC 21/12/2021
-			_oJson['pedido'] ['cd_rota']			:= "2"
-			_oJson['pedido'] ['ds_arquivo']			:= ""
-			_oJson['pedido'] ['referencia']			:= ""
-			_oJson['pedido'] ['cd_assunto']			:= ""
-			_oJson['pedido'] ['ds_assunto']			:= ""
-			_oJson['pedido'] ['cd_posto']			:= ""
-			_oJson['pedido'] ['descricao']			:= ""
-			_oJson['pedido'] ['nr_kit']				:= ""
-			_oJson['pedido'] ['cd_linha_montagem']	:= ""
-			_oJson['pedido'] ['nu_interface']		:= ""
-			_oJson['pedido'] ['cd_porta']			:= "1"      	//Verificar valor default sera definido Sidney
-			_oJson['pedido'] ['nu_pedido_origem']	:= _cPicking
-			_oJson['pedido'] ['cd_produto']			:= ""
-			_oJson['pedido'] ['cd_carga']			:= "1"
-			_oJson['pedido'] ['dt_faturamento']		:= ""
-			_oJson['pedido'] ['tp_frete']			:= ""
-			_oJson['pedido'] ['id_cliente_retira']	:= ""
-			_oJson['pedido'] ['cd_onda']			:= ""	
-			_oJson['pedido'] ['cd_transportador']	:= ""
-			_oJson['pedido'] ['ds_transportadora']	:= ""
-			_oJson['pedido'] ['cd_registro']		:= ""
-			_oJson['pedido'] ['ds_cliente']			:= AllTrim(SA1->A1_NOME)
-			_oJson['pedido'] ['nu_seq_entrega']		:= 0
-			_oJson['pedido'] ['qt_itens']			:= ""
-			_oJson['pedido'] ['id_cross_docking']	:= ""
-			_oJson['pedido'] ['cd_deposito']		:= _cDepWis//If(VS1->VS1_XMARCA == "CHE","PREP", "RGLOG") //conforme solicitaÁ„o JC DAC 13/04/2022	//AllTrim(VS1->VE1_XDEPWS)   //DEFINIDO PELO ZE (ESTARA NA VE1 CAMPO CUSTOMIZADO) VE1_XDEPWS (DEPOSITO)
-			_oJson['pedido'] ['cd_roteiro']			:= ""
-			_oJson['pedido'] ['nu_agenda']			:= ""
-			_oJson['pedido'] ['ds_placa']			:= SA1->A1_EST	//"" alterado conforme solicitaÁ„o Sidnei RG LOG tem que ser UF do cliente  DAC 16/02/2022
-			_oJson['pedido'] ['cd_freteiro']		:= ""
-			_oJson['pedido'] ['nm_municipio']		:= ""
-			_oJson['pedido'] ['dt_liberacao_pedido']:= ""
-			_oJson['pedido'] ['cd_cgc_cliente']		:= Val(SA1->A1_CGC) //Convers„o para inteiro - AlteraÁ„o solicitada por Sidney em 31/01/2022
-			_oJson['pedido'] ['nm_representante']	:= ""
-			_oJson['pedido'] ['cd_representante']	:= ""
-			_oJson['pedido'] ['ds_bairro']			:= AllTrim(SA1->A1_BAIRRO)
-			_oJson['pedido'] ['ds_cidade']			:= AllTrim(SA1->A1_MUN)
-			_oJson['pedido'] ['ds_endereco']		:= AllTrim(SA1->A1_END)
-			_oJson['pedido'] ['nm_solicitante']		:= ""
-			_oJson['pedido'] ['nm_destinatario']	:= ""
-			_oJson['pedido'] ['nu_picking']			:= _cPicking
-			_oJson['pedido'] ['nu_pedido_referencia']:= ""
-			_oJson['pedido'] ['ds_meio_transp']		:= ""
-			_oJson['pedido'] ['item']  				:= ZWSR007ITE( _oJson, _cPicking, @_lRet, @_aMsgRet)
-
-			If !_lRet
-				_lRet := .F.
-				Break
-			EndIf
-			_aNumOrc := {}
-			//Guardo orÁamentos para poder agrupar os produtos nos itens
-			//desta forma passo os orÁamentos que ja foram enviados em ZWSR007ITE enviara somente VS3 nesta funÁ„o conforme numero do picking
-			_cObs := "Pick "+AllTrim(_cPicking)+" ref.orc.fases " 
-			While (_cAlias)->(!Eof()) .And. (_cAlias)->VS1_XPICKI == _cPicking 
-				_nPos := Ascan(_aNumOrc,{|x| x[1] == (_cAlias)->VS1_NUMORC})
-				If  _nPos == 0 .and. (_cAlias)->NREGVS1 > 0
-					Aadd(_aNumOrc,{(_cAlias)->VS1_NUMORC,(_cAlias)->NREGVS1})
-					//_cObs += AllTrim( (_cAlias)->VS1_NUMORC )+" "  //N„o sera necess·rio mandar ser· tratado no SC5 conforme alinhado com ZÈ DAC  22/02/2022 
+		If !_lRet
+			_lRet := .F.
+			Break
+		EndIf
+		_aNumOrc := {}
+		//Guardo or√ßamentos para poder agrupar os produtos nos itens
+		//desta forma passo os or√ßamentos que ja foram enviados em ZWSR007ITE enviara somente VS3 nesta fun√ß√£o conforme numero do picking
+		_cObs := "Pick "+AllTrim(_cPicking)+" ref.orc.fases " 
+  		While (_cAlias)->(!Eof()) .And. (_cAlias)->VS1_XPICKI == _cPicking 
+			_nPos := Ascan(_aNumOrc,{|x| x[1] == (_cAlias)->VS1_NUMORC})
+			If  _nPos == 0 .and. (_cAlias)->NREGVS1 > 0
+				Aadd(_aNumOrc,{(_cAlias)->VS1_NUMORC,(_cAlias)->NREGVS1})
+				//_cObs += AllTrim( (_cAlias)->VS1_NUMORC )+" "  //N√£o sera necess√°rio mandar ser√° tratado no SC5 conforme alinhado com Z√© DAC  22/02/2022 
 				EndIf
-				//-- Guardo recnos para gravaÁ„o do VS1_PICKI em todos os registros da VS1
-				//-- em caso de sucesso na integraÁ„o do pedido - Fagner - 07/01/2021
-				//Aadd( aRecVS1, (_cAlias)->NREGVS1)  //Retirado n„o È necess·rio _aNumorc ja possui numero de registro DAC 03/02/2022
+				//-- Guardo recnos para grava√ß√£o do VS1_PICKI em todos os registros da VS1
+				//-- em caso de sucesso na integra√ß√£o do pedido - Fagner - 07/01/2021
+				//Aadd( aRecVS1, (_cAlias)->NREGVS1)  //Retirado n√£o √© necess√°rio _aNumorc ja possui numero de registro DAC 03/02/2022
 				(_cAlias)->(DbSkip())
 			EndDo
-			_lProcessou := .T.  //indica que passou pelo processamento e n„o ser· tratado nas msg de erros acima
+			_lProcessou := .T.  //indica que passou pelo processamento e n√£o ser√° tratado nas msg de erros acima
 			_lRet := ZWSRENVPOS( _oJson, _oSay, _lJob)
 			ZWSR007AOP(_aNumOrc, _cPicking, _lRet, _cObs, _oJson )
-			//Caso ja tenha entrado sem informaÁ„o do picking dever· zerar o numero do picking para criar um sequencial
+			//Caso ja tenha entrado sem informa√ß√£o do picking dever√° zerar o numero do picking para criar um sequencial
 			/*
 			If zPostRg(_oJson)
 				VS1->(ConfirmSx8())
@@ -306,8 +296,8 @@ Static Function ZWSR007PRC(_cAglutina, _cPicking, _lDataEnv, _oSay, _lJob)
 	End Sequence
 
 	If !_lProcessou .and. Len(_aMsgRet) > 0 
-		_cObs := "PROBLEMAS NO ENVIO RG LOG [ZWSR007], N√O ENVIADO PICKING "+ _cPicking + " em " + DtoC(Date())+ SubsTr(Time(),1,5) +CRLF
-		If _aMsgRet[1,1] == 200  //Caso n„o tenha localizado registro
+		_cObs := "PROBLEMAS NO ENVIO RG LOG [ZWSR007], N√ÉO ENVIADO PICKING "+ _cPicking + " em " + DtoC(Date())+ SubsTr(Time(),1,5) +CRLF
+		If _aMsgRet[1,1] == 200  //Caso n√£o tenha localizado registro
 			_cObs += " - "+_aMsgRet[1,2] + CRLF
 			Conout(_cObs)
 		Else
@@ -317,10 +307,10 @@ Static Function ZWSR007PRC(_cAglutina, _cPicking, _lDataEnv, _oSay, _lJob)
 			(_cAlias)->(DbGotop())
 			While (_cAlias)->(!Eof())
 				VS1->(DbGoto((_cAlias)->NREGVS1))  
-				//Gravo informaÁ„o no registro
+				//Gravo informa√ß√£o no registro
 				VS1->(RecLock("VS1", .F. ))
 				VS1->VS1_OBSAGL	:= Upper(_cObs) + CRLF  + AllTrim(VS1->VS1_OBSAGLU)
-				VS1->VS1_XBO	:= "E"  //Problemas na integraÁ„o
+				VS1->VS1_XBO	:= "E"  //Problemas na integra√ß√£o
 				VS1->(MsUnlock())
 				(_cAlias)->(DbSkip())
 			EndDo
@@ -332,7 +322,7 @@ Static Function ZWSR007PRC(_cAglutina, _cPicking, _lDataEnv, _oSay, _lJob)
 		Ferase(_cAlias+GetDBExtension())
 	Endif 
 	If _lJob
-		Conout("ZWSR007 - Finalizando processamento envio "+DtoC(Date())+" as "+Time()+" com "+If(_lRet,"Sucesso","InconsistÍncia"))
+		Conout("ZWSR007 - Finalizando processamento envio "+DtoC(Date())+" as "+Time()+" com "+If(_lRet,"Sucesso","Inconsist√™ncia"))
 	EndIf
 
 Return _lRet
@@ -348,9 +338,9 @@ Local _nPos
 Local _nSeq
 
 Begin Sequence
-	//FaÁo um Select para agrupar por quantidade
-	//Ajustado GROUP BY n„o pode ser de item e sequencia
-	BeginSql Alias _cAliasPesq //Define o nome do alias tempor·rio 
+	//Fa√ßo um Select para agrupar por quantidade
+	//Ajustado GROUP BY n√£o pode ser de item e sequencia
+	BeginSql Alias _cAliasPesq //Define o nome do alias tempor√°rio 
 		SELECT 	VS3.VS3_CODITE, 
 				SUM(VS3.VS3_QTDITE) AS VS3_QTDITE,
 				SUM(VS3.VS3_VALTOT) AS VS3_VALTOT
@@ -366,14 +356,14 @@ Begin Sequence
 	If (_cAliasPesq)->(Eof())  
     	//adiciono retorno em branco
 		Aadd(_aItens,JsonObject():new())
-		Aadd(_aMsgRet, {301,"Problemas envio RG LOG, N„o localizados registros relacionados aos itens para envio SeparaÁ„o "}) 
+		Aadd(_aMsgRet, {301,"Problemas envio RG LOG, N√£o localizados registros relacionados aos itens para envio Separa√ß√£o "}) 
 		_lRet := .F.
 		Break	
 	Endif
 	While (_cAliasPesq)->(!Eof())
 		//Controlar 
 		If (_cAliasPesq)->VS3_VALTOT <= 0
-			Aadd(_aMsgRet, {302,"Problemas envio RG LOG, Valores referente ao total zerados, n„o ser· enviado Picking ! "}) 
+			Aadd(_aMsgRet, {302,"Problemas envio RG LOG, Valores referente ao total zerados, n√£o ser√° enviado Picking ! "}) 
 			_lRet := .F.
 			Break	
 		Endif
@@ -381,7 +371,7 @@ Begin Sequence
     	_nPos := Len(_aItens)
     	_nSeq := _nPos //Val((_cAliasPesq)->VS3_SEQUEN) //Len(_aItens)
     	_aItens[_nPos] ['nu_pedido'] 			:= _cPicking
-    	_aItens[_nPos] ['cd_cliente'] 			:= Val(SA1->A1_CGC) //Convers„o para inteiro - AlteraÁ„o solicitada por Sidney em 31/01/2022
+    	_aItens[_nPos] ['cd_cliente'] 			:= Val(SA1->A1_CGC) //Convers√£o para inteiro - Altera√ß√£o solicitada por Sidney em 31/01/2022
     	_aItens[_nPos] ['cd_empresa'] 			:= _cEmpWis //"1"
 		_aItens[_nPos] ['cd_produto'] 			:= AllTrim((_cAliasPesq)->VS3_CODITE)
 		_aItens[_nPos] ['cd_faixa'] 			:= ""
@@ -409,7 +399,7 @@ Begin Sequence
 		_aItens[_nPos] ['cd_registro'] 			:= ""
 		_aItens[_nPos] ['id_processado'] 		:= "N"
 		_aItens[_nPos] ['nu_doc_erp'] 			:= ""
-		_aItens[_nPos] ['cd_deposito'] 			:= _cDepWis//If(VS1->VS1_XMARCA == "CHE","PREP", "RGLOG") //conforme solicitaÁ„o JC DAC 13/04/2022
+		_aItens[_nPos] ['cd_deposito'] 			:= _cDepWis//If(VS1->VS1_XMARCA == "CHE","PREP", "RGLOG") //conforme solicita√ß√£o JC DAC 13/04/2022
 		_aItens[_nPos] ['cd_roteiro'] 			:= ""
 		_aItens[_nPos] ['nu_seq_entrega'] 		:= ""
 		_aItens[_nPos] ['nu_agenda'] 			:= ""
@@ -425,18 +415,18 @@ If Select((_cAliasPesq)) <> 0
 Endif 
 Return _aItens
 
-//Atualizar os orÁamentos com os numero do picking
+//Atualizar os or√ßamentos com os numero do picking
 Static Function ZWSR007AOP(_aNumOrc, _cPicking, _lProcessado, _cObsMenNF, _oJson)
 Local _lRet	:= .T.
-Local _cObs	:= "[ZWSR007AOP] ENVIO SEPARA«√O PICKING "+ _cPicking +" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+ CRLF		
+Local _cObs	:= "[ZWSR007AOP] ENVIO SEPARA√á√ÉO PICKING "+ _cPicking +" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+ CRLF		
 Local _nPos
 
 Default _lProcessado 	:= .F. 
 Default _cObsMenNF		:= ""
 
 Begin Sequence
-	//guardo primeiro a observaÁ„o
-	//pega informaÁıes do retorno para gravar na obs
+	//guardo primeiro a observa√ß√£o
+	//pega informa√ß√µes do retorno para gravar na obs
 	For _nPos := 1 To Len(_aMsgRet)
 		_cObs += _aMsgRet[_nPos,2] + CRLF
 	Next
@@ -447,7 +437,7 @@ Begin Sequence
 	ZWSR007GRJ(_cPicking, _oJson, _lProcessado, @_cObs)
 	//Gravo usuario e obs
 	For _nPos := 1 To Len(_aNumOrc) 
-		VS1->(DbGoto( _aNumOrc[_nPos,2] )) // //N.OrÁamento [1], N.do Registro na VS1 [2]
+		VS1->(DbGoto( _aNumOrc[_nPos,2] )) // //N.Or√ßamento [1], N.do Registro na VS1 [2]
 		If VS1->(RecLock("VS1",.F.))
 			If _lProcessado
 				//VS1->VS1_XPICKI := _cPicking  JA ESTA GRAVADO ANTERIORMENTE
@@ -456,7 +446,7 @@ Begin Sequence
 				VS1->VS1_XUSUPI := RetCodUsr()
 				VS1->VS1_XBO	:= "I"  //foi integrado
 				VS1->VS1_OBSAGL	:=  Upper(_cObs) + CRLF  + AllTrim(VS1->VS1_OBSAGL) 
-				//Gravar Picking e AglutinaÁ„o no VS3 na VS3 - Itens
+				//Gravar Picking e Aglutina√ß√£o no VS3 na VS3 - Itens
 				VS3->(dbSetOrder(1))
 				VS3->(dbSeek(xFilial("VS3")+VS1->VS1_NUMORC))  //_aNumOrc[_nPos,1]))
        	    	Do While (!("VS3")->( Eof() ) .and. VS3->VS3_FILIAL ==  VS1->VS1_FILIAL .AND. VS3->VS3_NUMORC = VS1->VS1_NUMORC )//_aNumOrc[_nPos,1])
@@ -469,23 +459,23 @@ Begin Sequence
 		        	VS3->(MsUnlock())
                 	VS3->(dbSkip())
             	EndDo
-				//N√O GRAVAR INFORMA«’ES SERA ENVIADO NO RECEBIMENTO E NO MOMENTO DO SC5 DAC 22/02/2022
+				//N√ÉO GRAVAR INFORMA√á√ïES SERA ENVIADO NO RECEBIMENTO E NO MOMENTO DO SC5 DAC 22/02/2022
 				//VS1->VS1_MENNOT := AllTrim(VS1->VS1_NUMORC) //Upper(AllTrim(_cObsMenNF))
 				//EndIf
 			Else
-				//DAC Reverter o orÁamento e o picking Avalidar com  JC se libera esta funcionalidade neste ponto
-				//U_XRETSTVS1(VS1->VS1_NUMORC, .F. /*_lTela*/)  //reverter orÁamento caso n„o conseguiu enviar	
-				//N„o ira voltar para o status inicial ser· implementado nova sigla de pendente no picking para aproveitar o ja processado, alinhado com ZÈ e Rosangela DAC 06/06/2022
+				//DAC Reverter o or√ßamento e o picking Avalidar com  JC se libera esta funcionalidade neste ponto
+				//U_XRETSTVS1(VS1->VS1_NUMORC, .F. /*_lTela*/)  //reverter or√ßamento caso n√£o conseguiu enviar	
+				//N√£o ira voltar para o status inicial ser√° implementado nova sigla de pendente no picking para aproveitar o ja processado, alinhado com Z√© e Rosangela DAC 06/06/2022
 				//VS1->VS1_XBO	:= "E"  //se for voltar a fase a 0 colocar xbo como erro
-				_cObs := "N√O FOI POSSIVEL INTEGRAR PICKING COM RGLOG"+ CRLF  +_cObs
+				_cObs := "N√ÉO FOI POSSIVEL INTEGRAR PICKING COM RGLOG"+ CRLF  +_cObs
 				VS1->VS1_OBSAGL	:=  Upper(_cObs) + CRLF  + AllTrim(VS1->VS1_OBSAGL) 
 				VS1->VS1_XDTEPI := CtoD(Space(08))
 				VS1->VS1_XHSPIC := Time()
 				VS1->VS1_XUSUPI := RetCodUsr()
-				VS1->VS1_XBO	:= "E"  //Problemas na integraÁ„o
+				VS1->VS1_XBO	:= "E"  //Problemas na integra√ß√£o
 			Endif
 			VS1->(MsUnlock())
-			//Fazer o recalculo dos valores antes de enviar para a separaÁ„o conforme solicitaÁ„o JC TOTVS
+			//Fazer o recalculo dos valores antes de enviar para a separa√ß√£o conforme solicita√ß√£o JC TOTVS
 			//AJUSTADO PARA REFAZER O VALOR NO MOMENTO DE ATUALIZAR O REGISTRO DAC 06/06/2022
 		Else
 			ConOut("ZWSR007AOP - ERRO AO BLOQUEAR VS1 ")
@@ -508,13 +498,13 @@ Static Function ZWSRENVPOS( _oJson, _oSay, _lJob) //zPostRg(_oJson)
 	Local _lRet			:= .T.
 	Local nCont			:= 0
 	Local cApi 			:= SubStr( cUrl, At("/", cUrl) )
-	Local _nTempo		:= 3	//reduzido o tempo pois podera tentar enviar novamente apÛs o final do processamento ZPECF08
+	Local _nTempo		:= 3	//reduzido o tempo pois podera tentar enviar novamente ap√≥s o final do processamento ZPECF08
 	Local _cJson 	   	
 
 	oJsRet	:= JsonObject():New()
 
 	Begin Sequence
-		//oJsonEnv["usuario"] := Alltrim(Getmv("CMV_WSR009")) // Usu·rio
+		//oJsonEnv["usuario"] := Alltrim(Getmv("CMV_WSR009")) // Usu√°rio
 		//oJsonEnv["senha"]   := Alltrim(Getmv("CMV_WSR010")) // Senha encodada no Postman com o tipo Basic
 		//oJsonEnv["pedido"]  := _oJson
 		_cJson 	:= _oJson:toJSON()
@@ -539,19 +529,19 @@ Static Function ZWSRENVPOS( _oJson, _oSay, _lJob) //zPostRg(_oJson)
 		if Valtype(cRes) = "U"
 			_lRet := .F.
 			//Return {.f., "Sen retorno do Host"}
-			Aadd(_aMsgRet,{999,"N„o existe retorno do Host, excedido o numero de tentativas de conex„o"})
+			Aadd(_aMsgRet,{999,"N√£o existe retorno do Host, excedido o numero de tentativas de conex√£o"})
 			Break
 		EndIf
 
 		oJsRet:FromJSON(cRes)
 		if oJsRet:hasProperty("status") = .F.
 			_lRet := .F.
-			//Return { .F., "N„o retornou Status de Processamento:" + cRes}
-			Aadd(_aMsgRet,{999,"N„o retornou Status de Processamento:" + cRes})
+			//Return { .F., "N√£o retornou Status de Processamento:" + cRes}
+			Aadd(_aMsgRet,{999,"N√£o retornou Status de Processamento:" + cRes})
 			Break
 		Endif
 
-		if  oJsRet["status"] = 200 .Or. oJsRet["status"] = 201 //AlteraÁ„o solicitada por Sidney via e-mail em 05/01/2021 -- Fagner  
+		if  oJsRet["status"] = 200 .Or. oJsRet["status"] = 201 //Altera√ß√£o solicitada por Sidney via e-mail em 05/01/2021 -- Fagner  
 			Aadd(_aMsgRet,{oJsRet["status"],"Processado com Sucesso "+cRes})
 			//Return { .T., "Ok, processado" + cRes}
 			Break
@@ -568,7 +558,7 @@ Static Function ZWSRENVPOS( _oJson, _oSay, _lJob) //zPostRg(_oJson)
 Return _lRet
 
 
-//Reprocessar envio separaÁ„o para orÁamentos que n„o gerar„o picking - DAC 29/12/2021
+//Reprocessar envio separa√ß√£o para or√ßamentos que n√£o gerar√£o picking - DAC 29/12/2021
 User Function ZWSR007R()
 	Local _cAliasPesq	:= GetNextAlias()   
 	Local _cFaseConf 	:= Alltrim(GetNewPar("MV_MIL0095","4")) // Fase de Conferencia e Separacao
@@ -584,8 +574,8 @@ User Function ZWSR007R()
 	Local _aButtons		:= {}
 	Local _aRet    	    := {}
 
-	Local _cCadastro    := OemToAnsi("Reprocessar envio Picking RG LOG")   //"SeparaÁ„o OrÁamento"
-	Local _cTitle  	    := OemToAnsi("Reprocessar envio Picking")   //"SeparaÁ„o OrÁamento"
+	Local _cCadastro    := OemToAnsi("Reprocessar envio Picking RG LOG")   //"Separa√ß√£o Or√ßamento"
+	Local _cTitle  	    := OemToAnsi("Reprocessar envio Picking")   //"Separa√ß√£o Or√ßamento"
 
 	Local _nRet			:= 0
 	Local _cCodMarca	:= Space(TamSx3("VS1_XMARCA")[1]) 
@@ -594,14 +584,14 @@ User Function ZWSR007R()
 	Begin Sequence
 		//	Aadd(_aPar,{1,"Filial de:"				,_cFilDe 	,"@D"		,".T."	,"SM0" ,".T."	,50,.F.})
 		//	Aadd(_aPar,{1,"Filial Ate:"				,_cFilAte	,"@D"		,".T."	,"SM0" ,".T."	,50,.T.})
-		aAdd(_aPar,{3 , OemToAnsi("Reprocessar") ,2 , {OemToAnsi("Todos"), OemToAnsi("Selecionado")}	,60,"",.F.})  //DescriÁ„o / 1=Todos 2=Selecionado 
-		Aadd(_aPar,{1 , OemToAnsi("Marca      ") , _cCodMarca	, "@!"		, ".T."	, "VE1" 	, ".T."	, 50,.F.}) //CÛdigo do marca
+		aAdd(_aPar,{3 , OemToAnsi("Reprocessar") ,2 , {OemToAnsi("Todos"), OemToAnsi("Selecionado")}	,60,"",.F.})  //Descri√ß√£o / 1=Todos 2=Selecionado 
+		Aadd(_aPar,{1 , OemToAnsi("Marca      ") , _cCodMarca	, "@!"		, ".T."	, "VE1" 	, ".T."	, 50,.F.}) //C√≥digo do marca
 		// Monta Tela principal
-		AADD(_aSays,OemToAnsi("indique se ira reprocessar todos os picking n„o enviados")) 
+		AADD(_aSays,OemToAnsi("indique se ira reprocessar todos os picking n√£o enviados")) 
 		AADD(_aSays,OemToAnsi("ou se ira processar o picking Selecionado.")) 
-		AADD(_aSays,OemToAnsi("Caso seja reprocessamento de Todos Picking, poder· ser ")) 
+		AADD(_aSays,OemToAnsi("Caso seja reprocessamento de Todos Picking, poder√° ser ")) 
 		AADD(_aSays,OemToAnsi("informado a Marca, caso este campo esteja vazio processara")) 
-		AADD(_aSays,OemToAnsi("todas as marcas relativos aos Picking n„o enviados")) 
+		AADD(_aSays,OemToAnsi("todas as marcas relativos aos Picking n√£o enviados")) 
 
 		AADD(_aButtons, { 1,.T.,{|o| FechaBatch(),_nRet:=1											}})
 		AADD(_aButtons, { 2,.T.,{|o| FechaBatch()													}})
@@ -612,7 +602,7 @@ User Function ZWSR007R()
 			Break
 		Endif
 		If Len(_aRet) == 0
-			Help("",1,OemToAnsi("AtenÁ„o"),,OemToAnsi("Necess·rio informar os par‚metros"),4,1) // AtenÁ„o/Necess·rio informar os par‚metros
+			Help("",1,OemToAnsi("Aten√ß√£o"),,OemToAnsi("Necess√°rio informar os par√¢metros"),4,1) // Aten√ß√£o/Necess√°rio informar os par√¢metros
 			Break 
 		Endif
 		If _aRet[01] == 1  //todos
@@ -630,16 +620,16 @@ User Function ZWSR007R()
 		_cWhere 	:= "%"+_cWhere+"%"
 
 		If !_lTodos .and. Empty(_cPicking)	
-			Help( , ,OemToAnsi("ATENCAO"),,OemToAnsi("O orÁamentos posicionado n„o possue numero Picking  !"),4,1) 
+			Help( , ,OemToAnsi("ATENCAO"),,OemToAnsi("O or√ßamentos posicionado n√£o possue numero Picking  !"),4,1) 
 			Break
 		EndIf
 		If !_lTodos .and. VS1->VS1_STATUS <> _cFaseConf	
-			Help( , ,OemToAnsi("ATENCAO"),,OemToAnsi("O orÁamentos pocicionado n„o esta na fase de conferÍncia  !"),4,1) 
+			Help( , ,OemToAnsi("ATENCAO"),,OemToAnsi("O or√ßamentos pocicionado n√£o esta na fase de confer√™ncia  !"),4,1) 
 			Break
 		EndIf
 
 		_aMsgRet := {}
-		BeginSql Alias _cAliasPesq //Define o nome do alias tempor·rio 
+		BeginSql Alias _cAliasPesq //Define o nome do alias tempor√°rio 
 			SELECT 	VS1.VS1_XPICKI
 			FROM  %Table:VS1% VS1 
 			WHERE 	VS1.VS1_FILIAL 	=  %xFilial:VS1% 
@@ -654,7 +644,7 @@ User Function ZWSR007R()
 		EndSql
 		//VERIFICA SE LOCALIZOU ITNES
 		If (_cAliasPesq)->(Eof()) 
-			Help( , ,OemToAnsi("ATENCAO"),,OemToAnsi("N„o existem orÁamentos a serem reprocessados  com Picking "+_cPicking+" !"),4,1) //AtenÁ„o / N„o existem orÁamentos a serem reprocessados para geraÁ„o do Picking !
+			Help( , ,OemToAnsi("ATENCAO"),,OemToAnsi("N√£o existem or√ßamentos a serem reprocessados  com Picking "+_cPicking+" !"),4,1) //Aten√ß√£o / N√£o existem or√ßamentos a serem reprocessados para gera√ß√£o do Picking !
 			Break
 		EndIf	
 		If !_lTodos .And. !Empty(VS1->VS1_XDTEPI)
@@ -663,8 +653,8 @@ User Function ZWSR007R()
 			EndIf	 
 			_lDataEnv := .T.
 		EndIf
-		//conforme J.C. N„o perguntar o processo tem que ser automatico DAC  18/07/2022	
-		//If MsgYesNo( "Confirma Reprocessar envio de Picking " +If(_lTodos,"para todos n„o enviados","numero "+_cPicking)+" para carregamento RG LOG ?"  )
+		//conforme J.C. N√£o perguntar o processo tem que ser automatico DAC  18/07/2022	
+		//If MsgYesNo( "Confirma Reprocessar envio de Picking " +If(_lTodos,"para todos n√£o enviados","numero "+_cPicking)+" para carregamento RG LOG ?"  )
 			//Reprocessar
 		FwMsgRun(,{ || ZWSR007REP( _cAliasPesq, _lTodos, _lDataEnv ) }, "Reprocessando Picking ", "Aguarde...")  
 		//EndIf
@@ -676,7 +666,7 @@ User Function ZWSR007R()
 
 Return Nil
 
-//Reprocessar orÁamentos que n„o gerar„o picking
+//Reprocessar or√ßamentos que n√£o gerar√£o picking
 Static Function ZWSR007REP(_cAliasPesq, _lTodos, _lDataEnv)
 	Local _lRet 	:= .T.
 	Local _lValida  := .T.
@@ -694,17 +684,17 @@ Static Function ZWSR007REP(_cAliasPesq, _lTodos, _lDataEnv)
 			_lValida 	:= U_ZWSR007( /*VS1_XAGLU*/, (_cAliasPesq)->VS1_XPICKI, _lDataEnv )
 			//Caso tenha retorno do processamento
 			If !_lValida  
-				//FaÁo verificaÁ„o do cÛdigo para saber
+				//Fa√ßo verifica√ß√£o do c√≥digo para saber
 				If ValType(_aMsgRet)  == "A"
 					//verifico se tenho algum item com envio correto
 					For _nPos := 1 To Len(_aMsgRet)
-						//caso n„o validou o envio posso deixar como falso para retorno	
+						//caso n√£o validou o envio posso deixar como falso para retorno	
 						If _aMsgRet[_nPos,1] == 100
 							_lValida  := .T.
 						Endif
 						Aadd( _aMens,{	_aMsgRet[_nPos,2], ;
 										AllTrim((_cAliasPesq)->VS1_XPICKI )})	
-						If _aMsgRet[_nPos,1] == 999  //respectivo a conex„o irei abortar o processo caso tenham muitos para ser enviados
+						If _aMsgRet[_nPos,1] == 999  //respectivo a conex√£o irei abortar o processo caso tenham muitos para ser enviados
 							_lAborta  := .T.
 						Endif
 					Next
@@ -714,14 +704,14 @@ Static Function ZWSR007REP(_cAliasPesq, _lTodos, _lDataEnv)
 				Endif
 				If !_lValida  
 					_lRet 	:= .F.
-				ElseIf _lValida   //ocorreu uma validaÁ„o de envio apesar de ter cÛdigo 999 no meio n„o vai poder abortar
+				ElseIf _lValida   //ocorreu uma valida√ß√£o de envio apesar de ter c√≥digo 999 no meio n√£o vai poder abortar
 					_lAborta  := .F.
 				EndIf	
 			EndIf	
 			//no caso de poder abortar e for mais de um picking posso sais do while
 			(_cAliasPesq)->(DbSkip())
 			If (_cAliasPesq)->(!Eof()) .and. _lAborta .and. _lTodos
-				Aadd( _aMens,{	"Processo interrompido devido a Erro recorrente (acima) n„o processara os demais itens para ", ;
+				Aadd( _aMens,{	"Processo interrompido devido a Erro recorrente (acima) n√£o processara os demais itens para ", ;
 								"Todos"	})			
 					_lRet 	:= .F.
 				Exit
@@ -743,7 +733,7 @@ Static Function ZWSR007REP(_cAliasPesq, _lTodos, _lDataEnv)
 		If _lJob
 			Conout("ZWSR007 "+_cObs)
 		Else	
-			MSGINFO( Upper(_cObs), "[ZWSR007] - AtenÁ„o" )
+			MSGINFO( Upper(_cObs), "[ZWSR007] - Aten√ß√£o" )
 		EndIf
 	EndIf
 Return _lRet
@@ -789,54 +779,54 @@ Return(_cRet)
 "cd_cliente":'12',
 "cd_empresa":'1',
 		"cd_situacao":'1',
-ìdt_addrowî:"",
-ìid_processadoî:'N',
-ìcd_errorî:"",
-ìdt_processadoî:"",
+¬ìdt_addrow¬î:"",
+¬ìid_processado¬î:'N',
+¬ìcd_error¬î:"",
+¬ìdt_processado¬î:"",
 "tp_pedido":'A',
 "cd_rota":"",
-ìds_arquivoî:"",
-ìreferenciaî:"",
-ìcd_assuntoî:"",
-ìds_assuntoî:"",
-ìcd_postoî:"",
-ìdescricaoî:"",
-ìnr_kitî:"",
-ìcd_linha_montagemî:"",
-ìnu_interfaceî:"",
+¬ìds_arquivo¬î:"",
+¬ìreferencia¬î:"",
+¬ìcd_assunto¬î:"",
+¬ìds_assunto¬î:"",
+¬ìcd_posto¬î:"",
+¬ìdescricao¬î:"",
+¬ìnr_kit¬î:"",
+¬ìcd_linha_montagem¬î:"",
+¬ìnu_interface¬î:"",
 "cd_porta":'1',
 "nu_pedido_origem":'221',
-ìcd_produtoî:'A1444',
+¬ìcd_produto¬î:'A1444',
 "cd_carga":"",
 "dt_faturamento":"",
-ìtp_freteî:"",
-ìid_cliente_retiraî:"",
-ìcd_ondaî:"",
-ìcd_transportadorî:"",
+¬ìtp_frete¬î:"",
+¬ìid_cliente_retira¬î:"",
+¬ìcd_onda¬î:"",
+¬ìcd_transportador¬î:"",
 "ds_transportadora":"",
-ìcd_registroî:"",
+¬ìcd_registro¬î:"",
 "ds_cliente":"",
 "nu_seq_entrega":"",
-ìqt_itensî:"",
-ìid_cross_dockingî:"",
+¬ìqt_itens¬î:"",
+¬ìid_cross_docking¬î:"",
 		"cd_deposito":'001',
-		ìcd_roteiroî:"",
-		ìnu_agendaî:"",
-		ìds_placaî:'UHI-0900',
-		ìcd_freteiroî:"",
-		ìnm_municipioî:"",
-		ìdt_liberacao_pedidoî:"",
-		ìcd_cgc_clienteî: '909009009',
-		ìnm_representanteî:"",
-		ìcd_representanteî:"",
-		ìds_bairroî: 'Teste123',
-		ìds_cidadeî: 'S„o Paulo',
-		ìds_enderecoî: 'Rua teste, 123',
-		ìnm_solicitanteî: 'Joao',
-		ìnm_destinatarioî: 'Jose',
-		ìnu_pickingî:'122',
-		ìnu_pedido_referenciaî:"",
-		ìds_meio_transpî:"",
+		¬ìcd_roteiro¬î:"",
+		¬ìnu_agenda¬î:"",
+		¬ìds_placa¬î:'UHI-0900',
+		¬ìcd_freteiro¬î:"",
+		¬ìnm_municipio¬î:"",
+		¬ìdt_liberacao_pedido¬î:"",
+		¬ìcd_cgc_cliente¬î: '909009009',
+		¬ìnm_representante¬î:"",
+		¬ìcd_representante¬î:"",
+		¬ìds_bairro¬î: 'Teste123',
+		¬ìds_cidade¬î: 'S√£o Paulo',
+		¬ìds_endereco¬î: 'Rua teste, 123',
+		¬ìnm_solicitante¬î: 'Joao',
+		¬ìnm_destinatario¬î: 'Jose',
+		¬ìnu_picking¬î:'122',
+		¬ìnu_pedido_referencia¬î:"",
+		¬ìds_meio_transp¬î:"",
 		
 		"item":
 		[
@@ -845,38 +835,38 @@ Return(_cRet)
 "cd_cliente":'12',	
 "cd_empresa":'1',
 "cd_produto":'P000123',
-ìcd_faixaî:"",
-ìnu_seq_pedidoî:1,
+¬ìcd_faixa¬î:"",
+¬ìnu_seq_pedido¬î:1,
 "qt_separar":'10',
-ìps_separarî:"",
-ìqt_volumenes_separarî:"",
-ìqt_pallets_separarî:"",
-ìvl_separarî:"",
+¬ìps_separar¬î:"",
+¬ìqt_volumenes_separar¬î:"",
+¬ìqt_pallets_separar¬î:"",
+¬ìvl_separar¬î:"",
 "cd_situacao":'1',
 "cd_carga":"",
-ìqt_pedidoî:"",
-ìps_pedidoî:"",
+¬ìqt_pedido¬î:"",
+¬ìps_pedido¬î:"",
 "nu_pedido_origem":'221',
-ìnu_seq_corpî:1,
-ìcd_postoî:"",
-ìnr_kitî:"",
-ìcd_destinoî:"",
+¬ìnu_seq_corp¬î:1,
+¬ìcd_posto¬î:"",
+¬ìnr_kit¬î:"",
+¬ìcd_destino¬î:"",
 "nu_lote":"",
-ìnu_serie_produtoî:"",
-ìdt_addrowî:"",
-ìnu_interfaceî:"",
-ìdt_processadoî:"",
-ìid_busca_loteî:"",
-ìcd_registroî:"",
-ìid_processadoî:'N',
-ìnu_doc_erpî:"",
+¬ìnu_serie_produto¬î:"",
+¬ìdt_addrow¬î:"",
+¬ìnu_interface¬î:"",
+¬ìdt_processado¬î:"",
+¬ìid_busca_lote¬î:"",
+¬ìcd_registro¬î:"",
+¬ìid_processado¬î:'N',
+¬ìnu_doc_erp¬î:"",
 				"cd_deposito":'001',
-				ìcd_roteiroî:"",
-				ìnu_seq_entregaî:"",
-				ìnu_agendaî:"",
-				ìqt_cross_dockingî:"",
-				ìqt_unidade_embalagemî:"",
-				ìnu_pickingî: '8989'
+				¬ìcd_roteiro¬î:"",
+				¬ìnu_seq_entrega¬î:"",
+				¬ìnu_agenda¬î:"",
+				¬ìqt_cross_docking¬î:"",
+				¬ìqt_unidade_embalagem¬î:"",
+				¬ìnu_picking¬î: '8989'
 
 						}
 
@@ -1030,7 +1020,7 @@ Return(_cRet)
 
 
 ////////////////////
-//rodado ajustando apÛs geraÁ„o
+//rodado ajustando ap√≥s gera√ß√£o
 /*
 { "usuario": "caoa.totvs",
 	"senha": "CAgka2694X*",
@@ -1143,7 +1133,7 @@ Static Function ZWSR007GRJ(_cPicking, _oJson, _lProcessado, _cObs)
 			Break
 		EndIf
 		If SZK->ZK_XPICKI <> _cPicking
-			BeginSql Alias _cAliasPesq //Define o nome do alias tempor·rio 
+			BeginSql Alias _cAliasPesq //Define o nome do alias tempor√°rio 
 				SELECT 	SZK.R_E_C_N_O_ NREGSZK 
 				FROM  %Table:SZK% SZK 
 				WHERE 	SZK.ZK_FILIAL 	=  	%xFilial:SZK% 
@@ -1151,7 +1141,7 @@ Static Function ZWSR007GRJ(_cPicking, _oJson, _lProcessado, _cObs)
 				ORDER BY SZK.ZK_SEQREG
 			EndSql
 			If (_cAliasPesq)->(Eof())  .or. (_cAliasPesq)->NREGSZK == 0
-				_cObs 	+= "N√O LOCALIZADO PICKING "+_cPicking + CRLF 
+				_cObs 	+= "N√ÉO LOCALIZADO PICKING "+_cPicking + CRLF 
 				Break
 			EndIf
 			SZK->(DbGoto((_cAliasPesq)->NREGSZK))
@@ -1174,7 +1164,7 @@ Static Function ZWSR007GRJ(_cPicking, _oJson, _lProcessado, _cObs)
 		If SZK->(FieldPos("ZK_XJSSTEN")) > 0 
 			SZK->ZK_XJSSTEN := If(_lProcessado,"1","3")  //1=ENVIADO;2=NAO ENVIADO;3=INCONSISTENCIA                                                                                           
 		EndIf
-		//dados que retornar„o gravar n„o recebido inicialmente DAC 09/06/2022
+		//dados que retornar√£o gravar n√£o recebido inicialmente DAC 09/06/2022
 		If SZK->(FieldPos("ZK_XJSSTRE")) > 0
 			SZK->ZK_XJSSTRE := "2" //1=RECEBIDO;2=NAO RECEBIDO;3=INCONSISTENCIA                                                                                      
 		EndIf

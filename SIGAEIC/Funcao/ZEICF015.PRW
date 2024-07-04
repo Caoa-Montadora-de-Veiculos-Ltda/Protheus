@@ -14,10 +14,9 @@ Uso......:              EIC - receb. Importacao
 ===================================================================================== */
 User Function ZEICF015(_lParam)
 
-     Local _cEmp         := FWCodEmp()
      Default _lParam     := .F.
      
-     If _cEmp == "2010" //Executa o p.e. Anapolis.
+     If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
           zMontadora()
      Else
           zCaoaSp(_lParam) //Executa o p.e. Barueri

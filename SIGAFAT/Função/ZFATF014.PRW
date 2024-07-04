@@ -6,29 +6,30 @@
 Programa.:              ZFATF014
 Autor....:              CAOA - Evandro A Mariano dos Santos 
 Data.....:              28/07/2022
-Descricao / Objetivo:   Ajusta os limites de CrÈdito
+Descricao / Objetivo:   Ajusta os limites de Cr√©dito
 Doc. Origem:            
 Solicitante:            Faturamento/Pecas
 Uso......:              V.03
 Obs......:              
 @history    DAC Denilso - 06/04/2023	        
-            GRUPO CAOA GAP FIN108 - RevitalizaÁ„o Credito [ Montadora ]
-            UnificaÁ„o PeÁas com Montadora
+            GRUPO CAOA GAP FIN108 - Revitaliza√ß√£o Credito [ Montadora ]
+            Unifica√ß√£o Pe√ßas com Montadora
 =====================================================================================
 */
 
 User Function ZFATF014(_cCliFat, _cTpCred, _cLoja, _lZera)
+
 	Local _aArea      	:= GetArea()
 	Local _nValAtr 		:= 0
 	Local _nValAbe 		:= 0
 	Local _nValBo 		:= 0
 	Local _nValPed 		:= 0
-	Local _nValCred		:= 0   //implementar para NCC como crÈdito
+	Local _nValCred		:= 0   //implementar para NCC como cr√©dito
 	Local _cRet			:= ""
-	Local _cPgNAval		:= AllTrim(SuperGetMV( "MV_CPNCLC" 	,,"")) 	//condiÁ„o de pagamento n„o ser· avaliado LC
-	Local _cPgFP 		:= AllTrim(SuperGetMV( "CMV_PEC018" ,,""))  //condiÁ„o de pagamento Forplan = 005
-	Local _cPgCAOA		:= AllTrim(SuperGetMV( "CMV_FAT007" ,,"")) 	//condiÁ„o de pagamento CAOA
-	Local _cTpOper      := AllTrim(SuperGetMV( "CAOA_TPLIM" ,,""))  //Tipos de OperaÁ„o para analise do crÈdito - CAOA   54;91;90;67;82;93
+	Local _cPgNAval		:= AllTrim(SuperGetMV( "MV_CPNCLC" 	,,"")) 	//condi√ß√£o de pagamento n√£o ser√° avaliado LC
+	Local _cPgFP 		:= AllTrim(SuperGetMV( "CMV_PEC018" ,,""))  //condi√ß√£o de pagamento Forplan = 005
+	Local _cPgCAOA		:= AllTrim(SuperGetMV( "CMV_FAT007" ,,"")) 	//condi√ß√£o de pagamento CAOA
+	Local _cTpOper      := AllTrim(SuperGetMV( "CAOA_TPLIM" ,,""))  //Tipos de Opera√ß√£o para analise do cr√©dito - CAOA   54;91;90;67;82;93
 
 	//Ajustes referentes ao GAP096 -----
 	Local _cChaveLock 	:= ""
@@ -48,9 +49,9 @@ User Function ZFATF014(_cCliFat, _cTpCred, _cLoja, _lZera)
 	_cChaveLock := "ZFATF014" + _cFilial + alltrim(str(_nRecno))
 
 	//Garantir que o processamento seja unico
-	If !LockByName(_cChaveLock ,.T.,.T.) //Entra se n„o conseguir lockar (j· lockado)
-		//Abre tela de processamento e aguarda a outra improtaÁ„o terminar.
-		FWMsgRun(,{||_lRet := zProcessaLock(_cChaveLock)} , "Processando", "Outra importaÁ„o em andamento, por favor aguarde...")
+	If !LockByName(_cChaveLock ,.T.,.T.) //Entra se n√£o conseguir lockar (j√° lockado)
+		//Abre tela de processamento e aguarda a outra improta√ß√£o terminar.
+		FWMsgRun(,{||_lRet := zProcessaLock(_cChaveLock)} , "Processando", "Outra importa√ß√£o em andamento, por favor aguarde...")
 	Else
 		_lRet := .T.
 	EndIf
@@ -60,11 +61,11 @@ User Function ZFATF014(_cCliFat, _cTpCred, _cLoja, _lZera)
 		Begin Sequence
 			//Tem que vir informando o Cliente
 			If Empty(_cCliFat)
-				//quando n„o informar o cliente faturamento avaliar todos os clientes
-				ZFAT014GER(/*_cCliFat*/ ,/* _cLoja */)  //quando geral n„o enviar a loja
+				//quando n√£o informar o cliente faturamento avaliar todos os clientes
+				ZFAT014GER(/*_cCliFat*/ ,/* _cLoja */)  //quando geral n√£o enviar a loja
 				Break
 			Endif
-			//Caso n„o venha a loja informado localizo a principal que deve ter a referencias do crÈdito DAC 28/03/2023
+			//Caso n√£o venha a loja informado localizo a principal que deve ter a referencias do cr√©dito DAC 28/03/2023
 			If Empty(_cLoja) .or. Empty(_cTpCred)
 				_cLoja	:= ZFATF014LJ( _cCliFat, _cLoja, @_cTpCred)
 			Endif
@@ -74,29 +75,29 @@ User Function ZFATF014(_cCliFat, _cTpCred, _cLoja, _lZera)
 			Endif
 			_nValAtr 	:= ZFATF14TAT(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Titulos Em Atraso a mais de 3 dias.
 			_nValAbe 	:= ZFATF14TAB(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Titulos Em Aberto
-			//Na quest„o BO foi necessario separar pois È verificado VS1 para peÁas e SC6 para Fabrica
+			//Na quest√£o BO foi necessario separar pois √© verificado VS1 para pe√ßas e SC6 para Fabrica
 			//para Fabrica
-			//InÌcio - OneGate001 - nova empresa 90 | HMB
+			//In√≠cio - OneGate001 - nova empresa 90 | HMB
 			If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 				_nValBo  	:= ZFATF14TBF(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Pedidos Em Bo
-				_nValPed 	:= ZFATF14TPF(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Pedidos Em Reserva/Em Faturamento/Em SeparaÁ„o
-				//Para PeÁas
+				_nValPed 	:= ZFATF14TPF(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Pedidos Em Reserva/Em Faturamento/Em Separa√ß√£o
+				//Para Pe√ßas
 			ElseIf ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 				_nValBo  	:= ZFATF14TBP(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Pedidos Em Bo
-				_nValPed 	:= ZFATF14TPP(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Pedidos Em Reserva/Em Faturamento/Em SeparaÁ„o
+				_nValPed 	:= ZFATF14TPP(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA) //Verifica os Pedidos Em Reserva/Em Faturamento/Em Separa√ß√£o
 			Endif
 			//Fim - OneGate001 - nova empresa 90 | HMB
-			/*  Caso incluam credito avaliar se tem NCC para retornar crÈdito, Financeiro CAOA informou que atualmente n„o calcula o crÈdito para L.C.
+			/*  Caso incluam credito avaliar se tem NCC para retornar cr√©dito, Financeiro CAOA informou que atualmente n√£o calcula o cr√©dito para L.C.
 			_nValCred 	:= ZProc040(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA)
 			*/
 			_cRet := ZFATF14SA1(_cCliFat, _cTpCred, _nValAtr, _nValAbe, _nValBo, _nValPed, _nValCred, _cLoja) //Grava os Dados na SA1
-			//Zera todas as lojas que est„o com tipo de limite igual a 0=n„o tem
+			//Zera todas as lojas que est√£o com tipo de limite igual a 0=n√£o tem
 			If _lZera
 				ZF014ZERLC( _cCliFat , _cLoja, _cTpCred)
 			EndIf
 		End Sequence
 		  
-		//MsgInfo("Rotina lockada") //Retirar essa linha antes de subir em produÁ„o.
+		//MsgInfo("Rotina lockada") //Retirar essa linha antes de subir em produ√ß√£o.
 
 		AADD(_aRet, _cRet)
 		AADD(_aRet, _nValAtr)
@@ -108,14 +109,14 @@ User Function ZFATF014(_cCliFat, _cTpCred, _cLoja, _lZera)
 		UnLockByName(_cChaveLock ,.T.,.T.)
 	Else
 		If !_lJob
-			MsgStop("Rotina n„o pode ser concluÌda." + CRLF + "J· existe um processo em andamento.","Erro",1,0,1)
+			MsgStop("Rotina n√£o pode ser conclu√≠da." + CRLF + "J√° existe um processo em andamento.","Erro",1,0,1)
 			//MsgStop("O cliente: " + _cCliFat + " esta sendo processado por outra rotina, ")
 
 			_lRet := .F.
 			_aRet := Nil
 			//Return _lRet
 		Else
-			Conout("[ZFATF014] IntegraÁ„o n„o pode ser concluÌdo, j· existe um processo em andamento.")
+			Conout("[ZFATF014] Integra√ß√£o n√£o pode ser conclu√≠do, j√° existe um processo em andamento.")
 			_aRet := Nil
 			//Return Nil
 		ENDIF
@@ -129,21 +130,22 @@ Return(_aRet)
 
 /*/{Protheus.doc} ZFATF014TA
 Verifica os Titulos Em Atraso a mais de 3 dias.
-@param     	_cCliFat	,cÛdigo cliente
-			_cTpCred	,tipo de crÈdito utilizado 
-			_cTpOper	,tipo de operaÁ„o a ser utilizada
-			_cPgNAval	,condiÁ„o de pgto a vista 	
-			_cPgFP		,condiÁ„o de pagamento Forplan  
-			_cPgCAOA,	,condiÁ„o de pagamento CAO
+@param     	_cCliFat	,c√≥digo cliente
+			_cTpCred	,tipo de cr√©dito utilizado 
+			_cTpOper	,tipo de opera√ß√£o a ser utilizada
+			_cPgNAval	,condi√ß√£o de pgto a vista 	
+			_cPgFP		,condi√ß√£o de pagamento Forplan  
+			_cPgCAOA,	,condi√ß√£o de pagamento CAO
 @return		_nValAtraso	,Valores em atraso
 @author     CAOA - Evandro A Mariano dos Santos 
 @version    12.1.17 / Superior
 @project	GRUPO CAOA 
 @since      28/07/2022
-@history 	28/03/2023	,GAP FIN108 - RevitalizÁ„o Credito [ Montadora ]
+@history 	28/03/2023	,GAP FIN108 - Revitaliz√ß√£o Credito [ Montadora ]
 						 Ajustando funcionalidade para utilizar LC na Montadora como em Barueri
 /*/
 Static Function ZFATF14TAT(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA)
+
 	Local _cAliasPesq  	:= GetNextAlias()
 	Local _nValAtraso  	:= 0
 	Local _nDiasAtraso	:= SuperGetMV( "CMV_PEC027"  ,,3 )
@@ -153,18 +155,18 @@ Static Function ZFATF14TAT(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPg
 
 	Begin Sequence
 		_DtAtraso := ( _DtAtraso - _nDiasAtraso )
-		//condi«„oo de pagamento Forplan = 005
+		//condi√á√£oo de pagamento Forplan = 005
 		If _cTpCred == '1' .And. !Empty(_cPgFP)
 			_cWhereSF2 += " 	AND SF2.F2_COND IN "+ FormatIn(_cPgFP,";")
-			//condiÁ„o de pagamento CAOA
+			//condi√ß√£o de pagamento CAOA
 		ElseIf _cTpCred == '2' .And. !Empty(_cPgCAOA)
 			_cWhereSF2 += " 	AND SF2.F2_COND IN "+ FormatIn(_cPgCAOA,";")
 		EndIf
-		//Caso esteja informado condiÁ„o de pgto a vista n„o computar nos valores DAC 07/03/2023
+		//Caso esteja informado condi√ß√£o de pgto a vista n√£o computar nos valores DAC 07/03/2023
 		If !Empty(_cPgNAval) //Cond. de pagto. p/ venda a vista sem limite Credit
 			_cWhereSF2 += " 	AND SF2.F2_COND NOT IN  "+ FormatIn(_cPgNAval,";")
 		Endif
-		//verificar pelo tipo de operaÁ„o utilizado em Anapolis
+		//verificar pelo tipo de opera√ß√£o utilizado em Anapolis
 		//OneGate001 - nova empresa 90 | HMB
 		If !Empty(_cTpOper) .and. ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 			_cWhereSE1 += " AND SE1.E1_PEDIDO = (SELECT C6_NUM "
@@ -194,7 +196,7 @@ Static Function ZFATF14TAT(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPg
 		_cWhereSE1 := "%"+_cWhereSE1+"%"
 
 		//Procura os titulos em aberto no financeiro.
-		BeginSql Alias _cAliasPesq //Define o nome do alias tempor·rio
+		BeginSql Alias _cAliasPesq //Define o nome do alias tempor√°rio
 		SELECT SE1.E1_CLIENTE, SUM(SE1.E1_SALDO) AS TIT_VENCIDO 
 		FROM %table:SE1% SE1 
 		JOIN  %Table:SF2% SF2  												
@@ -231,39 +233,40 @@ Return(_nValAtraso)
 
 /*/{Protheus.doc} ZFATF14TAB
 Verifica os Titulos Em Aberto
-@param     	_cCliFat	,cÛdigo cliente
-			_cTpCred	,tipo de crÈdito utilizado 
-			_cTpOper	,tipo de operaÁ„o a ser utilizada
-			_cPgNAval	,condiÁ„o de pgto a vista 	
-			_cPgFP		,condiÁ„o de pagamento Forplan  
-			_cPgCAOA,	,condiÁ„o de pagamento CAO
+@param     	_cCliFat	,c√≥digo cliente
+			_cTpCred	,tipo de cr√©dito utilizado 
+			_cTpOper	,tipo de opera√ß√£o a ser utilizada
+			_cPgNAval	,condi√ß√£o de pgto a vista 	
+			_cPgFP		,condi√ß√£o de pagamento Forplan  
+			_cPgCAOA,	,condi√ß√£o de pagamento CAO
 @return		_nValAberto	,Valores em aberto
 @author     CAOA - Evandro A Mariano dos Santos 
 @version    12.1.17 / Superior
 @project	GRUPO CAOA 
 @since      28/07/2022
-@history 	28/03/2023	,GAP FIN108 - RevitalizaÁ„o Credito [ Montadora ]
+@history 	28/03/2023	,GAP FIN108 - Revitaliza√ß√£o Credito [ Montadora ]
 						 Ajustando funcionalidade para utilizar LC na Montadora como em Barueri
 /*/
 Static Function ZFATF14TAB(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA)
+
 	Local _cAliasPesq  	:= GetNextAlias()
 	Local _nValAberto  	:= 0
 	Local _cWhereSF2	:= ""
 	Local _cWhereSE1	:= ""
 
 	Begin Sequence
-		//condiÁ„o de pagamento Forplan = 005
+		//condi√ß√£o de pagamento Forplan = 005
 		If _cTpCred == '1' .And. !Empty(_cPgFP)
 			_cWhereSF2 += " 	AND SF2.F2_COND IN "+ FormatIn(_cPgFP,";")
-			//condiÁ„o de pagamento CAOA
+			//condi√ß√£o de pagamento CAOA
 		ElseIf _cTpCred == '2'  .And. !Empty(_cPgCAOA)
 			_cWhereSF2 += " 	AND SF2.F2_COND IN "+ FormatIn(_cPgCAOA,";")
 		EndIf
-		//Caso esteja informado condiÁ„o de pgto a vista n„o computar nos valores DAC 07/03/2023
+		//Caso esteja informado condi√ß√£o de pgto a vista n√£o computar nos valores DAC 07/03/2023
 		If !Empty(_cPgNAval) //Cond. de pagto. p/ venda a vista sem limite Credit
 			_cWhereSF2 += " 	AND SF2.F2_COND NOT IN  "+ FormatIn(_cPgNAval,";")
 		Endif
-		//verificar pelo tipo de operaÁ„o utilizado em Anapolis
+		//verificar pelo tipo de opera√ß√£o utilizado em Anapolis
 		//OneGate001 - nova empresa 90 | HMB
 		If !Empty(_cTpOper) .and. ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 			_cWhereSE1 += " AND SE1.E1_PEDIDO = (SELECT C6_NUM "
@@ -292,7 +295,7 @@ Static Function ZFATF14TAB(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPg
 		_cWhereSE1 := "%"+_cWhereSE1+"%"
 
 		//Procura os titulos em aberto no financeiro.
-		BeginSql Alias _cAliasPesq //Define o nome do alias tempor·rio
+		BeginSql Alias _cAliasPesq //Define o nome do alias tempor√°rio
 		SELECT SE1.E1_CLIENTE, SUM(SE1.E1_SALDO) AS TIT_ABERTO 
 		FROM %table:SE1% SE1 
 		JOIN  %Table:SF2% SF2  												
@@ -329,18 +332,18 @@ Return(_nValAberto)
 
 /*/{Protheus.doc} ZFATF14TBP
 Verifica os Pedidos Em Bo
-@param     	_cCliFat	,cÛdigo cliente
-			_cTpCred	,tipo de crÈdito utilizado 
-			_cTpOper	,tipo de operaÁ„o a ser utilizada
-			_cPgNAval	,condiÁ„o de pgto a vista 	
-			_cPgFP		,condiÁ„o de pagamento Forplan  
-			_cPgCAOA,	,condiÁ„o de pagamento CAO
+@param     	_cCliFat	,c√≥digo cliente
+			_cTpCred	,tipo de cr√©dito utilizado 
+			_cTpOper	,tipo de opera√ß√£o a ser utilizada
+			_cPgNAval	,condi√ß√£o de pgto a vista 	
+			_cPgFP		,condi√ß√£o de pagamento Forplan  
+			_cPgCAOA,	,condi√ß√£o de pagamento CAO
 @return		_nValBO		,Pedidos em aberto
 @author     CAOA - Evandro A Mariano dos Santos 
 @version    12.1.17 / Superior
 @project	GRUPO CAOA 
 @since      28/07/2022
-@history 	28/03/2023	,GAP FIN108 - RevitalizaÁ„o Credito [ Montadora ]
+@history 	28/03/2023	,GAP FIN108 - Revitaliza√ß√£o Credito [ Montadora ]
 						 Ajustando funcionalidade para utilizar LC na Montadora como em Barueri
 /*/
 Static Function ZFATF14TBP(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA)
@@ -350,18 +353,18 @@ Static Function ZFATF14TBP(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPg
 	Local _cWhereVS1	:= ""
 
 	Begin Sequence
-		//condiÁ„o de pagamento Forplan = 005
+		//condi√ß√£o de pagamento Forplan = 005
 		If _cTpCred == '1' .And. !Empty(_cPgFP)
 			_cWhereVS1 += " 	AND VS1.VS1_FORPAG  IN "+ FormatIn(_cPgFP,";")
-			//condiÁ„o de pagamento CAOA
+			//condi√ß√£o de pagamento CAOA
 		ElseIf _cTpCred == '2'  .And. !Empty(_cPgCAOA)
 			_cWhereVS1 += " 	AND VS1.VS1_FORPAG  IN "+ FormatIn(_cPgCAOA,";")
 		EndIf
-		//Caso esteja informado condiÁ„o de pgto a vista n„o computar nos valores DAC 07/03/2023
+		//Caso esteja informado condi√ß√£o de pgto a vista n√£o computar nos valores DAC 07/03/2023
 		If !Empty(_cPgNAval) //Cond. de pagto. p/ venda a vista sem limite Credit
 			_cWhereVS1 += " 	AND VS1.VS1_FORPAG  NOT IN  "+ FormatIn(_cPgNAval,";")
 		Endif
-		//verificar pelo tipo de operaÁ„o utilizado em Anapolis
+		//verificar pelo tipo de opera√ß√£o utilizado em Anapolis
 		If !Empty(_cTpOper)
 			_cWhereVS1 += " AND VS1.VS1_NUMORC 	= ( SELECT VS3.VS3_NUMORC "
 			_cWhereVS1 += "						FROM "+ RetSQLName('VS3') +" VS3 "
@@ -374,7 +377,7 @@ Static Function ZFATF14TBP(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPg
 		_cWhereVS1 := "%"+_cWhereVS1+"%"
 
 		//Procura os titulos em aberto no financeiro.
-		BeginSql Alias _cAliasPesq //Define o nome do alias tempor·rio
+		BeginSql Alias _cAliasPesq //Define o nome do alias tempor√°rio
 		SELECT NVL(SUM(VS1.VS1_VTOTNF),0) AS TIT_VS1BO
 		FROM %table:VS1% VS1 
 		WHERE VS1.%notDel%																
@@ -388,7 +391,7 @@ Static Function ZFATF14TBP(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPg
 			Break
 		EndIf
 		If _nFatorRed > 0
-			//para garantir que execute somente atÈ 100 %
+			//para garantir que execute somente at√© 100 %
 			If _nFatorRed > 100
 				_nFatorRed := 100
 			Endif
@@ -407,18 +410,18 @@ Return(_nValBO)
 
 /*/{Protheus.doc} ZFATF14TBF
 Verifica os Pedidos Em Bo
-@param     	_cCliFat	,cÛdigo cliente
-			_cTpCred	,tipo de crÈdito utilizado 
-			_cTpOper	,tipo de operaÁ„o a ser utilizada
-			_cPgNAval	,condiÁ„o de pgto a vista 	
-			_cPgFP		,condiÁ„o de pagamento Forplan  
-			_cPgCAOA,	,condiÁ„o de pagamento CAO
+@param     	_cCliFat	,c√≥digo cliente
+			_cTpCred	,tipo de cr√©dito utilizado 
+			_cTpOper	,tipo de opera√ß√£o a ser utilizada
+			_cPgNAval	,condi√ß√£o de pgto a vista 	
+			_cPgFP		,condi√ß√£o de pagamento Forplan  
+			_cPgCAOA,	,condi√ß√£o de pagamento CAO
 @return		_nValBO		,Pedidos em aberto
 @author     CAOA - Evandro A Mariano dos Santos 
 @version    12.1.17 / Superior
 @project	GRUPO CAOA 
 @since      28/07/2022
-@history 	28/03/2023	,GAP FIN108 - RevitalizaÁ„o Credito [ Montadora ]
+@history 	28/03/2023	,GAP FIN108 - Revitaliza√ß√£o Credito [ Montadora ]
 						 Ajustando funcionalidade para utilizar LC na Montadora como em Barueri
 /*/
 Static Function ZFATF14TBF(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA)
@@ -429,18 +432,18 @@ Static Function ZFATF14TBF(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPg
 	Local _cWhereSC6	:= ""
 
 	Begin Sequence
-		//condiÁ„o de pagamento Forplan = 005
+		//condi√ß√£o de pagamento Forplan = 005
 		If _cTpCred == '1' .And. !Empty(_cPgFP)
 			_cWhereSC5 += " 	AND SC5.C5_CONDPAG  IN "+ FormatIn(_cPgFP,";")
-			//condiÁ„o de pagamento CAOA
+			//condi√ß√£o de pagamento CAOA
 		ElseIf _cTpCred == '2'  .And. !Empty(_cPgCAOA)
 			_cWhereSC5 += " 	AND SC5.C5_CONDPAG  IN "+ FormatIn(_cPgCAOA,";")
 		EndIf
-		//Caso esteja informado condiÁ„o de pgto a vista n„o computar nos valores DAC 07/03/2023
+		//Caso esteja informado condi√ß√£o de pgto a vista n√£o computar nos valores DAC 07/03/2023
 		If !Empty(_cPgNAval) //Cond. de pagto. p/ venda a vista sem limite Credit
 			_cWhereSC5 += " 	AND SC5.C5_CONDPAG  NOT IN  "+ FormatIn(_cPgNAval,";")
 		Endif
-		//verificar pelo tipo de operaÁ„o utilizado em Anapolis
+		//verificar pelo tipo de opera√ß√£o utilizado em Anapolis
 		If !Empty(_cTpOper)
 			_cWhereSC6 += " AND SC6.C6_OPER IN "+ FormatIn(_cTpOper,";") + " "
 		Endif
@@ -448,7 +451,7 @@ Static Function ZFATF14TBF(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPg
 		_cWhereSC6 := "%"+_cWhereSC6+"%"
 
 		//Procura os titulos em aberto no financeiro.
-		BeginSql Alias _cAliasPesq //Define o nome do alias tempor·rio
+		BeginSql Alias _cAliasPesq //Define o nome do alias tempor√°rio
 		SELECT NVL(SUM(SC6.C6_VALOR),0) AS TIT_SC6BO  
 		FROM %Table:SC6% SC6  		
 		JOIN %Table:SC5% SC5  		
@@ -468,7 +471,7 @@ Static Function ZFATF14TBF(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPg
 			Break
 		EndIf
 		If _nFatorRed > 0
-			//para garantir que execute somente atÈ 100 %
+			//para garantir que execute somente at√© 100 %
 			If _nFatorRed > 100
 				_nFatorRed := 100
 			Endif
@@ -486,19 +489,19 @@ Return(_nValBO)
 
 
 /*/{Protheus.doc} ZFATF14TPP
-Verifica os Pedidos Em Reserva/Em Faturamento/Em SeparaÁ„o PeÁas
-@param     	_cCliFat	,cÛdigo cliente
-			_cTpCred	,tipo de crÈdito utilizado 
-			_cTpOper	,tipo de operaÁ„o a ser utilizada
-			_cPgNAval	,condiÁ„o de pgto a vista 	
-			_cPgFP		,condiÁ„o de pagamento Forplan  
-			_cPgCAOA,	,condiÁ„o de pagamento CAO
+Verifica os Pedidos Em Reserva/Em Faturamento/Em Separa√ß√£o Pe√ßas
+@param     	_cCliFat	,c√≥digo cliente
+			_cTpCred	,tipo de cr√©dito utilizado 
+			_cTpOper	,tipo de opera√ß√£o a ser utilizada
+			_cPgNAval	,condi√ß√£o de pgto a vista 	
+			_cPgFP		,condi√ß√£o de pagamento Forplan  
+			_cPgCAOA,	,condi√ß√£o de pagamento CAO
 @return		_nValPed	,Pedidos faturados
 @author     CAOA - Evandro A Mariano dos Santos 
 @version    12.1.17 / Superior
 @project	GRUPO CAOA 
 @since      28/07/2022
-@history 	28/03/2023	,GAP FIN108 - RevitalizaÁ„o Credito [ Montadora ]
+@history 	28/03/2023	,GAP FIN108 - Revitaliza√ß√£o Credito [ Montadora ]
 						 Ajustando funcionalidade para utilizar LC na Montadora como em Barueri
 /*/
 Static Function ZFATF14TPP(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPgCAOA)
@@ -507,18 +510,18 @@ Static Function ZFATF14TPP(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPg
 	Local _cWhereVS1	:= ""
 
 	Begin Sequence
-		//condiÁ„o de pagamento Forplan = 005
+		//condi√ß√£o de pagamento Forplan = 005
 		If _cTpCred == '1' .And. !Empty(_cPgFP)
 			_cWhereVS1 += " 	AND VS1.VS1_FORPAG  IN "+ FormatIn(_cPgFP,";")
-			//condiÁ„o de pagamento CAOA
+			//condi√ß√£o de pagamento CAOA
 		ElseIf _cTpCred == '2'  .And. !Empty(_cPgCAOA)
 			_cWhereVS1 += " 	AND VS1.VS1_FORPAG  IN "+ FormatIn(_cPgCAOA,";")
 		EndIf
-		//Caso esteja informado condiÁ„o de pgto a vista n„o computar nos valores DAC 07/03/2023
+		//Caso esteja informado condi√ß√£o de pgto a vista n√£o computar nos valores DAC 07/03/2023
 		If !Empty(_cPgNAval) //Cond. de pagto. p/ venda a vista sem limite Credit
 			_cWhereVS1 += " 	AND VS1.VS1_FORPAG  NOT IN  "+ FormatIn(_cPgNAval,";")
 		Endif
-		//verificar pelo tipo de operaÁ„o utilizado em Anapolis
+		//verificar pelo tipo de opera√ß√£o utilizado em Anapolis
 		If !Empty(_cTpOper)
 			_cWhereVS1 += " AND VS1.VS1_NUMORC 	= ( SELECT VS3.VS3_NUMORC "
 			_cWhereVS1 += "						FROM "+ RetSQLName('VS3') +" VS3 "
@@ -531,7 +534,7 @@ Static Function ZFATF14TPP(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPg
 		_cWhereVS1 := "%"+_cWhereVS1+"%"
 
 		//Procura os titulos em aberto no financeiro.
-		BeginSql Alias _cAliasPesq //Define o nome do alias tempor·rio
+		BeginSql Alias _cAliasPesq //Define o nome do alias tempor√°rio
 		SELECT NVL(SUM(VS1.VS1_VTOTNF),0) AS TIT_PEDIDO
 		FROM %table:VS1% VS1 
 		WHERE VS1.VS1_FILIAL 	= %XFilial:VS1%
@@ -554,19 +557,19 @@ Return(_nValPed)
 
 
 /*/{Protheus.doc} ZFATF14TPF
-Verifica os Pedidos Em Reserva/Em Faturamento/Em SeparaÁ„o PeÁas
-@param     	_cCliFat	,cÛdigo cliente
-			_cTpCred	,tipo de crÈdito utilizado 
-			_cTpOper	,tipo de operaÁ„o a ser utilizada
-			_cPgNAval	,condiÁ„o de pgto a vista 	
-			_cPgFP		,condiÁ„o de pagamento Forplan  
-			_cPgCAOA,	,condiÁ„o de pagamento CAO
+Verifica os Pedidos Em Reserva/Em Faturamento/Em Separa√ß√£o Pe√ßas
+@param     	_cCliFat	,c√≥digo cliente
+			_cTpCred	,tipo de cr√©dito utilizado 
+			_cTpOper	,tipo de opera√ß√£o a ser utilizada
+			_cPgNAval	,condi√ß√£o de pgto a vista 	
+			_cPgFP		,condi√ß√£o de pagamento Forplan  
+			_cPgCAOA,	,condi√ß√£o de pagamento CAO
 @return		_nValBO		,Pedidos em aberto
 @author     CAOA - Evandro A Mariano dos Santos 
 @version    12.1.17 / Superior
 @project	GRUPO CAOA 
 @since      28/07/2022
-@history 	28/03/2023	,GAP FIN108 - RevitalizaÁ„o Credito [ Montadora ]
+@history 	28/03/2023	,GAP FIN108 - Revitaliza√ß√£o Credito [ Montadora ]
 						 Ajustando funcionalidade para utilizar LC na Montadora como em Barueri
 /*/
 
@@ -577,18 +580,18 @@ Static Function ZFATF14TPF(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPg
 	Local _cWhereSC6	:= ""
 
 	Begin Sequence
-		//condiÁ„o de pagamento Forplan = 005
+		//condi√ß√£o de pagamento Forplan = 005
 		If _cTpCred == '1' .And. !Empty(_cPgFP)
 			_cWhereSC5 += " 	AND SC5.C5_CONDPAG  IN "+ FormatIn(_cPgFP,";")
-			//condiÁ„o de pagamento CAOA
+			//condi√ß√£o de pagamento CAOA
 		ElseIf _cTpCred == '2'  .And. !Empty(_cPgCAOA)
 			_cWhereSC5 += " 	AND SC5.C5_CONDPAG  IN "+ FormatIn(_cPgCAOA,";")
 		EndIf
-		//Caso esteja informado condiÁ„o de pgto a vista n„o computar nos valores DAC 07/03/2023
+		//Caso esteja informado condi√ß√£o de pgto a vista n√£o computar nos valores DAC 07/03/2023
 		If !Empty(_cPgNAval) //Cond. de pagto. p/ venda a vista sem limite Credit
 			_cWhereSC5 += " 	AND SC5.C5_CONDPAG  NOT IN  "+ FormatIn(_cPgNAval,";")
 		Endif
-		//verificar pelo tipo de operaÁ„o utilizado em Anapolis
+		//verificar pelo tipo de opera√ß√£o utilizado em Anapolis
 		If !Empty(_cTpOper)
 			_cWhereSC6 += " AND SC6.C6_OPER IN "+ FormatIn(_cTpOper,";") + " "
 		Endif
@@ -596,7 +599,7 @@ Static Function ZFATF14TPF(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPg
 		_cWhereSC6 := "%"+_cWhereSC6+"%"
 
 		//Procura os titulos em aberto no financeiro.
-		BeginSql Alias _cAliasPesq //Define o nome do alias tempor·rio
+		BeginSql Alias _cAliasPesq //Define o nome do alias tempor√°rio
 		SELECT NVL(SUM(SC6.C6_VALOR),0) AS TIT_PEDIDO  
 		FROM %Table:SC6% SC6  		
 		JOIN %Table:SC5% SC5  		
@@ -614,7 +617,7 @@ Static Function ZFATF14TPF(_cCliFat, _cTpCred, _cTpOper, _cPgNAval, _cPgFP, _cPg
 			%Exp:_cWhereSC6%
 		EndSql
 		//		AND SC5.C5_BLQ		= ' '
-	/* caso seja necess·rio validar item
+	/* caso seja necess√°rio validar item
 			SELECT
 				C9_OK,
 				C9_PEDIDO,
@@ -644,17 +647,18 @@ Return(_nValPed)
 
 
 /*/{Protheus.doc} ZFATF14SA1
-Grava os Dados do Limite de CrÈdito na SA1
+Grava os Dados do Limite de Cr√©dito na SA1
 @param      _cCliFat 	- Codigo do cliente  
 @return     _cLoja
 @author     CAOA - Evandro A Mariano dos Santos
 @version    12.1.17 / Superior
 @project	GRUPO CAOA 
 @since      28/07/2022
-@history 	28/03/2023	,GAP FIN108 - RevitalizaÁ„o Credito [ Montadora ]
+@history 	28/03/2023	,GAP FIN108 - Revitaliza√ß√£o Credito [ Montadora ]
 						 Ajustando funcionalidade para utilizar LC na Montadora como em Barueri
 /*/
 Static Function ZFATF14SA1(_cCliFat, _cTpCred, _nValAtr, _nValAbe, _nValBo, _nValPed, _nValCred, _cLoja)
+
 	Local _cRet			:= ""
 	Local _cWhere		:= ""
 	Local _nSaldo		:= 0
@@ -663,24 +667,25 @@ Static Function ZFATF14SA1(_cCliFat, _cTpCred, _nValAtr, _nValAbe, _nValBo, _nVa
 	//Local _nPos
 
 	Begin Sequence
-		//No caso de n„o estar informada a loja
+		//No caso de n√£o estar informada a loja
 		If !Empty(_cLoja)
 			_cWhere := "AND SA1.A1_LOJA =  '"+_cLoja+"'"
 		Endif
 		_cWhere := "%"+_cWhere+"%"
 
-		BeginSql Alias _cAliasPesq //Define o nome do alias tempor·rio
+		BeginSql Alias _cAliasPesq //Define o nome do alias tempor√°rio
 		SELECT 	ISNULL(SA1.R_E_C_N_O_,0) NREGSA1
 		FROM  %Table:SA1% SA1
 		WHERE SA1.A1_FILIAL 	= %XFilial:SA1%
 			AND SA1.A1_COD  	= %Exp:_cCliFat%
 			AND SA1.%notDel%
 			%Exp:_cWhere%
+
 		EndSQL
 		If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGSA1 == 0
 			Break
 		EndIf
-		//conforme definido sÛ pode existir um tipo de crÈdito  o select deve retornar somente 1 registro
+		//conforme definido s√≥ pode existir um tipo de cr√©dito  o select deve retornar somente 1 registro
 
 		(_cAliasPesq)->(DbGoTop())
 		While (_cAliasPesq)->(!Eof())
@@ -751,9 +756,10 @@ Static Function ZFATF14SA1(_cCliFat, _cTpCred, _nValAtr, _nValAbe, _nValBo, _nVa
 				EndIf
 				_cRet := SA1->A1_XSTAFP
 			EndIf
+
 			SA1->(MsUnlock())
 			//caso exista log para gravar
-			//n„o gravar alinhado com Evandro e Aline - DAC 17/05/2023
+			//n√£o gravar alinhado com Evandro e Aline - DAC 17/05/2023
 			//If Len(_aGrvLog) > 0
 			//	For _nPos := 1 To Len(_aGrvLog)
 			//		U_ZGENLZA2(_aGrvLog[_nPos,1], _aGrvLog[_nPos,2], _aGrvLog[_nPos,3], /*_cTitulo*/, "AVALIACAO L.C.",/*_cUserSol*/)
@@ -768,15 +774,15 @@ Static Function ZFATF14SA1(_cCliFat, _cTpCred, _nValAtr, _nValAbe, _nValBo, _nVa
 	Endif
 
 Return(_cRet)
-
+//----------------------------------------------------------------------------------------------------------
 //DAC - 13/04/2023
-//Retornar o valor a ser gravado ref L.C. e separar para gravaÁ„o do Log
+//Retornar o valor a ser gravado ref L.C. e separar para grava√ß√£o do Log
 Static Function ZFATF14DIF(_nValSa1, _nValCalc,_cCampo, _aGrvLog)
 	Local _nValRet := Round(_nValSa1,2)
 	Begin Sequence
 		If Round(_nValSa1,2) <> Round(_nValCalc,2)
 			_nValRet := Round(IiF(_nValCalc >= 0, _nValCalc	, 0),2)
-			//Se esta zerado  o resultado da avaliaÁ„o com o que j· esta gravado n„o gravo log
+			//Se esta zerado  o resultado da avalia√ß√£o com o que j√° esta gravado n√£o gravo log
 			If _nValSa1 == 0 .And. _nValRet == 0
 				Break
 			Endif
@@ -786,12 +792,12 @@ Static Function ZFATF14DIF(_nValSa1, _nValCalc,_cCampo, _aGrvLog)
 Return _nValRet
 
 /*/{Protheus.doc} ZFATF014LJ
-Localizar a loja para processamento respon·vel pelo Limite de crÈdito
+Localizar a loja para processamento respon√°vel pelo Limite de cr√©dito
 @param      _cCliFat 	- Codigo do cliente  
 @return     _cLoja
 @author     DAC Denilso
 @version    12.1.17 / Superior
-@project	GRUPO CAOA - GAP FIN108 - RevitalizaÁ„o Credito [ Montadora ]
+@project	GRUPO CAOA - GAP FIN108 - Revitaliza√ß√£o Credito [ Montadora ]
 @since      28/03/2023
 @history 	
 /*/
@@ -808,7 +814,7 @@ Static Function ZFATF014LJ(_cCliFat, _cLoja, _cTpCred)
 		Endif
 		_cWhere := "%"+_cWhere+"%"
 
-		BeginSql Alias _cAliasPesq //Define o nome do alias tempor·rio
+		BeginSql Alias _cAliasPesq //Define o nome do alias tempor√°rio
 		SELECT 	ISNULL(SA1.R_E_C_N_O_,0) NREGSA1
 				FROM  %Table:SA1% SA1
 				WHERE SA1.%notDel% 	
@@ -835,17 +841,17 @@ Return _cLoja
 
 
 
-//UTILIZADOS PELO DICION¡RIO
+//UTILIZADOS PELO DICION√ÅRIO
 /*/{Protheus.doc} ZF014VTC
-ValidaÁ„o criado para ajustar valor do limite de crÈdito quando da operaÁ„o alteraÁ„o inclus„o
-Esta funcionalidade deve ser utilizada na valiaÁ„o do campo A1_XTPCRED em X3_VALID 
+Valida√ß√£o criado para ajustar valor do limite de cr√©dito quando da opera√ß√£o altera√ß√£o inclus√£o
+Esta funcionalidade deve ser utilizada na valia√ß√£o do campo A1_XTPCRED em X3_VALID 
 @param      _cCodCli 	- Codigo do cliente  
 			_cLoja 		- Loja do Cliente 
-			_cXtpCred	- Tipo de crÈdito do Cliente
+			_cXtpCred	- Tipo de cr√©dito do Cliente
 @return     Logico
 @author     DAC Denilso
 @version    12.1.17 / Superior
-@project	GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (RevitalizaÁ„o Limite de crÈdito)
+@project	GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (Revitaliza√ß√£o Limite de cr√©dito)
 @since      27/02/2023
 /*/
 User Function ZF014VTC( _cCodCli, _cLoja, _cXtpCred)
@@ -861,14 +867,14 @@ User Function ZF014VTC( _cCodCli, _cLoja, _cXtpCred)
 	Default _cXtpCred	:= If(Type("M->A1_XTPCRED")	== "C",M->A1_XTPCRED,"")
 
 	Begin Sequence
-		//somente inclusÛo e ateraÁ„o
+		//somente inclus√≥o e atera√ß√£o
 		If !INCLUI .And. !ALTERA
 			Break
 		EndIf
 		If Empty(_cCodCli) .Or. Empty(_cLoja) .Or. Empty(_cXtpCred)
 			Break
 		Endif
-		//Caso n„o tenha limite zerar
+		//Caso n√£o tenha limite zerar
 		If _cXtpCred == "0"
 			M->A1_XLC	:= 0
 			M->A1_XDTLC	:= CtoD(Space(08))
@@ -876,10 +882,10 @@ User Function ZF014VTC( _cCodCli, _cLoja, _cXtpCred)
 		Endif
 
 		If !ZF014VDUPL(_cCodCli, _cXtpCred, _cLoja)
-			_cMsg := "Cliente ja possui registro com tipo de de crÈdito em outra loja, n„o podendo existir mais de um tipo de crÈdito por Cliente ! "
-			Conout("[ZFAT014 - ZF014VTC]  Usu·rio "+RetCodUsr()+ CRLF + _cMsg + CRLF)
+			_cMsg := "Cliente ja possui registro com tipo de de cr√©dito em outra loja, n√£o podendo existir mais de um tipo de cr√©dito por Cliente ! "
+			Conout("[ZFAT014 - ZF014VTC]  Usu√°rio "+RetCodUsr()+ CRLF + _cMsg + CRLF)
 			If !_lJob
-				MSGINFO( _cMsg, "[ZF014VTC] - AtenÁ„o" )
+				MSGINFO( _cMsg, "[ZF014VTC] - Aten√ß√£o" )
 			Endif
 			M->A1_XTPCRED	:= "0"
 			M->A1_XLC		:= 0
@@ -887,8 +893,8 @@ User Function ZF014VTC( _cCodCli, _cLoja, _cXtpCred)
 			_lRet := .F.
 			Break
 		Endif
-		//Verificar se existe outro registro com tipo de crÈdito
-		BeginSql Alias _cAliasQry //Define o nome do alias tempor·rio
+		//Verificar se existe outro registro com tipo de cr√©dito
+		BeginSql Alias _cAliasQry //Define o nome do alias tempor√°rio
 		SELECT 	ISNULL(SA1.R_E_C_N_O_,0) NREGSA1
 		FROM  %Table:SA1% SA1 
 		WHERE 	SA1.A1_FILIAL 	= %xFilial:SA1% 
@@ -900,21 +906,21 @@ User Function ZF014VTC( _cCodCli, _cLoja, _cXtpCred)
 		If (_cAliasQry)->(!Eof()) .And. (_cAliasQry)->NREGSA1 > 0
 			_nRegTab := (_cAliasQry)->NREGSA1
 		Endif
-		//Caso n„o exista nenhum outro registro com esta opÁ„o de crÈdito posso sair
+		//Caso n√£o exista nenhum outro registro com esta op√ß√£o de cr√©dito posso sair
 		If _nRegTab == 0
 			Break
 		Endif
-		//caso exista outro registro com este tipo de crÈdito pego os valores do mesmo paa o atual e informo em mensagem
-		//somente mostro msg para o Usu·rio para saber sobre mais de um registro com definiÁ„o de crÈdito
+		//caso exista outro registro com este tipo de cr√©dito pego os valores do mesmo paa o atual e informo em mensagem
+		//somente mostro msg para o Usu√°rio para saber sobre mais de um registro com defini√ß√£o de cr√©dito
 		SA1->(DbGoto( _nRegTab ))
-		_cMsg := "Cliente j· possui registro com este tipo de de crÈdito na loja "+SA1->A1_LOJA+ " em relaÁ„o a loja Atual "+M->A1_LOJA+" ! "
-		Conout("[ZFAT014 - ZF014VTC]  Usu·rio "+RetCodUsr()+ CRLF + _cMsg + CRLF)
+		_cMsg := "Cliente j√° possui registro com este tipo de de cr√©dito na loja "+SA1->A1_LOJA+ " em rela√ß√£o a loja Atual "+M->A1_LOJA+" ! "
+		Conout("[ZFAT014 - ZF014VTC]  Usu√°rio "+RetCodUsr()+ CRLF + _cMsg + CRLF)
 		If !_lJob
-			_lRet 	:= MsgYesNo(_cMsg + CRLF + "DESEJA TROCAR A LOJA DENTENTORA DO crÈdito ? ")
+			_lRet 	:= MsgYesNo(_cMsg + CRLF + "DESEJA TROCAR A LOJA DENTENTORA DO cr√©dito ? ")
 		Else
 			_lRet	:= .T.
 		Endif
-		//Verificar se existe rotina rodando em JOB caso exista ser· necessÛrio ajustar as variaveis de memÛria para tabela
+		//Verificar se existe rotina rodando em JOB caso exista ser√° necess√≥rio ajustar as variaveis de mem√≥ria para tabela
 		//Caso aceitou a troca da loja
 		If _lRet
 			M->A1_XTPCRED	:= _cXtpCred
@@ -927,10 +933,10 @@ User Function ZF014VTC( _cCodCli, _cLoja, _cXtpCred)
 			M->A1_XPEDFP 	:= SA1->A1_XPEDFP
 			M->A1_XVALBO 	:= SA1->A1_XVALBO
 			M->A1_XBLQLC 	:= SA1->A1_XBLQLC
-			//M->A1_XMOTBLO	:= SA1->A1_XMOTBLO   //n„o alterar o motivo pois existe histÛrico para cada cliente conforme Aline
+			//M->A1_XMOTBLO	:= SA1->A1_XMOTBLO   //n√£o alterar o motivo pois existe hist√≥rico para cada cliente conforme Aline
 			M->A1_XFPSAL 	:= SA1->A1_XFPSAL
 			M->A1_XBLQVEN	:= SA1->A1_XBLQVEN
-			//Caso n„o aceitou volto o tipo de crÈdito
+			//Caso n√£o aceitou volto o tipo de cr√©dito
 		Else
 			M->A1_XTPCRED	:= "0"
 			M->A1_XLC		:= 0
@@ -964,15 +970,15 @@ User Function ZF014VTC( _cCodCli, _cLoja, _cXtpCred)
 Return _lRet
 
 /*/{Protheus.doc} ZF014VDUPL
-FunÁ„o responsÛvel por verificar se existe outro tipo de credito cadastrado
-caso exista retornar· .F. Falso
+Fun√ß√£o respons√≥vel por verificar se existe outro tipo de credito cadastrado
+caso exista retornar√° .F. Falso
 @param      _cCliFat 	- Codigo do cliente  
-			_cTpCred	- Tipo de crÈdito do Cliente
+			_cTpCred	- Tipo de cr√©dito do Cliente
 			_cLoja 		- Loja do Cliente 
 @return     Logico
 @author     DAC Denilso
 @version    12.1.17 / Superior
-@project	GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (RevitalizaÁ„o Limite de crÈdito)
+@project	GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (Revitaliza√ß√£o Limite de cr√©dito)
 @since      02/03/2023
 /*/
 Static Function ZF014VDUPL(_cCodCli, _cTpCred, _cLoja)
@@ -980,7 +986,7 @@ Static Function ZF014VDUPL(_cCodCli, _cTpCred, _cLoja)
 	Local _cAliasPesq 	:= GetNextAlias()
 
 	Begin Sequence
-		BeginSql Alias _cAliasPesq //Define o nome do alias tempor·rio
+		BeginSql Alias _cAliasPesq //Define o nome do alias tempor√°rio
 		SELECT COUNT(SA1.R_E_C_N_O_) AS SA1TOTREG
 		FROM  %Table:SA1% SA1
 		WHERE SA1.A1_FILIAL 	= %XFilial:SA1%
@@ -1005,14 +1011,14 @@ Return _lRet
 
 
 /*/{Protheus.doc} ZFAT014GER
-FunÁ„o respons·vel por verificar se existe outro tipo de credito cadastrado
-caso exista retornar· .F. Falso
+Fun√ß√£o respons√°vel por verificar se existe outro tipo de credito cadastrado
+caso exista retornar√° .F. Falso
 @param      _cCliFat 	- Codigo do cliente  
 			_cLoja 		- Loja do Cliente 
 @return     Logico
 @author     DAC Denilso
 @version    12.1.17 / Superior
-@project	GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (RevitalizaÁ„o Limite de crÈdito)
+@project	GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (Revitaliza√ß√£o Limite de cr√©dito)
 @since      02/03/2023
 /*/
 Static Function ZFAT014GER(_cCliFat, _cLoja)
@@ -1032,7 +1038,7 @@ Static Function ZFAT014GER(_cCliFat, _cLoja)
 		Endif
 		_cWhere := "%"+_cWhere+"%"
 
-		BeginSql Alias _cAliasPesq //Define o nome do alias tempor·rio
+		BeginSql Alias _cAliasPesq //Define o nome do alias tempor√°rio
 		SELECT ISNULL(SA1.R_E_C_N_O_,0) NREGSA1
 		FROM  %Table:SA1% SA1
 		WHERE SA1.A1_FILIAL 	= %XFilial:SA1%
@@ -1048,10 +1054,10 @@ Static Function ZFAT014GER(_cCliFat, _cLoja)
 		While (_cAliasPesq)->(!Eof())
 			SA1->(DbGoto((_cAliasPesq)->NREGSA1))
 			
-			//InÌcio dos ajustes referentes ao GAP096
+			//In√≠cio dos ajustes referentes ao GAP096
 			_aRet := U_ZFATF014(SA1->A1_COD, SA1->A1_XTPCRED, SA1->A1_LOJA, .T. )
 			
-			If (_aRet == Nil) .or. (!Len(_aRet) > 0) //Se passar, funÁ„o estava lockada, crÈdito n„o calculado.
+			If (_aRet == Nil) .or. (!Len(_aRet) > 0) //Se passar, fun√ß√£o estava lockada, cr√©dito n√£o calculado.
 				AADD(_aNaoProc, { (_cAliasPesq)->NREGSA1, SA1->A1_COD, SA1->A1_XTPCRED, SA1->A1_LOJA, .T. })
 			EndIf
 
@@ -1062,8 +1068,8 @@ Static Function ZFAT014GER(_cCliFat, _cLoja)
 		EndDo
 	End Sequence
 
-	//InÌcio dos ajustes referentes ao GAP096
-	If	Len(_aNaoProc) > 0 //Se houveram erros, calcula crÈdito novamente.
+	//In√≠cio dos ajustes referentes ao GAP096
+	If	Len(_aNaoProc) > 0 //Se houveram erros, calcula cr√©dito novamente.
 		zReprocessa(_aNaoProc)
 	EndIF
 	//Fim dos ajustes referentes ao GAP096
@@ -1076,7 +1082,7 @@ Return _lRet
 
 
 /*/{Protheus.doc} ZF014ZERLC
-Funcao para atualiar os valores de limite de credito dos clientes que n„o utilizam limite
+Funcao para atualiar os valores de limite de credito dos clientes que n√£o utilizam limite
 pesquisando pelo codigo e avaliando as lojas zerara os valores e dadas do limite de credito
 @author DAC
 @since 03/04/2023
@@ -1159,8 +1165,8 @@ Return _lRet
 
 //Ajustes Referente ao GAP096 ----------------------------------------------------
 /*/{Protheus.doc} zReprocessa
-Funcao para recalcular o limite de crÈdito utilizando a ZFATF014 com os par‚metros dos
-clientes que n„o foram calculados devido a conflitos de execuÁ„o barrados pelo LockByName.
+Funcao para recalcular o limite de cr√©dito utilizando a ZFATF014 com os par√¢metros dos
+clientes que n√£o foram calculados devido a conflitos de execu√ß√£o barrados pelo LockByName.
 @author Nicolas Lima
 @since 28/11/2023
 @version 1.0
@@ -1176,9 +1182,9 @@ Static Function zReprocessa(_aNaoProc)
 		Local _lJob 		:= If( IsBlind(),.T.,.F.)
 
 		If !_lJob
-			_lContinua := MsgYesNo("O limite de crÈdito de " + AllTrim(Str(Len(_aNaoProc))) + " cliente(s) n„o foi recalculado." + CRLF + "Deseja tentar novamente?","AtenÁ„o")
+			_lContinua := MsgYesNo("O limite de cr√©dito de " + AllTrim(Str(Len(_aNaoProc))) + " cliente(s) n√£o foi recalculado." + CRLF + "Deseja tentar novamente?","Aten√ß√£o")
 		Else
-			Conout("[ZFATF014] O registro deste cliente esta lockado, o limite de crÈdito n„o foi recalculado, ser„o realizadas mais 3 tentativas.")
+			Conout("[ZFATF014] O registro deste cliente esta lockado, o limite de cr√©dito n√£o foi recalculado, ser√£o realizadas mais 3 tentativas.")
 			_lContinua := .T.
 		EndIf
 

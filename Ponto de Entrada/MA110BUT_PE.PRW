@@ -10,8 +10,11 @@ P.E. - Adiciona botões no Pedido de Compras e Autorização de Entrega.
 /*/
 USER FUNCTION MA110BUT
 
-	LOCAL aBotao      := {}
+	
 	LOCAL nOpcX		  := IIF(INCLUI,3,IIF(ALTERA,4,2))
+	LOCAL aBotao      := PARAMIXB[2] //Ajuste referente ao GAP097
+	//LOCAL aBotao      := {}
+
 	//Local nOpc:= PARAMIXB[1]
     //Local aBut:= PARAMIXB[2]
     //LOCAL bButZCOMF3

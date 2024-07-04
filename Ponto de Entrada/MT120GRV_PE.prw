@@ -25,7 +25,6 @@ USER Function MT120GRV()
 	Local cAviso     := ""
 	Local oWsdl      := TWsdlManager():New()
 	Local cURLFluig  := GetMV("ES_XFLUIG5",,"https://caoa-fluig.totvscloud.com.br/webdesk/ECMWorkflowEngineService?wsdl")
-	Local _cEmp		:= FWCodEmp()
 	Local aArea		:= GetArea()
 	
 	Private cFUsuario   := GetMV("ES_XFLUIG1",,"integrador")
@@ -52,7 +51,7 @@ USER Function MT120GRV()
 		Return lOk  //Ignora na inclusao
 	Endif
 
-	If _cEmp == "2010" //Executa o p.e. Anapolis. 
+	If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 	
 		Begin Sequence
 

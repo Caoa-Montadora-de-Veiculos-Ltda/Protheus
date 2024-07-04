@@ -226,7 +226,7 @@ Static Function ZWMSProces( lJob )
 
 	//DAC-Denilso GAP092
 	If lJob  //somente se for job
-		If ( _cTime > "20:00" .And. _cTime <= "23:59" ) .Or. ( _cTime >= "00:00" .And. _cTime < "05:00" ) 
+		If ( _cTime > "23:30" .And. _cTime <= "23:59" ) .Or. ( _cTime >= "00:00" .And. _cTime < "05:00" ) 
 			_cWhere := " AND SZJ.ZJ_LOCORI  <> 'PRD' " + CRLF
 			_cWhere += " AND SZJ.ZJ_LOCDEST <> 'PRD' " 
 		Endif 	

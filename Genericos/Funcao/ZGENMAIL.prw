@@ -149,7 +149,7 @@ User Function ZGENMAIL(	Param01		,Param02	,Param03	,Param04	,Param05	,Param06	,P
 					Else
 						Conout("[ZGENMAIL] O arquivo " + aAttach[nX] + " não foi anexado!")
 					EndIf
-					Return
+					Return .F. 
 				EndIf
 					//Grava nome do arquivo para salvar no Log.
 				cAnexos	+= aAttach[nX] +CRLF

@@ -1,6 +1,7 @@
 #Include 'Protheus.ch'
 #Include 'Topconn.ch'
 #Include "TOTVS.CH"
+
 /*
 =====================================================================================
 Programa.:              ZFISR001
@@ -48,17 +49,18 @@ Static Function zSelect(nRadio)
 	Local cArquivo	:= ""
 	Private cPergR1	:= "ZFISR001R1"
 	Private cPergR2	:= "ZFISR001R2"
+	Private lMvNFLeiZF := SuperGetMV("MV_NFLEIZF",,.F.)
 
 	If nRadio == 1
 		If Pergunte( cPergR1	,.T.	)
-			cArquivo := cGetFile(cExtens,cTitulo,,cMainPath,.F.)
+			cArquivo := cGetFile(cExtens,cTitulo,,cMainPath,.F.,)
 			If !Empty(cArquivo)
 				Processa({|| zRel0001(cArquivo)}	,"Gerando Relatório de Notas Fiscais de Entrada..."	)
 			EndIf
 		EndIf
 	Else
 		If Pergunte( cPergR2	,.T.	)
-			cArquivo := cGetFile(cExtens,cTitulo,,cMainPath,.F.)
+			cArquivo := cGetFile(cExtens,cTitulo,,cMainPath,.F.,)
 			If !Empty(cArquivo)
 				Processa({|| zRel0002(cArquivo)}	,"Gerando Relatório de Notas Fiscais de Saída..."	)
 			EndIf
@@ -115,6 +117,7 @@ Static Function zRel0001(cArquivo)
 	Local cCodNatur		:= ""
 	Local cCodChassi	:= ""
 	Local nVlCom		:= 0
+	Local nTotal 		:= 0
 
 	If !ApOleClient( "MSExcel" )
 		MsgAlert( "Microsoft Excel não instalado!!" )
@@ -143,7 +146,19 @@ Static Function zRel0001(cArquivo)
 	cQuery += " FT_BASEINS, FT_ALIQINS, D1_ABATINS, D1_AVLINSS, FT_VALINS, C7_NUM, FT_FORMUL, "										+ CRLF
 	cQuery += " D1_BASEISS, D1_ALIQISS, D1_ABATISS, D1_ABATMAT, D1_VALISS, FT_CODBCC, FT_INDNTFR, "									+ CRLF
 	cQuery += " D1_VALFRE, D1_DESPESA, D1_CUSTO, D1_SEGURO, D1_VALACRS, D1_II, FT_ICMSCOM, D1_TNATREC, D1_CONHEC, "					+ CRLF
-	cQuery += " D1_PESO, FT_MVALPIS, FT_MVALCOF, W6_DTREG_D, W6_DI_NUM, YD_PER_II, VRK_OPCION, W9_TX_FOB "							+ CRLF
+	cQuery += " D1_PESO, FT_MVALPIS, FT_MVALCOF, W6_DTREG_D, W6_DI_NUM, 
+		
+	cQuery += "( Select SYD.YD_PER_II from " + RetSqlName("SYD") + " SYD " + CRLF
+ 	cQuery += "	  where SYD.YD_FILIAL  = '" +  FWxFilial('SYD') + "' " + CRLF
+	cQuery += "		AND SYD.YD_TEC     = SB1.B1_POSIPI " + CRLF
+	cQuery += "		AND SYD.YD_EX_NCM  = SB1.B1_EX_NCM " + CRLF
+	cQuery += "		AND SYD.YD_EX_NBM  = SB1.B1_EX_NBM " + CRLF
+    cQuery += "		AND SYD.D_E_L_E_T_ = ' ' " + CRLF
+    cQuery += "		AND     ROWNUM     = 1 " + CRLF
+ 
+    cQuery += "		) as YD_PER_II,  " + CRLF
+
+	cQuery += " VRK_OPCION, W9_TX_FOB "							+ CRLF
 
 	cQuery += " FROM " + RetSQLName('SD1') + " SD1 "																				+ CRLF
 
@@ -187,14 +202,14 @@ Static Function zRel0001(cArquivo)
 	cQuery += " 	ON SW9.W9_FILIAL = '" + FWxFilial('SW9') + "' "																	+ CRLF
 	cQuery += "		AND SW9.W9_HAWB = SD1.D1_CONHEC  "	 																			+ CRLF
 	cQuery += "     AND SW9.D_E_L_E_T_ = ' '   " 																					+ CRLF
-
+/*
 	cQuery += " LEFT JOIN " + RetSQLName("SYD") + " SYD  " 																			+ CRLF
 	cQuery += " 	ON SYD.YD_FILIAL = '" + FWxFilial('SYD') + "' "																	+ CRLF
 	cQuery += "		AND SYD.YD_TEC = SB1.B1_POSIPI "	 																			+ CRLF
 	cQuery += "		AND SYD.YD_EX_NCM = SB1.B1_EX_NCM  "	 																		+ CRLF
 	cQuery += "		AND SYD.YD_EX_NBM = SB1.B1_EX_NBM  "	 																		+ CRLF
 	cQuery += "     AND SYD.D_E_L_E_T_ = ' '   " 																					+ CRLF
-
+*/
 	cQuery += " LEFT JOIN " + RetSQLName("VVF") + " VVF "																			+ CRLF
 	cQuery += "		ON VVF.VVF_FILIAL = '" + FWxFilial('VVF') + "' "																+ CRLF
 	cQuery += " 	AND VVF.VVF_NUMNFI = SF1.F1_DOC "																				+ CRLF
@@ -254,7 +269,7 @@ Static Function zRel0001(cArquivo)
 
 	cQuery += " GROUP BY 	D1_FILIAL, D1_COD, D1_DOC, D1_SERIE, D1_TES, D1_CF, D1_FORNECE, D1_LOJA, D1_EMISSAO, D1_DTDIGIT, " 		+ CRLF
 	cQuery += " D1_ITEM, F4_FINALID, F4_TEXTO, FT_CTIPI, FT_CSTPIS, FT_CSTCOF,  F4_ICM, F4_IPI, F4_CREDICM, F4_CREDIPI, F4_DUPLIC, "+ CRLF
-	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, "											+ CRLF
+	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, B1_EX_NBM, "											+ CRLF
 	cQuery += "	F1_ESPECIE, F1_CODNFE, F1_MENNOTA, F1_DOC, F1_SERIE, F1_STATUS, F1_TIPO, FT_CHVNFE,"								+ CRLF
 	cQuery += " FT_VALCONT, D1_CONTA, D1_ITEMCTA, D1_NFORI, D1_SERIORI, D1_VUNIT, D1_TOTAL, "										+ CRLF
 	cQuery += " D1_DESC, FT_CLASFIS, FT_BASERET, FT_ICMSRET, D1_DESCZFP, D1_DESCZFC,  "												+ CRLF
@@ -270,7 +285,7 @@ Static Function zRel0001(cArquivo)
 	cQuery += " FT_BASEINS, FT_ALIQINS, D1_ABATINS, D1_AVLINSS, FT_VALINS, C7_NUM, FT_FORMUL, "										+ CRLF
 	cQuery += " D1_BASEISS, D1_ALIQISS, D1_ABATISS, D1_ABATMAT, D1_VALISS, FT_CODBCC, FT_INDNTFR, "									+ CRLF
 	cQuery += " D1_VALFRE, D1_DESPESA, D1_CUSTO, D1_SEGURO, D1_VALACRS, D1_II, FT_ICMSCOM, D1_TNATREC, D1_CONHEC,  "				+ CRLF
-	cQuery += " D1_PESO, FT_MVALPIS, FT_MVALCOF, W6_DTREG_D, W6_DI_NUM, YD_PER_II, VRK_OPCION, W9_TX_FOB "							+ CRLF
+	cQuery += " D1_PESO, FT_MVALPIS, FT_MVALCOF, W6_DTREG_D, W6_DI_NUM, VRK_OPCION, W9_TX_FOB "							+ CRLF
 
 	cQuery += " ORDER BY SD1.D1_FILIAL, SD1.D1_EMISSAO, SD1.D1_DOC, SD1.D1_SERIE, SD1.D1_ITEM, SD1.D1_FORNECE, SD1.D1_LOJA "		+ CRLF
 
@@ -649,6 +664,12 @@ Static Function zRel0001(cArquivo)
 			zRel0003(@nVlIPIRegi, @nVlIPIPres, (cAliasTRB)->F1_ESPECIE, (cAliasTRB)->F1_DOC, (cAliasTRB)->F1_SERIE,;
 					(cAliasTRB)->D1_FORNECE, (cAliasTRB)->D1_LOJA, (cAliasTRB)->D1_ITEM )
 
+			if !lMvNFLeiZF
+				nTotal := (cAliasTRB)->D1_TOTAL  
+			Else
+                nTotal := (cAliasTRB)->D1_TOTAL - ((cAliasTRB)->D1_DESCZFP + (cAliasTRB)->D1_DESCZFC) //--Valor Total Item
+			EndIF
+			
 			oFWMSExcel:AddRow( cAba1	,cTabela1	,{ 	cCgcCpf,;    //--Cnpj/Cpf 
 														cIncEst,;    //--Insc.Estadual
 														cTpPessoa,;    //--Pessoa Fisica/Juridica
@@ -662,12 +683,12 @@ Static Function zRel0001(cArquivo)
 														AllTrim( (cAliasTRB)->VRK_OPCION ),;    //--Opcional
 														AllTrim( (cAliasTRB)->B1_GRUPO ),;    //--Grupo\Linha
 														AllTrim( Posicione("SBM",1,xFilial("SBM")+(cAliasTRB)->B1_GRUPO,"BM_DESC") ),;    //--Descrição do Grupo
-														(cAliasTRB)->D1_TOTAL,;    //--Valor Total Item
+														nTotal ,; //(cAliasTRB)->D1_TOTAL,;    //--Valor Total Item
 														(cAliasTRB)->D1_CF,;    //--Cfop
 														(cAliasTRB)->FT_VALCONT,;    //--Valor Contábil
-														(cAliasTRB)->FT_BASEICM,;    //--Base ICMS
-														(cAliasTRB)->FT_ALIQICM,;    //--Aliq. ICMS
-														(cAliasTRB)->FT_VALICM,;    //--Valor ICMS
+														iif( Alltrim((cAliasTRB)->F1_ESPECIE) <> "RPS", (cAliasTRB)->FT_BASEICM , 0),;    //--Base ICMS
+														iif( Alltrim((cAliasTRB)->F1_ESPECIE) <> "RPS", (cAliasTRB)->FT_ALIQICM , 0),;    //--Aliq. ICMS
+														iif( Alltrim((cAliasTRB)->F1_ESPECIE) <> "RPS", (cAliasTRB)->FT_VALICM  , 0),;    //--Valor ICMS
 														IIF( (cAliasTRB)->F1_TIPO $ "B|D" , nVlCom , 0 ),;    //--Comissão
 														(cAliasTRB)->FT_BASEIPI,;    //--Base IPI					
 														(cAliasTRB)->FT_ALIQIPI,;    //--Aliq. IPI			
@@ -884,7 +905,6 @@ Static Function zRel0001(cArquivo)
 			oFWMsExcel:AddColumn( cAba2	,cTabela2	,"Chave NFe"			,2	,1	,.F.	) // Center - Texto
 			oFWMsExcel:AddColumn( cAba2	,cTabela2	,"Descrição"			,2	,1	,.F.	) // Center - Texto
 
-
 			While (cTMPCanc)->(!EoF())
 				
 				oFWMSExcel:AddRow( cAba2	, cTabela2	, { Alltrim( (cTMPCanc)->F3_FILIAL ),;    //--Empresa
@@ -985,7 +1005,9 @@ Static Function zRel0002(cArquivo)
 	Local nTotReg		:= ""
 	Local nVlIPIRegi	:= 0
 	Local nVlIPIPres	:= 0
-	
+	Local nDesconto		:= 0
+	Local nDesVrIcms	:= 0
+	Local nTotal		:= 0
 
 	If !ApOleClient("MSExcel")
 		MsgAlert("Microsoft Excel não instalado!")
@@ -1014,7 +1036,7 @@ Static Function zRel0002(cArquivo)
 	cQuery += " FT_BASEINS,FT_ALIQINS,D2_ABATINS,FT_VALINS, D2_UM, D2_QUANT, "												+ CRLF
 	cQuery += " D2_BASEISS,D2_ALIQISS,D2_ABATISS,D2_ABATMAT,D2_VALISS, D2_ITEMCC, "											+ CRLF
 	cQuery += " FT_BASECSL,FT_ALIQCSL,FT_VALCSL, D2_CUSTO1, VRK_CHASSI, VRJ_CODCLI, VRJ_LOJA, C6_XVLCOM, "					+ CRLF
-	cQuery += " C6_TNATREC, C6_NFORI, C6_FILIAL, C6_NUM, VV3_TIPVEN, VV3_DESCRI, VRJ_CLIRET, VRK_OPCION "					+ CRLF
+	cQuery += " C6_TNATREC, C6_NFORI, C6_FILIAL, C6_NUM, VV3_TIPVEN, VV3_DESCRI, VRJ_CLIRET, VRK_OPCION,D2_DESCZFR , D2_VRDICMS " + CRLF
 	cQuery += " FROM   " + RetSQLName("SD2") + " SD2 " 																		+ CRLF
 	
 	cQuery += "	INNER JOIN " + RetSQLName("SF2") + " SF2 "																+ CRLF
@@ -1131,7 +1153,7 @@ Static Function zRel0002(cArquivo)
 	cQuery += " FT_BASEINS,FT_ALIQINS,D2_ABATINS,FT_VALINS, D2_UM, D2_QUANT, "												+ CRLF
 	cQuery += " D2_BASEISS,D2_ALIQISS,D2_ABATISS,D2_ABATMAT,D2_VALISS, D2_ITEMCC, "											+ CRLF
 	cQuery += " FT_BASECSL,FT_ALIQCSL,FT_VALCSL, D2_CUSTO1, VRK_CHASSI, VRJ_CODCLI, VRJ_LOJA, C6_XVLCOM,  "					+ CRLF
-	cQuery += " C6_TNATREC, C6_NFORI, C6_FILIAL, C6_NUM, VV3_TIPVEN, VV3_DESCRI, VRJ_CLIRET, VRK_OPCION "					+ CRLF
+	cQuery += " C6_TNATREC, C6_NFORI, C6_FILIAL, C6_NUM, VV3_TIPVEN, VV3_DESCRI, VRJ_CLIRET, VRK_OPCION,D2_DESCZFR, D2_VRDICMS"					+ CRLF
 
 	cQuery += " ORDER BY SD2.D2_FILIAL, SD2.D2_DOC, SD2.D2_SERIE, SD2.D2_CLIENTE, SD2.D2_LOJA " 						+ CRLF
 
@@ -1143,7 +1165,7 @@ Static Function zRel0002(cArquivo)
 	DbSelectArea((cAliasTRB))
 	nTotReg := Contar(cAliasTRB,"!Eof()")
 	(cAliasTRB)->(dbGoTop())
-	
+
 	If (cAliasTRB)->(!Eof())
 
 		// Criando o objeto que irá gerar o conteúdo do Excel.
@@ -1509,17 +1531,31 @@ Static Function zRel0002(cArquivo)
 			nVlIPIPres := 0
 			//-- Retorna Valor de IPI regional e presumido
 			zRel0003(@nVlIPIRegi, @nVlIPIPres, (cAliasTRB)->F2_ESPECIE, (cAliasTRB)->F2_DOC, (cAliasTRB)->F2_SERIE,;
-					(cAliasTRB)->D2_CLIENTE, (cAliasTRB)->D2_LOJA, (cAliasTRB)->D2_ITEM )	
+					(cAliasTRB)->D2_CLIENTE, (cAliasTRB)->D2_LOJA, (cAliasTRB)->D2_ITEM )
 
 			nVlrDesc   := 0
 			//Alterado conf. solicitação Silvana 26/05/22	
 			//Somente na filial Barueri 
-			IF FWCodEmp()   = '2020' .AND. FWFilial() = '2001'
+			IF ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 				nVlrFrete  := (cAliasTRB)->D2_VALFRE          //--Frete
 				nVlrSeguro := (cAliasTRB)->D2_SEGURO          //--Seguro
 				nVlrDesp   := (cAliasTRB)->D2_DESPESA         //--Despesas
 				nVlrDesc   := (cAliasTRB)->D2_DESCON          //--Desconto
 			ENDIF
+
+			nDesconto   := (cAliasTRB)->D2_DESCON
+        	nDesVrIcms  := 0
+			If  (cAliasTRB)->D2_VRDICMS > 0  .and. nDesconto >= (cAliasTRB)->D2_VRDICMS 
+				nDesVrIcms := (cAliasTRB)->D2_VRDICMS
+			EndIF
+        
+        	if !lMvNFLeiZF
+				nTotal := ((cAliasTRB)->D2_TOTAL  + nDesconto + (cAliasTRB)->D2_DESCZFR ) - nDesVrIcms 
+			Else
+                nTotal := ((cAliasTRB)->D2_TOTAL  + nDesconto + (cAliasTRB)->D2_DESCZFR ) - ( (cAliasTRB)->D2_DESCZFP + (cAliasTRB)->D2_DESCZFC + nDesVrIcms )  //--Valor Total Item
+			EndIF
+
+			nVlrDesc := nDesconto
 
 			oFWMSExcel:AddRow( cAba1	, cTabela1	, { cCgcCpf,;                //--Cnpj/Cpf
 														cCGCLocEnt,;             //--CNPJ Loc. Entr.
@@ -1530,19 +1566,19 @@ Static Function zRel0002(cArquivo)
 														Alltrim( (cAliasTRB)->F4_FINALID ),;    //--Finalidade TES
 														AllTrim( (cAliasTRB)->B1_ORIGEM ),;     //--Origem do Produto
 														AllTrim( (cAliasTRB)->B1_POSIPI ),;     //--NCM
-														AllTrim( (cAliasTRB)->B1_EX_NCM ),;     //--Ex-NCM
+														AllTrim( (cAliasTRB)->B1_EX_NCM ),;     //--Ex-NBM
 														AllTrim( cModVei ),;                    //--Modelo Veículo
 														AllTrim( (cAliasTRB)->VRK_OPCION ),;    //--Opcional
 														AllTrim( (cAliasTRB)->B1_GRUPO ),;      //--Grupo\Linha
 														AllTrim( Posicione("SBM",1,xFilial("SBM")+(cAliasTRB)->B1_GRUPO,"BM_DESC") ),;    //--Descrição do Grupo
-														(cAliasTRB)->D2_TOTAL,;      //--Valor Total Item
+														nTotal,;    //--Valor Total Item
 														(cAliasTRB)->D2_PRUNIT,;     //--Valor Unit. Bruto
 														nVlrDesc,;	//--Valor Desc Item
 														(cAliasTRB)->D2_CF,;         //--Cfop
 														(cAliasTRB)->FT_VALCONT,;    //--Valor Contábil
-														(cAliasTRB)->FT_BASEICM,;    //--Base ICMS
-														(cAliasTRB)->FT_ALIQICM,;    //--Aliq. ICMS
-														(cAliasTRB)->FT_VALICM,;     //--Valor ICMS
+														iif( Alltrim((cAliasTRB)->F2_ESPECIE) <> "RPS",(cAliasTRB)->FT_BASEICM , 0 ),;    //--Base ICMS
+														iif( Alltrim((cAliasTRB)->F2_ESPECIE) <> "RPS",(cAliasTRB)->FT_ALIQICM , 0 ),;    //--Aliq. ICMS
+														iif( Alltrim((cAliasTRB)->F2_ESPECIE) <> "RPS",(cAliasTRB)->FT_VALICM  , 0 ),;     //--Valor ICMS
 														(cAliasTRB)->C6_XVLCOM,;     //--Comissão
 														(cAliasTRB)->FT_BASEIPI,;    //--Base IPI
 														(cAliasTRB)->FT_ALIQIPI,;    //--Aliq. IPI
@@ -1587,11 +1623,11 @@ Static Function zRel0002(cArquivo)
 														AllTrim( Posicione("SB5",1,xFilial("SB5")+(cAliasTRB)->D2_COD,"B5_CEME") ),;    //--Descrição Científico
 														AllTrim( (cAliasTRB)->B1_XDESCL1 ),;     //--Descrição Longa
 														(cAliasTRB)->D2_UM,;         //--Un Medida
-														(cAliasTRB)->D2_QUANT,;      //--Quant										
+														(cAliasTRB)->D2_QUANT,;      //--Quant
 														nVlrFrete,;     //--Frete
 														nVlrSeguro,;    //--Seguro
 														nVlrDesp,;      //--Despesas
-                                                        (cAliasTRB)->D2_CUSTO1,;     //--Custo
+														(cAliasTRB)->D2_CUSTO1,;     //--Custo
 														(cAliasTRB)->D2_CONTA,;      //--Conta Contábil
 														AllTrim( Posicione("CT1",1,xFilial("CT1")+(cAliasTRB)->D2_CONTA,"CT1_DESC01") ),;    //--Desc.Conta Contábil
 														AllTrim( (cAliasTRB)->D2_FILIAL ),;    //--Empresa
@@ -1609,7 +1645,7 @@ Static Function zRel0002(cArquivo)
 														AllTrim( cComVei ),;         //--Combustível Veículo
 														AllTrim( (cAliasTRB)->F4_TEXTO ),;    //--Descrição CFOP
 														(cAliasTRB)->F2_CODNFE,;     //--Cód.Verificação
-														cAmbiente,;                  //--Ambiente
+														cAmbiente,;    				 //--Ambiente
 														(cAliasTRB)->FT_BASEIRR,;    //--Base Irrf Retenção
 														(cAliasTRB)->FT_ALIQIRR,;    //--Aliq. Irrf Retenção
 														(cAliasTRB)->FT_VALIRR,;     //--Irrf Retenção

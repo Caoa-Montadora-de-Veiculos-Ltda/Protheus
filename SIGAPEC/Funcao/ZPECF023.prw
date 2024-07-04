@@ -28,7 +28,6 @@ User Function ZPECF023()
     LOCAL nOpcao      := 0
     Local aPergs 	  := {}
     Local cCaminho    := Space(60)
-    Local _cEmp  	  := FWCodEmp()
     
     Private _cUser    := Substr(cUserName,1,20)
     Private _cCdUser  := RetCodUsr()
@@ -100,7 +99,7 @@ User Function ZPECF023()
 
     Private aRetP 	  := {}
 
-    If _cEmp == "2020" //Executa o p.e. Anapolis.
+    If ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 
     aAdd( aPergs ,{6,"Diretorio do Arquivo ",cCaminho     ,"@!" ,     ,'.T.' ,80,.T.,"Arquivos .xls |*.xls " })
     aAdd( aPergs ,{4,"Somente FOB ?",.F.,"Marque p/atualizar apenas FOB.",90,"",.F.})
@@ -1205,7 +1204,7 @@ _cQueArm := " "
 
 _cQueArm := " SELECT NNR_CODIGO, NNR_DESCRI "
 _cQueArm += "   FROM "+retsqlName('NNR')
-_cQueArm += "  WHERE NNR_FILIAL = '2020012001' "
+_cQueArm += "  WHERE NNR_FILIAL = '"+xFilial('NNR')+"' "
 _cQueArm += "    AND D_E_L_E_T_=' ' "
 
 dbUseArea( .T., "TOPCONN", TcGenQry( ,, _cQueArm ), _cQA1, .F., .T. )

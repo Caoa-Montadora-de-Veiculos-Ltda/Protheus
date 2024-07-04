@@ -169,7 +169,29 @@ User Function ZACDF001( cOriUnitz )   // vtdebug
 		VTAlert( cMsg, "Erro", .T.)
 		Loop
 	EndIf
+	
+	cmd := ""
+	cmd += CRLF + " SELECT ZJ_DATA, ZJ_HRLEITU  "
+	cmd += CRLF + " FROM " + RetSqlName("SZJ") "
+	cmd += CRLF + " WHERE  "
+	cmd += CRLF + "     D_E_L_E_T_ = ' ' "
+	cmd += CRLF + " AND ZJ_FILIAL  = '" + Xfilial("SZJ") + "'   "
+	cmd += CRLF + " AND ZJ_IDUNIT  = '" + cOriUnitz      + "'   "
+	cmd += CRLF + " AND ZJ_LOCORI  = '" + cOriLoc        + "'   "
+	cmd += CRLF + " AND ZJ_ENDORI  = '" + cOriEnd        + "'   "
+	cmd += CRLF + " AND ZJ_DATA	   = '" + Dtos(Date())   + "'   "
+	cmd += CRLF + " AND ZJ_STATUS  <> 'F'                       "
+	cmd += CRLF + " order by ZJ_DATA DESC, ZJ_HRLEITU DESC
+	
+	TcQuery cmd new alias (cTb)
+	
+	IF ELAPTIME( (cTb)->ZJ_HRLEITU , fTimer() ) <= "00:30:00" .AND. Dtos(Date()) == (cTb)->ZJ_DATA
+		VTAlert( "Unitizador: " + AllTrim(cOriUnitz) + " já se encontra na fila", "Erro", .T.)
+		Loop
+	ENDIF
 
+	(cTb)->(DbCloseArea())
+	
 	// ACD107 - Bloqueio de transferencia de Unitizador
 	VtClear()
 	@ 02,00 VtSay "Verificando Duplicidades..."
@@ -634,3 +656,10 @@ Static Function OkEndInvent(cOriLoc, cOriEnd, cDstLoc, cDstEnd,  aUnitz )
 	EndIf
 
 Return lRes
+
+Static Function fTimer()
+Local cTempo := ""
+
+cTempo := str(noround(seconds()/60/60,0)-1,2) + ":" +str(((seconds()/60/60)-noround((seconds()/60/60),0 ))*60,2)+":00" 
+	
+Return cTempo

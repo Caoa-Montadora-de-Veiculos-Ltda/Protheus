@@ -48,7 +48,7 @@ Static Function Transf_ZFATF018()
     Private lMsErroAuto := .F.
     Private lMsHelpAuto	:= .T.
 
-    If ( cFilant = '2020012001' .AND. SC6->C6_TES = _cTesMud .AND. FWIsInCallStack("U_ZPECF013"))
+    If ( ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) .And. SC6->C6_TES = _cTesMud .AND. FWIsInCallStack("U_ZPECF013"))
        _cArmDes  := ALLTRIM(SuperGetMV("CMV_EST004",.T.,"90")) 
        //_xInteg   := ' ' 
     else

@@ -49,10 +49,11 @@ Static Function zSelect(nRadio)
 	Local cArquivo	:= ""
 	Private cPergR1	:= "ZFISR001R1"
 	Private cPergR2	:= "ZFISR001R2"
+	Private lMvNFLeiZF := SuperGetMV("MV_NFLEIZF",,.F.)
 
 	If nRadio == 1
 		If Pergunte( cPergR1	,.T.	)
-			cArquivo := cGetFile( cExtens		,cTitulo	,				,cMainPath		,.F.		,)
+			cArquivo := cGetFile(cExtens,cTitulo,,cMainPath,.F.,)
 			If !Empty(cArquivo)
 				Processa({|| zRel0001(cArquivo)}	,"Gerando Relatório de Notas Fiscais de Entrada..."	)
 			EndIf
@@ -116,6 +117,7 @@ Static Function zRel0001(cArquivo)
 	Local cCodNatur		:= ""
 	Local cCodChassi	:= ""
 	Local nVlCom		:= 0
+	Local nTotal 		:= 0
 
 	If !ApOleClient( "MSExcel" )
 		MsgAlert( "Microsoft Excel não instalado!!" )
@@ -126,157 +128,176 @@ Static Function zRel0001(cArquivo)
 		(cAliasTRB)->(DbCloseArea())
 	EndIf
 
-	cQuery += " SELECT 	D1_FILIAL, D1_COD, D1_DOC, D1_SERIE, D1_TES, D1_CF, D1_FORNECE, D1_LOJA, D1_EMISSAO, D1_DTDIGIT, " 			+ CRLF
-	cQuery += " D1_ITEM, F4_FINALID, F4_TEXTO, FT_CTIPI, FT_CSTPIS, FT_CSTCOF, F4_ICM, F4_IPI, F4_CREDICM, F4_CREDIPI, F4_DUPLIC, "	+ CRLF
-	cQuery += "	B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, "								  			+ CRLF
-	cQuery += "	F1_ESPECIE, F1_CODNFE, F1_MENNOTA, F1_DOC, F1_SERIE, F1_STATUS, F1_TIPO, FT_CHVNFE, "								+ CRLF
-	cQuery += " FT_VALCONT, FT_DESCONT, D1_CONTA, D1_ITEMCTA, D1_NFORI, D1_SERIORI, D1_VUNIT, D1_TOTAL, "							+ CRLF
-	cQuery += " D1_DESC, FT_CLASFIS, FT_BASERET, FT_ICMSRET, D1_DESCZFP, D1_DESCZFC,  "												+ CRLF
-	cQuery += " F1_UFORITR, F1_MUORITR, F1_UFDESTR, F1_MUDESTR,  "																	+ CRLF
-	cQuery += " FT_BASEICM, FT_ALIQICM, FT_VALICM, "																				+ CRLF
-	cQuery += " FT_BASEIPI, FT_ALIQIPI, FT_VALIPI, FT_ARETPIS, FT_ARETCOF, FT_VRETPIS, FT_VRETCOF, FT_BRETPIS, " 					+ CRLF
-	cQuery += " D1_BASIMP6, D1_ALQIMP6, D1_VALIMP6, FT_BRETCOF, " 																	+ CRLF
-	cQuery += " D1_BASIMP5, D1_ALQIMP5, D1_VALIMP5, " 																				+ CRLF
-	cQuery += " FT_BASEPIS, FT_ALIQPIS, FT_VALPIS, FT_ALIQPS3, FT_VALPS3, "															+ CRLF
-	cQuery += " FT_BASECOF, FT_ALIQCOF, FT_VALCOF, FT_DIFAL, FT_BASECF3, FT_ALIQCF3, FT_VALCF3, FT_BASEPS3, "						+ CRLF
-	cQuery += " FT_BASEIRR, FT_ALIQIRR, FT_VALIRR, F3_OUTRIPI, F3_ISENIPI, F3_OUTRICM, F3_ISENICM, " 								+ CRLF
-	cQuery += " FT_BASECSL, FT_ALIQCSL, FT_VALCSL, D1_UM, D1_QUANT, D1_CHASSI, "													+ CRLF
-	cQuery += " FT_BASEINS, FT_ALIQINS, D1_ABATINS, D1_AVLINSS, FT_VALINS, C7_NUM, FT_FORMUL, "										+ CRLF
-	cQuery += " D1_BASEISS, D1_ALIQISS, D1_ABATISS, D1_ABATMAT, D1_VALISS, FT_CODBCC, FT_INDNTFR, "									+ CRLF
-	cQuery += " D1_VALFRE, D1_DESPESA, D1_CUSTO, D1_SEGURO, D1_VALACRS, D1_II, FT_ICMSCOM, D1_TNATREC, D1_CONHEC, "					+ CRLF
-	cQuery += " D1_PESO, FT_MVALPIS, FT_MVALCOF, W6_DTREG_D, W6_DI_NUM, YD_PER_II, VRK_OPCION, W9_TX_FOB, D1_CHASSI "							+ CRLF
+	cQuery += " SELECT 	D1_FILIAL, D1_COD, D1_DOC, D1_SERIE, D1_TES, D1_CF, D1_FORNECE, D1_LOJA, D1_EMISSAO, D1_DTDIGIT, " + CRLF
+	cQuery += " D1_ITEM, F4_FINALID, F4_TEXTO, FT_CTIPI, FT_CSTPIS, FT_CSTCOF, F4_ICM, F4_IPI, F4_CREDICM, F4_CREDIPI, F4_DUPLIC, " + CRLF
+	cQuery += "	B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, " + CRLF
+	cQuery += "	F1_ESPECIE, F1_CODNFE, F1_MENNOTA, F1_DOC, F1_SERIE, F1_STATUS, F1_TIPO, FT_CHVNFE, " + CRLF
+	cQuery += " FT_VALCONT, FT_DESCONT, D1_CONTA, D1_ITEMCTA, D1_NFORI, D1_SERIORI, D1_VUNIT, D1_TOTAL, " + CRLF
+	cQuery += " D1_DESC, FT_CLASFIS, FT_BASERET, FT_ICMSRET, D1_DESCZFP, D1_DESCZFC,  " + CRLF
+	cQuery += " F1_UFORITR, F1_MUORITR, F1_UFDESTR, F1_MUDESTR,  " + CRLF
+	cQuery += " FT_BASEICM, FT_ALIQICM, FT_VALICM, " + CRLF
+	cQuery += " FT_BASEIPI, FT_ALIQIPI, FT_VALIPI, FT_ARETPIS, FT_ARETCOF, FT_VRETPIS, FT_VRETCOF, FT_BRETPIS, " + CRLF
+	cQuery += " D1_BASIMP6, D1_ALQIMP6, D1_VALIMP6, FT_BRETCOF, " + CRLF
+	cQuery += " D1_BASIMP5, D1_ALQIMP5, D1_VALIMP5, " + CRLF
+	cQuery += " FT_BASEPIS, FT_ALIQPIS, FT_VALPIS, FT_ALIQPS3, FT_VALPS3, " + CRLF
+	cQuery += " FT_BASECOF, FT_ALIQCOF, FT_VALCOF, FT_DIFAL, FT_BASECF3, FT_ALIQCF3, FT_VALCF3, FT_BASEPS3, " + CRLF
+	cQuery += " FT_BASEIRR, FT_ALIQIRR, FT_VALIRR, F3_OUTRIPI, F3_ISENIPI, F3_OUTRICM, F3_ISENICM, " + CRLF
+	cQuery += " FT_BASECSL, FT_ALIQCSL, FT_VALCSL, D1_UM, D1_QUANT, D1_CHASSI, " + CRLF
+	cQuery += " FT_BASEINS, FT_ALIQINS, D1_ABATINS, D1_AVLINSS, FT_VALINS, C7_NUM, FT_FORMUL, " + CRLF
+	cQuery += " D1_BASEISS, D1_ALIQISS, D1_ABATISS, D1_ABATMAT, D1_VALISS, FT_CODBCC, FT_INDNTFR, " + CRLF
+	cQuery += " D1_VALFRE, D1_DESPESA, D1_CUSTO, D1_SEGURO, D1_VALACRS, D1_II, FT_ICMSCOM, D1_TNATREC, D1_CONHEC, " + CRLF
+	cQuery += " D1_PESO, FT_MVALPIS, FT_MVALCOF, W6_DTREG_D, W6_DI_NUM, 
+	
+	
+	cQuery += "( Select SYD.YD_PER_II from " + RetSqlName("SYD") + " SYD " + CRLF
+ 	cQuery += "	  where SYD.YD_FILIAL  = '" +  FWxFilial('SYD') + "' " + CRLF
+	cQuery += "		AND SYD.YD_TEC     = SB1.B1_POSIPI " + CRLF
+	cQuery += "		AND SYD.YD_EX_NCM  = SB1.B1_EX_NCM " + CRLF
+	cQuery += "		AND SYD.YD_EX_NBM  = SB1.B1_EX_NBM " + CRLF
+    cQuery += "		AND SYD.D_E_L_E_T_ = ' ' " + CRLF
+    cQuery += "		AND     ROWNUM     = 1 " + CRLF
+ 
+    cQuery += "		) as YD_PER_II,  " + CRLF
 
-	cQuery += " FROM " + RetSQLName('SD1') + " SD1 "																				+ CRLF
+	cQuery += " VRK_OPCION, W9_TX_FOB, D1_CHASSI " + CRLF
 
-	cQuery += " INNER JOIN " + RetSQLName('SF1') + " SF1 "			 																+ CRLF
-	cQuery += " 	ON SF1.F1_FILIAL = '" + FWxFilial('SF1') + "' "																	+ CRLF
-	cQuery += " 	AND SF1.F1_DOC = SD1.D1_DOC " 																					+ CRLF
-	cQuery += " 	AND SF1.F1_SERIE = SD1.D1_SERIE " 																				+ CRLF
-	cQuery += " 	AND SF1.F1_FORNECE = SD1.D1_FORNECE " 																			+ CRLF
-	cQuery += " 	AND SF1.F1_LOJA = SD1.D1_LOJA " 																				+ CRLF
-	cQuery += " 	AND SF1.F1_ESPECIE BETWEEN '" +MV_PAR03+ "' AND '" +MV_PAR04+ "' " 												+ CRLF
-	cQuery += " 	AND SF1.D_E_L_E_T_ = ' ' " 																						+ CRLF	
+	cQuery += " FROM " + RetSQLName('SD1') + " SD1 " + CRLF
+
+	cQuery += " INNER JOIN " + RetSQLName('SF1') + " SF1 " + CRLF
+	cQuery += " 	ON  SF1.F1_FILIAL  = '" + FWxFilial('SF1') + "' " + CRLF
+	cQuery += " 	AND SF1.F1_DOC     = SD1.D1_DOC " + CRLF
+	cQuery += " 	AND SF1.F1_SERIE   = SD1.D1_SERIE " + CRLF
+	cQuery += " 	AND SF1.F1_FORNECE = SD1.D1_FORNECE " + CRLF
+	cQuery += " 	AND SF1.F1_LOJA    = SD1.D1_LOJA " + CRLF
+	cQuery += " 	AND SF1.F1_ESPECIE BETWEEN '" + MV_PAR03 + "' AND '" + MV_PAR04 + "' " + CRLF
+	cQuery += " 	AND SF1.D_E_L_E_T_ = ' ' " + CRLF	
 
 	If !Empty(MV_PAR19)
-		cQuery += " 	AND SF1.F1_EST = '" + MV_PAR19 + "' "																		+ CRLF
+		cQuery += " 	AND SF1.F1_EST = '" + MV_PAR19 + "' " + CRLF
 	EndIf 
 
-	cQuery += " INNER JOIN " + RetSQLName("SB1") + " SB1  " 																		+ CRLF
-	cQuery += " 	ON SB1.B1_FILIAL = '" + FWxFilial('SB1') + "'  "																+ CRLF
-	cQuery += "		AND SB1.B1_COD = SD1.D1_COD  "	 																				+ CRLF
-	cQuery += "     AND SB1.D_E_L_E_T_ = ' '   " 																					+ CRLF
+	cQuery += " INNER JOIN " + RetSQLName("SB1") + " SB1  " + CRLF
+	cQuery += " 	ON SB1.B1_FILIAL = '" + FWxFilial('SB1') + "' " + CRLF
+	cQuery += "		AND SB1.B1_COD = SD1.D1_COD  " + CRLF
+	cQuery += "     AND SB1.D_E_L_E_T_ = ' ' " + CRLF
 	
 	If !Empty( MV_PAR20 )
-		cQuery += " 	AND SB1.B1_GRUPO = '" + MV_PAR20 + "' "																		+ CRLF
+		cQuery += " 	AND SB1.B1_GRUPO = '" + MV_PAR20 + "' " + CRLF
 	EndIf
 
 	If !Empty( MV_PAR21 )
-		cQuery += " 	AND SB1.B1_POSIPI = '" + MV_PAR21 + "' "																	+ CRLF
+		cQuery += " 	AND SB1.B1_POSIPI = '" + MV_PAR21 + "' " + CRLF
 	EndIf
 
-	cQuery += " INNER JOIN " + RetSQLName("SF4") + " SF4 " 																			+ CRLF
-	cQuery += " 	ON SF4.F4_FILIAL = '" + FWxFilial('SF4') + "'  "																+ CRLF
-	cQuery += "		AND SF4.F4_CODIGO = SD1.D1_TES  "	 																			+ CRLF
-	cQuery += "     AND SF4.D_E_L_E_T_ = ' '   " 																					+ CRLF
+	cQuery += " INNER JOIN " + RetSQLName("SF4") + " SF4 " + CRLF
+	cQuery += " 	ON  SF4.F4_FILIAL  = '" + FWxFilial('SF4') + "' " + CRLF
+	cQuery += "		AND SF4.F4_CODIGO  = SD1.D1_TES  " + CRLF
+	cQuery += "     AND SF4.D_E_L_E_T_ = ' ' " + CRLF
 
-	cQuery += " LEFT JOIN " + RetSQLName("SW6") + " SW6  " 																			+ CRLF
-	cQuery += " 	ON SW6.W6_FILIAL = '" + FWxFilial('SW6') + "' "																	+ CRLF
-	cQuery += "		AND SW6.W6_HAWB = SD1.D1_CONHEC  "	 																			+ CRLF
-	cQuery += "     AND SW6.D_E_L_E_T_ = ' '   " 																					+ CRLF
+	cQuery += " LEFT JOIN " + RetSQLName("SW6") + " SW6  " + CRLF
+	cQuery += " 	ON  SW6.W6_FILIAL  = '" + FWxFilial('SW6') + "' " + CRLF
+	cQuery += "		AND SW6.W6_HAWB    = SD1.D1_CONHEC " + CRLF
+	cQuery += "     AND SW6.D_E_L_E_T_ = ' ' " + CRLF
 
-	cQuery += " LEFT JOIN " + RetSQLName("SW9") + " SW9  " 																			+ CRLF
-	cQuery += " 	ON SW9.W9_FILIAL = '" + FWxFilial('SW9') + "' "																	+ CRLF
-	cQuery += "		AND SW9.W9_HAWB = SD1.D1_CONHEC  "	 																			+ CRLF
-	cQuery += "     AND SW9.D_E_L_E_T_ = ' '   " 																					+ CRLF
+	cQuery += " LEFT JOIN " + RetSQLName("SW9") + " SW9 " + CRLF
+	cQuery += " 	ON  SW9.W9_FILIAL  = '" + FWxFilial('SW9') + "' " + CRLF
+	cQuery += "		AND SW9.W9_HAWB    = SD1.D1_CONHEC  " + CRLF
+	cQuery += "     AND SW9.D_E_L_E_T_ = ' ' " + CRLF
+/*
+	cQuery += " LEFT JOIN " + RetSQLName("SYD") + " SYD  " 			+ CRLF
+	cQuery += " 	ON SYD.YD_FILIAL = '" + FWxFilial('SYD') + "' "	+ CRLF
+	cQuery += "		AND SYD.YD_TEC = SB1.B1_POSIPI "	 			+ CRLF
+	cQuery += "		AND SYD.YD_EX_NCM = SB1.B1_EX_NCM  "	 		+ CRLF
+	cQuery += "		AND SYD.YD_EX_NBM = SB1.B1_EX_NBM  "	 		+ CRLF
+	cQuery += "     AND SYD.D_E_L_E_T_ = ' '   " 					+ CRLF
+*/
+	cQuery += " LEFT JOIN " + RetSQLName("VVF") + " VVF " + CRLF
+	cQuery += "		ON  VVF.VVF_FILIAL = '" + FWxFilial('VVF') + "' " + CRLF
+	cQuery += " 	AND VVF.VVF_NUMNFI = SF1.F1_DOC " + CRLF
+	cQuery += " 	AND VVF.VVF_SERNFI = SF1.F1_SERIE " + CRLF
+	cQuery += " 	AND VVF.VVF_CODFOR = SF1.F1_FORNECE " + CRLF
+	cQuery += " 	AND VVF.VVF_LOJA   = SF1.F1_LOJA " + CRLF
+	cQuery += " 	AND VVF.D_E_L_E_T_ = ' ' " + CRLF
 
-	cQuery += " LEFT JOIN " + RetSQLName("SYD") + " SYD  " 																			+ CRLF
-	cQuery += " 	ON SYD.YD_FILIAL = '" + FWxFilial('SYD') + "' "																	+ CRLF
-	cQuery += "		AND SYD.YD_TEC = SB1.B1_POSIPI "	 																			+ CRLF
-	cQuery += "		AND SYD.YD_EX_NCM = SB1.B1_EX_NCM  "	 																		+ CRLF
-	cQuery += "		AND SYD.YD_EX_NBM = SB1.B1_EX_NBM  "	 																		+ CRLF
-	cQuery += "     AND SYD.D_E_L_E_T_ = ' '   " 																					+ CRLF
-
-	cQuery += " LEFT JOIN " + RetSQLName("VVF") + " VVF "																			+ CRLF
-	cQuery += "		ON VVF.VVF_FILIAL = '" + FWxFilial('VVF') + "' "																+ CRLF
-	cQuery += " 	AND VVF.VVF_NUMNFI = SF1.F1_DOC "																				+ CRLF
-	cQuery += " 	AND VVF.VVF_SERNFI = SF1.F1_SERIE " 																			+ CRLF
-	cQuery += " 	AND VVF.VVF_CODFOR = SF1.F1_FORNECE " 																			+ CRLF
-	cQuery += " 	AND VVF.VVF_LOJA = SF1.F1_LOJA " 																				+ CRLF
-	cQuery += " 	AND VVF.D_E_L_E_T_ = ' ' "																	 					+ CRLF
-
-	cQuery += " LEFT JOIN " + RetSQLName("SC7") + " SC7 "																			+ CRLF
-	cQuery += " 	ON SC7.C7_FILIAL = '" + FWxFilial('SC7') + "' "																	+ CRLF
-	cQuery += "		AND SC7.C7_NUM = SD1.D1_PEDIDO "																				+ CRLF
-	cQuery += "		AND SC7.C7_ITEM = SD1.D1_ITEMPC "												 								+ CRLF
-	cQuery += "		AND SC7.D_E_L_E_T_ = ' ' "																						+ CRLF
+	cQuery += " LEFT JOIN " + RetSQLName("SC7") + " SC7 " + CRLF
+	cQuery += " 	ON  SC7.C7_FILIAL  = '" + FWxFilial('SC7') + "' " + CRLF
+	cQuery += "		AND SC7.C7_NUM     = SD1.D1_PEDIDO " + CRLF
+	cQuery += "		AND SC7.C7_ITEM    = SD1.D1_ITEMPC " + CRLF
+	cQuery += "		AND SC7.D_E_L_E_T_ = ' ' " + CRLF
 	
-	cQuery += " LEFT JOIN " + RetSQLName("VRK") + " VRK "																			+ CRLF
-	cQuery += " 	ON VRK.VRK_FILIAL = '" + FWxFilial('VRK') + "' "  																+ CRLF
-	cQuery += "		AND VRK.VRK_PEDIDO = SD1.D1_PEDIDO	"																			+ CRLF
-    cQuery += "     AND VRK.VRK_ITEPED = SD1.D1_ITEMPC	"																			+ CRLF
-	cQuery += "     AND VRK.D_E_L_E_T_ = ' '   " 																					+ CRLF
+	cQuery += " LEFT JOIN " + RetSQLName("VRK") + " VRK " + CRLF
+	cQuery += " 	ON  VRK.VRK_FILIAL = '" + FWxFilial('VRK') + "' " + CRLF
+	cQuery += "		AND VRK.VRK_PEDIDO = SD1.D1_PEDIDO	" + CRLF
+    cQuery += "     AND VRK.VRK_ITEPED = SD1.D1_ITEMPC	" + CRLF
+	cQuery += "     AND VRK.D_E_L_E_T_ = ' '   " + CRLF
 
-	cQuery += " INNER JOIN " + RetSQLName("SFT") + " SFT " 																			+ CRLF
-	cQuery += "		ON SFT.FT_FILIAL = '" + FWxFilial('SFT') + "' "																	+ CRLF
-	cQuery += "		AND SFT.FT_TIPOMOV = 'E' "																						+ CRLF
-	cQuery += "		AND SFT.FT_SERIE = SD1.D1_SERIE "																				+ CRLF
-	cQuery += " 	AND SFT.FT_NFISCAL = SD1.D1_DOC "																				+ CRLF
-	cQuery += "		AND SFT.FT_CLIEFOR = SD1.D1_FORNECE " 																			+ CRLF
-	cQuery += "		AND SFT.FT_LOJA = SD1.D1_LOJA " 																				+ CRLF
-	cQuery += "		AND SFT.FT_ITEM = SD1.D1_ITEM " 																				+ CRLF
-	cQuery += "		AND SFT.FT_PRODUTO = SD1.D1_COD " 																				+ CRLF	
-	cQuery += "		AND SFT.D_E_L_E_T_ = ' ' "																						+ CRLF
+	cQuery += " INNER JOIN " + RetSQLName("SFT") + " SFT " + CRLF
+	cQuery += "		ON  SFT.FT_FILIAL  = '" + FWxFilial('SFT') + "' " + CRLF
+	cQuery += "		AND SFT.FT_TIPOMOV = 'E' " + CRLF
+	cQuery += "		AND SFT.FT_SERIE   = SD1.D1_SERIE "	+ CRLF
+	cQuery += " 	AND SFT.FT_NFISCAL = SD1.D1_DOC " + CRLF
+	cQuery += "		AND SFT.FT_CLIEFOR = SD1.D1_FORNECE " + CRLF
+	cQuery += "		AND SFT.FT_LOJA    = SD1.D1_LOJA " + CRLF
+	cQuery += "		AND SFT.FT_ITEM    = SD1.D1_ITEM " + CRLF
+	cQuery += "		AND SFT.FT_PRODUTO = SD1.D1_COD " + CRLF	
+	cQuery += "		AND SFT.D_E_L_E_T_ = ' ' " + CRLF
 
-	cQuery += " INNER JOIN " + RetSQLName("SF3") + " SF3 " 																			+ CRLF
-	cQuery += "		ON SF3.F3_FILIAL = '" + FWxFilial('SF3') + "' "																	+ CRLF
-	cQuery += "		AND SF3.F3_SERIE = SFT.FT_SERIE "																				+ CRLF
-	cQuery += "		AND SF3.F3_NFISCAL = SFT.FT_NFISCAL "																			+ CRLF
-	cQuery += " 	AND SF3.F3_CLIEFOR = SFT.FT_CLIEFOR "																			+ CRLF
-	cQuery += "		AND SF3.F3_LOJA = SFT.FT_LOJA " 																				+ CRLF
-	cQuery += "		AND SF3.F3_IDENTFT = SFT.FT_IDENTF3 " 																			+ CRLF
-	cQuery += "		AND SF3.D_E_L_E_T_ = ' ' "																						+ CRLF
+	cQuery += " INNER JOIN " + RetSQLName("SF3") + " SF3 " + CRLF
+	cQuery += "		ON  SF3.F3_FILIAL  = '" + FWxFilial('SF3') + "' " + CRLF
+	cQuery += "		AND SF3.F3_SERIE   = SFT.FT_SERIE " + CRLF
+	cQuery += "		AND SF3.F3_NFISCAL = SFT.FT_NFISCAL " + CRLF
+	cQuery += " 	AND SF3.F3_CLIEFOR = SFT.FT_CLIEFOR " + CRLF
+	cQuery += "		AND SF3.F3_LOJA    = SFT.FT_LOJA " + CRLF
+	cQuery += "		AND SF3.F3_IDENTFT = SFT.FT_IDENTF3 " + CRLF
+	cQuery += "		AND SF3.D_E_L_E_T_ = ' ' " + CRLF
 
-	cQuery += " WHERE SD1.D1_FILIAL BETWEEN '" + MV_PAR01 + "' AND '" + MV_PAR02 + "' " 											+ CRLF
-	cQuery += " 	AND SD1.D1_DOC BETWEEN '" + MV_PAR05 + "' AND '" + MV_PAR06 + "' " 												+ CRLF
-	cQuery += " 	AND SD1.D1_SERIE BETWEEN '" + MV_PAR07 + "' AND '" + MV_PAR08 + "' " 											+ CRLF
-	cQuery += " 	AND SD1.D1_FORNECE BETWEEN '" + MV_PAR09 + "' AND '" + MV_PAR10 + "' " 											+ CRLF
-	cQuery += " 	AND SD1.D1_DTDIGIT BETWEEN '" + DToS( MV_PAR11 ) + "' AND '" + DToS( MV_PAR12 ) + "' " 							+ CRLF
-	cQuery += " 	AND SD1.D1_EMISSAO BETWEEN '" + DToS( MV_PAR13 ) + "' AND '" + DToS( MV_PAR14 ) + "' " 							+ CRLF
-	cQuery += " 	AND SD1.D1_COD BETWEEN '" + MV_PAR15 + "' AND '" + MV_PAR16 + "' " 												+ CRLF
-	cQuery += " 	AND SD1.D_E_L_E_T_ = ' ' "	 																					+ CRLF
+	cQuery += " WHERE   SD1.D1_FILIAL  BETWEEN '" +       MV_PAR01   + "' AND '" +       MV_PAR02   + "' " + CRLF
+	cQuery += " 	AND SD1.D1_DOC     BETWEEN '" +       MV_PAR05   + "' AND '" +       MV_PAR06   + "' " + CRLF
+	cQuery += " 	AND SD1.D1_SERIE   BETWEEN '" +       MV_PAR07   + "' AND '" +       MV_PAR08   + "' " + CRLF
+	cQuery += " 	AND SD1.D1_FORNECE BETWEEN '" +       MV_PAR09   + "' AND '" +       MV_PAR10   + "' " + CRLF
+	cQuery += " 	AND SD1.D1_DTDIGIT BETWEEN '" + DToS( MV_PAR11 ) + "' AND '" + DToS( MV_PAR12 ) + "' " + CRLF
+	cQuery += " 	AND SD1.D1_EMISSAO BETWEEN '" + DToS( MV_PAR13 ) + "' AND '" + DToS( MV_PAR14 ) + "' " + CRLF
+	cQuery += " 	AND SD1.D1_COD     BETWEEN '" +        MV_PAR15  + "' AND '" +       MV_PAR16   + "' " + CRLF
+	cQuery += " 	AND SD1.D_E_L_E_T_ = ' ' " + CRLF
 
 	If !Empty( MV_PAR17 )
-		cQuery += " 	AND SD1.D1_TES = '" + MV_PAR17 + "' " 																		+ CRLF
+		cQuery += " 	AND SD1.D1_TES = '" + MV_PAR17 + "' " + CRLF
 	EndIf
 
 	If !Empty( MV_PAR18 )
-		cQuery += " 	AND SD1.D1_CF = '" + MV_PAR18 + "' " 																		+ CRLF
-	EndIf  
+		cQuery += " 	AND SD1.D1_CF = '" + MV_PAR18 + "' " + CRLF
+	EndIf
 
-
-    If !Empty( MV_PAR23) .OR. !Empty( MV_PAR24 )
-	   cQuery += " 	AND SD1.D1_CHASSI BETWEEN '" + MV_PAR23 + "' AND '" + MV_PAR24 + "' " 												+ CRLF
+    If !Empty( MV_PAR22) .OR. !Empty( MV_PAR23 )
+	   cQuery += " 	AND SD1.D1_CHASSI BETWEEN '" + MV_PAR22 + "' AND '" + MV_PAR23 + "' " + CRLF
     EndIf
 
-	cQuery += " GROUP BY 	D1_FILIAL, D1_COD, D1_DOC, D1_SERIE, D1_TES, D1_CF, D1_FORNECE, D1_LOJA, D1_EMISSAO, D1_DTDIGIT, " 		+ CRLF
-	cQuery += " D1_ITEM, F4_FINALID, F4_TEXTO, FT_CTIPI, FT_CSTPIS, FT_CSTCOF,  F4_ICM, F4_IPI, F4_CREDICM, F4_CREDIPI, F4_DUPLIC, "+ CRLF
-	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, "											+ CRLF
-	cQuery += "	F1_ESPECIE, F1_CODNFE, F1_MENNOTA, F1_DOC, F1_SERIE, F1_STATUS, F1_TIPO, FT_CHVNFE,"								+ CRLF
-	cQuery += " FT_VALCONT, FT_DESCONT, D1_CONTA, D1_ITEMCTA, D1_NFORI, D1_SERIORI, D1_VUNIT, D1_TOTAL, "							+ CRLF
-	cQuery += " D1_DESC, FT_CLASFIS, FT_BASERET, FT_ICMSRET, D1_DESCZFP, D1_DESCZFC,  "												+ CRLF
-	cQuery += " F1_UFORITR, F1_MUORITR, F1_UFDESTR, F1_MUDESTR,  "																	+ CRLF
-	cQuery += " FT_BASEICM, FT_ALIQICM, FT_VALICM, "																				+ CRLF
-	cQuery += " FT_BASEIPI, FT_ALIQIPI, FT_VALIPI, FT_ARETPIS, FT_ARETCOF, FT_VRETPIS, FT_VRETCOF, FT_BRETPIS, " 					+ CRLF
-	cQuery += " D1_BASIMP6, D1_ALQIMP6, D1_VALIMP6, FT_BRETCOF, " 																	+ CRLF
-	cQuery += " D1_BASIMP5, D1_ALQIMP5, D1_VALIMP5, " 																				+ CRLF
-	cQuery += " FT_BASEPIS, FT_ALIQPIS, FT_VALPIS, FT_ALIQPS3, FT_VALPS3, "															+ CRLF
-	cQuery += " FT_BASECOF, FT_ALIQCOF, FT_VALCOF, FT_DIFAL, FT_BASECF3, FT_ALIQCF3, FT_VALCF3, FT_BASEPS3, "						+ CRLF
-	cQuery += " FT_BASEIRR, FT_ALIQIRR, FT_VALIRR, F3_OUTRIPI, F3_ISENIPI, F3_OUTRICM, F3_ISENICM, " 								+ CRLF
-	cQuery += " FT_BASECSL, FT_ALIQCSL, FT_VALCSL, D1_UM, D1_QUANT, D1_CHASSI, "													+ CRLF
-	cQuery += " FT_BASEINS, FT_ALIQINS, D1_ABATINS, D1_AVLINSS, FT_VALINS, C7_NUM, FT_FORMUL, "										+ CRLF
-	cQuery += " D1_BASEISS, D1_ALIQISS, D1_ABATISS, D1_ABATMAT, D1_VALISS, FT_CODBCC, FT_INDNTFR, "									+ CRLF
-	cQuery += " D1_VALFRE, D1_DESPESA, D1_CUSTO, D1_SEGURO, D1_VALACRS, D1_II, FT_ICMSCOM, D1_TNATREC, D1_CONHEC,  "				+ CRLF
-	cQuery += " D1_PESO, FT_MVALPIS, FT_MVALCOF, W6_DTREG_D, W6_DI_NUM, YD_PER_II, VRK_OPCION, W9_TX_FOB, D1_CHASSI "							+ CRLF
+	cQuery += " GROUP BY 	D1_FILIAL , D1_COD    , D1_DOC    , D1_SERIE  , D1_TES    , D1_CF     , D1_FORNECE, D1_LOJA   , " + CRLF
+	cQuery += " 			D1_ITEM   , D1_CONTA  , D1_ITEMCTA, D1_NFORI  , D1_SERIORI, D1_VUNIT  , D1_TOTAL  , D1_CONHEC , " + CRLF
+	cQuery += " 			D1_BASIMP6, D1_ALQIMP6, D1_VALIMP6, D1_BASIMP5, D1_ALQIMP5, D1_VALIMP5, FT_BRETCOF, D1_ABATINS, " + CRLF
+	cQuery += " 			D1_AVLINSS, D1_PESO   , D1_EMISSAO, D1_DTDIGIT, D1_DESC   , D1_DESCZFP, D1_DESCZFC, D1_VALISS , " + CRLF
+	cQuery += " 			D1_VALFRE , D1_DESPESA, D1_CUSTO  , D1_SEGURO , D1_VALACRS, D1_II     , FT_ICMSCOM, D1_TNATREC, " + CRLF
+	cQuery += " 			D1_BASEISS, D1_ALIQISS, D1_ABATISS, D1_ABATMAT, D1_UM     , D1_QUANT  , D1_CHASSI, " + CRLF
+		
+	cQuery += " 			F1_UFORITR, F1_MUORITR, F1_UFDESTR, F1_MUDESTR, F1_ESPECIE, F1_CODNFE , F1_MENNOTA, F1_STATUS,  " + CRLF
+	cQuery += "				F1_DOC, F1_SERIE, F1_TIPO, " + CRLF
+	
+	cQuery += " 			FT_VALCONT, FT_DESCONT, FT_MVALPIS, FT_MVALCOF, FT_CODBCC , FT_INDNTFR, FT_BASEINS, FT_ALIQINS, " + CRLF
+	cQuery += " 			FT_BASEICM, FT_ALIQICM, FT_VALICM , FT_CTIPI  , FT_CSTPIS , FT_CSTCOF , FT_VALINS , FT_CHVNFE , " + CRLF
+	cQuery += " 			FT_BASEIPI, FT_ALIQIPI, FT_VALIPI , FT_ARETPIS, FT_ARETCOF, FT_VRETPIS, FT_VRETCOF, FT_BRETPIS, " + CRLF
+	cQuery += " 			FT_BASEPIS, FT_ALIQPIS, FT_VALPIS , FT_ALIQPS3, FT_VALPS3 , FT_CLASFIS, FT_BASERET, FT_ICMSRET, " + CRLF
+	cQuery += " 			FT_BASECOF, FT_ALIQCOF, FT_VALCOF , FT_DIFAL  , FT_BASECF3, FT_ALIQCF3, FT_VALCF3 , FT_BASEPS3, " + CRLF
+	cQuery += " 			FT_BASEIRR, FT_ALIQIRR, FT_VALIRR , FT_BASECSL, FT_ALIQCSL, FT_VALCSL ," + CRLF
+	
+	cQuery += " 			F3_OUTRIPI, F3_ISENIPI, F3_OUTRICM, F3_ISENICM, " + CRLF
+	
+	cQuery += " 			C7_NUM    , FT_FORMUL , " + CRLF
+	
+	cQuery += " 			B1_DESC   , B1_XDESCL1, B1_GRUPO  , B1_POSIPI , B1_CEST   , B1_ORIGEM , B1_EX_NCM ,B1_EX_NBM, " + CRLF
+	
+	cQuery += " 			F4_FINALID, F4_TEXTO  ,F4_ICM     , F4_IPI    , F4_CREDICM, F4_CREDIPI, F4_DUPLIC ,W6_DTREG_D," + CRLF
+	
+	cQuery += "				W6_DI_NUM , VRK_OPCION, W9_TX_FOB  " + CRLF
 
 	cQuery += " ORDER BY SD1.D1_FILIAL, SD1.D1_EMISSAO, SD1.D1_DOC, SD1.D1_SERIE, SD1.D1_ITEM, SD1.D1_FORNECE, SD1.D1_LOJA "		+ CRLF
 
@@ -472,11 +493,12 @@ Static Function zRel0001(cArquivo)
 			cLogInc 	:= ""
 			cLogAlt		:= ""
 			cDtLogAlt 	:= "" 
-			If SF1->(dbSeek( (cAliasTRB)->D1_FILIAL + (cAliasTRB)->D1_DOC + (cAliasTRB)->D1_SERIE + (cAliasTRB)->D1_FORNECE + (cAliasTRB)->D1_LOJA ))
+			/*If SF1->(dbSeek( (cAliasTRB)->D1_FILIAL + (cAliasTRB)->D1_DOC + (cAliasTRB)->D1_SERIE + (cAliasTRB)->D1_FORNECE + (cAliasTRB)->D1_LOJA ))
 				cLogInc		:= FWLeUserLg("F1_USERLGI")
 				cLogAlt		:= FWLeUserLg("F1_USERLGA")
 				cDtLogAlt	:= FWLeUserLg("F1_USERLGA", 2)
 			EndIf
+			*/
 
 			// Busca informações da Nota Fiscal no servidor TSS.
 			cAmbiente 	:= ""
@@ -569,7 +591,7 @@ Static Function zRel0001(cArquivo)
 					cCodNatur := ""
 					If SE1->( DbSeek( FWxFilial('SE1') + (cAliasTRB)->( D1_FORNECE + D1_LOJA + D1_SERIE + D1_DOC  ) ) )
 						//--Posiciono no primeiro registro lógico porque mesmo que existam parcelas a natureza ira se repetir nos demais registros
-						SE1->( DbGoTop() )
+						//SE1->( DbGoTop() )
 						cCodNatur := SE1->E1_NATUREZ
 					EndIf
 
@@ -615,7 +637,7 @@ Static Function zRel0001(cArquivo)
 					cCodNatur := ""
 					If SE2->( DbSeek( FWxFilial('SE2') + (cAliasTRB)->( D1_FORNECE + D1_LOJA + D1_SERIE + D1_DOC  ) ) )
 						//--Posiciono no primeiro registro lógico porque mesmo que existam parcelas a natureza ira se repetir nos demais registros
-						SE2->( DbGoTop() )
+						//SE2->( DbGoTop() )
 						cCodNatur := SE2->E2_NATUREZ
 					EndIf 
 					
@@ -656,6 +678,12 @@ Static Function zRel0001(cArquivo)
 			zRel0003(@nVlIPIRegi, @nVlIPIPres, (cAliasTRB)->F1_ESPECIE, (cAliasTRB)->F1_DOC, (cAliasTRB)->F1_SERIE,;
 					(cAliasTRB)->D1_FORNECE, (cAliasTRB)->D1_LOJA, (cAliasTRB)->D1_ITEM )
 
+			if !lMvNFLeiZF
+				nTotal := (cAliasTRB)->D1_TOTAL  
+			Else
+                nTotal := (cAliasTRB)->D1_TOTAL - ((cAliasTRB)->D1_DESCZFP + (cAliasTRB)->D1_DESCZFC) //--Valor Total Item
+			EndIF
+			
 			oFWMSExcel:AddRow( cAba1	,cTabela1	,{ 	cCgcCpf,;    //--Cnpj/Cpf 
 														cIncEst,;    //--Insc.Estadual
 														cTpPessoa,;    //--Pessoa Fisica/Juridica
@@ -664,17 +692,17 @@ Static Function zRel0001(cArquivo)
 														Alltrim( (cAliasTRB)->F4_FINALID ),;    //--Finalidade TES
 														AllTrim( (cAliasTRB)->B1_ORIGEM ),;    //--Origem do Produto
 														AllTrim( (cAliasTRB)->B1_POSIPI ),;    //--NCM
-														AllTrim( (cAliasTRB)->B1_EX_NCM ),;    //--Ex-NBM
+														AllTrim( (cAliasTRB)->B1_EX_NCM ),;    //--Ex-NCM
 														AllTrim( cModVei ),;    //--Modelo Veículo
 														AllTrim( (cAliasTRB)->VRK_OPCION ),;    //--Opcional
 														AllTrim( (cAliasTRB)->B1_GRUPO ),;    //--Grupo\Linha
 														AllTrim( Posicione("SBM",1,xFilial("SBM")+(cAliasTRB)->B1_GRUPO,"BM_DESC") ),;    //--Descrição do Grupo
-														(cAliasTRB)->D1_TOTAL,;    //--Valor Total Item
+														nTotal ,; //(cAliasTRB)->D1_TOTAL,;    //--Valor Total Item
 														(cAliasTRB)->D1_CF,;    //--Cfop
 														(cAliasTRB)->FT_VALCONT,;    //--Valor Contábil
-														(cAliasTRB)->FT_BASEICM,;    //--Base ICMS
-														(cAliasTRB)->FT_ALIQICM,;    //--Aliq. ICMS
-														(cAliasTRB)->FT_VALICM,;    //--Valor ICMS
+														iif( !Alltrim((cAliasTRB)->F1_ESPECIE) $ "RPS|NFS", (cAliasTRB)->FT_BASEICM , 0),;   //(cAliasTRB)->FT_BASEICM,;    //--Base ICMS
+														iif( !Alltrim((cAliasTRB)->F1_ESPECIE) $ "RPS|NFS", (cAliasTRB)->FT_ALIQICM , 0),;   //(cAliasTRB)->FT_ALIQICM,;    //--Aliq. ICMS
+														iif( !Alltrim((cAliasTRB)->F1_ESPECIE) $ "RPS|NFS", (cAliasTRB)->FT_VALICM  , 0),;   //(cAliasTRB)->FT_VALICM,;    //--Valor ICMS
 														IIF( (cAliasTRB)->F1_TIPO $ "B|D" , nVlCom , 0 ),;    //--Comissão
 														(cAliasTRB)->FT_BASEIPI,;    //--Base IPI					
 														(cAliasTRB)->FT_ALIQIPI,;    //--Aliq. IPI			
@@ -705,7 +733,7 @@ Static Function zRel0001(cArquivo)
 														(cAliasTRB)->F4_IPI,;    //--Calcula IPI
 														(cAliasTRB)->F4_CREDIPI,;    //--Credita IPI
 														(cAliasTRB)->D1_DOC,;    //--Nota Fiscal
-														IIF( AllTrim( (cAliasTRB)->F1_ESPECIE ) == "NFS", (cAliasTRB)->D1_DOC, ""),;    //--Nf. Prefeitura
+														IIF( AllTrim( (cAliasTRB)->F1_ESPECIE ) $ "RPS|NFS", (cAliasTRB)->D1_DOC, ""),;    //--Nf. Prefeitura
 														(cAliasTRB)->D1_SERIE,;    //--Série
 														(cAliasTRB)->F1_ESPECIE,;    //--Espécie
 														AModNot( (cAliasTRB)->F1_ESPECIE ),;    //--Modelo
@@ -892,7 +920,6 @@ Static Function zRel0001(cArquivo)
 			oFWMsExcel:AddColumn( cAba2	,cTabela2	,"Chave NFe"			,2	,1	,.F.	) // Center - Texto
 			oFWMsExcel:AddColumn( cAba2	,cTabela2	,"Descrição"			,2	,1	,.F.	) // Center - Texto
 
-
 			While (cTMPCanc)->(!EoF())
 				
 				oFWMSExcel:AddRow( cAba2	, cTabela2	, { Alltrim( (cTMPCanc)->F3_FILIAL ),;    //--Empresa
@@ -992,7 +1019,9 @@ Static Function zRel0002(cArquivo)
 	Local nTotReg		:= ""
 	Local nVlIPIRegi	:= 0
 	Local nVlIPIPres	:= 0
-	
+	Local nDesconto		:= 0
+	Local nDesVrIcms	:= 0
+	Local nTotal		:= 0
 
 	If !ApOleClient("MSExcel")
 		MsgAlert("Microsoft Excel não instalado!")
@@ -1008,7 +1037,7 @@ Static Function zRel0002(cArquivo)
 	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, D2_ITEM, "							+ CRLF
 	cQuery += " F2_ESPECIE,F2_CODNFE,F2_MENNOTA,F2_USERLGI,F2_USERLGA,F2_TIPO, FT_CHVNFE,F2_DOC, F2_SERIE, F2_FIMP,  " 		+ CRLF
 	cQuery += " FT_VALCONT, FT_DESCONT, F2_FORMUL, D2_CONTA, D2_NFORI, D2_SERIORI, D2_PRUNIT,D2_TOTAL, "					+ CRLF
-	cQuery += " D2_DESC, FT_CLASFIS, D2_DESCZFP, D2_DESCZFC, D2_TIPO, "														+ CRLF
+	cQuery += " D2_DESC, FT_CLASFIS, D2_DESCZFP, D2_DESCZFC, D2_TIPO, D2_DESCON,"														+ CRLF
 	cQuery += " FT_BASEICM, FT_ALIQICM, FT_VALICM, C6_CHASSI, "																+ CRLF
 	cQuery += " FT_BASEIPI, FT_ALIQIPI, FT_VALIPI, FT_ARETPIS, FT_ARETCOF, FT_VRETPIS, FT_VRETCOF, FT_BRETPIS, "			+ CRLF
 	cQuery += " FT_BASERET, FT_ICMSRET, FT_DIFAL, FT_BRETCOF, "																+ CRLF
@@ -1020,7 +1049,7 @@ Static Function zRel0002(cArquivo)
 	cQuery += " FT_BASEINS,FT_ALIQINS,D2_ABATINS,FT_VALINS, D2_UM, D2_QUANT, "												+ CRLF
 	cQuery += " D2_BASEISS,D2_ALIQISS,D2_ABATISS,D2_ABATMAT,D2_VALISS, D2_ITEMCC, "											+ CRLF
 	cQuery += " FT_BASECSL,FT_ALIQCSL,FT_VALCSL, D2_CUSTO1, VRK_CHASSI, VRJ_CODCLI, VRJ_LOJA, C6_XVLCOM, "					+ CRLF
-	cQuery += " C6_TNATREC, C6_NFORI, C6_FILIAL, C6_NUM, VV3_TIPVEN, VV3_DESCRI, VRJ_CLIRET, VRK_OPCION "					+ CRLF
+	cQuery += " C6_TNATREC, C6_NFORI, C6_FILIAL, C6_NUM, VV3_TIPVEN, VV3_DESCRI, VRJ_CLIRET, VRK_OPCION,D2_DESCZFR , D2_VRDICMS " + CRLF
 	cQuery += " FROM   " + RetSQLName("SD2") + " SD2 " 																		+ CRLF
 	
 	cQuery += "	INNER JOIN " + RetSQLName("SF2") + " SF2 "																+ CRLF
@@ -1128,7 +1157,7 @@ Static Function zRel0002(cArquivo)
 	cQuery += " B1_DESC, B1_XDESCL1, B1_GRUPO, B1_POSIPI, B1_CEST, B1_ORIGEM, B1_EX_NCM, D2_ITEM, "							+ CRLF
 	cQuery += " F2_ESPECIE,F2_CODNFE,F2_MENNOTA,F2_USERLGI,F2_USERLGA,F2_TIPO, FT_CHVNFE,F2_DOC, F2_SERIE, F2_FIMP,  " 		+ CRLF
 	cQuery += " FT_VALCONT, FT_DESCONT, F2_FORMUL, D2_CONTA, D2_NFORI, D2_SERIORI, D2_PRUNIT,D2_TOTAL, "					+ CRLF
-	cQuery += " D2_DESC, FT_CLASFIS, D2_DESCZFP, D2_DESCZFC, D2_TIPO, "														+ CRLF
+	cQuery += " D2_DESC, FT_CLASFIS, D2_DESCZFP, D2_DESCZFC, D2_TIPO,D2_DESCON, "														+ CRLF
 	cQuery += " FT_BASEICM, FT_ALIQICM, FT_VALICM, C6_CHASSI, "																+ CRLF
 	cQuery += " FT_BASEIPI, FT_ALIQIPI, FT_VALIPI, FT_ARETPIS, FT_ARETCOF, FT_VRETPIS, FT_VRETCOF, FT_BRETPIS, "			+ CRLF
 	cQuery += " FT_BASERET, FT_ICMSRET, FT_DIFAL, FT_BRETCOF, "																+ CRLF
@@ -1140,7 +1169,7 @@ Static Function zRel0002(cArquivo)
 	cQuery += " FT_BASEINS,FT_ALIQINS,D2_ABATINS,FT_VALINS, D2_UM, D2_QUANT, "												+ CRLF
 	cQuery += " D2_BASEISS,D2_ALIQISS,D2_ABATISS,D2_ABATMAT,D2_VALISS, D2_ITEMCC, "											+ CRLF
 	cQuery += " FT_BASECSL,FT_ALIQCSL,FT_VALCSL, D2_CUSTO1, VRK_CHASSI, VRJ_CODCLI, VRJ_LOJA, C6_XVLCOM,  "					+ CRLF
-	cQuery += " C6_TNATREC, C6_NFORI, C6_FILIAL, C6_NUM, VV3_TIPVEN, VV3_DESCRI, VRJ_CLIRET, VRK_OPCION "					+ CRLF
+	cQuery += " C6_TNATREC, C6_NFORI, C6_FILIAL, C6_NUM, VV3_TIPVEN, VV3_DESCRI, VRJ_CLIRET, VRK_OPCION,D2_DESCZFR, D2_VRDICMS"					+ CRLF
 
 	cQuery += " ORDER BY SD2.D2_FILIAL, SD2.D2_DOC, SD2.D2_SERIE, SD2.D2_CLIENTE, SD2.D2_LOJA " 						+ CRLF
 
@@ -1152,7 +1181,7 @@ Static Function zRel0002(cArquivo)
 	DbSelectArea((cAliasTRB))
 	nTotReg := Contar(cAliasTRB,"!Eof()")
 	(cAliasTRB)->(dbGoTop())
-	
+
 	If (cAliasTRB)->(!Eof())
 
 		// Criando o objeto que irá gerar o conteúdo do Excel.
@@ -1174,7 +1203,7 @@ Static Function zRel0002(cArquivo)
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Finalidade TES"				,1	,1	,.F.	) // Left - Texto
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Origem do Produto"			,1	,1	,.F.	) // Left - Texto
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"NCM"							,1	,1	,.F.	) // Left - Texto
-		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Ex-NCM"						,1	,1	,.F.	) // Left - Texto
+		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Ex-NBM"						,1	,1	,.F.	) // Left - Texto
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Modelo Veículo"				,1	,1	,.F.	) // Left - Texto
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Opcional"						,1	,1	,.F.	) // Left - Texto
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Grupo\Linha"					,1	,1	,.F.	) // Left - Texto
@@ -1321,11 +1350,12 @@ Static Function zRel0002(cArquivo)
 			cLogInc 	:= ""
 			cLogAlt 	:= ""
 			cDtLogAlt	:= ""
-			If SF2->(dbSeek( (cAliasTRB)->D2_FILIAL + (cAliasTRB)->D2_CLIENTE + (cAliasTRB)->D2_LOJA + (cAliasTRB)->D2_DOC + (cAliasTRB)->D2_SERIE + (cAliasTRB)->F2_TIPO + (cAliasTRB)->F2_ESPECIE))
+			/*If SF2->(dbSeek( (cAliasTRB)->D2_FILIAL + (cAliasTRB)->D2_CLIENTE + (cAliasTRB)->D2_LOJA + (cAliasTRB)->D2_DOC + (cAliasTRB)->D2_SERIE + (cAliasTRB)->F2_TIPO + (cAliasTRB)->F2_ESPECIE))
 				cLogInc 	:= FWLeUserlg( "F2_USERLGI" )
 				cLogAlt 	:= FWLeUserlg( "F2_USERLGA" )
 				cDtLogAlt	:= FWLeUserlg( "F2_USERLGA", 2 )
 			EndIf
+			*/
 
 			// Busca informações da Nota Fiscal no servidor TSS.
 			cAmbiente 	:= ""
@@ -1518,142 +1548,154 @@ Static Function zRel0002(cArquivo)
 			nVlIPIPres := 0
 			//-- Retorna Valor de IPI regional e presumido
 			zRel0003(@nVlIPIRegi, @nVlIPIPres, (cAliasTRB)->F2_ESPECIE, (cAliasTRB)->F2_DOC, (cAliasTRB)->F2_SERIE,;
-					(cAliasTRB)->D2_CLIENTE, (cAliasTRB)->D2_LOJA, (cAliasTRB)->D2_ITEM )	
+					(cAliasTRB)->D2_CLIENTE, (cAliasTRB)->D2_LOJA, (cAliasTRB)->D2_ITEM )
 
-			oFWMSExcel:AddRow( cAba1	, cTabela1	, { cCgcCpf,;    //--Cnpj/Cpf
-														cCGCLocEnt,;    //--CNPJ Loc. Entr.
-														cIncEst,;    //--Insc.Estadual
-														cTpPessoa,;    //--Pessoa Fisica/Juridica
-														cEstCli,;    //--UF
+			nDesconto   := (cAliasTRB)->D2_DESCON
+        	nDesVrIcms  := 0
+			If  (cAliasTRB)->D2_VRDICMS > 0  .and. nDesconto >= (cAliasTRB)->D2_VRDICMS 
+				nDesVrIcms := (cAliasTRB)->D2_VRDICMS
+			EndIF
+        
+        	if !lMvNFLeiZF
+				nTotal := ((cAliasTRB)->D2_TOTAL  + nDesconto + (cAliasTRB)->D2_DESCZFR ) - nDesVrIcms 
+			Else
+                nTotal := ((cAliasTRB)->D2_TOTAL  + nDesconto + (cAliasTRB)->D2_DESCZFR ) - ( (cAliasTRB)->D2_DESCZFP + (cAliasTRB)->D2_DESCZFC + nDesVrIcms )  //--Valor Total Item
+			EndIF
+      
+			oFWMSExcel:AddRow( cAba1	, cTabela1	, { cCgcCpf,;                //--Cnpj/Cpf
+														cCGCLocEnt,;             //--CNPJ Loc. Entr.
+														cIncEst,;                //--Insc.Estadual
+														cTpPessoa,;              //--Pessoa Fisica/Juridica
+														cEstCli,;                //--UF
 														(cAliasTRB)->D2_TES,;    //--Tes
 														Alltrim( (cAliasTRB)->F4_FINALID ),;    //--Finalidade TES
-														AllTrim( (cAliasTRB)->B1_ORIGEM ),;    //--Origem do Produto
-														AllTrim( (cAliasTRB)->B1_POSIPI ),;    //--NCM
-														AllTrim( (cAliasTRB)->B1_EX_NCM ),;    //--Ex-NBM
-														AllTrim( cModVei ),;    //--Modelo Veículo
+														AllTrim( (cAliasTRB)->B1_ORIGEM ),;     //--Origem do Produto
+														AllTrim( (cAliasTRB)->B1_POSIPI ),;     //--NCM
+														AllTrim( (cAliasTRB)->B1_EX_NCM ),;     //--Ex-NBM
+														AllTrim( cModVei ),;                    //--Modelo Veículo
 														AllTrim( (cAliasTRB)->VRK_OPCION ),;    //--Opcional
-														AllTrim( (cAliasTRB)->B1_GRUPO ),;    //--Grupo\Linha
+														AllTrim( (cAliasTRB)->B1_GRUPO ),;      //--Grupo\Linha
 														AllTrim( Posicione("SBM",1,xFilial("SBM")+(cAliasTRB)->B1_GRUPO,"BM_DESC") ),;    //--Descrição do Grupo
-														(cAliasTRB)->D2_TOTAL,;    //--Valor Total Item
-														(cAliasTRB)->D2_CF,;    //--Cfop
+														nTotal,;    //--Valor Total Item
+														(cAliasTRB)->D2_CF,;         //--Cfop
 														(cAliasTRB)->FT_VALCONT,;    //--Valor Contábil
-														(cAliasTRB)->FT_BASEICM,;    //--Base ICMS
-														(cAliasTRB)->FT_ALIQICM,;    //--Aliq. ICMS
-														(cAliasTRB)->FT_VALICM,;    //--Valor ICMS
-														(cAliasTRB)->C6_XVLCOM,;    //--Comissão
+														iif( Alltrim((cAliasTRB)->F2_ESPECIE) <> "RPS", (cAliasTRB)->FT_BASEICM , 0 ),;    //--Base ICMS
+														iif( Alltrim((cAliasTRB)->F2_ESPECIE) <> "RPS", (cAliasTRB)->FT_ALIQICM , 0 ),;    //--Aliq. ICMS
+														iif( Alltrim((cAliasTRB)->F2_ESPECIE) <> "RPS", (cAliasTRB)->FT_VALICM  , 0 ),;     //--Valor ICMS
+														(cAliasTRB)->C6_XVLCOM,;     //--Comissão
 														(cAliasTRB)->FT_BASEIPI,;    //--Base IPI
 														(cAliasTRB)->FT_ALIQIPI,;    //--Aliq. IPI
-														(cAliasTRB)->FT_VALIPI,;    //--Valor IPI
-														nVlIPIRegi,;    //--Credito_Regional IPI
-														nVlIPIPres,;    //--Credito_Presumido IPI/Frete
+														(cAliasTRB)->FT_VALIPI,;     //--Valor IPI
+														nVlIPIRegi,;                 //--Credito_Regional IPI
+														nVlIPIPres,;                 //--Credito_Presumido IPI/Frete
 														(cAliasTRB)->FT_BASERET,;    //--Base Subst
 														(cAliasTRB)->FT_ICMSRET,;    //--Valor Subst
 														(cAliasTRB)->FT_BASEPIS,;    //--Base Pis Apuração
 														(cAliasTRB)->FT_ALIQPIS,;    //--Aliq. Pis Apuração
-														(cAliasTRB)->FT_VALPIS,;    //--Valor Pis Apuração
+														(cAliasTRB)->FT_VALPIS,;     //--Valor Pis Apuração
 														(cAliasTRB)->FT_BASECOF,;    //--Base Cofins Apuração
-														(cAliasTRB)->FT_ALIQCOF,;	//--Aliq. Cofins Apuração
-														(cAliasTRB)->FT_VALCOF,;	//--Valor Cofins Apuração
+														(cAliasTRB)->FT_ALIQCOF,;	 //--Aliq. Cofins Apuração
+														(cAliasTRB)->FT_VALCOF,;	 //--Valor Cofins Apuração
 														(cAliasTRB)->FT_BASEPS3,;    //--Base Pis ST ZFM
 														(cAliasTRB)->FT_ALIQPS3,;    //--Aliq. Pis ST ZFM
-														(cAliasTRB)->FT_VALPS3,;	//--Vl. Pis ST ZFM
+														(cAliasTRB)->FT_VALPS3,;	 //--Vl. Pis ST ZFM
 														(cAliasTRB)->FT_BASECF3,;    //--Base Cof ST ZFM
 														(cAliasTRB)->FT_ALIQCF3,;    //--Aliq. Cof ST ZFM
-														(cAliasTRB)->FT_VALCF3,;	//--Vl. Cof ST ZFM
-														(cAliasTRB)->FT_DIFAL,;    //--ICMS Difal
+														(cAliasTRB)->FT_VALCF3,;	 //--Vl. Cof ST ZFM
+														(cAliasTRB)->FT_DIFAL,;      //--ICMS Difal
 														(cAliasTRB)->FT_CLASFIS,;    //--CST ICMS
-														(cAliasTRB)->FT_CTIPI,;    //--CST IPI
-														(cAliasTRB)->FT_CSTPIS,;    //--CST PIS
-														(cAliasTRB)->FT_CSTCOF,;    //--CST COFINS
-														(cAliasTRB)->F4_ICM,;    //--Calcula ICMS
+														(cAliasTRB)->FT_CTIPI,;      //--CST IPI
+														(cAliasTRB)->FT_CSTPIS,;     //--CST PIS
+														(cAliasTRB)->FT_CSTCOF,;     //--CST COFINS
+														(cAliasTRB)->F4_ICM,;        //--Calcula ICMS
 														(cAliasTRB)->F4_CREDICM,;    //--Credita ICMS
-														(cAliasTRB)->F4_IPI,;    //--Calcula IPI
+														(cAliasTRB)->F4_IPI,;        //--Calcula IPI
 														(cAliasTRB)->F4_CREDIPI,;    //--Credita IPI
-														(cAliasTRB)->D2_DOC,;    //--Nota Fiscal
+														(cAliasTRB)->D2_DOC,;        //--Nota Fiscal
 														IIF( AllTrim( (cAliasTRB)->F2_ESPECIE ) == 'NFS', (cAliasTRB)->D2_DOC, ""),;    //--Nf. Prefeitura
-														(cAliasTRB)->D2_SERIE,;    //--Série
+														(cAliasTRB)->D2_SERIE,;      //--Série
 														(cAliasTRB)->F2_ESPECIE,;    //--Espécie
-														AModNot( (cAliasTRB)->F2_ESPECIE ),;    //--Modelo
+														AModNot( (cAliasTRB)->F2_ESPECIE ),;     //--Modelo
 														IIF( Empty( SToD( (cAliasTRB)->D2_EMISSAO ) ), "", SToD( (cAliasTRB)->D2_EMISSAO ) ),;    //--Dt. de Emissão
 														(cAliasTRB)->D2_CLIENTE,;    //--Cliente\Fornecedor
-														(cAliasTRB)->D2_LOJA,;    //--Loja
-														cCliFor,;    //--Nome
-														AllTrim( (cAliasTRB)->C6_CHASSI ),;    //--Chassi
-														(cAliasTRB)->D2_COD,;    //--Cód.Produto
+														(cAliasTRB)->D2_LOJA,;       //--Loja
+														cCliFor,;                    //--Nome
+														AllTrim( (cAliasTRB)->C6_CHASSI ),;      //--Chassi
+														(cAliasTRB)->D2_COD,;        //--Cód.Produto
 														Substr( (cAliasTRB)->B1_DESC,1,20 ),;    //--Descrição do Produto
 														AllTrim( Posicione("SB5",1,xFilial("SB5")+(cAliasTRB)->D2_COD,"B5_CEME") ),;    //--Descrição Científico
 														AllTrim( (cAliasTRB)->B1_XDESCL1 ),;    //--Descrição Longa
-														(cAliasTRB)->D2_UM,;    //--Un Medida
-														(cAliasTRB)->D2_QUANT,;    //--Quant
-														(cAliasTRB)->D2_PRUNIT,;    //--Valor Unit. Item
+														(cAliasTRB)->D2_UM,;         //--Un Medida
+														(cAliasTRB)->D2_QUANT,;      //--Quant
+														(cAliasTRB)->D2_PRUNIT,;     //--Valor Unit. Item
 														(cAliasTRB)->FT_DESCONT,;    //--Desconto Item
-														nVlrFrete,;    //--Frete
+														nVlrFrete,;     //--Frete
 														nVlrSeguro,;    //--Seguro
-														nVlrDesp,;    //--Despesas
-														(cAliasTRB)->D2_CUSTO1,;    //--Custo
-														(cAliasTRB)->D2_CONTA,;    //--Conta Contábil
+														nVlrDesp,;      //--Despesas
+														(cAliasTRB)->D2_CUSTO1,;     //--Custo
+														(cAliasTRB)->D2_CONTA,;      //--Conta Contábil
 														AllTrim( Posicione("CT1",1,xFilial("CT1")+(cAliasTRB)->D2_CONTA,"CT1_DESC01") ),;    //--Desc.Conta Contábil
 														AllTrim( (cAliasTRB)->D2_FILIAL ),;    //--Empresa
-														cSituacao,;    //--Situação
-														cTpNF,;    //--Tipo Nota Fiscal
-														(cAliasTRB)->FT_CHVNFE,;    //--Chave Nota Fiscal
-														cProtocolo,;    //--Protocolo
+														cSituacao,;                  //--Situação
+														cTpNF,;                      //--Tipo Nota Fiscal
+														(cAliasTRB)->FT_CHVNFE,;     //--Chave Nota Fiscal
+														cProtocolo,;                 //--Protocolo
 														AllTrim( (cAliasTRB)->D2_NFORI ) + " - " + AllTrim( (cAliasTRB)->D2_SERIORI ),;    //--Nota Fiscal Origem
-														cDescTipo,;    //--Tipo Cli\For
-														cTpCliFor,;    //--Cli\For
+														cDescTipo,;                  //--Tipo Cli\For
+														cTpCliFor,;                  //--Cli\For
 														AllTrim( Posicione("SX5" ,1 ,xFilial("SX5") + "12" + cEstCli,"X5_DESCRI") ) ,;    //--Estado
 														AllTrim( Posicione("CC2" ,1 ,xFilial("CC2") + cEstCli + PadR( cCodMun ,TamSx3("CC2_CODMUN")[1] ) , "CC2_MUN" ) ),;    //--Município
-														AllTrim( (cAliasTRB)->B1_CEST ),;    //--CEST
-														AllTrim( cDesMod ),;    //--Descr. Modelo Veículo
-														AllTrim( cComVei ),;    //--Combustível Veículo
+														AllTrim( (cAliasTRB)->B1_CEST ),;     //--CEST
+														AllTrim( cDesMod ),;         //--Descr. Modelo Veículo
+														AllTrim( cComVei ),;         //--Combustível Veículo
 														AllTrim( (cAliasTRB)->F4_TEXTO ),;    //--Descrição CFOP
-														(cAliasTRB)->F2_CODNFE,;    //--Cód.Verificação
-														cAmbiente,;    //--Ambiente
+														(cAliasTRB)->F2_CODNFE,;     //--Cód.Verificação
+														cAmbiente,;    				 //--Ambiente
 														(cAliasTRB)->FT_BASEIRR,;    //--Base Irrf Retenção
 														(cAliasTRB)->FT_ALIQIRR,;    //--Aliq. Irrf Retenção
-														(cAliasTRB)->FT_VALIRR,;    //--Irrf Retenção
+														(cAliasTRB)->FT_VALIRR,;     //--Irrf Retenção
 														(cAliasTRB)->FT_BASEINS,;    //--Base Inss
 														(cAliasTRB)->FT_ALIQINS,;    //--Aliq. Inss
 														(cAliasTRB)->D2_ABATINS,;    //--Inss Recolhido
-														(cAliasTRB)->FT_VALINS,;    //--Valor Inss
+														(cAliasTRB)->FT_VALINS,;     //--Valor Inss
 														(cAliasTRB)->D2_BASEISS,;    //--Base Iss
 														(cAliasTRB)->D2_ALIQISS,;    //--Aliq. Iss
 														(cAliasTRB)->D2_ABATISS,;    //--Iss Serviços
 														(cAliasTRB)->D2_ABATMAT,;    //--Iss Materiais
-														(cAliasTRB)->D2_VALISS,;	//--Valor Iss
+														(cAliasTRB)->D2_VALISS,;	 //--Valor Iss
 														(cAliasTRB)->FT_BASECSL,;    //--Base Csll
 														IIF( (cAliasTRB)->FT_BASECSL > 0, (cAliasTRB)->FT_ALIQCSL, 0 ),;    //--Aliq. Csll
-														(cAliasTRB)->FT_VALCSL,;    //--Valor Csll
+														(cAliasTRB)->FT_VALCSL,;     //--Valor Csll
 														(cAliasTRB)->FT_BRETPIS,;    //--Base Pis Retenção
 														IIF( (cAliasTRB)->FT_BRETPIS > 0, (cAliasTRB)->FT_ARETPIS, 0 ),;    //--Aliq. Pis Retenção
 														(cAliasTRB)->FT_VRETPIS,;    //--Valor Pis Retenção
 														(cAliasTRB)->FT_BRETCOF,;    //--Base Cofins Retenção
 														IIF( (cAliasTRB)->FT_BRETCOF > 0, (cAliasTRB)->FT_ARETCOF, 0 ),;    //--Aliq. Cofins Retenção
 														(cAliasTRB)->FT_VRETCOF,;    //--Valor Cofins Retenção
-														cLogInc,;    //--Log. de Inclusão
-													  	cLogAlt,;    //--Log. de Alteração
-														cDtLogAlt,;    //--Dt. Log. de Alteração
+														cLogInc,;                    //--Log. de Inclusão
+													  	cLogAlt,;                    //--Log. de Alteração
+														cDtLogAlt,;                  //--Dt. Log. de Alteração
 														AllTrim( (cAliasTRB)->VV3_TIPVEN ),;    //--Tipo Venda
 														AllTrim( (cAliasTRB)->VV3_DESCRI ),;    //--Descr. Tipo Venda
-														cNumPed,;    //--Num. Pedido
-														cNaturez,;    //--Natureza Financeira
+														cNumPed,;                    //--Num. Pedido
+														cNaturez,;                   //--Natureza Financeira
 														AllTrim( (cAliasTRB)->C6_TNATREC ),;    //--Tab. Nat. Receita
-														AllTrim( (cAliasTRB)->D2_ITEMCC ),;    //--Item Contábil
+														AllTrim( (cAliasTRB)->D2_ITEMCC ),;     //--Item Contábil
 														(cAliasTRB)->F3_ISENICM,;    //--ICMS Isento
 														(cAliasTRB)->F3_OUTRICM,;    //--ICMS Outros
 														(cAliasTRB)->F3_ISENIPI,;    //--IPI Isento
 														(cAliasTRB)->F3_OUTRIPI,;    //--IPI Outros
-														cTransp,;    //--Cód. Transportadora
-														(cAliasTRB)->VRJ_CLIRET,; //--Cat. Local de Entrega
-														cNomLocEnt,;    //--Nome Loc. Entr.
-														cUFLocEnt,;    //--UF Loc. Entr.
-														cMsgSefaz,;    //--Msgn Sefaz
+														cTransp,;                    //--Cód. Transportadora
+														(cAliasTRB)->VRJ_CLIRET,;    //--Cat. Local de Entrega
+														cNomLocEnt,;                 //--Nome Loc. Entr.
+														cUFLocEnt,;                  //--UF Loc. Entr.
+														cMsgSefaz,;                  //--Msgn Sefaz
 														(cAliasTRB)->F2_MENNOTA,;    //--Msgn Nota Fiscal   
-														cMenNota,;    //--Mens.p/Nota
-														cMenPad,;    //--Mens. Padrão
-														cMensNFS,;   //--Mensagem NFS	
-														(cAliasTRB)->( F2_TOTFED + F2_TOTEST ),;	//--Vlr. Aprox. dos Tributos	
-														Alltrim( (cAliasTRB)->F4_DUPLIC ) })	//--Gera Duplicata   												    
+														cMenNota,;                   //--Mens.p/Nota
+														cMenPad,;                    //--Mens. Padrão
+														cMensNFS,;                   //--Mensagem NFS	
+														(cAliasTRB)->( F2_TOTFED + F2_TOTEST ),;  //--Vlr. Aprox. dos Tributos	
+														Alltrim( (cAliasTRB)->F4_DUPLIC ) })	  //--Gera Duplicata   												    
 			(cAliasTRB)->(DbSkip())
 		EndDo
 

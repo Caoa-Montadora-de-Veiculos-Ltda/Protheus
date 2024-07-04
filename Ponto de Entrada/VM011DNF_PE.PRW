@@ -88,7 +88,8 @@ Static Function GrvCD9()
 	CD9->CD9_TPOPER := cEstadoVei																							//Tipo de Operação
 	CD9->CD9_CHASSI := VV1->VV1_CHASSI 																						//Chassi
 	CD9->CD9_CORDE  := AllTrim( POSICIONE( "VVC", 1, xFilial( "VVC" ) + VV1->VV1_CODMAR + VV1->VV1_CORVEI, "VVC_GRUCOR" ) ) //Código da Cor segundo as regras de pré-cadastro do DENATRAN.
-	CD9->CD9_CODCOR := AllTrim( POSICIONE( "VVC", 1, xFilial( "VVC" ) + VV1->VV1_CODMAR + VV1->VV1_CORVEI, "VVC_GRUCOR" ) ) //Codigo da cor definido pela montadora
+	CD9->CD9_CODCOR := ALLTRIM(VV2->VV2_COREXT) + SUBSTR(VV2->VV2_CORINT,1,1)                                               //Codigo da cor definido pela montadora
+//	CD9->CD9_CODCOR := AllTrim( POSICIONE( "VVC", 1, xFilial( "VVC" ) + VV1->VV1_CODMAR + VV1->VV1_CORVEI, "VVC_GRUCOR" ) ) //Codigo da cor definido pela montadora
 	CD9->CD9_DSCCOR := AllTrim( POSICIONE( "VVC", 1, xFilial( "VVC" ) + VV1->VV1_CODMAR + VV1->VV1_CORVEI, "VVC_DESCRI" ) ) //Descrição da Cor
 	CD9->CD9_POTENC := cValToChar( VV2->VV2_POTMOT ) 																		//Potência máxima do motor do veículo em cavalo vapor (CV - potência veículo).
 	CD9->CD9_CM3POT := VV2->VV2_CM3 																						//Capacidade voluntária do motor expressa em centímetros cúbicos (CC - cilindradas).

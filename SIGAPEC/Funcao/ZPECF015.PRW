@@ -15,7 +15,7 @@ User function ZPECF015()
 Conout("ZPECF015 - Schedule de envio de cadastros para RGLOG - Inicio "+DtoC(date())+" "+Time())
 
 //--Chamada de integração de fornecedores
-U_ZWSR006("F")
+U_ZWSR014()
 
 //--Chamada de integração de clientes
 U_ZWSR006("C")

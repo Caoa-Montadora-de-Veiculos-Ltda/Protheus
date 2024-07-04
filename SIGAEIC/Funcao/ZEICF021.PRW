@@ -1031,7 +1031,7 @@ Begin Transaction
 				cSeqEW5 := Soma1(cSeqEW5)
 			endif
 
-			nTotalFOB := nTotalFOB + NoRound( WKEW5->EW5_QTDE * WKEW5->EW5_PRECO , 2 )
+			nTotalFOB := nTotalFOB + Round( WKEW5->EW5_QTDE * WKEW5->EW5_PRECO , 2 )
 	
 			IF aScan( aInvoice, { |x| x[1] ==  cInvoice } )== 0
 				AAdd(aInvoice, {cInvoice,cHouse,cNavio})

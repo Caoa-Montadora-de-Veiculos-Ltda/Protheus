@@ -812,7 +812,7 @@ Local _nQtdePrd
 Local _nQtdeParc 
 Local _lZera
 Local _cObs
-
+Local _nSAldo := 0
 Begin Sequence
 	_cConectWis := "%"+_cConectWis+"%"
 	_cCdEmpWIS 	:= "%"+_cCdEmpWIS+"%"
@@ -995,7 +995,7 @@ Begin Sequence
 			_nQtdePrd  := (_cAliasPesq)->QTDE_TOTAL- _nQtdeItem
 			_nQtdeParc := _nQtdePrd   //(_cAliasPesq)->QTDE_TOTAL
 			//ja ajusto com a quantidade parcial pois caso  não faça não ira faturar esta quantidade, o restante devrá ser avaliado e ou gerar backorder DAC 02/05/08
-			If !ALTERAITParcial( (_cAliasPesq)->NREGVS3, _cNumOrc, _cGrupo, _cCodProd, _cArmazem, _cCodProd, _cGrupo, _nQtdePrd, _nQtdePrd, _nSaldoSB2, "0" )
+			If !ALTERAITParcial( (_cAliasPesq)->NREGVS3, _cNumOrc, _cGrupo, _cCodProd, _cArmazem, _cCodProd, _cGrupo, _nQtdePrd, _nQtdePrd, _nSaldoSB2, "0" ,,@_nSaldo)
 				_lSepara := .F.
 				Break
 			EndIf	
@@ -1761,7 +1761,9 @@ Static Function ZPECF08PARC( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, 
 	Local _nValorUnit
 	Local _nTotal
 	Local _nRegVS3
-
+	Local _nSaldo       := 0
+	Local _lInclui 		:= .F.
+	Local _nItenNovo 	:= 0
 	Default _nQtdePrd 	:= 0
 	Default _cTpSub		:= ""
 	Default _lEncKit	:= .F.	
@@ -1804,16 +1806,22 @@ Static Function ZPECF08PARC( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, 
 				EndIf
 				_cLocal	:= VS3->VS3_LOCAL
 			EndIf 
-			_lRet := ALTERAITParcial( VS3->(Recno()), _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, _cGrupoSubst, _nQtdeItem, _nQtdePrd, _nSaldoSB2, _cTpSub, _cPecKit )
+			_lRet := ALTERAITParcial( VS3->(Recno()), _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, _cGrupoSubst, _nQtdeItem, _nQtdePrd, _nSaldoSB2, _cTpSub, _cPecKit,@_nSaldo )
 			If ! _lRet
 				Break
+			Else
+				_lInclui := .F.
 			EndIf
 		Else
 			_lRet := INCLUIITParcial( _nRegVS3, _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, _cGrupoSubst, _nQtdeItem, _nQtdePrd, _nSaldoSB2, _cTpSub, _cPecKit )
 			If ! _lRet
 				Break
+			Else
+				_nItenNovo := VS3->VS3_QTDITE
+				_lInclui := .T.
 			EndIf
 		EndIf	
+						
 		//Após processar ajusto os valores dos campos
 		VS3->(DbGoto(_nRegVS3))  //volta para o item principal
 		//indica que ainda não é para encerrar o processo de kit somente no ultimo registro do kit que encerra pois o mesmo é relativo a quentidade total DAC 09/02/2022
@@ -1844,10 +1852,12 @@ Static Function ZPECF08PARC( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, 
 			Aadd(_aMensAglu,"Não foi possivel alterar registro na tabela VS3 (ZPECF08PARC) !")
 			Break
 		EndIf	
-		If _nQtdReal <= 0
+		If _nQtdReal <= 0 .and. (_nItenNovo +VS3->VS3_QTDITE) <> VS3->VS3_QTDINI
 			VS3->(DbDelete())
 			VS3->(MsUnlock())
-			Break	
+			Break
+		Else
+			_nQtdReal := VS3->VS3_QTDITE	
 		EndIf	
 		//ajustar os valores
 		//_nQtdeDif 		-= _nQtdReal
@@ -1886,14 +1896,15 @@ Return _lRet
 
 
 //Altera VS3 com quantidade parcial caso ja exista um item de produto substituto
-Static Function ALTERAITParcial( _nRegVS3Sub, _cNumOrc, _cGrupo, _cCodItem, _cLocal  , _cCodSubst, _cGrupoSubst, _nQtdeItem, _nQtdePrd, _nSaldoSB2, _cTpSub, _cPecKit )
+Static Function ALTERAITParcial( _nRegVS3Sub, _cNumOrc, _cGrupo, _cCodItem, _cLocal  , _cCodSubst, _cGrupoSubst, _nQtdeItem, _nQtdePrd, _nSaldoSB2, _cTpSub, _cPecKit ,_nSaldo)
 	Local _lRet			:= .T.
-	Local _nValorUnit	
+	Local _nValorUnit
 	Local _nTotal
 	Local _nQtdeAtu
 	Local _nQtdTot
 
 	Default _cPecKit := "0"
+	Default _nSAldo := 0
 
 	Begin Sequence
 		VS3->(DbGoto(_nRegVS3Sub))  //reposiciona VS3
@@ -1918,6 +1929,7 @@ Static Function ALTERAITParcial( _nRegVS3Sub, _cNumOrc, _cGrupo, _cCodItem, _cLo
 		EndIf
 		_nTotal 			:= _nQtdTot * _nValorUnit
 		VS3->VS3_QTDITE		:= _nQtdTot
+		_nSAldo := _nQtdTot
 		//VS3->VS3_QTDINI		:= VS3->VS3_QTDITE
 		VS3->VS3_VALPEC 	:= _nValorUnit 
 		If VS3->VS3_PERDES > 0 
@@ -2068,8 +2080,10 @@ Static Function INCLUIITParcial( _nRegVS3, _cNumOrc, _cGrupo, _cCodItem, _cLocal
 			ElseIf AllTrim(_aEstruVS3[_nPos,1]) $ "VS3_XUSUGL"
 				_xValor := RetCodUsr()	
 			//a quantidade do KIT tem que ser alterada , conforme solicitação Zé 17/08/2022	
-			ElseIf AllTrim(_aEstruVS3[_nPos,1]) $ "VS3_QTDINI" .and. _cTpSub == "3"
+			ElseIf AllTrim(_aEstruVS3[_nPos,1]) $ "VS3_QTDINI" .and. _cTpSub <> "3"
 				_xValor := _nQtdePrd
+			ElseIf AllTrim(_aEstruVS3[_nPos,1]) $ "VS3_QTDINI" .and. _cTpSub == "3"
+				_xValor := 0
 			//quando for kit gravar ódigo do item como substituto	
 			ElseIf AllTrim(_aEstruVS3[_nPos,1]) $ "VS3_CODKIT" .and. _cTpSub == "3"
 				_xValor := _cCodItem
@@ -3136,7 +3150,7 @@ Begin Sequence
 			_nQtdePrd  := (_cAliasPesq)->QTDE_TOTAL- _nQtdeItem
 			_nQtdeParc := _nQtdePrd   //(_cAliasPesq)->QTDE_TOTAL
 			//ja ajusto com a quantidade parcial pois caso  não faça não ira faturar esta quantidade, o restante devrá ser avaliado e ou gerar backorder DAC 02/05/08
-			If !ALTERAITParcial( (_cAliasPesq)->NREGVS3, _cNumOrc, _cGrupo, _cCodProd, _cArmazem, _cCodProd, _cGrupo, _nQtdePrd, _nQtdePrd, _nSaldoSB2, "0" )
+			If !ALTERAITParcial( (_cAliasPesq)->NREGVS3, _cNumOrc, _cGrupo, _cCodProd, _cArmazem, _cCodProd, _cGrupo, _nQtdePrd, _nQtdePrd, _nSaldoSB2, "0" ,,@_nSaldo)
 				_lSepara := .F.
 				Break
 			EndIf	

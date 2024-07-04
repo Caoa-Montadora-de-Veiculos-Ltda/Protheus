@@ -12,10 +12,9 @@ Uso......:              FISVAL_NFE
 =====================================================================================*/
 User function ZFATF011()
 
-	Local _cEmp  	:= FWCodEmp()
 	Local _lRet 	:= .T.
 
-	If _cEmp == "2010" //Executa o p.e. somente para Anapolis.
+	If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 		_lRet := zFMontadora()
     EndIf
 
