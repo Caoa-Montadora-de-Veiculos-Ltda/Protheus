@@ -17,7 +17,6 @@ Visualizar Picking de itens
 /*/
 
 
-
 User Function ZPECF031(_cCodProd )
 Local _aArea := GetArea()
 Local _cCodProdDe   := Space(Len(SB1->B1_COD))

@@ -2,7 +2,7 @@
 Responsável pelas funções customizadas com utilizades em outros programas
 @author DAC - Denilso
 @since 20/11/2021
-@version 1.0
+@version V.03
 @return ${return}, ${return_description}
 @type user function
 @history    
@@ -21,7 +21,7 @@ Static oZPEC08Peca  := DMS_Peca():New()
 Liberar orçamento verifica se esta disponível para separação e grava separação
 @author 	DAC-Denilso
 @since 		01/11/2021
-@version 	V.03
+@version 	undefined
 @param 		_cNumOrc 	- Numero orçamento 
 @project    MIT044-GAP_PECCD07-08-09 Aglutinar  V3
 @type 		user function

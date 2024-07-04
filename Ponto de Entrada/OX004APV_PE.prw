@@ -5,11 +5,11 @@
 Programa.:              OX004APV
 Autor....:              Evandro Mariano
 Data.....:              02/03/22
-Descricao / Objetivo:   
+Descricao / Objetivo:   V.03 
 Doc. Origem:
 Solicitante:            
 Uso......:              
-Obs......:              V.03             
+Obs......:              
 ===============================================================================================
 */
 User Function OX004APV

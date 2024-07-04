@@ -9,8 +9,8 @@ Data.....:              28/07/2022
 Descricao / Objetivo:   Ajusta os limites de Crédito
 Doc. Origem:            
 Solicitante:            Faturamento/Pecas
-Uso......:              
-Obs......:  V.03            
+Uso......:              V.03
+Obs......:              
 @history    DAC Denilso - 06/04/2023	        
             GRUPO CAOA GAP FIN108 - Revitalização Credito [ Montadora ]
             Unificação Peças com Montadora

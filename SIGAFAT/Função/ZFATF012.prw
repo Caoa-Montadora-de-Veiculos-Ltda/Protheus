@@ -11,7 +11,7 @@ Doc. Origem:
 Solicitante:            
 Uso......:              [Barueri] - Financeiro
 @project	GRUPO CAOA GAP FIN108 - revitalização Credito [ Montadora ]
-Obs......:  V.03
+Obs......:  V.03 
 @history 	04/04/2023	, DAC, revitalização Limite de Crédito, alterado chamada de funcionalidade ZFATF017 para ZFATF014  
 =====================================================================================
 */

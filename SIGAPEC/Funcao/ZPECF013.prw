@@ -16,7 +16,7 @@
 /*/{Protheus.doc} ZPECF013
 @param  	
 @author 	CAOA - A.Carlos
-@version  	V.03
+@version  	V.03 
 @since  	28/12/2021
 @return  	NIL
 @obs         
