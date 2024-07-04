@@ -14,7 +14,7 @@ Static _oSaldoPec	:= SaldoCAOAPEC():New()  //GAP098 | Desmembrar itens bloqueado
 Responsável por Aglutinar e Separação do orçamento passando pelas fases automaticamente
 @author 	DAC-Denilso
 @since 		01/11/2021
-@version 	undefined
+@version 	V.03 
 @param 		 
 @project    MIT044-GAP_PECCD07-08-09 Aglutinar  V3
 @type 		user function
