@@ -59,7 +59,6 @@ User Function ZPECF008()
 	Local _cObsPrc		:= ""
 	Local _aOndaRel 	:= {}
 	Local _nPos
-
 	Private _cAglutina 	:= ""
 	Private _aMensAglu	:= {}
 	
