@@ -314,6 +314,7 @@ Local cNamSB1   := RetSqlName("SB1")
 Local cNamSB2   := RetSqlName("SB2")
 Local cNamSD1   := RetSqlName("SD1")
 Local cNamSD2   := RetSqlName("SD2")
+Local cNamSF2   := RetSqlName("SF2")
 Local cNamSD3   := RetSqlName("SD3")
 Local cNamSA1   := RetSqlName("SA1")
 Local cNamSA2   := RetSqlName("SA2")
@@ -824,25 +825,15 @@ Else
 				// Movimentacao Externa -> Saidas //
 				// Saulo - 01/07/2024
 				// Se não encontra VV0 e VV9, deve pesquisar pelo CHASSI do Veiculo na SD2
-				cQuery := "SELECT SD2.D2_FILIAL VV0_FILIAL, 
-				SD2.D2_EMISSAO VV0_DTHEMI, SD2.D2_DOC VV0_NUMTRA , 
-				SD2.D2_TIPO OPEMOV , SD2.D2_SITNFI , 
-				SD2.D2_EMISSAO VV0DATMOV , "C" CLIFOR , 
-				SD2.D2_TES VV0_CODTES , "2" VV0_TIPFAT , 
-				"A" VV0_STATUS , "
-				SD2.D2_DOC VV0_NUMNFI , 
-				SD2.D2_SERIE VV0_SERNFI , SD2.D2_DOC VV0_NNFFDI , 
-				SD2.D2_SERIE VV0_SNFFDI , SF2.F2_CLIENTE VV0_CODCLI, 
-				SF2.F2_LOJA VV0_LOJA, SF2.F2_VALBRUT VV0_VALVDA , 
-				SD2.D2_CUSTOS VV0VCAVEI , SD2.D2_VALFET VV0_VALFRE, 
-				SD2.D2.R_E_C_N_O_ RECVV0 ,
-				SD2.D2.R_E_C_D_E_L_ VV0_SITNFI,
-				"1" VV0.VV0_TIPDOC ,  VV0.VV0_TIPMOV "
-				
+				cQuery := "SELECT SD2.D2_FILIAL VV0_FILIAL,	SD2.D2_EMISSAO VV0_DTHEMI, SD2.D2_DOC VV0_NUMTRA, SD2.D2_TIPO OPEMOV, '1' SD2.D2_SITNFI, "
+				cQuery += "SD2.D2_EMISSAO VV0DATMOV, 'C' CLIFOR, SD2.D2_TES VV0_CODTES, '2' VV0_TIPFAT, 'A' VV0_STATUS, SD2.D2_DOC VV0_NUMNFI, " 
+				cQuery += "SD2.D2_SERIE VV0_SERNFI, SD2.D2_DOC VV0_NNFFDI, SD2.D2_SERIE VV0_SNFFDI, SF2.F2_CLIENTE VV0_CODCLI, SF2.F2_LOJA VV0_LOJA, "
+				cQuery += "SF2.F2_VALBRUT VV0_VALVDA, SD2.D2_CUSTOS VV0VCAVEI, SD2.D2_VALFET VV0_VALFRE, '1' VV0.VV0_TIPDOC, VV0.VV0_TIPMOV, "
+				cQuery += "SD2.D2.R_E_C_D_E_L_, SD2.D2.R_E_C_N_O_ RECVV0,
 				cQuery += " FROM "+cNamSD2+" VVA "
-				cQuery +=        " JOIN "+cNamVV0+" VV0 "
-				cQuery +=             " ON VV0.VV0_FILIAL = VVA.VVA_FILIAL "
-				cQuery +=            " AND VV0.VV0_NUMTRA = VVA.VVA_NUMTRA "
+				cQuery +=        " JOIN "+cNamSF2+" SF2 "
+				cQuery +=             " ON SF2.F2_FILIAL = SD2.SD2_FILIAL "
+				cQuery +=            " AND SF2.F2_NUMTRA = VVA.VVA_NUMTRA "
 				cQuery +=            " AND VV0.D_E_L_E_T_=' ' "
 				cQuery +=  " LEFT JOIN "+cNamVV9+" VV9 "
 				cQuery +=             " ON VV9.VV9_FILIAL = VVA.VVA_FILIAL "
