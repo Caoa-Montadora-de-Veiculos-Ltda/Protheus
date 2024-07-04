@@ -8,6 +8,7 @@
 #define CRLF chr(13) + chr(10)
 
 Static oZPEC08Peca  := DMS_Peca():New()
+Static _oSaldoPec	:= SaldoCAOAPEC():New()  //GAP098 | Desmembrar itens bloqueados por inventário - Alteração funcionalidade de verificação saldo WIS e Protheus DAC 08/11/2023
 
 /*/{Protheus.doc} ZPECF008
 Responsável por Aglutinar e Separação do orçamento passando pelas fases automaticamente
@@ -23,6 +24,8 @@ Responsável por Aglutinar e Separação do orçamento passando pelas fases automati
 @history    DAC - 16/12/2022 PEC031 - Limite de Credito - Revitalização DAC
 @    		DAC -19/05/2023
             PEC042 - Controle de saldo e e-mail apos integracao de armazenagem - Imprimir sem passar pelo parâmetro chamada ZPECR007
+			GAP098 | Desmembrar itens bloqueados por inventário - Alteração funcionalidade de verificação saldo WIS e Protheus DAC 08/11/2023
+
 /*/
 User Function ZPECF008()
 	Local _aSays	    := {}
@@ -35,8 +38,10 @@ User Function ZPECF008()
 	Local _lZPECF008    := SuperGetMV( "CMV_PEC009"  ,,.T. )   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
 	//Local _lAvaliaOrc   := SuperGetMV( "CMV_PEC032"  ,,.F. )   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
 	//Local _lAvaliaItem  := SuperGetMV( "CMV_PEC033"  ,,.F. )   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
-	Local _cArmazemFDR 	:= AllTrim(SuperGetMV( "CMV_PEC036" ,,"" ))   //Parâmetro para indicação de utilização de validação armazem Franco da Rocha
+	//Local _cArmazemFDR 	:= AllTrim(SuperGetMV( "CMV_PEC036" ,,"" ))   //Parâmetro para indicação de utilização de validação armazem Franco da Rocha
 
+	Local _cArmazem    	:= AllTrim(SuperGetMV( "CMV_PEC050"  ,,"" ))   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
+	Local _aArmazem 	:= {}
 	//Local _cFilDe 	:= Space(TamSx3("VS1_FILIAL")[1])
 	//Local _cFilAte	:= Space(TamSx3("VS1_FILIAL")[1])
 	Local _cCliFatDe	:= Space(TamSx3("VS1_CLIFAT")[1])
@@ -55,10 +60,9 @@ User Function ZPECF008()
 	Local _aChave 		:= {}
 	Local _lJob   		:=	If( IsBlind(),.T.,.F.)
 	Local _oSay			:= Nil
-	Local _cLocal		:= "01"  //iniciar com armazem 01
-	Local _cObsPrc		:= ""
 	Local _aOndaRel 	:= {}
 	Local _nPos
+	Local _cVar
 
 	Private _cAglutina 	:= ""
 	Private _aMensAglu	:= {}
@@ -75,6 +79,31 @@ User Function ZPECF008()
 		Endif
 		*/
 		//If U_ZGENUSER( RetCodUsr() ,"ZPECF008" ,.T.)
+
+		If Empty(_cArmazem)
+			Help( , ,"Atenção",,"Não informado parâmetro CMV_PEC050 de Armazém a ser avaliado na Onda !",4,1) //Atenção / 
+			_lRet := .F.
+			Break	
+		Endif 
+		//_cArmazem  := FormatIn(_cArmazem,";")
+		_cVar := ""
+		For _nPos := 1 To Len(_cArmazem)
+			If SubsTr(_cArmazem,_nPos,1) == ";"  
+				AAdd(_aArmazem, _cVar )
+				_cVar := ""
+			Else	
+				_cVar += SubsTr(_cArmazem,_nPos,1)
+			Endif	
+		Next	
+		If !Empty(_cVar)
+			AAdd(_aArmazem, _cVar )
+		Endif
+		If Len(_aArmazem) == 0
+			Help( , ,"Atenção",,"Verificar parâmetro CMV_PEC050 de Armazém a ser avaliado na Onda, com problemas !",4,1) //Atenção / 
+			_lRet := .F.
+			Break	
+		Endif 
+
 		BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
 			SELECT 	VX5.VX5_CHAVE,
 					VX5.VX5_CODIGO,
@@ -124,6 +153,9 @@ User Function ZPECF008()
 		AADD(_aSays,OemToAnsi(STR0031)) //previas e enviando a quantidade para a separação dos orçamentos.
 		AADD(_aSays,OemToAnsi(STR0032)) //Clique no botão Parâmetros para alterar as definições da rotina. 
 		AADD(_aSays,OemToAnsi(STR0033)) //Depois clique no Botão OK.
+		AADD(_aSays,OemToAnsi("")) 		//""
+		AADD(_aSays,OemToAnsi("ARMAZÉNS DE PROCESSAMENTO DA ONDA ==> "+ AllTrim(_cArmazem))) //Depois clique no Botão OK.
+
 		AADD(_aButtons, { 1,.T.,{|o| FechaBatch(),_nRet:=1											}})
 		AADD(_aButtons, { 2,.T.,{|o| FechaBatch()													}})
 		AADD(_aButtons, { 5,.T.,{|o| ParamBox(_aPar,_cTitle,@_aRet,,,.T.,,,,"ZPECF008",.T.,.T.) 			}})
@@ -138,32 +170,19 @@ User Function ZPECF008()
 		Endif
 		_cAglutina 	:= ""
 		_aMensAglu	:= {}
-		_cObsPrc    := ""
-
-		If ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
-			If ( AllTrim(_aRet[10]) == "CHE" .Or. AllTrim(_aRet[10]) == "SBR" )
-				Help( , ,OemToAnsi(STR0028),,"Marca CHE/SBR bloqueada na empresa 90 | HMB",4,1) //Atenção / Necessário informar os parâmetros 
-				Break 
-			EndIf
-		EndIf
 		//Carregar processo
-		If _lJob
-			ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _cLocal,/*indica FDR*/ , @_cObsPrc )
-			//validar armazem Franco da Rocha caso existam saldos manutenção temporária devido mudança,  DAC 02/02/2023
-			If !Empty(_cArmazemFDR)
-				ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _cArmazemFDR, .T., @_cObsPrc )
+		For _nPos := 1 To Len(_aArmazem)
+			NNR->(DbSetOrder(1)) //NNR_FILIAL+NNR_CODIGO                                                                                                                                           
+			NNR->(DbSeek(XFilial("NNR")+_aArmazem[_nPos]))
+			If _lJob
+				ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _aArmazem[_nPos], @_aOndaRel )
+			Else
+				FwMsgRun(,{ |_oSay| ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _aArmazem[_nPos], @_aOndaRel, @_oSay ) }, "Separação Orçamentos armazém "+_aArmazem[_nPos]+" - "+AllTrim(NNR->NNR_DESCRI)+", Aguarde...")  //Separação Orçamentos / Aguarde
 			Endif
-			Conout("[ZPECF008]"+CRLF+_cObsPrc)
-		Else
-			FwMsgRun(,{ |_oSay| ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _cLocal ,/*indica FDR*/, @_cObsPrc , @_aOndaRel, @_oSay ) }, "Separação Orçamentos armazém PADRÃO", "Aguarde...")  //Separação Orçamentos / Aguarde
-			//validar armazem Franco da Rocha caso existam saldos manutenção temporária devido mudança,  DAC 02/02/2023
-			If !Empty(_cArmazemFDR) 
-				FwMsgRun(,{ |_oSay| ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _cArmazemFDR , .T., @_cObsPrc,  @_aOndaRel, @_oSay ) }, "Separação Orçamentos armazém "+_cArmazemFDR, "Aguarde...")  //Separação Orçamentos / Aguarde
-			Endif
-			MSGINFO( _cObsPrc , "[ZPECF008] - Atenção" )
-			ZPECF08R07(_aOndaRel)
-		Endif
-
+		Next
+		ZPECF08RESumo(_aOndaRel)
+		//Validadr aondarel se possui enviado
+		ZPECF08R07(_aOndaRel)
 	End Sequence 
 	If Select(_cAliasPesq) <> 0
 		(_cAliasPesq)->(DbCloseArea())
@@ -185,7 +204,7 @@ Responsável pelo processamento Aglutinando e Separando do orçamento passando pel
 @return		Nulo
 @history    06/07/2022 DAC - Alterado select para onda incluído para não trazer com picking preenchido ZK_XPICKI
 /*/
-Static Function ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave , _cLocal, _lArmFDR, _cObsPrc, _aOndaRel, _oSay )
+Static Function ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave , _cLocal, _aOndaRel, _oSay )
 Local _cAliasTRB    	:= GetNextAlias()      
 Local _cCliFatDe 		:= _aRet[01]
 Local _cLojaCFDe		:= _aRet[02]
@@ -211,14 +230,15 @@ Local _lValCred  		:= .T.
 Local _cFaseConf 		:= Alltrim(GetNewPar("MV_MIL0095","4")) // Fase de Conferencia e Separacao
 Local _cFaseOrc 		:= AllTrim(GetNewPar("MV_FASEORC","023R45F"))
 Local _cConectWis  		:= AllTrim(SuperGetMV( "CMV_PEC031"  ,,"WIS.V_ENDERECO_ESTOQUE@DBLINK_WISPROD")) 
-Local _cTPedTransfFDR 	:= AllTrim(SuperGetMV( "CMV_PEC038" ,,"" ))   //Parâmetro para indicação de tipo de pedido de transferencia
+Local _cTPedTransf 		:= AllTrim(SuperGetMV( "CMV_PEC038" ,,"" ))   //Parâmetro para indicação de tipo de pedido de transferencia
 
 Local _nRegProcess		:= 0
 Local _nProcessado		:= 0
 Local _nGerado			:= 0
 Local _nTotByPass		:= 0
-Local _nGeradoErr		:= 0
 Local _nLimAvalia		:= 0
+Local	_nEnviado 		
+Local	_nEnviadoErr 	
 
 Local _lInconSaldo		
 Local _cStatus
@@ -242,11 +262,6 @@ Local _cHsFinal
 Local _cCdEmpWIS
 Local _cLojaCredito
 Local _cFaseRet
-
-Default _lArmFDR := .F.
-
-//Private _cAglutina 	:= ""
-//Private _aMensAglu	:= {}
 
 _dInicio 	:= Date()
 _cHsInicio 	:= SubsTr(Time(),1,5)
@@ -332,13 +347,7 @@ Begin Sequence
 	//acrecentado validações gerais
 	_cWhere += 	" AND VS1.VS1_FILIAL	= '" +XFilial("VS1")+ "' " + CRLF
 	//caso seja armazem Franco da Rocha não pode tratar com o numero do orçamento somente com o numero de aglutinação DAC 02/02/2023
-	If _lArmFDR .and. !Empty(_cAglutina)
-		_cWhere += 	" AND VS1.VS1_XAGLU BETWEEN '" +_cAglutina+ "'	AND '" +_cAglutina+ "' " + CRLF 
-		_cWhere += 	" AND VS1.VS1_XBO = 'S' " + CRLF
-	Else
-		_cWhere += 	" AND VS1.VS1_NUMORC BETWEEN '" +_cNumOrcDe+ "'	AND '" +_cNumOrcAte+ "' " + CRLF 
-	EndIf
-
+	_cWhere += 	" AND VS1.VS1_NUMORC BETWEEN '" +_cNumOrcDe+ "'	AND '" +_cNumOrcAte+ "' " + CRLF 
 	_cWhere += 	" AND VS1.VS1_TIPORC = '1' " + CRLF
 	_cWhere += 	" AND VS1.VS1_XMARCA = '"    +_cMarca+ "' " + CRLF 
 	_cWhere += 	" AND VS1.VS1_XPICKI = ' ' " + CRLF
@@ -394,13 +403,8 @@ Begin Sequence
 	//_cCdEmpresa := "%"+_cCdEmpresa+"%"
 	//CRIO O NUMERO DA AGLUTINAÇÃO E CONFIRMO PARA NÃO PERDER O PONTEIRO
 	//somente criar numero de aglutinação no processo normal não do armazem FDR DAC 02/02/2023
-	//If !_lArmFDR  //caso faça isto dara erro na 10 pois xonda será o mesmo da aglutinação antes de testas FDR
 	_cAglutina := GETSX8NUM("VS1","VS1_XAGLU")
 	VS1->(ConfirmSx8())
-
-	//Aadd(_aOndaRel,_cAglutina)
-
-	//Endif	
 
 	//Caso o usuário informe a numeração do orçamentono parametor inicial e final não executar como bypass DAC 
 	If !Empty(_cNumOrcDe) .or.  !"Z" $ _cNumOrcAte
@@ -465,9 +469,7 @@ Begin Sequence
 
 	//TCSetField(_cAliasTRB,'ZD0_DATPRF','D',8,0)
 	If (_cAliasTRB)->(Eof())  
-		If !_lArmFDR
-			Aviso("AVISO","Não foram encontrados Orçamentos ! ",{"Ok"})
-		EndIf	
+		Aviso("AVISO","Não foram encontrados Orçamentos ! ",{"Ok"})
 		_lRet := .F.
 		Break	
 	Endif
@@ -481,10 +483,12 @@ Begin Sequence
 	//_cAglutina := GETSX8NUM("VS1","VS1_XAGLU")
     While (_cAliasTRB)->(!Eof())
 		//caso seja o armazém de transferência não validar somente validar se não for transferência o tipo de pedido, esta transferência sera de Barueri para FDR DAC 08/02/2023
-		If _lArmFDR .and. !Empty(_cTPedTransfFDR) .and. AllTrim((_cAliasTRB)->VS1_XTPPED) == _cTPedTransfFDR 	
+		/* GAP098 necessário validar armazém de transferência
+		If !Empty(_cTPedTransf) .and. AllTrim((_cAliasTRB)->VS1_XTPPED) == _cTPedTransf 	
 			(_cAliasTRB)->(DbSkip())
 			Loop
 		Endif	
+		*/
 		//organizar para geração do Picking após o acumuo dos orçamentos DAC 14/06/2022
 		_cTipoPed		:= (_cAliasTRB)->VS1_XTPPED
 		_cTipoModal		:= (_cAliasTRB)->VS1_XTPTRA
@@ -508,7 +512,7 @@ Begin Sequence
 			_nProcessado	++
 			VS1->(DbGoto((_cAliasTRB)->NREGVS1))
 			If !Softlock("VS1") // Travar Registro do VS1
-        		Help( , ,OemToAnsi(STR0028),,OemToAnsi("Não Foi ossivel travar registro orçamento "+VS1->VS1_NUMORC+" para processamento a operação será abortada !"),4,1) //Atenção / "Não Foi ossivel travar registro para processamento a operação será abortada ! 
+        		Help( , ,OemToAnsi(STR0028),,OemToAnsi("Não Foi possível travar registro orçamento "+VS1->VS1_NUMORC+" para processamento a operação será abortada !"),4,1) //Atenção / "Não Foi ossivel travar registro para processamento a operação será abortada ! 
 				_lRet 	:= .F.
 				Break	
 			EndIf
@@ -526,19 +530,6 @@ Begin Sequence
 				(_cAliasTRB)->(DbSkip())
 				Loop
 			Endif		
-			//Verificar se existe divergência de Tabela
-			If U_XVERTABPreco (_cCliFat, _cLoja, VS1->VS1_NUMORC )
-				//Recalcular valores
-				If !VS1->(U_ORCCALFIS(VS1->VS1_NUMORC /*_cNumOrc*/,/*_lAtuaPreco*/))
-					VS1->(RecLock("VS1",.F.))
-					_cObs			:="Não foi possivel recalcular valores deste orçamento referente a Onda "+_cAglutina+" !
-					VS1->VS1_OBSAGL	:= Upper(_cObs) + CRLF  + AllTrim(VS1->VS1_OBSAGL)
-					VS1->(MsUnlock())
-					(_cAliasTRB)->(DbSkip())
-					Loop
-				Endif
-			Endif
-
 			//Conforme e-mail Zé devido a problemas com o Padrão necessário voltar para o status "0" quando estiver com "3" 25/04/2022 
 			//Estamos com um problema no padrão conforme abaixo e, acredito que como paliativo, até que seja feita essa correção, o ideal seria que, todos Orc.Fases no status ‘3’ que estejam no parâmetro da rotina de Separação, retornem para status ‘0’ antes da chamada da função de análise de crédito do padrão evitando o bloqueio indevido dos mesmos.
 			If VS1->VS1_STATUS == "3"
@@ -547,7 +538,20 @@ Begin Sequence
 				VS1->(MsUnlock())
 			EndIf
 			//somente validar se não for transferência o tipo de pedido, esta transferência sera de Barueri para FDR DAC 08/02/2023
-			If Empty(_cTPedTransfFDR) .Or. AllTrim(VS1->VS1_XTPPED) <> _cTPedTransfFDR
+			If Empty(_cTPedTransf) .Or. AllTrim(VS1->VS1_XTPPED) <> _cTPedTransf
+				//Verificar se existe divergência de Tabela
+				If U_XVERTABPreco (_cCliFat, _cLoja, VS1->VS1_NUMORC )
+					//Recalcular valores
+					If !VS1->(U_ORCCALFIS(VS1->VS1_NUMORC /*_cNumOrc*/,/*_lAtuaPreco*/))
+						VS1->(RecLock("VS1",.F.))
+						_cObs			:="Não foi possivel recalcular valores deste orçamento referente a Onda "+_cAglutina+" !
+						VS1->VS1_OBSAGL	:= Upper(_cObs) + CRLF  + AllTrim(VS1->VS1_OBSAGL)
+						VS1->(MsUnlock())
+						(_cAliasTRB)->(DbSkip())
+						Loop
+					Endif
+				Endif
+
 				//Verificar Fases
 				If "2" $ _cFaseOrc  //somente se estiver na fase do orçamento conforme alinhado com Zé 30/11/2021
 					U_XFASEORC("2")  //Verifica se passa pela Fase MARGEM DE LUCRO
@@ -564,23 +568,20 @@ Begin Sequence
 					EndIf
 				EndIf
 			Endif	
-			IF VS1->VS1_CLIFAT == '000314'
-				CONOUT('TESTE')
-			ENDIF
 			//Verifica Saldos 
 			If _lRet
 				_aBackOrder 	:= {}
 				_lInconSaldo 	:= .F.  //inconsistencias com saldo serão as unicas que gravarão XBO = S conforme alinhado com Zé 04/02/2022  DAC 04/02/2022
 				Begin Transaction
 					//Caso esteja com bloqueio de limite verificar se é possivel utilizar o limite para os itens existentes em quanto o valor estiver atendendo a quantidade
-					If _lRet .and. !Empty(_cTPedTransfFDR) .And. AllTrim(VS1->VS1_XTPPED) == _cTPedTransfFDR
-						If !ZPECF8TVS3(VS1->VS1_NUMORC, VS1->VS1_XMARCA, @_aBackOrder, _cConectWis, _cCdEmpWIS, _cLocal, _cTPedTransfFDR)
+					If _lRet .and. !Empty(_cTPedTransf) .And. AllTrim(VS1->VS1_XTPPED) == _cTPedTransf
+						If !ZPECF8TVS3(VS1->VS1_NUMORC, VS1->VS1_XMARCA, @_aBackOrder, _cConectWis, _cCdEmpWIS, _cLocal, _cTPedTransf)
 							_lRet 		 := .F.
 							_lInconSaldo := .T.
            					Disarmtransaction()
 						EndIf  
 					ElseIf _lRet
-						If !ZPECF08VS3(VS1->VS1_NUMORC, VS1->VS1_XMARCA, @_aBackOrder, _cConectWis, _cCdEmpWIS, _cLocal, _cTPedTransfFDR)
+						If !ZPECF08VS3(VS1->VS1_NUMORC, VS1->VS1_XMARCA, @_aBackOrder, _cConectWis, _cCdEmpWIS, _cLocal)
 							_lRet 		 := .F.
 							_lInconSaldo := .T.
            					Disarmtransaction()
@@ -639,7 +640,7 @@ Begin Sequence
 					//Retorno para o registro VS1 pode ter sido disposicionado DAC 20/06/2022
 					//Mesmo que esta bloqueado por limite de crédito deixo fazer o carregamento devido os arquivos em bakorder
 					VS1->(DbGoto((_cAliasTRB)->NREGVS1))
-					If _lRet .and. !ZPECF08CAR(VS1->VS1_NUMORC, @_aBackOrder, @_aSeqVS3,(_cAliasTRB)->NREGVS1, @_aVS3Reg, If(_lArmFDR, _cLocal, ""))
+					If _lRet .and. !ZPECF08CAR(VS1->VS1_NUMORC, @_aBackOrder, @_aSeqVS3,(_cAliasTRB)->NREGVS1, @_aVS3Reg, _cLocal)
 						_lRet := .F.
            				Disarmtransaction()
 					EndIf	
@@ -669,7 +670,7 @@ Begin Sequence
 			//gravar informações no VS1
 			_cObs := 	Upper("Aglutinado/Separação "+ _cAglutina +" em "+ DtoC(Date()) +" "+ ;
 		  				SubsTr(Time(),1,5) +" hs." +If(_lRet," com sucesso "," não realizado")) + CRLF
-			_cObs += "PROCESSANDO ARMAZÉM"+ _cLocal + CRLF
+			_cObs += "PROCESSANDO ARMAZÉM -> "+ _cLocal + CRLF
 			
 			If Len(_aMensAglu) > 0
 				For _nPos := 1 To Len(_aMensAglu)
@@ -721,47 +722,50 @@ Begin Sequence
 				Next
 				_lSepara	:= .F.
 				_nGerado  	--
-				_nGeradoErr	++
 			//Envia o picking pata a RG LOG
 			Else
 				StartJob("U_ZWSR007",GetEnvServer(),.F.,_cAglutina, _cPicking, /*_lDataEnv*/, cEmpAnt, cFilAnt, /*_aMens*/)
-				//Incluir processamento da onda somente quando tiver algum titulo gerado
-				If Ascan(_aOndaRel, _cAglutina) == 0
-					Aadd(_aOndaRel,_cAglutina)
-				EndIf
 			EndIf
 		EndIf
 	EndDo
 	//Verifica se existe picking pendente ao qual não foi enviado
 	_dFinal 	:= Date() 
 	_cHsFinal	:= Substr(Time(),1,5)
-	Sleep(30000) //aguardar um momento para inicializar reprocesso assim não causa sobreposição	
-	//Função para reprocessar envio RGLOG
-	StartJob("U_XFUNPRRGlog",GetEnvServer(),.F.,_cAglutina, cEmpAnt, cFilAnt, /*_nReprocessado*/, /*_oSay*/)
+	//GAP098 caso não gerou processo não verificar picking
+	If _nGerado > 0
+		Sleep(10000) //aguardar um momento para inicializar reprocesso assim não causa sobreposição	
+		//Função para reprocessar envio RGLOG
+		StartJob("U_XFUNPRRGlog",GetEnvServer(),.F.,_cAglutina, cEmpAnt, cFilAnt, /*_nReprocessado*/, /*_oSay*/)
+	Endif
 End Sequence
-Sleep(5000) //aguardar um momento para inicializar reprocesso assim não causa sobreposição	
-//Função que verifica a quantidade de envios realizadas com Sucesso
-_nGeradoErr += XCONTIRGLog( _cAglutina )
+//GAP098 caso não gerou processo não verificar picking
+_nEnviado 		:= 0 	/*Enviados*/ 
+_nEnviadoErr 	:= 0 	/*Problemas de Envio*/ 
 
-_cObs		:= Upper("Processo referente a Onda  "	+_cAglutina+" finalizado !!!")  + CRLF
-_cObs		+= CRLF
-_cObs		+= Upper("REFERENTE AO ARMAZÉM " +If(_lArmFDR, _cLocal, "PADRÃO"))
-_cObs		+= CRLF
-_cObs		+= "Total Reg................ 	 " 		+ StrZero(_nTotByPass+_nRegProcess,7)	+" Registros" + CRLF
-_cObs		+= "Selecionados........  " 			+ StrZero(_nRegProcess,7)	+" Registros" + CRLF
-_cObs		+= CRLF
-_cObs		+= "Lidos.......................  " 	+ StrZero(_nProcessado,7)	+" Registros" + CRLF 
-_cObs		+= "Gerados.................  " 		+ StrZero(_nGerado,7)  		+" Registros" + CRLF
-_cObs		+= "Enviados................  " 		+ StrZero(XCONTERGLog( _cAglutina ),7)  +" Registros" + CRLF
-_cObs		+= "Problemas envio.. " 				+ StrZero(_nGeradoErr,7)  +" Registros" + CRLF
-_cObs		+= CRLF
-_cObs		+= "Iniciado em.........  " 			+ DtoC(_dInicio)+ " as " 	+_cHsInicio   + CRLF 
-_cObs		+= "Finalizado em.....  " 				+ DtoC(_dFinal) + " as " 	+_cHsFinal    + CRLF
+If _nGerado > 0
+	Sleep(30000) //aguardar um momento para inicializar reprocesso assim não causa sobreposição	
+	_nEnviado 		:= XCONTERGLog( _cAglutina ) 	/*Enviados*/ 
+	_nEnviadoErr 	:= XCONTIRGLog( _cAglutina ) 	/*Problemas de Envio*/ 
+Endif
+//Guardar dados para mostrar no final
+NNR->(DbSetOrder(1)) //NNR_FILIAL+NNR_CODIGO                                                                                                                                           
+NNR->(DbSeek(XFilial("NNR")+_cLocal))
+
+Aadd(_aOndaRel,{ _cAglutina  					/*Num Aglutina*/ ; 
+				, _cLocal    					/*Armazem*/ ;
+				, NNR->NNR_DESCRI				/*Desc Armazem*/ ;
+				, _nTotByPass+_nRegProcess 		/*Total Registros*/ ;
+				, _nRegProcess 					/*Selecionados*/ ;
+				, _nProcessado 					/*Lidos*/ ;
+				, _nGerado 						/*Gerados*/ ;
+				, _nEnviado 					/*Enviados*/ ;
+				, _nEnviadoErr 					/*Problemas de Envio*/ ;
+				, DtoC(_dInicio)+ " as " 	+_cHsInicio /*Iniciado em*/ ;
+				, DtoC(_dFinal) + " as " 	+_cHsFinal  /*Finalizado em*/ ;
+				})
 
 //U_CAOA_TRFO(_cAglutina, cEmpAnt, cFilAnt)
 //StartJob("U_CAOA_TRFO",GetEnvServer(),.F.,_cAglutina, cEmpAnt, cFilAnt) // Transferencia entre filial não validado
-_cObsPrc += CRLF
-_cObsPrc += _cObs
 //MSGINFO( _cObs , "[ZPECF008] - Atenção" )
 If Select((_cAliasTRB)) <> 0
 	(_cAliasTRB)->(DbCloseArea())
@@ -788,7 +792,7 @@ Responsável por verificar se pode liberar o orçamento para carregamento
 			DAC 08/08/2023
 			GAP			- Incluindo validação tipo de Pedido para transferência Barueri para FDR
 /*/
-Static Function	ZPECF08VS3(_cNumOrc, _cMarca, _aBackOrder, _cConectWis, _cCdEmpWIS, _cLocal, _cTPedTransfFDR)  
+Static Function	ZPECF08VS3(_cNumOrc, _cMarca, _aBackOrder, _cConectWis, _cCdEmpWIS, _cLocal)  
 Local _lRet 		:= .F.
 Local _lSepara		:= .F.
 Local _lParcial		:= .F.
@@ -798,9 +802,7 @@ Local _aBak			:= {}
 Local _cValidItSubs := Upper(AllTrim(SuperGetMV( "CMV_PEC022"  ,,"" )))   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
 
 Local _nPos
-Local _aRetSaldo 
-Local _lRetorno 
-Local _cMens
+Local _cGrupo
 //Local _aCpoVazio	:= {"VS1_XAGLU","VS1_XDTAGL","VS1_XHSAGL","VS1_XUSUGL","VS1_OBSAGL"}
 //Local _nTam			:= TamSx3("B2_LOCAL")[1]
 Local _nSaldoSB2
@@ -810,7 +812,7 @@ Local _nQtdePrd
 Local _nQtdeParc 
 Local _lZera
 Local _cObs
-
+Local _nSAldo := 0
 Begin Sequence
 	_cConectWis := "%"+_cConectWis+"%"
 	_cCdEmpWIS 	:= "%"+_cCdEmpWIS+"%"
@@ -828,24 +830,19 @@ Begin Sequence
 		, 	SB1.B1_MSBLQL
 		, 	SB1.B1_XNUMINM 
 		, 	SB1.B1_XVLDINM 
-		, 	AVG(	CASE WHEN VS3.VS3_CODITE IS NOT NULL 
-				THEN
-				(	SELECT NVL((B2VS3.B2_QATU - B2VS3.B2_RESERVA - B2VS3.B2_QACLASS),0) 
-					FROM %Table:SB2%  B2VS3 
-					WHERE 	B2VS3.B2_FILIAL		= %xFilial:SB2%	
-						AND B2VS3.B2_COD 		= VS3.VS3_CODITE 										
-						AND B2VS3.B2_LOCAL 		= %Exp:_cArmazem%
-						AND B2VS3.%notDel% 
-				) 
-	  	  		ELSE 
-					0	  
-	  	  		END ) AS SLD_VS3
+		, 	AVG(NVL((SB2.B2_QATU - SB2.B2_RESERVA - SB2.B2_QACLASS),0)) AS SLD_VS3
 		,	AVG(COALESCE(VS3.R_E_C_N_O_,0)) NREGVS3 	
+		,   MAX(SB2.B2_DTINV) DATAINVENT
 		FROM %Table:VS3% VS3
 		LEFT  JOIN %Table:SB1% SB1
 			ON SB1.B1_FILIAL 		= %xFilial:SB1%
 			AND SB1.B1_COD 			= VS3.VS3_CODITE
 			AND SB1.%notDel%
+		LEFT  JOIN %Table:SB2% SB2 
+			ON 	SB2.B2_FILIAL		= %xFilial:SB2%	
+			AND SB2.B2_COD 			= VS3.VS3_CODITE 										
+			AND SB2.B2_LOCAL 		= %Exp:_cArmazem%
+			AND SB2.%notDel% 
 		WHERE VS3.VS3_FILIAL 		= %xFilial:VS3%
 			AND VS3.VS3_NUMORC 		= %Exp:_cNumOrc%
 			AND VS3.%notDel%
@@ -861,61 +858,6 @@ Begin Sequence
 				, SB1.B1_XVLDINM 
 		ORDER BY VS3.VS3_NUMORC, VS3.VS3_SEQUEN
 	EndSql
-/*  Retirado 05/12/2022 para que execute o calculo pelo Padrão
-		, 	AVG( CASE WHEN VE9.VE9_ITENOV IS NOT NULL 
-				THEN 
-				( 	SELECT SUM(NVL((B2VE9.B2_QATU - B2VE9.B2_RESERVA - B2VE9.B2_QACLASS),0)) 
-					FROM %Table:SB2% B2VE9
-					JOIN %Table:VE9% VE9
-						ON 	VE9.VE9_FILIAL 		= %xFilial:VE9%
-						AND VE9.VE9_ITEANT 		= VS3.VS3_CODITE
-						AND VE9.%notDel%							
-				) 
-				ELSE 
-					0 
-				END)  AS SLD_SUBSTI 
-		,	AVG( CASE WHEN VPD.VPD_CODREL IS NOT NULL 
-				THEN 
-				( 	SELECT SUM(NVL((B2VPD.B2_QATU - B2VPD.B2_RESERVA - B2VPD.B2_QACLASS),0))			
-					FROM %Table:SB2% B2VPD
-		 			JOIN %Table:VPD% VPD
-						ON VPD.VPD_FILIAL 		= %xFilial:VPD%
-						AND VPD.VPD_COD 		= VS3.VS3_CODITE
-						AND VPD.%notDel% 							
-				WHERE 	B2VPD.B2_FILIAL		= %xFilial:SB2% 	
-					AND B2VPD.B2_COD 		= VPD.VPD_CODREL 									
-					AND B2VPD.B2_LOCAL 		= %Exp:_cArmazem%
-					AND B2VPD.%notDel%
-		  		) 
-				ELSE 
-					0 
-				END)  AS SLD_SIMILAR 
-		, ( SELECT SUM(NVL((B2VE8.B2_QATU - B2VE8.B2_RESERVA - B2VE8.B2_QACLASS),0))  		
-	 		FROM %Table:VE8% VE8
-	 		JOIN %Table:SB2% B2VE8 
-				ON  B2VE8.B2_FILIAL 	= %xFilial:SB2% 
-				AND B2VE8.B2_COD 		= VE8.VE8_CODITE 
-		 		AND B2VE8.B2_LOCAL 		= %Exp:_cArmazem% 
-				AND B2VE8.B2_QATU 		> 0
-				AND B2VE8.%notDel% 	
-			WHERE VE8.VE8_FILIAL		= %xFilial:VE8% 
-				AND VE8.VE8_CODKIT 		= VS3.VS3_CODITE 
-				AND VE8.%notDel%
-			) AS SLD_KIT
-
-
-		LEFT JOIN %Table:VE9% VE9 
-			ON VE9.VE9_FILIAL 		= %xFilial:SB1%    
-			AND VE9.VE9_ITEANT 		= VS3.VS3_CODITE 
-			AND VE9.%notDel%
-		LEFT JOIN  %Table:VPD% VPD 
-			ON VPD.VPD_FILIAL 		= %xFilial:SB1%      
-			AND VPD.VPD_COD 		= VS3.VS3_CODITE 
-			AND VPD.%notDel%
-
-*/
-
-
 //	TCSetField(_cAliasPesq,'VS3_CODITE','C',TamSx3("B2_COD")[1],0)
 
 	_lSepara	:= .F.  //indica se tera algum item que será separado
@@ -926,7 +868,8 @@ Begin Sequence
 		Aadd(_aMensAglu,"Orçamento não possui itens localizados !")
 		Break	
 	Endif
-	
+	//Carrega Objeto para calculo PEC
+
 	While (_cAliasPesq)->(!Eof())
 		//Ajustar tamanho código produto
 		//_cArmazem	:= (_cAliasPesq)->VS3_LOCAL
@@ -955,48 +898,57 @@ Begin Sequence
 		Endif
 		//Verificar se esta bloqueado
 		//Tratamento de trasferencia para FDR por tipo de pedido DAC 08/02/2023
-		If Empty(_cTPedTransfFDR) .Or. AllTrim(VS1->VS1_XTPPED) <> _cTPedTransfFDR
-			If (_cAliasPesq)->B1_MSBLQL == "1"  
-				Aadd(_aMensAglu,"Produto "+ AllTrim(_cCodProd) +" bloqueado não será permitido faturar !")
-				Aadd(_aBak,{(	_cAliasPesq)->NREGVS3,;
-				 				_cCodProd,; 
-								(_cAliasPesq)->QTDE_TOTAL,;
-								_aMensAglu[Len(_aMensAglu)],; 
-								.T. ,;							//_Lxbo 
-								.T. })							//_lZera	
-	   			(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
-				Loop
-			EndIf		
-			//Validar Imetro
-			//GAP_PECCD01 - Controle de Validade de Produtos com Inm V1.
-			//ja esta posicionado no SB1 função U_XSLDCAOAEstoque
-			If !Empty((_cAliasPesq)->B1_XNUMINM) .And. (_cAliasPesq)->B1_XVLDINM < DtOS(DATE())
-				Aadd(_aMensAglu,"Produto "+ AllTrim(_cCodProd) +" não permitido faturar, restrição INMETRO !")
-				Aadd(_aBak,{(	_cAliasPesq)->NREGVS3,;
-				 				_cCodProd,; 
-								(_cAliasPesq)->QTDE_TOTAL,;
-								_aMensAglu[Len(_aMensAglu)],; 
-								.T. ,;							//_Lxbo 
-								.T. })							//_lZera	
-	   			(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
-				Loop
-			EndIf
-			//Caso o saldo tenha sido encontrado no produto devo validar pelo Sistema 
-			//no caso
-		Endif
+		If (_cAliasPesq)->B1_MSBLQL == "1"  
+			Aadd(_aMensAglu,"Produto "+ AllTrim(_cCodProd) +" bloqueado não será permitido faturar !")
+			Aadd(_aBak,{(	_cAliasPesq)->NREGVS3,;
+			 				_cCodProd,; 
+							(_cAliasPesq)->QTDE_TOTAL,;
+							_aMensAglu[Len(_aMensAglu)],; 
+							.T. ,;							//_Lxbo 
+							.T. })							//_lZera	
+	   		(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
+			Loop
+		EndIf		
+
+		//Validar Inmetro
+		//GAP_PECCD01 - Controle de Validade de Produtos com Inm V1.
+		//ja esta posicionado no SB1 
+		If !Empty((_cAliasPesq)->B1_XNUMINM) .And. (_cAliasPesq)->B1_XVLDINM < DtOS(DATE())
+			Aadd(_aMensAglu,"Produto "+ AllTrim(_cCodProd) +" não permitido faturar, restrição INMETRO !")
+			Aadd(_aBak,{(	_cAliasPesq)->NREGVS3,;
+			 				_cCodProd,; 
+							(_cAliasPesq)->QTDE_TOTAL,;
+							_aMensAglu[Len(_aMensAglu)],; 
+							.T. ,;							//_Lxbo 
+							.T. })							//_lZera	
+   			(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
+			Loop
+		EndIf
+		//Caso o saldo tenha sido encontrado no produto devo validar pelo Sistema 
+		//no caso
+		//GAP098 | Desmembrar itens bloqueados por inventário
+		//Verificar se esta em inventário DAC 07/11/2023
+		If !Empty((_cAliasPesq)->DATAINVENT)  
+			Aadd(_aMensAglu,"Produto "+ AllTrim(_cCodProd) +" bloqueado para inventário "+(_cAliasPesq)->DATAINVENT+" ! ZPECF008")
+			Aadd(_aBak,{(	_cAliasPesq)->NREGVS3,;
+				 			_cCodProd,; 
+							(_cAliasPesq)->QTDE_TOTAL,;
+							_aMensAglu[Len(_aMensAglu)],; 
+							.T. ,;							//_Lxbo 
+							.T. })							//_lZera	
+	   		(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
+			Loop
+		EndIf		
+
 		_nSaldoSB2 := 0
 		If (_cAliasPesq)->SLD_VS3 > 0 
-			_aRetSaldo 	:= U_XSLDCAOAEstoque(_cCodProd, _cArmazem, _cGrupo ) //procurar saldo entre Wis e Proteus DAC 25/05/2022
-			_lRetorno  	:= _aRetSaldo[1]  //Retorna verdadeiro ou falso
-			_nSaldoSB2  := _aRetSaldo[2]  //Retorna oSaldo calculado
-			_cMens		:= _aRetSaldo[3]  //Retorna as Mensagens de validações	 
-			_cCodProd	:= _aRetSaldo[4]  //pego o produto novamente pois o mesmo pode ter sido ajustado o tamanho
-			//quando retorno mensagem ja devo separar para gravar	
-			If !Empty(_cMens)
-				Aadd(_aMensAglu,_cMens)
-			EndIf	
-			If !_lRetorno  //posição de retorno
-				Aadd(_aMensAglu, _cMens)  //retorno de msg
+			//GAP098 | Desmembrar itens bloqueados por inventário - Alteração funcionalidade de verificação saldo WIS e Protheus DAC 08/11/2023
+			_oSaldoPec:CarregaCAOAPEC(_cCodProd, _cArmazem, _cGrupo, _cMarca, /*nSaldoSB2*/)
+			//ocorreu problemas no calculo
+			If Len(_oSaldoPec:_aError) > 0  
+				For _nPos := 1 To Len(_oSaldoPec:_aError)
+					Aadd(_aMensAglu,_oSaldoPec:_aError[_nPos])
+				Next
 				Aadd(_aBak,{(	_cAliasPesq)->NREGVS3,;
 			 					_cCodProd,; 
 								(_cAliasPesq)->QTDE_TOTAL,;
@@ -1006,6 +958,7 @@ Begin Sequence
 				(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
 				Loop
 			EndIf
+			_nSaldoSB2 := _oSaldoPec:_nSaldoPEC
 		EndIf
 		//Avaliar e tratar item parcial quando for parcial deverá utilizar o saldo do B2 e o restante deverá gerar separação via Bakorder
 		If (_cAliasPesq)->QTDE_TOTAL <= _nSaldoSB2  //possui saldo posso processar
@@ -1013,25 +966,23 @@ Begin Sequence
 			//MV_MIL0095 -- Fase de Conferência e Separação Personalizada      = 4
 			// não verificar substituto para Subaro quando existe saldo  //DAC 02/03/2022
 			_lSepara := .T.   //ja indico que existira separação
-			//Tratamento de trasferencia para FDR por tipo de pedido DAC 08/02/2023
-			If Empty(_cTPedTransfFDR) .Or. AllTrim(VS1->VS1_XTPPED) <> _cTPedTransfFDR
-				//no caso de não estar no parametro posso passar para próximo registro
-				If !Empty(_cValidItSubs) .and. VS1->VS1_XMARCA $ _cValidItSubs  //alterado para parametro conforme solicitação JC 19/05/2022 DAC
-					(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
-					Loop
-				EndIf
-				//Verifica se tem item substituto
-				_nQtdeItem := (_cAliasPesq)->QTDE_TOTAL
-				Aadd(_aMensAglu,"Existe saldo no item principal, procurar item Substitutos para o produto " +AllTrim(_cCodProd)+ " armazem "+_cArmazem+"+ verificar se existe saldo produtos antigos !")	
-				_lRet := ZPECF08SUB( _cNumOrc, _cGrupo, _cCodProd, _cArmazem, @_nQtdeItem )
-				//Caso seja feito parcial informar
-				If _lRet .and. _nQtdeItem <> (_cAliasPesq)->QTDE_TOTAL
-					Aadd(_aMensAglu,"Feita Sustituição "+If(_nQtdeItem > 0," parcial","")+ "do item principal, por item Substitutos para o produto " +AllTrim(_cCodProd)+ " armazem "+_cArmazem+" não possui saldo total no substituto ! ")	
-				EndIf
-			Endif
+			//no caso de não estar no parametro posso passar para próximo registro
+			If !Empty(_cValidItSubs) .and. VS1->VS1_XMARCA $ _cValidItSubs  //alterado para parametro conforme solicitação JC 19/05/2022 DAC
+				(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
+				Loop
+			EndIf
+			//Verifica se tem item substituto
+			_nQtdeItem := (_cAliasPesq)->QTDE_TOTAL
+			Aadd(_aMensAglu,"Existe saldo no item principal, procurar item Substitutos para o produto " +AllTrim(_cCodProd)+ " armazem "+_cArmazem+"+ verificar se existe saldo produtos antigos !")	
+			_lRet := ZPECF08SUB( _cNumOrc, _cGrupo, _cCodProd, _cArmazem, @_nQtdeItem, _cMarca )
+			//Caso seja feito parcial informar
+			If _lRet .and. _nQtdeItem <> (_cAliasPesq)->QTDE_TOTAL
+				Aadd(_aMensAglu,"Feita Sustituição "+If(_nQtdeItem > 0," parcial","")+ "do item principal, por item Substitutos para o produto " +AllTrim(_cCodProd)+ " armazem "+_cArmazem+" não possui saldo total no substituto ! ")	
+			EndIf
 			(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
 			Loop
-		EndIf
+		Endif
+
 		//Verificar utilização do parcial
 		Aadd(_aMensAglu,"Produto "+AllTrim(_cCodProd)+" armazem "+_cArmazem+" não possui saldo suficiente para faturamento, saldo atual " +AllTrim(Transform(_nSaldoSB2,"@E 999,999.999")))	
 		 _nQtdeParc := 0  
@@ -1044,71 +995,58 @@ Begin Sequence
 			_nQtdePrd  := (_cAliasPesq)->QTDE_TOTAL- _nQtdeItem
 			_nQtdeParc := _nQtdePrd   //(_cAliasPesq)->QTDE_TOTAL
 			//ja ajusto com a quantidade parcial pois caso  não faça não ira faturar esta quantidade, o restante devrá ser avaliado e ou gerar backorder DAC 02/05/08
-			If !ALTERAITParcial( (_cAliasPesq)->NREGVS3, _cNumOrc, _cGrupo, _cCodProd, _cArmazem, _cCodProd, _cGrupo, _nQtdePrd, _nQtdePrd, _nSaldoSB2, "0" )
+			If !ALTERAITParcial( (_cAliasPesq)->NREGVS3, _cNumOrc, _cGrupo, _cCodProd, _cArmazem, _cCodProd, _cGrupo, _nQtdePrd, _nQtdePrd, _nSaldoSB2, "0" ,,@_nSaldo)
 				_lSepara := .F.
 				Break
 			EndIf	
 			_lParcial 	:= .T.  //indica que usou parcial
 			_lSepara 	:= .T.
 		Else
-			//Tratamento de trasferencia para FDR por tipo de pedido DAC 08/02/2023
-			If !Empty(_cTPedTransfFDR) .And. AllTrim(VS1->VS1_XTPPED) == _cTPedTransfFDR
-				(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
-				Loop
-			Endif
 			_nQtdeItem := (_cAliasPesq)->QTDE_TOTAL
 		EndIf
 
-		//Tratamento de trasferencia para FDR por tipo de pedido DAC 08/02/2023
-		//necessário validar e ir até o final caso seja saldo parcial do tipo de transferência, pode gerar backorder
-		If Empty(_cTPedTransfFDR) .Or. AllTrim(VS1->VS1_XTPPED) <> _cTPedTransfFDR
-			//Após continuar avaliando
-			//analisar possibilidades de utilizar outros produtos
-			//1 item substituto
-			//MV_MIL0095 -- Fase de Conferência e Separação Personalizada      = 4
-			//Verificar pelo padrão existem regras que verificam produtos com situações diferentes exemplo similar DAC 01/12/2022
-			//If (_cAliasPesq)->SLD_SUBSTI > 0
-			_lRet := ZPECF08SUB( _cNumOrc, _cGrupo, _cCodProd, _cArmazem, @_nQtdeItem )
-			//Caso consegui completar orçamento posso sair
-			If _lRet .and. _nQtdeItem <= 0
-				(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
-				_lSepara := .T.   
-				Loop
-			Endif		
-			//EndIf
-			//2- item similar
-			//If (_cAliasPesq)->SLD_SIMILAR > 0
-			_lRet := ZPECF08SIM( _cNumOrc, _cGrupo, _cCodProd, _cArmazem, @_nQtdeItem  )
-			//Caso consegui completar orçamento posso sair
-			If _lRet .and. _nQtdeItem <= 0  
-				(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
-				_lSepara := .T.   
-				Loop
-			Endif		
-			//EndIf
-			/* conforme Zé não vai entrar num primeiro momento
-			Zé solicitou validação do KIT 03/02/2022 DAC */
-			//If (_cAliasPesq)->SLD_KIT	
-			_lRet := ZPECF08KIT( _cNumOrc, _cGrupo, _cCodProd, _cArmazem, @_nQtdeItem, (_cAliasPesq)->NREGVS3, _lParcial )
-			//Caso consegui completar orçamento posso sair
-			If _lRet //.and. _nQtdeItem <= 0   //kit tem que ser tratado diferente na questão quantidade se retornar verdadeiro a quantidade do produto original ja foi zerada na funcionalidade
-				(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
-				_lSepara := .T.   
-				Loop
-			EndIf
-			//EndIf
-		Endif
+		//Após continuar avaliando
+		//analisar possibilidades de utilizar outros produtos
+		//1 item substituto
+		//MV_MIL0095 -- Fase de Conferência e Separação Personalizada      = 4
+		//Verificar pelo padrão existem regras que verificam produtos com situações diferentes exemplo similar DAC 01/12/2022
+		//If (_cAliasPesq)->SLD_SUBSTI > 0
+		_lRet := ZPECF08SUB( _cNumOrc, _cGrupo, _cCodProd, _cArmazem, @_nQtdeItem, _cMarca )
+		//Caso consegui completar orçamento posso sair
+		If _lRet .and. _nQtdeItem <= 0
+			(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
+			_lSepara := .T.   
+			Loop
+		Endif		
+		//EndIf
+		//2- item similar
+		//If (_cAliasPesq)->SLD_SIMILAR > 0
+		_lRet := ZPECF08SIM( _cNumOrc, _cGrupo, _cCodProd, _cArmazem, @_nQtdeItem, _cMarca  )
+		//Caso consegui completar orçamento posso sair
+		If _lRet .and. _nQtdeItem <= 0  
+			(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
+			_lSepara := .T.   
+			Loop
+		Endif		
+		//EndIf
+		/* conforme Zé não vai entrar num primeiro momento
+		Zé solicitou validação do KIT 03/02/2022 DAC */
+		//If (_cAliasPesq)->SLD_KIT	
+		_lRet := ZPECF08KIT( _cNumOrc, _cGrupo, _cCodProd, _cArmazem, @_nQtdeItem, (_cAliasPesq)->NREGVS3, _lParcial, _cMarca )
+		//Caso consegui completar orçamento posso sair
+		If _lRet //.and. _nQtdeItem <= 0   //kit tem que ser tratado diferente na questão quantidade se retornar verdadeiro a quantidade do produto original ja foi zerada na funcionalidade
+			(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
+			_lSepara := .T.   
+			Loop
+		EndIf
+		//EndIf
 		If _nQtdePrd > 0  //significa que utilizou parcial não podendo zerar
 			_lZera := .F.
 		Else
 			_lZera := .T.
 		Endif	 
 
-		If Empty(_cTPedTransfFDR) .Or. AllTrim(VS1->VS1_XTPPED) <> _cTPedTransfFDR
-			_cObs := If(Len(_aBak) > 0,"","Não possui Saldo, item Substituto,item Similar, KIT para produto no armazem "+_cArmazem) 
-		Else
-			_cObs := If(Len(_aBak) > 0,"","Não possui Saldo total para a transfereria FDR conforme parametrização tipo de pedido "+_cTPedTransfFDR+" armazém "+_cArmazem) 
-		Endif
+		_cObs := If(Len(_aBak) > 0,"","Não possui Saldo total conforme parametrização  armazém "+_cArmazem) 
 		Aadd(_aBak,{	(_cAliasPesq)->NREGVS3,;
 						 _cCodProd,; 
 						_nQtdeItem,; 
@@ -1118,7 +1056,7 @@ Begin Sequence
 	   (_cAliasPesq)->(DbSkip())
 	Enddo
 End Sequence
-//no caso que conseguiu passar um item posso fazer backorder, caso não não gerar backorder
+//no caso que conseguiu passar um item posso fazer backorder, caso não, não gerar backorder.
 If _lSepara .and. Len(_aBak) > 0
 	For _nPos := 1 To Len(_aBak)
 		Aadd(_aBackOrder,_aBak[_nPos])
@@ -1150,19 +1088,16 @@ Responsável por pesquisar item substituto
 @return		_lRet		- Verdadeiro ou falso
 @history    
 /*/
-Static Function	ZPECF08SUB(_cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem)
-	Local _lRet			:= .F.
-	Local _nQtdeAnt		:= _nQtdeItem
-	Local _nSaldoSB2
-	Local _aItemRelac	
-	Local _cCodSubst
-	Local _cGrupoSubst 
-	Local _nQtdePrd  
-	Local _nPos
-	Local _aRetSaldo 
-	Local _lRetorno
-	Local _cMens
-	Local _cCodProd	
+Static Function	ZPECF08SUB(_cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _cMarca)
+Local _lRet			:= .F.
+Local _nQtdeAnt		:= _nQtdeItem
+Local _nSaldoSB2
+Local _aItemRelac	
+Local _cCodSubst
+Local _cGrupoSubst 
+Local _nQtdePrd  
+Local _nPos
+Local _nCount
 
 	//Local _lSaldoItSubs	:= GetNewPar("MV_CHKQSUB","N") == "S"  //indica se verifica saldo do SB2 para dar continuidade no processamento
 
@@ -1179,19 +1114,18 @@ Static Function	ZPECF08SUB(_cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem)
 			_cGrupoSubst	:= _aItemRelac[_nPos,1]
 			_cCodSubst 		:= AllTrim(_aItemRelac[_nPos,2])
 			_nSaldoSB2 		:= _aItemRelac[_nPos,7]
-			//Verificar saldo wis DAC 26/05/2022
-			_aRetSaldo 	:= U_XSLDCAOAEstoque(_cCodSubst, _cLocal, _cGrupoSubst, _nSaldoSB2 ) //procurar saldo entre Wis e Proteus DAC 25/05/2022
-			_lRetorno  	:= _aRetSaldo[1]  //Retorna verdadeiro ou falso
-			_nSaldoSB2  := _aRetSaldo[2]  //Retorna oSaldo calculado
-			_cMens		:= _aRetSaldo[3]  //Retorna as Mensagens de validações	 
-			_cCodProd	:= _aRetSaldo[4]  //pego o produto novamente pois o mesmo pode ter sido ajustado o tamanho
-			//quando retorno mensagem ja devo separar para gravar	
-			If !Empty(_cMens)
-				Aadd(_aMensAglu,_cMens)
-			EndIf	
-			If !_lRetorno
-				Break
-			Endif
+			
+			//GAP098 | Desmembrar itens bloqueados por inventário - Alteração funcionalidade de verificação saldo WIS e Protheus DAC 08/11/2023
+			//Calcular o Saldo
+			_oSaldoPec:CarregaCAOAPEC(_cCodSubst, _cLocal, _cGrupoSubst, _cMarca, _nSaldoSB2)
+			If Len(_oSaldoPec:_aError) > 0  //ocorreu problemas no calculo
+				Aadd(_aMensAglu,"Não existe saldo do item Substituto " +AllTrim(_cCodSubst)+ " para o produto " +AllTrim(_cCodItem))	
+				For _nCount := 1 To Len(_oSaldoPec:_aError)
+					Aadd(_aMensAglu, _oSaldoPec:_aError[_nCount])
+				Next _nCount
+				Break 
+			Endif	
+			_nSaldoSB2 := _oSaldoPec:_nSaldoPEC
 			//Caso esteja zerado
 			If _nSaldoSB2 <= 0
 				Aadd(_aMensAglu,"Não existe saldo do item Substituto " +AllTrim(_cCodSubst)+ " para o produto " +AllTrim(_cCodItem))	
@@ -1207,6 +1141,12 @@ Static Function	ZPECF08SUB(_cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem)
 				Aadd(_aMensAglu,"Não foi possivel montar PARCIAL doProduto "+AllTrim(_cCodItem))	
 				Break
 			EndIf		
+			If Len(_oSaldoPec:_aMsg) > 0  //ocorreu problemas no calculo
+				Aadd(_aMensAglu,"Utilizado saldo do item Substituto " +AllTrim(_cCodSubst)+ " para o produto " +AllTrim(_cCodItem))	
+				For _nCount := 1 To Len(_oSaldoPec:_aMsg)
+					Aadd(_aMensAglu, _oSaldoPec:_aMsg[_nCount])
+				Next _nCount
+			Endif	
 			If _nQtdeItem <= 0
 				Exit
 			EndIf		
@@ -1236,18 +1176,15 @@ Responsável por pesquisar item Similar
 @return		_lRet		- Verdadeiro ou falso
 @history    
 /*/
-Static Function ZPECF08SIM( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem)
+Static Function ZPECF08SIM( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _cMarca)
 	Local _lRet 	:= .F.
 	Local _nQtdeAnt := _nQtdeItem
 	Local _aItemSim
 	Local _nPos
 	Local _cCodSimilar
 	Local _cGrupoSubst
-	Local _aRetSaldo
-	Local _lRetorno  
 	Local _nSaldoSB2
-	Local _cMens
-	Local _cCodProd	
+	Local _nCount
 	//Local _lSaldoItSubs	:= GetNewPar("MV_CHKQSUB","N") == "S"  //indica se verifica saldo do SB2 para dar continuidade no processamento
 
 	Begin Sequence
@@ -1264,20 +1201,18 @@ Static Function ZPECF08SIM( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem)
 			_cGrupoSubst	:= _aItemSim[_nPos,1]
 			_cCodSimilar	:= AllTrim(_aItemSim[_nPos,2])
 			_nSaldoSB2 		:= _aItemSim[_nPos,4] //SB2->(SaldoSB2())
-			//Verificar saldo wis DAC 26/05/2022
-			_aRetSaldo 	:= U_XSLDCAOAEstoque(_cCodSimilar, _cLocal, _cGrupoSubst, _nSaldoSB2 ) //procurar saldo entre Wis e Proteus DAC 25/05/2022
-			_lRetorno  	:= _aRetSaldo[1]  //Retorna verdadeiro ou falso
-			_nSaldoSB2  := _aRetSaldo[2]  //Retorna oSaldo calculado
-			_cMens		:= _aRetSaldo[3]  //Retorna as Mensagens de validações	 
-			_cCodProd	:= _aRetSaldo[4]  //pego o produto novamente pois o mesmo pode ter sido ajustado o tamanho
-			//quando retorno mensagem ja devo separar para gravar	
-			If !Empty(_cMens)
-				Aadd(_aMensAglu,_cMens)
-			EndIf	
-			If !_lRetorno
-				Break
-			Endif
 
+			//GAP098 | Desmembrar itens bloqueados por inventário - Alteração funcionalidade de verificação saldo WIS e Protheus DAC 08/11/2023
+			//Calcular o Saldo
+			_oSaldoPec:CarregaCAOAPEC(_cCodSimilar, _cLocal, _cGrupoSubst, _cMarca, _nSaldoSB2)
+			If Len(_oSaldoPec:_aError) > 0  //ocorreu problemas no calculo
+				Aadd(_aMensAglu,"Não existe saldo do item Similar " +AllTrim(_cCodSimilar)+ " para o produto " +AllTrim(_cCodItem))	
+				For _nCount := 1 To Len(_oSaldoPec:_aError)
+					Aadd(_aMensAglu, _oSaldoPec:_aError[_nCount])
+				Next _nCount
+				Break 
+			Endif	
+			_nSaldoSB2 := _oSaldoPec:_nSaldoPEC
 			//Caso esteja zerado
 			If _nSaldoSB2 <= 0
 				Aadd(_aMensAglu,"Não existe saldo do item Similar " +AllTrim(_cCodSimilar)+ " para o produto " +AllTrim(_cCodItem))	
@@ -1291,11 +1226,18 @@ Static Function ZPECF08SIM( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem)
 			EndIf	
 			//Gravar o saldo existente em novo registro
 			If !ZPECF08PARC( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSimilar, _cGrupoSubst, @_nQtdeItem, _nQtdePrd, _nSaldoSB2, "2" )
-				Aadd(_aMensAglu,"Não foi possivel montar PARCIAL doProduto "+AllTrim(_cCodItem))	
+				Aadd(_aMensAglu,"Não foi possivel montar PARCIAL do Produto "+AllTrim(_cCodItem))	
 				Break
 			EndIf
 			//Se zerou é por que conseguiu atingir todos os produtos
 			//VERIFICAR POSTERIORMENTE SE IRA PODER SER COM PARCIAL CASO SEJA AI TEM QUE RETORNAR VERDADEIRO E MONTAR OUTRO ORÇAMENTO COM A QUANTIDADE FALTANTE
+			If Len(_oSaldoPec:_aMsg) > 0  //ocorreu problemas no calculo
+				Aadd(_aMensAglu,"Utiizado saldo do item Similar " +AllTrim(_cCodSimilar)+ " para o produto " +AllTrim(_cCodItem))	
+				For _nCount := 1 To Len(_oSaldoPec:_aMsg)
+					Aadd(_aMensAglu, _oSaldoPec:_aMsg[_nCount])
+				Next _nCount
+			Endif	
+
 			If _nQtdeItem <= 0
 				Exit
 			EndIf		
@@ -1325,7 +1267,7 @@ Responsável por pesquisar e verificar se existe KIT disponivel
 @history    06/07/2022 DAC - JC solicitou alterar o tipo VEH_TIPO = 2 para VEH_TIPO = 1
 			21/07/2022 DAC - Alteração na seleção do KIT irá verificar VEH_TIPO 1 e 2, onde 1 = MANDATÓRIO e 2 = CORRELATO
 /*/
-Static Function ZPECF08KIT( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _nRegVS3, _lParcial  )
+Static Function ZPECF08KIT( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _nRegVS3, _lParcial, _cMarca  )
 	//Local aRet := OFIOC040(_cGrupo,AllTrim(_cCodItem)+"KIT")
 	Local _cCodKit 		:= AllTrim(_cCodItem) //+"KIT"  	//verificar se o codigo do kit será o mesmo código com final KIT - CONFORME ALINHADO COM ZÉ SERA INCLUÍDO NO CADASTRO COM MESMO CÓDIGO DE PRODUTO ACRESCENTANDO NO FINAL KIT
 	Local _cGrupoKit	:= _cGrupo							//verificar se o grupo do kit sera o mesmo do grupo do produto normal - CONFORME ALINHADO COM ZÉ SIM DEVERÁ SER O MESMO GRUPO DO PRODUTO ORIGINAL	
@@ -1383,7 +1325,7 @@ Static Function ZPECF08KIT( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _
 				_cCodKit	:= VEH->VEH_CODKIT
 				_aKit  	:= {}
 				_aBak	:= {}
-				_aRet 	:= ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodKit, _cCodItem, _cLocal, _nRegVS3)
+				_aRet 	:= ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodKit, _cCodItem, _cLocal, _nRegVS3, _cMarca)
 				If Len(_aRet) == 0 .or. Len(_aRet[1]) == 0  //sempre tem que ter um KIT
 					_lRet := .F.
 					Break	
@@ -1419,20 +1361,17 @@ Static Function ZPECF08KIT( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _
 Return _lRet
 
 //Avaliar itens do KIT
-Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodKit, _cCodItem, _cLocal, _nRegVS3)
+Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodKit, _cCodItem, _cLocal, _nRegVS3, _cMarca)
 	Local _lRet			:= .T.
 	Local _cAliasPesq	:= GetNextAlias()
 	Local _aKit			:= {}
 	Local _aBak			:= {}
 	Local _cCodSubst
 	Local _cGrupoSubst
-	Local _aRetSaldo
-	Local _lRetorno  
 	Local _nSaldoSB2
-	Local _cMens
-	Local _cCodProd	
 	Local _nQtdePrd
 	Local _nQtde
+	Local _nCount
 
 	Default _nRegVS3 	:= 0
 
@@ -1481,23 +1420,21 @@ Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodK
 				(_cAliasPesq)->(DbSkip())
 				Loop
 			EndIf	   
-			_nSaldoSB2 := SB2->(SaldoSB2())
 
-			//Verificar saldo wis DAC 26/05/2022
-			_aRetSaldo 	:= U_XSLDCAOAEstoque(_cCodSubst, _cLocal, _cGrupoSubst, _nSaldoSB2 ) //procurar saldo entre Wis e Proteus DAC 25/05/2022
-			_lRetorno  	:= _aRetSaldo[1]  //Retorna verdadeiro ou falso
-			_nSaldoSB2  := _aRetSaldo[2]  //Retorna oSaldo calculado
-			_cMens		:= _aRetSaldo[3]  //Retorna as Mensagens de validações	 
-			_cCodProd	:= _aRetSaldo[4]  //pego o produto novamente pois o mesmo pode ter sido ajustado o tamanho
-			//quando retorno mensagem ja devo separar para gravar	
-			If !Empty(_cMens)
-				Aadd(_aMensAglu,_cMens)
-			EndIf	
-			If !_lRetorno
-				_aKit := {}
+			//Calcular o Saldo
+			_nSaldoSB2 := SB2->(SaldoSB2())
+			//GAP098 | Desmembrar itens bloqueados por inventário - Alteração funcionalidade de verificação saldo WIS e Protheus DAC 08/11/2023
+			_oSaldoPec:CarregaCAOAPEC(_cCodSubst, _cLocal, _cGrupoSubst, _cMarca, _nSaldoSB2)
+			If Len(_oSaldoPec:_aError) > 0  //ocorreu problemas no calculo
+				Aadd(_aMensAglu,"KIT - Não existe saldo do item KIT " +AllTrim(_cCodSubst)+ " para o produto " +AllTrim(_cCodKit)+" armazém "+_cLocal)	
+				For _nCount := 1 To Len(_oSaldoPec:_aError)
+					Aadd(_aMensAglu, _oSaldoPec:_aError[_nCount])
+				Next _nCount
 				(_cAliasPesq)->(DbSkip())
 				Loop
-			Endif
+			Endif	
+			_nSaldoSB2 := _oSaldoPec:_nSaldoPEC
+
 			//como é KIT tenho que multiplicar pela quantidade
 			_nQtdePrd := _nQtdeItem * VE8->VE8_QTDADE  //verificar se a conta será realizada deste jeito ESTA CORRETO
 			//Verifico se o tipo do KIT VEH for "2=KIT" e não tiver saldo não posso utilizar
@@ -1552,7 +1489,7 @@ Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodK
 			EndIf	
 			//Caso passe guardar no KIT
 			AAdd(_aKit,{_cNumOrc,; 
-						_cGrupo,;
+						_cGrupoKit,;
 						_cCodItem,;
 						_cLocal,;
 						_cCodSubst,;
@@ -1561,6 +1498,12 @@ Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodK
 						_nSaldoSB2,;
 						VE8->VE8_TIPO})		//09 - VS3_PECKIT 0=Não;1=Mandatório;2=Correlato 
 
+			If Len(_oSaldoPec:_aMsg) > 0  //ocorreu problemas no calculo
+				Aadd(_aMensAglu,"KIT - Utilizado saldo do item KIT " +AllTrim(_cCodSubst)+ " para o produto " +AllTrim(_cCodKit)+" armazém "+_cLocal)	
+				For _nCount := 1 To Len(_oSaldoPec:_aMsg)
+					Aadd(_aMensAglu, _oSaldoPec:_aMsg[_nCount])
+				Next _nCount
+			Endif	
 			(_cAliasPesq)->(DbSkip())
 		EndDo
 	End Sequence
@@ -1719,12 +1662,13 @@ Return _lRet
 
 
 //Avaliar se pode realizar fechamnto
-Static Function ZPECF08CAR(_cNumOrc, _aBackOrder, _aSeqVS3, _nRegVS1, _aVS3Reg, _cArmazemFDR)
+Static Function ZPECF08CAR(_cNumOrc, _aBackOrder, _aSeqVS3, _nRegVS1, _aVS3Reg, _cLocal)
 	Local _lRet 		:= .T.
 	Local _cNumSeq
 	//Garantir que esta posicionado no VS1 DAC 20/06/2022
-	Default _nRegVS1 		:= VS1->(Recno()) 
-	Default _cArmazemFDR	:= ""
+	Default _nRegVS1 	:= VS1->(Recno()) 
+	Default _cLocal	:= ""
+
 	Begin Sequence
 		//Montar novo orçamento caso tenha inconsistencias em itens DAC 08/02/2022
 		If Len(_aBackOrder) > 0
@@ -1755,9 +1699,9 @@ Static Function ZPECF08CAR(_cNumOrc, _aBackOrder, _aSeqVS3, _nRegVS1, _aVS3Reg, 
 				Exit
 			Endif
 			VS3->VS3_SEQUEN := _cNumSeq
-			//Atualizar para o armazem de Franco da Rocha quando estiver lendo o depósito deste processo  DAC 02/02/2023
-			If !Empty(_cArmazemFDR)
-				VS3->VS3_LOCAL 	:= _cArmazemFDR
+			//Atualizar para o armazem  quando estiver lendo o depósito deste processo  DAC 02/02/2023
+			If !Empty(_cLocal)
+				VS3->VS3_LOCAL 	:= _cLocal
 				//VS3->VS3_SQCONF := ""   //STRZERO(Val(VS3->VS3_SEQUEN),Len(VS3->VS3_SQCONF))  //caso não faça isto na troca da sequencia terei problemas na geração do VM5 no retorno do carregamento DAC 04/02/2022 
 			EndIf
 			If !Empty(VS3->VS3_SQCONF) 
@@ -1817,7 +1761,9 @@ Static Function ZPECF08PARC( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, 
 	Local _nValorUnit
 	Local _nTotal
 	Local _nRegVS3
-
+	Local _nSaldo       := 0
+	Local _lInclui 		:= .F.
+	Local _nItenNovo 	:= 0
 	Default _nQtdePrd 	:= 0
 	Default _cTpSub		:= ""
 	Default _lEncKit	:= .F.	
@@ -1860,16 +1806,22 @@ Static Function ZPECF08PARC( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, 
 				EndIf
 				_cLocal	:= VS3->VS3_LOCAL
 			EndIf 
-			_lRet := ALTERAITParcial( VS3->(Recno()), _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, _cGrupoSubst, _nQtdeItem, _nQtdePrd, _nSaldoSB2, _cTpSub, _cPecKit )
+			_lRet := ALTERAITParcial( VS3->(Recno()), _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, _cGrupoSubst, _nQtdeItem, _nQtdePrd, _nSaldoSB2, _cTpSub, _cPecKit,@_nSaldo )
 			If ! _lRet
 				Break
+			Else
+				_lInclui := .F.
 			EndIf
 		Else
 			_lRet := INCLUIITParcial( _nRegVS3, _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, _cGrupoSubst, _nQtdeItem, _nQtdePrd, _nSaldoSB2, _cTpSub, _cPecKit )
 			If ! _lRet
 				Break
+			Else
+				_nItenNovo := VS3->VS3_QTDITE
+				_lInclui := .T.
 			EndIf
 		EndIf	
+						
 		//Após processar ajusto os valores dos campos
 		VS3->(DbGoto(_nRegVS3))  //volta para o item principal
 		//indica que ainda não é para encerrar o processo de kit somente no ultimo registro do kit que encerra pois o mesmo é relativo a quentidade total DAC 09/02/2022
@@ -1900,10 +1852,12 @@ Static Function ZPECF08PARC( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, 
 			Aadd(_aMensAglu,"Não foi possivel alterar registro na tabela VS3 (ZPECF08PARC) !")
 			Break
 		EndIf	
-		If _nQtdReal <= 0
+		If _nQtdReal <= 0 .and. (_nItenNovo +VS3->VS3_QTDITE) <> VS3->VS3_QTDINI
 			VS3->(DbDelete())
 			VS3->(MsUnlock())
-			Break	
+			Break
+		Else
+			_nQtdReal := VS3->VS3_QTDITE	
 		EndIf	
 		//ajustar os valores
 		//_nQtdeDif 		-= _nQtdReal
@@ -1942,14 +1896,15 @@ Return _lRet
 
 
 //Altera VS3 com quantidade parcial caso ja exista um item de produto substituto
-Static Function ALTERAITParcial( _nRegVS3Sub, _cNumOrc, _cGrupo, _cCodItem, _cLocal  , _cCodSubst, _cGrupoSubst, _nQtdeItem, _nQtdePrd, _nSaldoSB2, _cTpSub, _cPecKit )
+Static Function ALTERAITParcial( _nRegVS3Sub, _cNumOrc, _cGrupo, _cCodItem, _cLocal  , _cCodSubst, _cGrupoSubst, _nQtdeItem, _nQtdePrd, _nSaldoSB2, _cTpSub, _cPecKit ,_nSaldo)
 	Local _lRet			:= .T.
-	Local _nValorUnit	
+	Local _nValorUnit
 	Local _nTotal
 	Local _nQtdeAtu
 	Local _nQtdTot
 
 	Default _cPecKit := "0"
+	Default _nSAldo := 0
 
 	Begin Sequence
 		VS3->(DbGoto(_nRegVS3Sub))  //reposiciona VS3
@@ -1974,6 +1929,7 @@ Static Function ALTERAITParcial( _nRegVS3Sub, _cNumOrc, _cGrupo, _cCodItem, _cLo
 		EndIf
 		_nTotal 			:= _nQtdTot * _nValorUnit
 		VS3->VS3_QTDITE		:= _nQtdTot
+		_nSAldo := _nQtdTot
 		//VS3->VS3_QTDINI		:= VS3->VS3_QTDITE
 		VS3->VS3_VALPEC 	:= _nValorUnit 
 		If VS3->VS3_PERDES > 0 
@@ -2124,8 +2080,10 @@ Static Function INCLUIITParcial( _nRegVS3, _cNumOrc, _cGrupo, _cCodItem, _cLocal
 			ElseIf AllTrim(_aEstruVS3[_nPos,1]) $ "VS3_XUSUGL"
 				_xValor := RetCodUsr()	
 			//a quantidade do KIT tem que ser alterada , conforme solicitação Zé 17/08/2022	
-			ElseIf AllTrim(_aEstruVS3[_nPos,1]) $ "VS3_QTDINI" .and. _cTpSub == "3"
+			ElseIf AllTrim(_aEstruVS3[_nPos,1]) $ "VS3_QTDINI" .and. _cTpSub <> "3"
 				_xValor := _nQtdePrd
+			ElseIf AllTrim(_aEstruVS3[_nPos,1]) $ "VS3_QTDINI" .and. _cTpSub == "3"
+				_xValor := 0
 			//quando for kit gravar ódigo do item como substituto	
 			ElseIf AllTrim(_aEstruVS3[_nPos,1]) $ "VS3_CODKIT" .and. _cTpSub == "3"
 				_xValor := _cCodItem
@@ -2326,7 +2284,7 @@ Static Function XTRANSRERVA()
 				MSGINFO(OemToAnsi("Necessário confirmação dos parâmetros"),OemToAnsi("Atenção")) 
 				Loop 
 			Endif
-			NNR->(DbSetOrer(1)) //NNR_FILIAL+NNR_CODIGO                                                                                                                                           
+			NNR->(DbSetOrder(1)) //NNR_FILIAL+NNR_CODIGO                                                                                                                                           
 			If !NNR->(DbSeek(XFilial("NNR")+_cOrigem))
 				MSGINFO(OemToAnsi("Armazém "+_cOrigem+" não cadastrado !"),OemToAnsi("Atenção"))  
 				Loop
@@ -3039,7 +2997,7 @@ Responsável por verificar se pode liberar o orçamento para carregamento que este
 @menu       Nao Informado
 @return		_lRet	- Verdadeiro ou falso  
 @history    /*/
-Static Function	ZPECF8TVS3(_cNumOrc, _cMarca, _aBackOrder, _cConectWis, _cCdEmpWIS, _cLocal, _cTPedTransfFDR)  
+Static Function	ZPECF8TVS3(_cNumOrc, _cMarca, _aBackOrder, _cConectWis, _cCdEmpWIS, _cLocal, _cTPedTransf)  
 Local _lRet 		:= .F.
 Local _lSepara		:= .F.
 Local _lParcial		:= .F.
@@ -3047,9 +3005,6 @@ Local _cAliasPesq	:= GetNextAlias()
 Local _cArmazem		:= _cLocal
 Local _aBak			:= {}
 Local _nPos
-Local _aRetSaldo 
-Local _lRetorno 
-Local _cMens
 Local _nSaldoSB2
 Local _nQtdeItem 
 Local _cCodProd
@@ -3145,29 +3100,38 @@ Begin Sequence
    			(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
 			Loop
 		Endif
-		_nSaldoSB2 := 0
-		If (_cAliasPesq)->SLD_VS3 > 0 
-			_aRetSaldo 	:= U_XSLDCAOAEstoque(_cCodProd, _cArmazem, _cGrupo ) //procurar saldo entre Wis e Proteus DAC 25/05/2022
-			_lRetorno  	:= _aRetSaldo[1]  //Retorna verdadeiro ou falso
-			_nSaldoSB2  := _aRetSaldo[2]  //Retorna oSaldo calculado
-			_cMens		:= _aRetSaldo[3]  //Retorna as Mensagens de validações	 
-			_cCodProd	:= _aRetSaldo[4]  //pego o produto novamente pois o mesmo pode ter sido ajustado o tamanho
-			//quando retorno mensagem ja devo separar para gravar	
-			If !Empty(_cMens)
-				Aadd(_aMensAglu,_cMens)
-			EndIf	
-			If !_lRetorno  //posição de retorno
-				Aadd(_aMensAglu, _cMens)  //retorno de msg
-				Aadd(_aBak,{(	_cAliasPesq)->NREGVS3,;
-			 					_cCodProd,; 
-								(_cAliasPesq)->QTDE_TOTAL,;
-								_aMensAglu[Len(_aMensAglu)],; 
-								.T. ,;							//_Lxbo 
-								.T. })							//_lZera	
-				(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
-				Loop
-			EndIf
+		//GAP098 acrescentado não deixar passar produto bloqueado DAC 24/11/2023
+		//Verificar se esta bloqueado
+		//Tratamento de trasferencia para FDR por tipo de pedido DAC 08/02/2023
+		If (_cAliasPesq)->B1_MSBLQL == "1"  
+			Aadd(_aMensAglu,"Produto "+ AllTrim(_cCodProd) +" bloqueado não será permitido faturar !")
+			Aadd(_aBak,{(	_cAliasPesq)->NREGVS3,;
+			 				_cCodProd,; 
+							(_cAliasPesq)->QTDE_TOTAL,;
+							_aMensAglu[Len(_aMensAglu)],; 
+							.T. ,;							//_Lxbo 
+							.T. })							//_lZera	
+	   		(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
+			Loop
+		EndIf		
+
+		//GAP098 | Desmembrar itens bloqueados por inventário - Alteração funcionalidade de verificação saldo WIS e Protheus DAC 08/11/2023
+		_oSaldoPec:CarregaCAOAPEC(_cCodProd, (_cAliasPesq)->VS3_LOCAL, _cGrupo, _cMarca, /*nSaldoSB2*/)
+		If Len(_oSaldoPec:_aError) > 0  //ocorreu problemas no calculo
+			For _nPos := 1 To Len(_oSaldoPec:_aError)
+				Aadd(_aMensAglu,_oSaldoPec:_aError[_nPos])
+			Next
+			Aadd(_aBak,{(	_cAliasPesq)->NREGVS3,;
+							_cCodProd,; 
+							(_cAliasPesq)->QTDE_TOTAL,;
+							_aMensAglu[Len(_aMensAglu)],; 
+							.T. ,;							//_Lxbo 
+							.T. })							//_lZera	
+			(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
+			Loop
 		EndIf
+		_nSaldoSB2 := _oSaldoPec:_nSaldoPEC
+
 		//Avaliar e tratar item parcial quando for parcial deverá utilizar o saldo do B2 e o restante deverá gerar separação via Bakorder
 		If (_cAliasPesq)->QTDE_TOTAL <= _nSaldoSB2  //possui saldo posso processar
 			_lSepara := .T.   //ja indico que existira separação
@@ -3186,7 +3150,7 @@ Begin Sequence
 			_nQtdePrd  := (_cAliasPesq)->QTDE_TOTAL- _nQtdeItem
 			_nQtdeParc := _nQtdePrd   //(_cAliasPesq)->QTDE_TOTAL
 			//ja ajusto com a quantidade parcial pois caso  não faça não ira faturar esta quantidade, o restante devrá ser avaliado e ou gerar backorder DAC 02/05/08
-			If !ALTERAITParcial( (_cAliasPesq)->NREGVS3, _cNumOrc, _cGrupo, _cCodProd, _cArmazem, _cCodProd, _cGrupo, _nQtdePrd, _nQtdePrd, _nSaldoSB2, "0" )
+			If !ALTERAITParcial( (_cAliasPesq)->NREGVS3, _cNumOrc, _cGrupo, _cCodProd, _cArmazem, _cCodProd, _cGrupo, _nQtdePrd, _nQtdePrd, _nSaldoSB2, "0" ,,@_nSaldo)
 				_lSepara := .F.
 				Break
 			EndIf	
@@ -3203,9 +3167,9 @@ Begin Sequence
 		Endif	 
 
 		If _lParcial
-			_cObs := If(Len(_aBak) > 0,"","Urilizado saldo parcial "+AllTrim(STR(_nQtdeParc))+" de acordo com tipo de pedido transferencia FDR "+_cTPedTransfFDR+" armazém "+_cArmazem) 
+			_cObs := If(Len(_aBak) > 0,"","Utilizado saldo parcial "+AllTrim(STR(_nQtdeParc))+" de acordo com tipo de pedido transferencia FDR "+_cTPedTransf+" armazém "+_cArmazem) 
 		Else
-			_cObs := If(Len(_aBak) > 0,"","Não possui Saldo  para a transfereria FDR conforme parametrização tipo de pedido "+_cTPedTransfFDR+" armazém "+_cArmazem) 
+			_cObs := If(Len(_aBak) > 0,"","Não possui Saldo  para a transfereria FDR conforme parametrização tipo de pedido "+_cTPedTransf+" armazém "+_cArmazem) 
 		Endif
 		Aadd(_aBak,{	(_cAliasPesq)->NREGVS3,;
 						 _cCodProd,; 
@@ -3213,6 +3177,11 @@ Begin Sequence
 						_cObs,;
 						.T.,;    ///*_LXBO*/
 						_lZera /*indica se zera ou*/})
+		If Len(_oSaldoPec:_aMsg) > 0	
+			For _nPos := 1 To Len(_oSaldoPec:_aMsg)
+				Aadd(_aMensAglu,_oSaldoPec:_aMsg[_nPos])
+			Next _nPos
+		Endif
 	   (_cAliasPesq)->(DbSkip())
 	Enddo
 End Sequence
@@ -3252,9 +3221,16 @@ Begin Sequence
 	If Len(_aOndaRel) == 0
 		Break
 	Endif
+	_cOndaRel := ""
 	For _nPos := 1 To Len(_aOndaRel)
-		_cOndaRel += (_aOndaRel[_nPos]+";")
+		If _aOndaRel[_nPos,07] > 0  //Enviados
+			_cOndaRel += (_aOndaRel[_nPos,1]+";")
+		Endif	
     Next
+	//Não existem enviados
+	If Empty(_cOndaRel)
+		Break
+	Endif	
 	_cOndaRel := SubsTr(_cOndaRel,1,Len(_cOndaRel)-1)
 	//passar parametros para a 
 	aAdd( aRetP , _cOndaRel)  	//Onda
@@ -3270,3 +3246,64 @@ Begin Sequence
 End Sequence
 
 Return Nil
+
+
+//Tela final com resumo do processamento
+Static Function ZPECF08RESumo(_aOndaRel)
+Local oBrowse     := Nil
+Local oModal   := Nil
+Local aBrwData    := {}
+Local aBrwModel   := {}
+Local aBrwCol     := {}
+//Local aBrwSeek    := {}
+Local aBrwFil     := {}
+Local aCoors      := FwGetDialogSize()
+Local _nPos 
+
+    //DEFINE DIALOG oDlg TITLE "Processamento Ona" FROM 180,180 TO 550,700 PIXEL
+	aBrwData := _aOndaRel
+	Aadd(aBrwModel,{"Aglutina"			,"@!" 			 	,Len(VS1->VS1_XAGLU)	, 00	, 1	})	
+	Aadd(aBrwModel,{"Armazem"			,"@!" 				,Len(VS3->VS3_LOCAL)	, 00	, 1	})	
+	Aadd(aBrwModel,{"Desc. Armazem"		,"@!" 				,Len(NNR->NNR_DESCRI)	, 00	, 1	})	
+	Aadd(aBrwModel,{"Total Registros"	,"@E 9999,999" 		,08						, 00	, 1	})	
+	Aadd(aBrwModel,{"Selecionados"	 	,"@E 9999,999" 		,08						, 00	, 1	})	
+	Aadd(aBrwModel,{"Lidos"				,"@E 9999,999" 		,08						, 00	, 1	})	
+	Aadd(aBrwModel,{"Gerados"			,"@E 9999,999" 		,08						, 00	, 1	})	
+	Aadd(aBrwModel,{"Enviados"			,"@E 9999,999" 		,08						, 00	, 1	})	
+	Aadd(aBrwModel,{"Problemas Envio"	,"@E 9999,999" 		,08						, 00	, 1	})	
+	Aadd(aBrwModel,{"Iniciado em"		,"@!" 				,15						, 00	, 1	})	
+	Aadd(aBrwModel,{"Finalizado em"		,"@!" 				,15						, 00	, 1	})	
+	
+	For _nPos := 1 To Len(aBrwModel)
+    	aAdd(aBrwFil, {aBrwModel[_nPos,1], aBrwModel[_nPos,1], 'C', aBrwModel[_nPos,3], aBrwModel[_nPos,4], aBrwModel[_nPos,2]} )
+    	aAdd(aBrwCol, FwBrwColumn():New())
+    	aBrwCol[Len(aBrwCol)]:SetData( &('{ || aBrwData[oBrowse:nAt,' + cValToChar(_nPos) + ']}') )
+    	aBrwCol[Len(aBrwCol)]:SetTitle(aBrwModel[_nPos,1])
+    	aBrwCol[Len(aBrwCol)]:SetPicture(aBrwModel[_nPos,2])
+    	aBrwCol[Len(aBrwCol)]:SetSize(aBrwModel[_nPos,3])
+    	aBrwCol[Len(aBrwCol)]:SetDecimal(aBrwModel[_nPos,4])
+    	aBrwCol[Len(aBrwCol)]:SetAlign(aBrwModel[_nPos,5])
+	Next _nPos
+
+	oModal := FwDialogModal():New()
+
+    oModal:SetTitle('Processamento Onda')
+    oModal:SetEscClose(.F.)
+    oModal:SetSize(aCoors[3] / 2.7, aCoors[4] / 2.9)
+    oModal:CreateDialog()
+
+    oModal:EnableFormBar(.T.)
+    oModal:CreateFormBar()
+
+    oBrowse := FwBrowse():New()
+    oBrowse:SetDataArray()
+    oBrowse:SetArray(aBrwData)
+    oBrowse:SetColumns(aBrwCol)
+    //oBrowse:SetSeek(, aBrwSeek)
+    oBrowse:SetUseFilter()    
+    oBrowse:SetFieldFilter(aBrwFil)
+    oBrowse:SetOwner(oModal:GetPanelMain())
+    oBrowse:Activate()
+    oModal:AddButton('Sair'    , { || oModal:DeActivate() }, 'Sair',,.T.,.F.,.T.,)
+	oModal:Activate()
+Return Nil	
