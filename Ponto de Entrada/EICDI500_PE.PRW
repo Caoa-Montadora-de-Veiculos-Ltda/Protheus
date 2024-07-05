@@ -181,6 +181,11 @@ ElseIf cParam == "TELA_TOTAIS_DESP"
 	EndDo
 
 	TRB->(DbGoTop())
+
+ElseIf cParam == "INV_CARREGA_SW8
+	Work_SW8->W8_XCASE:= SW8->W8_XCASE
+	Work_SW8->W8_XLOTE:= SW8->W8_XLOTE
+	Work_SW8->W8_XCONT:= SW8->W8_XCONT
 EndIf
 
 Return lRet
