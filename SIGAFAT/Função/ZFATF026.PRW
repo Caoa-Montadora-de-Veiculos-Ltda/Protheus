@@ -765,7 +765,7 @@ Begin Sequence
 	For _nPos := 1 To Len( _aCampos )	
 		If SubsTr(_aCampos[_nPos],1,3) == "C6_"
 			If AllTrim(_aCampos[_nPos]) == "C6_ITEM"   //neste caso acrescento zero a esquerda para pesquisa VRK
-				_cWCampos += CRLF + ", '0'+"+_aCampos[_nPos]+ " AS  ITEMSC6" 
+				_cWCampos += CRLF + ", '0' || "+_aCampos[_nPos]+ " AS  ITEMSC6" 
 			Endif
 			_cWCampos += CRLF + ", "+_aCampos[_nPos]
 		//ElseIf SubsTr(_aCampos[_nPos],1,3) == "C5_"

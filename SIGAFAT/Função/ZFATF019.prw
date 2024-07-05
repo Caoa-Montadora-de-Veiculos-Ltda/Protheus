@@ -1191,6 +1191,7 @@ Local _cCC_STATUS   As Character
 Local nLinhas       As Numeric
 
 Default _aPrevisao  := {}   //  ter um retorno da função GAP167  Previsao de Faturamento
+DeFault cNumPed     := ""
 
 Private lMsHelpAuto As Logical
 Private lMsErroAuto As Logical
@@ -4153,9 +4154,9 @@ Default _cJoin      := ""
 Default _cGroup     := ""
 
     //Tem que existir parametro
-    If Len(_aRet) == 0 
-        Return _cQuery
-    Endif
+    //If Len(_aRet) == 0 
+    //    Return _cQuery
+    //Endif
     
 	//_cQuery := CrLf +_cSelect 
 	//_cQuery := CrLf +" WITH PEDIDOS_FAT AS ( "
@@ -4231,34 +4232,36 @@ Default _cGroup     := ""
     Else
         _cQuery += CrLf + " WHERE   SC6.D_E_L_E_T_   = ' ' "
         _cQuery += CrLf + " 	AND SC6.C6_FILIAL    = '" + xFilial("SC6") + "' "
-        _cQuery += CrLf + "     AND SC6.C6_CLI       BETWEEN '" +      _aRet[01]  + "' AND '" +      _aRet[03]  + "' "
-        _cQuery += CrLf + "     AND SC6.C6_LOJA      BETWEEN '" +      _aRet[02]  + "' AND '" +      _aRet[04]  + "' "
-        _cQuery += CrLf + "     AND SC6.C6_PRODUTO   BETWEEN '" +      _aRet[05]  + "' AND '" +      _aRet[06]  + "' "
-        _cQuery += CrLf + "     AND SC6.C6_PEDCLI    BETWEEN '" +      _aRet[08]  + "' AND '" +      _aRet[09]  + "' "
-        If !Empty(_aRet[10]) .Or. !("ZZ" $ _aRet[11])      
-            _cQuery += CrLf + "     AND VRK.VRK_CODMAR   BETWEEN '" +      _aRet[10]  + "' AND '" +      _aRet[11]  + "' "
+        If Len(_aRet) > 0
+            _cQuery += CrLf + "     AND SC6.C6_CLI       BETWEEN '" +      _aRet[01]  + "' AND '" +      _aRet[03]  + "' "
+            _cQuery += CrLf + "     AND SC6.C6_LOJA      BETWEEN '" +      _aRet[02]  + "' AND '" +      _aRet[04]  + "' "
+            _cQuery += CrLf + "     AND SC6.C6_PRODUTO   BETWEEN '" +      _aRet[05]  + "' AND '" +      _aRet[06]  + "' "
+            _cQuery += CrLf + "     AND SC6.C6_PEDCLI    BETWEEN '" +      _aRet[08]  + "' AND '" +      _aRet[09]  + "' "
+            If !Empty(_aRet[10]) .Or. !("ZZ" $ _aRet[11])      
+                _cQuery += CrLf + "     AND VRK.VRK_CODMAR   BETWEEN '" +      _aRet[10]  + "' AND '" +      _aRet[11]  + "' "
+            Endif
+            If !Empty(_aRet[12]) .Or. !("ZZ" $ _aRet[13])      
+                _cQuery += CrLf + "     AND VRK.VRK_GRUMOD   BETWEEN '" +      _aRet[12]  + "' AND '" +      _aRet[13]  + "' "
+            Endif
+            If !Empty(_aRet[14]) .Or. !("ZZ" $ _aRet[15])      
+                _cQuery += CrLf + "     AND VRK.VRK_MODVEI   BETWEEN '" +      _aRet[14]  + "' AND '" +      _aRet[15]  + "' "
+            Endif 
+            If !Empty(_aRet[16]) .Or. !("ZZ" $ _aRet[17])      
+                _cQuery += CrLf + "     AND VRK.VRK_FABMOD   BETWEEN '" +      _aRet[16]  + "' AND '" +      _aRet[17]  + "' "
+            Endif 
+            //somente fazer a distinção se estiver informado código especifico
+            If !Empty(_aRet[18]) .Or. !("ZZ" $ _aRet[19])      
+                _cQuery += CrLf + "     AND VRK.VRK_CORINT   BETWEEN '" +      _aRet[18]  + "' AND '" +      _aRet[19]  + "' "
+            Endif 
+            If !Empty(_aRet[20]) .Or. !("ZZ" $ _aRet[21])      
+                _cQuery += CrLf + "     AND VRK.VRK_COREXT   BETWEEN '" +      _aRet[20]  + "' AND '" +      _aRet[21]  + "' "
+            Endif
+            If !Empty(_aRet[22]) .Or. !("ZZ" $ _aRet[23])      
+                //_cQuery += CrLf + "     AND SC6.C6_XSEGMOD   BETWEEN '" +      _aRet[16]  + "' AND '" +      _aRet[17]  + "' "
+                _cQuery += CrLf + "     AND VRK.VRK_OPCION   BETWEEN '" +      _aRet[22]  + "' AND '" +      _aRet[23]  + "' "
+            Endif
+            _cQuery += CrLf + "     AND SC5.C5_EMISSAO   BETWEEN '" + DtoS(_aRet[24]) + "' AND '" + DtoS(_aRet[25]) + "' "
         Endif
-        If !Empty(_aRet[12]) .Or. !("ZZ" $ _aRet[13])      
-            _cQuery += CrLf + "     AND VRK.VRK_GRUMOD   BETWEEN '" +      _aRet[12]  + "' AND '" +      _aRet[13]  + "' "
-        Endif
-        If !Empty(_aRet[14]) .Or. !("ZZ" $ _aRet[15])      
-            _cQuery += CrLf + "     AND VRK.VRK_MODVEI   BETWEEN '" +      _aRet[14]  + "' AND '" +      _aRet[15]  + "' "
-        Endif 
-        If !Empty(_aRet[16]) .Or. !("ZZ" $ _aRet[17])      
-            _cQuery += CrLf + "     AND VRK.VRK_FABMOD   BETWEEN '" +      _aRet[16]  + "' AND '" +      _aRet[17]  + "' "
-        Endif 
-        //somente fazer a distinção se estiver informado código especifico
-        If !Empty(_aRet[18]) .Or. !("ZZ" $ _aRet[19])      
-            _cQuery += CrLf + "     AND VRK.VRK_CORINT   BETWEEN '" +      _aRet[18]  + "' AND '" +      _aRet[19]  + "' "
-        Endif 
-        If !Empty(_aRet[20]) .Or. !("ZZ" $ _aRet[21])      
-            _cQuery += CrLf + "     AND VRK.VRK_COREXT   BETWEEN '" +      _aRet[20]  + "' AND '" +      _aRet[21]  + "' "
-        Endif
-        If !Empty(_aRet[22]) .Or. !("ZZ" $ _aRet[23])      
-            //_cQuery += CrLf + "     AND SC6.C6_XSEGMOD   BETWEEN '" +      _aRet[16]  + "' AND '" +      _aRet[17]  + "' "
-            _cQuery += CrLf + "     AND VRK.VRK_OPCION   BETWEEN '" +      _aRet[22]  + "' AND '" +      _aRet[23]  + "' "
-        Endif
-        _cQuery += CrLf + "     AND SC5.C5_EMISSAO   BETWEEN '" + DtoS(_aRet[24]) + "' AND '" + DtoS(_aRet[25]) + "' "
         _cQuery += CrLf + "     AND SC6.C6_QTDVEN    > SC6.C6_QTDENT "
         _cQuery += CrLf + "     AND SC5.C5_TIPO      = 'N' "
         _cQuery += CrLf + "     AND SC6.C6_PEDCLI    <> ' ' "
@@ -4291,14 +4294,15 @@ Return _cQuery
 User Function XZFT19CP()
 Local _aCab
 _aCab  := { "C6_OK"     ,"CC_STATUS" ,"C6_FILIAL" ,"C6_NUM"    ,"C6_PEDCLI" ,"C5_EMISSAO","C5_CLIENTE","C5_LOJACLI",;
-            "A1_NOME"   ,"C5_CONDPAG","C5_NATUREZ","C5_XMENSER","C6_ITEM"   ,"C6_PRODUTO","B1_DESC"   ,"C6_LOCAL"  ,;
+            "A1_CGC"    ,"A1_NOME"   ,"C5_CONDPAG","C5_NATUREZ","C5_XMENSER","C6_ITEM"   ,"C6_PRODUTO","B1_DESC"   ,"C6_LOCAL"  ,;
             "C6_CHASSI" ,"C6_NUMSERI","C6_LOCALIZ","C6_XCODMAR","C6_XDESMAR","C6_XGRPMOD","C6_XDGRMOD","C6_XMODVEI",;
             "C6_XDESMOD","C6_XSEGMOD","C6_XDESSEG","C6_XFABMOD","C6_XCORINT","C6_XCOREXT","C6_QTDVEN" ,"C6_PRCVEN" ,;
             "C6_VALOR"  ,"C6_OPER"   ,"C6_TES"    ,"C6_XVLRVDA","C6_PRUNIT" ,"C6_XPRCTAB","C6_XVLRPRD","C6_XVLRMVT",;
-            "C6_XBASST" ,"C9_SEQUEN" ,"C9_NFISCAL","C9_SERIENF","C5_XTIPVEN","VRJ_PEDIDO","VRK_FABMOD","VRK_CHASSI",;
+            "C6_XBASST" ,"C6_LOJA"   ,"C6_CLI"    ,"C9_SEQUEN" ,"C9_NFISCAL","C9_SERIENF","C5_XTIPVEN","VRJ_PEDIDO","VRK_FABMOD","VRK_CHASSI",;
             "VRK_CORINT","VRK_COREXT","VRK_MODVEI","VRK_SEGMOD","VV2_DESMOD","VE1_DESMAR","VVX_DESSEG","VRK_CODMAR",;
             "VRK_VALTAB","VRK_VALPRE","VRK_VALMOV","VRK_XBASST","VRK_VALVDA","VRJ_STATUS" ; 
             }
+            
 Return _aCab
 
 
