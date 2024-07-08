@@ -865,6 +865,14 @@ Begin Sequence
 		Break
 	Endif
 
+	//Esta com problemas nas tabelas descompasado o chassi tem que estar igual nas duas
+	If Val((_cAliasEmp)->C6_ITEM) <> Val((_cAliasEmp)->VRK_ITEPED)
+		ApMsgStop("Não foi possivel realizar empenho XZFT19EP, Chassi esta divergente entre Ped. Venda "+AllTrim((_cAliasEmp)->C6_NUM)+" e Ped.Veiculo "+AllTrim((_cAliasEmp)->C6_PEDCLI) , "Previsao Faturamento")
+		_lRet := .F. 
+		Break
+	Endif
+
+
 	If _nOpcEmp == 1
 		_aPrevisao := U_XZFT19EP(_cAliasEmp)   //localizado em ZFATF019
 		If Len(_aPrevisao) == 0 

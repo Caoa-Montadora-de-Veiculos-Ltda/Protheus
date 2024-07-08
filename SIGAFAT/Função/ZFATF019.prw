@@ -4078,8 +4078,8 @@ Return
 //Separado parametro para que possa ser utilizado por outras funcionalidades
 User Function XZFT19PA(_aRet, _lCarrega)
 Local _aParamBox    := {}
-Local _dDatIni      := Date() - 360
-Local _dDatfin      := Date()
+Local _dDatIni      := dDataBase - 120
+Local _dDatfin      := dDataBase
 Local _nChassis     := 0
 Local _bRet         := {||.T.}
 //Local _bBloco     
@@ -4298,9 +4298,10 @@ _aCab  := { "C6_OK"     ,"CC_STATUS" ,"C6_FILIAL" ,"C6_NUM"    ,"C6_PEDCLI" ,"C5
             "C6_CHASSI" ,"C6_NUMSERI","C6_LOCALIZ","C6_XCODMAR","C6_XDESMAR","C6_XGRPMOD","C6_XDGRMOD","C6_XMODVEI",;
             "C6_XDESMOD","C6_XSEGMOD","C6_XDESSEG","C6_XFABMOD","C6_XCORINT","C6_XCOREXT","C6_QTDVEN" ,"C6_PRCVEN" ,;
             "C6_VALOR"  ,"C6_OPER"   ,"C6_TES"    ,"C6_XVLRVDA","C6_PRUNIT" ,"C6_XPRCTAB","C6_XVLRPRD","C6_XVLRMVT",;
-            "C6_XBASST" ,"C6_LOJA"   ,"C6_CLI"    ,"C9_SEQUEN" ,"C9_NFISCAL","C9_SERIENF","C5_XTIPVEN","VRJ_PEDIDO","VRK_FABMOD","VRK_CHASSI",;
-            "VRK_CORINT","VRK_COREXT","VRK_MODVEI","VRK_SEGMOD","VV2_DESMOD","VE1_DESMAR","VVX_DESSEG","VRK_CODMAR",;
-            "VRK_VALTAB","VRK_VALPRE","VRK_VALMOV","VRK_XBASST","VRK_VALVDA","VRJ_STATUS" ; 
+            "C6_XBASST" ,"C6_LOJA"   ,"C6_CLI"    ,"C9_SEQUEN" ,"C9_NFISCAL","C9_SERIENF","C5_XTIPVEN","VRJ_PEDIDO",;
+            "VRK_ITEPED","VRK_FABMOD","VRK_CHASSI","VRK_CORINT","VRK_COREXT","VRK_MODVEI","VRK_SEGMOD","VRK_CODMAR",;
+            "VRK_VALTAB","VRK_VALPRE","VRK_VALMOV","VRK_XBASST","VRK_VALVDA","VRJ_STATUS","VV2_DESMOD","VE1_DESMAR",;
+            "VVX_DESSEG"; 
             }
             
 Return _aCab
@@ -4576,7 +4577,7 @@ Begin Sequence
         Break
 	EndIf
     //Após o Faturamento atualizar tabela ZZN
-    XZFAT9ZZNC(_cStatus, _cStatusNew, _cFilPrev, _cCodPrev, _nOper, _aMsg, .T. /*_lMens*/)
+    U_XZFAT9ZZNC(_cStatus, _cStatusNew, _cFilPrev, _cCodPrev, _nOper, _aMsg, .T. /*_lMens*/)
 
 End Sequence 
 If Select((_cAliasPesq)) <> 0
@@ -4733,7 +4734,7 @@ If Select((_cAliasPesq)) <> 0
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif 
 //Chamar funcionalidade para verificar se encerrara aPrevisao ZZN
-XZFAT9ZZNC(_cStatus, _cStatusNew, _cFilPrev, _cCodPrev, _nOper, _aObs, _lMens)
+U_XZFAT9ZZNC(_cStatus, _cStatusNew, _cFilPrev, _cCodPrev, _nOper, _aObs, _lMens)
 Return _lRet
 
 
@@ -4741,7 +4742,7 @@ Return _lRet
 //Após o Faturamento atualizar tabela ZZN
 //Após o cancelamento de nota atualizar tabela ZZN
 //_nOper : 1=Faturamento, 2= Cancelamento de Nota, 3=Devolução de Nota
-Static Function XZFAT9ZZNC( _cStatus, _cStatusNew, _cFilPrev,_cCodPrev, _nOper, _aObs, _lMens )
+User Function XZFAT9ZZNC( _cStatus, _cStatusNew, _cFilPrev,_cCodPrev, _nOper, _aObs, _lMens )
 Local _cAliasPesq   := GetNextAlias()
 Local _lRet         := .T.
 Local _lAtualiza    := .T.
