@@ -4179,7 +4179,7 @@ Default _cGroup     := ""
     _cQuery += CrLf + "     ON  VRK.VRK_FILIAL = '" + xFilial("VRK") + "' "
     _cQuery += CrLf + "     AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
     //Verificar forma de tentar controlar pois o item na SC6 pode estar diferente da VRK
-    _cQuery += CrLf + "     AND VRK.VRK_ITEPED = LPad(SC6.C6_ITEM,3,'0') "
+    _cQuery += CrLf + "     AND VRK.VRK_ITEPED = '0' || SC6.C6_ITEM "  //LPad(SC6.C6_ITEM,3,'0') "
     //Estava saindo itens deletados conforme montilha é deletado no VRK e não no SC6 Criando condição para validar o cod produto
     _cQuery += CrLf + "     AND TRIM(VRK.VRK_MODVEI)||TRIM(VRK.VRK_SEGMOD) = TRIM(SC6.C6_PRODUTO) "
     _cQuery += CrLf + "     AND VRK.VRK_CHASSI = SC6.C6_CHASSI "
