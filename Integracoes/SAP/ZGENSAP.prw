@@ -839,8 +839,15 @@ User Function ZF11GENSAP(cxFil,cTab,cIndice,cChave,nOperPro,nOperSAP,cXMLSZ7,cSt
         // tratamento para quando vier status "N" no quinto elemento do array adadosori,
         // neste caso indica que o registro de exclusao nao deve ser processado, pois o registro de inclusao ainda nao foi
         // enviado, e tambem o registro de inclusao nao deve ser processado
-        If nOperSAP == 2 .and. Len(aDadosOri) > 1 .and. aDadosOri[5] == "N" .and. !Empty(aDadosOri[6])
+        If nOperSAP == 1 .and. Len(aDadosOri) > 1 .and. aDadosOri[5] == "N" .and. !Empty(aDadosOri[6])
             lNaoProcEnvio := .T.
+            SZ7->Z7_XSTATUS := "N"
+            nRecStatusExc := SZ7->(Recno())
+        Endif
+
+        // Adicionado por Cintia Araujo em 05/07/24 - INC0112050 - gerar Z7_XSTATUS = 'N' quando Z7_SERORI = 'EIC' para nao integrar SAP
+        If SZ7->Z7_SERORI = 'EIC' 
+            lNaoProcEnvio := .F.
             SZ7->Z7_XSTATUS := "N"
             nRecStatusExc := SZ7->(Recno())
         Endif
