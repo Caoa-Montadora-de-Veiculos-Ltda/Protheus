@@ -82,6 +82,8 @@ Private TelWindow 	:= TelAcWindow():New("SB1")
 Private oArea    
 Private oPanelVis
 Private	_aCliRel  	:= {}
+Private CrLf      := (Chr(13)+Chr(10))
+
 
 Begin Sequence
 	TelWindow:Init()
@@ -696,8 +698,8 @@ Local _cCodPrev
 
 	//somente liberado para visualizar e ou incluir 
 	//If (_nOpc < 2 .Or. _nOpc > 3) .And. ZZN->ZZN_STATUS $ "F"
-	If  (_nOpc < 2 .Or. _nOpc > 3) .And. ZZN->ZZN_STATUS $ "F"
-        MsgStop("Previsao jafaturada", "PREVISAO")
+	If  (_nOpc < 2 .Or. _nOpc > 3) .And. _nOpc <> 6 .And. ZZN->ZZN_STATUS $ "F"  
+        MsgStop("Previsao ja faturada", "PREVISAO")
 		Return Nil
 	Endif
 	 
@@ -853,10 +855,10 @@ Begin Sequence
 			Break
 		Endif 
 
-    	cWhereWith += CrLf + "     AND SC6.C6_CLI       BETWEEN '" +      _aRet[01]  + "' AND '" +      _aRet[03]  + "' "
-    	cWhereWith += CrLf + "     AND SC6.C6_LOJA      BETWEEN '" +      _aRet[02]  + "' AND '" +      _aRet[04]  + "' "
-    	cWhereWith += CrLf + "     AND SC6.C6_PRODUTO   BETWEEN '" +      _aRet[05]  + "' AND '" +      _aRet[06]  + "' "
-    	cWhereWith += CrLf + "     AND SC6.C6_PEDCLI    BETWEEN '" +      _aRet[08]  + "' AND '" +      _aRet[09]  + "' "
+    	_cWhereWith += CrLf + "     AND SC6.C6_CLI       BETWEEN '" +      _aRet[01]  + "' AND '" +      _aRet[03]  + "' "
+    	_cWhereWith += CrLf + "     AND SC6.C6_LOJA      BETWEEN '" +      _aRet[02]  + "' AND '" +      _aRet[04]  + "' "
+    	_cWhereWith += CrLf + "     AND SC6.C6_PRODUTO   BETWEEN '" +      _aRet[05]  + "' AND '" +      _aRet[06]  + "' "
+    	_cWhereWith += CrLf + "     AND SC6.C6_PEDCLI    BETWEEN '" +      _aRet[08]  + "' AND '" +      _aRet[09]  + "' "
     	If !Empty(_aRet[10]) .Or. !("ZZ" $ _aRet[11])      
     	    _cWhere += CrLf + "     AND VRK.VRK_CODMAR   BETWEEN '" +      _aRet[10]  + "' AND '" +      _aRet[11]  + "' "
     	Endif
@@ -914,7 +916,7 @@ Begin Sequence
 		Endif 
 		Break
 	Endif
-	_lRet := .F.
+	_lRet := .T.
 
 	DbSelectArea(_cAliasPrev)
 	Count To _nQtdeReg	  //Conta quantos chassis estão disponiveis
@@ -1021,6 +1023,7 @@ Begin Sequence
 		If _nRegZZN == 0
 			If !RecLock("ZZN",.T.) 
 				Break
+				_lRet := .F.
 			Endif
 			//Gravar Previsão Cabeçalho
 			ZZN->ZZN_FILIAL := FwXFilial("ZZN") 
@@ -1033,6 +1036,7 @@ Begin Sequence
 		Endif
 		If ! RecLock("ZZP",.T.)
 			Break
+			_lRet := .F.
 		Endif
 		//Gravar Previsão 
 		ZZP->ZZP_FILIAL := FwXFilial("ZZP") 
@@ -1064,6 +1068,7 @@ Begin Sequence
 			SC6->(DbGoto(_aRegSC6[_nPos]))
 			If !RecLock("SC6",.F.)
 				Break 
+				_lRet := .F.
 			Endif 
 			SC6->C6_XFILPVR := FwXFilial("ZZP")
 			SC6->C6_XCODPVR := _cNumPrev
