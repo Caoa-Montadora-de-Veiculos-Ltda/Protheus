@@ -81,11 +81,14 @@ Local aTamSx3       As Array
 Local aValidCmp     As Array
 Local _lAvalia      As Logical
 Local _cInsert      As Character
-//GAP167  Previsao de Faturamento
-Local _lPrevFat    := FWIsInCallStack("U_XZFT19FT") 
 //Local dDatIni       := Date()
 //Local dDatfin       := Date()
 //Local nChassi       := 0
+Local _cLinFora     As Character
+Local _aCpoFora     As Array
+Local _cSelect      As Character
+//GAP167  Previsao de Faturamento
+Local _lPrevFat    := FWIsInCallStack("U_XZFT19FT") 
 
 
 Default _cWhere     := ""
@@ -154,8 +157,17 @@ aValidCmp   := {{ "C5_CONDPAG" , "{ || fVldCampo( cCabAlias , oSay , cCabTable ,
                 { "C6_XVLRPRD" , "{ || fVldCampo( cCabAlias , oSay , cCabTable , oCabTable)}" },; 
                 { "C6_XVLRMVT" , "{ || fVldCampo( cCabAlias , oSay , cCabTable , oCabTable)}" }} 
 
-aCabStru    := {}
+_aCpoFora   := {"C6_FILIAL" , "CC_STATUS" , "C9_SEQUEN" , "C9_NFISCAL", "C9_SERIENF", "C6_PRUNIT",;
+                "C6_XGRPMOD", "C6_XDGRMOD", "VRK_CORINT", "VRK_COREXT", "C5_XTIPVEN", "C6_NUMSERI",;
+                "C5_XMENSER", "VRJ_PEDIDO", "VRJ_STATUS", "LUPD"      , "LINHA"     , "VRK_VALTAB",; 
+                "VRK_VALPRE", "VRK_VALMOV", "VRK_XBASST", "VRK_VALVDA"}
 
+_cLinFora := ""
+For nY := 1 To Len(_aCpoFora)
+    _cLinFora += If(nY > 1, "|"+_aCpoFora[nY],+_aCpoFora[nY])
+Next
+
+aCabStru    := {}
 For nY := 1 To Len(aCabCampos)
     aTamSx3 := TamSX3(aCabCampos[nY])
     Aadd(aCabStru, {aCabCampos[nY] ,aTamSx3[03] ,aTamSx3[01] ,aTamSx3[02] })
@@ -166,11 +178,10 @@ Aadd(aCabStru, {"LINHA" ,"N" ,5 ,0 })
 aCabCol := {}
 
 For nY := 02 To Len(aCabStru)
-
     //Columas Cabeçalho
     //If !aCabStru[nY][1] $ "C6_FILIAL|CC_STATUS|C9_SEQUEN|C9_NFISCAL|C9_SERIENF|C6_PRUNIT|C6_XGRPMOD|C6_XDGRMOD|C6_XCORINT|C6_XCOREXT|C5_XTIPVEN|C6_NUMSERI|C5_XMENSER|VRJ_PEDIDO|VRJ_STATUS|LUPD|LINHA"
 //    If !aCabStru[nY][1] $ "C6_FILIAL|CC_STATUS|C9_SEQUEN|C9_NFISCAL|C9_SERIENF|C6_PRUNIT|C6_XGRPMOD|C6_XDGRMOD|VRK_CORINT|VRK_COREXT|C5_XTIPVEN|C6_NUMSERI|C5_XMENSER|VRJ_PEDIDO|VRJ_STATUS|LUPD|LINHA"
-    If !aCabStru[nY][1] $ "C6_FILIAL|CC_STATUS|C9_SEQUEN|C9_NFISCAL|C9_SERIENF|C6_PRUNIT|C6_XGRPMOD|C6_XDGRMOD|VRK_CORINT|VRK_COREXT|C5_XTIPVEN|C6_NUMSERI|C5_XMENSER|VRJ_PEDIDO|VRJ_STATUS|LUPD|LINHA|VRK_VALTAB|VRK_VALPRE|VRK_VALMOV|VRK_XBASST|VRK_VALVDA"
+    If !aCabStru[nY][1] $ _cLinFora
         cTipCpo    := GetSx3Cache(aCabStru[nY][1], "X3_TIPO" )
         If SubsTr(aCabStru[nY][1],3) <> "_" 
             cPictAlias := Left(aCabStru[nY][1],3)
@@ -189,14 +200,11 @@ For nY := 02 To Len(aCabStru)
         If "C6_NUM"   <> Substr(Alltrim(aCabStru[nY][1]),1,Len(Alltrim(aCabStru[nY][1]))) .And. ;
            "C6_LOCAL" <> Substr(Alltrim(aCabStru[nY][1]),1,Len(Alltrim(aCabStru[nY][1]))) .And. ;
             aCabStru[nY][1] $ "C5_CONDPAG|C5_NATUREZ|C5_XMENSER|C6_NUMSERI|C6_LOCALIZ|C6_TES|C6_XVLRPRD|C6_OPER|C6_XVLRMVT"
-
             If Substr(Alltrim(aCabStru[nY][1]),1,Len(Alltrim(aCabStru[nY][1]))) <> "C6_NUMSERI"
                 aCabCol[Len(aCabCol)]:SetEdit(.T.)
             Endif
-
             aCabCol[Len(aCabCol)]:SetReadVar(aCabStru[nY][1])
             aCabCol[Len(aCabCol)]:SetValid((&(aValidCmp[aScan(aValidCmp,{|x| Alltrim(x[1]) == aCabStru[nY][1] }),2])))
-
         EndIf
     EndIf
 Next nY
@@ -212,27 +220,50 @@ cCabAlias := oCabTable:GetAlias()
 
 cCabTable := oCabTable:GetRealName()
 //cOrderTab := "SC6.C6_FILIAL,SC6.C6_PEDCLI,SC6.C6_ITEM,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO"
-cQuery := ""
-cQuery += " INSERT INTO " + cCabTable + " "
-cQuery += CrLf + " ("
 
-For nY := 1 To Len(aCabCampos)
-    If Upper(Alltrim(aCabCampos[nY])) <> "C9_SEQUEN"  .And. Upper(Alltrim(aCabCampos[nY])) <> "C9_NFISCAL" .And.;
-       Upper(Alltrim(aCabCampos[nY])) <> "C9_SERIENF" .And. Upper(Alltrim(aCabCampos[nY])) <> "C5_XMENSER"
-    
-       cQuery += aCabCampos[nY]+","
-    EndIf
-Next nY
-cQuery += CrLf + " LUPD,LINHA,D_E_L_E_T_,R_E_C_N_O_) "
-_cInsert    := cQuery   //Separo insert da query 
+cQuery      := ""
+cQuery      += " INSERT INTO " + cCabTable + " "
+cQuery      += CrLf + " ("
+cQuery      += CrLf + " C6_OK "
 
-cQuery      := "" 
+_cSelect    := ""
 If !_lPrevFat
-    cQuery += CrLf + " SELECT '  ' C6_OK    , "
+    _cSelect  += CrLf + " SELECT '  ' C6_OK    "
 Else 
-    cQuery += CrLf + " SELECT '"+cMarca+"' C6_OK    , "
+    _cSelect  += CrLf + " SELECT '"+cMarca+"' C6_OK   "
 Endif
 
+For nY := 1 To Len(aCabCampos)
+    //If Upper(Alltrim(aCabCampos[nY]))  <> "C9_SEQUEN"  .And. Upper(Alltrim(aCabCampos[nY])) <> "C9_NFISCAL" .And. ;
+    //    Upper(Alltrim(aCabCampos[nY])) <> "C9_SERIENF" .And. Upper(Alltrim(aCabCampos[nY])) <> "C5_XMENSER" .And. ;
+    //    Upper(Alltrim(aCabCampos[nY])) <> "LUPD"       .And. Upper(Alltrim(aCabCampos[nY])) <> "CC_STATUS"
+
+    If !Upper(Alltrim(aCabCampos[nY]))  $ "C9_SEQUEN|C9_NFISCAL|C9_SERIENF|C5_XMENSER|LUPD!CC_STATUS|C6_OK"
+        //cQuery += aCabCampos[nY]+","
+        //garantir que só lera as tabelas definidas DAC 08/07/2024  
+        cQryAlias := ""
+        If Left(aCabCampos[nY],3) == "C6_" ; cQryAlias := "SC6." ; EndIf
+        If Left(aCabCampos[nY],3) == "C5_" ; cQryAlias := "SC5." ; EndIf
+        If Left(aCabCampos[nY],3) == "A1_" ; cQryAlias := "SA1." ; EndIf
+        If Left(aCabCampos[nY],3) == "B1_" ; cQryAlias := "SB1." ; EndIf
+        If Left(aCabCampos[nY],3) == "F4_" ; cQryAlias := "SF4." ; EndIf
+        If Left(aCabCampos[nY],3) == "VRJ" ; cQryAlias := "VRJ." ; EndIf
+        If Left(aCabCampos[nY],3) == "VRK" ; cQryAlias := "VRK." ; EndIf
+        If Left(aCabCampos[nY],3) == "VE1" ; cQryAlias := "VE1." ; EndIf  
+        If Left(aCabCampos[nY],3) == "VV2" ; cQryAlias := "VV2." ; EndIf  
+        If Left(aCabCampos[nY],3) == "VVX" ; cQryAlias := "VVX." ; EndIf  
+
+        If !Empty(cQryAlias)
+            cQuery += ", "+aCabCampos[nY]
+
+            _cSelect += CrLf + ", " + (cQryAlias+aCabCampos[nY])  
+        Endif
+    EndIf
+Next nY
+cQuery += CrLf + " ,LUPD ,LINHA ,D_E_L_E_T_, R_E_C_N_O_) "
+_cInsert    := cQuery   //Separo insert da query 
+cQuery      := _cSelect
+/*
 cQuery += CrLf + " ' '         C6_STATUS, "
 For nY := 1 To Len(aCabCampos)
     If  Upper(Alltrim(aCabCampos[nY])) <> "C6_OK"      .And. Upper(Alltrim(aCabCampos[nY])) <> "CC_STATUS"  .And.;
@@ -255,11 +286,12 @@ For nY := 1 To Len(aCabCampos)
     EndIf
 Next nY
 //cQuery += CrLf + "      VRJ.VRJ_PEDIDO, 
-cQuery += CrLf + " VRJ.VRJ_STATUS as VRJ_STATUS, "  
-cQuery += CrLf + " 'F' as LUPD , "
-cQuery += CrLf + " ROW_NUMBER() OVER (ORDER BY " + cOrderTab + " )  LINHA, "
-cQuery += CrLf + " ' ' as  D_E_L_E_T_  , "
-cQuery += CrLf + " ROW_NUMBER() OVER (ORDER BY " + cOrderTab + " )  R_E_C_N_O_ "
+cQuery += CrLf + " VRJ.VRJ_STATUS as VRJ_STATUS, " 
+*/ 
+cQuery += CrLf + " , 'F' as LUPD  "
+cQuery += CrLf + " , ROW_NUMBER() OVER (ORDER BY " + cOrderTab + " )  LINHA "
+cQuery += CrLf + " , ' ' as  D_E_L_E_T_   "
+cQuery += CrLf + " , ROW_NUMBER() OVER (ORDER BY " + cOrderTab + " )  R_E_C_N_O_ "
 
 //GAP167  Previsao de Faturamento
 If _lPrevFat  
@@ -281,7 +313,7 @@ If Empty(_cCargaQry)
     Return(.F.)
 Endif
 cQuery := _cInsert 
-cQuery += CrLf +_cCargaQry
+cQuery += _cCargaQry
 
 nStatus := TCSqlExec(cQuery)
  
@@ -947,17 +979,19 @@ Descricao / Objetivo: Monta tela para Visualização dos Pedidos de Vendas
 
 Static Function fVisuPed(cCabAlias,aRotina,nOpc,oSay,cCabTable,oCabTable)
 
-Local lRetorno    As Logical
-Local nRecno      As numeric
-Local nY          As numeric
-Local aArea       As Array
-Local aRotina2    As Array
-Local aRotina3    As Array
-Local aCabPed     As Array
-Local aItePed     As Array
-Local aLinha      As Array
-Local cCampo      As Character
-Local cQuery      As Character
+Local lRetorno      As Logical
+Local nRecno        As numeric
+Local nY            As numeric
+Local aArea         As Array
+Local aRotina2      As Array
+Local aRotina3      As Array
+Local aCabPed       As Array
+Local aItePed       As Array
+Local aLinha        As Array
+Local cCampo        As Character
+Local cQuery        As Character
+Local _cSelect      As Character  
+Local cQryAlias     As Character   
 
 Private cCadastro   As Character
 Private Inclui      As Logical
@@ -1005,38 +1039,46 @@ If cCabAlias == "SC5" .Or. SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
             cQuery := ""
             cQuery += " INSERT INTO " + cCabTable + " "
             cQuery += CrLf + " ("
-
+            /*
             For nY := 1 To Len(aCabCampos)
                 If  Upper(Alltrim(aCabCampos[nY])) <> "C9_SEQUEN"  .And. Upper(Alltrim(aCabCampos[nY])) <> "C9_NFISCAL" .And.;
                     Upper(Alltrim(aCabCampos[nY])) <> "C9_SERIENF" .And. Upper(Alltrim(aCabCampos[nY])) <> "C5_XMENSER"
-                    
                     cQuery += aCabCampos[nY]+","
-                
                 EndIf
             Next nY
-
-            cQuery += CrLf + " D_E_L_E_T_,R_E_C_N_O_) "
+            cQuery += CrLf + " D_E_L_E_T_  R_E_C_N_O_) "
             cQuery += CrLf + " SELECT '  ' C6_OK    , "
             cQuery += CrLf + " ' '         C6_STATUS, "
+            */
             
+            cQuery      += CrLf + " D_E_L_E_T_  R_E_C_N_O_) "
+
+            _cSelect    += CrLf + " SELECT '  ' C6_OK    , "
+            _cSelect    += CrLf + " ' '         C6_STATUS, "
+
             For nY := 1 To Len(aCabCampos)
-            
-                If  Upper(Alltrim(aCabCampos[nY])) <> "C6_OK"      .And. Upper(Alltrim(aCabCampos[nY])) <> "CC_STATUS"  .And.;
-                    Upper(Alltrim(aCabCampos[nY])) <> "C9_SEQUEN"  .And. Upper(Alltrim(aCabCampos[nY])) <> "C9_NFISCAL" .And.;
-                    Upper(Alltrim(aCabCampos[nY])) <> "C9_SERIENF" .And. Upper(Alltrim(aCabCampos[nY])) <> "C5_XMENSER"
-            
+                //If  Upper(Alltrim(aCabCampos[nY])) <> "C6_OK"      .And. Upper(Alltrim(aCabCampos[nY])) <> "CC_STATUS"  .And.;
+                //    Upper(Alltrim(aCabCampos[nY])) <> "C9_SEQUEN"  .And. Upper(Alltrim(aCabCampos[nY])) <> "C9_NFISCAL" .And.;
+                //    Upper(Alltrim(aCabCampos[nY])) <> "C9_SERIENF" .And. Upper(Alltrim(aCabCampos[nY])) <> "C5_XMENSER"
+                If  !Upper(Alltrim(aCabCampos[nY])) $ "C6_OK!C5_XMENSER"  //DAC 08/07/2024
+                    cQryAlias := ""
                     If Left(aCabCampos[nY],3) == "C6_" ; cQryAlias := "SC6." ; EndIf
                     If Left(aCabCampos[nY],3) == "C5_" ; cQryAlias := "SC5." ; EndIf
                     If Left(aCabCampos[nY],3) == "A1_" ; cQryAlias := "SA1." ; EndIf
                     If Left(aCabCampos[nY],3) == "B1_" ; cQryAlias := "SB1." ; EndIf
                     If Left(aCabCampos[nY],3) == "F4_" ; cQryAlias := "SF4." ; EndIf
+                    //Validar se localizou as tabelas pre definidas DAC 08/07/2024
+                    If !Empty(cQryAlias)
+                        cQuery += aCabCampos[nY]+","
             
-                    cQuery +=  CrLf + " " + (cQryAlias+aCabCampos[nY])+", "
-            
+                        _cSelect +=  CrLf + " " + (cQryAlias+aCabCampos[nY])+", "
+                    Endif
                 EndIf
             
             Next
             
+            cQuery += _cSelect
+
             cQuery += CrLf + "        ' ' AS D_E_L_E_T_  , "
             cQuery += CrLf + "        ROW_NUMBER() OVER (ORDER BY SC6.C6_FILIAL,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO)  R_E_C_N_O_  "
             cQuery += CrLf + " FROM "+RetSqlName("SC6")+" SC6 "
@@ -1261,12 +1303,22 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
 
     if (cCabAlias)->LUPD <> "T"
         cNumSerie := ""
-        SC5->(DbSetOrder(1))        
-        SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
-    
-        SC6->(DbSetOrder(1))        
-        SC6->(DbSeek(xFilial("SC6") + (cCabAlias)->C6_NUM + (cCabAlias)->C6_ITEM))
 
+        SC5->(DbSetOrder(1))        
+        SC6->(DbSetOrder(1))        
+
+        //Caso exista referencia posiciono pelo numero do registro
+        If (cCabAlias)->(FieldPos("NREGSC6"))	 > 0		
+            SC6->(DbGoto((_cAliasPrev)->NREGSC6))
+            SC5->(DbSeek(FwXFilial("SC5")+SC6->C6_NUM))
+        Else 
+            SC5->(DbSeek(FwXFilial("SC5")+(cCabAlias)->C6_NUM))
+            SC6->(DbSeek(FwxFilial("SC6") + (cCabAlias)->C6_NUM + (cCabAlias)->C6_ITEM))
+        Endif    
+        //Caso exista referencia posiciono pelo numero do registro
+        If (cCabAlias)->(FieldPos("NREGVRK"))	 > 0		
+			VRK->(DbGoto((_cAliasPrev)->NREGVRK))
+        Endif    
         //GAP167  Previsao de Faturamento
         //no caso de previsão não locar temporario
         If !_lPrevisao
@@ -1347,29 +1399,37 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
                 (cCabAlias)->C9_SEQUEN  := SDC->DC_SEQ
                 (cCabAlias)->(MsUnLock())
             EndIf
-            cQuery := ""
-            cQuery += CrLf + " UPDATE "+RetSqlName("VRK")                                                                           
-            cQuery += CrLf + " SET VRK_CHASSI = '"+SC6->C6_NUMSERI+"' "
-            cQuery += CrLf + " WHERE VRK_FILIAL = '"+xFilial("VRK")+"' "
-            cQuery += CrLf + " AND VRK_PEDIDO||VRK_ITEPED = (SELECT VRK.VRK_PEDIDO||VRK.VRK_ITEPED "
-            cQuery += CrLf + "                               FROM "+RetSqlName("VRJ")+" VRJ "
-            cQuery += CrLf + "                               INNER JOIN  " + RetSqlName("VRK") + " VRK " 
-            cQuery += CrLf + "                                      ON  VRK.VRK_FILIAL = '"+xFilial("VRK")+"' "
-            cQuery += CrLf + "                                      AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
-            cQuery += CrLf + "                                      AND VRK.D_E_L_E_T_ = VRJ.D_E_L_E_T_ "
-            cQuery += CrLf + "                                      AND VRK.VRK_ITEPED  = '" + StrZero(Val(Alltrim(SC6->C6_ITEM)),3)  +"' "
 
-            cQuery += CrLf + "                               WHERE VRJ.VRJ_FILIAL  = '" + xFilial("VRJ") + "' "
-            cQuery += CrLf + "                                 AND VRJ.VRJ_CODCLI  = '" + SC5->C5_CLIENTE + "' "
-            cQuery += CrLf + "                                 AND VRJ.VRJ_LOJA    = '" + SC5->C5_LOJACLI + "' "
-            cQuery += CrLf + "                                 AND VRJ.VRJ_PEDCOM  = '" + SC6->C6_PEDCLI  + "' "
-            cQuery += CrLf + "                                 AND VRJ.D_E_L_E_T_  = ' ') "
-            nStatus := TCSqlExec(cQuery)
+            //Caso exista referencia posiciono pelo numero do registro
+            If (cCabAlias)->(FieldPos("NREGVRK")) > 0		
+			    VRK->(DbGoto((_cAliasPrev)->NREGVRK))
+                VRK->(RecLock("VRK",.F.))
+                VRK->VRK_CHASSI := SC6->C6_NUMSERI
+                VRK->(MsUnlock())
+            Else
 
-            If (nStatus < 0)
-                MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Chasi VRK")
-            EndIf
+                cQuery := ""
+                cQuery += CrLf + " UPDATE "+RetSqlName("VRK")                                                                           
+                cQuery += CrLf + " SET VRK_CHASSI = '"+SC6->C6_NUMSERI+"' "
+                cQuery += CrLf + " WHERE VRK_FILIAL = '"+xFilial("VRK")+"' "
+                cQuery += CrLf + "      AND VRK_PEDIDO||VRK_ITEPED = (SELECT VRK.VRK_PEDIDO||VRK.VRK_ITEPED "
+                cQuery += CrLf + "                               FROM "+RetSqlName("VRJ")+" VRJ "
+                cQuery += CrLf + "                               INNER JOIN  " + RetSqlName("VRK") + " VRK " 
+                cQuery += CrLf + "                                      ON  VRK.VRK_FILIAL = '"+xFilial("VRK")+"' "
+                cQuery += CrLf + "                                      AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
+                cQuery += CrLf + "                                      AND VRK.D_E_L_E_T_ = VRJ.D_E_L_E_T_ "
+                cQuery += CrLf + "                                      AND VRK.VRK_ITEPED  = '" + StrZero(Val(Alltrim(SC6->C6_ITEM)),3)  +"' "
+                cQuery += CrLf + "                               WHERE VRJ.VRJ_FILIAL  = '" + xFilial("VRJ") + "' "
+                cQuery += CrLf + "                                 AND VRJ.VRJ_CODCLI  = '" + SC5->C5_CLIENTE + "' "
+                cQuery += CrLf + "                                 AND VRJ.VRJ_LOJA    = '" + SC5->C5_LOJACLI + "' "
+                cQuery += CrLf + "                                 AND VRJ.VRJ_PEDCOM  = '" + SC6->C6_PEDCLI  + "' "
+                cQuery += CrLf + "                                 AND VRJ.D_E_L_E_T_  = ' ') "
+                nStatus := TCSqlExec(cQuery)
 
+                If (nStatus < 0)
+                    MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Chasi VRK")
+                EndIf
+            Endif
             (cCabAlias)->(DbSkip())
             Loop
         EndIf
@@ -1410,15 +1470,21 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
             ************************************************
             /*/
             SC5->(DbSetOrder(1))        
-            SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
+            SC6->(DbSetOrder(1))        
+            //Valido como previsão pois não criara novos registros
+            If _lPrevisao .And. (cCabAlias)->(FieldPos("NREGSC6"))	 > 0		
+                SC6->(DbGoto((_cAliasPrev)->NREGSC6))
+                SC5->(DbSeek(FwXFilial("SC5")+SC6->C6_NUM))
+            Else 
+                SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
+                SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
+            Endif
             If Empty(SC5->C5_STATUS)
                 RecLock("SC5",.F.)
-                    SC5->C5_STATUS := "XX"
+                SC5->C5_STATUS := "XX"
                 SC5->(MsUnlock())
             EndIf
 
-            SC6->(DbSetOrder(1))        
-            SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
             //Atualizar  a operação 
             If RecLock("SC6",.F.)
                 SC6->C6_QTDLIB  := 1
@@ -1632,7 +1698,7 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
                         (cCabAlias)->C6_XDGRMOD := ""                      
                         (cCabAlias)->C9_NFISCAL := CriaVar("C9_NFISCAL")
                         (cCabAlias)->C9_SERIENF := CriaVar("C9_SERIENF")
-                        If (cCabAlias)->(FieldPos("VVX_DESSEG")) > 0
+                        If (cCabAlias)->(FieldPos("CC_STATUS")) > 0
                             (cCabAlias)->CC_STATUS  := _cCC_STATUS
                         Endif    
                         (cCabAlias)->(MsUnLock())
@@ -1667,28 +1733,43 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
                     EndIf
                 SC9->(MsUnLock())
 
-                cQuery := "" 
-                cQuery +=  CrLf +  " UPDATE " + RetSqlName("VRK")
-                cQuery +=  CrLf +  " SET VRK_CHASSI = '"+(cTmpAlias)->VV1_CHASSI+"' "
-                cQuery +=  CrLf +  " WHERE VRK_FILIAL = '"+xFilial("VRK")+"' "
-                cQuery +=  CrLf +  " AND VRK_PEDIDO||VRK_ITEPED = (SELECT VRK.VRK_PEDIDO||VRK.VRK_ITEPED "
-                cQuery +=  CrLf +  "                               FROM "+RetSqlName("VRJ")+" VRJ "
-                cQuery +=  CrLf +  "                               INNER JOIN " + RetSqlName("VRK") + " VRK"
-                cQuery +=  CrLf +  "                                    ON  VRK.VRK_FILIAL = '" + xFilial("VRK") + "' "
-                cQuery +=  CrLf +  "                                    AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
-                cQuery +=  CrLf +  "                                    AND VRK.D_E_L_E_T_ = VRJ.D_E_L_E_T_ "
-                cQuery +=  CrLf +  "                               WHERE VRJ.VRJ_FILIAL  = '" + xFilial("VRJ")  + "' "
-                cQuery +=  CrLf +  "                                 AND VRJ.VRJ_CODCLI  = '" + SC5->C5_CLIENTE + "' "
-                cQuery +=  CrLf +  "                                 AND VRJ.VRJ_LOJA    = '" + SC5->C5_LOJACLI + "' "
-                cQuery +=  CrLf +  "                                 AND VRJ.VRJ_PEDCOM  = '" + SC6->C6_PEDCLI  + "' "
-                cQuery +=  CrLf +  "                                 AND VRK.VRK_ITEPED  = '" + StrZero(Val(Alltrim(SC6->C6_ITEM)),3) + "' "
-                cQuery +=  CrLf +  "                                 AND VRJ.D_E_L_E_T_  = ' ') "
-                nStatus := TCSqlExec(cQuery)
+                If (cCabAlias)->(FieldPos("NREGVRK")) > 0		
+			        VRK->(DbGoto((_cAliasPrev)->NREGVRK))
+                    VRK->(RecLock("VRK",.F.))
+                    VRK->VRK_CHASSI := (cTmpAlias)->VV1_CHASSI
+                    VRK->(MsUnlock())
+                    SC6->(RecLock("SC6",.F.))
+                    SC6->C6_CHASSI := (cTmpAlias)->VV1_CHASSI
+                    SC6->(MsUnlock())
+                    //verificar se não será necessário alterar SC6    
+                Else 
+                    cQuery := "" 
+                    cQuery +=  CrLf +  " UPDATE " + RetSqlName("VRK")
+                    cQuery +=  CrLf +  " SET VRK_CHASSI = '"+(cTmpAlias)->VV1_CHASSI+"' "
+                    cQuery +=  CrLf +  " WHERE VRK_FILIAL = '"+xFilial("VRK")+"' "
+                    cQuery +=  CrLf +  " AND VRK_PEDIDO||VRK_ITEPED = (SELECT VRK.VRK_PEDIDO||VRK.VRK_ITEPED "
+                    cQuery +=  CrLf +  "                               FROM "+RetSqlName("VRJ")+" VRJ "
+                    cQuery +=  CrLf +  "                               INNER JOIN " + RetSqlName("VRK") + " VRK"
+                    cQuery +=  CrLf +  "                                    ON  VRK.VRK_FILIAL = '" + xFilial("VRK") + "' "
+                    cQuery +=  CrLf +  "                                    AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
+                    cQuery +=  CrLf +  "                                    AND VRK.D_E_L_E_T_ = VRJ.D_E_L_E_T_ "
+                    cQuery +=  CrLf +  "                               WHERE VRJ.VRJ_FILIAL  = '" + xFilial("VRJ")  + "' "
+                    cQuery +=  CrLf +  "                                 AND VRJ.VRJ_CODCLI  = '" + SC5->C5_CLIENTE + "' "
+                    cQuery +=  CrLf +  "                                 AND VRJ.VRJ_LOJA    = '" + SC5->C5_LOJACLI + "' "
+                    cQuery +=  CrLf +  "                                 AND VRJ.VRJ_PEDCOM  = '" + SC6->C6_PEDCLI  + "' "
+                    cQuery +=  CrLf +  "                                 AND VRK.VRK_ITEPED  = '" + StrZero(Val(Alltrim(SC6->C6_ITEM)),3) + "' "
+                    cQuery +=  CrLf +  "                                 AND VRJ.D_E_L_E_T_  = ' ') "
+                    nStatus := TCSqlExec(cQuery)
 
-                If (nStatus < 0)
-                    MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Chassi VRK")
-                EndIf
-
+                    If (nStatus < 0)
+                        MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Chassi VRK")
+                    Else 
+                        SC6->(DbGoto(n_RecnoSc6))
+                        SC6->(RecLock("SC6",.F.))
+                        SC6->C6_CHASSI := (cTmpAlias)->VV1_CHASSI
+                        SC6->(MsUnlock())
+                    EndIf
+                Endif
                 DBCommitAll()
                 Aadd(_aPrevisao,n_RecnoSc6)
                 nLinhas ++      //	//Atualização realizada pela Totvs, acrescentada na lógica DAC 14/05/2024

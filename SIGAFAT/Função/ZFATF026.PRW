@@ -386,7 +386,7 @@ Return Nil
 @type function
 /*/
 Static Function ValidCampo(_cCol, _oBrW)
-Local _lRet := .T. 
+Local _lRet := .F. 
 Local _nPos := (_cAliasZF026)->(Recno())
  //Guarda o posicionamento do temporÃ¡rio
 //Local _aOrd 	:= SaveOrd(_cAliasPlan)
@@ -411,21 +411,20 @@ Begin Sequence
 	
 	//Verificar quantidades para avaliar se possui chassis
 	ZZP->( DbGoto(_nRegZZP) )
+	_nQtdeLZZP 	:= ZZP->ZZP_QTELIB
+	_nQtde 		:= ZZP->ZZP_QTELIB   //sempre deixar quantidade anterior caso não execute o calculo volta para anterior
 	//neste caso não foi alterado
 	If ZZP->ZZP_QTELIB  == _nQtdeLib
 		Break
 	Endif 
-	_nQtdeLZZP 	:= ZZP->ZZP_QTELIB
-	_nQtde 		:= ZZP->ZZP_QTELIB   //sempre deixar quantidade anterior caso não execute o calculo volta para anterior
+
 	//Não deixar liberar mas que existe em pedido
 	If _nQtdeLib > _nQtdePed
 		MSGINFO( "Quantidade liberada não pode ser maior que quantidade do Pedido", "Atencao" )
-		_lRet 	:= .F.
 		Break  
 	Endif 
 	If _nQtdeLib > (_nQtdePed - _nQtdeFat)
 		MSGINFO( "Quantidade liberada não pode ser maior que quantidade do Pedido menos quantidade Faturada", "Atencao" )
-		_lRet 	:= .F.
 		Break  
 	Endif 
 
@@ -437,7 +436,7 @@ Begin Sequence
 	If _nQtdeLZZP > _nQtdeLib
 		_nQtde := ZFATF026RE( _nQtdeLZZP, _nQtdeLib)
 		If _nQtde < 0
-			_lRet 	:= .F.
+			_nQtde := _nQtdeLZZP
 			Break
 		Endif	
 	Else 
@@ -453,7 +452,7 @@ Begin Sequence
 				Endif 	
 			Else 
 				MSGINFO( "Quantidade de chassi nao Empenhada  "+AllTrim(Str(_nQtdeChassi))+" disponivel, nao atende a necessidade ", "Atencao" )
-				_lRet 	:= .F. 
+				Break 
 			Endif
 		Endif
 	Endif
@@ -462,27 +461,31 @@ End Sequence
 //_oBrW:FWBrowse(): ColPos 
 //Atualizar para que possa ser dado o refresh 
 //Sempre deixar atualiza com a quantidade
-If !_lRet  //Caso de problemas na atualização voltar a qtde anterior 
-	_nQtde 	:= _nQtdeLZZP
-ElseIf ValType(_nQtde) <> "N"  //pode não passar pelas definições acima
-	_nQtde := _nQtdeLib
-Endif 
+//If !_lRet  //Caso de problemas na atualização voltar a qtde anterior 
+//	_nQtde 	:= _nQtdeLZZP
+//ElseIf ValType(_nQtde) <> "N"  //pode não passar pelas definições acima
+//	_nQtde := _nQtdeLib
+//Else 	
+//	_nQtde 	:= _nQtdeLZZP
+//Endif 
+ZZP->( DbGoto(_nRegZZP) )
+//Browser atualizar
 If RecLock(_cAliasZF026,.F.)
 	(_cAliasZF026)->(FieldPut(FieldPos("ZZP_QTELIB"),_nQtde))
 	(_cAliasZF026)->(MsUnLock())
 Endif		
-ZZP->( DbGoto(_nRegZZP) )
-//Grava tabela Principal pelo motivo de estar empenhando direto
-If RecLock("ZZP",.F.)
-	ZZP->(FieldPut(FieldPos("ZZP_QTELIB"), _nQtde))
-	ZZP->(MsUnLock())
-Endif
-
-If _lRet  
-	//Atualizar dados
-	ZFAT026Total(ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, /*_lCarrega*/)
-Endif
-//_oBrW:Refresh()
+If ZZP->ZZP_QTELIB <> _nQtde
+	//Grava tabela Principal pelo motivo de estar empenhando direto
+	If RecLock("ZZP",.F.)
+		ZZP->(FieldPut(FieldPos("ZZP_QTELIB"), _nQtde))
+		ZZP->(MsUnLock())
+	Endif
+	If _lRet  
+		//Atualizar dados
+		ZFAT026Total(ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, /*_lCarrega*/)
+	Endif
+	//_oBrW:Refresh()
+Endif	
 Return .T. //_lRet
 
 //Função que verifica se possui mais empenho que o solicitado e retira o empenho caso confirmado
@@ -729,7 +732,7 @@ Return _nQtdeChassi  //Qtde de chacssi disponivel para gerar empenho
 //Realiza o Empenho 
 //_nOpc == 1 Criar Empenho
 //_nOpc == 2 Retirar Empenho
-Static Function ZFATF26EMP( _oSay, _nOpcEmp, _cFilPrev, _cCodPrev, _nRegZZP, _nQtde, _lMens )
+Static Function ZFATF26EMP( _oSay, _nOpcEmp, _cFilPrev, _cCodPrev, _nRegZZP, _nQtde, _lMens, _aMsgErro )
 Local _cAliasEmp	:= GetNextAlias()
 Local _lRet 		:= .T.
 Local _cWCampos		:= ""
@@ -747,7 +750,7 @@ Default _cCodPrev   := ""
 Default _nRegZZP 	:= 0
 Default _nQtde		:= 0
 Default _lMens 		:= .T. 
-
+Default _aMsgErro   := {}
 
 Begin Sequence
 	//nao pode vir em branco
@@ -860,23 +863,34 @@ Begin Sequence
 	Endif  
 	//Esta com problemas nas tabelas descompasado o chassi tem que estar igual nas duas
 	If (_cAliasEmp)->C6_CHASSI <> (_cAliasEmp)->VRK_CHASSI
-		ApMsgStop("Não foi possivel realizar empenho XZFT19EP, Chassi esta divergente entre Ped. Venda "+AllTrim((_cAliasEmp)->C6_NUM)+" e Ped.Veiculo "+AllTrim((_cAliasEmp)->C6_PEDCLI) , "Previsao Faturamento")
+		_cMens := "Não foi possivel realizar empenho XZFT19EP, Chassi esta divergente entre Ped. Venda "+AllTrim((_cAliasEmp)->C6_NUM)+" e Ped.Veiculo "+AllTrim((_cAliasEmp)->C6_PEDCLI)
+		Aadd(_aMsgErro, _cMens)
+		If _lMens
+			ApMsgStop( _cMens, "Previsao Faturamento")
+		Endif	
 		_lRet := .F. 
 		Break
 	Endif
 
 	//Esta com problemas nas tabelas descompasado o chassi tem que estar igual nas duas
 	If Val((_cAliasEmp)->C6_ITEM) <> Val((_cAliasEmp)->VRK_ITEPED)
-		ApMsgStop("Não foi possivel realizar empenho XZFT19EP, Chassi esta divergente entre Ped. Venda "+AllTrim((_cAliasEmp)->C6_NUM)+" e Ped.Veiculo "+AllTrim((_cAliasEmp)->C6_PEDCLI) , "Previsao Faturamento")
+		_cMens := "Não foi possivel realizar empenho XZFT19EP, Chassi esta divergente entre Ped. Venda "+AllTrim((_cAliasEmp)->C6_NUM)+" e Ped.Veiculo "+AllTrim((_cAliasEmp)->C6_PEDCLI)
+		Aadd(_aMsgErro, _cMens)
+		If _lMens
+			ApMsgStop(_cMens , "Previsao Faturamento")
+		Endif 
 		_lRet := .F. 
 		Break
 	Endif
 
-
 	If _nOpcEmp == 1
 		_aPrevisao := U_XZFT19EP(_cAliasEmp)   //localizado em ZFATF019
 		If Len(_aPrevisao) == 0 
-	    	ApMsgStop("Não foi possivel realizar empenho XZFT19EP, verificar com ADM Sistemas", "Previsao Faturamento")
+			_cMens := "Não foi possivel realizar empenho XZFT19EP, verificar com ADM Sistemas"
+			Aadd(_aMsgErro, _cMens)
+			If _lMens
+	    		ApMsgStop(_cMens, "Previsao Faturamento")
+			Endif
 			_lRet := .F. 
 			Break
 		Endif  
@@ -1182,3 +1196,20 @@ Begin Sequence
 End Sequence 
 Return _oColumn
 
+
+
+//Receber dados de outros programaspara realizar emprenho
+User Function XZFT26E1(_oSay, _nQtdeCalc, _nRegZZP)
+Local _aArea		:= GetArea()
+Local _lRet			:= .T.
+
+Default _nRegZZP	:= 0
+Default _nQtdeCalc	:= ZZP->ZZP_QTELIB  //ASSUMO QUE ESTA POSICIONADO NO ZZP
+
+	DbSelectArea("ZZP")
+	If _nRegZZP > 0 
+		ZZP->(DbGoto(_nRegZZP))
+	Endif
+	FwMsgRun(,{ |_oSay| _lRet := ZFATF26EMP( @_oSay, 1, ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, ZZP->(RECNO()), _nQtdeCalc, .F. ) }, "Preparando dados", "Aguarde...")  
+	RestArea(_aArea)
+Return _lRet
