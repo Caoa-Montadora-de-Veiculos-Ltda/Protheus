@@ -1852,7 +1852,7 @@ Static Function ZPECF08PARC( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, 
 			Aadd(_aMensAglu,"Não foi possivel alterar registro na tabela VS3 (ZPECF08PARC) !")
 			Break
 		EndIf	
-		If _nQtdReal <= 0 .and. (_nItenNovo +VS3->VS3_QTDITE) <> VS3->VS3_QTDINI
+		If _nQtdReal <= 0 .and. _nItenNovo == VS3->VS3_QTDINI
 			VS3->(DbDelete())
 			VS3->(MsUnlock())
 			Break
