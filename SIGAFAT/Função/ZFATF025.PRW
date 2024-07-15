@@ -797,7 +797,7 @@ Return _lRet
 
 //Inclusão de Nova Previsão
 
-Static Function ZFATF025Qry( _oSay, _nRegZZN, _aSelect, _cWhere, _cWhereWith, _cJoin,  _nQtdeLib, _aMsgErro, _lMens )
+Static Function ZFATF025Qry( _oSay, _nRegZZN, _aSelect, _cWhere, _cWhereWith, _cJoin,  _nQtdeLib, _nLinha, _aMsgErro, _lMens )
 Local _cAliasPesq 	:= GetNextAlias()
 Local _lRet 		:= .T.
 Local _cNumPrev		:= ""
@@ -807,6 +807,7 @@ Local _lIncGeral 	:= FWIsInCallStack("ZFATF025Inclui")
 Local _aRegZZP		:= {}
 Local _cOrderTab	:= "C6_FILIAL, C6_CLI, C6_LOJA, C6_PRODUTO, VRK_FABMOD, VRK_MODVEI, VRK_SEGMOD, C6_PEDCLI, C6_ITEM " 
 Local _cAliasPrev 	:= GetNextAlias()
+Local _cLinhaPrev    := ""
 
 Local _nPos 
 Local _cCliente 	
@@ -834,16 +835,21 @@ Default _cWhere  	:= ""
 Default _cWhereWith := "" 
 Default _cJoin		:= "" 
 Default _nQtdeLib	:= 0
+Default _nLinha		:= 0
 Default _aMsgErro  	:= {}
 
 
 Begin Sequence 
+	If _nLinha > 0
+		_cLinhaPrev := " item : "+AllTrim(Str(_nLinha))
+	Endif 
 	If _lIncGeral
 		If !MsgYesNo("Deseja criar nova Previsão ?") 
 			Break 
 		Endif 
 		//Parametro encontra na função ZFATF019
 		If !U_XZFT19PA(@_aRet)
+			_lRet := .F.
 			Break
 		Endif
 		If Len(_aRet) == 0 
@@ -852,6 +858,7 @@ Begin Sequence
 			If _lMens 
 				ApMsgStop(_cMens, "Previsão Faturamento")
 			Endif	
+			_lRet := .F.
 			Break
 		Endif 
 
@@ -885,6 +892,7 @@ Begin Sequence
     	_cWhereWith += CrLf + "     AND SC5.C5_EMISSAO   BETWEEN '" + DtoS(_aRet[24]) + "' AND '" + DtoS(_aRet[25]) + "' "
 	Endif
 
+
 	ZZP->(DbSetOrder(1))
 	If _nRegZZN == 0
 		BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
@@ -898,7 +906,7 @@ Begin Sequence
 			(_cAliasPesq)->(DbCloseArea())
 		Endif
 	Else
-		ZZN->(DbGoto(_cNumPrev))
+		ZZN->(DbGoto(_nRegZZN))
 		_cNumPrev := ZZN->ZZN_CODPRV
 	Endif	
 	//Realizar o Select
@@ -909,13 +917,15 @@ Begin Sequence
 	_lRet := ZFATF025EL( _cAliasPrev, _aSelect, _cWhere, _cWhereWith, _cJoin, _cOrderTab)
 
 	If !_lRet
-		_cMens := "Não existem registros para os parametros informados"
+		_cMens := "Não existem registros para os parametros informados "+_cLinhaPrev
 		Aadd(_aMsgErro,_cMens)
 		If _lMens
 	    	ApMsgStop(_cMens, "Previsão Faturamento")
 		Endif 
+		_lRet := .F.
 		Break
 	Endif
+	
 	_lRet := .T.
 
 	DbSelectArea(_cAliasPrev)
@@ -966,7 +976,7 @@ Begin Sequence
 			Endif	
 			//Não permitir incusão de previsao com chassi
 			If !Empty(SC6->C6_CHASSI)
-				_cMens += " Pedido "+SC6->C6_NUM+" Produto "+AllTrim(SC6->C6_PRODUTO)+" com numero de Chassim "+AllTrim(SC6->C6_CHASSI)+ " nao sera utilizado na Previsao "+SC6->C6_XCODPVR
+				_cMens += " Pedido "+SC6->C6_NUM+" Produto "+AllTrim(SC6->C6_PRODUTO)+" com numero de Chassim "+AllTrim(SC6->C6_CHASSI)+ " nao sera utilizado na Previsao "+SC6->C6_XCODPVR+" "+_cLinhaPrev
 				Aadd(_aMsg,_cMens)
 				(_cAliasPrev)->(DbSkip())
 				Loop	
@@ -1009,9 +1019,9 @@ Begin Sequence
 
 		//Não encontrou nenhum
 		If _nQtVen == 0 .Or. Len(_aRegSC6) == 0
-			//Esta tratando por Prodto não pode deixar o processo encerrar	
+			//Esta tratando por Produto não pode deixar o processo encerrar	
 			If !_lIncGeral
-				_cMens := "Não encontrado Pedidos para o Produto "+_cProduto+" Ano Fab "+_cFabAno+" referente ao Cliente "+_cCliente
+				_cMens := "Não encontrado Pedidos para o Produto "+_cProduto+" Ano Fab "+_cFabAno+" referente ao Cliente "+_cCliente+" "+_cLinhaPrev
 				Aadd(_aMsgErro,_cMens)
 				If _lMens
 	    			ApMsgStop(_cMens, "Previsão Faturamento")
@@ -1019,11 +1029,21 @@ Begin Sequence
 			Endif	
 			Loop
 		Endif
+		//Caso ja tenha sido informado a quantidade liberada ela não pode ser maior que a venda
+		If _nQtdeLib > 0 .And. _nQtdeLib > _nQtVen 
+			_cMens := "Qtde de pedidos "+AllTrim(Str(_nQtVen))+" menor que a qtde a ser liberada "+AllTrim(Str(_nQtdeLib))+" para o Produto "+_cProduto+" Ano Fab "+_cFabAno+" referente ao Cliente "+_cCliente+" "+_cLinhaPrev
+			Aadd(_aMsgErro,_cMens)
+			If _lMens
+	    		ApMsgStop(_cMens, "Previsão Faturamento")
+				_lRet := .F.
+				Break
+			Endif 
+		Endif
 		//Criar Cabeçalho
 		If _nRegZZN == 0
 			If !RecLock("ZZN",.T.) 
-				Break
 				_lRet := .F.
+				Break
 			Endif
 			//Gravar Previsão Cabeçalho
 			ZZN->ZZN_FILIAL := FwXFilial("ZZN") 
@@ -1035,8 +1055,8 @@ Begin Sequence
 			_nRegZZN		:= ZZN->(Recno())
 		Endif
 		If ! RecLock("ZZP",.T.)
-			Break
 			_lRet := .F.
+			Break
 		Endif
 		//Gravar Previsão 
 		ZZP->ZZP_FILIAL := FwXFilial("ZZP") 
@@ -1045,10 +1065,10 @@ Begin Sequence
 		ZZP->ZZP_LOJCLI := _cLoja
 		ZZP->ZZP_CNPJCP := _cCGC
 		ZZP->ZZP_CODPRD := _cProduto
-		ZZP->ZZP_QTEPED := _nQtVen
+		ZZP->ZZP_QTEPED := If(_nQtdeLib == 0,_nQtVen, _nQtdeLib)
 		ZZP->ZZP_CHSDIS := 0 //CHASSI QTDE
 		ZZP->ZZP_QTEDIS := 0 
-		ZZP->ZZP_QTELIB := _nQtdeLib //ZZP->ZZP_QTEPED - ZZP->ZZP_QTEDIS
+		ZZP->ZZP_QTELIB := 0 //ZZP->ZZP_QTEPED - ZZP->ZZP_QTEDIS
 		ZZP->ZZP_QTEFAT := 0
 		ZZP->ZZP_VLRTAB := _nVlrVen
 		ZZP->ZZP_TOTLIB := If(ZZP->ZZP_QTELIB > 0, _nVlrVen * ZZP->ZZP_QTELIB, 0)
@@ -1067,14 +1087,14 @@ Begin Sequence
 		For _nPos := 1 To Len(_aRegSC6) 
 			SC6->(DbGoto(_aRegSC6[_nPos]))
 			If !RecLock("SC6",.F.)
-				Break 
 				_lRet := .F.
+				Break 
 			Endif 
 			SC6->C6_XFILPVR := FwXFilial("ZZP")
 			SC6->C6_XCODPVR := _cNumPrev
 			SC6->C6_XDTPVR 	:= Date()
 			SC6->C6_XUSUPVR	:= RetCodUsr()
-			_cMens := "Pedido "+SC6->C6_NUM+" item "+SC6->C6_ITEM+"incluido paraa Previsao "+_cNumPrev
+			_cMens := "Pedido "+SC6->C6_NUM+" item "+SC6->C6_ITEM+"incluido paraa Previsao "+_cNumPrev+" "+_cLinhaPrev
 			Aadd(_aMsg, _cMens)
 			If !Empty(_cMens)
 				SC6->C6_MOPC    := AllTrim(SC6->C6_MOPC) + CRLF + Upper(_cMens) + CRLF 
@@ -1350,6 +1370,7 @@ Local _cSegMod
 Local _cModVei 	
 Local _cCodCli 
 Local _cLojaCli
+Local _cLinhaPrev
 
 Begin Sequence
 	//adiciono a estrutura do CSV 
@@ -1371,7 +1392,6 @@ Begin Sequence
 	_nPosModVei	:= Ascan(_aEstruCSV,{|x| x[1] =="ZZP_MODVEI"})
 	_nPosSegMod	:= Ascan(_aEstruCSV,{|x| x[1] =="ZZP_SEGMOD"})
 	_nPosFabMod := Ascan(_aEstruCSV,{|x| x[1] =="ZZP_FABMOD"})
-  
     FT_FUSE(_cFileOpen)
     FT_FGOTOP()
     FT_FSKIP()
@@ -1380,14 +1400,15 @@ Begin Sequence
     FT_FSKIP(1)  //Linhas a saltar
 	
 	While !FT_FEOF()
-    	_nLinha ++
+    	_nLinha 	++
+		_cLinhaPrev := " linha : "+AllTrim(Str(_nLinha))
 		_oSay:SetText("Aguarde Lendo linha "+StrZero(_nLinha,5)+" de "+ StrZero(_nLinTot,5))
 		ProcessMessage()
 	    _cLinha := FT_FREADLN()
         _aDados := Separa(_cLinha, _cSeparador)
 		//Verificar se os dados estão consistentes
 		If ZValidCSV(@_aDados, _aEstruCSV, _nLinha, @_aMsgErro)
-			//Verifica se ja possui chave cadastrada
+			//Verifica se ja possui chave cadastrada nesta posição será a chave
 			_nPosCpo := Len(_aDados) + 1   //Chave
 			_cChave := _aDados[_nPosCgc]+_aDados[_nPosCodPrd]+_aDados[_nPosModVei]+_aDados[_nPosSegMod]+_aDados[_nPosFabMod]
 			Aadd(_aDados,_cChave)
@@ -1413,8 +1434,15 @@ Begin Sequence
 	Endif
 	_lContinua	:= .T.   //Indica se ira gravar ZZP desprezando dados invalidos _lAbort
 	For _nPos := 1 To Len(_aDadosZZP)
-		_oSay:SetText("Aguarde Efetuando gravação linha "+StrZero(_nPos,5)+" de "+ StrZero(_nLinha,_nLinTot))
+		If !_lContinua 
+			Break
+		Endif
+		//Guardo a posição da linha na leitura do arquivo ela é gravada após as informações da estruturas
+    	_nLinha 	:= _aDadosZZP[_nPos, Len(_aEstruCSV)+1]  
+		_cLinhaPrev := " linha : "+AllTrim(Str(_nLinha))
+		_oSay:SetText("Aguarde Efetuando gravação linha "+StrZero(_nPos,5)+" de "+_cLinhaPrev )
 		ProcessMessage()
+
 		_cCodPrd 		:= _aDadosZZP[_nPos, _nPosCodPrd]
 		_cFabMod		:= _aDadosZZP[_nPos, _nPosFabMod]
 		_nQtdeLib		:= _aDadosZZP[_nPos, _nPosQtdLib]
@@ -1424,7 +1452,7 @@ Begin Sequence
 		//Verifica se o cliente esta cadastrado 		
 		SA1->(DbSetOrder(3))
 		If !SA1->(DbSeek(FwxFilial("SA1")+AllTrim(_cCgc)))
-			_cMens := "Cliente conCPF/NNPJ "+AllTrim(_cCgc)+" nao cadastrado "
+			_cMens := "Cliente conCPF/NNPJ "+AllTrim(_cCgc)+" nao cadastrado "+_cLinhaPrev
 			AAdd(_aMsgErro,_cMens)
 			_lRet := .F.
 			If _lAborta 
@@ -1437,7 +1465,7 @@ Begin Sequence
 
 		_nQtdeChassi 	:= ZFATF025QChassi(_cCodPrd, _cFabMod)  //Verifica quantos chassis tem disponiveis
 		If _nQtdeChassi < _nQtdeLib
-			_cMens := "Qtde "+AllTrim(Str(_nQtdeLib))+" do Produto "+_cCodPrd+" solicitado maior que a quantidade "+AllTrim(Str(_nQtdeChassi))+" disponível de Chassis, nao sera gravado este item "
+			_cMens := "Qtde "+AllTrim(Str(_nQtdeLib))+" do Produto "+_cCodPrd+" solicitado maior que a quantidade "+AllTrim(Str(_nQtdeChassi))+" disponível de Chassis, nao sera gravado este item "+_cLinhaPrev
 			AAdd(_aMsgErro,_cMens)
 			_lRet := .F.
 			If _lAborta 
@@ -1465,18 +1493,19 @@ Begin Sequence
     	_cWhere += CRLF + "     	AND VRK.VRK_SEGMOD  = '"+_cSegMod+"' "
     	_cWhere += CRLF + "     	AND VRK.VRK_MODVEI  = '"+_cModVei+"' "
 
-		If !ZFATF025Qry( _oSay, @_nRegZZN, _aSelect, _cWhere, _cWhereWith, _cJoin, _nQtdeLib, @_aMsgErro, .F. /*_lMens */)
+		If !ZFATF025Qry( _oSay, @_nRegZZN, _aSelect, _cWhere, _cWhereWith, _cJoin, _nQtdeLib, _nLinha, @_aMsgErro, .F. /*_lMens */)
 			_lRet := .F.
 			If _lAborta 
 				_lContinua := .F.
 			Endif
 		Endif
+		DbSelectArea("ZZP")
+		DBCommitAll()
 	Next		
-	DbSelectArea("ZZP")
-	DBCommitAll()
+	//DbSelectArea("ZZP")
+	//DBCommitAll()
 	If _nRegZZN > 0
 		ZZN->(DbGoto(_nRegZZN))
-
 		BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
 			SELECT 	ZZP.R_E_C_N_O_ AS NREGZZP
 			FROM  	%Table:ZZP% ZZP
@@ -1485,7 +1514,7 @@ Begin Sequence
 				AND ZZP.ZZP_CODPRV 	= %Exp:ZZN->ZZN_CODPRV%
 		EndSql
 		If (_cAliasPesq)->(Eof())
-			_cMens := "Não foi localizado as previsões para realizar empenho"
+			_cMens := "Não foi localizado as previsões para realizar empenho "+_cLinhaPrev
 			AAdd(_aMsgErro,_cMens)
 	    	ApMsgStop(Upper(_cMens), "Previsão Faturamento")
 			Break
@@ -1495,19 +1524,23 @@ Begin Sequence
 			ZZP->(DbGoto((_cAliasPesq)->NREGZZP))
 			_oSay:SetText("Aguarde Efetuando Empenho "+ZZP->ZZP_CODPRD)
 			ProcessMessage()
+			_nQtdeLib	:= ZZP->ZZP_QTEPED
 			//Executar empenho do ZZP
-			If ! U_XZFT26E1()  //Empenho
+			_lRet :=  U_XZFT26E1(_oSay, _nQtdeLib, (_cAliasPesq)->NREGZZP)  //Empenho
+			iF _lRet
+				_cMens := "Realizado empenho de "+AllTrim(Str(ZZP->ZZP_QTELIB))+" do Produto "+	ZZP->ZZP_CODPRD+" FAB/MOD "+ZZP->ZZP_FABMOD+" previsao "+ZZP->ZZP_CODPRV+" cliente "+ZZP->ZZP_CODCLI+"/"+ZZP->ZZP_LOJCLI 		
+				If ZZP->(RecLock("ZZP",.F.))
+					ZZP->ZZP_STATUS := "L"
+					ZZP->ZZP_QTELIB	:= _nQtdeLib  
+					ZZP->ZZP_OBS 	:= AllTrim(ZZP->ZZP_OBS) + CRLF + Upper(_cMens) + CRLF
+					ZZP->(MsUnlock())
+				Endif 
+				AAdd(_aMsgErro,_cMens)
+			Else
 				_cMens := "Não foi possivel empenhar quantidade "+AllTrim(Str(ZZP->ZZP_QTELIB))+" do Produto "+ZZP->ZZP_CODPRD+" referente a Previsao "+ZZP->ZZP_CODPRV
 				AAdd(_aMsgErro,_cMens)
 				_lRet := .F.
 			Endif	
-			_cMens := "Realizado empenho de "+AllTrim(Str(ZZP->ZZP_QTELIB))+" do Produto "+	ZZP->ZZP_CODPRD+" FAB/MOD "+ZZP->ZZP_FABMOD+" previsao "+ZZP->ZZP_CODPRV+" cliente "+ZZP->ZZP_CODCLI+"/"+ZZP->ZZP_LOJCLI		
-			AAdd(_aMsgErro,_cMens)
-			If ZZP->(RecLock("ZZP",.F.))
-				ZZP->ZZP_STATUS := "L"
-				ZZP->ZZP_OBS 	:= AllTrim(ZZP->ZZP_OBS) + CRLF + Upper(_cMens) + CRLF
-				ZZP->(MsUnlock())
-			Endif 
 			(_cAliasPesq)->(DBSkip())
 		EndDo 
 		DBCommitAll()
@@ -1687,6 +1720,8 @@ Begin Sequence
 	Endif 
 	_lRet := .T.
 End Sequence 
+//Neste momento posso adicionar a linha ja validei o tamanho
+Aadd(_aDados,_nLinha)  //acrescento a linha
 If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
 	Ferase(_cAliasPesq+GetDBExtension())
