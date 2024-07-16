@@ -388,7 +388,7 @@ If _lRet
 	//Tem que integrar RGLOG
 	If RecLock("SA1",.F.)
 		If ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
-			If SA1->A1_XINTEG  <> "X"
+			If FieldPos("A1_XINTEG") > 0 .And. SA1->A1_XINTEG  <> "X"
 				SA1->A1_XINTEG := "X"
 			Endif	
 		EndIf

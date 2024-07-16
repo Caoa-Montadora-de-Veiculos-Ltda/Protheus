@@ -50,7 +50,7 @@ Begin Sequence
 	_cResp			:= Self:GetHeader("Responsavel", .F.)
 
 	//_cUser 	:= AllTrim( superGetMv( "CAOA_RES01"	, , "USER_TOTVS"		) )	// Usuario para autenticacao no WS 
-	//_cPass 	:= AllTrim( superGetMv( "CAOA_RES02"	, , "@IntcaoaSA!2024!"	) )	// Senha para autenticao no WS 
+	//_cPass 	:= AllTrim( superGetMv( "CAOA_RES02"	, , "@IntcaoaSA1!2024!"	) )	// Senha para autenticao no WS 
 	//_cChave := encode64( allTrim( _cUser ) + ":" + allTrim( _cPass ) )    
 	_cUser 	:= AllTrim( superGetMv( "CAOA_RES01"	, , ""	) )	// Usuario para autenticacao no WS 
 	_cPass 	:= AllTrim( superGetMv( "CAOA_RES02"	, , ""	) )	// Senha para autenticao no WS 
