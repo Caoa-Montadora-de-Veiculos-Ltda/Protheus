@@ -230,6 +230,9 @@ User Function ZCF029EMAI()
     Local aEmails   := {}
     Local aDest     := {}
     Local nI        := 1
+    Local nRecJob   := 0
+    Local _aMatriz  := {cEmpAnt,cFilAnt}
+    Local cFun      := Alltrim(Funname())
 
     SY1->( DbSetOrder(1) )
     SC1->( DbSetOrder(6) )
@@ -275,10 +278,18 @@ User Function ZCF029EMAI()
             //--Chamada da rotina de envio de pedido por e-mail
         
             If !Empty(aDest)
-               IF SC7->C7_ORIGEM = "EICPO400"
-                  U_ZCOMR004(,,,,,,,aDest)
-               ELSE
-                  U_ZCOMR001(,,,,,,,aDest)
+                IF SC7->C7_ORIGEM = "EICPO400" 
+                    nRecJob := zSW2REC()
+                    //U_ZCOMR004(,,,,,,,aDest)
+                    if nRecJob <> 0 .AND. SC7->C7_CONAPRO <> 'B'
+                        StartJob("U_ZCOMR004",GetEnvServer(),.F.,,,,,,,,aDest,nRecJob,_aMatriz,cFun,.T.)
+                    EndIf
+                ELSE
+                    nRecJob := SC7->(RECNO())
+                    //U_ZCOMR001(,,,,,,,aDest)
+                    If SC7->C7_CONAPRO <> 'B'
+                        StartJob("U_ZCOMR001",GetEnvServer(),.F.,,,,,,,,aDest,nRecJob,_aMatriz,cFun,.T.)
+                    EndIf
                 ENDIF
             EndIf
 
@@ -323,3 +334,38 @@ Static Function zEmailUsr(cUserId)
     (cAliasTRB)->(DbCloseArea())
 
 Return cEmailUser
+
+
+/*
+=======================================================================================
+Programa.:              zEmailUsr
+Autor....:              CAOA - Fagner Ferraz Barreto
+Data.....:              06/07/2020
+Descricao / Objetivo:   Retorna e-mail do usuario          
+=======================================================================================
+*/
+Static Function zSW2REC()
+    Local cQuery		:= ""
+    Local cAliasTRB		:= GetNextAlias()
+    Local nRec          := 0
+    
+    cQuery += " SELECT SW2.R_E_C_N_O_ AS REC FROM "+ retSQLName("SW2") + " SW2 "   + CRLF
+    cQuery += " WHERE SW2.W2_FILIAL  = '" + XFilial("SW2") + "' "   + CRLF
+    cQuery += "   AND SW2.W2_PO_SIGA = '" + SC7->C7_NUM + "'"    + CRLF
+    cQuery += "   AND SW2.D_E_L_E_T_ = ' ' "   + CRLF
+
+    cQuery := ChangeQuery(cQuery)
+
+    // Executa a consulta.
+    DbUseArea( .T., "TOPCONN", TcGenQry(,,cQuery), cAliasTRB, .T., .T. )
+
+    DbSelectArea((cAliasTRB))
+    (cAliasTRB)->(dbGoTop())
+
+    If (cAliasTRB)->(!EOF())
+        nRec := (cAliasTRB)->REC
+    EndIf
+
+    (cAliasTRB)->(DbCloseArea())
+
+Return nRec

@@ -51,8 +51,8 @@
 #DEFINE SEGURO    007  // Valor total do seguro
 #DEFINE TOTF3     008  // Total utilizado no Folder 3
 #DEFINE IMPOSTOS  009  // Array contendo Os Valores de Impostos Exibidos no ListBox
-#DEFINE NTRIB     010 // Valor das despesas nao tributadas - Portugal
-#DEFINE TARA      011 // Valor da Tara - Portugal
+#DEFINE NTRIB     010  // Valor das despesas nao tributadas - Portugal
+#DEFINE TARA      011  // Valor da Tara - Portugal
 
 #DEFINE MB_YESNO         004
 #DEFINE MB_ICONQUESTION  032
@@ -72,7 +72,7 @@ Uso......:              Pedido de Compra > Browse > Outras Acoes > Impr.PC.CAOA
 Obs......:              Modelo especifico. Padrao CAOA. Modelo atual SAP
 =====================================================================================
 */
-USER FUNCTION ZCOMR001(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, aEmails )
+USER FUNCTION ZCOMR001(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, aEmails ,nRecJob,_aMatriz,cFun,lJob)
 	LOCAL aArea     := GetArea()
 	LOCAL lEnd		:= .T.
 	LOCAL cFilePrt  := SubStr(ProcName(),3)
@@ -88,7 +88,6 @@ USER FUNCTION ZCOMR001(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 	LOCAL aDest        := {}
 	Local i            := 0
 
-	DEFAULT lServer    := .F.
 	PRIVATE PixelX
 	PRIVATE PixelY
 
@@ -97,17 +96,23 @@ USER FUNCTION ZCOMR001(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 	PRIVATE lAuto      := (nReg!=NIL)
 	PRIVATE aColsMail  := {} //-- aCols RETORNA COM DADOS DO GRID DO PEDIDO
 
-	PRIVATE cPictCabec := "LGRL" + FWGrpCompany() + ".BMP"
+	PRIVATE cPictCabec := ""
 	
 	PRIVATE cAliasSC1  := GetNextAlias()
 	PRIVATE cAliasSC7  := GetNextAlias()
 	PRIVATE cAliasSZV  := GetNextAlias()
 
 	//Private cPathInServer   := IIF( ValType(aEmails) <> "U", GetTempPath(), "" )
-	PRIVATE cPathInServer   := SuperGetMV( "CMV_COM002" ,,"\spool\")  //Local de armazenamento do arquivo pdf - \Cons_Compras\ 
+	PRIVATE cPathInServer   := "" //SuperGetMV( "CMV_COM002" ,,"\spool\")  //Local de armazenamento do arquivo pdf - \Cons_Compras\ 
+	PRIVATE lRascunho	:= .F.
+	PRIVATE lIsBlind 	:= IsBlind() .OR. Type("__LocalDriver") == "U"
 
 	DEFAULT cAlias     	:= "SC7"
 	DEFAULT aEmails		:= {}
+	DEFAULT nRecJob     := 0
+	DEFAULT lServer    	:= .F.
+	DEFAULT cFun 		:= alltrim(Funname())
+	DEFAULT lJob 		:= .F.
 
 	/** =================================================================== **/
 	/** ==================== MARCA D'AGUA DE IMPRESSAO ==================== **/
@@ -119,10 +124,24 @@ USER FUNCTION ZCOMR001(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 	/** =================================================================== **/
 	DEFAULT cPictMarca := "/templates/compras/marca-dagua-rascunho.bmp"
 	DEFAULT lMarcaImpr := File(cPictMarca) // ARQUIVO MARCA D'AGUA EXISTE PARA IMPRESSAO
-	PRIVATE lRascunho  := (lMarcaImpr .AND. "RASCUNHO" $ Upper(cPictMarca))
+	DEFAULT _aMatriz	:= {"01","2010022001"}
+	lRascunho  := (lMarcaImpr .AND. "RASCUNHO" $ Upper(cPictMarca))
+	aDest  := aClone(aEmails)
+	If lIsBlind
+		
+		RpcSetType(3)
+		RpcSetEnv(_aMatriz[1],_aMatriz[2])
+		dbSelectArea('SC7')
+		SC7->(dbSetOrder(1))
+		SC7->(DBGoTo(nRecJob))
+		//RpcClearEnv()
 	
+	EndIf
+
+	cPathInServer := SuperGetMV( "CMV_COM002" ,,"\spool\")
+	cPictCabec := "LGRL" + FWGrpCompany() + ".BMP"
 	If !ExistDir(cPathInServer)
-	   MakeDir(cPathInServer)
+		MakeDir(cPathInServer)
 	EndIf
 
 	/** =================================================================================================================================== **/
@@ -141,8 +160,7 @@ USER FUNCTION ZCOMR001(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 		lSendMail  := .F.
 	EndIf
 
-
-	If Alltrim(Funname()) = "MATA121"
+	If cFun == "MATA121"
 		lAuto  := .T.
 		cAlias := "SC7"
 		nReg   := SC7->(RECNO())
@@ -212,7 +230,7 @@ USER FUNCTION ZCOMR001(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 		
 		If !Empty(cPathInServer)
 
-       	    If Alltrim(Funname()) <> "MATA094" .AND. !FWIsInCallStack("POST")
+       	    If cFun <> "MATA094" .AND. !FWIsInCallStack("POST")
 
 			   lRet := DlgSendMail(aElements, @aColsMail)
 
@@ -297,6 +315,7 @@ USER FUNCTION ZCOMR001(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 	EndIf
 
 	RestArea(aArea)
+
 RETURN()
 
 
@@ -475,10 +494,6 @@ STATIC FUNCTION Imprimir(oReport,aElements,lEnd)
 	LOCAL nAlignHorz
 	LOCAL nAlignVert
 	LOCAL cPixel     := "-2" // DEFAULT -2
-	
-	// LOCAL oFontWMark
-	// LOCAL nMarkRow
-	// LOCAL nMarkCol
 
 	LOCAL nPagePrint := 001
 	LOCAL nNumPages  := 001
@@ -706,15 +721,8 @@ Manutencao efetuada:    Criacao
 =====================================================================================
 */
 STATIC FUNCTION ReportCab(oReport,aElements,lEnd,nPosV,nFolha,nFolhas,nLine,nBaseCol,nBaseTxt)
-
-	// LOCAL nHPage      := 0
-	// LOCAL nVPage      := 0
-
-	// LOCAL cGrpCompany := cEmpAnt
-
 	LOCAL cPictCabec
 	LOCAL lNewPage    := .F.
-	// LOCAL i
 	LOCAL nItRef
 	LOCAL nSpace      := 002 //_nSpaceLine
 	LOCAL nMargin     := 004
@@ -760,18 +768,16 @@ STATIC FUNCTION ReportCab(oReport,aElements,lEnd,nPosV,nFolha,nFolhas,nLine,nBas
 	LOCAL cXFCA
 	Local nX := 1
 	Local aMAux := {}
+
 	PRIVATE oColumns   := {}
 	PRIVATE nTamVCabIt := 123 //-- ALTURA DOS CABECALHO / TITULOS DE COLUNAS DOS ITENS
 
 	DEFAULT aElements  := {}
-	
 
 	cPictCabec := "LGRL" + FWGrpCompany() + ".BMP"
 	nRow       := nLine
 
-
 	PrtHeader(@oReport,@aElements)   //-- INICIA NOVA PAGINA E IMPRIME CABECALHO
-
 
 	/** =================================================================================================================================== **/
 	/** ======================================================= DADOS DO FORNECEDOR ======================================================= **/
@@ -2357,8 +2363,8 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
 						MaFisLoad(cRefCols,aCols[nX][nY],nX)       //-- CARREGA O VALOR DO CAMPO DO aCols PARA A REFERENCIA NO aNFItem DA MATXFIS
 					EndIf
 				Next nY
-				MaFisEndLoad(nX,02)                                //-- ENCERRA A CARGA DO ITEM
 			Next nX
+			MaFisEndLoad(nX-1,02)                                //-- ENCERRA A CARGA DO ITEM
 
 		EndIf
 
@@ -3027,10 +3033,8 @@ STATIC FUNCTION PrtHeader(oReport, aElements)
 	LOCAL oFont
 	LOCAL nWidth
 	LOCAL nHeight
-	// LOCAL nClrText
 	LOCAL nAlignH
 	LOCAL nAlignV
-	// LOCAL nAngle
 
 	LOCAL aUltComp
 
@@ -3064,7 +3068,7 @@ STATIC FUNCTION PrtHeader(oReport, aElements)
 	cText    := cPictCabec                                          // 075 x 028
 	nRow     := nRow + nMargin
 	nCol     := nCol + nMargin
-	nHeight  := aUltComp[ATT_TAMV][02] - (nMargin * 2)               // 021 => 028%
+	nHeight  := aUltComp[ATT_TAMV][02] - (nMargin * 2)              // 021 => 028%
 	nWidth   := (nHeight * 100) / 28                                // 075 => 100%
 	aUltComp := AAddComponent(xReportPage,@aElements,"ReportImage",TYPE_IMG,cText,nRow,nCol,,nWidth,nHeight)
 
@@ -3644,12 +3648,13 @@ STATIC FUNCTION DlgSendMail(aElements,aColsMail)
 	LOCAL aBotoes		:= {}         			// Variável onde será incluido o botão para a legenda
 	PRIVATE oLista                    			// Declarando o objeto do Browser
 	PRIVATE aCabecalho  := {}         			// Variável que montará o aHeader do Grid
-	DEFAULT aColsMail 	:= {}         			// Variável que receberá os dados
-
+	PRIVATE lIsBlind	:= IsBlind() .OR. Type("__LocalDriver") == "U"
 	PRIVATE cFornMail := ""						// DEFAULT
 	PRIVATE cCmprMail := ""						// DEFAULT
 	PRIVATE cUserMail := AllTrim(UsrRetMail(RetCodUsr()))
 	
+	DEFAULT aColsMail 	:= {}         			// Variável que receberá os dados
+
 	//-- ENDERECO EMAIL DO FORNECEDOR - IMPRESSO NO RELATORIO
 	nItRef  := AScan(aElements, {|aElem| aElem[ATT_NAME][02] == "DetailCellSupplierMail"})
 	If nItRef > 0
@@ -3667,32 +3672,38 @@ STATIC FUNCTION DlgSendMail(aElements,aColsMail)
 			cCmprMail := cAux
 		EndIf
 	EndIf
-
-	DEFINE MSDIALOG oDlg TITLE cTitulo FROM 000, 000  TO 300, 700  PIXEL
-		//-- CRIAR ESTRUTURA aHeader
+	
+	if  lIsBlind
 		CriaCabec()
-
-		//-- BROWSER PARA INCLUSAO, REMOCAO E ATUALIZACAO
-		oLista := MsNewGetDados():New( 053, 078, 415, 775, GD_INSERT+GD_DELETE+GD_UPDATE, "AllwaysTrue", "AllwaysTrue", "AllwaysTrue", aACampos,1, 999, "AllwaysTrue", "", "AllwaysTrue", oDlg, aCabecalho, aColsMail)
-
-		//-- CARGA DOS ITENS DO GRID, ENDERECOS EMAIL PRINCIPAIS
 		Carregar(@aColsMail)
+		lRet := .t.
+	else
+		DEFINE MSDIALOG oDlg TITLE cTitulo FROM 000, 000  TO 300, 700  PIXEL
+			//-- CRIAR ESTRUTURA aHeader
+			CriaCabec()
 
-		//-- ALINHAMENTO PARA OCUPACAO DE ESPACO DISPONIVEL
-		oLista:oBrowse:Align := CONTROL_ALIGN_ALLCLIENT
+			//-- BROWSER PARA INCLUSAO, REMOCAO E ATUALIZACAO
+			oLista := MsNewGetDados():New( 053, 078, 415, 775, GD_INSERT+GD_DELETE+GD_UPDATE, "AllwaysTrue", "AllwaysTrue", "AllwaysTrue", aACampos,1, 999, "AllwaysTrue", "", "AllwaysTrue", oDlg, aCabecalho, aColsMail)
 
-		//-- DEFINIR FOCO NO BROWSER NA ABERTURA
-		oLista:oBrowse:SetFocus()
+			//-- CARGA DOS ITENS DO GRID, ENDERECOS EMAIL PRINCIPAIS
+			Carregar(@aColsMail)
 
-		//-- BOTAO ACOES RELACIONADAS
-		// Aadd(aBotoes,{"NG_ICO_LEGENDA", {||Legenda()},"Legenda","Legenda"})
+			//-- ALINHAMENTO PARA OCUPACAO DE ESPACO DISPONIVEL
+			oLista:oBrowse:Align := CONTROL_ALIGN_ALLCLIENT
 
-		EnchoiceBar(oDlg, {|| lRet:=.T.,oDlg:End() }, {|| lRet:=.F.,oDlg:End() },,aBotoes)
+			//-- DEFINIR FOCO NO BROWSER NA ABERTURA
+			oLista:oBrowse:SetFocus()
 
-	ACTIVATE MSDIALOG oDlg CENTERED
+			//-- BOTAO ACOES RELACIONADAS
+			// Aadd(aBotoes,{"NG_ICO_LEGENDA", {||Legenda()},"Legenda","Legenda"})
 
-	//-- ATUALIZAR VALORES DO GRID
-	aColsMail := oLista:aCols
+			EnchoiceBar(oDlg, {|| lRet:=.T.,oDlg:End() }, {|| lRet:=.F.,oDlg:End() },,aBotoes)
+
+		ACTIVATE MSDIALOG oDlg CENTERED
+
+		//-- ATUALIZAR VALORES DO GRID
+		aColsMail := oLista:aCols
+	endif
 
 RETURN(lRet)
 
@@ -3778,7 +3789,9 @@ STATIC FUNCTION Carregar(aColsMail)
 	Local i          := 0
 
 	DEFAULT lEnvPrd    := ("_PRD" $ Upper(GetEnvServer())) //-- ENVIAR PARA EMAIL EXTERNO, COMO PRODUCAO
- 
+
+	cUserMail     := Posicione("SY1", 03, xFilial("SY1")+(cAliasSC7)->(C7_USER), "Y1_EMAIL") // 03 - Y1_FILIAL+Y1_USER
+
     Aadd(aContatos,{"F",cFornMail})
     Aadd(aContatos,{"C",cCmprMail})
     Aadd(aContatos,{"R",(cAliasSZV)->ZV_REQMAIL})
@@ -3794,12 +3807,13 @@ STATIC FUNCTION Carregar(aColsMail)
 		Aadd(aColsMail,{StrZero(i,3),aContatos[i,1],PadR(cMail,aCabecalho[3,4]),(Empty(cMail).OR.!lSend)})
 		lSend := .T.
     Next
- 
-    //-- SETAR aCols DE DADOS NO OBJETO
-    oLista:SetArray(aColsMail,.T.)
- 
-    //-- ATUALIZAR INFORMACOES PARA EXIBICAO
-    oLista:Refresh()
+	if !lIsBlind
+		//-- SETAR aCols DE DADOS NO OBJETO
+		oLista:SetArray(aColsMail,.T.)
+		//-- ATUALIZAR INFORMACOES PARA EXIBICAO
+		oLista:Refresh()
+	endif
+
 RETURN()
 
 
@@ -3822,7 +3836,6 @@ STATIC FUNCTION DlgSendMa(aElements,aColsMail)
 	LOCAL cTitulo       := "Enviar e-mail - Listagem de destinatários"
 	LOCAL cAux
 	LOCAL lRet
-	Local oDlg
 	LOCAL aACampos  	:= {"CONTATO","EMAIL"} 	// Variável contendo o campo editável no Grid
 	LOCAL aBotoes		:= {}         			// Variável onde será incluido o botão para a legenda
 	PRIVATE oLista                    			// Declarando o objeto do Browser
@@ -3831,8 +3844,9 @@ STATIC FUNCTION DlgSendMa(aElements,aColsMail)
 
 	PRIVATE cFornMail := ""						// DEFAULT
 	PRIVATE cCmprMail := ""						// DEFAULT
-	//PRIVATE cUserMail := AllTrim(UsrRetMail(RetCodUsr()))
 	PRIVATE cUserMail := alltrim(SC1->C1_XREQMAI)
+	//PRIVATE cUserMail := AllTrim(UsrRetMail(RetCodUsr()))
+
 	//-- ENDERECO EMAIL DO FORNECEDOR - IMPRESSO NO RELATORIO
 	nItRef  := AScan(aElements, {|aElem| aElem[ATT_NAME][02] == "DetailCellSupplierMail"})
 	If nItRef > 0
@@ -3878,7 +3892,6 @@ STATIC FUNCTION DlgSendMa(aElements,aColsMail)
 	//aColsMail := oLista:aCols
 
 RETURN(lRet)
-
 
 
 
