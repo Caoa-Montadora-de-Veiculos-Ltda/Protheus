@@ -137,7 +137,8 @@ Local _lRet 		:= .F.
 Local _lNovo    	:= .T.
 Local _cCodSegmento := AllTrim(SuperGetMV("CMV_JSA101",.F.,"06"))  			//"06 - PADRÃO"  //Código do Segmento Cliente
 Local _cConta 		:= AllTrim(SuperGetMV("CMV_JSA102",.F.,"1120101001"))  	//Conta Contabil Padrão
-Local _cGrpTrib     := AllTrim(SuperGetMV("CMV_JSA103",.F.,"FID"))  		//Grupo de Tributação Padrão
+//Local _cGrpTrib     := AllTrim(SuperGetMV("CMV_JSA103",.F.,"FID"))  		//Grupo de Tributação Padrão
+Local _cGrpTrib     := AllTrim(SuperGetMV("CMV_JSA103",.F.,""))  			//Grupo de Tributação Padrão - Solicitado Montilha deixar em branco DAC 17/07/2024
 Local _cWhere		:= ""
 
 Local _cLoja
@@ -188,8 +189,9 @@ Begin Sequence
 		_cBloqueio  := SA1->A1_MSBLQL
 		_lNovo      := .F.
 		_cConta 	:= IIf(Empty(SA1->A1_CONTA),AllTrim(SuperGetMV("CMV_JSA102",.F.,"1120101001")), SA1->A1_CONTA)
-		_cGrpTrib   := IIf(Empty(SA1->A1_GRPTRIB),AllTrim(SuperGetMV("CMV_JSA103",.F.,"FID")), SA1->A1_GRPTRIB) 
 		_cContrib   := IIf(Empty(SA1->A1_CONTRIB),"1", SA1->A1_CONTRIB)
+		//_cGrpTrib   := IIf(Empty(SA1->A1_GRPTRIB),AllTrim(SuperGetMV("CMV_JSA103",.F.,"FID")), SA1->A1_GRPTRIB) 
+		_cGrpTrib   := SA1->A1_GRPTRIB 
 	Else
 		If Select( (_cAliasPesq) ) > 0
 			(_cAliasPesq)->(DbCloseArea())
@@ -260,13 +262,10 @@ Begin Sequence
 			_cLoja		:= Soma1((_cAliasPesq)->LOJA)	
 		Endif
 
-
 		_cBloqueio  := "1"
 		_lNovo      := .T.
 		_cContrib   := "1"   //Verificar se é exportação testar quem é contribuinte 
 		//(_cAliasPesq)->(DbCloseArea())
-
-
 	EndIf
 
 	_cCnPjCpf	:= AllTrim(_oJson:GetJsonText("cnpjcpf"))  
