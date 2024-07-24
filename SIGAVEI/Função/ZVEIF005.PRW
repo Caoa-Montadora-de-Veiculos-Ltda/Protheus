@@ -292,10 +292,13 @@ Local cQAlVO3   := "SQLVO3"  // VO3
 Local cQAlSB1   := "SQLSB1"  // SB1
 Local cQAlSB2   := "SQLSB2"  // SB2
 Local cQAlVVFG  := "SQLVVFG" // VVF/VVG
-Local cQAlVV0A  := "SQLVV0A" // VV0/VVA/VV9
+Local sQAL2D    := "SQAL2D" // VV0/VVA/VV9
 Local cQAlSD1   := "SQLSD1"  // SD1
 Local cQAlSD2   := "SQLSD2"  // SD2
 Local cQAlSD3   := "SQLSD3"  // SD3
+Local cQALNFS   := getLastQuery()
+Local cQryTmp   := getLastQuery()
+
 Local cSTATUS   := ""
 Local aVV1      := {}
 Local cGetKey   := Alltrim(cpesqv5)
@@ -353,7 +356,7 @@ Local aVeiAux := {} // Informações Chassi - Descricao VEICULO (Customizado)
 Local lFuncFrete := FindFunction("VA1800111_LevantaTodasNFsFretes")
 //
 aMov005     := {}
-aInt005    := {}
+aInt005     := {}
 aAte005     := {}
 //cChaInt005 := left(cpesqv5,len(SC6->C6_CHAINT))
 cChassi  := left(cpesqv5,len(SC6->C6_CHASSI))
@@ -829,43 +832,57 @@ Else
 				cQuery += "VV0.VV0_SITNFI <> '0' AND "
 			EndIf
 			cQuery +=       " VVA.D_E_L_E_T_ = ' '"
-			dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cQAlVV0A , .F., .T. )
+			dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), sQAL2D , .F., .T. )
            
-		    IF ( cQAlVV0A )->( Eof() )
+		    IF ( sQAL2D )->( Eof() )
+			    //sQAL2D := ' '
 				// Movimentacao Externa -> Saidas //
 				// Saulo - 01/07/2024
 				// Se não encontra VV0 e VV9, deve pesquisar pelo CHASSI do Veiculo na SD2
-				cQuery := "SELECT SD2.D2_FILIAL,SD2.D2_EMISSAO VV0_DTHEMI, SD2.D2_DOC VV0_NUMTRA, SD2.D2_TIPO OPEMOV, '1' D2_SITNFI, "
-				cQuery += "SD2.D2_EMISSAO VV0_DATMOV, 'C' CLIFOR, SD2.D2_TES VV0_CODTES, '2' VV0_TIPFAT, 'A' VV0_STATUS, SD2.D2_DOC VV0_NUMNFI, " 
-				cQuery += "SD2.D2_SERIE VV0_SERNFI, SD2.D2_DOC VV0_NNFFDI, SD2.D2_SERIE VV0_SNFFDI, SF2.F2_CLIENTE VV0_CODCLI, SF2.F2_LOJA VV0_LOJA, "
-				cQuery += "SF2.F2_VALBRUT VV0_VALVDA, SD2.D2_CUSTO1 VV0_VCAVEI, SD2.D2_VALFET VV0_VALFRE, '1' VV0_TIPDOC, "
-				cQuery += "SD2.R_E_C_D_E_L_, SD2.R_E_C_N_O_ RECVV0
+				( sQAL2D )->( dbCloseArea() )  //fechar a query
+				cQuery := "SELECT SD2.D2_FILIAL,SD2.D2_EMISSAO VV0_DTHEMI, SD2.D2_DOC VV0_NUMTRA, SD2.D2_TIPO VV0_OPEMOV, '1' VV0_SITNFI, "  //D2_SITNFI
+				cQuery += "'0' VV0_TIPMOV, ' ' VV9_STATUS,  SD2.D2_EMISSAO VV0_DATMOV, 'C' VV0_CLIFOR, SD2.D2_TES VVA_CODTES,'2' VV0_TIPFAT, "   
+				cQuery += "'A' VV0_STATUS, SD2.D2_DOC VV0_NUMNFI, SD2.D2_SERIE VV0_SERNFI, SD2.D2_DOC VV0_NNFFDI, SD2.D2_SERIE VV0_SNFFDI, " 
+				cQuery += "SF2.F2_CLIENTE VV0_CODCLI, SF2.F2_LOJA VV0_LOJA,SF2.F2_VALBRUT VVA_VALVDA, SD2.D2_CUSTO1 VVA_VCAVEI, SD2.D2_VALFET VVA_VALFRE, '1' VV0_TIPDOC, "
+				cQuery += "SD2.R_E_C_D_E_L_ RECSDD, SD2.R_E_C_N_O_ RECVV0
 				cQuery += " FROM " + cNamSD2 + " SD2 "
 				cQuery += " JOIN " + cNamSF2 + " SF2 "
-				cQuery += " ON SF2.F2_FILIAL = SD2.D2_FILIAL "
-				cQuery += " AND SF2.F2_DOC   = SD2.D2_DOC "
+				cQuery += " 	ON SF2.F2_FILIAL = SD2.D2_FILIAL "
+				cQuery += " 	AND SF2.F2_DOC   = SD2.D2_DOC "
 				//cQuery +=            " AND VV0.D_E_L_E_T_=' ' "
 				cQuery += " WHERE SD2.D2_FILIAL = '" + xFilial("SD2") + "' AND "
 				cQuery += " SD2.D2_NUMSERI = '" + cChassi + "' "
+
 				//cQuery +=       " VVA.D_E_L_E_T_ = ' '"
-				dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cQAlVV0A , .F., .T. )
+				dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), sQAL2D , .F., .T. )
+
+				lTIPMOV := .F.
             ENDIF
 
-			While !( cQAlVV0A )->( Eof() )
+			While !( sQAL2D )->( Eof() )
 			
-				cSitVV0 := left(X3CBOXDESC("VV0_SITNFI",( cQAlVV0A )->( VV0_SITNFI ))+space(15),15)
+				//cSitVV0 := left(X3CBOXDESC("VV0_SITNFI",( sQAL2D )->( VV0_SITNFI ))+space(15),15)
 				cOpeVV0 := ""
 				cAgrDes := ""
-				cTipDoc := PadR( X3CBOXDESC("VV0_TIPDOC", ( cQAlVV0A )->VV0_TIPDOC ) , 15 )
+				//cTipDoc := PadR( X3CBOXDESC("VV0_TIPDOC", ( sQAL2D )->VV0_TIPDOC ) , 15 )
 
-				If lTIPMOV .and. ( cQAlVV0A )->( VV0_TIPMOV ) <> "0"
-					cAgrDes := ( cQAlVV0A )->( VV0_TIPMOV )
+				IF ( sQAL2D )->VV0_TIPDOC = '1'
+                    cTipDoc := 'NOTA FISCAL'
+				ENDIF 
+
+				If lTIPMOV .and. ( sQAL2D )->( VV0_TIPMOV ) <> "0"
+					cAgrDes := ( sQAL2D )->( VV0_TIPMOV )
 		 		EndIf
 
 	 			If !Empty(cAgrDes)
 					cOpeVV0 := IIf(cAgrDes=="1","Agregacao","Desagregacao") // Agregacao / Desagregacao
 				Else
-					cOpeVV0 := left(X3CBOXDESC("VV0_OPEMOV",( cQAlVV0A )->( VV0_OPEMOV ))+space(15),15)
+					//cOpeVV0 := left(X3CBOXDESC("VV0_OPEMOV",( sQAL2D )->( VV0_OPEMOV ))+space(15),15)
+			        IF ( sQAL2D )->( VV0_OPEMOV ) = 'N'
+					    cOpeVV0 := 'VENDA'
+			        ELSEIF ( sQAL2D )->( VV0_OPEMOV ) = 'D'
+					    cOpeVV0 := 'DEVOLUCA0'						
+			        ENDIF
 				EndIf
 
 				cFilMov := ""
@@ -874,65 +891,76 @@ Else
 					cFilMov += "-"+left(aFil[nTam,2]+space(20),20)
 				EndIf
 
-				cNroNF := ( cQAlVV0A )->( VV0_NUMNFI )
-				cSerNF := ( cQAlVV0A )->( VV0_SERNFI )
-				If ( cQAlVV0A )->( VV0_TIPFAT ) == "2" // Faturamento Direto
-					cNroNF := ( cQAlVV0A )->( VV0_NNFFDI )
-					cSerNF := ( cQAlVV0A )->( VV0_SNFFDI )
+				cNroNF := ( sQAL2D )->( VV0_NUMNFI )
+				cSerNF := ( sQAL2D )->( VV0_SERNFI )
+				If ( sQAL2D )->( VV0_TIPFAT ) == "2" // Faturamento Direto
+					cNroNF := ( sQAL2D )->( VV0_NNFFDI )
+					cSerNF := ( sQAL2D )->( VV0_SNFFDI )
 				EndIf
 
 				If ! Empty(cNroNF)
-					cDescTES := ( cQAlVV0A )->( VVA_CODTES )+"-"+left(FM_SQL("SELECT F4_TEXTO FROM "+cNamSF4+" WHERE F4_FILIAL='"+cFilSF4+"' AND F4_CODIGO='"+( cQAlVV0A )->( VVA_CODTES )+"' AND D_E_L_E_T_=' '"),18)
+					cDescTES := ( sQAL2D )->( VVA_CODTES )+"-"+left(FM_SQL("SELECT F4_TEXTO FROM "+cNamSF4+" WHERE F4_FILIAL='"+cFilSF4+"' AND F4_CODIGO='"+( sQAL2D )->( VVA_CODTES )+"' AND D_E_L_E_T_=' '"),18)
 				Else
 					//cDescTES := STR0060 // Mov.Interna - Agrega/Desagrega
 					cDescTES := " " // Mov.Interna - Agrega/Desagrega
 				EndIf
 				
-				cSTATUS := ( cQAlVV0A )->( VV9_STATUS )
-				If cSTATUS == "A" .and. lVendid
+				cSTATUS := ( sQAL2D )->( VV9_STATUS )
+				
+				/*If cSTATUS == "A" .and. lVendid
 					cSTATUS := "X"
-				EndIf
-				If ( cQAlVV0A )->( VV0_TIPDOC ) == '2' // Mov.Interna SD3
+				EndIf*/
+
+				If ( sQAL2D )->( VV0_TIPDOC ) == '2' // Mov.Interna SD3
 					cSTATUS := "F" // F - Para entrar no vetor de Movimentações
 				EndIf
-
+		
+				IF !Empty( ( sQAL2D )->( VV0_NUMTRA ) ) .AND. Empty( RECSDD )    // verifica se não está deletada
+					cSitVV0 := "Valida"
+                    cSTATUS := "A" 
+					lVendid := .T.
+				ELSEIf !Empty( RECSDD )    // verifica se está deletada=cancelada
+				    cSitVV0 := "Cancelada"
+					cSTATUS := "F" 									
+                ENDIF
+				
 				cNome := ""
-				If ( cQAlVV0A )->( VV0_CLIFOR ) == "F" // Fornecedor
-					cNome := left(FM_SQL("SELECT A2_NOME FROM "+cNamSA2+" WHERE A2_FILIAL='"+cFilSA2+"' AND A2_COD='"+( cQAlVV0A )->( VV0_CODCLI )+"' AND A2_LOJA='"+( cQAlVV0A )->( VV0_LOJA )+"' AND D_E_L_E_T_=' '"),30)
+				If ( sQAL2D )->( VV0_CLIFOR ) == "F" // Fornecedor
+					cNome := left(FM_SQL("SELECT A2_NOME FROM "+cNamSA2+" WHERE A2_FILIAL='"+cFilSA2+"' AND A2_COD='"+( sQAL2D )->( VV0_CODCLI )+"' AND A2_LOJA='"+( sQAL2D )->( VV0_LOJA )+"' AND D_E_L_E_T_=' '"),30)
 				Else
-					cNome := left(FM_SQL("SELECT A1_NOME FROM "+cNamSA1+" WHERE A1_FILIAL='"+cFilSA1+"' AND A1_COD='"+( cQAlVV0A )->( VV0_CODCLI )+"' AND A1_LOJA='"+( cQAlVV0A )->( VV0_LOJA )+"' AND D_E_L_E_T_=' '"),30)
+					cNome := left(FM_SQL("SELECT A1_NOME FROM "+cNamSA1+" WHERE A1_FILIAL='"+cFilSA1+"' AND A1_COD='"+( sQAL2D )->( VV0_CODCLI )+"' AND A1_LOJA='"+( sQAL2D )->( VV0_LOJA )+"' AND D_E_L_E_T_=' '"),30)
 				EndIf
 
-				If cSTATUS <> "F" .and. Empty( cNroNF+cSerNF ) .and. ( ( cQAlVV0A )->( VV0_OPEMOV )+( cQAlVV0A )->( VV0_SITNFI ) ) $ cAte
+				If cSTATUS <> "F" .and. Empty( cNroNF+cSerNF ) .and. ( ( sQAL2D )->( VV0_OPEMOV )+( sQAL2D )->( VV0_SITNFI ) ) $ cAte
 					Aadd(aAte005,{ ;
 						cSTATUS,;
-						stod(( cQAlVV0A )->( VV0_DATMOV )),;
+						stod(( sQAL2D )->( VV0_DATMOV )),;
 						cFilAnt5+cFilMov,;
-						( cQAlVV0A )->( VV0_NUMTRA ),;
-						( cQAlVV0A )->( VVA_CODTES )+"-"+left(FM_SQL("SELECT F4_TEXTO FROM "+cNamSF4+" WHERE F4_FILIAL='"+cFilSF4+"' AND F4_CODIGO='"+( cQAlVV0A )->( VVA_CODTES )+"' AND D_E_L_E_T_=' '"),18),;
-						( cQAlVV0A )->( VVA_VALVDA ),;
-						( cQAlVV0A )->( VV0_CODCLI )+"-"+( cQAlVV0A )->( VV0_LOJA )+" " + cNome })
+						( sQAL2D )->( VV0_NUMTRA ),;
+						( sQAL2D )->( VVA_CODTES )+"-"+left(FM_SQL("SELECT F4_TEXTO FROM "+cNamSF4+" WHERE F4_FILIAL='"+cFilSF4+"' AND F4_CODIGO='"+( sQAL2D )->( VVA_CODTES )+"' AND D_E_L_E_T_=' '"),18),;
+						( sQAL2D )->( VVA_VALVDA ),;
+						( sQAL2D )->( VV0_CODCLI )+"-"+( sQAL2D )->( VV0_LOJA )+" " + cNome })
 				Else
 					// SAIDA
 					Aadd(aMov005,{ ;
-						stod(( cQAlVV0A )->( VV0_DATMOV )) ,; // 01
+						stod(( sQAL2D )->( VV0_DATMOV )) ,; // 01
 						cFilAnt5+cFilMov ,; // 02
 						"1-"+"Saída" ,; // 03 STR0029
 						cOpeVV0 ,; // 04
 						cDescTES ,; // 05
 						cSitVV0 ,; // 06
 						cNroNF+"-"+cSerNF ,; // 07
-						( cQAlVV0A )->( VVA_VALVDA ) ,; // 08
-						( cQAlVV0A )->( VV0_CODCLI )+"-"+( cQAlVV0A )->( VV0_LOJA )+" "+cNome ,; // 09
-						( cQAlVV0A )->( VV0_NUMTRA ) ,; // 10
-						( cQAlVV0A )->( VV0_DTHEMI ) ,; // 11
-						( cQAlVV0A )->( VVA_VCAVEI )+( cQAlVV0A )->( VVA_VALFRE ) ,; // 12
-						( cQAlVV0A )->( RECVV0 ),; // 13
+						( sQAL2D )->( VVA_VALVDA ) ,; // 08
+						( sQAL2D )->( VV0_CODCLI )+"-"+( sQAL2D )->( VV0_LOJA )+" "+cNome ,; // 09
+						( sQAL2D )->( VV0_NUMTRA ) ,; // 10
+						( sQAL2D )->( VV0_DTHEMI ) ,; // 11
+						( sQAL2D )->( VVA_VCAVEI )+( sQAL2D )->( VVA_VALFRE ) ,; // 12
+						( sQAL2D )->( RECVV0 ),; // 13
 						cTipDoc ,;  // 14
 						"" })  // 15
 					//
 
-					If lVNFComp .and. !Empty(( cQAlVV0A )->( VV0_NUMNFI )) .and. ( !lVV0_TIPDOC .or. ( cQAlVV0A )->( VV0_TIPDOC ) <> '2' )
+					If lVNFComp .and. !Empty(( sQAL2D )->( VV0_NUMNFI )) .and. ( !lVV0_TIPDOC .or. ( sQAL2D )->( VV0_TIPDOC ) <> '2' )
 						cQuery := "SELECT SD2.D2_EMISSAO , SD2.D2_TES , SD2.D2_DOC , SD2.D2_SERIE , SD2.D2_TOTAL , SD2.D2_CLIENTE , SD2.D2_LOJA , SA1.A1_NOME , SD2.D2_TOTAL "
 						cQuery +=  " FROM "+cNamSD2+" SD2 "
 						cQuery +=         " JOIN "+cNamSA1+" SA1 "
@@ -941,8 +969,8 @@ Else
 						cQuery +=              " AND SA1.A1_LOJA = SD2.D2_LOJA "
 						cQuery +=              " AND SA1.D_E_L_E_T_ = ' ' "
 						cQuery += "WHERE SD2.D2_FILIAL ='" + xFilial("SD2") + "' AND "
-						cQuery +=      " SD2.D2_NFORI ='"+( cQAlVV0A )->VV0_NUMNFI+"' AND "
-						cQuery +=      " SD2.D2_SERIORI = '"+( cQAlVV0A )->VV0_SERNFI+"' AND "
+						cQuery +=      " SD2.D2_NFORI ='"+( sQAL2D )->VV0_NUMNFI+"' AND "
+						cQuery +=      " SD2.D2_SERIORI = '"+( sQAL2D )->VV0_SERNFI+"' AND "
 						cQuery +=      " SD2.D2_COD = '"+cB1COD+"' AND "
 						cQuery +=      " SD2.D2_TIPO ='C' AND "
 						cQuery +=      " SD2.D_E_L_E_T_ =' ' "
@@ -973,9 +1001,9 @@ Else
 						( cQAlSD2 )->( dbCloseArea() )
 					EndIf
 				EndIf
-			  	( cQAlVV0A )->( DbSkip() )
+			  	( sQAL2D )->( DbSkip() )
 			EndDo
-			( cQAlVV0A )->( dbCloseArea() )
+			( sQAL2D )->( dbCloseArea() )
 		Next nCont
 		cFilAnt5 := c005FilAnt
 		FS_NFCANC('M',cGruVei,cNamSB1,cNamSD1,cNamSD2,cNamSA1,cNamSA2) // Monta Vetor das NF's Canceladas
@@ -1084,7 +1112,7 @@ Static Function FS_NFCANC(cTip,cGruVei,cNamSB1,cNamSD1,cNamSD2,cNamSA1,cNamSA2)
 Local aObjects   := {}, aInfo := {}, aPos := {}
 Local aSizeHalf  := MsAdvSize(.f.)  // Tamanho Maximo da Janela (.t.=TOOLBAR,.f.=SEM TOOLBAR)
 Local cQAlSD1    := "SQLSD1"
-Local cQAlSD2    := "SQLSD2"
+Local cQAlSD2    := "SQLSD2_A"
 Local cFilSD1    := ""
 Local cFilSD2    := ""
 Local cFilSB1    := ""
