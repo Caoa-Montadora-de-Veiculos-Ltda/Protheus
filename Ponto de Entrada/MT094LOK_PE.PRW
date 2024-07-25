@@ -25,10 +25,9 @@ Local cVLIBER
 Local CONTRATO    := GetNextAlias()
 Local LIMPEZA     := GetNextAlias()
 Local cChave      := ""
-Local _cEmp       := FWCodEmp()
 Local aArea	      := GetArea()
 
-   If _cEmp == "2010" //Executa o p.e. Anapolis.
+   If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 
       cFILIAL          := SCR->CR_FILIAL
       cNum             := SCR->CR_NUM

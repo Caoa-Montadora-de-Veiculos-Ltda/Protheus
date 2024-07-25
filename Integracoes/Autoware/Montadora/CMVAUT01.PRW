@@ -252,7 +252,7 @@ DbSelectArea('VV2')
 DbSelectArea('VVR')
 DbSelectArea('VX5')*/
 
-If AllTrim(FWCodEmp()) <> "2010"
+If !( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
     Conout("[ CMVAUT01 ] - ERRO NA ABERTURA DA EMPRESA: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) +" - " + DTOC(dDATABASE) + " - " + TIME() )
 Else
     Conout("[ CMVAUT01 ] - EMPRESA ABERTA COM SUCESSO: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) +" - " + DTOC(dDATABASE) + " - " + TIME() )

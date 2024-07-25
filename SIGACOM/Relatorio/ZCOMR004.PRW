@@ -4,7 +4,7 @@
 #INCLUDE "FWPrintSetup.ch"
 
 #DEFINE IMP_SPOOL 2
- 
+
 #DEFINE VBOX      080
 #DEFINE HMARGEM   030
 #DEFINE MAXBOXH   860 //800 // Tamanho maximo do box Horizontal
@@ -72,7 +72,7 @@ Uso......:              Pedido de Compra > Browse > Outras Acoes > Impr.PC.CAOA
 Obs......:              Modelo especifico. Padrao CAOA. Modelo atual SAP
 =====================================================================================
 */
-USER FUNCTION  ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, aEmails )
+USER FUNCTION ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, aEmails ,nRecJob,_aMatriz,cFun,lJobMail)
 	LOCAL aArea     := GetArea()
 	LOCAL lEnd		:= .T.
 	LOCAL cFilePrt  := SubStr(ProcName(),3)
@@ -86,29 +86,28 @@ USER FUNCTION  ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer,
 	LOCAL aDest        := {}
 	Local i            := 0
 
-	DEFAULT lServer    := .F.
 	PRIVATE PixelX
 	PRIVATE PixelY
-	PRIVATE cPathInServer    := SuperGetMV( "CMV_COM002" ,,"\spool\")  //Local de armazenamento do arquivo pdf - \Cons_Compras\ 
-
+	PRIVATE cPathInServer    := ""
 
 	PRIVATE cNumPc
 	PRIVATE aElements
 	PRIVATE lAuto      := (nReg!=NIL)
 	PRIVATE aColsMail  := {} //-- aCols RETORNA COM DADOS DO GRID DO PEDIDO
 
-	PRIVATE cPictCabec := "LGRL" + FWGrpCompany() + ".BMP"
+	PRIVATE cPictCabec := ""
 
 	PRIVATE cAliasSC7  := GetNextAlias()
 	PRIVATE cAliasSZV  := GetNextAlias()
-
-	If !ExistDir(cPathInServer)
-	   MakeDir(cPathInServer)
-	EndIf
-
+	PRIVATE lRascunho	:= .F.
+	PRIVATE lIsBlind 	:= IsBlind() .OR. Type("__LocalDriver") == "U"
 
 	DEFAULT cAlias     	:= "SC7"
 	DEFAULT aEmails		:= {}
+	DEFAULT nRecJob     := 0
+	DEFAULT lServer    	:= .F.
+	DEFAULT cFun 		:= alltrim(Funname())
+	DEFAULT lJobMail 	:= .F.
 
 	/** =================================================================== **/
 	/** ==================== MARCA D'AGUA DE IMPRESSAO ==================== **/
@@ -120,9 +119,25 @@ USER FUNCTION  ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer,
 	/** =================================================================== **/
 	DEFAULT cPictMarca := "/templates/compras/marca-dagua-rascunho.bmp"
 	DEFAULT lMarcaImpr := File(cPictMarca) // ARQUIVO MARCA D'AGUA EXISTE PARA IMPRESSAO
-	PRIVATE lRascunho  := (lMarcaImpr .AND. "RASCUNHO" $ Upper(cPictMarca))
+	DEFAULT _aMatriz	:= {"01","2010022001"}
+	lRascunho  := (lMarcaImpr .AND. "RASCUNHO" $ Upper(cPictMarca))
+	aDest  := aClone(aEmails)
 
+	If lIsBlind
+		RpcSetType(3)
+		RpcSetEnv(_aMatriz[1],_aMatriz[2])
+		//RpcClearEnv()
+	EndIf
 
+	cPathInServer := SuperGetMV( "CMV_COM002" ,,"\spool\")  //Local de armazenamento do arquivo pdf - \Cons_Compras\ 
+	cPictCabec := "LGRL" + FWGrpCompany() + ".BMP"
+	If !ExistDir(cPathInServer)
+		MakeDir(cPathInServer)
+	EndIf
+	
+	iF nRecJob > 0 .and. lJobMail
+		fGetTabela(nRecJob)
+	endif
 	//Posiciona no pedido da PO
 	SC7->(DBSeek(xFilial("SC7")+SW2->W2_PO_SIGA))
     
@@ -144,7 +159,7 @@ USER FUNCTION  ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer,
 	cNumPc := SC7->C7_NUM
 
     //Rotina permitida apenas para os pedidos originados do SigaEic
-	IF SC7->C7_ORIGEM = "EICPO400" .AND. SC7->C7_CONAPRO <> "B"
+	IF SC7->C7_ORIGEM = "EICPO400" .AND. ( SC7->C7_CONAPRO <> "B" .OR. lIsBlind )
 
 		/** =================================================================================================================================== **/
 		/** = Confere existencia da rotina para envio de emails, caso contrario nao apresenta opcao de envio                                    **/
@@ -162,7 +177,7 @@ USER FUNCTION  ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer,
 			lSendMail  := .F.
 		EndIf
 
-		If Alltrim(Funname()) = "EICPO400"
+		If cFun == "EICPO400"
 			lAuto  := .T.
 			cAlias := "SC7"
 			nReg   := SC7->(RECNO())
@@ -228,7 +243,7 @@ USER FUNCTION  ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer,
 			
 			If !Empty(cPathInServer)
 
-			    If Alltrim(Funname()) <> "MATA094" .AND. !FWIsInCallStack("POST")
+			    If cFun <> "MATA094" .AND. !FWIsInCallStack("POST")
 					
 					lRet := DlgSendMail(aElements, @aColsMail)
 
@@ -284,6 +299,7 @@ USER FUNCTION  ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer,
 					If !ExistDir("\spool\")
 						MakeDir("\spool\")
 					EndIf
+
 					lCpyErr := CpyT2S( oReport:cPathPDF+cFilePrt + ".pdf", "\spool\" )
 					If !lCpyErr
 						MESSAGEBOX( "Erro ao copiar arquivo (Client -> Server).", "Falha na cópia do arquivo", MB_OK )
@@ -323,7 +339,6 @@ USER FUNCTION  ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer,
 	RestArea(aArea)
 
 RETURN()
-
 
 
 /*
@@ -755,7 +770,6 @@ STATIC FUNCTION ReportCab(oReport,aElements,lEnd,nPosV,nFolha,nFolhas,nLine,nBas
 
 	DEFAULT aElements  := {}
 	
-
 	cPictCabec := "LGRL" + FWGrpCompany() + ".BMP"
 	nRow       := nLine
 
@@ -2098,8 +2112,8 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
 						MaFisLoad(cRefCols,aCols[nX][nY],nX)       //-- CARREGA O VALOR DO CAMPO DO aCols PARA A REFERENCIA NO aNFItem DA MATXFIS
 					EndIf
 				Next nY
-				MaFisEndLoad(nX,02)                                //-- ENCERRA A CARGA DO ITEM
 			Next nX
+			MaFisEndLoad(nX - 1,02)                                //-- ENCERRA A CARGA DO ITEM
 
 		EndIf
 
@@ -2594,7 +2608,7 @@ STATIC FUNCTION PrtHeader(oReport, aElements)
 	cText    := cPictCabec                                          // 075 x 028
 	nRow     := nRow + nMargin
 	nCol     := nCol + nMargin
-	nHeight  := aUltComp[ATT_TAMV][02] - (nMargin * 2)            // 021 => 028%
+	nHeight  := aUltComp[ATT_TAMV][02] - (nMargin * 2)              // 021 => 028%
 	nWidth   := (nHeight * 100) / 28                                // 075 => 100%
 	aUltComp := AAddComponent(xReportPage,@aElements,"ReportImage",TYPE_IMG,cText,nRow,nCol,,nWidth,nHeight)
 
@@ -2602,12 +2616,12 @@ STATIC FUNCTION PrtHeader(oReport, aElements)
 	/** ============================================================= TITULO ============================================================== **/
 	nItRef   := AScan(aElements, {|aItem| aItem[ATT_NAME][02] == "ReportHeaderBox"})
 	cText    := "                           PURCHASE ORDER Nº:" + Space(1)
-	cText    := cText + SW2->W2_PO_NUM	
+	cText    := cText + SW2->W2_PO_NUM
 	nRow     := aElements[nItRef][ATT_POSV][02] + nMargin
 	nCol     := aElements[nItRef][ATT_POSH][02]
 	oFont    := oFont18N:oFont
 	nWidth   := aElements[nItRef][ATT_TAMH][02]
-	nHeight  := aElements[nItRef][ATT_TAMV][02] 
+	nHeight  := aElements[nItRef][ATT_TAMV][02]
 	nAlignH  := ALIGNCENT
 	nAlignV  := VALIGCENT
 	aUltComp := AAddComponent(xReportPage,@aElements,"ReportTitle",TYPE_TXT,cText,nRow,nCol,oFont,nWidth,nHeight,nAlignH,nAlignV)
@@ -3037,7 +3051,7 @@ Descricao:              Cria template de email para envio com PC anexado
 STATIC FUNCTION RptSendMail(aElements,aDest,cArqPedido)
 	LOCAL lEnvia
 	LOCAL cMailTo    := ""
-	LOCAL cMailCC
+	LOCAL cMailCC	 := ""
 	LOCAL cReplyTo
 	LOCAL cSubject
 	LOCAL cHtml      := ""
@@ -3178,12 +3192,13 @@ STATIC FUNCTION DlgSendMail(aElements,aColsMail)
 	LOCAL aBotoes		:= {}         			// Variável onde será incluido o botão para a legenda
 	PRIVATE oLista                    			// Declarando o objeto do Browser
 	PRIVATE aCabecalho  := {}         			// Variável que montará o aHeader do Grid
-	DEFAULT aColsMail 	:= {}         			// Variável que receberá os dados
-
+	PRIVATE lIsBlind	:= IsBlind() .OR. Type("__LocalDriver") == "U"
 	PRIVATE cFornMail := ""						// DEFAULT
 	PRIVATE cCmprMail := ""						// DEFAULT
 	PRIVATE cUserMail := AllTrim(UsrRetMail(RetCodUsr()))
 	
+	DEFAULT aColsMail 	:= {}         			// Variável que receberá os dados
+
 	//-- ENDERECO EMAIL DO FORNECEDOR - IMPRESSO NO RELATORIO
 	nItRef  := AScan(aElements, {|aElem| aElem[ATT_NAME][02] == "DetailCellSupplierMail"})
 	If nItRef > 0
@@ -3192,6 +3207,7 @@ STATIC FUNCTION DlgSendMail(aElements,aColsMail)
 			cFornMail := cAux
 		EndIf
 	EndIf
+
 	//-- ENDERECO EMAIL DO COMPRADOR - IMPRESSO NO RELATORIO
 	nItRef  := AScan(aElements, {|aElem| aElem[ATT_NAME][02] == "DetailCellBillingPurchaserMail"})
 	If nItRef > 0
@@ -3200,29 +3216,35 @@ STATIC FUNCTION DlgSendMail(aElements,aColsMail)
 			cCmprMail := cAux
 		EndIf
 	EndIf
-
-	DEFINE MSDIALOG oDlg TITLE cTitulo FROM 000, 000  TO 300, 700  PIXEL
-		//-- CRIAR ESTRUTURA aHeader
+	
+	if  lIsBlind
 		CriaCabec()
-
-		//-- BROWSER PARA INCLUSAO, REMOCAO E ATUALIZACAO
-		oLista := MsNewGetDados():New( 053, 078, 415, 775, GD_INSERT+GD_DELETE+GD_UPDATE, "AllwaysTrue", "AllwaysTrue", "AllwaysTrue", aACampos,1, 999, "AllwaysTrue", "", "AllwaysTrue", oDlg, aCabecalho, aColsMail)
-
-		//-- CARGA DOS ITENS DO GRID, ENDERECOS EMAIL PRINCIPAIS
 		Carregar(@aColsMail)
+		lRet := .t.
+	else
+		DEFINE MSDIALOG oDlg TITLE cTitulo FROM 000, 000  TO 300, 700  PIXEL
+			//-- CRIAR ESTRUTURA aHeader
+			CriaCabec()
 
-		//-- ALINHAMENTO PARA OCUPACAO DE ESPACO DISPONIVEL
-		oLista:oBrowse:Align := CONTROL_ALIGN_ALLCLIENT
+			//-- BROWSER PARA INCLUSAO, REMOCAO E ATUALIZACAO
+			oLista := MsNewGetDados():New( 053, 078, 415, 775, GD_INSERT+GD_DELETE+GD_UPDATE, "AllwaysTrue", "AllwaysTrue", "AllwaysTrue", aACampos,1, 999, "AllwaysTrue", "", "AllwaysTrue", oDlg, aCabecalho, aColsMail)
 
-		//-- DEFINIR FOCO NO BROWSER NA ABERTURA
-		oLista:oBrowse:SetFocus()
+			//-- CARGA DOS ITENS DO GRID, ENDERECOS EMAIL PRINCIPAIS
+			Carregar(@aColsMail)
 
-		EnchoiceBar(oDlg, {|| lRet:=.T.,oDlg:End() }, {|| lRet:=.F.,oDlg:End() },,aBotoes)
+			//-- ALINHAMENTO PARA OCUPACAO DE ESPACO DISPONIVEL
+			oLista:oBrowse:Align := CONTROL_ALIGN_ALLCLIENT
 
-	ACTIVATE MSDIALOG oDlg CENTERED
+			//-- DEFINIR FOCO NO BROWSER NA ABERTURA
+			oLista:oBrowse:SetFocus()
 
-	//-- ATUALIZAR VALORES DO GRID
-	aColsMail := oLista:aCols
+			EnchoiceBar(oDlg, {|| lRet:=.T.,oDlg:End() }, {|| lRet:=.F.,oDlg:End() },,aBotoes)
+
+		ACTIVATE MSDIALOG oDlg CENTERED
+
+		//-- ATUALIZAR VALORES DO GRID
+		aColsMail := oLista:aCols
+	endif
 
 RETURN(lRet)
 
@@ -3308,9 +3330,8 @@ STATIC FUNCTION Carregar(aColsMail)
 	Local i          := 0
 
 	DEFAULT lEnvPrd    := ("_PRD" $ Upper(GetEnvServer())) //-- ENVIAR PARA EMAIL EXTERNO, COMO PRODUCAO
- 
-   
-    cUserMail     := Posicione("SY1", 03, xFilial("SY1")+(cAliasSC7)->(C7_USER), "Y1_EMAIL") // 03 - Y1_FILIAL+Y1_USER
+
+	cUserMail     := Posicione("SY1", 03, xFilial("SY1")+(cAliasSC7)->(C7_USER), "Y1_EMAIL") // 03 - Y1_FILIAL+Y1_USER
 
     Aadd(aContatos,{"F",cFornMail})
     Aadd(aContatos,{"C",cCmprMail})
@@ -3322,12 +3343,13 @@ STATIC FUNCTION Carregar(aColsMail)
 		Aadd(aColsMail,{StrZero(i,3),aContatos[i,1],PadR(cMail,aCabecalho[3,4]),(Empty(cMail).OR.!lSend)})
 		lSend := .T.
     Next
- 
-    //-- SETAR aCols DE DADOS NO OBJETO
-    oLista:SetArray(aColsMail,.T.)
- 
-    //-- ATUALIZAR INFORMACOES PARA EXIBICAO
-    oLista:Refresh()
+	if !lIsBlind
+		//-- SETAR aCols DE DADOS NO OBJETO
+		oLista:SetArray(aColsMail,.T.)
+		//-- ATUALIZAR INFORMACOES PARA EXIBICAO
+		oLista:Refresh()
+	endif
+
 RETURN()
 
 
@@ -3369,6 +3391,7 @@ STATIC FUNCTION DlgSendMa(aElements,aColsMail)
 			cFornMail := cAux
 		EndIf
 	EndIf
+
 	//-- ENDERECO EMAIL DO COMPRADOR - IMPRESSO NO RELATORIO
 	nItRef  := AScan(aElements, {|aElem| aElem[ATT_NAME][02] == "DetailCellBillingPurchaserMail"})
 	If nItRef > 0
@@ -3446,3 +3469,39 @@ STATIC FUNCTION Carrega(aColsMail)
     //-- ATUALIZAR INFORMACOES PARA EXIBICAO
     //oLista:Refresh()
 RETURN()
+
+Static Function fGetTabela(nRecJob)
+
+DbSelectArea("SW2")
+SW2->(DbGoto(nRecJob))
+
+DbSelectArea("SC7")
+SC7->(DbSetOrder(1))
+//SC7->(DBSeek(xFilial("SC7")+SW2->W2_PO_SIGA))
+
+//Busca IMPORTADORES / CONSIGNATARIOS
+DbSelectArea("SYT")
+SYT->(DbSetOrder(1))
+//SYT->(DBSeek(xFilial("SYT")+SW2->W2_IMPORT))
+
+//Busca Descrição da moeda
+DbSelectArea("SYF")
+SYF->(DbSetOrder(1))
+//SYF->(DBSeek(xFilial("SYF")+SW2->W2_MOEDA))
+
+//Busca Tipo de Transporte
+DbSelectArea("SYQ")
+SYQ->(DbSetOrder(1))
+//SYQ->(DBSeek(xFilial("SYQ")+SW2->W2_TIPO_EM))
+
+//Busca Forwarder
+DbSelectArea("SY4")
+SY4->(DbSetOrder(1))
+//SY4->(DBSeek(xFilial("SY4")+SW2->W2_AGENTE))
+
+//Busca Observação do Pedido
+DbSelectArea("SYP")
+SYP->(DbSetOrder(1))
+//SYP->(DBSeek(xFilial("SYP")+SW2->W2_OBS))
+
+Return

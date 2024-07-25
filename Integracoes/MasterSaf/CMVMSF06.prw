@@ -345,7 +345,7 @@ static _VLR_UNIT
 */
 
 User Function CMVMSF06()
-
+ 
 	Local nOpc := 0
 	Local aRet := {}
 	Local aParamBox := {}
@@ -2938,7 +2938,7 @@ Descricao / Objetivo:   Itens Notas Fiscais Mercadorias e Produtos
 */
 
 Static Function fSAFX08()
-	Local cLP := '610-002'
+	Local cLP := SuperGetMV("CMV_LPSFAT", .F., "610-002")
 	Local cConta := ""
 	Local cChave := ""
 
@@ -3072,14 +3072,27 @@ Static Function fSAFX08()
 					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_UM")
 					nPosCmpCab:=PosCabArray(aItens,"COD_NBM")						
 					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_POSIPI")
+
+					//******* INC0113339 25/06/24 Cintia Araujo
 					nPosCmpCab:=PosCabArray(aItens,"VLR_UNIT")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_PRCUNIT")
+					If SFT->FT_DESCZFR > 0
+						aItens[Len(aItens)][nPosCmpCab][2] := (SFT->FT_PRCUNIT+(SFT->FT_DESCZFR/SD2->D2_QUANT))*(10**TamSZR(cTab)[2])
+					Else
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_PRCUNIT")
+					EndIf
 					nPosCmpCab:=PosCabArray(aItens,"VLR_ITEM")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_TOTAL")
+					If SFT->FT_DESCZFR > 0
+						aItens[Len(aItens)][nPosCmpCab][2] := (SFT->FT_TOTAL+SFT->FT_DESCZFR)*(10**TamSZR(cTab)[2])
+					Else
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_TOTAL")
+					EndIf
+					//******* INC0113339 25/06/24 Cintia Araujo
+
+
 					nPosCmpCab:=PosCabArray(aItens,"VLR_DESCONTO")
 					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_DESCONT")
 					nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_A")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_ORIGEM")
+					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CLASFIS")  //"SB1->B1_ORIGEM")   INC0112420 17/06/24 Cintia Araujo
 					nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_B")
 					aItens[Len(aItens)][nPosCmpCab][2] := IIf((Empty(SFT->FT_CLASFIS) .or. !Len(Alltrim(SFT->FT_CLASFIS)) == 3),"@",Subs(SFT->FT_CLASFIS,2,2))
 					nPosCmpCab:=PosCabArray(aItens,"VLR_FRETE")
@@ -4218,7 +4231,7 @@ Static Function fSAFX52()
 					aItens[Len(aItens)][nPosCmpCab][2] := "D"
 					//INC0020855 - SAFX52
 					nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_A")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_ORIGEM")
+					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CLASFIS")  //"SB1->B1_ORIGEM")  INC0112420 17/06/24 Cintia Araujo
 					//INC0020855 - SAFX52
 					nPosCmpCab:=PosCabArray(aItens,"IND_MOT_INV")
 					aItens[Len(aItens)][nPosCmpCab][2] := "01"

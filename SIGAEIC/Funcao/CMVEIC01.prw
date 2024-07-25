@@ -7,7 +7,7 @@
 Programa.:              CMVEIC01
 Autor....:              Atilio Amarilla / Marcelo Haro Sanches / Marcelo Carneiro
 Data.....:              20/12/2018 / 10/04/2019
-Descricao / Objetivo:   InclusÃ£o de botÃ´es adicionais na rotina EIVEV100
+Descricao / Objetivo:   Inclusão de botÃ´es adicionais na rotina EIVEV100
 Doc. Origem:            GAP
 Solicitante:            Cliente
 Uso......:              CAOA Montadora de Veiculos - GAP EIC004
@@ -20,7 +20,6 @@ Obs......:              - U_CMVEI01A() - importação de Invoice
 ===================================================================================== */
 Static nNumInte := 0
 Static aStIten  := {} 
-Static cFilExec := "2020"
 
 User Function CMVEIC01()
 
@@ -110,7 +109,7 @@ User Function CMVEI01A()
 	Private cAnoFab		:= Str(Year(dDataBase), 4)
 	Private cAnoMod		:= Str(Year(dDataBase), 4)
 
-	Private cLayout		:= Iif( FWCodEmp() == "2020", aLayout[5], aLayout[1] )
+	Private cLayout		:= Iif( ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ), aLayout[5], aLayout[1] )
 	Private cPicVlr 	:= "@E 999,999,999.99"
 	Private lAgt_Ok		:= "1"
 	Private lOk_Shp		:= "1"
@@ -124,6 +123,7 @@ User Function CMVEI01A()
 
 	Private _cChaveLock	:= ""	//GAP081
 	Private _cPoLock	:= ""	//GAP081
+	Private cFilExec    :=  AllTrim(FwCodEmp()) 
 
 	If (nPos:=RAt("\",cDirInicial)) > 0
 		cDirInicial := Subs(cDirInicial,1,nPos)
@@ -154,7 +154,7 @@ User Function CMVEI01A()
 			@ 0.2,nCo2	MSGet cDiretorio SIZE 200,8 Picture "@!"  Valid (Vazio() .OR. IIF(!File(AllTrim(cDiretorio)),(MsgStop("Arquivo Inválido!"),.F.),.T.)) When .F. Of oDlg
 			@ 2,240 BUTTON "..." SIZE 12,12 ACTION (Eval(bGetDir)) Pixel OF oDlg
 			@ 1.5,nCo1	Say "Layout:" SIZE 4,2 Of oDlg
-			if FWCodEmp() == cFilExec
+			if ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 				@ 1.4,nCo2	Combobox cLayout ITEMS aLayout When .F. SIZE 80,12 Of oDlg
 			else
 				@ 1.4,nCo2	Combobox cLayout ITEMS aLayout When .T. SIZE 80,12 Of oDlg
@@ -164,7 +164,7 @@ User Function CMVEI01A()
 			@ 1.5,nCo1+22	Say "Ano Mod:"
 			@ 1.4,nCo2+21	MSGet cAnoMod Picture "9999" When .F. /*aScan( aLayout , cLayout )=3*/ Of oDlg
 			@ 2.7,nCo1 SAY "Proforma" Of oDlg
-			if FWCodEmp() == cFilExec
+			if ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 				@ 2.6,nCo2 MsGet cPoNum F3 "SW2" Picture "@!" When .F./*aScan( aLayout , cLayout )<> 1*/ SIZE 60,08 Of oDlg
 			else
 				@ 2.6,nCo2 MsGet cPoNum F3 "SW2" Picture "@!" When aScan( aLayout , cLayout )<> 1 SIZE 60,08 Of oDlg
@@ -211,7 +211,7 @@ Static Function ValidTela() //Validação de todas as informaÃ§Ãµes do CSV
 	Else
 		nLayout   := aScan( aLayout , cLayout )
 
-		If (FWCodEmp() == cFilExec .AND. nLayout < 5) .OR. (FWCodEmp() <> cFilExec .AND. nLayout = 5)
+		If ( ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) .AND. nLayout < 5) .OR. ( !( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) .AND. nLayout = 5)
 			FWAlertError("O layout " + Alltrim(aLayout[nLayout]) + " não pode ser usado nessa filial", "CMVEIC01")
 			Return
 		EndIf
@@ -237,7 +237,7 @@ Static Function ValidTela() //Validação de todas as informaÃ§Ãµes do CSV
 	EndIf
 
     //Ajustes Referente ao GAP023
-	if  (FWCodEmp() = cFilExec .AND. nLayout = 5 .and. lRet)
+	if  ( ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) .AND. nLayout = 5 .and. lRet)
 		_aPergs     := {}
 	    _aRetP      := {}
 
@@ -389,7 +389,7 @@ Static Function ValidTela() //Validação de todas as informaÃ§Ãµes do CSV
 					aEspaco	    := AllTrim(Subs(cLinhaIT,214,046)) // 214 a 260 - Espaco
 
 					if empty(cProforma)
-						MsgStop("A Planilha " + cINTCSV + " contém campos dos Números das Proformas, que estão em branco!")
+						MsgStop("A Planilha " + cINTCSV + " contém campos dos Número das Proformas, que estão em branco!")
 						lRet := .F.
 					Endif
 					
@@ -734,7 +734,7 @@ Static Function IntegraInv()
 			Processa( {|| lErroGer := !(U_ZEICF021(cINTCSV,cPoNum,nLayout))}, "Lendo Arquivo de Integração...", OemToAnsi("Lendo dados do arquivo..."),.F.)
 			UnLockByName(_cChaveLock ,.T.,.T.) //VERIFICAR ONDE COLOCAR ISSO, ALTERAR A VARIÃVEL
 		Else 
-			MsgStop("Integração não pode ser concluída." + CRLF + "Já existe um processo em andamento.","Erro",1,0,1)
+			MsgStop("Integração não pode ser concluída." + CRLF + "já existe um processo em andamento.","Erro",1,0,1)
 			Return
 		EndIf 
 	
@@ -813,44 +813,18 @@ Static Function MontaWork1()
 	AADD(aStrut1, {"EW5_XHOUSE", "C", TamSx3("EW4_XHOUSE")[1], 0})
 	AADD(aStrut1, {"EW5_XCHAV2", "C", 100, 0})
 
-	cArqEW5 := CriaTrab(aStrut1, .T.)
-	if FWCodEmp() <> cFilExec
-		If File(cArqEW5_2+OrdBagExt())
-			fErase(cArqEW5_2+OrdBagExt())
-		EndIf
-	
-		cArqEW5_2 := CriaTrab(Nil, .F.)
-		dbUseArea(.t.,,cArqEW5,cWKEW5,.f.,.f.)
-		IndRegua(cWKEW5,cArqEW5+OrdBagExt(),"EW5_INVOIC+EW5_PO_NUM+EW5_COD_I+EW5_SI_NUM+EW5_POSICA")
-		IndRegua(cWKEW5,cArqEW5_2+OrdBagExt(),"EW5_INVOIC+EW5_CC+EW5_SI_NUM+EW5_PO_NUM+EW5_POSICA+EW5_COD_I+EW5_XCASE")
-	// ordena WKEW5 igual a tela padrao de invoice antecipada, para poder enumerar os itens corretamente
-		
-		SET INDEX TO (cArqEW5)
-		SET INDEX TO (cArqEW5_2) ADDITIVE
-	else
-		If File(cArqEW5_1+OrdBagExt())
-			fErase(cArqEW5_1+OrdBagExt())
-		EndIf
-	
-		If File(cArqEW5_2+OrdBagExt())
-			fErase(cArqEW5_2+OrdBagExt())
-		EndIf
-		cArqEW5_1 := CriaTrab(Nil, .F.)
-		cArqEW5_2 := CriaTrab(Nil, .F.)
-		dbUseArea(.t.,,cArqEW5,cWKEW5,.T.,.F.)
+	//************* Inicio - Ajustes Referente ao GAP195 - Adicionado por Cintia Araujo em 13/06/24
+	oTempTable := FWTemporaryTable():New( cWKEW5 )
+	oTempTable:SetFields( aStrut1 )
+	oTempTable:AddIndex("indice1", {"EW5_INVOIC", "EW5_PO_NUM", "EW5_COD_I", "EW5_SI_NUM", "EW5_POSICA"}  )
+	oTempTable:AddIndex("indice2", {"EW5_INVOIC", "EW5_CC", "EW5_SI_NUM", "EW5_PO_NUM", "EW5_POSICA", "EW5_COD_I", "EW5_XCASE"} )
+	oTempTable:Create()
 
-
-		(cWKEW5)->(DBClearIndex() )
-  		DBCreateIndex(cWKEW5+'1', "EW5_INVOIC+EW5_PO_NUM+EW5_COD_I+EW5_SI_NUM+EW5_POSICA" , {|| EW5_INVOIC+EW5_PO_NUM+EW5_COD_I+EW5_SI_NUM+EW5_POSICA })
-		DBCreateIndex(cWKEW5+'2', "EW5_INVOIC+EW5_CC+EW5_SI_NUM+EW5_PO_NUM+EW5_POSICA+EW5_COD_I+EW5_XCASE", {|| EW5_INVOIC+EW5_CC+EW5_SI_NUM+EW5_PO_NUM+EW5_POSICA+EW5_COD_I+EW5_XCASE})
-	
-	EndIf
-
-
+	DbSelectArea(cWKEW5)
 	(cWKEW5)->(dbSetOrder(1))
+	//************* Fim - Ajustes Referente ao GAP195 - Adicionado por Cintia Araujo em 13/06/24
 
 	dbSelectArea(nArea)
-
 Return
 
 //----------------------------------------------------------------------------------
@@ -1106,7 +1080,7 @@ Static Function LerDados(cINTCSV)
 			[06] Opcional
 			[07] Chave / KeyNo
 			[08] T/MNO - Valor Total
-			// 10/10/2019 - Alteração de layout. InclusÃ£o de colunas Invoice, Ano Fab e Ano Mod
+			// 10/10/2019 - Alteração de layout. Inclusão de colunas Invoice, Ano Fab e Ano Mod
 			[09] Invoice
 			[10] Ano Fab
 			[11] Ano Mod    */
@@ -1946,7 +1920,7 @@ Static Function CMV01GravaInv() //Gravação da tabela EW5
 
 					lProcEW5	:= .F.
 					
-					If nLayOut == 5 .And. FWCodEmp() == cFilExec
+					If nLayOut == 5 .And. ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 						cQuery := ""
 						cQuery += " SELECT SW3.W3_QTDE,EW5.* 						"+(Chr(13)+Chr(10))
 						cQuery += " FROM "+RetSqlName("EW5")+" EW5 					"+(Chr(13)+Chr(10))
@@ -3418,7 +3392,7 @@ Static function zLayouts() //Configuração dos Layouts
 	cmd += CRLF + "	[04] EX"
 	cmd += CRLF + "	[05] CODIGO PRODUTO"
 	cmd += CRLF + "	[06] QUANTIDADE"
-	cmd += CRLF + "	[07] VALOR UNITÃRIO"
+	cmd += CRLF + "	[07] VALOR UNITÁRIO"
 	cmd += CRLF + "	[08] CONTAINER"
 	cmd += CRLF + "	[09] CAIXA"
 	cmd += CRLF + "	[10] PESO LIQUIDO"
@@ -3529,7 +3503,7 @@ Static Function CMV01ValAr()
 		While !WKEW5->(EOF()) .AND. WKEW5->EW5_INVOIC == cInvoice
 			IF SW2->(dbSeek(xFilial("SW2")+WKEW5->EW5_PO_NUM))
 			
-				If nLayOut == 5 .And. FWCodEmp() == "2020"
+				If nLayOut == 5 .And. ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 					
 					cQuery := " "
 					cQuery += " SELECT SW3.W3_POSICAO ,W3_SEQ, SW3.W3_QTDE ,NVL(EW5_QTDE,0) AS QUANT, (SW3.W3_QTDE-NVL(EW5_QTDE,0) ) AS SALDO,W3_PRECO"+(Chr(13)+Chr(10))

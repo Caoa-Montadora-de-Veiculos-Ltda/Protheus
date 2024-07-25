@@ -16,11 +16,10 @@ Obs.................:
 
 User Function ITEM()
 
-   Local _cEmp    := FWCodEmp()
    Local _lRet	  := .T.
    Local aArea	  := GetArea()
 
-   If _cEmp == "2010" //Executa o p.e. Anapolis.
+   If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
       _lRet := zMontadora()
    Else
       _lRet := zCaoaSp() //Executa o p.e. CaoaSp
@@ -46,8 +45,6 @@ Local oObj   	:= ""
 Local cIdPonto 	:= ""
 Local cIdModel 	:= ""
 Local cFilSilt 	:= Alltrim(SuperGetMV("CAOA_ST006",.T.,"2010072005"))
-Local _cEmp  	:= FWCodEmp()
-Local _cFilial	:= FWFilial()
 Local cCodProd 	:= ""
  
 If aParam <> NIL
@@ -59,7 +56,7 @@ If aParam <> NIL
 
 	If cIdPonto == 'FORMCOMMITTTSPOS'
 	
-		IF _cEmp = '2020' .AND. _cFilial = '2001' .AND. Substr(M->B1_COD,1,1) = "R" //somente Peças Barueri
+		IF ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) .AND. Substr(M->B1_COD,1,1) = "R" //somente Peças Barueri
 	
 			If nOpcx == 3  .or.  nOpcx == 4  .or.  nOpcx == 5  //Inclusão ou Alteração ou Excluir
         		cCodProd := M->B1_COD
@@ -87,7 +84,7 @@ If aParam <> NIL
 	*/
 	If cIdPonto == 'FORMCOMMITTTSPRE'
 
-		IF _cEmp = '2010'
+		IF ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 		
 			If FindFunction("U_ZCOMF021") .And. FunName() <> "EICA130"
     			U_ZCOMF021(oObj) // ataliza campos na SB1
@@ -117,8 +114,6 @@ Local oObj   	:= ""
 Local cIdPonto 	:= ""
 Local cIdModel 	:= ""
 //Local cFilSilt 	:= Alltrim(SuperGetMV("CAOA_ST006",.T.,"2010072005"))
-Local _cEmp  	:= FWCodEmp()
-Local _cFilial	:= FWFilial()
 Local cCodProd 	:= ""
 Local _lVisual	:= .T.
 Local cTipo     := "" 
@@ -152,7 +147,7 @@ If aParam <> NIL
 
 	If cIdPonto == 'FORMCOMMITTTSPOS' 
 	
-		IF _cEmp = '2020' .AND. _cFilial = '2001' .AND. Substr(M->B1_COD,1,1) = "R" .AND. !FWIsInCallStack("U_ZPECF023")//somente Peças Barueri
+		IF ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) .AND. Substr(M->B1_COD,1,1) = "R" .AND. !FWIsInCallStack("U_ZPECF023")//somente Peças Barueri
 	
 			If nOpcx == 3  .or.  nOpcx == 4  .or.  nOpcx == 5  //Inclusão ou Alteração ou Excluir
         		cCodProd := M->B1_COD
@@ -166,7 +161,7 @@ If aParam <> NIL
 
 	ElseIf cIdPonto == 'FORMCOMMITTTSPRE'
 
-		IF _cEmp = '2010'
+		IF ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 		
 			If FindFunction("U_ZCOMF021") .And. FunName() <> "EICA130"
     			U_ZCOMF021(oObj) // ataliza campos na SB1

@@ -96,7 +96,6 @@ Static Function ZCOMF51B(_cFile051,cArqLog)
 	Private lErroGer
 
 	Public aDadosLi      := {}
-	Public _cEmp  	     := FWCodEmp()
 	Public _nCtItem      := 0
 	Public _nLinAc       := 0
 

@@ -31,11 +31,7 @@ Private cCdLin  := ""
 Private cCdFam  := ""
 Private aReturn := {(STR0008), 1,(STR0009), 2, 2, 1, '',1 } // 'Zebrado'###'Administracao'
 
-IF FWCodEmp() <> '2020' 
-   RETURN Nil
-ENDIF
-
-IF FWFilial() <> '2001'
+IF !( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
    RETURN Nil
 ENDIF
 

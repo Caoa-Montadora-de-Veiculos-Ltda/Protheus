@@ -27,10 +27,9 @@ Local _cTipo         := Space(2)
 Local _nLaco         := 0
 Local aPergs         := {}
 Local lEnder         := .T.
-Local _cEmpresa 	   := FWCodEmp()
-Local _lWLocaliz     := IIf(_cEmpresa=='2010','.T.','.F.')
-Local _lOLocaliz     := IIf(_cEmpresa=='2010',.T.,.F.)
-Local _lOTpOper      := IIf(_cEmpresa=='2010',.F.,.T.)
+Local _lWLocaliz     := IIf(AllTrim(FWCodEmp())=='2010','.T.','.F.')
+Local _lOLocaliz     := IIf(AllTrim(FWCodEmp())=='2010',.T.,.F.)
+Local _lOTpOper      := IIf(AllTrim(FWCodEmp())=='2010',.F.,.T.)
 
 Private _cCLVL    := space(11)
 Private _cCusto   := space(11)
@@ -75,7 +74,7 @@ IF _cTipo <> 'SV' .AND. _cGrupo <> 'VEIA'
       ACTIVATE MSDIALOG oDlg CENTER
 
       //Validar o armazém com o endereço p/ dar continuidade
-      If _cEmpresa == '2010'
+      If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
          lEnder   := VerArm()
       EndIf
 

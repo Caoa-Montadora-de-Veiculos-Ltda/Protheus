@@ -1536,7 +1536,7 @@ Static Function zRel0002(cArquivo)
 			nVlrDesc   := 0
 			//Alterado conf. solicitação Silvana 26/05/22	
 			//Somente na filial Barueri 
-			IF FWCodEmp()   = '2020' .AND. FWFilial() = '2001'
+			IF ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 				nVlrFrete  := (cAliasTRB)->D2_VALFRE          //--Frete
 				nVlrSeguro := (cAliasTRB)->D2_SEGURO          //--Seguro
 				nVlrDesp   := (cAliasTRB)->D2_DESPESA         //--Despesas

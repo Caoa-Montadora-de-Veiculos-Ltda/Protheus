@@ -14,18 +14,17 @@
 
 User Function MT460FIM()
 
-	Local _cEmp		:= FWCodEmp()
 	Local aArea		:= GetArea()
 
 	If findfunction("U_XMT460UPD")
 		U_XMT460UPD()
 	Endif
 
-	If _cEmp == "2010" //Executa o p.e. Anapolis.
+	If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 		If findfunction("U_CMVSAP24")
 			U_CMVSAP24()
 		Endif
-	Else
+	ElseIf ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 		If findfunction("U_ZSAPF024")
 			U_ZSAPF024()
 		Endif

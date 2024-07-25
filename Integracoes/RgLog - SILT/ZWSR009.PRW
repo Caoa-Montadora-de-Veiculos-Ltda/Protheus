@@ -5,7 +5,7 @@
 Serviço de integração  Autoware recebimento separação de mercadorias orçamento
 @author 	   DAC 
 @since 		17/12/2021
-@version 	undefined
+@version 	V.03
 @param		Não utilizado
 @return     lRet			, caracter, JSON com tabelas.
 @type       class

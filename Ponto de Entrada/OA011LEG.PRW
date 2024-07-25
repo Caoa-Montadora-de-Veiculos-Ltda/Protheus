@@ -16,7 +16,7 @@
 #Define STR0122 "Orçamento Oficina Pendente para O.S.
 #Define STR0123 "Orçamento Oficina Liberado para O.S."
 #Define STR0124 "Orçamento Oficina Importado para O.S."
-#Define STR0125 "rçamento Oficina Cancelado"
+#Define STR0125 "Orçamento Oficina Cancelado"
 
 ************************
 User Function OA011LEG()

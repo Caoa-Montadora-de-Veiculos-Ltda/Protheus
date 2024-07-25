@@ -127,7 +127,7 @@ Static Function fMontaTela()
 Return lRet
  
 
-//Popula tabela temporária com informaç~eos que vão aparecer na grid.
+//Popula tabela temporária com informações que vão aparecer na grid.
 Static Function fPopula()
 
     Local cQuery := ""

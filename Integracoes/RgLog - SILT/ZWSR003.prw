@@ -148,12 +148,12 @@ Static Function zProcessa(lJob)
     If !Empty( __cChvCTE )
 
         //--Quando a execução for manual acrescenta a chave do CTe ao nome do arquivo de log
-        __cArqLog := cDirLog +"ZWSR003_"+__cChvCTE+"_"+DTOS(Date())+"_"+StrTran(Time(),":")+".LOG"
+        __cArqLog := cDirLog +"ZWSR003_" + xFilial("GW1") + "_" + __cChvCTE + "_" + DTOS(Date()) + "_" + StrTran(Time(),":") + ".LOG"
         //__cArqOk  := cDirLog +"ZWSR003_"+__cChvCTE+"_"+DTOS(Date())+"_"+StrTran(Time(),":")+"_Ok.LOG"
 
     Else
 
-        __cArqLog := cDirLog +"ZWSR003_Gera_Romaneio_"+DTOS(Date())+"_"+StrTran(Time(),":")+".LOG"
+        __cArqLog := cDirLog +"ZWSR003_" + xFilial("GW1") + "_Gera_Romaneio_"+DTOS(Date())+"_"+StrTran(Time(),":")+".LOG"
         //__cArqOk  := cDirLog +"ZWSR003_Gera_Romaneio_"+DTOS(Date())+"_"+StrTran(Time(),":")+"_Ok.LOG"
 
     EndIf    
@@ -327,16 +327,30 @@ Static Function zProcessa(lJob)
                 //Estiver preenchido, não deve gerar o romaneio, pois a Ana coloca manualmente
                 //Para ela ter o controle.
 
-                If _CnpjPag == "03471344000509" .And. _CnpjRem <> "03471344000509" .And. _CnpjDest <> "03471344000509"
-                    _ctpoper := "TRIANGULA"
-                ElseIf _tp_oper $ cFracion
-                    _ctpoper := "FRACIONADO"
-                ElseIf _tp_oper $ cOperImp
-                    //--Consulta tipo de operação na matriz de De/Para
-                    nPos := aScan( aMunOper, { |x| AllTrim( x[1] ) == _MunCol } )
-                    _ctpoper := aMunOper[nPos][2]
-                Else
-                    _ctpoper := _tp_oper
+                If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+                    If _CnpjPag == "03471344000509" .And. _CnpjRem <> "03471344000509" .And. _CnpjDest <> "03471344000509"
+                        _ctpoper := "TRIANGULA"
+                    ElseIf _tp_oper $ cFracion
+                        _ctpoper := "FRACIONADO"
+                    ElseIf _tp_oper $ cOperImp
+                        //--Consulta tipo de operação na matriz de De/Para
+                        nPos := aScan( aMunOper, { |x| AllTrim( x[1] ) == _MunCol } )
+                        _ctpoper := aMunOper[nPos][2]
+                    Else
+                        _ctpoper := _tp_oper
+                    EndIf
+                ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
+                        If _CnpjPag == "10394422000657" .And. _CnpjRem <> "10394422000657" .And. _CnpjDest <> "10394422000657"
+                        _ctpoper := "TRIANGULA"
+                    ElseIf _tp_oper $ cFracion
+                        _ctpoper := "FRACIONADO"
+                    ElseIf _tp_oper $ cOperImp
+                        //--Consulta tipo de operação na matriz de De/Para
+                        nPos := aScan( aMunOper, { |x| AllTrim( x[1] ) == _MunCol } )
+                        _ctpoper := aMunOper[nPos][2]
+                    Else
+                        _ctpoper := _tp_oper
+                    EndIf
                 EndIf
 
                 cMsgLogCte := "Coleta: " + _coleta + " | Chave CT-e : " + _cChaveCTE

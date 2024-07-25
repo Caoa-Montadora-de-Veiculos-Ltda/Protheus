@@ -28,11 +28,13 @@ User Function ZWSR013()
 	Default cForn	 := ""
 	Default cLoja	 := ""
 
+	Private _cEmpWis		:= ""
+	Private _cDepWis		:= ""
 	Private oJsRet    := JsonObject():New()
 	Private __cArqTxt   := "\spool\JSON_ZWSR013_" + cValToChar(ThreadID()) + ".txt"
 
-	//--Filtra apenas por Barueri
-	IF !( FWCodEmp() = '2020' .And. FWFilial() = '2001' )
+	//--Filtra apenas por Barueri e hyundai
+	IF !( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 		Return
 	EndIf
 
@@ -98,9 +100,29 @@ User Function ZWSR013()
                             SubStr( (_cAlias)->F2_EMISSAO ,5 ,2 ) + '-' +;
                             SubStr( (_cAlias)->F2_EMISSAO ,7 ,2 )
 
-			cDataBase := 	Substr(DTOC(dDatabase),7,4) +'-'+;
-							Substr(DTOC(dDatabase),4,2) +'-'+;
-							Substr(DTOC(dDatabase),1,2)
+			cDataBase := 	Substr(DTOS(dDatabase),1,4) +'-'+;
+							Substr(DTOS(dDatabase),5,2) +'-'+;
+							Substr(DTOS(dDatabase),7,2)
+
+			_cEmpWis := ""
+			_cDepWis := ""
+			If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+				If AllTrim((_cAlias)->VS1_XMARCA) =="CHE"
+					_cEmpWis := "1002"
+					_cDepWis := "002"
+				ElseIf AllTrim((_cAlias)->VS1_XMARCA) =="SBR"
+					_cEmpWis := "1006"
+					_cDepWis := "006"
+				ElseIf AllTrim((_cAlias)->VS1_XMARCA) =="HYU"
+					_cEmpWis := "1006"
+					_cDepWis := "006"
+				EndIf
+			ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
+				If AllTrim((_cAlias)->VS1_XMARCA) =="HYU"
+					_cEmpWis := "1008"
+					_cDepWis := "006"
+				EndIf
+			EndIf
             
 			FreeObj(oJsConFat)                     
 			oJsConFat := JsonObject():new()
@@ -109,9 +131,9 @@ User Function ZWSR013()
             oJsConFat['faturamento']:=JsonObject():New()
             oJsConFat['faturamento']['nu_pedido']           := AllTrim( (_cAlias)->VS1_XPICKI )
             oJsConFat['faturamento']['cd_cliente']          := (_cAlias)->A1_CGC 
-			oJsConFat['faturamento']['cd_empresa']          := 1	//SM0->M0_CGC Sidnei ira verificar e retornar será código fixo
+			oJsConFat['faturamento']['cd_empresa']          := _cEmpWis
             oJsConFat['faturamento']['cd_roteiro']          := ""  
-            oJsConFat['faturamento']['cd_deposito']         := IiF( (_cAlias)->VS1_XMARCA == "CHE", "002", "006" )
+            oJsConFat['faturamento']['cd_deposito']         := _cDepWis
             oJsConFat['faturamento']['nu_serie_nota'] 	    := ""
             oJsConFat['faturamento']['nu_serie_nf'] 	    := AllTrim( (_cAlias)->F2_SERIE )
             oJsConFat['faturamento']['nu_documento']        := ""

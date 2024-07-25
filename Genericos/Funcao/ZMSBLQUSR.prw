@@ -55,22 +55,23 @@ Obs......:
 */
 Static Function zProcessa(_lJob, _nDias)
 
-Local cQuery		:= ""
-Local cAliasTRB		:= GetNextAlias()
-Local nTotReg       := 0
-Local _dDataProc    := Date()
-Local _aBloq		:= {}
+    Local cQuery		:= ""
+    Local cAliasTRB		:= GetNextAlias()
+    Local nTotReg       := 0
+    Local _dDataProc    := Date()
+    Local _aBloq		:= {}
+    Local cStatus       := ""
+    Local lRet          := .F.
 
-
-Default _lJob       := .F.
-Default _nDias      := 60
+    Default _lJob       := .F.
+    Default _nDias      := 60
 
     If Select( (cAliasTRB) ) > 0
         (cAliasTRB)->(DbCloseArea())
     EndIf
 
     _dDataProc := _dDataProc - _nDias
-    
+
     //Administrador/Fabio/Evandro - Não bloqueia
     cQuery := " "
     cQuery += " SELECT USR_ID,USR_CODIGO,USR_MSBLQL,USR_DTINC, USR_DTLOGON FROM ABDHDU_PROT.SYS_USR "                                                       + CRLF
@@ -84,7 +85,7 @@ Default _nDias      := 60
     DbUseArea( .T., "TOPCONN", TcGenQry(,,cQuery), cAliasTRB, .T., .T. )
 
     DbSelectArea((cAliasTRB))
-    
+
     If !(_lJob)
         nTotReg := Contar(cAliasTRB,"!Eof()")
 
@@ -104,18 +105,23 @@ Default _nDias      := 60
                 ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZMSBLQUSR] Bloqueando Usuario: " + Alltrim((cAliasTRB)->USR_ID) + " | " + Alltrim((cAliasTRB)->USR_CODIGO))          
             EndIf
             
-            //Faz o processamento do Bloqueio
-            zProcBloq((cAliasTRB)->USR_ID)
 
+            //Faz o processamento do Bloqueio
+            lRet := U_ZWSR017((cAliasTRB)->USR_ID)
+            Conout( "[ZMSBLQUSR] Retorno da funcao U_ZWSR017, lRet: " + AllToChar(lRet) + ", tentativa de bloqueio do usuário: " + (cAliasTRB)->USR_ID + " .")
+            //GAP153 Alterado para bloqueio via API - Nicolas Lima
+            //zProcBloq((cAliasTRB)->USR_ID) 
+            cStatus := IIf(lRet, "Usuário Bloqueado","ATENÇÃO - NÃO Bloqueado")
             //Grava o array com os usuários bloqueados
-            Aadd( _aBloq, {  AllTrim((cAliasTRB)->USR_ID),;
-                             Alltrim((cAliasTRB)->USR_CODIGO),;
-                             AllTrim(DToC(SToD((cAliasTRB)->USR_DTINC))),;
-                             AllTrim(DToC(SToD((cAliasTRB)->USR_DTLOGON))) } )	
+            Aadd( _aBloq, {     AllTrim(cStatus),;    
+                                AllTrim((cAliasTRB)->USR_ID),;
+                                Alltrim((cAliasTRB)->USR_CODIGO),;
+                                AllTrim(DToC(SToD((cAliasTRB)->USR_DTINC))),;
+                                AllTrim(DToC(SToD((cAliasTRB)->USR_DTLOGON))) } )	
             
             (cAliasTRB)->(DbSkip())
         End
-    
+
         //Dispara o e-mail com os usuários bloqueados
         zEnviaMail(_aBloq, _nDias)
 
@@ -139,19 +145,19 @@ Obs......:
 */
 Static Function zProcBloq(_cId)
 
-Local cNameUser     := ""
-Local _lBloq        := .T.
+    Local cNameUser     := ""
+    Local _lBloq        := .T.
 
-//Ordena por UserId
-PswOrder(1)
+    //Ordena por UserId
+    PswOrder(1)
 
- //Pesquisa no UserId                     
-If PswSeek(_cId)
-    //Se encontrou grava o Username na variavel xNameUser                  
-    cNameUser := PswRet(1)[1][2]
-    //Bloqueia usuário no configurador
-    _lBloq := PswBlock(cNameUser)
-EndIf
+    //Pesquisa no UserId                     
+    If PswSeek(_cId)
+        //Se encontrou grava o Username na variavel xNameUser                  
+        cNameUser := PswRet(1)[1][2]
+        //Bloqueia usuário no configurador
+        _lBloq := PswBlock(cNameUser)
+    EndIf
 
 Return(_lBloq)
 
@@ -169,109 +175,107 @@ Obs......:
 */
 Static Function zEnviaMail(_aBloq, _nDias)
 
-Local _cEmailDest 		:= ""
-Local _lMsgOK			:= .T.
-Local _lMsgErro			:= .F.
-Local _cObsMail			:= ""
-Local _cReplyTo			:= ""
-Local _cCorItem			:= "FFFFFF"
-Local _lEnvia			:= .T.
-Local _cAssunto		    := "Bloqueio de Usuarios Protheus"
-Local _cEmails 		    := AllTrim(SuperGetMV("CMV_GEN007", .F., "evandro.mariano@caoa.com.br"))
-Local _aAnexos		    := {}
-Local _cEMailCopia	    := ""
-Local _cRotina		    := "ZMSBLQUSR"
-Local _nX               := 0
+    Local _cEmailDest 		:= ""
+    Local _lMsgOK			:= .T.
+    Local _lMsgErro			:= .F.
+    Local _cObsMail			:= ""
+    Local _cReplyTo			:= ""
+    Local _cCorItem			:= "FFFFFF"
+    Local _lEnvia			:= .T.
+    Local _cAssunto		    := "Bloqueio de Usuarios Protheus"
+    Local _cEmails 		    := AllTrim(SuperGetMV("CMV_GEN007", .F., "evandro.mariano@caoa.com.br"))
+    Local _aAnexos		    := {}
+    Local _cEMailCopia	    := ""
+    Local _cRotina		    := "ZMSBLQUSR"
+    Local _nX               := 0
 
-_cEmailDest := _cEmails
+    _cEmailDest := _cEmails
 
-_cHtml := ""
-_cHtml += "<html>"+ CRLF
-_cHtml += "	<head>"+ CRLF
-_cHtml += "		<title>Bloqueio dos usuarios do Sistema</title>"+ CRLF
-_cHtml += "	</head>"+ CRLF
-_cHtml += "	<body leftmargin='0' topmargin='0' rightmargin='0' bottommargin='0'>"+ CRLF
-_cHtml += "		<table width='100%' height='100%' border='0' cellpadding='0' cellspacing='0'>"+ CRLF
-_cHtml += "			<tr>"+ CRLF
-_cHtml += "				<th width='1200' height='100%' align='center' valign='top' scope='col'>"+ CRLF
-_cHtml += "					<table width='90%' height='50%' border='0' cellpadding='0' cellspacing='0'>"+ CRLF
-_cHtml += "						<tr>"+ CRLF
-_cHtml += "							<th width='100%' height='100' scope='col'>"+ CRLF
-_cHtml += "								<table width='100%' height='60%' border='3' cellpadding='0' cellspacing='0' >"+ CRLF
-_cHtml += "									<tr>"+ CRLF
-_cHtml += "										<th width='12%' height='0' scope='col'><img src='https://tinyurl.com/logocaoa' width='118' height='40'></th>"+ CRLF
-_cHtml += "										<td width='67%' align='center' valign='middle' scope='col'><font face='Arial' size='+1'><b>Informacoes de Bloqueio</b></font></td>"+ CRLF
-_cHtml += "									</tr>"+ CRLF
-_cHtml += "								</table>"+ CRLF
-_cHtml += "							</th>"+ CRLF
-_cHtml += "						</tr>"+ CRLF
-_cHtml += "						<tr>"+ CRLF
-_cHtml += "							<th width='100' height='100' scope='col'>"+ CRLF
-_cHtml += "								<table width='100%' height='100%' border='2' cellpadding='2' cellspacing='1' >"+ CRLF
-_cHtml += "									<tr>"+ CRLF
-_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Empresa:	</b></font></td>"+ CRLF
-_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>"+ AllTrim(FWFilialName(,SM0->M0_CODFIL)) +"</font></td>"+ CRLF
-_cHtml += "									</tr>"+ CRLF
-_cHtml += "									<tr>"+ CRLF
-_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Ambiente: </b></font></td>"+ CRLF
-_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>" + AllTrim(GetEnvServer()) + "</font></td>"+ CRLF
-_cHtml += "									</tr>"+ CRLF
-_cHtml += "									<tr>"+ CRLF
-_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Dias sem acesso:	</b></font></td>"+ CRLF
-_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>"+ AllTrim(cValToChar(_nDias)) +"</font></td>"+ CRLF
-_cHtml += "									</tr>"+ CRLF
-_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Data de Corte:	</b></font></td>"+ CRLF
-_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>"+ DToc(Date() - _nDias)  +"</font></td>"+ CRLF
-_cHtml += "									</tr>"+ CRLF
-_cHtml += "								</table>"+ CRLF
-_cHtml += "							</th>"+ CRLF
-_cHtml += "						</tr>"+ CRLF
-_cHtml += "						<tr >"+ CRLF
-_cHtml += "							<td height='25' style='padding-top:1em;'>"+ CRLF
-_cHtml += "								<table width='100%' height='100%' border='2' cellpadding='2' cellspacing='0' >"+ CRLF
-_cHtml += "									<tr bgcolor='#4682B4'>"+ CRLF
-_cHtml += "										<th width='10%' height='100%' align='center' valign='middle' scope='col'><font face='Arial' size='2'><b>Descrição		</b></font></th>"+ CRLF
-_cHtml += "									</tr>"+ CRLF
-
-For _nX := 1 To Len(_aBloq)
-    
-    _cMsgErro := "Id: " + AllTrim(_aBloq[_nX,01]) +" | Codigo: "+Upper(AllTrim(_aBloq[_nX,02])) +" | Inclusao: "+AllTrim(_aBloq[_nX,03]) +" | Ult. Logon: "+AllTrim(_aBloq[_nX,04])
-
-    _cHtml += "									<tr> <!--while advpl-->"+ CRLF
-    _cHtml += "										<td width='10%' height='16' align='left'	valign='middle' bgcolor='#"+_cCorItem+"' scope='col'><font size='1' face='Arial'>"+_cMsgErro+"</font></td>"+ CRLF
+    _cHtml := ""
+    _cHtml += "<html>"+ CRLF
+    _cHtml += "	<head>"+ CRLF
+    _cHtml += "		<title>Bloqueio dos usuarios do Sistema</title>"+ CRLF
+    _cHtml += "	</head>"+ CRLF
+    _cHtml += "	<body leftmargin='0' topmargin='0' rightmargin='0' bottommargin='0'>"+ CRLF
+    _cHtml += "		<table width='100%' height='100%' border='0' cellpadding='0' cellspacing='0'>"+ CRLF
+    _cHtml += "			<tr>"+ CRLF
+    _cHtml += "				<th width='1200' height='100%' align='center' valign='top' scope='col'>"+ CRLF
+    _cHtml += "					<table width='90%' height='50%' border='0' cellpadding='0' cellspacing='0'>"+ CRLF
+    _cHtml += "						<tr>"+ CRLF
+    _cHtml += "							<th width='100%' height='100' scope='col'>"+ CRLF
+    _cHtml += "								<table width='100%' height='60%' border='3' cellpadding='0' cellspacing='0' >"+ CRLF
+    _cHtml += "									<tr>"+ CRLF
+    _cHtml += "										<th width='12%' height='0' scope='col'><img src='https://tinyurl.com/logocaoa' width='118' height='40'></th>"+ CRLF
+    _cHtml += "										<td width='67%' align='center' valign='middle' scope='col'><font face='Arial' size='+1'><b>Informacoes de Bloqueio</b></font></td>"+ CRLF
+    _cHtml += "									</tr>"+ CRLF
+    _cHtml += "								</table>"+ CRLF
+    _cHtml += "							</th>"+ CRLF
+    _cHtml += "						</tr>"+ CRLF
+    _cHtml += "						<tr>"+ CRLF
+    _cHtml += "							<th width='100' height='100' scope='col'>"+ CRLF
+    _cHtml += "								<table width='100%' height='100%' border='2' cellpadding='2' cellspacing='1' >"+ CRLF
+    _cHtml += "									<tr>"+ CRLF
+    _cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Empresa:	</b></font></td>"+ CRLF
+    _cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>"+ AllTrim(FWFilialName(,SM0->M0_CODFIL)) +"</font></td>"+ CRLF
+    _cHtml += "									</tr>"+ CRLF
+    _cHtml += "									<tr>"+ CRLF
+    _cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Ambiente: </b></font></td>"+ CRLF
+    _cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>" + AllTrim(GetEnvServer()) + "</font></td>"+ CRLF
+    _cHtml += "									</tr>"+ CRLF
+    _cHtml += "									<tr>"+ CRLF
+    _cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Dias sem acesso:	</b></font></td>"+ CRLF
+    _cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>"+ AllTrim(cValToChar(_nDias)) +"</font></td>"+ CRLF
+    _cHtml += "									</tr>"+ CRLF
+    _cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Data de Corte:	</b></font></td>"+ CRLF
+    _cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>"+ DToc(Date() - _nDias)  +"</font></td>"+ CRLF
+    _cHtml += "									</tr>"+ CRLF
+    _cHtml += "								</table>"+ CRLF
+    _cHtml += "							</th>"+ CRLF
+    _cHtml += "						</tr>"+ CRLF
+    _cHtml += "						<tr >"+ CRLF
+    _cHtml += "							<td height='25' style='padding-top:1em;'>"+ CRLF
+    _cHtml += "								<table width='100%' height='100%' border='2' cellpadding='2' cellspacing='0' >"+ CRLF
+    _cHtml += "									<tr bgcolor='#4682B4'>"+ CRLF
+    _cHtml += "										<th width='10%' height='100%' align='center' valign='middle' scope='col'><font face='Arial' size='2'><b>Descrição		</b></font></th>"+ CRLF
     _cHtml += "									</tr>"+ CRLF
 
-Next
+    For _nX := 1 To Len(_aBloq)
+        
+        _cMsgErro := "Status: " + AllTrim(_aBloq[_nX,01]) + " | Id: " + AllTrim(_aBloq[_nX,02]) + " | Codigo: "+Upper(AllTrim(_aBloq[_nX,03])) +" | Inclusao: "+AllTrim(_aBloq[_nX,04]) +" | Ult. Logon: "+AllTrim(_aBloq[_nX,05])
 
-_cHtml += "					</table>"+ CRLF
-_cHtml += "				</th >"+ CRLF
-_cHtml += "			</tr>"+ CRLF
-_cHtml += "		</table >"+ CRLF
-_cHtml += "	</body >"+ CRLF
+        _cHtml += "									<tr> <!--while advpl-->"+ CRLF
+        _cHtml += "										<td width='10%' height='16' align='left'	valign='middle' bgcolor='#"+_cCorItem+"' scope='col'><font size='1' face='Arial'>"+_cMsgErro+"</font></td>"+ CRLF
+        _cHtml += "									</tr>"+ CRLF
 
-_cHtml +=    "<br/> <br/> <br/> <br/>" 
-_cHtml +=    " <h5>Esse email foi gerado pela rotina " + FunName() + " </h5>"
+    Next
 
-	
-ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZMSBLQUSR] Enviando e-mail com os usuarios bloquedos")
+    _cHtml += "					</table>"+ CRLF
+    _cHtml += "				</th >"+ CRLF
+    _cHtml += "			</tr>"+ CRLF
+    _cHtml += "		</table >"+ CRLF
+    _cHtml += "	</body >"+ CRLF
+    _cHtml +=    "<br/> <br/> <br/> <br/>" 
+    _cHtml +=    " <h5>Esse email foi gerado pela rotina " + FunName() + " </h5>"
 
-/*
-cMailDestino	- E-mail de Destino
-cMailCopia		- E-mail de cópia
-cAssunto		- Assunto do E-mail
-cHtml			- Corpo do E-mail
-aAnexos			- Anexos que será enviado
-lMsgErro		- .T. Exige msgn na tela - .F. Exibe somente por Conout
-cReplyTo		- Responder para outra pessoa.
-cRotina			- Rotina que está sendo executada.
-cObsMail		- Observação para Gravação do Log.
-*/
-_lEnvia := U_ZGENMAIL(_cEmailDest,_cEMailCopia,_cAssunto,_cHtml,_aAnexos,_lMsgErro,_lMsgOK,_cRotina,_cObsMail,_cReplyTo)
+    ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZMSBLQUSR] Enviando e-mail com os usuarios bloquedos")
 
-If !_lEnvia
-	ConOut("**** [ZMSBLQUSR] - Erro no envio do e-mail, favor verificar ****"+ CRLF)
-Else
-    ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZMSBLQUSR] E-mail enviado com sucesso")
-EndIf
+    /*
+    cMailDestino	- E-mail de Destino
+    cMailCopia		- E-mail de cópia
+    cAssunto		- Assunto do E-mail
+    cHtml			- Corpo do E-mail
+    aAnexos			- Anexos que será enviado
+    lMsgErro		- .T. Exige msgn na tela - .F. Exibe somente por Conout
+    cReplyTo		- Responder para outra pessoa.
+    cRotina			- Rotina que está sendo executada.
+    cObsMail		- Observação para Gravação do Log.
+    */
+    _lEnvia := U_ZGENMAIL(_cEmailDest,_cEMailCopia,_cAssunto,_cHtml,_aAnexos,_lMsgErro,_lMsgOK,_cRotina,_cObsMail,_cReplyTo)
+
+    If !_lEnvia
+        ConOut("**** [ZMSBLQUSR] - Erro no envio do e-mail, favor verificar ****"+ CRLF)
+    Else
+        ConOut("["+Left(DtoC(Date()),5)+"]["+Left(Time(),5)+"][ZMSBLQUSR] E-mail enviado com sucesso")
+    EndIf
 
 Return()

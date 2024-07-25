@@ -607,9 +607,9 @@ Local cQ        := ""
 Local cAliasTrb := GetNextAlias()
 Local cPref     := ""
 
-IF FWCodEmp() = '2010' 
+IF AllTrim(FWCodEmp()) = '2010' 
 	_cFilial := '2010022001'
-ELSEIF FWCodEmp() = '2020' 
+ELSEIF AllTrim(FWCodEmp()) = '2020' 
 	_cFilial := '2020012001'
 ENDIF
 
@@ -710,7 +710,6 @@ User Function ZF11GENSAP(cxFil,cTab,cIndice,cChave,nOperPro,nOperSAP,cXMLSZ7,cSt
     Local aOcor := {}
     Local nOperSZ7 := 0
     Local nRecStatusExc := 0
-	Local _cEmp    := FWCodEmp()
 
     Default cXMLSZ7		:= ""
     Default cRetSZ7		:= ""
@@ -759,9 +758,9 @@ User Function ZF11GENSAP(cxFil,cTab,cIndice,cChave,nOperPro,nOperSAP,cXMLSZ7,cSt
         SZ7->Z7_XOPESAP	:= nOperSAP //1=Inclusao/2=Cancelamento
         SZ7->Z7_XDTINC	:= dDataBase
         SZ7->Z7_XHRINC	:= Time()
-		If _cEmp == "2010" //Executa o p.e. Anapolis.
+		If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
      		SZ7->Z7_ORIGEM  := IIf(IsInCallStack("MATA020") .or. IsInCallStack("MATA030"),FunName(),IIf(Len(aDadosOri) > 1 .and. !Empty(aDadosOri[1]),aDadosOri[1],IIf(FWIsInCallStack("xBaixTit"),"CMVSAP06",IIf(FWIsInCallStack("FINA040"),"FINA040",IIf(FWIsInCallStack("FINA050"),"FINA050",CT2->CT2_ROTINA)))))
-   		Else
+   		ElseIf ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Franco da Rocha | Caoa
      		SZ7->Z7_ORIGEM  := IIf(IsInCallStack("MATA020") .or. IsInCallStack("MATA030"),FunName(),IIf(Len(aDadosOri) > 1 .and. !Empty(aDadosOri[1]),aDadosOri[1],IIf(FWIsInCallStack("xBaixTit"),"ZSAPF006",IIf(FWIsInCallStack("FINA040"),"FINA040",IIf(FWIsInCallStack("FINA050"),"FINA050",CT2->CT2_ROTINA)))))
    		EndIf
         SZ7->Z7_LOTEINC := IIf(!Empty(aDadosOri) .and. Len(aDadosOri) > 7,aDadosOri[8],"")
@@ -840,8 +839,15 @@ User Function ZF11GENSAP(cxFil,cTab,cIndice,cChave,nOperPro,nOperSAP,cXMLSZ7,cSt
         // tratamento para quando vier status "N" no quinto elemento do array adadosori,
         // neste caso indica que o registro de exclusao nao deve ser processado, pois o registro de inclusao ainda nao foi
         // enviado, e tambem o registro de inclusao nao deve ser processado
-        If nOperSAP == 2 .and. Len(aDadosOri) > 1 .and. aDadosOri[5] == "N" .and. !Empty(aDadosOri[6])
+        If nOperSAP == 1 .and. Len(aDadosOri) > 1 .and. aDadosOri[5] == "N" .and. !Empty(aDadosOri[6])
             lNaoProcEnvio := .T.
+            SZ7->Z7_XSTATUS := "N"
+            nRecStatusExc := SZ7->(Recno())
+        Endif
+
+        // Adicionado por Cintia Araujo em 05/07/24 - INC0112050 - gerar Z7_XSTATUS = 'N' quando Z7_SERORI = 'EIC' para nao integrar SAP
+        If SZ7->Z7_SERORI = 'EIC' 
+            lNaoProcEnvio := .F.
             SZ7->Z7_XSTATUS := "N"
             nRecStatusExc := SZ7->(Recno())
         Endif
@@ -1939,14 +1945,13 @@ Descricao / Objetivo:
 ===================================================================================== */
 User Function xSAP12()
 
-Local _cEmp 	:= FWCodEmp()
 Local _cEmpSap 	:= "" 
 local _cFilSap	:= "" 
 local _cDivSap	:= "" 
 
-IF _cEmp = '2010' 
+IF ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
 	U_CMVSAP12({"01","2010022001",20167})   
-Else
+ElseIf ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Franco da Rocha | Caoa
 	_cEmpSap 	:= GetMv("CMV_SAP001") 
 	_cFilSap	:= GetMv("CMV_SAP002")
 	_cDivSap	:= GetMv("CMV_SAP002")

@@ -10,10 +10,9 @@ User Function GFEA065()
 	Local cIdModel   := ''
 	Local aArea      := GetArea()
 	Local aAreaGU3   := {}
-	Local _cEmp		 := FWCodEmp()
 	Local cTes       := ""	
 
-	If _cEmp == "2020" //Executa CaoaSp.
+	If ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 		If aParam <> NIL
 			oObj     := aParam[1]
 			cIdPonto := aParam[2]
