@@ -25,11 +25,11 @@ Rdmake 	responsavel pela inclusão/visualização de historicos
 @history    
 --------------------------------------------------------------------------------------*/
 /*Iniciando sua função*/
-User Function ZCOMF015( _cTpDoc, _nOpc, _lGeral)
+User Function ZCOMF015( _cTpDoc, _nOpc, _lGeral,_cNum,_aHeadAux,_aColsAux,_lJobStart,_aEmpFil,_cFunOrig,_lInc,_lAlter,_cUser,_cMemo)
 Local _aArea 	    := GetArea()
 Local _aMens        := {}
 Local _cTipo        := ""
-Local _lZCONF015    := SuperGetMV( "CMV_COM003"  ,,.T.)  //parametro para habilitar/desabilitar funcionalidade
+Local _lZCONF015    := .t. //SuperGetMV( "CMV_COM003"  ,,.T.)  //parametro para habilitar/desabilitar funcionalidade
 Local _lJob         := GetRemoteType() == -1 // Verifica se é job
 Local _lNovo        := .F.
 Local _lCopia       := .F.
@@ -39,27 +39,73 @@ Local _cMsg
 Local _cAlias
 Local _cDoc
 Local _nTipo
-Default _lGeral := .F.
+Local cMensage := ""
+Private lIsBlind  := .F.
+Private _cUsuario := Space(8)
+Private _cMotivo  := ""
 
+Default _lGeral    := .F.
+Default _lJobStart := .F.
+Default _cNum      := ""
+Default _aHeadAux  := {}
+Default _aColsAux  := {}
+Default _aEmpFil   := {"",""}
+Default _cFunOrig   := FunName()
+Default _lInc       := .T.
+Default _lAlter     := .T.
+Default _cUser      := space(8)
+Default _cMemo   := space(255)
     //Caso seja envio por JOB não continuar
-    If _lJob
+        
+    If _lJobStart
+        Conout("**************** STARTJOB -- ZCOMF015 ************")
+		RpcSetType(3)
+		RpcSetEnv(_aEmpFil[1],_aEmpFil[2])
+		//RpcClearEnv()
+	
+        Private aHeader     := aClone(_aHeadAux)
+        Private aCols       := aClone(_aColsAux)
+        Private INCLUI      := _lInc
+        Private ALTERA      := _lAlter
+      
+        _cUsuario   := _cUser
+        lIsBlind := .T.
+        _cMotivo := _cMemo
+        if INCLUI .and. ALTERA
+            Conout("Exite problemas na chamada da função ZCOMF015, contatar admnistrador do Sistema")
+            Return
+        EndIF
+    Else
+        _cUsuario := RETCODUSR()
+    EndIf
+    If _lJob .and. !lIsBlind 
         Return _lRet
     Endif    
-    
+
+    _lZCONF015    := SuperGetMV( "CMV_COM003"  ,,.T.)  //parametro para habilitar/desabilitar funcionalidade 
     //Caso esteja desabilitado parametro
     If !_lZCONF015
         Return _lRet
     Endif
 
     If Valtype(_cTpDoc) <> "C" .or. Valtype(_nOpc) <> "N"
-        Msgalert("Exite problemas na chamada da função ZCOMF015, contatar admnistrador do Sistema")
+        cMensage := "Exite problemas na chamada da função ZCOMF015, contatar admnistrador do Sistema"
+        if lIsBlind 
+            Conout(cMensage)
+        Else
+            Msgalert(cMensage)
+        EndIf
         _lRet := .F.
         Return _lRet
 	Endif
 
     If _nOpc == 3  //Inclusão sempre sera novo
         _lNovo := .T.
-    EndIf    
+    EndIf
+    
+    If lIsBlind    
+        GetTab(_cTpDoc,_cNum)
+    endIf
 
   	DBSELECTAREA('SZH')  //Tabela de auditoria Solicitação de Compras e Pedido de Compras	
     If _cTpDoc == "PC"
@@ -87,7 +133,7 @@ Default _lGeral := .F.
     Endif
 
     //Na inclusão pode não estar gravado o tipo da AE
-    If _lNovo .and. _cTipo == "PC" .and. AllTrim(FunName()) == "MATA122"
+    If _lNovo .and. _cTipo == "PC" .and. _cFunOrig == "MATA122"
         _cTipo      := "AE"
     EndIf
 
@@ -118,14 +164,20 @@ Default _lGeral := .F.
         For _nPos := 1 To Len(_aMens)
             _cMsg := _aMens[_nPos]+_cEol
         Next
-        Msgalert(_cMsg)
+        If  !IsBlind
+            Msgalert(_cMsg)
+        Else
+            
+            Conout(_cMsg)
+            Conout("****************** END JOB ***********************")
+        EndIf
         Return _lRet
     Endif
     //GrvAudiF15(_aMens,_cDoc,_cTipo)
     ApvAudiF15(_aMens,_cDoc,_cTipo,/*_lGeral*/)
 
-RestArea(_aArea)
-
+    RestArea(_aArea)
+    Conout("****************** END JOB ***********************")
 Return _lRet
 
 //-------------------------------------------------------------------
@@ -150,9 +202,16 @@ Local _nReg
 Local _cVar1
 Local _cVar2
 Local _nPos
+Local cMensage := "" 
 
     If _nPosItem == 0
-        Msgalert("Exite problemas na chamada da função ZCOMF015/VerAudiF15 não localizou campo item, contatar admnistrador do Sistema")
+        cMensage := "Exite problemas na chamada da função ZCOMF015/VerAudiF15 não localizou campo item, contatar admnistrador do Sistema"
+        if IsBlind
+            Conout(cMensage)
+        Else
+            Msgalert(cMensage)
+        endif
+
         Return _lRet
     EndIf
 
@@ -212,8 +271,13 @@ Local _nPos
             (_cAlias)->(DbGoto(_nReg))
             If (_cAlias)->(FieldGet(FieldPos(_cVarMem))) <> aCols[_nCount,_nPos]
                 If ValType(aCols[_nCount,_nPos]) == "N"
-                    _cVar1 := AllTrim(Str((_cAlias)->(FieldGet(FieldPos(_cVarMem)))))
-                    _cVar2 := AllTrim(Str(aCols[_nCount,_nPos]))
+                    if _cAlias == "SC3"
+                        _cVar1 := AllTrim(Str(aCols[_nCount,_nPos]))
+                        _cVar2 := AllTrim(Str((_cAlias)->(FieldGet(FieldPos(_cVarMem)))))
+                    else
+                        _cVar1 := AllTrim(Str((_cAlias)->(FieldGet(FieldPos(_cVarMem)))))
+                        _cVar2 := AllTrim(Str(aCols[_nCount,_nPos]))
+                    endif
                 ElseIf ValType(aCols[_nCount,_nPos]) == "D"
                     _cVar1 := DtoC((_cAlias)->(FieldGet(FieldPos(_cVarMem))))
                     _cVar2 := DtoC(aCols[_nCount,_nPos])
@@ -264,6 +328,7 @@ Local _cVarMem
 Local _cVarTit
 Local _nPos 
 Local _lVar
+Local cMensage := ""
 
     //Verifica se ocorreu deleção    
     If _nOpc == 5  //deleção
@@ -287,7 +352,13 @@ Local _lVar
     //Funcionalidade responsavel por carregar as variaveis e campos que serão testados de acordo com o tipo de documento
     _aMat := carregaF15(_cTipo)
     If Len(_aMat) == 0
-        Msgalert("Exite problemas na chamada da função ZCOMF015 não conseguiu montar os campos, contatar admnistrador do Sistema")
+        cMensage := "Exite problemas na chamada da função ZCOMF015 não conseguiu montar os campos, contatar admnistrador do Sistema"
+        If lIsBlind
+            Conout(cMensage)
+        Else
+            Msgalert(cMensage)
+        EndIf
+
         Return Nil
     EndIf
 
@@ -365,12 +436,12 @@ Static Function ApvAudiF15(_aMens, _cDoc, _cTipo, _lGeral)
 
 Local _aMotivo  := {}
 Local _aCab     := {}
-Local _cMotivo  := Space(10)
+//Local _cMotivo  := Space(10)
 Local _lRet     := .T.
 Local _nPos 
 Local _cItem    
 Local _cRevisao  
-Local _cUsuario 
+//Local _cUsuario 
 Local _cData 
 Local _cHora 
 
@@ -390,7 +461,7 @@ Default _lGeral := .F.
                 _cHora      := _aMens[_nPos,12]
             Else
                 _cRevisao   := StrZero(0,Len(SZH->ZH_REVISAO)) 
-                _cUsuario   := RETCODUSR()
+                //_cUsuario   := RETCODUSR()
                 _cData      := Date()
                 _cHora      := Time()
             Endif    
@@ -418,7 +489,11 @@ Default _lGeral := .F.
 
     If Len(_aMotivo) > 0 .and. !INCLUI  //acrescentado conforme solicitação Douglas não mostrar tela quando da influsão
         //funcao responsavel por montar tela para a confirmação dos dados de auditoria com um motiva previamente descrito pelo usuário
-        _lRet := TelAudiF15( _aMotivo, @_cMotivo, _lGeral)  
+        if !lIsBlind
+            _lRet := TelAudiF15( _aMotivo, @_cMotivo, _lGeral)  
+        Else
+            _lRet := .T.
+        EndIf
     Endif
 
     If !_lGeral .and. _lRet  //_lGeral indica somente a visualização
@@ -476,7 +551,7 @@ Local _nPos
         SZH->ZH_TITULO  :=  Upper(FWX3Titulo(_aMens[_nPos,5]))  //_aMens[_nPos,8] trazer o título do campo
         SZH->ZH_MOTIVO  :=  Upper(AllTrim(_cMotivo))
         SZH->ZH_NUMREG  :=  _aMens[_nPos,3]
-        SZH->ZH_CODUSU  :=  RETCODUSR() 
+        SZH->ZH_CODUSU  :=  _cUsuario//RETCODUSR() 
         SZH->ZH_DATAI   :=  Date()
         SZH->ZH_HORAI   :=  Time()
         SZH->(MsUnlocK())
@@ -776,18 +851,6 @@ Local _nPos
         DbSelectarea("SC7")
         AAdd(_aRet  ,{ "C7_EMISSAO", "dA120Emis"})  
 	    AAdd(_aRet  ,{ "C7_FORNECE", "cA120Forn"})  
-	    AAdd(_aRet  ,{ "C7_FORNECE", "cA120Forn"})  
-	    AAdd(_aRet  ,{ "C7_FORNECE", "cA120Forn"})  
-	    AAdd(_aRet  ,{ "C7_FORNECE", "cA120Forn"})  
-	    AAdd(_aRet  ,{ "C7_FORNECE", "cA120Forn"})  
-	    AAdd(_aRet  ,{ "C7_FORNECE", "cA120Forn"})  
-	    AAdd(_aRet  ,{ "C7_FORNECE", "cA120Forn"})  
-	    AAdd(_aRet  ,{ "C7_FORNECE", "cA120Forn"})  
-	    AAdd(_aRet  ,{ "C7_FORNECE", "cA120Forn"})  
-	    AAdd(_aRet  ,{ "C7_FORNECE", "cA120Forn"})  
-	    AAdd(_aRet  ,{ "C7_FORNECE", "cA120Forn"})  
-	    AAdd(_aRet  ,{ "C7_FORNECE", "cA120Forn"})  
-	    AAdd(_aRet  ,{ "C7_FORNECE", "cA120Forn"})  
 	    AAdd(_aRet  ,{ "C7_LOJA"   , "cA120Loj"})  
 	    AAdd(_aRet  ,{ "C7_COND"   , "cCondicao"})  
 	    AAdd(_aRet  ,{ "E4_DESCRI" , "cDescCond"})  
@@ -846,7 +909,11 @@ Local _cOper
     EndSQL
 
     If (_cAliasTab)->(EOF())
-        Msgalert("Não existe histórico para este documento")
+        if lIsBlind
+            Conout("Não existe histórico para este documento")
+        else
+            Msgalert("Não existe histórico para este documento")
+        endif
         Return Nil
     Endif
     
@@ -885,3 +952,104 @@ Local _cOper
 If Select(_cAliasTab) <> 0 ; (_cAliasTab)->(DbCloseArea()) ; 	Ferase(_cAliasTab+GetDBExtension()) ; Endif  
 
 Return Nil
+
+Static Function GetTab(_cTpDoc,_cDoc)
+Local lRet := .T.
+
+Default _cDoc := ""
+DbSelectArea("SC7")
+SC7->(DbSetOrder(1))
+if !SC7->(DbSeek(xFilial("SC7") + _cDoc))
+    lRet := .F.
+endif
+
+DbSelectArea("SC1")
+SC1->(DbSetOrder(1))
+if !SC1->(DbSeek(xFilial("SC1") + _cDoc))
+    lRet := .F.
+endif
+
+DbSelectArea("SC3")
+SC3->(DbSetOrder(1))
+if !SC3->(DbSeek(xFilial("SC3") + _cDoc))
+    lRet := .F.
+endif
+
+Return lRet
+
+
+
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} TelAudiF15
+Gravar dados na tabela SZH referente ao historico
+@author DAC denilso.carvalho
+@since 05/03/2020
+@version 1.0
+/*/
+//-------------------------------------------------------------------
+User Function TelMotivo(_cMotivo)
+
+Local _lRet			:= .T.
+Local _aItem    	:= {}
+Local _aCab			:= {}
+//Local _aGrava 		:= {}
+//Local _aItemNovo 	:= {}
+Local _aButtons		:= {}
+//Local _aInfo 
+//Local _aPosObj 
+
+Local _aCoors
+Local _oDlg
+//Local _nPos
+//Local _nPos2
+Local _oFWLayer
+//Local _oPanelUp
+Local _oPanelDown
+
+Local _aPict 
+Local _aTam 
+Local _oFontT12		:= TFont():New("Tahoma",,-12,.T.,.T.)
+
+Default _cMotivo := SZH->ZH_MOTIVO
+Default _lGeral  := .F.
+
+    SX3->(DbSetOrder(2))
+	//Prepara array para visualização
+	_aCab  := {}
+	_aItem := {}
+    _aPict := {}
+    _aTam  := {}
+
+    Aadd(_aCab ,"St")
+    Aadd(_aPict,"")
+    Aadd(_aTam ,2)
+	
+	//Gravo o motivo relacionado ao ultimo item
+	//_cMotivo := _aItem[Len(_aItem),6]
+    _cMotivo := ""
+ 	_aCoors  := FwGetDialogSize( oMainWnd )
+	_aCoors[1] += 100
+	_aCoors[2] += 100
+	_aCoors[3] -= 150
+	_aCoors[4] -= 300
+	//DEFINE MSDIALOG oDlg TITLE cTitulo FROM 000,000 TO 080,300 PIXEL
+	Define MsDialog _oDlg Title "Historico de Alteracoes" From _aCoors[1], _aCoors[2] To _aCoors[3], _aCoors[4] Pixel STYLE DS_MODALFRAME
+
+	_oFWLayer := FWLayer():New()
+	_oFWLayer:Init( _oDlg, .F., .T. )
+	// Painel Superior
+    _oFWLayer:AddLine( 'UP', 80, .F. )
+	_oFWLayer:AddCollumn( 'ALL', 100, .T., 'UP' )
+	_oPanelDown := _oFWLayer:GetColPanel( 'ALL', 'UP' )
+    
+    //_cMotivo := Space(500)
+    TSay():New( 005,030,{||OemToAnsi("Motivo do Procedimento ?")},_oPanelDown,,_oFontT12,.F.,.F.,.F.,.T.,CLR_BLACK) 
+    _oMotivo := tMultiget():create( _oPanelDown, {| u | if( pCount() > 0, _cMotivo := u, _cMotivo ) },;
+	  	    										 15, 03, 450, 80, _oFontT12, , , , , .T. )	
+
+	_oDlg:lEscClose := .F.  //não permitir ESC
+	ACTIVATE MSDIALOG _oDlg CENTERED ON INIT EnchoiceBar(_oDlg,{|| _nOpc := 1,If(VldMotiF15( _cMotivo, _lGeral ),_oDlg:End(),_nOpc := 0)},;
+                                                               {||If(VldMotiF15( _cMotivo, _lGeral ),If(_lGeral,_oDlg:End(),_nOpc := 0),_nOpc := 0)},,_aButtons)
+
+Return _lRet

@@ -26,10 +26,25 @@ User Function MT120FIM
 Local _nOpc    	:= PARAMIXB[1]
 Local _nOpcA   	:= PARAMIXB[3]   
 Local _lRet		:= .T.
+Local _aEmpFil   := {cEmpAnt,cFilAnt}
+Local _cFun      := Alltrim(Funname())
+Local _aHeadAux  := aClone(aHeader)
+Local _aColsAux  := aClone(aCols)
+Local _lJobStart := .T.
+Local _cNum      := cA120Num
+Local _cUsuario  := RETCODUSR()
+Local _cMotivo 	 := space(255)
+
 Begin Sequence                                             
 	// _nOpcA <> 1   //indica se foi confirmado
 	If _lRet  .and. FindFunction("U_ZCOMF015") .and. _nOpc == 5 .and. _nOpcA == 1
-		_lRet := U_ZCOMF015( "PC" /*DoC*/, _nOpc /*Novo Registro inclusao*/, /*indica se devve mostrar somente a tela*/,/*indica que esta sendo copiado*/)
+		//_lRet := U_ZCOMF015( "PC" /*DoC*/, _nOpc /*Novo Registro inclusao*/, /*indica se devve mostrar somente a tela*/,/*indica que esta sendo copiado*/)
+		If INCLUI
+			_cMotivo := "Inclusão"
+		else
+			U_TelMotivo(@_cMotivo)
+		Endif
+		StartJob("U_ZCOMF015",GetEnvServer(),.F.,"PC",_nOpc,,_cNum,_aHeadAux,_aColsAux,_lJobStart,_aEmpFil,_cFun,INCLUI,ALTERA,_cUsuario,_cMotivo )
 	Endif
 	
 	//--Realiza gravação no campo C7_XFORMAI dos e-mails informados no PC
