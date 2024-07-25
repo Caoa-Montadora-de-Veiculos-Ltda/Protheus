@@ -44,6 +44,14 @@ Local _lRet       := .T.
 Local  _nOpc      := If(INCLUI,3, ;
 					 IF(ALTERA,4, ;
 					 5) )
+Local _aEmpFil   := {cEmpAnt,cFilAnt}
+Local _cFun      := Alltrim(Funname())
+Local _aHeadAux  := aClone(aHeader)
+Local _aColsAux  := aClone(aCols)
+Local _lJobStart := .T.
+Local _cNum      := cA120Num
+Local _cUsuario  := RETCODUSR()
+Local _cMotivo 	 := space(255)
 
 Begin Sequence
 
@@ -51,7 +59,13 @@ Begin Sequence
     // **  VALIDAR CAMPOS, INFORMACOES ADICIONAIS (Enchoise / MsmGet)  ** //
     // ** ************************************************************ ** //
 	If FindFunction("U_ZCOMF015")
-		_lRet := U_ZCOMF015( "PC" /*Doc*/,_nOpc, /*indica se devve mostrar somente a tela*/)
+		//_lRet := U_ZCOMF015( "PC" /*Doc*/,_nOpc, /*indica se devve mostrar somente a tela*/)
+		If INCLUI
+			_cMotivo := "Inclusão"
+		else
+			U_TelMotivo(@_cMotivo)
+		Endif
+		StartJob("U_ZCOMF015",GetEnvServer(),.F.,"PC",_nOpc,,_cNum,_aHeadAux,_aColsAux,_lJobStart,_aEmpFil,_cFun,INCLUI,ALTERA,_cUsuario,_cMotivo )
 	EndIf
 
 	//--Validação somente no PC
@@ -94,13 +108,27 @@ Local _lRet       := .T.
 Local  _nOpc      := If(INCLUI,3, ;
 					 IF(ALTERA,4, ;
 					 5) )
+Local _aEmpFil   := {cEmpAnt,cFilAnt}
+Local _cFun      := Alltrim(Funname())
+Local _aHeadAux  := aClone(aHeader)
+Local _aColsAux  := aClone(aCols)
+Local _lJobStart := .T.
+Local _cNum      := cA120Num
+Local _cUsuario   := RETCODUSR()
+Local _cMotivo 	:= space(255)
 
 Begin Sequence
 	// ** ************************************************************ ** //
     // **  VALIDAR CAMPOS, INFORMACOES ADICIONAIS (Enchoise / MsmGet)  ** //
     // ** ************************************************************ ** //
 	If FindFunction("U_ZCOMF015")
-		_lRet := U_ZCOMF015( "PC" /*Doc*/,_nOpc, /*indica se devve mostrar somente a tela*/)
+		//_lRet := U_ZCOMF015( "PC" /*Doc*/,_nOpc, /*indica se devve mostrar somente a tela*/)
+		If INCLUI
+			_cMotivo := "Inclusão"
+		else
+			U_TelMotivo(@_cMotivo)
+		Endif
+		StartJob("U_ZCOMF015",GetEnvServer(),.F.,"PC",_nOpc,,_cNum,_aHeadAux,_aColsAux,_lJobStart,_aEmpFil,_cFun,INCLUI,ALTERA,_cUsuario,_cMotivo )
 	EndIf
 
 	//--Validação somente no PC
