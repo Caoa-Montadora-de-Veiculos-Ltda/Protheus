@@ -62,7 +62,7 @@ Local __cCliLiCred  := AllTrim(SuperGetMV( "CMV_FAT014" ,, "" ) ) //"00057601"
 
 Begin Sequence
   	If !Empty(SC5->C5_NOTA)
-		AAdd(_aMsg, "Pedido "+SC5-C5_NUM+" possui nota fiscal "+SC5->C5_NOTA+" !")
+		AAdd(_aMsg, "Pedido "+SC5->C5_NUM+" possui nota fiscal "+SC5->C5_NOTA+" !")
         _lRet := .F.
 		Break
     EndIf
