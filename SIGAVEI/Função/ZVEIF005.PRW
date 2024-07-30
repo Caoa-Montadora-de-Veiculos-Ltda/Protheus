@@ -24,6 +24,7 @@ Local lPEVC140VEI := ExistBlock("VC140VEI")
 Local cVMvOutFil  := "0" // 0 = Sem Permissao ( Não Ver Movimentacoes de Filiais se o usuario nao tem acesso )
 //
 Private cpesqv5   := space(30) // Pesquisa VEICULO
+Private cChaT005  := space(6)  // ChaInt005VEICULO p/ tela
 Private cChaInt005 := space(6) // ChaInt005VEICULO
 Private cChassi  := "" // Chassi VEICULO
 Private cPlaVei  := "" // Placa VEICULO
@@ -156,7 +157,7 @@ DEFINE MSDIALOG oMov005 FROM aSizeHalf[7],0 TO aSizeHalf[6],aSizeHalf[5] TITLE (
 
 	@ aPos[1,1] + 004, aPos[1,2] + 113 SAY ( cSitVei + " " + IIf(!lReqOS, cFilAtu, "") ) SIZE 400,08 OF oMov005 PIXEL COLOR CLR_BLUE
 	@ aPos[1,1] + 004, aPos[1,2] + 350 SAY cBloqVei SIZE 100,08 OF oMov005 PIXEL COLOR CLR_RED
-	@ aPos[1,1] + 004, aPos[1,4] - 097 SAY "<< " + cChaInt005+ " >>" SIZE 50,08 OF oMov005 PIXEL COLOR CLR_RED
+	@ aPos[1,1] + 004, aPos[1,4] - 097 SAY "<< " + cChaT005+ " >>" SIZE 50,08 OF oMov005 PIXEL COLOR CLR_RED
 	@ aPos[1,1] + 003, aPos[1,4] - 050 BUTTON o005Sair PROMPT "SAIR" OF oMov005 SIZE 50,10 PIXEL ACTION oMov005:End() //SAIR
 	// Fim Veículo
 
@@ -380,6 +381,11 @@ Else
 		lRet := dbSeek( xFilial('VV1') + cChaInt005)
 		lBuscChaInt:= .f.
 	else
+		dbSelectArea('VV1')
+		dbSetOrder(2)
+        dbSeek( xFilial('VV1') + cChassi)
+		cChaT005 := VV1->VV1_CHAINT
+
 		lRet := FG_POSVEI("cpesqv5",)
 	end
 
@@ -470,7 +476,7 @@ Else
 			////EndIf
 
 			cpesqv5 := left(( cQAlSC6 )->( C6_CHASSI )+space(30),30)
-			//cSitVei := "Situacao: "+X3CBOXDESC("VV1_SITVEI",( cQAlSC6 )->( VV1_SITVEI ))+space(5) // Situacao:
+			cSitVei := "Situacao: "+X3CBOXDESC("VV1_SITVEI",VV1->VV1_SITVEI)+space(5) // Situacao:
 			IF ( cQAlSC6 )->QTBF > 0
 			    lVendid := .f.
 			ELSE
@@ -501,7 +507,7 @@ Else
 				dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cQAlVO3, .F., .T. )
 
 				If !( cQAlVO3 )->( Eof() )
-					cSitVei += ( cQAlVO3 )->( D3_OP ) + " - Filial" + ": " + ( cQAlVO3 )->( D3_FILIAL )    // Filial
+					//cSitVei += ( cQAlVO3 )->( D3_OP ) + " - Filial" + ": " + ( cQAlVO3 )->( D3_FILIAL )    // Filial
 				    lReqOS := .t.
 				EndIf
 				( cQAlVO3 )->( dbCloseArea() )
