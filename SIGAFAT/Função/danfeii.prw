@@ -3,9 +3,8 @@
 #INCLUDE "COLORS.CH"
 #INCLUDE "RPTDEF.CH"
 #INCLUDE "FWPrintSetup.ch" 
-
+ 
 #DEFINE IMP_SPOOL 2
-
 #DEFINE VBOX       080
 #DEFINE VSPACE     008
 #DEFINE HSPACE     010
@@ -20,11 +19,8 @@
 #DEFINE MAXITEMC   035					// M·xima de caracteres por linha de produtos/serviÁos
 #DEFINE MAXMENLIN  080					// M·ximo de caracteres por linha de dados adicionais
 #DEFINE MAXMSG     013					// M·ximo de dados adicionais por p·gina
-//#DEFINE MAXVALORC  009					// M·ximo de caracteres por linha de valores numÈricos
-#DEFINE MAXVALORC  015					// M·ximo de caracteres por linha de valores numÈricos
-//#DEFINE MAXCODPRD  050					// M·ximo de caracteres do codigo de produtos/servicos conforme o tamanho do quadro "Cod. prod"
-#DEFINE MAXCODPRD  075					// M·ximo de caracteres do codigo de produtos/servicos conforme o tamanho do quadro "Cod. prod"
- 
+#DEFINE MAXVALORC  015					// M·ximo de caracteres por linha de valores numÈricos - Especifico CAOA
+#DEFINE MAXCODPRD  075					// M·ximo de caracteres do codigo de produtos/servicos conforme o tamanho do quadro "Cod. prod" - Especifico CAOA
 
 /*/
 ‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
@@ -54,9 +50,11 @@ Local aArea     := GetArea()
 Local lExistNfe := .F.
 Local lPergunte	:= .T.
 Local lRet		:= .T.
-Local lVerPerg	:= .T.
-Local lJob		:= .F.
-Local cProg		:= iif(existBlock("DANFEProc"),"U_DANFEProc","DANFEProc")
+local lVerPerg	:= .T.
+local lJob		:= .F.
+local cProg		:= iif(existBlock("DANFEProc"),"U_DANFEProc","DANFEProc")
+local cNaoImp	:= ""	//Mensagem para as Notas n„o impressas do Modelo "65- NFCE" pela Rotina SPEDNFE
+local cNfceMens	:= ""	//Mensagem para as Notas n„o impressas do Modelo "65- NFCE" pela Rotina SPEDNFE
 
 Default lIsLoja	:= .F.	//indica se foi chamado de alguma rotina do SIGALOJA
 Default nTipo	:= 0
@@ -77,16 +75,20 @@ If nTipo <> 1
 	// ----------------------------------------------
 	If lJob .or. oSetup:GetProperty(PD_PRINTTYPE) == IMP_PDF
 		oDanfe:nDevice := IMP_PDF
+		
+		//************ Especifico Caoa ******************
 		// ----------------------------------------------
 		// Define para salvar o PDF
 		// ----------------------------------------------
 		If Upper(Alltrim(FunName())) != "ZPECF013"
-			oDanfe:cPathPDF := If( lJob , SuperGetMV('MV_RELT',,"\SPOOL\") , oSetup:aOptions[PD_VALUETYPE])
+			oDanfe:cPathPDF := if( lJob , SuperGetMV('MV_RELT',,"\SPOOL\") , oSetup:aOptions[PD_VALUETYPE] )
 		Else
 			oDanfe:cPathPDF := "C:\TEMP\"
 		EndIf	
+
 	elseIf oSetup:GetProperty(PD_PRINTTYPE) == IMP_SPOOL
 		oDanfe:nDevice := IMP_SPOOL
+		oDanfe:SetParm( "-RFS")
 		// ----------------------------------------------
 		// Salva impressora selecionada
 		// ----------------------------------------------
@@ -94,7 +96,7 @@ If nTipo <> 1
 		oDanfe:cPrinter := oSetup:aOptions[PD_VALUETYPE]
 	Endif
 
-	If lIsLoja .Or. Upper(Alltrim(FunName())) == "ZPECF013"
+	If lIsLoja .Or. Upper(Alltrim(FunName())) == "ZPECF013" //************ Especifico Caoa 
 		MV_PAR01 := SF2->F2_DOC
 		MV_PAR02 := SF2->F2_DOC
 		MV_PAR03 := SF2->F2_SERIE
@@ -125,9 +127,9 @@ If nTipo <> 1
 
 	If lPergunte
 		if lJob
-			&cProg.(@oDanfe, , cIDEnt, Nil, Nil, @lExistNFe, lIsLoja )
+			&cProg.(@oDanfe, , cIDEnt, Nil, Nil, @lExistNFe, lIsLoja)
 		else
-			RPTStatus( {|lEnd| &cProg.(@oDanfe, @lEnd, cIDEnt, Nil, Nil, @lExistNFe, lIsLoja )}, "Imprimindo DANFE..." )
+			RPTStatus( {|lEnd| &cProg.(@oDanfe, @lEnd, cIDEnt, Nil, Nil, @lExistNFe, lIsLoja, Nil, @cNfceMens )}, "Imprimindo DANFE..." )
 		endif
 	EndIf
 
@@ -149,19 +151,30 @@ ElseIf nTipo == 1
 
 	If lPergunte
 		if lJob
-			&cProg.(@oDanfe, , cIDEnt, Nil, Nil, @lExistNFe, lIsLoja, nTipo )
+			&cProg.(@oDanfe, , cIDEnt, Nil, Nil, @lExistNFe, lIsLoja, nTipo)
 		else
 			RPTStatus( {|lEnd| &cProg.(@oDanfe, @lEnd, cIDEnt, Nil, Nil, @lExistNFe, lIsLoja, nTipo)}, "Imprimindo DANFE..." )
 		endif
 	EndIf
-EndIf
+	
+EndIf 
 
 //Se SIGALOJA, o objeto oDANFE È destruido onde foi instanciado e retorna se houve impressao do DANFE
 If lIsLoja
 	lRet := lExistNFe
-Else
+
+//Tratamento para as Notas n„o impressas do Modelo "65- NFCE" pela Rotina SPEDNFE
+Elseif !Empty(cNfceMens)  
+	cNaoImp := "A impress„o do DANFE referente ao Modelo do Documento NFC-e deve ser impresso pela Modulo SigaLoja." 
+	cNaoImp += CRLF
+	cNaoImp += CRLF
+	cNaoImp += "Segue relaÁ„o de Documentos n„o impressos: " +CRLF
+	cNaoImp += CRLF
+	cNaoImp += cNfceMens
+	Aviso( "           			SPED   ", cNaoImp, {"OK"}, 3 )
+Else 	
 	FreeObj(oDANFE)
-	oDANFE := Nil
+	oDANFE := Nil	
 EndIf
 
 RestArea(aArea)
@@ -192,7 +205,8 @@ Return lRet
 /*/
 
 User Function DANFEProc(	oDanfe	, lEnd		, cIdEnt	, cVal1,;
-							cVal2	, lExistNfe	, lIsLoja	, nTipo)
+							cVal2	, lExistNfe	, lIsLoja	, nTipo,;
+							cNfceMens	)
 
 Local aArea      := GetArea()
 Local aAreaSF3   := {}
@@ -231,21 +245,31 @@ Local cxFilial	:= ""
 Local cCampos	:= ""
 local lChave	:= .F.
 Local cChavSF3	:= ""
+local lPossuiF3	:= .F.
+local lQuerySFW	:= .F.
+local lMnVldAR1 := SuperGetMv("MV_RSKVLDF",.F.,.F.) .And. ExistFunc("RskIsActive") .And. RskIsActive()
+local aAreaAR1  := AR1->(GetArea())
 
-Default lEnd	:= .F.
-Default lIsLoja	:= .F.
-Default nTipo	:= 0
+Default lEnd		:= .F.
+Default lIsLoja		:= .F.
+Default nTipo		:= 0
+Default cNfceMens	:= ""	//Mensagem para as Notas n„o impressas do Modelo "65- NFCE" pela Rotina SPEDNFE
 
 public nMaxItem := MAXITEM
 
 MV_PAR01 := AllTrim(MV_PAR01)
+MV_PAR02 := AllTrim(MV_PAR02)
+
 lImpSimp := ( !Empty( MV_PAR06 ) .and. MV_PAR06 == 1 )
+
+If lMnVldAR1
+	AR1->(DbSetOrder(2)) // AR1_FILIAL+AR1_FILNF+AR1_DOC+AR1_SERIE+AR1_CLIENT+AR1_LOJA
+EndIf
 
 If !lImpDir .or. MV_PAR04 == 0 /* Caso impress„o de DANFE seja realizada via AutoDistMail */
 	dbSelectArea("SF3")
 	dbSetOrder(5)
 	#IFDEF TOP
-
 		If MV_PAR04==1
 
 		 	If lSdoc
@@ -352,6 +376,26 @@ If !lImpDir .or. MV_PAR04 == 0 /* Caso impress„o de DANFE seja realizada via Aut
 		(cAliasSF3)->F3_NFISCAL <= MV_PAR02
 
 		dbSelectArea(cAliasSF3)
+		
+		//------  Tratamento para n„o Imprimir Danfe do NFC-e quando chamado pela Rotina SPEDNFE ---// 
+		if !lIsLoja .and. Alltrim((cAliasSF3)->F3_ESPECIE) =='NFCE'
+			cNfceMens += "Doc: " +(cAliasSF3)->F3_NFISCAL + " Serie: "+(cAliasSF3)->F3_SERIE +CRLF
+			(cAliasSF3)->(DbSkip())
+			loop 
+		endif
+		//------------------------------------------------------------------------------------------//
+
+		//------  Tratamento para n„o Imprimir Danfe do Totvs Mais NegÛcios quando n„o Aprovada ----// 
+		If lMnVldAR1 .And. AR1->(MsSeek(xFilial("AR1")+(cAliasSF3)->F3_FILIAL+(cAliasSF3)->F3_NFISCAL+(cAliasSF3)->F3_SERIE+(cAliasSF3)->F3_CLIEFOR+(cAliasSF3)->F3_LOJA ) )
+			If AR1->AR1_STATUS <> "2"
+				cNaoAut += "A impress„o do DANFE referente ao Doc/SÈrie " + AllTrim( (cAliasSF3)->F3_NFISCAL ) + "/" + (cAliasSF3)->F3_SERIE + " N√O FOI REALIZADA pelo motivo abaixo:"
+				cNaoAut += CRLF + "[ Nota Fiscal TOTVS Mais NegÛcios n„o aprovada! ]" +  CRLF
+				(cAliasSF3)->(DbSkip())
+				Loop
+			EndIf
+		EndIf
+		//------------------------------------------------------------------------------------------//
+
 		If  Empty((cAliasSF3)->F3_DTCANC) .And. &cWhere //.And. AModNot((cAliasSF3)->F3_ESPECIE)=="55"
 
 			If (SubStr((cAliasSF3)->F3_CFO,1,1)>="5" .Or. (cAliasSF3)->F3_FORMUL=="S") .And. aScan(aNotas,{|x| x[4]+x[5]+x[6]+x[7]==(cAliasSF3)->F3_SERIE+(cAliasSF3)->F3_NFISCAL+(cAliasSF3)->F3_CLIEFOR+(cAliasSF3)->F3_LOJA})==0
@@ -388,7 +432,7 @@ If !lImpDir .or. MV_PAR04 == 0 /* Caso impress„o de DANFE seja realizada via Aut
 			else
 				aXml := GetXML(cIdEnt,aNotas,@cModalidade, if( valtype(oDanfe) == "O", oDanfe:lInJob, nil ) )
 			endif
-			cPegaXml := aXML[1][2]  //GAP117.-.Exportacao.da.Danfe.e.XML.individualmente
+
 			nLenNotas := Len(aNotas)
 
 			For nX := 1 To nLenNotas
@@ -584,6 +628,7 @@ If !lImpDir .or. MV_PAR04 == 0 /* Caso impress„o de DANFE seja realizada via Aut
 			Next nX
 			aNotas := {}
 
+			lPossuiF3	:= .T.				   
 			RestArea(aAreaSF3)
 			DelClassIntF()
 		EndIf
@@ -600,6 +645,119 @@ If !lImpDir .or. MV_PAR04 == 0 /* Caso impress„o de DANFE seja realizada via Aut
 		Aviso("SPED","As seguintes notas n„o foram autorizadas: "+CRLF+CRLF+cNaoAut,{"Ok"},3)
 	EndIf
 
+	/*--- Ajuste nota com Bloqueio ---------------------------------------- */
+	If !lPossuiF3 .And. MV_PAR04 <> 2
+		cxFilial := xFilial("SF1")
+		cFrom	:=	"%"+RetSqlName("SF1")+" SF1 %"
+		cCampos := "%SF1.F1_FILIAL FILIAL, SF1.F1_DOC DOC, SF1.F1_SERIE SERIE%"
+		cSerie 	:= Padr(MV_PAR03,TamSx3("F1_SERIE")[1])
+		cWhere 	:= "%SF1.D_E_L_E_T_= ' ' AND SF1.F1_FILIAL ='"+xFilial("SF1")+"' AND SF1.F1_DOC <='"+MV_PAR02+ "' AND SF1.F1_DOC >='" + MV_PAR01 + "' AND SF1.F1_SERIE ='"+ cSerie + "' AND SF1.F1_ESPECIE = 'SPED' AND SF1.F1_FORMUL = 'S'"
+
+		cWhere += " ORDER BY SF1.F1_DOC%"
+
+		cAliasSFW 	:= GetNextAlias()
+		lQuerySFW	:= .T.
+
+		BeginSql Alias cAliasSFW
+			SELECT
+			%Exp:cCampos%
+			FROM
+			%Exp:cFrom%
+			WHERE
+			%Exp:cWhere%
+		EndSql
+
+		(cAliasSFW)->(DBGoTop())
+
+		While (cAliasSFW)->(!Eof()) .And. ;
+			cxFilial == (cAliasSFW)->FILIAL .And.;
+			if(lSdoc,(cAliasSFW)->SDOC, (cAliasSFW)->SERIE) == MV_PAR03 .And.;
+			(cAliasSFW)->DOC >= MV_PAR01 .And.;
+			(cAliasSFW)->DOC <= MV_PAR02
+
+			aNotas := {}
+			For nx:=1 To 20
+				aadd(aNotas,{})
+				aAdd(Atail(aNotas),.F.)
+				aadd(Atail(aNotas),IIF(MV_PAR04==0,"E","S"))
+				aAdd(Atail(aNotas),"")
+				aadd(Atail(aNotas),(cAliasSFW)->SERIE)
+				aAdd(Atail(aNotas),(cAliasSFW)->DOC)
+				aadd(Atail(aNotas),"")
+				aadd(Atail(aNotas),"")
+				If ( (cAliasSFW)->(Eof()) )
+					exit
+				EndIF
+				( cAliasSFW )->( DbSkip() )
+			Next nX
+
+			aXml:={}
+			if lUsaColab
+				//Tratamento do TOTVS ColaboraÁ„o
+				aXml := GetXMLColab(aNotas,@cModalidade,lUsaColab)
+			else
+				aXml := GetXML(cIdEnt,aNotas,@cModalidade, if( valtype(oDanfe) == "O", oDanfe:lInJob, nil ))
+			endif
+
+			nLenNotas := Len(aNotas)
+			For nx :=1 To nLenNotas
+			
+				If !Empty(aXml[nX])
+					cAutoriza   := aXML[nX][1]
+					cCodAutDPEC := aXML[nX][5]
+					cCodRetNFE	:= aXML[nX][9]
+					cCodRetSF3	:= iif ( Empty (cCodAutDPEC),cCodRetNFE,cCodAutDPEC )
+					cMsgSF3		:= iif ( aXML[nX][10]<> Nil ,aXML[nX][10],"")
+				EndIf
+				cAviso := ""
+				cErro  := ""	
+
+				oRetNF := XmlParser(aXML[nX][2],"_",@cAviso,@cErro)
+				IIf(ValAtrib("oRetNF:_NFEPROC") <> "U", oNfe := WSAdvValue( oRetNF,"_NFEPROC","string",NIL,NIL,NIL,NIL,NIL), oNfe := oRetNF)
+
+				oNfeDPEC := XmlParser(aXML[nX][4],"_",@cAviso,@cErro)
+				If Empty(cAviso) .And. Empty(cErro) .and. !Empty(aXML[nX][2])
+					ImpDet(@oDanfe,oNFe,cAutoriza,cModalidade,oNfeDPEC,cCodAutDPEC,aXml[nX][6],aXml[nX][7],aNotas[nX],lImpSimp,nTipo,aXml[nX][11])
+					lExistNfe := .T.
+				EndIf
+		
+				//(se possui protocolo ou protocolo dpec ou a modalidade de transmissao for 2 ou 5) E codigo retorno nao esta na lista
+				If ( !Empty(cAutoriza) .Or. !Empty(cCodAutDPEC) .Or. Alltrim(aXML[nX][8]) $ "2,5" ) .And. !cCodRetNFE $ RetCodDene()
+					If aNotas[nX][02]=="E" .And. MV_PAR04==0 .And. (oNfe:_NFE:_INFNFE:_IDE:_TPNF:TEXT=="0")
+						dbSelectArea("SF1")
+						dbSetOrder(1)
+						If MsSeek(xFilial("SF1")+aNotas[nX][05]+aNotas[nX][04]) .And. SF1->(FieldPos("F1_FIMP"))<>0 .And. Alltrim(aXML[nX][8])$"1,3,4,6" .or. ( Alltrim(aXML[nX][8]) $ "2,5"  .And. !Empty(cAutoriza) )
+							Do While !Eof() .And. SF1->F1_DOC==aNotas[nX][05] .And. SF1->F1_SERIE==aNotas[nX][04]
+								If SF1->F1_FORMUL == "S"
+									if RecLock("SF1")
+										If !SF1->F1_FIMP $ "D"
+											SF1->F1_FIMP := "S"
+										EndIf
+										If SF1->(FieldPos("F1_CHVNFE"))>0
+											SF1->F1_CHVNFE := SubStr(NfeIdSPED(aXML[nX][2],"Id"),4)
+										EndIf
+										If SF1->(FieldPos("F1_HAUTNFE")) > 0 .and. SF1->(FieldPos("F1_DAUTNFE")) > 0 //grava a data e hora de autorizaÁ„o da NFe
+											SF1->F1_HAUTNFE := IIF(!Empty(aXML[nX][6]),SUBSTR(aXML[nX][6],1,5),"")
+											SF1->F1_DAUTNFE	:= IIF(!Empty(aXML[nX][7]),aXML[nX][7],SToD("  /  /    "))
+										EndIf
+										SF1->(MsUnlock())
+									endif									
+								EndIf
+								SF1->(DbSkip())
+							EndDo
+						EndIf
+					endif
+				endif
+				oNfe     := nil
+				oNfeDPEC := nil
+			Next nX
+		endDo	
+		DelClassIntF()	
+		if lQuerySFW
+			(cAliasSFW)->(dbCloseArea())
+		EndIf	
+	endif
+	
 ElseIf  lImpDir
 	//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
 	//≥Tratamento para quando o parametro MV_IMPDIR esteja        ≥
@@ -618,12 +776,22 @@ ElseIf  lImpDir
 			If lSdoc
 				cCampos += "%SF1.F1_FILIAL FILIAL, SF1.F1_DOC DOC, SF1.F1_SERIE SERIE, SF1.F1_SDOC SDOC%"
 				cSerie := Padr(MV_PAR03,TamSx3("F1_SDOC")[1])
-				cWhere := "%SF1.D_E_L_E_T_= '' AND SF1.F1_FILIAL ='"+xFilial("SF1")+"' AND SF1.F1_DOC <='"+MV_PAR02+ "' AND SF1.F1_DOC >='" + MV_PAR01 + "' AND SF1.F1_SDOC ='"+ cSerie + "' AND SF1.F1_ESPECIE = 'SPED' AND SF1.F1_FORMUL = 'S' ORDER BY SF1.F1_DOC%"
+				cWhere := "%SF1.D_E_L_E_T_= ' ' AND SF1.F1_FILIAL ='"+xFilial("SF1")+"' AND SF1.F1_DOC <='"+MV_PAR02+ "' AND SF1.F1_DOC >='" + MV_PAR01 + "' AND SF1.F1_SDOC ='"+ cSerie + "' AND SF1.F1_ESPECIE = 'SPED' AND SF1.F1_FORMUL = 'S'"
 			Else
-				cCampos += "%SF1.F1_FILIAL FILIAL, SF1.F1_DOC DOC, SF1.F1_SERIE SERIE%"
+				cCampos += "%SF1.F1_FILIAL FILIAL, SF1.F1_DOC DOC, SF1.F1_SERIE SERIE,SF1.F1_FORNECE FORNECE,SF1.F1_LOJA LOJA%"
 				cSerie := Padr(MV_PAR03,TamSx3("F2_SERIE")[1])
-				cWhere := "%SF1.D_E_L_E_T_= '' AND SF1.F1_FILIAL ='"+xFilial("SF1")+"' AND SF1.F1_DOC <='"+MV_PAR02+ "' AND SF1.F1_DOC >='" + MV_PAR01 + "' AND SF1.F1_SERIE ='"+ cSerie + "' AND SF1.F1_ESPECIE = 'SPED' AND SF1.F1_FORMUL = 'S' ORDER BY SF1.F1_DOC%"
+				cWhere := "%SF1.D_E_L_E_T_= ' ' AND SF1.F1_FILIAL ='"+xFilial("SF1")+"' AND SF1.F1_DOC <='"+MV_PAR02+ "' AND SF1.F1_DOC >='" + MV_PAR01 + "' AND SF1.F1_SERIE ='"+ cSerie + "' AND SF1.F1_ESPECIE = 'SPED' AND SF1.F1_FORMUL = 'S'"
 			Endif
+
+			If !Empty(MV_PAR07) 
+				cWhere += " AND SF1.F1_EMISSAO >= '" + %exp:DtoS(MV_PAR07)% + "'"
+			EndIF
+
+			If !Empty(MV_PAR08)
+				cWhere += " AND SF1.F1_EMISSAO <= '" + %exp:DtoS(MV_PAR08)% + "'"
+			EndIF
+
+			cWhere += " ORDER BY SF1.F1_DOC%"
 
 		ElseIf MV_PAR04==2
 
@@ -633,12 +801,22 @@ ElseIf  lImpDir
 			If lSdoc
 				cCampos += "%SF2.F2_FILIAL FILIAL, SF2.F2_DOC DOC, SF2.F2_SERIE SERIE, SF2.F2_SDOC SDOC%"
 				cSerie := Padr(MV_PAR03,TamSx3("F2_SDOC")[1])
-				cWhere := "%SF2.D_E_L_E_T_= '' AND SF2.F2_FILIAL ='"+xFilial("SF2")+"' AND SF2.F2_DOC <='"+MV_PAR02+ "' AND SF2.F2_DOC >='" + MV_PAR01 + "' AND SF2.F2_SDOC ='"+ cSerie + "' AND SF2.F2_ESPECIE IN ('SPED','NFCE') ORDER BY SF2.F2_DOC%"
+				cWhere := "%SF2.D_E_L_E_T_= ' ' AND SF2.F2_FILIAL ='"+xFilial("SF2")+"' AND SF2.F2_DOC <='"+MV_PAR02+ "' AND SF2.F2_DOC >='" + MV_PAR01 + "' AND SF2.F2_SDOC ='"+ cSerie + "' AND SF2.F2_ESPECIE IN ('SPED','NFCE')"
 			Else
 				cCampos += "%SF2.F2_FILIAL FILIAL, SF2.F2_DOC DOC, SF2.F2_SERIE SERIE%"
 				cSerie := Padr(MV_PAR03,TamSx3("F2_SERIE")[1])
-				cWhere := "%SF2.D_E_L_E_T_= '' AND SF2.F2_FILIAL ='"+xFilial("SF2")+"' AND SF2.F2_DOC <='"+MV_PAR02+ "' AND SF2.F2_DOC >='" + MV_PAR01 + "' AND SF2.F2_SERIE ='"+ cSerie + "' AND SF2.F2_ESPECIE IN ('SPED','NFCE') AND SF2.F2_EMISSAO >= '" + %exp:DtoS(MV_PAR07)% + "' AND SF2.F2_EMISSAO <= '" + %exp:DtoS(MV_PAR08)% + "' ORDER BY SF2.F2_DOC%"
+				cWhere := "%SF2.D_E_L_E_T_= ' ' AND SF2.F2_FILIAL ='"+xFilial("SF2")+"' AND SF2.F2_DOC <='"+MV_PAR02+ "' AND SF2.F2_DOC >='" + MV_PAR01 + "' AND SF2.F2_SERIE ='"+ cSerie + "' AND SF2.F2_ESPECIE IN ('SPED','NFCE')"
 			Endif
+			
+			If !Empty(MV_PAR07) 
+				cWhere += " AND SF2.F2_EMISSAO >= '" + %exp:DtoS(MV_PAR07)% + "'"
+			EndIF
+
+			If !Empty(MV_PAR08)
+				cWhere += " AND SF2.F2_EMISSAO <= '" + %exp:DtoS(MV_PAR08)% + "'"
+			EndIF
+
+			cWhere += " ORDER BY SF2.F2_DOC%"
 
 		EndIf
 
@@ -664,13 +842,14 @@ ElseIf  lImpDir
 			aNotas := {}
 			For nx:=1 To 20
 				aadd(aNotas,{})
-				aAdd(Atail(aNotas),.F.)
+				aadd(Atail(aNotas),.F.)
 				aadd(Atail(aNotas),IIF(MV_PAR04==1,"E","S"))
-				aAdd(Atail(aNotas),"")
+				aadd(Atail(aNotas),"")
 				aadd(Atail(aNotas),(cAliasSFX)->SERIE)
-				aAdd(Atail(aNotas),(cAliasSFX)->DOC)
-				aadd(Atail(aNotas),"")
-				aadd(Atail(aNotas),"")
+				aadd(Atail(aNotas),(cAliasSFX)->DOC)
+				aadd(Atail(aNotas),if( MV_PAR04==1, (cAliasSFX)->FORNECE, ""))
+				aadd(Atail(aNotas),if( MV_PAR04==1, (cAliasSFX)->LOJA, ""))
+  
 				If ( (cAliasSFX)->(Eof()) )
 					exit
 				EndIF
@@ -691,6 +870,24 @@ ElseIf  lImpDir
 				dbSetOrder(1)
 				cChaveSFT	:=	(xFilial("SFT")+aNotas[nX][02]+aNotas[nX][04]+aNotas[nX][05])
 				MsSeek(cChaveSFT)
+		
+				//------ Tratamento para n„o Imprimir Danfe do NFC-e quando chamado pela Rotina SPEDNFE ---//
+				if !lIsLoja .and. AllTrim((cAliasSFT)->FT_ESPECIE) =='NFCE'
+					cNfceMens += " Doc:  " +(cAliasSFT)->FT_NFISCAL + " Serie: "+(cAliasSFT)->FT_SERIE + CRLF 
+					loop 
+				endif
+				//---------------------------------------------------------------------------------------------//
+
+				//------  Tratamento para n„o Imprimir Danfe do Totvs Mais NegÛcios quando n„o Aprovada ----// 
+				If lMnVldAR1 .And. AR1->(MsSeek(xFilial("AR1")+(cAliasSFT)->FT_FILIAL+(cAliasSFT)->FT_NFISCAL+(cAliasSFT)->FT_SERIE+(cAliasSFT)->FT_CLIEFOR+(cAliasSFT)->FT_LOJA ) )
+					If AR1->AR1_STATUS <> "2"
+						cNaoAut += "A impress„o do DANFE referente ao Doc/SÈrie " + AllTrim( (cAliasSFT)->FT_NFISCAL ) + "/" + (cAliasSFT)->FT_SERIE + " N√O FOI REALIZADA pelo motivo abaixo:"
+						cNaoAut += CRLF + "[ Nota Fiscal TOTVS Mais NegÛcios n„o aprovada! ]" + CRLF
+						Loop
+					EndIf
+				EndIf
+				//------------------------------------------------------------------------------------------//
+
 				If ( !Empty(aXML[nX][2]) .AND. (AllTrim((cAliasSFT)->FT_ESPECIE)$'SPED,NFCE') .Or. (lImpDir .And. !Empty(aXML[nX][2])) ) .And. Empty((cAliasSFT)->FT_DTCANC)
 					If !Empty(aXml[nX])
 						cAutoriza   := aXML[nX][1]
@@ -918,7 +1115,11 @@ If Len(aGrvSF3)>0 .And. SF3->(FieldPos("F3_CHVNFE"))>0
 		EndIf
 	Next nI
 EndIf
+RestArea(aAreaAR1)
 RestArea(aArea)
+
+FwFreeArray(aAreaAR1)
+
 Return .T.
 
 /*/
@@ -965,7 +1166,8 @@ If nTipo <> 1
 	PRIVATE oFont12    := TFontEx():New(oDanfe,"Times New Roman",11,11,.F.,.T.,.F.)// 10
 	PRIVATE oFont11N   := TFontEx():New(oDanfe,"Times New Roman",10,10,.T.,.T.,.F.)// 11
 	PRIVATE oFont18N   := TFontEx():New(oDanfe,"Times New Roman",17,17,.T.,.T.,.F.)// 12
-	PRIVATE OFONT12N   := TFontEx():New(oDanfe,"Times New Roman",11,11,.T.,.T.,.F.)// 12
+	PRIVATE OFONT12N   := TFontEx():New(oDanfe,"Times New Roman",11,11,.T.,.T.,.F.)// 12	 
+	PRIVATE oFont13N   := TFontEx():New(oDanfe,"Times New Roman",08,08,.T.,.T.,.F.)// 13 
 	PRIVATE lUsaColab  :=  UsaColaboracao("1")
 
 	if lImpSimp
@@ -1078,6 +1280,7 @@ Local nMaxItemP2    := MAXITEM // Vari·vel utilizada para tratamento de quantos 
 Local nTamB5Cod		:= 0
 
 Local cAux          := ""
+Local cAuxOnu		:= ""
 Local cSitTrib      := ""
 Local cUF		 	:= ""
 Local cMVCODREG		:= Alltrim( SuperGetMV("MV_CODREG", ," ") )
@@ -1134,6 +1337,8 @@ Local lNFCE 		:= Substr(oNFe:_NFe:_InfNfe:_ID:Text,24,2) == "65"
 local nPosOnu		:= 0
 local nMaxUn		:= 2
 local cAuxUn		:= ""
+local lSpedCodOnu	:= existFunc("SpedCodOnu") .and. allTrim(superGetMv("MV_NONUINF",,"0")) == "1"
+Local lInfAdProd	:= .F.
 
 Default cDtHrRecCab := ""
 Default dDtReceb    := CToD("")
@@ -1233,14 +1438,18 @@ endIf
 //≥Carrega as variaveis de impressao                                       ≥
 //¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
 aadd(aSitTrib,"00")
+aadd(aSitTrib,"02")
 aadd(aSitTrib,"10")
+aadd(aSitTrib,"15")
 aadd(aSitTrib,"20")
 aadd(aSitTrib,"30")
 aadd(aSitTrib,"40")
 aadd(aSitTrib,"41")
 aadd(aSitTrib,"50")
 aadd(aSitTrib,"51")
+aadd(aSitTrib,"53")
 aadd(aSitTrib,"60")
+aadd(aSitTrib,"61")
 aadd(aSitTrib,"70")
 aadd(aSitTrib,"90")
 aadd(aSitTrib,"PART")
@@ -1283,7 +1492,7 @@ EndIf
 //⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
 //≥Calculo do Imposto                                                      ≥
 //¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
-aTotais := {"","","","","","","","","","","",""}
+aTotais := {"","","","","","","","","","",""}
 aTotais[01] := Transform(Val(oTotal:_ICMSTOT:_vBC:TEXT),"@e 9,999,999,999,999.99")
 aTotais[02] := Transform(Val(oTotal:_ICMSTOT:_vICMS:TEXT),"@e 9,999,999,999,999.99")
 aTotais[03] := Transform(Val(oTotal:_ICMSTOT:_vBCST:TEXT),"@e 9,999,999,999,999.99")
@@ -1303,7 +1512,7 @@ If ( MV_PAR04 == 1 )
 		ElseIf SF1->F1_TIPO == "D" .and. lEntIpiDev
 			aTotais[10] := 	Transform(Val(oTotal:_ICMSTOT:_vIPI:TEXT),"@e 9,999,999,999,999.99")
 		Else
-			aTotais[10] := ""
+			aTotais[10] := "0,00"
 		EndIf
 		MsUnlock()
 		DbSkip()
@@ -1687,19 +1896,13 @@ For nZ := 1 To nLenDet
 						nValICM  := Val(&("oImposto:_Imposto:_ICMS:_ICMS"+aSitTrib[nY]+":_vICMS:TEXT"))
 						nPICM    := Val(&("oImposto:_Imposto:_ICMS:_ICMS"+aSitTrib[nY]+":_PICMS:TEXT"))
 					ElseIf ValAtrib("oImposto:_Imposto:_ICMS:_ICMS"+aSitTrib[nPrivate2]+":_MOTDESICMS") <> "U" .And. ValAtrib("oImposto:_PROD:_VDESC:TEXT") <> "U"   //SINIEF 25/12, efeitos a partir de 20.12.12
-						If oNF:_INFNFE:_VERSAO:TEXT >= "3.10" .and. &("oImposto:_Imposto:_ICMS:_ICMS"+aSitTrib[nY]+":_CST:TEXT") <> "40"
+						If !(&("oImposto:_Imposto:_ICMS:_ICMS"+aSitTrib[nY]+":_CST:TEXT") $"40-41")
 							If AllTrim(&("oImposto:_Imposto:_ICMS:_ICMS"+aSitTrib[nY]+":_motDesICMS:TEXT")) == "7" .And. &("oImposto:_Imposto:_ICMS:_ICMS"+aSitTrib[nY]+":_CST:TEXT") == "30"
 								nValICM  := 0
 							Else
 								nValICM  := Val(&("oImposto:_Imposto:_ICMS:_ICMS"+aSitTrib[nY]+":_vICMSDESON:TEXT"))
 							EndIf
-						Elseif &("oImposto:_Imposto:_ICMS:_ICMS"+aSitTrib[nY]+":_CST:TEXT") <> "40"
-							If AllTrim(&("oImposto:_Imposto:_ICMS:_ICMS"+aSitTrib[nY]+":_motDesICMS:TEXT")) == "7" .And. &("oImposto:_Imposto:_ICMS:_ICMS"+aSitTrib[nY]+":_CST:TEXT") == "30"
-								nValICM  := 0
-							Else
-								nValICM  := Val(&("oImposto:_Imposto:_ICMS:_ICMS"+aSitTrib[nY]+":_vICMS:TEXT"))
-							EndIf
-						EndIf
+					    EndIf
 					EndIf
 					If ValAtrib("oImposto:_Imposto:_ICMS:_ICMSST")<>"U" // Tratamento para 4.0
 						cSitTrib := &("oImposto:_Imposto:_ICMS:_ICMSST:_ORIG:TEXT")
@@ -1741,18 +1944,98 @@ For nZ := 1 To nLenDet
 
 	nMaxCod := MaxCod(oDet[nX]:_Prod:_cProd:TEXT, MAXCODPRD)
 
-	if (nPosOnu := ascan( aCodONU, { |x| x[1] == oDet[nX]:_Prod:_cProd:TEXT } ) ) == 0
+	cCodOnu := ""
+	if lSpedCodOnu
 		if SB5->( DbSeek( xFilial( "SB5" ) + padr( oDet[nX]:_Prod:_cProd:TEXT, nTamB5Cod ) ) )
-			Aadd( aCodONU, { oDet[nX]:_Prod:_cProd:TEXT , SB5->B5_ONU }  )
-			nPosOnu := len(aCodONU)
-			If DY3->( DbSeek(xFilial("DY3")+ SB5->B5_ONU) )
-				If !Empty(DY3->DY3_DESCRI) .and. (DY3->DY3_INFCPL =="S" .OR. DY3->DY3_INFCPL =="1")
-					aAdd( aMensONU, noAcento( '  ONU ' + Alltrim(DY3->DY3_ONU) + ' ' + Alltrim(DY3->DY3_DESCRI) + '   ' ))
-				EndIF  		
-			EndIF
+			cUnidMed 	:= oDet[nX]:_Prod:_uTrib:TEXT
+			nPesoBruto	:= posicione("SB1",1,xFilial("SB1")+SB5->B5_COD,"B1_PESBRU")
+			cMensONU	:= "" //se deve preencher as informaÁıes de rodape do DANFE
+			cCodOnu		:= SpedCodOnu(SB5->B5_ONU, SB5->B5_ITEM, nQtd, cUnidMed ,nPesoBruto, @cMensONU)
+			if !empty(cMensONU)
+				aAdd(aMensONU, noAcento('  ' + cMensONU))
+			endIf
+		endIf
+
+	else
+		//modelo antigo apenas para compatibilidade - sem manutenÁ„o
+		if (nPosOnu := ascan( aCodONU, { |x| x[1] == oDet[nX]:_Prod:_cProd:TEXT } ) ) == 0
+			if SB5->( DbSeek( xFilial( "SB5" ) + padr( oDet[nX]:_Prod:_cProd:TEXT, nTamB5Cod ) ) )
+				If DY3->( DbSeek(xFilial("DY3")+ SB5->B5_ONU) )
+					cCodOnu := 'ONU ' + Alltrim(DY3->DY3_ONU) + ' ' + Alltrim(DY3->DY3_DESCRI)
+					If !Empty(DY3->DY3_DESCRI) .and. (DY3->DY3_INFCPL =="S" .OR. DY3->DY3_INFCPL =="1")
+						aAdd( aMensONU, noAcento( '  ' + cCodOnu + '   ' ))
+					EndIF  		
+				EndIF
+				Aadd( aCodONU, { oDet[nX]:_Prod:_cProd:TEXT , SB5->B5_ONU, cCodOnu }  )
+			endIf
+		else
+			cCodOnu := aCodONU[nPosOnu,3]
 		endIf
 	endIf
+	cCodOnu := iif(lImpInfAd,cCodOnu,"")
+	cAuxOnu := cCodOnu
 	
+	//Tratativa para que COD Onu seja impresso antes de produto.
+	lInfAdProd := (ValAtrib("oNf:_infnfe:_det[nPrivate]:_Infadprod:TEXT") <> "U" .Or. ValAtrib("oNf:_infnfe:_det:_Infadprod:TEXT") <> "U") .And. ( lImpAnfav .Or. lImpInfAd )
+	If lInfAdProd
+		If nX == 1
+			aadd(aItens,{;
+				"-",;
+				"-",;
+				"-",;
+				"-",;
+				"-",;
+				"-",;
+				"-",;
+				"-",;
+				"-",;
+				"-",;
+				"-",;
+				"-",;
+				"-",;
+				"-";
+			})
+		EndIf
+		While !Empty(cCodonu)
+			aadd(aItens,{;
+				"",;
+				{SubStr(cCodOnu,1,nMaxDes), .T.},;
+				"",;
+				"",;
+				"",;
+				"",;
+				"",;
+				"",;
+				"",;
+				"",;
+				"",;
+				"",;
+				"",;
+				"";
+			})
+			If lUf_MG
+				aadd(aItensAux,{;
+					"",;
+					{SubStr(cCodOnu,1,nMaxDes), .T.},;
+					"",;
+					"",;
+					oDet[nX]:_Prod:_CFOP:TEXT,;
+					"",;
+					"",;
+					"",;
+					"",;
+					"",;
+					"",;
+					"",;
+					"",;
+					"",;
+					StrZero( ++nSequencia, 4 ),;
+					0;
+				})
+			Endif
+			cCodOnu := SubStr(cCodOnu,(nMaxDes + 1))
+		EndDo
+	EndIf
 	// Tratamento para quebrar os digitos dos valores
 	aAux := {}
 	AADD(aAux, AllTrim(TransForm(nQtd,TM(nQtd,15,4))))
@@ -1969,7 +2252,8 @@ For nZ := 1 To nLenDet
 		EndDo
 	Endif
 
-	If (ValAtrib("oNf:_infnfe:_det[nPrivate]:_Infadprod:TEXT") <> "U" .Or. ValAtrib("oNf:_infnfe:_det:_Infadprod:TEXT") <> "U") .And. ( lImpAnfav .Or. lImpInfAd )
+	If lInfAdProd
+		cCodOnu := cAuxOnu
 		If at("<", AllTrim(SubStr(oDet[nX]:_Infadprod:TEXT,1))) <> 0
 			cAux := stripTags(AllTrim(SubStr(oDet[nX]:_Infadprod:TEXT,1)), .T.) + " "
 			cAux += stripTags(AllTrim(SubStr(oDet[nX]:_Infadprod:TEXT,1)), .F.)
@@ -1977,57 +2261,11 @@ For nZ := 1 To nLenDet
 			cAux := stripTags(AllTrim(SubStr(oDet[nX]:_Infadprod:TEXT,1)), .T.)
 		endIf
 
-		cCodOnu := ""
-		if nPosOnu > 0 .And. lImpInfAd
-			If DY3->( DbSeek(xFilial("DY3")+ aCodOnu[nPosOnu][2] ) )
-				cCodOnu := 'ONU ' + Alltrim(DY3->DY3_ONU) + ' ' + Alltrim(DY3->DY3_DESCRI)
-			EndIf 		
-		endIf
-
 		// Retira CÛd. Onu de cAux para que nao seja impresso duas vezes
 		If AllTrim(cCodOnu) $ cAux
 			cAux := StrTran(cAux, AllTrim(cCodOnu), "")
 		EndIf
 
-		While !Empty(cCodonu)
-			aadd(aItens,{;
-				"",;
-				{SubStr(cCodOnu,1,nMaxDes), .T.},;
-				"",;
-				"",;
-				"",;
-				"",;
-				"",;
-				"",;
-				"",;
-				"",;
-				"",;
-				"",;
-				"",;
-				"";
-			})
-			If lUf_MG
-				aadd(aItensAux,{;
-					"",;
-					{SubStr(cCodOnu,1,nMaxDes), .T.},;
-					"",;
-					"",;
-					oDet[nX]:_Prod:_CFOP:TEXT,;
-					"",;
-					"",;
-					"",;
-					"",;
-					"",;
-					"",;
-					"",;
-					"",;
-					"",;
-					StrZero( ++nSequencia, 4 ),;
-					0;
-				})
-			Endif
-			cCodOnu := SubStr(cCodOnu,(nMaxDes + 1))
-		EndDo
 		While !Empty(cAux)
 			aadd(aItens,{;
 				"",;
@@ -2069,7 +2307,7 @@ For nZ := 1 To nLenDet
 			lPontilhado := .T.
 		EndDo
 	EndIf
-	If lPontilhado .and. nZ < nLenDet
+	If (lPontilhado .Or. !Empty(cAuxOnu)) .and. nZ < nLenDet
 		aadd(aItens,{;
 			"-",;
 			{"-",.F.},;
@@ -2410,9 +2648,15 @@ If Type("oNF:_InfNfe:_infAdic:_infCpl:TEXT")<>"U"
 	if !Empty(cAux) .and. len( aMensONU ) > 0
 		for nMsg := 1 to len(aMensONU)
 			cMensONU := alltrim( aMensONU[nMsg] )
-			if( cMensONU $ cAux )
-				cAux := strTran(cAux, cMensONU, "")
-				cMensONU := alltrim( cMensONU )
+			if cMensONU $ cAux
+				if lSpedCodOnu
+					nPosIni 	:= at(cMensONU,cAux)
+					nPosFin 	:= nPosIni + len(cMensONU)
+					cAux 		:= allTrim(subStr(cAux,1,nPosIni-1)) + " " + allTrim(subStr(cAux,nPosFin)) //Remove somente a ocorrencia da mensagem
+				else
+					cAux := strTran(cAux, cMensONU, "")
+				endIf
+				cMensONU	:= alltrim( cMensONU )
 				while !empty(cMensONU)
 					aadd(aMensagem, { SubStr(cMensONU,1,IIf(EspacoAt(cMensONU, MAXMENLIN) > 1, EspacoAt(cMensONU, MAXMENLIN) - 1, MAXMENLIN)) , .T. } )
 					cMensONU := SubStr(cMensONU,IIf(EspacoAt(cMensONU, MAXMENLIN) > 1, EspacoAt(cMensONU, MAXMENLIN), MAXMENLIN) + 1)
@@ -2659,7 +2903,7 @@ cStrAux		:=	AllTrim(NoChar(oEmitente:_xNome:Text,lConverte))
 nForTo		:=	Len(cStrAux)/24
 nForTo		:=	Iif(nForTo>Round(nForTo,0),Round(nForTo,0)+1,Round(nForTo,0))
 For nX := 1 To nForTo
-	oDanfe:Say(nLinCalc,096,SubStr(cStrAux,Iif(nX==1,1,((nX-1)*24)+1),24), oFont12N:oFont )
+	oDanfe:Say(nLinCalc,096,SubStr(cStrAux,Iif(nX==1,1,((nX-1)*24)+1),24), ValidDanfe(oDanfe:nDevice) )
 	nLinCalc+=10
 Next nX
 
@@ -2706,7 +2950,11 @@ EndIf
 //¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
 
 oDanfe:Box(042,248,137,351)
-oDanfe:Say(055,275, "DANFE",oFont18N:oFont)
+if oDanfe:nDevice == 2
+	oDanfe:Say(055,275, "DANFE",oFont12N:oFont)
+else
+	oDanfe:Say(055,275, "DANFE",oFont18N:oFont)
+endif
 oDanfe:Say(065,258, "DOCUMENTO AUXILIAR DA",oFont07:oFont)
 
 if lNFCE
@@ -2786,19 +3034,31 @@ If nfolha==1
 	EndIF
 Endif
 
+
 //⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
 //≥Codigo de barra                                                         ≥
 //¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
 
 oDanfe:Box(042,350,088,603)
 oDanfe:Box(075,350,110,603)
-oDanfe:Say(095,355,TransForm(SubStr(oNF:_InfNfe:_ID:Text,4),"@r 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999"),oFont12N:oFont)
+if oDanfe:nDevice == 2
+	oDanfe:Say(095,355,TransForm(SubStr(oNF:_InfNfe:_ID:Text,4),"@r 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999"),oFont09N:oFont)
+else
+	oDanfe:Say(095,355,TransForm(SubStr(oNF:_InfNfe:_ID:Text,4),"@r 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999"),oFont12N:oFont)
+endif
+
 oDanfe:Box(105,350,137,603)
 
 If nFolha == 1
-	oDanfe:Say(085,355,"CHAVE DE ACESSO DA "+iif(lNFCE,"NFC-E","NF-E"),oFont12N:oFont)
+	if oDanfe:nDevice == 2
+		oDanfe:Say(085,355,"CHAVE DE ACESSO DA "+iif(lNFCE,"NFC-E","NF-E"),oFont09N:oFont)
+	else
+		oDanfe:Say(085,355,"CHAVE DE ACESSO DA "+iif(lNFCE,"NFC-E","NF-E"),oFont12N:oFont)
+	endif		
+	
 	nFontSize := 28
 	oDanfe:Code128C(072,370,SubStr(oNF:_InfNfe:_ID:Text,4), nFontSize )
+
 EndIf
 
 If !Empty(cCodAutDPEC) .And. (oNFe:_NFE:_INFNFE:_IDE:_TPEMIS:TEXT)$"4" .And. !lUsaColab
@@ -2851,14 +3111,24 @@ EndIf
 
 If Empty(cCodAutDPEC)
 	If Empty(cChaveCont)
-		oDanfe:Say(117,355,"Consulta de autenticidade no portal nacional da "+iif(lNFCE,"NFC-e","NF-e"),oFont12:oFont)
-		oDanfe:Say(127,355,"www.nfe.fazenda.gov.br/portal ou no site da SEFAZ Autorizada",oFont12:oFont)
+		if oDanfe:nDevice == 2
+			oDanfe:Say(117,355,"Consulta de autenticidade no portal nacional da "+iif(lNFCE,"NFC-e","NF-e"),oFont09N:oFont)
+			oDanfe:Say(127,355,"www.nfe.fazenda.gov.br/portal ou no site da SEFAZ Autorizada",oFont09:oFont)
+		else
+			oDanfe:Say(117,355,"Consulta de autenticidade no portal nacional da "+iif(lNFCE,"NFC-e","NF-e"),oFont12:oFont)
+			oDanfe:Say(127,355,"www.nfe.fazenda.gov.br/portal ou no site da SEFAZ Autorizada",oFont12:oFont)
+		endif
 	Endif
 Endif
 
 If  !Empty(cCodAutDPEC)
-	oDanfe:Say(117,355,"Consulta de autenticidade no portal nacional da "+iif(lNFCE,"NFC-e","NF-e"),oFont12:oFont)
-	oDanfe:Say(127,355,"www.nfe.fazenda.gov.br/portal ou no site da SEFAZ Autorizada",oFont12:oFont)
+	if oDanfe:nDevice == 2
+		oDanfe:Say(117,355,"Consulta de autenticidade no portal nacional da "+iif(lNFCE,"NFC-e","NF-e"),oFont08:oFont)
+		oDanfe:Say(127,355,"www.nfe.fazenda.gov.br/portal ou no site da SEFAZ Autorizada",oFont08:oFont)
+	else
+		oDanfe:Say(117,355,"Consulta de autenticidade no portal nacional da "+iif(lNFCE,"NFC-e","NF-e"),oFont12:oFont)
+		oDanfe:Say(127,355,"www.nfe.fazenda.gov.br/portal ou no site da SEFAZ Autorizada",oFont12:oFont)
+	endif
 Endif
 
 // inicio do segundo codigo de barras ref. a transmissao CONTIGENCIA OFF LINE
@@ -3105,34 +3375,29 @@ Endif
 
 //Calculo do imposto
 oDanfe:Say(305+nAjustImp,002,"CALCULO DO IMPOSTO",oFont08N:oFont)
-oDanfe:Box(307+nAjustImp,000,330+nAjustImp,101)
+oDanfe:Box(307+nAjustImp,000,330+nAjustImp,121)
 oDanfe:Say(316+nAjustImp,002,"BASE DE CALCULO DO ICMS",oFont08N:oFont)
 If cMVCODREG $ "2|3"
 	oDanfe:Say(326+nAjustImp,002,aTotais[01],oFont08:oFont)
 ElseIf lImpSimpN
 	oDanfe:Say(326+nAjustImp,002,aSimpNac[01],oFont08:oFont)
 Endif
-oDanfe:Box(307+nAjustImp,100,330+nAjustImp,170)
-oDanfe:Say(316+nAjustImp,105,"VALOR DO ICMS",oFont08N:oFont)
+oDanfe:Box(307+nAjustImp,120,330+nAjustImp,200)
+oDanfe:Say(316+nAjustImp,125,"VALOR DO ICMS",oFont08N:oFont)
 If cMVCODREG $ "2|3"
-	oDanfe:Say(326+nAjustImp,105,aTotais[02],oFont08:oFont)
+	oDanfe:Say(326+nAjustImp,125,aTotais[02],oFont08:oFont)
 ElseIf lImpSimpN
-	oDanfe:Say(326+nAjustImp,105,aSimpNac[02],oFont08:oFont)
+	oDanfe:Say(326+nAjustImp,125,aSimpNac[02],oFont08:oFont)
 Endif
-oDanfe:Box(307+nAjustImp,169,330+nAjustImp,280)
-oDanfe:Say(316+nAjustImp,170,"BASE DE CALC.ICMS SUBSTITUI«√O",oFont08N:oFont)
-oDanfe:Say(326+nAjustImp,172,aTotais[03],oFont08:oFont)
-oDanfe:Box(307+nAjustImp,280,330+nAjustImp,380)
-oDanfe:Say(316+nAjustImp,283,"VALOR DO ICMS SUBSTITUI«√O",oFont08N:oFont)
-oDanfe:Say(326+nAjustImp,283,aTotais[04],oFont08:oFont)
-//************************************************************************************************
-oDanfe:Box(307+nAjustImp,380,330+nAjustImp,500)
-oDanfe:Say(316+nAjustImp,385,"VLR.APROX.TRIBUTOS(LEI 12.741/2012)",oFont08N:oFont)
-oDanfe:Say(326+nAjustImp,385,aTotais[12],oFont08:oFont)
-//************************************************************************************************
-oDanfe:Box(307+nAjustImp,500,330+nAjustImp,603)
-oDanfe:Say(316+nAjustImp,501,"VALOR TOTAL DOS PRODUTOS",oFont08N:oFont)
-oDanfe:Say(327+nAjustImp,501,aTotais[05],oFont08:oFont)
+oDanfe:Box(307+nAjustImp,199,330+nAjustImp,360)
+oDanfe:Say(316+nAjustImp,200,"BASE DE CALCULO DO ICMS SUBSTITUI«√O",oFont08N:oFont)
+oDanfe:Say(326+nAjustImp,202,aTotais[03],oFont08:oFont)
+oDanfe:Box(307+nAjustImp,360,330+nAjustImp,490)
+oDanfe:Say(316+nAjustImp,363,"VALOR DO ICMS SUBSTITUI«√O",oFont08N:oFont)
+oDanfe:Say(326+nAjustImp,363,aTotais[04],oFont08:oFont)
+oDanfe:Box(307+nAjustImp,490,330+nAjustImp,603)
+oDanfe:Say(316+nAjustImp,491,"VALOR TOTAL DOS PRODUTOS",oFont08N:oFont)
+oDanfe:Say(327+nAjustImp,491,aTotais[05],oFont08:oFont)
 
 oDanfe:Box(330+nAjustImp,000,353+nAjustImp,110)
 oDanfe:Say(339+nAjustImp,002,"VALOR DO FRETE",oFont08N:oFont)
@@ -3283,7 +3548,7 @@ For nX :=1 To nLenItens
 	nY++
 	aadd(Atail(aAux)[nY],aItens[nX][01])
 	nY++
-	aadd(Atail(aAux)[nY],NoChar(aItens[nX][02],lConverte))
+	aadd(Atail(aAux)[nY],aItens[nX][02])
 	nY++
 	aadd(Atail(aAux)[nY],aItens[nX][03])
 	nY++
@@ -3451,7 +3716,7 @@ For nY := 1 To nLenItens
 			nForTo		:=	Len(cStrAux)/24
 			nForTo		:=	Iif(nForTo>Round(nForTo,0),Round(nForTo,0)+1,Round(nForTo,0))
 			For nX := 1 To nForTo
-				oDanfe:Say(nLinCalc,096,SubStr(cStrAux,Iif(nX==1,1,((nX-1)*24)+1),24), oFont12N:oFont )
+				oDanfe:Say(nLinCalc,096,SubStr(cStrAux,Iif(nX==1,1,((nX-1)*24)+1),24), ValidDanfe(oDanfe:nDevice) )
 				nLinCalc+=10
 			Next nX
 
@@ -3494,7 +3759,12 @@ For nY := 1 To nLenItens
 			EndIf
 
 			oDanfe:Box(000+nLinhavers,248,095+nLinhavers,351)
-			oDanfe:Say(013+nLinhavers,275, "DANFE",oFont18N:oFont)
+			if oDanfe:nDevice == 2
+				oDanfe:Say(013+nLinhavers,275, "DANFE",oFont12N:oFont)
+			else
+				oDanfe:Say(013+nLinhavers,275, "DANFE",oFont18N:oFont)
+			endif
+			
 			oDanfe:Say(023+nLinhavers,255, "DOCUMENTO AUXILIAR DA",oFont07:oFont)
 			if lNFCE
 				oDanfe:Say(033+nLinhavers,255, "NOTA FISCAL DE CONSUMIDOR",oFont07:oFont)
@@ -3513,10 +3783,16 @@ For nY := 1 To nLenItens
 			oDanfe:Box(000+nLinhavers,350,040+nLinhavers,603)
 			oDanfe:Box(040+nLinhavers,350,062+nLinhavers,603)
 			oDanfe:Box(063+nLinhavers,350,095+nLinhavers,603)
-			oDanfe:Say(058+nLinhavers,355,TransForm(SubStr(oNF:_InfNfe:_ID:Text,4),"@r 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999"),oFont12N:oFont)
-
-			oDanfe:Say(048+nLinhavers,355,"CHAVE DE ACESSO DA "+iif(lNFCE,"NFC-E","NF-E"),oFont12N:oFont)
-			nFontSize := 28
+			if oDanfe:nDevice == 2
+				oDanfe:Say(058+nLinhavers,355,TransForm(SubStr(oNF:_InfNfe:_ID:Text,4),"@r 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999"),oFont09N:oFont)
+				oDanfe:Say(048+nLinhavers,355,"CHAVE DE ACESSO DA "+iif(lNFCE,"NFC-E","NF-E"),oFont09:oFont)
+			else
+				oDanfe:Say(058+nLinhavers,355,TransForm(SubStr(oNF:_InfNfe:_ID:Text,4),"@r 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999"),oFont12N:oFont)
+				oDanfe:Say(048+nLinhavers,355,"CHAVE DE ACESSO DA "+iif(lNFCE,"NFC-E","NF-E"),oFont12N:oFont)
+			endif
+			
+			nFontSize := 28		
+			
 			oDanfe:Code128C(036+nLinhavers,370,SubStr(oNF:_InfNfe:_ID:Text,4), nFontSize )
 
 			If lMv_Logod
@@ -3526,8 +3802,13 @@ For nY := 1 To nLenItens
 			EndIf
 
 			If Empty(cChaveCont)
-				oDanfe:Say(075+nLinhavers,355,"Consulta de autenticidade no portal nacional da "+iif(lNFCE,"NFC-e","NF-e"),oFont12:oFont)
-				oDanfe:Say(085+nLinhavers,355,"www.nfe.fazenda.gov.br/portal ou no site da SEFAZ Autorizada",oFont12:oFont)
+				if oDanfe:nDevice == 2
+					oDanfe:Say(075+nLinhavers,355,"Consulta de autenticidade no portal nacional da "+iif(lNFCE,"NFC-e","NF-e"),oFont09N:oFont)
+					oDanfe:Say(085+nLinhavers,355,"www.nfe.fazenda.gov.br/portal ou no site da SEFAZ Autorizada",oFont09:oFont)
+				else
+					oDanfe:Say(075+nLinhavers,355,"Consulta de autenticidade no portal nacional da "+iif(lNFCE,"NFC-e","NF-e"),oFont12:oFont)
+					oDanfe:Say(085+nLinhavers,355,"www.nfe.fazenda.gov.br/portal ou no site da SEFAZ Autorizada",oFont12:oFont)
+				endif
 			Endif
 
 			If  !Empty(cCodAutDPEC)
@@ -3561,7 +3842,7 @@ For nY := 1 To nLenItens
 			oDanfe:Box(100+nLinhavers,000,123+nLinhavers,603)
 			oDanfe:Box(100+nLinhavers,000,123+nLinhavers,300)
 			oDanfe:Say(109+nLinhavers,002,"NATUREZA DA OPERA«√O",oFont08N:oFont)
-			oDanfe:Say(119+nLinhavers,002,oIdent:_NATOP:TEXT,oFont08:oFont)
+			oDanfe:Say(119+nLinhavers,002,oIdent:_NATOP:TEXT,oFont08:oFont)			
 			If(!Empty(cCodAutDPEC))
 				oDanfe:Say(109+nLinhavers,300,"N⁄MERO DE REGISTRO DPEC",oFont08N:oFont)
 			Endif
@@ -3662,7 +3943,7 @@ For nY := 1 To nLenItens
 				nLenMensagens:= Len(aMensagem)
 				--nMensagem
 				For nX := 1 To Min(nLenMensagens - nMensagem, MAXMSG)
-					if aMensagem[nX][2]
+					if aMensagem[nMensagem+nX][2]
 						oDanfe:Say( nLin, 002, aMensagem[nMensagem+nX][1], oFont08N:oFont )
 					else
 						oDanfe:Say( nLin, 002, aMensagem[nMensagem+nX][1], oFont08:oFont )
@@ -3706,7 +3987,7 @@ For nY := 1 To nLenItens
 		nForTo		:=	Len(cStrAux)/24
 		nForTo		:=	Iif(nForTo>Round(nForTo,0),Round(nForTo,0)+1,Round(nForTo,0))
 		For nX := 1 To nForTo
-			oDanfe:Say(nLinCalc,096,SubStr(cStrAux,Iif(nX==1,1,((nX-1)*24)+1),24), oFont12N:oFont )
+			oDanfe:Say(nLinCalc,096,SubStr(cStrAux,Iif(nX==1,1,((nX-1)*24)+1),24), ValidDanfe(oDanfe:nDevice) )
 			nLinCalc+=10
 		Next nX
 
@@ -3749,7 +4030,12 @@ For nY := 1 To nLenItens
 		EndIf
 
 		oDanfe:Box(000,248,095,351)
-		oDanfe:Say(013,275, "DANFE",oFont18N:oFont)
+		if oDanfe:nDevice == 2
+			oDanfe:Say(013,275, "DANFE",oFont12N:oFont)
+		else
+			oDanfe:Say(013,275, "DANFE",oFont18N:oFont)
+		endif
+		
 		oDanfe:Say(023,255, "DOCUMENTO AUXILIAR DA",oFont07:oFont)
 
 		if lNFCE
@@ -3769,9 +4055,14 @@ For nY := 1 To nLenItens
 		oDanfe:Box(000,350,040,603)
 		oDanfe:Box(040,350,062,603)
 		oDanfe:Box(063,350,095,603)
-		oDanfe:Say(058,355,TransForm(SubStr(oNF:_InfNfe:_ID:Text,4),"@r 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999"),oFont12N:oFont)
-
-		oDanfe:Say(048,355,"CHAVE DE ACESSO DA "+iif(lNFCE,"NFC-E","NF-E"),oFont12N:oFont)
+		if oDanfe:nDevice == 2
+			oDanfe:Say(058,355,TransForm(SubStr(oNF:_InfNfe:_ID:Text,4),"@r 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999"),oFont09N:oFont)
+			oDanfe:Say(048,355,"CHAVE DE ACESSO DA "+iif(lNFCE,"NFC-E","NF-E"),oFont09:oFont)
+		else
+			oDanfe:Say(058,355,TransForm(SubStr(oNF:_InfNfe:_ID:Text,4),"@r 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999"),oFont12N:oFont)
+			oDanfe:Say(048,355,"CHAVE DE ACESSO DA "+iif(lNFCE,"NFC-E","NF-E"),oFont12N:oFont)
+		endif
+		
 		nFontSize := 28
 		oDanfe:Code128C(036,370,SubStr(oNF:_InfNfe:_ID:Text,4), nFontSize )
 
@@ -3782,8 +4073,8 @@ For nY := 1 To nLenItens
 		EndIf
 
 		If Empty(cChaveCont)
-			oDanfe:Say(075,355,"Consulta de autenticidade no portal nacional da "+iif(lNFCE,"NFC-e","NF-e"),oFont12:oFont)
-			oDanfe:Say(085,355,"www.nfe.fazenda.gov.br/portal ou no site da SEFAZ Autorizada",oFont12:oFont)
+			oDanfe:Say(075,355,"Consulta de autenticidade no portal nacional da "+iif(lNFCE,"NFC-e","NF-e"),oFont09N:oFont)
+			oDanfe:Say(085,355,"www.nfe.fazenda.gov.br/portal ou no site da SEFAZ Autorizada",oFont09:oFont)
 		Endif
 
 		If  !Empty(cCodAutDPEC)
@@ -3913,7 +4204,7 @@ For nY := 1 To nLenItens
 			nLenMensagens:= Len(aMensagem)
 			--nMensagem
 			For nX := 1 To Min(nLenMensagens - nMensagem, MAXMSG)
-				if aMensagem[nX][2]
+				if aMensagem[nMensagem+nX][2]
 					oDanfe:Say( nLin, 002, aMensagem[nMensagem+nX][1], oFont08N:oFont )
 				else
 					oDanfe:Say( nLin, 002, aMensagem[nMensagem+nX][1], oFont08:oFont )
@@ -3950,14 +4241,18 @@ For nY := 1 To nLenItens
 	nAuxH := 0
 
 	If aAux[1][1][nY] == "-"
-		oDanfe:Say(nLinha, nAuxH, Replicate("- ", 150), oFont08:oFont)
+		if oDanfe:nDevice == 2
+			oDanfe:Say(nLinha, nAuxH, Replicate("- ", 155), oFont07:oFont)
+		else
+			oDanfe:Say(nLinha, nAuxH, Replicate("- ", 150), oFont08:oFont)
+		endif
 	Else
 		oDanfe:Say(nLinha, nAuxH + 2, aAux[1][1][nY], oFont08:oFont )
 		nAuxH += aTamCol[1]
 		If aAux[1][2][nY][2]
-			oDanfe:Say(nLinha, nAuxH + 2, aAux[1][2][nY][1], oFont08N:oFont) // COD ONU DESTACADO EM NEGRITO
+			oDanfe:Say(nLinha, nAuxH + 2, NoChar(aAux[1][2][nY][1], lConverte), oFont08N:oFont) // COD ONU DESTACADO EM NEGRITO
 		else
-			oDanfe:Say(nLinha, nAuxH + 2, aAux[1][2][nY][1], oFont08:oFont) // DESCRICAO DO PRODUTO
+			oDanfe:Say(nLinha, nAuxH + 2, NoChar(aAux[1][2][nY][1], lConverte), oFont08:oFont) // DESCRICAO DO PRODUTO
 		EndIf
 		nAuxH += aTamCol[2]
 		oDanfe:Say(nLinha, nAuxH + 2, aAux[1][3][nY], oFont08:oFont) // NCM
@@ -4092,7 +4387,7 @@ If lMensagens
 	nForTo		:=	Len(cStrAux)/24
 	nForTo		:=	Iif(nForTo>Round(nForTo,0),Round(nForTo,0)+1,Round(nForTo,0))
 	For nX := 1 To nForTo
-		oDanfe:Say(nLinCalc,096,SubStr(cStrAux,Iif(nX==1,1,((nX-1)*24)+1),24), oFont12N:oFont )
+		oDanfe:Say(nLinCalc,096,SubStr(cStrAux,Iif(nX==1,1,((nX-1)*24)+1),24), ValidDanfe(oDanfe:nDevice))
 		nLinCalc+=10
 	Next nX
 
@@ -4135,7 +4430,7 @@ If lMensagens
 	EndIf
 
 	oDanfe:Box(000,248,095,351)
-	oDanfe:Say(013,275, "DANFE",oFont18N:oFont)
+	oDanfe:Say(013,275, "DANFE", oFont18N:oFont)
 	oDanfe:Say(023,255, "DOCUMENTO AUXILIAR DA",oFont07:oFont)
 
 	if lNFCE
@@ -4155,9 +4450,9 @@ If lMensagens
 	oDanfe:Box(000,350,040,603)
 	oDanfe:Box(040,350,062,603)
 	oDanfe:Box(063,350,095,603)
-	oDanfe:Say(058,355,TransForm(SubStr(oNF:_InfNfe:_ID:Text,4),"@r 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999"),oFont12N:oFont)
-
-	oDanfe:Say(048,355,"CHAVE DE ACESSO DA "+iif(lNFCE,"NFC-E","NF-E"),oFont12N:oFont)
+	oDanfe:Say(058,355,TransForm(SubStr(oNF:_InfNfe:_ID:Text,4),"@r 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999"),ValidDanfe(oDanfe:nDevice))
+	
+	oDanfe:Say(048,355,"CHAVE DE ACESSO DA "+iif(lNFCE,"NFC-E","NF-E"),ValidDanfe(oDanfe:nDevice))
 	nFontSize := 28
 	oDanfe:Code128C(036,370,SubStr(oNF:_InfNfe:_ID:Text,4), nFontSize )
 
@@ -4168,8 +4463,8 @@ If lMensagens
 	EndIf
 
 	If Empty(cChaveCont)
-		oDanfe:Say(075,355,"Consulta de autenticidade no portal nacional da "+iif(lNFCE,"NFC-e","NF-e"),oFont12:oFont)
-		oDanfe:Say(085,355,"www.nfe.fazenda.gov.br/portal ou no site da SEFAZ Autorizada",oFont12:oFont)
+		oDanfe:Say(075,355,"Consulta de autenticidade no portal nacional da "+iif(lNFCE,"NFC-e","NF-e"),oFont09N:oFont)
+		oDanfe:Say(085,355,"www.nfe.fazenda.gov.br/portal ou no site da SEFAZ Autorizada",oFont09:oFont)
 	Endif
 
 	If  !Empty(cCodAutDPEC)
@@ -4525,8 +4820,8 @@ Static Function RetTamCol(aCabec, aValores, oPrinter, oFontCabec, oFont)
 
 	/* Valores fixados, devido erro de impr. quando S.O est· com visualizaÁ„o <> de 100% 
 	*/		
-	aTamCol := {70,;
-				130,;
+	aTamCol := {50,;
+				150,;
 				33,;
 				iif(aCabec[4] == "CSOSN", 22, 16),; // CST/CSON
 				22,;
@@ -5140,7 +5435,7 @@ cStrAux		:=	AllTrim(NoChar(oEmitente:_xNome:Text,lConverte))
 nForTo		:=	Len(cStrAux)/24
 nForTo		:=	Iif(nForTo>Round(nForTo,0),Round(nForTo,0)+1,Round(nForTo,0))
 For nX := 1 To nForTo
-	oDanfe:Say(nLinCalc,096,SubStr(cStrAux,Iif(nX==1,1,((nX-1)*24)+1),24), oFont12N:oFont )
+	oDanfe:Say(nLinCalc,096,SubStr(cStrAux,Iif(nX==1,1,((nX-1)*24)+1),24), ValidDanfe(oDanfe:nDevice) )
 	nLinCalc+=10
 Next nX
 
@@ -5204,7 +5499,11 @@ Endif
 //Codigo de barra
 oDanfe:Box(042,350,093,603)
 oDanfe:Box(085,350,115,603)
-oDanfe:Say(107,355,TransForm(SubStr(oNF:_InfNfe:_ID:Text,4),"@r 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999"),oFont12N:oFont)
+	if oDanfe:nDevice == 2
+		oDanfe:Say(107,355,TransForm(SubStr(oNF:_InfNfe:_ID:Text,4),"@r 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999"),oFont09N:oFont)
+	else
+		oDanfe:Say(107,355,TransForm(SubStr(oNF:_InfNfe:_ID:Text,4),"@r 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999"),oFont12N:oFont)
+	endif	
 oDanfe:Box(115,350,147,603)
 
 If !Empty(cCodAutDPEC) .And. (oNFe:_NFE:_INFNFE:_IDE:_TPEMIS:TEXT)$"4"
@@ -5258,14 +5557,22 @@ If !Empty(cUF) .And. !Empty(cDataEmi) .And. !Empty(cTPEmis) .And. !Empty(cValIcm
 	cChaveCont += cUF+cTPEmis+cCNPJCPF+cValIcm+cICMSp+cICMSs+cDataEmi
 	cChaveCont := cChaveCont+Modulo11(cChaveCont)
 EndIf
-
-oDanfe:Say(127,355,"Consulta de autenticidade no portal nacional da "+iif(lNFCE,"NFC-e","NF-e"),oFont12:oFont)
-oDanfe:Say(137,355,"www.nfe.fazenda.gov.br/portal ou no site da SEFAZ Autorizada",oFont12:oFont)
-
+if oDanfe:nDevice == 2
+	oDanfe:Say(127,355,"Consulta de autenticidade no portal nacional da "+iif(lNFCE,"NFC-e","NF-e"),oFont09N:oFont)
+	oDanfe:Say(137,355,"www.nfe.fazenda.gov.br/portal ou no site da SEFAZ Autorizada",oFont09:oFont)
+else
+	oDanfe:Say(127,355,"Consulta de autenticidade no portal nacional da "+iif(lNFCE,"NFC-e","NF-e"),oFont12:oFont)
+	oDanfe:Say(137,355,"www.nfe.fazenda.gov.br/portal ou no site da SEFAZ Autorizada",oFont12:oFont)
+endif
 //Quadro 2
 oDanfe:Box(042,248,147,351)
-oDanfe:Say(055,275, "DANFE",OFONT12N:oFont)
-oDanfe:Say(065,258, "SIMPLIFICADO",OFONT12N:oFont)
+if oDanfe:nDevice == 2
+	oDanfe:Say(055,275, "DANFE",OFONT09N:oFont)
+	oDanfe:Say(065,258, "SIMPLIFICADO",OFONT09N:oFont)
+else
+	oDanfe:Say(055,275, "DANFE",OFONT12N:oFont)
+	oDanfe:Say(065,258, "SIMPLIFICADO",OFONT12N:oFont)
+endif
 oDanfe:Say(075,258, "DOCUMENTO AUXILIAR DA",oFont07:oFont)
 
 if lNFCE
@@ -5293,7 +5600,11 @@ If nFolha == 1
 	If ((oNFe:_NFE:_INFNFE:_IDE:_TPEMIS:TEXT)$"25")
 		oDanfe:Say(097,355,"DADOS DA "+iif(lNFCE,"NFC-E","NF-E"),oFont12N:oFont)
 	Else
-		oDanfe:Say(097,355,"CHAVE DE ACESSO DA "+iif(lNFCE,"NFC-E","NF-E"),oFont12N:oFont)
+		if oDanfe:nDevice == 2
+			oDanfe:Say(097,355,"CHAVE DE ACESSO DA "+iif(lNFCE,"NFC-E","NF-E"),oFont09N:oFont)
+		else
+			oDanfe:Say(097,355,"CHAVE DE ACESSO DA "+iif(lNFCE,"NFC-E","NF-E"),oFont12N:oFont)
+		endif
 	EndIf
 	nFontSize := 28
 	oDanfe:Code128C(077,370,SubStr(oNF:_InfNfe:_ID:Text,4), nFontSize )
@@ -5408,7 +5719,7 @@ For nX :=1 To nLenItens
 	nY++
 	aadd(Atail(aAux)[nY],aItens[nX][01])
 	nY++
-	aadd(Atail(aAux)[nY],NoChar(aItens[nX][02],lConverte))
+	aadd(Atail(aAux)[nY],aItens[nX][02])
 	nY++
 	aadd(Atail(aAux)[nY],aItens[nX][03])
 	nY++
@@ -5464,9 +5775,18 @@ Next nX
 
 //Monta quadro dos Totais
 oDanfe:Box(845, 000, 865, 374)
-oDanfe:Say(859,002 , "VALOR TOTAL DA NOTA", oFont18N:oFont)
+if oDanfe:nDevice == 2
+	oDanfe:Say(859,002 , "VALOR TOTAL DA NOTA", oFont12N:oFont)
+else
+	oDanfe:Say(859,002 , "VALOR TOTAL DA NOTA", oFont18N:oFont)
+endif
+
 oDanfe:Box( 845, 374, 865, 603 )
-oDanfe:Say(859, 376, Alltrim(Transform(Val(oTotal:_ICMSTOT:_vNF:TEXT),"@e 9,999,999,999,999.99")) ,oFont18N:oFont)
+if oDanfe:nDevice == 2
+	oDanfe:Say(859, 376, Alltrim(Transform(Val(oTotal:_ICMSTOT:_vNF:TEXT),"@e 9,999,999,999,999.99")) ,oFont12N:oFont)
+else
+	oDanfe:Say(859, 376, Alltrim(Transform(Val(oTotal:_ICMSTOT:_vNF:TEXT),"@e 9,999,999,999,999.99")) ,oFont18N:oFont)
+endif
 
 oDanfe:EndPage()
 
@@ -5778,3 +6098,21 @@ oDestRet := XmlParser(cAux,"_","","")
 oDestRet := oDestRet:_dest
 
 Return oDestRet
+
+/*/{Protheus.doc} ValidDanfe
+Valida o estilo de fonte caso for PDF ou SPOOl.
+@type function
+@version V12 P2210
+@author Gabriel Jesus
+@since 27/06/2023
+@param oDanfe, object, recebe o nDevice para identificar se È pdf ou spool.
+/*/
+Static Function ValidDanfe(oDanfe)
+	Local oEstilo	:= oFont13N:oFont
+	Default oDanfe	:= 6
+
+	If oDanfe == 6
+		oEstilo := oFont12N:oFont
+	EndIf
+
+Return oEstilo
