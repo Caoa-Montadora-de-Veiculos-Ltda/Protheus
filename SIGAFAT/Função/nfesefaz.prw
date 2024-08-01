@@ -551,7 +551,7 @@ Else
 	lPe01Nfe := ExistBlock("ZCSP_NFESEFAZ")
 EndIf
 //***********************************************
-
+ 
 If FunName() == "SPEDNFSE"
 	DEFAULT cTipo   := PARAMIXB[1]
 	DEFAULT cSerie  := PARAMIXB[3]
@@ -627,8 +627,8 @@ IF Alltrim(GetNewPar("MV_CAMPBAR",""))  <>  ""
 			cBarTrib 	:= aCampBar[2]
 		Endif
 	Endif
-Endif 
-
+Endif  
+ 
 If cTipo == "1"
 	//旼컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴커
 	//쿣erifica se existem mais de um cupom relacionado na nota sobre cupom    �
@@ -11132,7 +11132,7 @@ Static Function LeiTransp (nPos,aProd,aNota)
 
 Local nAliq := 0
 Local aAreaSD2 := SD2->( GetArea() )
-local cFilial	:= xFilial("SD2")
+//local _cFilial	:= ' '
 local cDoc		:= iif(len(aNota)>=2,PadR(aNota[2],TamSx3("D2_DOC")[1]),"")
 local cSerie	:= iif(len(aNota)>=1,PadR(aNota[1],TamSx3("D2_SERIE")[1]),"")
 local cCliente	:= iif(len(aNota)>=7,PadR(aNota[7],TamSx3("D2_CLIENTE")[1]),"")
@@ -11144,10 +11144,12 @@ Default nPos	:= 30
 Default aProd :={}
 Default aNota :={}
 
+//_cFilial	:= FwFilial("SD2")
+
 DbSelectArea("SD2")
 DbSetOrder(3) //D2_FILIAL, D2_DOC, D2_SERIE, D2_CLIENTE, D2_LOJA, D2_COD, D2_ITEM
 
-If len(aNota) > 1 .and. MsSeek(cFilial+cDoc+cSerie+cCliente+cLoja+cCodigo+cItem)
+If len(aNota) > 1 .and. MsSeek(FwFilial("SD2")+cDoc+cSerie+cCliente+cLoja+cCodigo+cItem)
 	nAliq := aProd[nPos] /  (SD2->D2_VALBRUT + SD2->D2_DESCON)
 Endif	
 
