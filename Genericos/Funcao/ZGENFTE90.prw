@@ -12,6 +12,8 @@ Geração de Doc.Entrada na Empresa Hyunday
 @author     A.Carlos 
 @since      11/04/2024
 @project    GAP160  OneGate  Hyundai  Entrada
+@Obs		06/08/2024  DAC 
+						Alterado para conter filial de origem não estava localizando de outra filial, criado controle para não executar da mesma filial e consulta no campo filial origem, alterado select
 @version    1.0
 /*/
 User Function ZGENFTE90()
@@ -34,11 +36,12 @@ Local _cCCusto		:= Space(TamSx3("D1_CC")[1])
 Local _cCCond		:= Space(TamSx3("F2_COND")[1])  
 Local _cCodFor		:= Space(TamSx3("F2_CLIENTE")[1])  
 Local _cLojaFor		:= Space(TamSx3("F2_LOJA")[1])  
+Local _cFilGNF		:= Space(TamSx3("F2_FILIAL")[1])
 
 Local _oSay
 
 Private lMsErroAuto := .F.
-Private cFilGNF     := '          '        //SuperGetMV( "CMV_PEC047" ,,'901001HAD1')  //Filial onde será gerada a Nota de Entrada
+//Private cFilGNF     := '          '        //SuperGetMV( "CMV_PEC047" ,,'901001HAD1')  //Filial onde será gerada a Nota de Entrada
 
 Begin Sequence
 	If cEmpAnt <> "90"
@@ -55,7 +58,7 @@ Begin Sequence
     aAdd(_aPar,{1,OemToAnsi("Local Entrada   : ")   ,_cArmazem	, "@!"	,".T."	,"NNR", ".T.", 100,.T.})
 	aAdd(_aPar,{1,OemToAnsi("Fornecedor Entrada : "),_cCodFor	, "@!"	,".T."	,"SA2", ".T.", 100,.T.}) 
 	aAdd(_aPar,{1,OemToAnsi("Loja Entrada    : ")	,_cLojaFor 	, "@!"	,".T."	,"SA2", ".T.", 100,.T.}) 
-    //aAdd(_aPar,{1,OemToAnsi("Filial Origem	 : ") 	,cFilGNF	, "@!"	,".T."	,""   , ".T.", 100,.T.})	
+    aAdd(_aPar,{1,OemToAnsi("Filial Origem	 : ") 	,_cFilGNF	, "@!"	,".T."	,"SM0", ".T.", 100,.T.})	//DAC 05/08/2024
 
 	// Monta Tela principal
 	aAdd(_aSays,OemToAnsi("Este Programa tem  como  Objetivo realizar a integração de Produto")) 
@@ -101,6 +104,7 @@ Local _cCPgto     	:= _aRet[08]
 Local _cLocal     	:= _aRet[09] // retornado variavel por Cintia Araujo em 26/06/24
 Local _cCodFor     	:= _aRet[10]
 Local _cLojaFor    	:= _aRet[11]
+Local _cFilGNF      := _aRet[12]
 Local _cSerie		:= ""
 Local _cCliente		:= ""
 Local _cLojaCli		:= ""
@@ -115,6 +119,7 @@ Local _nLidos       := 0
 Local _cTipoCli
 Local _nCont
 Local _cUpdate
+Local _cFilSF2
 
 Local cUpdSB1P01	:= ""
 Local cUpdSB1P02	:= ""
@@ -123,6 +128,12 @@ DbSelectArea("SA1")
 DbSelectArea("SA2")
 
 Begin Sequence
+	//DAC 05/08/2024	
+	If _cFilGNF == cFilAnt  //FwxFilial("SF2")
+		Help( , ,OemToAnsi("Atenção"),,OemToAnsi("Não é permitido para a mesma Filial !"),4,1)   
+		_lRet := .F.
+		Break 
+	Endif
 
 	SA2->( DBSetOrder(01) )
 	if !SA2->( MsSeek(FwXFilial("SA2") + _cCodFor + _cLojaFor ))
@@ -133,7 +144,8 @@ Begin Sequence
 	_cTipoCli := SA2->A2_TIPO
 	
 	BeginSql Alias _cAliasPesq
-		SELECT SF2.F2_CLIENTE
+		SELECT 	SF2.F2_FILIAL
+				,SF2.F2_CLIENTE
 				,SF2.F2_LOJA
 				,SF2.F2_DOC
 				,SF2.F2_SERIE
@@ -153,19 +165,18 @@ Begin Sequence
 				,SD2.R_E_C_N_O_ NREGSD2
 		FROM %Table:SF2% SF2		
 		INNER JOIN %Table:SD2% SD2  
-			ON SD2.D2_FILIAL   = %xFilial:SD2%       
+			ON SD2.D2_FILIAL   = SF2.F2_FILIAL       
 			AND SD2.D2_DOC     = SF2.F2_DOC 
 			AND SD2.D2_SERIE   = SF2.F2_SERIE
 			AND SD2.D2_CLIENTE = SF2.F2_CLIENTE
 			AND SD2.D2_LOJA    = SF2.F2_LOJA
 			AND SD2.%notDel%
-		WHERE 
-		SF2.F2_FILIAL      = %xFilial:SF2%
-		AND SF2.F2_DOC BETWEEN %Exp:_cDocumDe% AND %Exp:_cDocumAte%
-		AND SF2.F2_SERIE   = %Exp:_cSerieori%
-		AND SF2.F2_CLIENTE = %Exp:_cCodCli%
-		AND SF2.F2_LOJA    = %Exp:_cLoja%
-		AND	SF2.%notDel%
+		WHERE SF2.F2_FILIAL		= %Exp:_cFilGNF%
+			AND SF2.F2_DOC BETWEEN %Exp:_cDocumDe% AND %Exp:_cDocumAte%
+			AND SF2.F2_SERIE   = %Exp:_cSerieori%
+			AND SF2.F2_CLIENTE = %Exp:_cCodCli%
+			AND SF2.F2_LOJA    = %Exp:_cLoja%
+			AND	SF2.%notDel%
 		ORDER BY SF2.F2_CLIENTE,SF2.F2_LOJA,SF2.F2_DOC,SF2.F2_SERIE,SD2.D2_ITEM
 	EndSql
 		//	ON SD2.D2_FILIAL   = %Exp:cFilGNF%       //'901001HAD1'	
@@ -173,7 +184,6 @@ Begin Sequence
 
 		//FROM abdhdu_prot.SF2900 SF2 
 		//INNER JOIN abdhdu_prot.SD2900 SD2
-
 
 /*
 		AND SF2.F2_FIMP    = 'S'
@@ -209,7 +219,9 @@ Begin Sequence
 		_cSerie		:= (_cAliasPesq)->F2_SERIE
 		_cCliente	:= (_cAliasPesq)->F2_CLIENTE
 		_cLojaCli	:= (_cAliasPesq)->F2_LOJA
+		_cFilSF2   	:= (_cAliasPesq)->F2_FILIAL
         _nRecSF2 	:= (_cAliasPesq)->NREGSF2	
+
 
 		Aadd(_aCabNFE,{"F1_FILIAL"  , xFilial('SF1')           	,  nil })
 		aadd(_aCabNFE,{"F1_TIPO"   	, "N"                      	,  nil })    
@@ -236,12 +248,13 @@ Begin Sequence
 		cUpdSB1P01 += "WHERE SB1.B1_FILIAL = '" + FWxFilial("SB1") + "' "
 		//cUpdSB1P01 += "AND SB1.B1_COD IN ( SELECT D2_COD FROM ABDHDU_PROT.SD2900 SD2 "
 		cUpdSB1P01 += "AND SB1.B1_COD IN ( SELECT D2_COD FROM "+ RetSqlName("SD2")+" SD2 "
-		//cUpdSB1P01 += "						WHERE SD2.D2_FILIAL = '" + cFilGNF + "'"             //'901001HAD1' " +
-		cUpdSB1P01 += "						WHERE SD2.D2_FILIAL = '" + FwxFilial("SD2") + "'"             //'901001HAD1' " +
-		cUpdSB1P01 += "						AND SD2.D2_DOC      = '" + (_cAliasPesq)->F2_DOC     + "' "
-		cUpdSB1P01 += "						AND SD2.D2_SERIE    = '" + (_cAliasPesq)->F2_SERIE   + "'  "
-		cUpdSB1P01 += "						AND SD2.D2_CLIENTE  = '" + (_cAliasPesq)->F2_CLIENTE + "'  "
-		cUpdSB1P01 += "						AND SD2.D2_LOJA     = '" + (_cAliasPesq)->F2_LOJA    + "'  "
+		//cUpdSB1P01 += "						WHERE SD2.D2_FILIAL = '" + _cFilGNF + "'"             //'901001HAD1' " +
+		//cUpdSB1P01 += "						WHERE SD2.D2_FILIAL = '" + FwxFilial("SD2") + "'"             //'901001HAD1' " +
+		cUpdSB1P01 += "						WHERE SD2.D2_FILIAL = '" + (_cAliasPesq)->F2_FILIAL + "' "   //DAC 05/08/2024 manter o mesmo do F2         //'901001HAD1' " +
+		cUpdSB1P01 += "						AND SD2.D2_DOC      = '" + (_cAliasPesq)->F2_DOC    + "' "
+		cUpdSB1P01 += "						AND SD2.D2_SERIE    = '" + (_cAliasPesq)->F2_SERIE  + "'  "
+		cUpdSB1P01 += "						AND SD2.D2_CLIENTE  = '" + (_cAliasPesq)->F2_CLIENTE+ "'  "
+		cUpdSB1P01 += "						AND SD2.D2_LOJA     = '" + (_cAliasPesq)->F2_LOJA   + "'  "
 		cUpdSB1P01 += "						AND SD2.D_E_L_E_T_  = ' ') "
 		cUpdSB1P01 += "AND SB1.D_E_L_E_T_ = ' ' "
 
@@ -294,7 +307,8 @@ Begin Sequence
 		Else
 
 			//_cUpdate := " UPDATE ABDHDU_PROT.SF2900 "  
-			_cUpdate := " UPDATE "RetSqlName("SD2")+" SD2  "  
+			//_cUpdate := " UPDATE " + RetSqlName("SD2") + " SD2  "  
+			_cUpdate := " UPDATE " + RetSqlName("SF2") + " SF2  "  //DAC 05/08/2024 estava buscando SD2
 			_cUpdate += " SET F2_XINT90 = 'S' "                    
 			_cUpdate += " WHERE d_e_l_e_t_ = ' '"                      
 			_cUpdate += "    AND r_e_c_n_o_ = " + AllTrim( Str( _nRecSF2 ))+" "
@@ -309,8 +323,9 @@ Begin Sequence
 			cUpdSB1P02 += "WHERE SB1.B1_FILIAL = '" + FWxFilial("SB1") + "' "
 			//cUpdSB1P02 += "AND SB1.B1_COD IN ( SELECT D2_COD FROM ABDHDU_PROT.SD2900 SD2 "
 			cUpdSB1P02 += "AND SB1.B1_COD IN ( SELECT D2_COD FROM "+RetSqlName("SD2")+" SD2  "
-			//cUpdSB1P02 += "						WHERE SD2.D2_FILIAL = '" + cFilGNF   + "'"             //'901001HAD1' " +'901001HAD1' "
-			cUpdSB1P02 += "						WHERE SD2.D2_FILIAL = '" + FwxFilial("SD2")   + "'"             //'901001HAD1' " +'901001HAD1' "
+			//DAC 05/08/2024 manter a filial do SF2
+			cUpdSB1P02 += "						WHERE SD2.D2_FILIAL = '" + _cFilSF2   + "'"             //'901001HAD1' " +'901001HAD1' "
+			//cUpdSB1P02 += "						WHERE SD2.D2_FILIAL = '" + FwxFilial("SD2")   + "'"             //'901001HAD1' " +'901001HAD1' "
 			cUpdSB1P02 += "						AND SD2.D2_DOC      = '" + _cDoc     + "' "
 			cUpdSB1P02 += "						AND SD2.D2_SERIE    = '" + _cSerie   + "' "
 			cUpdSB1P02 += "						AND SD2.D2_CLIENTE  = '" + _cCliente + "'  "
