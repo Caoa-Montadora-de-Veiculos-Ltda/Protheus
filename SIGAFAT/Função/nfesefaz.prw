@@ -33,6 +33,7 @@ static lCDVLanc		:= nil
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 /*/
 User Function XmlNfeSef(cTipo,cSerie,cNota,cClieFor,cLoja,cNotaOri,cSerieOri)
+ 
 //Declaração de Arrays
 Local aNota     	:= {}
 Local aDupl     	:= {}
@@ -2666,7 +2667,7 @@ If cTipo == "1"
 
 							Next nX 
 						EndIf                
-													
+													 
 						//Verifica se municipio de prestação foi informado no pedido
 						If SC5->(FieldPos("C5_MUNPRES")) > 0 .And. !Empty(SC5->C5_MUNPRES)
 							if len(AllTrim(SC5->C5_MUNPRES)) == 7 
@@ -2679,8 +2680,15 @@ If cTipo == "1"
 						Else
 							cMunPres := ConvType(aUF[aScan(aUF,{|x| x[1] == aDest[09]})][02]+aDest[07])
 						EndIf
+
+						//************ Especifico Caoa ******************
+						//Ajuste realizado para atender a venda dos HR para a HMB
+						If AllTrim(SC6->C6_TES) == '802' .And. AllTrim(SC6->C6_CLI) == '000008' .And. AllTrim(SC6->C6_LOJA) == '05'
+							aadd(aPedCom,{"5500012312","10"})
+							//*******************************************
+
 						// Tags xPed e nItemPed (controle de B2B) para nota de saída
-						If SC6->(FieldPos("C6_NUMPCOM")) > 0 .And. SC6->(FieldPos("C6_ITEMPC")) > 0
+						ElseIf SC6->(FieldPos("C6_NUMPCOM")) > 0 .And. SC6->(FieldPos("C6_ITEMPC")) > 0
 							If !Empty(SC6->C6_NUMPCOM) .And. !Empty(SC6->C6_ITEMPC) 
 								aadd(aPedCom,{SC6->C6_NUMPCOM,SC6->C6_ITEMPC})
 							Else
@@ -2847,7 +2855,7 @@ If cTipo == "1"
 										nValIFecp := SFT->FT_VFECPST + SFT->FT_VALFECP  + SFT->FT_VFECPMG + SFT->FT_VFESTMG					
 								Endif
 						   
-						   Endif					
+						   Endif					 
 						Endif	
 
 						//-----------------------------------------------------------------------------------------
@@ -3023,14 +3031,15 @@ If cTipo == "1"
 								nValOutr +=(cAliasSD2)->D2_VALIPI	
 							EndIf
 						EndIf	
-
 						
 						/* PISST + COFINSST deixam de ir para <vOutros> ficando em <vPis> e <vCofins> - NT 2020.005 
 							Anteriormente em tag vOutros NT 2011.004
 						*/
-						nValOutr += (cAliasSD2)->D2_DESPESA + nIcmsST + nCrdPres
+						//************ Especifico Caoa ******************
+						nValOutr += (cAliasSD2)->D2_DESPESA + nIcmsST + nCrdPres + If(retNT2005(), 0, (cAliasSD2)->D2_VALPS3 + (cAliasSD2)->D2_VALCF3)
+					  //nValOutr += (cAliasSD2)->D2_DESPESA + nIcmsST + nCrdPres
 						cTpOrig  := IIF(nCountIT > 0 .And. Len(aNfVinc[nCountIT]) > 9, aNfVinc[nCountIT][10], "") //Pegar tipo da nota de origem
-			           		            		
+
 						aAdd(aInfoItem,{(cAliasSD2)->D2_PEDIDO,(cAliasSD2)->D2_ITEMPV,(cAliasSD2)->D2_TES,(cAliasSD2)->D2_ITEM})
 						
 						If aDest[09] == "DF"
@@ -3877,8 +3886,10 @@ If cTipo == "1"
 						EndIf
 
 						/* PISST e COFINSST deixam de compor ICMSTot/vOutro NT 2020.005
-						*/
-						aTotal[01] += (cAliasSD2)->D2_DESPESA + nIcmsST + nCrdPres
+						*/ 
+						//************ Especifico Caoa ******************
+						//aTotal[01] += (cAliasSD2)->D2_DESPESA + nIcmsST + nCrdPres 
+						aTotal[01] += (cAliasSD2)->D2_DESPESA + nIcmsST + nCrdPres + If(retNT2005(), 0, (cAliasSD2)->D2_VALPS3 + (cAliasSD2)->D2_VALCF3)
 					   
 						If (cAliasSD2)->D2_TIPO == "I"
 							If (cAliasSD2)->D2_ICMSRET > 0
@@ -3897,9 +3908,20 @@ If cTipo == "1"
 		              EndIf
 
 						// Tratamento para que o valor de PISST, COFINSST sejam somados ao valor total da nota.
-						aTotal[03] += If( lSomaPISST, (cAliasSD2)->D2_VALPS3 , 0) + If( lSomaCOFINSST, (cAliasSD2)->D2_VALCF3, 0)
-						lSomaPISST	  := .F. 
-                        lSomaCOFINSST := .F.
+						//aTotal[03] += If( lSomaPISST, (cAliasSD2)->D2_VALPS3 , 0) + If( lSomaCOFINSST, (cAliasSD2)->D2_VALCF3, 0)
+						//lSomaPISST	  := .F. 
+                        //lSomaCOFINSST := .F.
+						
+						//************ Especifico Caoa ******************
+						If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
+							lSomaPISST	  := Len(aPISST[1]) >= 7 .And. aPISST[1,7] == "1" .And. !retNT2005()
+							lSomaCOFINSST := Len(aCOFINSST[1]) >= 7 .And. aCOFINSST[1,7] == "1" .And. !retNT2005()
+						Else
+							lSomaPISST	  := Len(aPISST[1]) >= 7 .And. aPISST[1,7] == "1" .And. retNT2005()
+							lSomaCOFINSST := Len(aCOFINSST[1]) >= 7 .And. aCOFINSST[1,7] == "1" .And. retNT2005()
+						EndIf
+
+						aTotal[03] += If( lSomaPISST, (cAliasSD2)->D2_VALPS3 , 0) + If( lSomaCOFINSST, (cAliasSD2)->D2_VALCF3, 0)					
 	
 						If SF4->(ColumnPos("F4_DIFAL")) > 0 .And. SF4->F4_DIFAL == "1"
 							lDifal := .T.
@@ -5738,9 +5760,11 @@ Else
 				EndIf
 
 				/* PISST + COFINSST deixam de ir para <vOutros> ficando em <vPis> e <vCofins> - NT 2020.005 
-					Anteriormente em tag vOutros NT 2011.004
+					Anteriormente em tag vOutros NT 2011.004 
 				*/				
-				nValOutr += (cAliasSD1)->D1_DESPESA + nIcmsST + nCrdPres
+				//************ Especifico Caoa ******************
+				nValOutr += (cAliasSD1)->D1_DESPESA + nIcmsST + nCrdPres + If(retNT2005(), 0, (cAliasSD1)->D1_VALPS3 + (cAliasSD1)->D1_VALCF3)
+				//nValOutr += (cAliasSD1)->D1_DESPESA + nIcmsST + nCrdPres
 				cTpOrig  := IIF(nCountIT > 0 .And. Len(aNfVinc[nCountIT]) > 9, aNfVinc[nCountIT][10], "")
 								            		            										
 				aadd(aProd,	{Len(aProd)+1,;  
@@ -6592,10 +6616,20 @@ Else
 					EndIf
 				EndIf
 				
+				//************ Especifico Caoa ******************								
 				/* PISST e COFINSST deixam de compor ICMSTot/vOutro NT 2020.005
 				*/
-				aTotal[01] += (cAliasSD1)->D1_DESPESA + nIcmsST + nCrdPres
+				aTotal[01] += (cAliasSD1)->D1_DESPESA + nIcmsST + nCrdPres + If(retNT2005(), 0, (cAliasSD1)->D1_VALPS3 + (cAliasSD1)->D1_VALCF3)
+				//aTotal[01] += (cAliasSD1)->D1_DESPESA + nIcmsST + nCrdPres
 												
+				If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
+					lSomaPISST	  := Len(aPISST[1]) >= 7 .And. aPISST[1,7] == "1" .And. !retNT2005()	//retNT2005()
+					lSomaCOFINSST := Len(aCOFINSST[1]) >= 7 .And. aCOFINSST[1,7] == "1" .And. !retNT2005()	//retNT2005()
+				Else
+					lSomaPISST	  := Len(aPISST[1]) >= 7 .And. aPISST[1,7] == "1" .And. retNT2005()
+					lSomaCOFINSST := Len(aCOFINSST[1]) >= 7 .And. aCOFINSST[1,7] == "1" .And. retNT2005()
+				EndIf
+
 				If (cAliasSD1)->D1_TIPO $ "I"
 					If (cAliasSD1)->D1_ICMSRET > 0
 						aTotal[02] += (cAliasSD1)->D1_ICMSRET
@@ -8080,8 +8114,8 @@ If Len(aPedCom) > 0 .And. !Empty(aPedCom[01])
 	cString += '<nItemPed>'+ConvType(aPedCom[02])+'</nItemPed>'
 Endif
 
-//Nota Técnica 2013/006 
-If !Empty(aFCI) 
+//Nota Técnica 2013/006
+If !Empty(aFCI)
 	cString += '<nFCI>'+Alltrim(aFCI[01])+'</nFCI>'
 EndIf
 cString += '</prod>'
@@ -8502,8 +8536,10 @@ If  !lIssQn
 				EndIf
 				cString += '<pFCP>'+ConvType(aICMS[17],5,2)+'</pFCP>'
 				cString += '<vFCP>'+ConvType(aICMS[18],15,2)+'</vFCP>'
-
-				If aCST[1] == '51' .and. aICMS[28] > 0
+				
+				//************ Especifico Caoa ******************								
+				If retNT2005() .And. aCST[1] == '51' .and. aICMS[28] > 0
+				//If aCST[1] == '51' .and. aICMS[28] > 0 
 					cString += '<pFCPDif>' +ConvType(aICMS[19],8,4)+ '</pFCPDif>' // CD2_PICMDF
 					cString += '<vFCPDif>' +ConvType(aICMS[28],15,2)+ '</vFCPDif>' // CD2_VFCPDI
 					cString += '<vFCPEfet>' +ConvType(aICMS[29],15,2)+ '</vFCPEfet>' // CD2_VFCPEF
@@ -8544,9 +8580,11 @@ If  !lIssQn
 				nVicmsDeson += nValDeson
 				cString += '<valor>'+ConvType(nValDeson,15,4)+'</valor>'				
 			Else
-				cString += '<valor>'+ConvType(0,15,2)+'</valor>'
+			    //************ Especifico Caoa ******************
+				cString += '<valor>'+ConvType(aICMSST[07],15,2)+'</valor>'
+	//			cString += '<valor>'+ConvType(0,15,2)+'</valor>'
 			EndIf	
-
+	
 			cString += '<qtrib>'+ConvType(0,16,4)+'</qtrib>'
 			cString += '<vltrib>'+ConvType(0,15,4)+'</vltrib>'
 
@@ -8646,7 +8684,6 @@ If  !lIssQn
 		endif
 		
 		/* NT 2020.005
-
 			O trecho abaixo deve ser liberado assim que houver liberação da ficha DSERFISE-1055
 
 		If retNT2005() .And. (aCST[1] $ "10|70|90") .And. alltrim(aICMSST[17]) $ "3|9|12" //FT_MOTICMS - 3=Uso na agropecuária | 9=Outros | 12=Órgão de fomento e desenvolvimento agropecuário.
@@ -9086,7 +9123,8 @@ If Len(aPISST)>0
 	cString += '<vlTrib>'+ConvType(aPISST[06],15,4)+'</vlTrib>'
 	cString += '<qTrib>'+ConvType(aPISST[05],16,4)+'</qTrib>'
 	cString += '<valor>'+ConvType(aPISST[04],15,2)+'</valor>'
-	cString += '<indSomaPISST>'+ Iif(aPISST[07] == "1", ConvType(aPISST[07],1), "0") +'</indSomaPISST>'
+	cString += If(retNT2005(), '<indSomaPISST>'+ Iif(aPISST[07] == "1", ConvType(aPISST[07],1), "0") +'</indSomaPISST>', '')  //************ Especifico Caoa ******************
+	//cString += '<indSomaPISST>'+ Iif(aPISST[07] == "1", ConvType(aPISST[07],1), "0") +'</indSomaPISST>'  
 	cString += '</Tributo>'
 	cString += '</imposto>'
 	nValPis += aPISST[04]
@@ -9103,6 +9141,7 @@ If Len(aCOFINS)>0
 	cString += '<vlTrib>'+ConvType(aCOFINS[06],15,4)+'</vlTrib>'
 	cString += '<qTrib>'+ConvType(aCOFINS[05],16,4)+'</qTrib>'
 	cString += '<valor>'+ConvType(aCOFINS[04],15,2)+'</valor>'
+	cString += If(retNT2005(), '<indSomaCOFINSST>'+ Iif(aCOFINSST[07] == "1", ConvType(aCOFINSST[07],1), "0") +'</indSomaCOFINSST>', '')  //************ Especifico Caoa ******************
 	cString += '</Tributo>'
 	nValCof += aCOFINS[04]
 Else
@@ -13041,5 +13080,30 @@ static function retBenefRBC(cCST, nValRBC, cCodAju)
 		cString += '<cBenefRBC>' + ConvType(cCodAju) + '</cBenefRBC>'
 	endIf
 
-return cString
+return cString 
 			
+//----------------------------------------------------------
+/*/{Protheus.doc} retNT2005
+Retorna o conteúdo do parâmetro MV_NT2005 - Especifico CAOA
+
+@return		lRetorno	.T. - Informa tags ref. NT 2020.005  
+						.F. = Não informa
+
+Tratamento deve ser retirado após liberação em produção
+
+@author  	renan.franco
+@since   	30/08/2021
+@version 	1.0
+/*/
+//----------------------------------------------------------
+static function retNT2005()
+
+	Local dData := date()
+	Local dNt	:= cTod(SuperGetMv('MV_NT2005',.F.,"04/10/2021"))
+	Local lRetorno := .F.
+
+	If dData >= dNt
+		lRetorno := .T.
+	EndIf
+
+return lRetorno
