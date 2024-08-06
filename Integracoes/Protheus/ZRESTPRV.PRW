@@ -151,6 +151,7 @@ Local _aItens
 Local _cPedido 		
 Local _aLinha 
 Local _nTam
+Local _cFabMod
 
 Begin Sequence 
 	If _cTipoOper <> "1"
