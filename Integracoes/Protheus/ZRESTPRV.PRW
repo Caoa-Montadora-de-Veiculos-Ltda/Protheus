@@ -141,9 +141,16 @@ Local _cTipoOper	:= AllTrim(_oJson:GetJsonText("tpoperacao"))
 Local _cNumPed		:= ""
 Local _aCabSC5      := {}
 Local _cOper 		:= "92"   //VENDA VEICULO
+Local _CodTes		:= "501"
+
 Local _cCodProd
 Local _aMsgErro 
 Local _cItem 
+Local _aCabSC5 		
+Local _aItens  		
+Local _cPedido 		
+Local _aLinha 
+Local _nTam
 
 Begin Sequence 
 	If _cTipoOper <> "1"
@@ -161,77 +168,94 @@ Begin Sequence
 		_cNumPed := GetSxeNum("SC5","C5_NUM")
 		ZRESTPRVAlterados(	"C5_FILIAL"		, FWxFilial('SC5')						, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
 		ZRESTPRVAlterados(	"C5_NUM"		, _cNumPed								, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
+	Else 
+		_cNumPed := SC5->C5_NUM	
 	Endif
-	ZRESTPRVAlterados(	"C5_CLIENTE"	, SA1->A1_COD								, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
-	ZRESTPRVAlterados(	"C5_LOJACLI"	, SA1->A1_LOJA								, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
-	ZRESTPRVAlterados(	"C5_CLIENT"		, SA1->A1_COD								, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
-	ZRESTPRVAlterados(	"C5_LOJAENT"	, SA1->A1_LOJA								, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
-	ZRESTPRVAlterados(  "C5_EMISSAO"	, StoD(_oJson:GetJsonText("dataemissao"))	, @_aCabSC5, @_aAlterado, _lNovo )   // Tipo 
-	ZRESTPRVAlterados(  "C5_CONDPAG"	, _oJson:GetJsonText("cdcondpgto")    		, @_aCabSC5, @_aAlterado, _lNovo )   // Tipo 
-	ZRESTPRVAlterados(  "C5_NATUREZ"	, _oJson:GetJsonText("cdnatureza")   		, @_aCabSC5, @_aAlterado, _lNovo )   // Endereco
-	ZRESTPRVAlterados(  "C5_TIPLIB"	 	, "1"   									, @_aCabSC5, @_aAlterado, _lNovo )   // Endereco
-	ZRESTPRVAlterados(  "C5_MOEDA"	 	, 1   										, @_aCabSC5, @_aAlterado, _lNovo )   // Endereco
-	ZRESTPRVAlterados(  "C5_TIPOCLI"	, SA1->A1_TIPO   							, @_aCabSC5, @_aAlterado, _lNovo )   // Endereco
-	ZRESTPRVAlterados(  "C5_TPFRETE"	, _oJson:GetJsonText("tpfrete")   			, @_aCabSC5, @_aAlterado, _lNovo )   // Endereco
-	ZRESTPRVAlterados(	"C5_TRANSP" 	, SA4->A4_COD   							, @_aCabSC5, @_aAlterado, _lNovo )   //  Nome reduz.
-	ZRESTPRVAlterados(	"C5_XTIPVEN" 	, _oJson:GetJsonText("tpvenda")   			, @_aCabSC5, @_aAlterado, _lNovo )   //  Nome reduz.
+
+	_aCabSC5	:= {}
+	_aItens 	:= {}
+	_cPedido 	:= AllTrim(_oJson:GetJsonText("pedidovei"))
+
+	ZRESTPRVAlterados( "SC5"	,"C5_CLIENTE"	, SA1->A1_COD								, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
+	ZRESTPRVAlterados( "SC5"	,"C5_LOJACLI"	, SA1->A1_LOJA								, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
+	ZRESTPRVAlterados( "SC5"	,"C5_CLIENT"	, SA1->A1_COD								, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
+	ZRESTPRVAlterados( "SC5"	,"C5_LOJAENT"	, SA1->A1_LOJA								, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
+	ZRESTPRVAlterados( "SC5"	,"C5_EMISSAO"	, StoD(_oJson:GetJsonText("dataemissao"))	, @_aCabSC5, @_aAlterado, _lNovo )   // Tipo 
+	ZRESTPRVAlterados( "SC5"	,"C5_CONDPAG"	, _oJson:GetJsonText("cdcondpgto")    		, @_aCabSC5, @_aAlterado, _lNovo )   // Tipo 
+	ZRESTPRVAlterados( "SC5"	,"C5_NATUREZ"	, _oJson:GetJsonText("cdnatureza")   		, @_aCabSC5, @_aAlterado, _lNovo )   // Endereco
+	ZRESTPRVAlterados( "SC5"	,"C5_TIPLIB"	, "1"   									, @_aCabSC5, @_aAlterado, _lNovo )   // Endereco
+	ZRESTPRVAlterados( "SC5"	,"C5_MOEDA"		, 1   										, @_aCabSC5, @_aAlterado, _lNovo )   // Endereco
+	ZRESTPRVAlterados( "SC5"	,"C5_TIPOCLI"	, SA1->A1_TIPO   							, @_aCabSC5, @_aAlterado, _lNovo )   // Endereco
+	ZRESTPRVAlterados( "SC5"	,"C5_TPFRETE"	, _oJson:GetJsonText("tpfrete")   			, @_aCabSC5, @_aAlterado, _lNovo )   // Endereco
+	ZRESTPRVAlterados( "SC5"	,"C5_TRANSP" 	, SA4->A4_COD   							, @_aCabSC5, @_aAlterado, _lNovo )   //  Nome reduz.
+	ZRESTPRVAlterados( "SC5"	,"C5_XTIPVEN" 	, _oJson:GetJsonText("tpvenda")   			, @_aCabSC5, @_aAlterado, _lNovo )   //  Nome reduz.
 
 	_nTam 		:= Len(_oJson["itens"])
-	_aMsgErro 	:= {}
 
 	For _nPos := 1 To _nTam
-		_aItemAux 	:= {}
+		_aLinha		:= {}
         _cCodProd 	:= AllTrim(_oJson["itens"][_nPos]:GetJsonText("cdmodvei")) + ;
 					   AllTrim(_oJson["itens"][_nPos]:GetJsonText("cdsegmod"))
 		_cItem		:= AllTrim(_oJson["itens"][_nPos]:GetJsonText("nritem"))
+		_cFabMod	:= AllTrim(_oJson["itens"][_nPos]:GetJsonText("anomodelo"))+AllTrim(_oJson["itens"][_nPos]:GetJsonText("anofabricacao"))
+
+
+                VV2->(DbSetOrder(1))
+                VV2->(DbSeek(xFilial("VV2")+(cTmpAlias)->VRK_CODMAR+(cTmpAlias)->VRK_MODVEI+(cTmpAlias)->VRK_SEGMOD))
 
 		If ZRESTPRVSB1(_cCodProd, _cItem, @_aMsgErro)
-			Loop
+			Exit
 		Endif
 		
 		If Empty(_oJson["itens"][_nPos]:GetJsonText("cdoperacao"))
 			_cOper := _oJson["itens"][_nPos]:GetJsonText("cdoperacao")
 		Endif	
 		//valida Operação
-		If ZRESTPRVOper(_cOper, _cItem, @_aMsgErro)
-			Loop
+		If ZRESTPRVOper(@_cOper, @_cCodTes, _cItem, _cCodProd, @_aMsgErro)
+			Exit 
 		Endif
+		_aLinha := {}
 		If _lNovo
-			ZRESTPRVAlterados(	"C6_FILIAL"		, FWxFilial('SC5')						, @_aItemAux, @_aAlterado, _lNovo )   // Nome
-			ZRESTPRVAlterados(	"C6_NUM"		, _cNumPed								, @_aItemAux, @_aAlterado, _lNovo )   // Nome
+			ZRESTPRVAlterados(	"C6_FILIAL"		, FWxFilial('SC6')						, @_aLinha,	@_aAlterado, _lNovo )   // Nome
+			ZRESTPRVAlterados(	"C6_NUM"		, _cNumPed								, @_aLinha, @_aAlterado, _lNovo )   // Nome
 		Endif
-		ZRESTPRVAlterados( "C6_ITEM"	, _oJson["itens"][_nPos]:GetJsonText("nritem")			, @_aItemAux, @_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados( "C6_PRODUTO"	, _cCodProd												, @_aItemAux, @_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados( "C6_QTDVEN"	, _oJson["itens"][_nPos]:GetJsonText("qtdeitem")		, @_aItemAux, @_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados( "C6_PRCVEN"	, _oJson["itens"][_nPos]:GetJsonText("valorunitario")	, @_aItemAux, @_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados( "C6_VALOR"	, _oJson["itens"][_nPos]:GetJsonText("valorunitario")	, @_aItemAux, @_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados( "C6_PRUNIT"	, _oJson["itens"][_nPos]:GetJsonText("valorunitario")	, @_aItemAux, @_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados( "C6_OPER"	, _cOper												, @_aItemAux, @_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_ITEM"		, _oJson["itens"][_nPos]:GetJsonText("nritem")			, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_PRODUTO"	, _cCodProd												, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_QTDVEN"	, _oJson["itens"][_nPos]:GetJsonText("qtdeitem")		, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_PRCVEN"	, _oJson["itens"][_nPos]:GetJsonText("valorunitario")	, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_VALOR"		, _oJson["itens"][_nPos]:GetJsonText("valorunitario")	, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_PRUNIT"	, _oJson["itens"][_nPos]:GetJsonText("valorunitario")	, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_OPER"		, _cOper												, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_TES"		, _CodTes												, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_PEDCLI"	, _cPedido												, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+        //Verificar como validar estes campos    
+		ZRESTPRVAlterados("SC6", "C6_CHASSI"	, CriaVar("C6_CHASSI" )									, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_LOCALIZ"	, CriaVar("C6_LOCALIZ")									, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_QTDLIB"	, CriaVar("C6_NUMSERI")									, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
 
+		ZRESTPRVAlterados("SC6", "C6_XCODMAR"	, _oJson["itens"][_nPos]:GetJsonText("cdmarca")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_XDESMAR"	, _oJson["itens"][_nPos]:GetJsonText("")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_XCORINT"	, _oJson["itens"][_nPos]:GetJsonText("cdcorinterna")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_XCOREXT"	, _oJson["itens"][_nPos]:GetJsonText("cdcorexterna")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_XMODVEI"	, _oJson["itens"][_nPos]:GetJsonText("cdmodvei")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_XDESMOD"	, VV2->VV2_DESMOD										, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_XSEGMOD"	, _oJson["itens"][_nPos]:GetJsonText("cdsegmod")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_XDESSEG"	, VVX->VVX_DESSEG  										, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_XFABMOD"	, _cFabMod											, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_XGRPMOD"	, _oJson["itens"][_nPos]:GetJsonText("")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_XPRCTAB"	, _oJson["itens"][_nPos]:GetJsonText("")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_XVLRPRD"	, _oJson["itens"][_nPos]:GetJsonText("")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_XVLRMVT"	, _oJson["itens"][_nPos]:GetJsonText("")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_XVLRVDA"	, _oJson["itens"][_nPos]:GetJsonText("")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_XBASST"	, _oJson["itens"][_nPos]:GetJsonText("")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
 
-
-
-                Aadd( aLinha, { "C6_OPER"   , (cTmpAlias)->VRK_OPER   , Nil } )
-                Aadd( aLinha, { "C6_TES"    , (cTmpAlias)->VRK_CODTES , Nil } )
-                Aadd( aLinha, { "C6_PEDCLI" , (cTmpAlias)->VRJ_PEDCOM , Nil } )
-                Aadd( aLinha, { "C6_QTDLIB" , 0                       , Nil } )
-                Aadd( aLinha, { "C6_CHASSI" , CriaVar("C6_CHASSI" )   , Nil } )
-                Aadd( aLinha, { "C6_LOCALIZ", CriaVar("C6_LOCALIZ")   , Nil } )
-                Aadd( aLinha, { "C6_NUMSERI", CriaVar("C6_NUMSERI")   , Nil } )
-                Aadd( aLinha, { "C6_XCODMAR", (cTmpAlias)->VRK_CODMAR , Nil } )
-                Aadd( aLinha, { "C6_XDESMAR", VE1->VE1_DESMAR         , Nil } )
-                Aadd( aLinha, { "C6_XCORINT", (cTmpAlias)->VRK_CORINT , Nil } )
-                Aadd( aLinha, { "C6_XCOREXT", (cTmpAlias)->VRK_COREXT , Nil } )
-                Aadd( aLinha, { "C6_XMODVEI", (cTmpAlias)->VRK_MODVEI , Nil } )
-                Aadd( aLinha, { "C6_XDESMOD", VV2->VV2_DESMOD         , Nil } )
-                Aadd( aLinha, { "C6_XSEGMOD", (cTmpAlias)->VRK_SEGMOD , Nil } )
-                Aadd( aLinha, { "C6_XDESSEG", VVX->VVX_DESSEG         , Nil } )
-                Aadd( aLinha, { "C6_XFABMOD", (cTmpAlias)->VRK_FABMOD , Nil } )
-                Aadd( aLinha, { "C6_XGRPMOD", ""                      , Nil } )
-                Aadd( aLinha, { "C6_XPRCTAB", (cTmpAlias)->VRK_VALTAB , Nil } )
-                Aadd( aLinha, { "C6_XVLRPRD", (cTmpAlias)->VRK_VALPRE , Nil } )
-                Aadd( aLinha, { "C6_XVLRMVT", (cTmpAlias)->VRK_VALMOV , Nil } )
-                Aadd( aLinha, { "C6_XVLRVDA", (cTmpAlias)->VRK_VALVDA , Nil } )
+                Aadd( aLinha, { "C6_XDESSEG",       , Nil } )
+                Aadd( aLinha, { "", (cTmpAlias)->VRK_FABMOD , Nil } )
+                Aadd( aLinha, { "", ""                      , Nil } )
+                Aadd( aLinha, { "", (cTmpAlias)->VRK_VALTAB , Nil } )
+                Aadd( aLinha, { "", (cTmpAlias)->VRK_VALPRE , Nil } )
+                Aadd( aLinha, { "", (cTmpAlias)->VRK_VALMOV , Nil } )
+                Aadd( aLinha, { "", (cTmpAlias)->VRK_VALVDA , Nil } )
                 Aadd( aLinha, { "C6_XBASST",  (cTmpAlias)->VRK_XBASST , Nil } )
                 Aadd( aItePed ,  aLinha )
 
@@ -239,13 +263,7 @@ Begin Sequence
 
 			_cItem 		:= Soma1(_cItem)
 
-	//Se conseguir validar as informações
-	_lRet := _oModel:VldData()
-	If _lRet 
-		If _lNovo
-			ConfirmSX8()
-		Endif
-	Endif	
+
     If !_lRet
 
 		RollBackSX8()	
@@ -322,6 +340,7 @@ Return _lRet
 Static Function ZRESTVVNValida(_oJson)
 Local _cAliasPesq   := GetNextAlias()
 Local _lRet 		:= .F.
+Local _cPedido		:= AllTrim(_oJson:GetJsonText("pedidovei"))
 Local _cTipoOper	:= AllTrim(_oJson:GetJsonText("tpoperacao"))
 Local _cCnPjCpf		:= AllTrim(_oJson:GetJsonText("cnpjcpf"))  
 Local _dTEmissao	:= StoD(_oJson:GetJsonText("dataemissao"))
@@ -380,7 +399,6 @@ Begin Sequence
 				,VV3.R_E_C_N_O_ AS NREGVV3
 				,SC6.R_E_C_N_O_ AS NREGSC6 
 				,SA1.R_E_C_N_O_ AS NREGSA1
-				,SB1.R_E_C_N_O_ AS NREGSB1 
 				_cSelect
 		FROM %Table:SC5% SC5
 		LEFT JOIN %Table:SC6% SC6
@@ -408,8 +426,8 @@ Begin Sequence
 		U_ZRETMsgJson("pedido","Pedido "+_cPedido+" nao localizado !")
 		Break
 	Endif
-	If  (_cAliasPesq)->NREGSC6 == 0 .And. _cTipoOper <> "I"
-		U_ZRETMsgJson("tpvenda","Itens para o Pedido "+_cPedido+"  nao localizado !")
+	If  (_cAliasPesq)->NREGSC5 == 0 .And. _cTipoOper <> "I"
+		U_ZRETMsgJson("pedido","Pedido "+_cPedido+"  nao localizado !")
 		Break
 	Endif
 	//operação alterar
@@ -417,6 +435,10 @@ Begin Sequence
 		U_ZRETMsgJson("pedido","Pedido "+_cPedido+" ja cadastrado !")
 		Break
 	Endif
+	//rEPOSICIONAR sc5
+	If (_cAliasPesq)->(!Eof())
+		SC5->(DbGoto((_cAliasPesq)->NREGSC5))
+	Endif 
 	If  (_cAliasPesq)->NREGSED == 0
 		U_ZRETMsgJson("cdnatureza","Natureza "+_cNatureza+" nao localizada !")
 		Break
@@ -435,9 +457,7 @@ Begin Sequence
 	Else 
 		SA1->(DbGoto((_cAliasPesq)->NREGSA1))
 	Endif 
-
 	_lRet := .T.
-
 End Sequence 
 
 If Select((_cAliasPesq)) <> 0
@@ -448,7 +468,7 @@ Return _lRet
 
 
 //localizar Produto
-Static Function ZRESTPRVSB1(_cCodProd, _cItem, _aMsgErro)
+Static Function ZRESTPRVSB1(_cCodProd, _cItem)
 Local _cAliasPesq   := GetNextAlias()
 Local _lRet			:= .T.
 	BeginSql Alias _cAliasPesq
@@ -460,7 +480,7 @@ Local _lRet			:= .T.
 	EndSql      
 	//operação incluir
 	If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGSB1 == 0
-		Aadd(_aMsgErro,"Produto "+_cCodProd+" para o item "+_cItem+" nao localizado !") 
+		U_ZRETMsgJson("produto","Produto "+_cCodProd+" para o item "+_cItem+" nao localizado !")
 		_lRet := .F.
 	Endif 
 	If _lRet
@@ -475,10 +495,13 @@ Return _lRet
 
 
 //localizar o tipo de operação
-Static Function ZRESTPRVOper(_cOper, _cItem, _aMsgErro)
+Static Function ZRESTPRVOper(_cOper, _cCodTes, _cItem, _cCodProd )
 Local _cAliasPesq   := GetNextAlias()
 Local _lRet			:= .T.
 Local _cTab 		:= "DJ"
+Local _cTesPar 		:= AllTrim(SuperGetMV("CAOA_AUT1C", ,'501'))
+Local _cOper1  		:= AllTrim(SuperGetMV("CAOA_AUT1A", ,'92')
+Local _cOper2 		:= AllTrim(SuperGetMV("CAOA_AUT1B", ,'93')
 
 	BeginSql Alias _cAliasPesq
 		SELECT 	 SX5.R_E_C_N_O_ AS NREGSX5
@@ -496,6 +519,26 @@ Local _cTab 		:= "DJ"
 	If _lRet
 		SX5->(DbGoto((_cAliasPesq)->NREGSX5))
 	Endif
+	//Caso  tenha sido informado operação
+	If !Empty(_cOper)
+    	_cCodTes := MaTesInt(2, _cOper, SA1->A1_COD, SA1->A1_LOJA, "C", _cCodProd, "C6_TES") 
+	Endif 
+	//não localizou cod da TES
+	If Empty(_cCodTes)
+		_cOper 		:= _cOper1
+    	_cCodTes 	:= MaTesInt(2, _cOper, SA1->A1_COD, SA1->A1_LOJA, "C", _cCodProd, "C6_TES") 
+	Endif 
+	//não localizou cod da TES
+	If Empty(_cCodTes)
+		_cOper 		:= _cOper2
+    	_cCodTes 	:= MaTesInt(2, _cOper, SA1->A1_COD, SA1->A1_LOJA, "C", _cCodProd, "C6_TES") 
+	Endif		
+	//Se continuar em branco problemas com TES
+	If Empty(_cCodTes)
+		U_ZRETMsgJson("cdoperacao","Nao localizado regra para a operacao referente ao item "+_cItem+" !")
+		_lRet := .F.
+	Endif
+
 If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
 	Ferase(_cAliasPesq+GetDBExtension())
@@ -507,12 +550,14 @@ Return _lRet
 
 
 //Verifica campos alterados no REST caso seja alteração
-Static Function ZRESTPRVAlterados( _cTab, _cCampo, _xConteudo, _aAlterado, _lNovo )
+
+Static Function ZRESTPRVAlterados( _cTab, _cCampo, _xConteudo, _aAuto, _aAlterado, _lNovo )
 Local _lRet 		:= .T.
 Local _cConteudo	:= ""
 //Local _nTam 	:= _oSA1Mod:adatamodel[1]  //_oSA1Mod:GetFields()
 Begin Sequence 
     //Registro novo não guardar alterações
+	Aadd( _aAuto, { _cCampo    , _xConteudo , Nil } )
 	If _lNovo
 		Break 
 	Endif
@@ -616,10 +661,10 @@ Begin Sequence
 	Aadd(_aRet, {457,	"cdcorexterna"		, .T.	, .T., 	"Problemas com ao Cor Externa Veiculo"})
 	Aadd(_aRet, {458,	"cdcorinterna"		, .T.	, .T., 	"Problemas com ao Cor Interna Veiculo"})
 	Aadd(_aRet, {459,	"cdopcional"		, .T.	, .F., 	"Problemas com Opcional Veículo"})
-	Aadd(_aRet, {460,	"qtdeitem"			, .T.	, .T., 	"Problemas com quantidade de item"})
-	Aadd(_aRet, {461,	"valorunitario"		, .T.	, .F., 	"Problemas com valor unitario"})
-	Aadd(_aRet, {462,	"cdoperacao"		, .T.	, .F., 	"Problemas com codigo operacao no item"})
-
+	Aadd(_aRet, {460,	"produto"			, .T.	, .T., 	"Problemas com Produto"})
+	Aadd(_aRet, {461,	"qtdeitem"			, .T.	, .T., 	"Problemas com quantidade de item"})
+	Aadd(_aRet, {462,	"valorunitario"		, .T.	, .F., 	"Problemas com valor unitario"})
+	Aadd(_aRet, {463,	"cdoperacao"		, .T.	, .F., 	"Problemas com codigo operacao no item"})
 
 	Aadd(_aRet, {500,	"conexao"			, .F.	, .T., 	"Problemas relativo a conexão"})
 
