@@ -2,6 +2,7 @@
 #INCLUDE "COLORS.CH"
 #INCLUDE "TBICONN.CH"
 
+
 static lSpedCodOnu	:= nil
 static lNT23004		:= nil 
 static lCDVLanc		:= nil
@@ -32,6 +33,7 @@ static lCDVLanc		:= nil
 ±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 /*/
+
 User Function XmlNfeSef(cTipo,cSerie,cNota,cClieFor,cLoja,cNotaOri,cSerieOri)
  
 //Declaração de Arrays
