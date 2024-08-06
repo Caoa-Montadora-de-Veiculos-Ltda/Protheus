@@ -33,7 +33,6 @@ static lCDVLanc		:= nil
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 /*/
 User Function XmlNfeSef(cTipo,cSerie,cNota,cClieFor,cLoja,cNotaOri,cSerieOri)
- 
 //Declaração de Arrays
 Local aNota     	:= {}
 Local aDupl     	:= {}
