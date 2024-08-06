@@ -138,20 +138,27 @@ Local _cAliasPesq	:= GetNextAlias()
 Local _lRet 		:= .F.
 Local _lNovo    	:= .T.
 Local _cTipoOper	:= AllTrim(_oJson:GetJsonText("tpoperacao"))
-Local _cNumPed		:= ""
-Local _aCabSC5      := {}
-Local _cOper 		:= "92"   //VENDA VEICULO
-Local _CodTes		:= "501"
 
-Local _cCodProd
-Local _aMsgErro 
-Local _cItem 
-Local _aCabSC5 		
-Local _aItens  		
-Local _cPedido 		
-Local _aLinha 
-Local _nTam
-Local _cFabMod
+Local _aCabSC5 		AS Array	
+Local _aItens  		AS Array	
+Local _aLinha 		AS Array
+
+Local _nTam			AS Numeric
+Local _nValTab		AS Numeric
+
+Local _cNumPed		AS Character
+Local _cOper 		AS Character 
+Local _CodTes		AS Character
+Local _cCodProd		AS Character
+Local _cItem 		AS Character
+Local _cPedido 		AS Character	
+Local _cFabMod		AS Character
+Local _cCodMar 		AS Character 
+Local _cModVei 		AS Character
+Local _cSegMod 		AS Character
+Local _cGrupoMod 	AS Character
+Local _cCorInterna	AS Character
+Local _cCorExterna	AS Character
 
 Begin Sequence 
 	If _cTipoOper <> "1"
@@ -165,6 +172,9 @@ Begin Sequence
   
 	_aAlterado 	:= {}  //indicação de alteração do campo
 	_aCabSC5	:= {}
+	_cOper 		:= "92"   //VENDA VEICULO
+	_CodTes		:= "501"
+
 	If _lNovo
 		_cNumPed := GetSxeNum("SC5","C5_NUM")
 		ZRESTPRVAlterados(	"C5_FILIAL"		, FWxFilial('SC5')						, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
@@ -195,14 +205,17 @@ Begin Sequence
 
 	For _nPos := 1 To _nTam
 		_aLinha		:= {}
-        _cCodProd 	:= AllTrim(_oJson["itens"][_nPos]:GetJsonText("cdmodvei")) + ;
-					   AllTrim(_oJson["itens"][_nPos]:GetJsonText("cdsegmod"))
 		_cItem		:= AllTrim(_oJson["itens"][_nPos]:GetJsonText("nritem"))
 		_cFabMod	:= AllTrim(_oJson["itens"][_nPos]:GetJsonText("anomodelo"))+AllTrim(_oJson["itens"][_nPos]:GetJsonText("anofabricacao"))
+		_cCodMar 	:= AllTrim(_oJson["itens"][_nPos]:GetJsonText("cdmarca"))
+		_cModVei 	:= AllTrim(_oJson["itens"][_nPos]:GetJsonText("cdmodvei"))
+		_cSegMod 	:= AllTrim(_oJson["itens"][_nPos]:GetJsonText("cdsegmod"))
+		_cGrupoMod 	:= AllTrim(_oJson["itens"][_nPos]:GetJsonText("cdgrupomod"))
+		_cCorInterna:= AllTrim(_oJson["itens"][_nPos]:GetJsonText("cdcorinterna"))
+		_cCorExterna:= AllTrim(_oJson["itens"][_nPos]:GetJsonText("cdcorexterna"))
 
-
-                VV2->(DbSetOrder(1))
-                VV2->(DbSeek(xFilial("VV2")+(cTmpAlias)->VRK_CODMAR+(cTmpAlias)->VRK_MODVEI+(cTmpAlias)->VRK_SEGMOD))
+	    _cCodProd 	:= _cModVei + _cSegMod	//montagem do codigo produto
+		_nValTab 	:= ZRESTPRVPTabela( _cCodMar, _cModVei, _cSegMod, _cFabMod)  //tabela de veiculo
 
 		If ZRESTPRVSB1(_cCodProd, _cItem, @_aMsgErro)
 			Exit
@@ -217,39 +230,43 @@ Begin Sequence
 		Endif
 		_aLinha := {}
 		If _lNovo
-			ZRESTPRVAlterados(	"C6_FILIAL"		, FWxFilial('SC6')						, @_aLinha,	@_aAlterado, _lNovo )   // Nome
-			ZRESTPRVAlterados(	"C6_NUM"		, _cNumPed								, @_aLinha, @_aAlterado, _lNovo )   // Nome
+			ZRESTPRVAlterados(	"C6_FILIAL"		, FWxFilial('SC6')						, @_aLinha,	@_aAlterado, _lNovo )   
+			ZRESTPRVAlterados(	"C6_NUM"		, _cNumPed								, @_aLinha, @_aAlterado, _lNovo )   
 		Endif
-		ZRESTPRVAlterados("SC6", "C6_ITEM"		, _oJson["itens"][_nPos]:GetJsonText("nritem")			, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_PRODUTO"	, _cCodProd												, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_QTDVEN"	, _oJson["itens"][_nPos]:GetJsonText("qtdeitem")		, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_PRCVEN"	, _oJson["itens"][_nPos]:GetJsonText("valorunitario")	, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_VALOR"		, _oJson["itens"][_nPos]:GetJsonText("valorunitario")	, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_PRUNIT"	, _oJson["itens"][_nPos]:GetJsonText("valorunitario")	, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_OPER"		, _cOper												, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_TES"		, _CodTes												, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_PEDCLI"	, _cPedido												, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_ITEM"		, _oJson["itens"][_nPos]:GetJsonText("nritem")			, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_PRODUTO"	, _cCodProd												, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_QTDVEN"	, _oJson["itens"][_nPos]:GetJsonText("qtdeitem")		, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_PRCVEN"	, _oJson["itens"][_nPos]:GetJsonText("valorunitario")	, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_VALOR"		, _oJson["itens"][_nPos]:GetJsonText("valorunitario")	, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_PRUNIT"	, _oJson["itens"][_nPos]:GetJsonText("valorunitario")	, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_OPER"		, _cOper												, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_TES"		, _CodTes												, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_PEDCLI"	, _cPedido												, @_aLinha,	@_aAlterado, _lNovo )   
         //Verificar como validar estes campos    
-		ZRESTPRVAlterados("SC6", "C6_CHASSI"	, CriaVar("C6_CHASSI" )									, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_LOCALIZ"	, CriaVar("C6_LOCALIZ")									, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_QTDLIB"	, CriaVar("C6_NUMSERI")									, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_CHASSI"	, CriaVar("C6_CHASSI" )									, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_LOCALIZ"	, CriaVar("C6_LOCALIZ")									, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_QTDLIB"	, CriaVar("C6_NUMSERI")									, @_aLinha,	@_aAlterado, _lNovo )   
 
-		ZRESTPRVAlterados("SC6", "C6_XCODMAR"	, _oJson["itens"][_nPos]:GetJsonText("cdmarca")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_XDESMAR"	, _oJson["itens"][_nPos]:GetJsonText("")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_XCORINT"	, _oJson["itens"][_nPos]:GetJsonText("cdcorinterna")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_XCOREXT"	, _oJson["itens"][_nPos]:GetJsonText("cdcorexterna")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_XMODVEI"	, _oJson["itens"][_nPos]:GetJsonText("cdmodvei")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_XDESMOD"	, VV2->VV2_DESMOD										, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_XSEGMOD"	, _oJson["itens"][_nPos]:GetJsonText("cdsegmod")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_XDESSEG"	, VVX->VVX_DESSEG  										, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_XFABMOD"	, _cFabMod											, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_XGRPMOD"	, _oJson["itens"][_nPos]:GetJsonText("")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_XPRCTAB"	, _oJson["itens"][_nPos]:GetJsonText("")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_XVLRPRD"	, _oJson["itens"][_nPos]:GetJsonText("")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_XVLRMVT"	, _oJson["itens"][_nPos]:GetJsonText("")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_XVLRVDA"	, _oJson["itens"][_nPos]:GetJsonText("")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
-		ZRESTPRVAlterados("SC6", "C6_XBASST"	, _oJson["itens"][_nPos]:GetJsonText("")				, @_aLinha,	@_aAlterado, _lNovo )   // Endereco
+		ZRESTPRVAlterados("SC6", "C6_XCODMAR"	, _cCodMar			, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XMODVEI"	, _cModVei		, @_aLinha,	@_aAlterado, _lNovo )   
 
+		ZRESTPRVAlterados("SC6", "C6_XDESMAR"	, 				, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XCORINT"	, _cCorInterna	, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XCOREXT"	, _cCorExterna	, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XDESMOD"	, VV2->VV2_DESMOD										, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XSEGMOD"	, _cSegMod		, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XDESSEG"	, VVX->VVX_DESSEG  										, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XFABMOD"	, _cFabMod												, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XGRPMOD"	, _cGrupoMod		, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XPRCTAB"	, _nValTab												, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XVLRPRD"	, _nValTab												, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XVLRMVT"	, 														, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XVLRVDA"	, 														, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XBASST"	, 														, @_aLinha,	@_aAlterado, _lNovo )   
+
+		If SC6->(FieldPos("C6_XOPCION"))
+			ZRESTPRVAlterados("SC6", "C6_XGRPMOD"	, _oJson["itens"][_nPos]:GetJsonText("cdopcional")	, @_aLinha,	@_aAlterado, _lNovo )   
+		Endif
                 Aadd( aLinha, { "C6_XDESSEG",       , Nil } )
                 Aadd( aLinha, { "", (cTmpAlias)->VRK_FABMOD , Nil } )
                 Aadd( aLinha, { "", ""                      , Nil } )
@@ -336,6 +353,77 @@ If Select((_cAliasPesq)) <> 0
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif 
 Return _lRet 
+
+
+
+//localizar tabela de Veiculo
+Static Function ZRESTPRVPTabela( _cCodMar, _cModVei, _cSegMod, _cFabMod)
+Local _cAliasTab   := GetNextAlias()
+Local _nValTab := 0
+  	BeginSql Alias _cAliasTab
+   		SELECT 	VVP.VVP_VALTAB,
+				VVP.VVP_DATPRC,
+				VVP.VVP_BASEST
+   		FROM %Table:VVP% VVP
+   		WHERE 	VVP.VVP_FILIAL = %xFilial:VVP%
+			AND VVP.VVP_CODMAR = %Exp:_cCodMar%
+			AND VVP.VVP_MODVEI = %Exp:_cModVei%
+			AND VVP.VVP_SEGMOD = %Exp:_cSegMod%
+			AND VVP.VVP_FABMOD = %Exp:_cFabMod%
+			AND VVP.%NotDel%			
+	      	AND VVP.VVP_DATPRC = (  SELECT MAX(VVPB.VVP_DATPRC)  "
+	      	                         FROM %Table:VVP% VVPB 
+	      	                          WHERE VVPB.VVP_FILIAL = VVP.VVP_FILIAL 
+		     	                    	AND VVPB.VVP_CODMAR	= VVP.VVP_CODMAR 
+		     	                        AND VVPB.VVP_MODVEI	= VVP.VVP_MODVEI 
+		     	                        AND VVPB.VVP_SEGMOD	= VVP.VVP_SEGMOD 
+	      	                           	AND VVPB.VVP_FABMOD	= VVP.VVP_FABMOD 
+                              			AND VVPB.%NotDel% ) 
+   	EndSql
+
+	If (_cAliasTab)->(!Eof())
+		_nValTab := (_cAliasTab)->VVP_VALTAB
+	Endif 
+If Select((_cAliasTab)) <> 0
+	(_cAliasTab)->(DbCloseArea())
+	Ferase(_cAliasTab+GetDBExtension())
+Endif 
+Return _nValTab
+
+
+/*
+=======================================================================================
+Programa.:            VlrPret  
+Autor....:              
+Data.....:              
+Descricao / Objetivo: Calcula o Valor Pretendido
+=======================================================================================
+*/
+
+Static Function ZRESTPRCVPret(_cCodMar, _cModVei, _cSegMod, _nValTab, _nValPre, _nValMov,cCabAlias,lCalMov)
+Local _cForm121 As Character
+
+Default _lCalMNov := .F.
+
+	_cForm121 := GetNewPar("MV_MIL0121","") //U_CMVVEI01()
+
+	// Se o usuario zerar o valore pretendido, volta o valor de tabela...
+	If nValPre == 0
+		_nValMovimento := iif( _lCalMov, _nValMov, _nValTab)
+	Else
+		If Empty(_cForm121)
+			_nValMovimento := iif( _lCalMov, _nValMov, _nValPre)//nValPre
+		Else
+			_nValMovimento 	:= iif( _lCalMov, _nValMov, _nValPre)//nValPre
+			_nValorPre 		:= iif( _lCalMov, _nValMov, _nValPre)//nValPre // Valor utilizada na formula...
+			_nValorMov 		:= CalcRev(_nValorPre, _cCabAlias)  //verificar funcionalidade
+
+			If _nValorMov <> _nValPre
+				_nValMovimento := _nValorMov
+			EndIf
+		EndIf
+	EndIf
+Return .T.
 
 //Valida campos enviados no REST
 Static Function ZRESTVVNValida(_oJson)
@@ -467,7 +555,6 @@ If Select((_cAliasPesq)) <> 0
 Endif 
 Return _lRet
 
-
 //localizar Produto
 Static Function ZRESTPRVSB1(_cCodProd, _cItem)
 Local _cAliasPesq   := GetNextAlias()
@@ -494,32 +581,66 @@ Endif
 Return _lRet 	
 
 
-
-//localizar o tipo de operação
-Static Function ZRESTPRVOper(_cOper, _cCodTes, _cItem, _cCodProd )
+//localizar relacionamento veicuo
+Static Function ZRESTPRVLV(_cCodProd, _cCodMar, _cModVei, _cSegMod _cItem)
 Local _cAliasPesq   := GetNextAlias()
-Local _lRet			:= .T.
-Local _cTab 		:= "DJ"
-Local _cTesPar 		:= AllTrim(SuperGetMV("CAOA_AUT1C", ,'501'))
-Local _cOper1  		:= AllTrim(SuperGetMV("CAOA_AUT1A", ,'92')
-Local _cOper2 		:= AllTrim(SuperGetMV("CAOA_AUT1B", ,'93')
+Local _lRet			:= .F.		
+
 
 	BeginSql Alias _cAliasPesq
-		SELECT 	 SX5.R_E_C_N_O_ AS NREGSX5
-		FROM %Table:SX5% SX5
-       	WHERE SX5.%notDel% 
-			AND SX5.X5_FILIAL  	= %XFilial:SX5%
-			AND SX5.X5_TABELA 	= %Exp:_cTab%
-			AND SX5.X5_CHAVE	= %Exp:_cOper%
+		SELECT 	VV2.R_E_C_N_O_ AS NREGVV2
+		FROM 	%Table:VV2% VV2
+        WHERE 	VV2.%notDel% 
+			AND VV2.VV2_FILIAL = %XFilial:VV2%
+			AND VV2.VV2_CODMAR = %Exp:_cCodMar%
+			AND VV2.VV2_MODVEI = %Exp:_cModVei%
+			AND VV2.VV2_SEGMOD = %Exp:_cSegMod%
 	EndSql      
+	If (_cAliasPesq)->(Eof()) .And. (_cAliasPesq)->NREGVV2
+		U_ZRETMsgJson("cdmodvei","Modelo de Veiculo não encontrado na tabela de Modelos para o item"+_cItem+" !")
+		Return .F.
+	Endif
+	VV2->(DbGoto((_cAliasPesq)->NREGVV2))
+
+    _cQuery += CrLf + " LEFT JOIN " + RetSqlName("VE1") + " VE1  "
+    _cQuery += CrLf + "     ON  VE1.VE1_FILIAL  = '" + xFilial("VE1") + "'  "
+    _cQuery += CrLf + "     AND VE1.VE1_CODMAR  = VRK.VRK_CODMAR   "
+    _cQuery += CrLf + "     AND VE1.D_E_L_E_T_  = ' ' "
+
+    _cQuery += CrLf + " LEFT JOIN " + RetSqlName("VVX") + " VVX  "
+    _cQuery += CrLf + "     ON  VVX.VVX_FILIAL  = '" + xFilial("VVX") + "' "
+    _cQuery += CrLf + "     AND VVX.VVX_CODMAR  = VRK.VRK_CODMAR "
+    _cQuery += CrLf + "     AND VVX.VVX_SEGMOD  = VRK.VRK_SEGMOD "
+    _cQuery += CrLf + "     AND VVX.D_E_L_E_T_  = ' ' "
+       	WHERE SB1.%notDel% 
+			AND SB1.B1_FILIAL  	= %XFilial:SB1%
+			AND SB1.B1_COD 		= %Exp:_cCodProd%
 	//operação incluir
-	If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGSX5 == 0
-		Aadd(_aMsgErro,"Codigo da operacao "+_cOper+" para o item "+_cItem+" nao localizado !") 
+	If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGSB1 == 0
+		U_ZRETMsgJson("produto","Produto "+_cCodProd+" para o item "+_cItem+" nao localizado !")
 		_lRet := .F.
 	Endif 
 	If _lRet
-		SX5->(DbGoto((_cAliasPesq)->NREGSX5))
+		SB1->(DbGoto((_cAliasPesq)->NREGSB1))
 	Endif
+If Select((_cAliasPesq)) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif 
+Return _lRet 	
+
+
+
+//localizar o tipo de operação
+Static Function ZRESTPRVOper(_cOper, _cCodTes, _cItem, _cCodProd )
+//Local _cAliasPesq   := GetNextAlias()
+//Local _cTab 		:= "DJ"
+Local _lRet			:= .T.
+Local _cTesPar 		:= AllTrim(SuperGetMV("CAOA_AUT1C", ,'501'))
+Local _cOper1  		:= AllTrim(SuperGetMV("CAOA_AUT1A", ,'92')
+Local _cOper2 		:= AllTrim(SuperGetMV("CAOA_AUT1B", ,'93')
+Local _cOperIni 	:= If(Empty(_cOper),_cOper1,_cOper)
+
 	//Caso  tenha sido informado operação
 	If !Empty(_cOper)
     	_cCodTes := MaTesInt(2, _cOper, SA1->A1_COD, SA1->A1_LOJA, "C", _cCodProd, "C6_TES") 
@@ -536,16 +657,32 @@ Local _cOper2 		:= AllTrim(SuperGetMV("CAOA_AUT1B", ,'93')
 	Endif		
 	//Se continuar em branco problemas com TES
 	If Empty(_cCodTes)
-		U_ZRETMsgJson("cdoperacao","Nao localizado regra para a operacao referente ao item "+_cItem+" !")
+		U_ZRETMsgJson("cdoperacao","Nao localizado regra para a operacao "+_cOperIni+" referente ao item "+_cItem+" !")
 		_lRet := .F.
 	Endif
-
 If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif 
 Return _lRet 	
 
+/* localização operação
+	BeginSql Alias _cAliasPesq
+		SELECT 	 SX5.R_E_C_N_O_ AS NREGSX5
+		FROM %Table:SX5% SX5
+       	WHERE SX5.%notDel% 
+			AND SX5.X5_FILIAL  	= %XFilial:SX5%
+			AND SX5.X5_TABELA 	= %Exp:_cTab%
+			AND SX5.X5_CHAVE	= %Exp:_cOper%
+	EndSql      
+	//operação incluir
+	If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGSX5 == 0
+		Aadd(_aMsgErro,"Nao localizado regra para a operacao "+_cOper+" referente ao item "+_cItem+" !") 
+		_lRet .F.
+	Else 
+		SX5->(DbGoto((_cAliasPesq)->NREGSX5))
+
+*/
 
 
 
