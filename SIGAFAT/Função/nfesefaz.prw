@@ -8081,8 +8081,8 @@ If Len(aPedCom) > 0 .And. !Empty(aPedCom[01])
 	cString += '<nItemPed>'+ConvType(aPedCom[02])+'</nItemPed>'
 Endif
 
-//Nota Técnica 2013/006
-If !Empty(aFCI)
+//Nota Técnica 2013/006 
+If !Empty(aFCI) 
 	cString += '<nFCI>'+Alltrim(aFCI[01])+'</nFCI>'
 EndIf
 cString += '</prod>'
