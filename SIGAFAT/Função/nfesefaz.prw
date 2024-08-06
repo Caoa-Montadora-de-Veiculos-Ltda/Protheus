@@ -6,7 +6,7 @@ static lSpedCodOnu	:= nil
 static lNT23004		:= nil 
 static lCDVLanc		:= nil
 
-/*/
+/*/ 
 ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
 ±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
 ±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
@@ -2667,7 +2667,7 @@ If cTipo == "1"
 
 							Next nX 
 						EndIf                
-													
+													 
 						//Verifica se municipio de prestação foi informado no pedido
 						If SC5->(FieldPos("C5_MUNPRES")) > 0 .And. !Empty(SC5->C5_MUNPRES)
 							if len(AllTrim(SC5->C5_MUNPRES)) == 7 
@@ -2680,8 +2680,15 @@ If cTipo == "1"
 						Else
 							cMunPres := ConvType(aUF[aScan(aUF,{|x| x[1] == aDest[09]})][02]+aDest[07])
 						EndIf
+
+						//************ Especifico Caoa ******************
+						//Ajuste realizado para atender a venda dos HR para a HMB
+						If AllTrim(SC6->C6_TES) == '802' .And. AllTrim(SC6->C6_CLI) == '000008' .And. AllTrim(SC6->C6_LOJA) == '05'
+							aadd(aPedCom,{"5500012312","10"})
+							//*******************************************
+
 						// Tags xPed e nItemPed (controle de B2B) para nota de saída
-						If SC6->(FieldPos("C6_NUMPCOM")) > 0 .And. SC6->(FieldPos("C6_ITEMPC")) > 0
+						ElseIf SC6->(FieldPos("C6_NUMPCOM")) > 0 .And. SC6->(FieldPos("C6_ITEMPC")) > 0
 							If !Empty(SC6->C6_NUMPCOM) .And. !Empty(SC6->C6_ITEMPC) 
 								aadd(aPedCom,{SC6->C6_NUMPCOM,SC6->C6_ITEMPC})
 							Else
@@ -8081,8 +8088,8 @@ If Len(aPedCom) > 0 .And. !Empty(aPedCom[01])
 	cString += '<nItemPed>'+ConvType(aPedCom[02])+'</nItemPed>'
 Endif
 
-//Nota Técnica 2013/006 
-If !Empty(aFCI) 
+//Nota Técnica 2013/006
+If !Empty(aFCI)
 	cString += '<nFCI>'+Alltrim(aFCI[01])+'</nFCI>'
 EndIf
 cString += '</prod>'
