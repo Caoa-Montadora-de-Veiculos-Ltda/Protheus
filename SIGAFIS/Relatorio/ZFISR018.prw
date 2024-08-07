@@ -75,7 +75,9 @@ Static Function fReportDef()
 	oReport:SetLineHeight(50) 			//--Espaçamento entre linhas
 	oReport:cFontBody := 'Courier New' 	//--Tipo da fonte
 	oReport:nFontBody := 12				//--Tamanho da fonte
-	
+	//Verifica os parâmetros selecionados via Pergunte
+    Pergunte(oReport:GetParam(),.F.)
+
 	oSection1 := TRSection():New(oReport    ,"NF ativas"    ,{cAliasTMP}) 
     
     //--Colunas do relatório
@@ -304,6 +306,8 @@ Static Function  ReportPrint(oReport)
 	oReport:SetMeter( nTotal )
 	// Secção 1
 	oSection1:Init()
+    oSection2:Init()
+    oReport:IncMeter()
 
     DbSelectArea((cAliasTMP))
     (cAliasTMP)->(dbGoTop())
@@ -313,9 +317,9 @@ Static Function  ReportPrint(oReport)
 
         // Incrementa a mensagem na régua.
         oReport:SetMsgPrint("Imprimindo registo " + cValToChar(nAtual) + " de " + cValToChar(nTotal) + " ...")
-        oReport:IncMeter()
+        //oReport:IncMeter()
 
-        If !Empty((cAliasTMP)->F3_DTCANC)         
+        If Empty((cAliasTMP)->F3_DTCANC)         
 
             oSection1:Cell("ENTRADA"):SetValue(StoD((cAliasTMP)->DT_ENTRADA))
             oSection1:Cell("DT_LANC"):SetValue(StoD((cAliasTMP)->DT_LANC))
@@ -326,19 +330,20 @@ Static Function  ReportPrint(oReport)
     
         ELSE
 
-            oSection2:Init()
+
             oSection2:Cell("CANCELADA"):SetValue(StoD((cAliasTMP)->F3_DTCANC))
             //oSection2:Cell("ENTRADA"):SetValue(StoD((cAliasTMP)->DT_ENTRADA))
             //oSection2:Cell("DT_LANC"):SetValue(StoD((cAliasTMP)->DT_LANC))
 
             oSection2:PrintLine()	
-            oSection2:Finish()	
+	
 
         EndIf
         
         (cAliasTMP)->(dbSkip() )
 	EndDo               
 	oSection1:Finish()	  
+    oSection2:Finish()
 
     (cAliasTMP)->(DbCloseArea())
 
