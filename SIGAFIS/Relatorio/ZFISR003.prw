@@ -560,7 +560,7 @@ Static Function ZTmpRadio1()
 
     Local cQuery    	:= ""
 
-    If MV_PAR25 == 1
+    If MV_PAR24 == 1
 	  zSelNfs3()
     EndIf	
     
@@ -616,13 +616,13 @@ Static Function ZTmpRadio1()
 	cQuery += " 	AND SF1.D_E_L_E_T_ = ' ' " 																						+ CRLF	
 
 
-	cQuery += " INNER JOIN " + RetSQLName("SB1") + " SB1  " 																		+ CRLF
+	cQuery += " LEFT JOIN " + RetSQLName("SB1") + " SB1  " 																		+ CRLF
 	cQuery += " 	ON  SB1.B1_FILIAL  = '" + FWxFilial('SB1') + "'  "															    + CRLF
 	cQuery += "		AND SB1.B1_COD     = SD1.D1_COD  "	 																				+ CRLF
 	cQuery += "     AND SB1.D_E_L_E_T_ = ' '   " 																					+ CRLF
 
 
-	cQuery += " INNER JOIN " + RetSQLName("SF4") + " SF4 " 																			+ CRLF
+	cQuery += " LEFT JOIN " + RetSQLName("SF4") + " SF4 " 																			+ CRLF
 	cQuery += " 	ON  SF4.F4_FILIAL  = '" + FWxFilial('SF4') + "'  "															    + CRLF
 	cQuery += "		AND SF4.F4_CODIGO  = SD1.D1_TES  "	 																			+ CRLF
 	cQuery += "     AND SF4.D_E_L_E_T_ = ' '   " 																					+ CRLF
@@ -719,8 +719,8 @@ Static Function ZTmpRadio1()
     	cQuery += " 	AND SD1.D1_DOC     BETWEEN '" +       MV_PAR05   + "' AND '" +       MV_PAR06   + "' " 												
 	EndIf
 
-    If !Empty( alltrim(MV_PAR23)) .OR. !Empty( alltrim(MV_PAR24) )
-       cQuery += " 	AND SD1.D1_CHASSI BETWEEN '" + MV_PAR23 + "' AND '" + MV_PAR24 + "' " 
+    If !Empty( alltrim(MV_PAR22)) .OR. !Empty( alltrim(MV_PAR23) )
+       cQuery += " 	AND SD1.D1_CHASSI BETWEEN '" + MV_PAR22 + "' AND '" + MV_PAR23 + "' " 
     EndIf
     
 	cQuery += " GROUP BY 	D1_FILIAL , D1_COD    , D1_DOC    , D1_SERIE  , D1_TES    , D1_CF     , D1_FORNECE, D1_LOJA   , " + CRLF

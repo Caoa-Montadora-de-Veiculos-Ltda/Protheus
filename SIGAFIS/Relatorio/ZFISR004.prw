@@ -90,7 +90,7 @@ Return
 Static Function zTmpRadio2()
     Local cQuery    	:= ""
 
-    If MV_PAR25 == 1
+    If MV_PAR24 == 1
 	  zSelNfs4()
     EndIf	
 
@@ -165,8 +165,8 @@ Static Function zTmpRadio2()
     	cQuery += " 	AND SD1.D1_DOC     BETWEEN '" +       MV_PAR05   + "' AND '" +       MV_PAR06   + "' " 												
 	EndIf
     
-    If !Empty( alltrim(MV_PAR23)) .OR. !Empty( alltrim(MV_PAR24) )
-       cQuery += " 	AND SD1.D1_CHASSI BETWEEN '" + MV_PAR23 + "' AND '" + MV_PAR24 + "' " 
+    If !Empty( alltrim(MV_PAR22)) .OR. !Empty( alltrim(MV_PAR23) )
+       cQuery += " 	AND SD1.D1_CHASSI BETWEEN '" + MV_PAR22 + "' AND '" + MV_PAR23 + "' " 
     ENDIF
 
     cQuery += " GROUP BY F3_FILIAL, F3_OBSERV, F3_ESPECIE, F3_NFISCAL, F3_SERIE, F3_CLIEFOR, F3_LOJA, A2_GRPTRIB ," + CRLF
