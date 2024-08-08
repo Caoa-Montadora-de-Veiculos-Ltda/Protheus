@@ -78,8 +78,8 @@ Static Function fReportDef()
 	//Verifica os parâmetros selecionados via Pergunte
     Pergunte(oReport:GetParam(),.F.)
 
-	oSection1 := TRSection():New(oReport    ,"NF ativas"    ,{cAliasTMP}) 
-    
+	oSection1 := TRSection():New(oReport    ,"NF ativas"    ,{cAliasTMP},,.F.,.T.) 
+
     //--Colunas do relatório
     TRCell():New( oSection1, "CNPJ"	            , cAliasTMP, "CNPJ"	              , PesqPict("SA2","A2_CGC")     , TamSx3("A2_CGC")[1]     , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
     TRCell():New( oSection1, "INS_EST"	        , cAliasTMP, "INS EST"            , PesqPict("SA2","A2_INSCR")   , TamSx3("A2_INSCR")[1]   , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
@@ -120,7 +120,7 @@ Static Function fReportDef()
     TRCell():New( oSection1, "USERINC"          , cAliasTMP, "INCLUSAO"           , PesqPict("SF1", "F1_USERLGI"), TamSx3("F1_USERLGI")[1] , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
     TRCell():New( oSection1, "USERALT"          , cAliasTMP, "ALTERACAO"          , PesqPict("SF1", "F1_USERLGA"), TamSx3("F1_USERLGA")[1] , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)
 
-    oSection2 := TRSection():New(oReport    ,"NF canceladas"    ,{cAliasTMP}) 
+    oSection2 := TRSection():New(oReport    ,"NF canceladas"    ,{cAliasTMP},,.F.,.T.) 
     //--Colunas do relatório
     TRCell():New( oSection2, "CNPJ"	            , cAliasTMP, "CNPJ"	              , PesqPict("SA2","A2_CGC")     , TamSx3("A2_CGC")[1]     , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
     TRCell():New( oSection2, "INS_EST"	        , cAliasTMP, "INS EST"            , PesqPict("SA2","A2_INSCR")   , TamSx3("A2_INSCR")[1]   , /*lPixel*/, /*{|| code-block de impressao }*/, "LEFT", /*lLineBreak*/, "LEFT", /*lCellBreak*/, /*nColSpace*/, /*lAutoSize*/, /*nClrBack*/, /*nClrFore*/, .F.)	
@@ -216,7 +216,7 @@ Static Function  ReportPrint(oReport)
     cQuery += "    AND SD1.D1_FORNECE = SF1.F1_FORNECE"                 + CRLF
     cQuery += "    AND SD1.D1_LOJA    = SF1.F1_LOJA"                    + CRLF
     cQuery += "    AND SD1.D1_EMISSAO = SF1.F1_EMISSAO"                 + CRLF
-    cQuery += "    AND SD1.D_E_L_E_T_ = ' ' "	                        + CRLF
+//    cQuery += "    AND SD1.D_E_L_E_T_ = ' ' "	                        + CRLF
     cQuery += " LEFT JOIN "  + RetSQLName( 'SFT' ) + " SFT "            + CRLF //-- ITENS LIVROS FISCAIS
 	cQuery += "     ON SFT.FT_FILIAL  = '" + FWxFilial('SFT') + "' "    + CRLF 
     cQuery += "    AND SFT.FT_NFISCAL = SF1.F1_DOC"                     + CRLF
@@ -224,7 +224,7 @@ Static Function  ReportPrint(oReport)
     cQuery += "    AND SFT.FT_CLIEFOR = SF1.F1_FORNECE"                 + CRLF
     cQuery += "    AND SFT.FT_LOJA	  = SF1.F1_LOJA"                    + CRLF
     cQuery += "    AND SFT.FT_PRODUTO = SD1.D1_COD"                     + CRLF
-    cQuery += "    AND SFT.D_E_L_E_T_ = ' ' "	                        + CRLF
+//    cQuery += "    AND SFT.D_E_L_E_T_ = ' ' "	                        + CRLF
     cQuery += " WHERE  "	                                            + CRLF         
     cQuery += "    SF1.F1_FILIAL 		= '" + FWxFilial('SF1') + "' "  + CRLF
 	
@@ -244,7 +244,7 @@ Static Function  ReportPrint(oReport)
 		cQuery += " AND SF1.F1_FORNECE BETWEEN '" + MV_PAR06 + "' AND '" + MV_PAR07 + "'"               + CRLF //--FORNECEDOR
 	EndIf
 
-    cQuery += "    AND SF1.D_E_L_E_T_ 	= ' ' "                         + CRLF
+ //   cQuery += "    AND SF1.D_E_L_E_T_ 	= ' ' "                         + CRLF
     cQuery += " GROUP BY  "	                                            + CRLF 
     cQuery += "         SF1.F1_FILIAL "                                 + CRLF    
     cQuery += "         , SD1.D1_CF "                                   + CRLF  
@@ -307,12 +307,12 @@ Static Function  ReportPrint(oReport)
 	// Secção 1
 	oSection1:Init()
     oSection2:Init()
-    oReport:IncMeter()
 
     DbSelectArea((cAliasTMP))
     (cAliasTMP)->(dbGoTop())
     While (cAliasTMP)->(!EoF()) .And. !oReport:Cancel()
         //Incrementando a regua
+        oReport:IncMeter()
 		nAtual++
 
         // Incrementa a mensagem na régua.
@@ -330,7 +330,6 @@ Static Function  ReportPrint(oReport)
     
         ELSE
 
-
             oSection2:Cell("CANCELADA"):SetValue(StoD((cAliasTMP)->F3_DTCANC))
             //oSection2:Cell("ENTRADA"):SetValue(StoD((cAliasTMP)->DT_ENTRADA))
             //oSection2:Cell("DT_LANC"):SetValue(StoD((cAliasTMP)->DT_LANC))
@@ -342,8 +341,8 @@ Static Function  ReportPrint(oReport)
         
         (cAliasTMP)->(dbSkip() )
 	EndDo               
-	oSection1:Finish()	  
-    oSection2:Finish()
+	oSection2:Finish()	  
+    oSection1:Finish()
 
     (cAliasTMP)->(DbCloseArea())
 
