@@ -64,7 +64,7 @@ Static Function ZRESTPRVPR( _oJson, _cEmpFil, _cResp )
 Local _cEmpresa     := ""
 Local _cFilAtu      := ""
 Local _lRet			:= .F.
-//Local _cRespLib		:= AllTrim( superGetMv( "CAOA_RES03"	, , "00000000"		) )	
+Local _cRespLib		:= AllTrim( superGetMv( "CAOA_RES03"	, , ""		) )	
 
 Local _nPos
 Begin Sequence
@@ -134,17 +134,21 @@ Gravar dados do oJson no Cliente
 @type function
 /*/
 Static Function ZRESTPRVGR(_oJson, _cEmpresa, _cFilAtu, _cResp)
-Local _cAliasPesq	:= GetNextAlias()
-Local _lRet 		:= .F.
+Local _lRet 		:= .T.
 Local _lNovo    	:= .T.
 Local _cTipoOper	:= AllTrim(_oJson:GetJsonText("tpoperacao"))
 
 Local _aCabSC5 		AS Array	
 Local _aItens  		AS Array	
 Local _aLinha 		AS Array
+Local _aError		AS Array
+Local _aCampos		AS Array
 
+Local _nOper 		AS Numeric
 Local _nTam			AS Numeric
 Local _nValTab		AS Numeric
+Local _nReg			AS Numeric
+Local _nError		AS Numeric
 
 Local _cNumPed		AS Character
 Local _cOper 		AS Character 
@@ -159,10 +163,23 @@ Local _cSegMod 		AS Character
 Local _cGrupoMod 	AS Character
 Local _cCorInterna	AS Character
 Local _cCorExterna	AS Character
+Local _cError 		AS Character
+Local _cMsg			AS Character
+Local _cHsIni		AS Character
+
+lOCAL _dDataIni 	AS Date
 
 Begin Sequence 
-	If _cTipoOper <> "1"
+	_cHsIni		:= SubsTr(Time(),1,5)
+	_dDataIni	:= Date()
+	If _cTipoOper == "1"	//inclui
+		_lNovo := .T.
+		_nOper := 3
+	ElseIf _cTipoOper == "2"  //Altera
 		_lNovo := .F.
+		_nOper := 4
+	ElseIf _cTipoOper == "3"  //Exclui
+		_nOper := 5
 	Endif
 
 	//Função para retorno de códigos, verificar se existem pais estado e municipio, indiferente do cliente ser ou nao cadastrdos estas informações tem que estar fornecidas corretamente
@@ -172,8 +189,7 @@ Begin Sequence
   
 	_aAlterado 	:= {}  //indicação de alteração do campo
 	_aCabSC5	:= {}
-	_cOper 		:= "92"   //VENDA VEICULO
-	_CodTes		:= "501"
+	_nOper		:= 3   //operação inclusão
 
 	If _lNovo
 		_cNumPed := GetSxeNum("SC5","C5_NUM")
@@ -201,8 +217,8 @@ Begin Sequence
 	ZRESTPRVAlterados( "SC5"	,"C5_TRANSP" 	, SA4->A4_COD   							, @_aCabSC5, @_aAlterado, _lNovo )   //  Nome reduz.
 	ZRESTPRVAlterados( "SC5"	,"C5_XTIPVEN" 	, _oJson:GetJsonText("tpvenda")   			, @_aCabSC5, @_aAlterado, _lNovo )   //  Nome reduz.
 
+	//processar os itens
 	_nTam 		:= Len(_oJson["itens"])
-
 	For _nPos := 1 To _nTam
 		_aLinha		:= {}
 		_cItem		:= AllTrim(_oJson["itens"][_nPos]:GetJsonText("nritem"))
@@ -216,8 +232,11 @@ Begin Sequence
 
 	    _cCodProd 	:= _cModVei + _cSegMod	//montagem do codigo produto
 		_nValTab 	:= ZRESTPRVPTabela( _cCodMar, _cModVei, _cSegMod, _cFabMod)  //tabela de veiculo
+		//_cItem 		:= Soma1(_cItem)  utilizara item enviado pelo criente
+		_aLinha 	:= {}
 
-		If ZRESTPRVSB1(_cCodProd, _cItem, @_aMsgErro)
+ 		If ! ZRESTPRVRVeiculo(_cCodProd, _cCodMar, _cModVei, _cSegMod _cItem)
+			_lRet := .F. 
 			Exit
 		Endif
 		
@@ -225,10 +244,10 @@ Begin Sequence
 			_cOper := _oJson["itens"][_nPos]:GetJsonText("cdoperacao")
 		Endif	
 		//valida Operação
-		If ZRESTPRVOper(@_cOper, @_cCodTes, _cItem, _cCodProd, @_aMsgErro)
+		If ZRESTPRVOper(@_cOper, @_cCodTes, _cItem, _cCodProd)
+			_lRet := .F. 
 			Exit 
 		Endif
-		_aLinha := {}
 		If _lNovo
 			ZRESTPRVAlterados(	"C6_FILIAL"		, FWxFilial('SC6')						, @_aLinha,	@_aAlterado, _lNovo )   
 			ZRESTPRVAlterados(	"C6_NUM"		, _cNumPed								, @_aLinha, @_aAlterado, _lNovo )   
@@ -247,183 +266,94 @@ Begin Sequence
 		ZRESTPRVAlterados("SC6", "C6_LOCALIZ"	, CriaVar("C6_LOCALIZ")									, @_aLinha,	@_aAlterado, _lNovo )   
 		ZRESTPRVAlterados("SC6", "C6_QTDLIB"	, CriaVar("C6_NUMSERI")									, @_aLinha,	@_aAlterado, _lNovo )   
 
-		ZRESTPRVAlterados("SC6", "C6_XCODMAR"	, _cCodMar			, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_XMODVEI"	, _cModVei		, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XCODMAR"	, _cCodMar												, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XMODVEI"	, _cModVei												, @_aLinha,	@_aAlterado, _lNovo )   
 
-		ZRESTPRVAlterados("SC6", "C6_XDESMAR"	, 				, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_XCORINT"	, _cCorInterna	, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_XCOREXT"	, _cCorExterna	, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XDESMAR"	, 														, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XCORINT"	, _cCorInterna											, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XCOREXT"	, _cCorExterna											, @_aLinha,	@_aAlterado, _lNovo )   
 		ZRESTPRVAlterados("SC6", "C6_XDESMOD"	, VV2->VV2_DESMOD										, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_XSEGMOD"	, _cSegMod		, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XSEGMOD"	, _cSegMod												, @_aLinha,	@_aAlterado, _lNovo )   
 		ZRESTPRVAlterados("SC6", "C6_XDESSEG"	, VVX->VVX_DESSEG  										, @_aLinha,	@_aAlterado, _lNovo )   
 		ZRESTPRVAlterados("SC6", "C6_XFABMOD"	, _cFabMod												, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_XGRPMOD"	, _cGrupoMod		, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XGRPMOD"	, _cGrupoMod											, @_aLinha,	@_aAlterado, _lNovo )   
 		ZRESTPRVAlterados("SC6", "C6_XPRCTAB"	, _nValTab												, @_aLinha,	@_aAlterado, _lNovo )   
 		ZRESTPRVAlterados("SC6", "C6_XVLRPRD"	, _nValTab												, @_aLinha,	@_aAlterado, _lNovo )   
 		ZRESTPRVAlterados("SC6", "C6_XVLRMVT"	, 														, @_aLinha,	@_aAlterado, _lNovo )   
 		ZRESTPRVAlterados("SC6", "C6_XVLRVDA"	, 														, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_XBASST"	, 														, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XBASST"	, VVP->VVP_BASEST										, @_aLinha,	@_aAlterado, _lNovo )   
 
 		If SC6->(FieldPos("C6_XOPCION"))
-			ZRESTPRVAlterados("SC6", "C6_XGRPMOD"	, _oJson["itens"][_nPos]:GetJsonText("cdopcional")	, @_aLinha,	@_aAlterado, _lNovo )   
+			ZRESTPRVAlterados("SC6", "C6_XOPCION"	, _oJson["itens"][_nPos]:GetJsonText("cdopcional")	, @_aLinha,	@_aAlterado, _lNovo )   
 		Endif
-                Aadd( aLinha, { "C6_XDESSEG",       , Nil } )
-                Aadd( aLinha, { "", (cTmpAlias)->VRK_FABMOD , Nil } )
-                Aadd( aLinha, { "", ""                      , Nil } )
-                Aadd( aLinha, { "", (cTmpAlias)->VRK_VALTAB , Nil } )
-                Aadd( aLinha, { "", (cTmpAlias)->VRK_VALPRE , Nil } )
-                Aadd( aLinha, { "", (cTmpAlias)->VRK_VALMOV , Nil } )
-                Aadd( aLinha, { "", (cTmpAlias)->VRK_VALVDA , Nil } )
-                Aadd( aLinha, { "C6_XBASST",  (cTmpAlias)->VRK_XBASST , Nil } )
-                Aadd( aItePed ,  aLinha )
+       	Aadd( _aItens , _aLinha )
+	Next
+	If ! _lRet
+		Break 
+	Endif 	
+	If Len(_aCabSC5) == 0 .Or. Len(_aItens) == 0 
+		U_ZRETMsgJson("erropad","Nao foi possivel carregar parametos dos campos para o Pedido "+_cPedido+" !")
+		_lRet := .F. 
+		Break
+	Endif	
+	//Private lMsHelpAuto 	:= .T.  // força a gravação das informações de erro em array para manipulação da gravação ao invés de gravar direto no arquivo temporário 
+	Private lMsErroAuto 	:= .F.	// variável que define que o help deve ser gravado no arquivo de log e que as informações estão vindo à partir da rotina automática.
+	Private lAutoErrNoFile 	:= .T.  //Variavel de Controle do GetAutoGRLog
+	MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, aCabPed, aItePed, _nOpc , .F.)
 
-
-
-			_cItem 		:= Soma1(_cItem)
-
-
-    If !_lRet
-
+	If lMsErroAuto
+		_cError := "Erro Padrao Pedido "+ _cPedido + CRLF
+		// se estiver em debug, pega o log inteiro do erro para uma analise mais detalhada
+		_aError := GetAutoGRLog()
+		For _nPos := 1 To Len(_aError)
+			If !Empty((AllTrim(_aError[_nPos])))  	
+				_cError	+= 	AllTrim(_aError[_nPos]) + CRLF
+			EndIf		
+		Next _nPos			
+		U_ZRETMsgJson("erropad",_cError)
+		_lRet := .F. 
 		RollBackSX8()	
-
-		//Busca o Erro do Modelo de Dados
-    	_aErro := _oModel:GetErrorMessage()
-		/*
-    	//Monta o Texto que será mostrado na tela
-    	AutoGrLog("Id do formulário de origem:"  + ' [' + AllToChar(_aErro[01]) + ']')
-    	AutoGrLog("Id do campo de origem: "      + ' [' + AllToChar(_aErro[02]) + ']')
-    	AutoGrLog("Id do formulário de erro: "   + ' [' + AllToChar(_aErro[03]) + ']')
-    	AutoGrLog("Id do campo de erro: "        + ' [' + AllToChar(_aErro[04]) + ']')
-    	AutoGrLog("Id do erro: "                 + ' [' + AllToChar(_aErro[05]) + ']')
-    	AutoGrLog("Mensagem do erro: "           + ' [' + AllToChar(_aErro[06]) + ']')
-   		AutoGrLog("Mensagem da solução: "        + ' [' + AllToChar(_aErro[07]) + ']')
-    	AutoGrLog("Valor atribuído: "            + ' [' + AllToChar(_aErro[08]) + ']')
-    	AutoGrLog("Valor anterior: "             + ' [' + AllToChar(_aErro[09]) + ']')
-    	//Mostra a mensagem de Erro
-    	//MostraErro()
-		*/
-		U_ZRETMsgJson("erropad",AllTrim(FwNoAccent( AllToChar(_aErro[06])))+" | "+AllTrim(FwNoAccent( AllToChar(_aErro[04]))))
-	Else 
+		Break
+	ElseIf _nopc == 3 
 		ConfirmSX8()
 	Endif
-	//Desativa o modelo de dados
-	_oModel:DeActivate()
 End Sequence
 
-_aMsg 		:= {}
 _aCampos	:= {}
+_nReg 		:= If(_lRet,SC5->(RECNO()),0 ) 
+_cMsg		:= ""
+_nError		:= 0
 If _lRet 
 	_cStatus 	:=	"1"
-	_aMsg 		:=  {"Cliente "+If(_lNovo,"Recebido","Alterado")+" com Sucesso"}
+	_cMsg 		:=  "Pedido "+_cPedido+If(_lNovo," Incluído"," Alterado")+" com Sucesso"+CRLF
 	//Indica que alterou campos
 	If Len(_aAlterado) > 0 
-		_cMsg 	:= "Alteracoes cadastro de Clientes Recponsavel "+_cResp+" em "+DtOC(Date())+" - "+Time()
+		_cMsg 	:= "Alteracoes cadastro de Clientes Responsavel "+_cResp+" em "+DtOC(Date())+" - "+Time()
 		_cMsg 	+= CRLF
 		For _nPos := 1 To Len(_aAlterado)
 			_cMsg += _aAlterado[_nPos] +CRLF
 		Next 
-		//Adiciono para gravar msgem de alteração
-		AAdd(_aCampos,{"Z1_MSGLOG"	, Upper(_cMsg)	})
 	Endif 
-	//Devido estar retornando como X que é o identificador para RGLOG SIGAPEC
-	//Tem que integrar RGLOG
-	If RecLock("SA1",.F.)
-		If ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
-			If FieldPos("A1_XINTEG") > 0 .And. SA1->A1_XINTEG  <> "X"
-				SA1->A1_XINTEG := "X"
-			Endif	
-		EndIf
-		If _lNovo
-			SA1->A1_CONTA	:= ""
-			SA1->A1_GRPTRIB	:= ""
-			SA1->A1_CONTRIB	:= ""
-			SA1->A1_MSBLQL	:= "1"	//deixar bloqueado após o recebimento
-		Endif
-		SA1->(MsUnlock())
-	Endif 
-
 Else 
 	_cStatus 	:=	"2"
+	_cMsg 		:=  "Pedido "+_cPedido+If(_lNovo," para Inclusao"," Alteracao")+" com inconsistencia"+CRLF
 	For _nPos := 1 To Len(_aMsgRet)
-		Aadd(_aMsg,_aMsgRet[_nPos,2])
+		_cMsg += _aMsgRet[_nPos,2]+CRLF
+		If _nError == 0
+			_nError := _aMsgRet[_nPos,1]
+		Endif	
 	Next
+	_cMsg 		:=  "Pedido "+_cPediro+If(_lNovo," Incluído"," Alterado")+" com Sucesso"
 Endif 
-If Select((_cAliasPesq)) <> 0
-	(_cAliasPesq)->(DbCloseArea())
-	Ferase(_cAliasPesq+GetDBExtension())
-Endif 
+//Adiciono para gravar msgem de alteração
+AAdd(_aCampos,{"Z1_MSGLOG"	, Upper(_cMsg)	})
+
+//ZRESTPRVMonitor(_cStatus, "_cTab", _cDoc, _cMens, _cErro, _dDataIni, _cHsIni, _nErro, _nReg )
+//ZRESTPRVMonitor(_cStatus, SC5, _cPedido, _cMsg, _cError, _dDataIni, _cHsIni, _nError, _nReg )
+
+
 Return _lRet 
 
-
-
-//localizar tabela de Veiculo
-Static Function ZRESTPRVPTabela( _cCodMar, _cModVei, _cSegMod, _cFabMod)
-Local _cAliasTab   := GetNextAlias()
-Local _nValTab := 0
-  	BeginSql Alias _cAliasTab
-   		SELECT 	VVP.VVP_VALTAB,
-				VVP.VVP_DATPRC,
-				VVP.VVP_BASEST
-   		FROM %Table:VVP% VVP
-   		WHERE 	VVP.VVP_FILIAL = %xFilial:VVP%
-			AND VVP.VVP_CODMAR = %Exp:_cCodMar%
-			AND VVP.VVP_MODVEI = %Exp:_cModVei%
-			AND VVP.VVP_SEGMOD = %Exp:_cSegMod%
-			AND VVP.VVP_FABMOD = %Exp:_cFabMod%
-			AND VVP.%NotDel%			
-	      	AND VVP.VVP_DATPRC = (  SELECT MAX(VVPB.VVP_DATPRC)  "
-	      	                         FROM %Table:VVP% VVPB 
-	      	                          WHERE VVPB.VVP_FILIAL = VVP.VVP_FILIAL 
-		     	                    	AND VVPB.VVP_CODMAR	= VVP.VVP_CODMAR 
-		     	                        AND VVPB.VVP_MODVEI	= VVP.VVP_MODVEI 
-		     	                        AND VVPB.VVP_SEGMOD	= VVP.VVP_SEGMOD 
-	      	                           	AND VVPB.VVP_FABMOD	= VVP.VVP_FABMOD 
-                              			AND VVPB.%NotDel% ) 
-   	EndSql
-
-	If (_cAliasTab)->(!Eof())
-		_nValTab := (_cAliasTab)->VVP_VALTAB
-	Endif 
-If Select((_cAliasTab)) <> 0
-	(_cAliasTab)->(DbCloseArea())
-	Ferase(_cAliasTab+GetDBExtension())
-Endif 
-Return _nValTab
-
-
-/*
-=======================================================================================
-Programa.:            VlrPret  
-Autor....:              
-Data.....:              
-Descricao / Objetivo: Calcula o Valor Pretendido
-=======================================================================================
-*/
-
-Static Function ZRESTPRCVPret(_cCodMar, _cModVei, _cSegMod, _nValTab, _nValPre, _nValMov,cCabAlias,lCalMov)
-Local _cForm121 As Character
-
-Default _lCalMNov := .F.
-
-	_cForm121 := GetNewPar("MV_MIL0121","") //U_CMVVEI01()
-
-	// Se o usuario zerar o valore pretendido, volta o valor de tabela...
-	If nValPre == 0
-		_nValMovimento := iif( _lCalMov, _nValMov, _nValTab)
-	Else
-		If Empty(_cForm121)
-			_nValMovimento := iif( _lCalMov, _nValMov, _nValPre)//nValPre
-		Else
-			_nValMovimento 	:= iif( _lCalMov, _nValMov, _nValPre)//nValPre
-			_nValorPre 		:= iif( _lCalMov, _nValMov, _nValPre)//nValPre // Valor utilizada na formula...
-			_nValorMov 		:= CalcRev(_nValorPre, _cCabAlias)  //verificar funcionalidade
-
-			If _nValorMov <> _nValPre
-				_nValMovimento := _nValorMov
-			EndIf
-		EndIf
-	EndIf
-Return .T.
 
 //Valida campos enviados no REST
 Static Function ZRESTVVNValida(_oJson)
@@ -555,10 +485,49 @@ If Select((_cAliasPesq)) <> 0
 Endif 
 Return _lRet
 
-//localizar Produto
-Static Function ZRESTPRVSB1(_cCodProd, _cItem)
+//localizar tabela de Veiculo
+Static Function ZRESTPRVPTabela( _cCodMar, _cModVei, _cSegMod, _cFabMod)
+Local _cAliasTab   := GetNextAlias()
+Local _nValTab := 0
+  	BeginSql Alias _cAliasTab
+   		SELECT 	VVP.R_E_C_N_O_ NREGVVP
+				,VVP.VVP_VALTAB
+				.VVP.VVP_DATPRC
+				,VVP.VVP_BASEST
+   		FROM %Table:VVP% VVP
+   		WHERE 	VVP.VVP_FILIAL = %xFilial:VVP%
+			AND VVP.VVP_CODMAR = %Exp:_cCodMar%
+			AND VVP.VVP_MODVEI = %Exp:_cModVei%
+			AND VVP.VVP_SEGMOD = %Exp:_cSegMod%
+			AND VVP.VVP_FABMOD = %Exp:_cFabMod%
+			AND VVP.%NotDel%			
+	      	AND VVP.VVP_DATPRC = (  SELECT MAX(VVPB.VVP_DATPRC)  "
+	      	                         FROM %Table:VVP% VVPB 
+	      	                          WHERE VVPB.VVP_FILIAL = VVP.VVP_FILIAL 
+		     	                    	AND VVPB.VVP_CODMAR	= VVP.VVP_CODMAR 
+		     	                        AND VVPB.VVP_MODVEI	= VVP.VVP_MODVEI 
+		     	                        AND VVPB.VVP_SEGMOD	= VVP.VVP_SEGMOD 
+	      	                           	AND VVPB.VVP_FABMOD	= VVP.VVP_FABMOD 
+                              			AND VVPB.%NotDel% ) 
+   	EndSql
+
+	If (_cAliasTab)->(!Eof())
+		VVP->((_cAliasTab)->NREGVVP)
+		_nValTab := (_cAliasTab)->VVP_VALTAB
+	Endif 
+If Select((_cAliasTab)) <> 0
+	(_cAliasTab)->(DbCloseArea())
+	Ferase(_cAliasTab+GetDBExtension())
+Endif 
+Return _nValTab
+
+
+//localizar relacionamento veicuo
+Static Function ZRESTPRVRVeiculo(_cCodProd, _cCodMar, _cModVei, _cSegMod _cItem)
 Local _cAliasPesq   := GetNextAlias()
-Local _lRet			:= .T.
+Local _lRet			:= .F.		
+Begin Sequence 
+
 	BeginSql Alias _cAliasPesq
 		SELECT 	 SB1.R_E_C_N_O_ AS NREGSB1 
 		FROM %Table:SB1% SB1
@@ -569,24 +538,11 @@ Local _lRet			:= .T.
 	//operação incluir
 	If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGSB1 == 0
 		U_ZRETMsgJson("produto","Produto "+_cCodProd+" para o item "+_cItem+" nao localizado !")
-		_lRet := .F.
+		Break 
 	Endif 
-	If _lRet
-		SB1->(DbGoto((_cAliasPesq)->NREGSB1))
-	Endif
-If Select((_cAliasPesq)) <> 0
+	SB1->(DbGoto((_cAliasPesq)->NREGSB1))
 	(_cAliasPesq)->(DbCloseArea())
-	Ferase(_cAliasPesq+GetDBExtension())
-Endif 
-Return _lRet 	
-
-
-//localizar relacionamento veicuo
-Static Function ZRESTPRVLV(_cCodProd, _cCodMar, _cModVei, _cSegMod _cItem)
-Local _cAliasPesq   := GetNextAlias()
-Local _lRet			:= .F.		
-
-
+	//localizar marca
 	BeginSql Alias _cAliasPesq
 		SELECT 	VV2.R_E_C_N_O_ AS NREGVV2
 		FROM 	%Table:VV2% VV2
@@ -598,37 +554,43 @@ Local _lRet			:= .F.
 	EndSql      
 	If (_cAliasPesq)->(Eof()) .And. (_cAliasPesq)->NREGVV2
 		U_ZRETMsgJson("cdmodvei","Modelo de Veiculo não encontrado na tabela de Modelos para o item"+_cItem+" !")
-		Return .F.
+		Break
 	Endif
 	VV2->(DbGoto((_cAliasPesq)->NREGVV2))
-
-    _cQuery += CrLf + " LEFT JOIN " + RetSqlName("VE1") + " VE1  "
-    _cQuery += CrLf + "     ON  VE1.VE1_FILIAL  = '" + xFilial("VE1") + "'  "
-    _cQuery += CrLf + "     AND VE1.VE1_CODMAR  = VRK.VRK_CODMAR   "
-    _cQuery += CrLf + "     AND VE1.D_E_L_E_T_  = ' ' "
-
-    _cQuery += CrLf + " LEFT JOIN " + RetSqlName("VVX") + " VVX  "
-    _cQuery += CrLf + "     ON  VVX.VVX_FILIAL  = '" + xFilial("VVX") + "' "
-    _cQuery += CrLf + "     AND VVX.VVX_CODMAR  = VRK.VRK_CODMAR "
-    _cQuery += CrLf + "     AND VVX.VVX_SEGMOD  = VRK.VRK_SEGMOD "
-    _cQuery += CrLf + "     AND VVX.D_E_L_E_T_  = ' ' "
-       	WHERE SB1.%notDel% 
-			AND SB1.B1_FILIAL  	= %XFilial:SB1%
-			AND SB1.B1_COD 		= %Exp:_cCodProd%
-	//operação incluir
-	If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGSB1 == 0
-		U_ZRETMsgJson("produto","Produto "+_cCodProd+" para o item "+_cItem+" nao localizado !")
-		_lRet := .F.
-	Endif 
-	If _lRet
-		SB1->(DbGoto((_cAliasPesq)->NREGSB1))
+	(_cAliasPesq)->(DbCloseArea())
+	//Localizar Veiculo
+	BeginSql Alias _cAliasPesq
+		SELECT 	VE1.R_E_C_N_O_ AS NREGVE1
+		FROM 	%Table:VE1% VE1
+        WHERE 	VE1.%notDel% 
+			AND VE1.VE1_FILIAL = %XFilial:VE1%
+			AND VE1.VE1_CODMAR = %Exp:_cCodMar%
+	EndSql      
+	If (_cAliasPesq)->(Eof()) .And. (_cAliasPesq)->NREGVE1
+		U_ZRETMsgJson("cdmodvei","Veiculo não encontrado na tabela de vEÍCULOS para o item"+_cItem+" !")
+		Break
 	Endif
+	(_cAliasPesq)->(DbCloseArea())
+	//Localizar Descrição
+	BeginSql Alias _cAliasPesq
+		SELECT 	VVX.R_E_C_N_O_ AS NREGVVX
+		FROM 	%Table:VE1% VE1
+        WHERE 	VVX.%notDel% 
+			AND VVX.VVX_FILIAL = %XFilial:VVX%
+			AND VVX.VVX_CODMAR = %Exp:_cCodMar%
+			AND VVX.VVX_SEGMOD = %Exp:_cSegMod%
+	EndSql      
+	If (_cAliasPesq)->(Eof()) .And. (_cAliasPesq)->NREGVVX
+		U_ZRETMsgJson("cdmodvei","Tabela de descrição modelo não localizada não encontrado na tabela de vEÍCULOS para o item"+_cItem+" !")
+		Break
+	Endif
+	_lRet := .T.
+Endif 
 If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif 
 Return _lRet 	
-
 
 
 //localizar o tipo de operação
@@ -639,25 +601,29 @@ Local _lRet			:= .T.
 Local _cTesPar 		:= AllTrim(SuperGetMV("CAOA_AUT1C", ,'501'))
 Local _cOper1  		:= AllTrim(SuperGetMV("CAOA_AUT1A", ,'92')
 Local _cOper2 		:= AllTrim(SuperGetMV("CAOA_AUT1B", ,'93')
-Local _cOperIni 	:= If(Empty(_cOper),_cOper1,_cOper)
+Local _cOperIni 	:= _cOper
 
 	//Caso  tenha sido informado operação
 	If !Empty(_cOper)
     	_cCodTes := MaTesInt(2, _cOper, SA1->A1_COD, SA1->A1_LOJA, "C", _cCodProd, "C6_TES") 
 	Endif 
-	//não localizou cod da TES
-	If Empty(_cCodTes)
+	//não localizou cod da TES com operação enviada REST
+	If Empty(_cCodTes) .And. !Empty(_cOper1)
 		_cOper 		:= _cOper1
     	_cCodTes 	:= MaTesInt(2, _cOper, SA1->A1_COD, SA1->A1_LOJA, "C", _cCodProd, "C6_TES") 
 	Endif 
-	//não localizou cod da TES
-	If Empty(_cCodTes)
+	//não localizou cod da TES com operação 1 pre definaida tentar com operação 2 pre definida
+	If Empty(_cCodTes) .And. !Empty(_cOper2)
 		_cOper 		:= _cOper2
     	_cCodTes 	:= MaTesInt(2, _cOper, SA1->A1_COD, SA1->A1_LOJA, "C", _cCodProd, "C6_TES") 
 	Endif		
+	//caso não localize ainda tenho a TES do parâmetro
+	If Empty(_cCodTes) .And. !Empty(_cTesPar)
+		_cCodTes 	: _cTesPar 
+	Endif
 	//Se continuar em branco problemas com TES
-	If Empty(_cCodTes)
-		U_ZRETMsgJson("cdoperacao","Nao localizado regra para a operacao "+_cOperIni+" referente ao item "+_cItem+" !")
+	If Empty(_cCodTes) .Or. Empty(_cOperIni)
+		U_ZRETMsgJson("cdoperacao","Nao localizado regra para a operacao referente ao item "+_cItem+" !")
 		_lRet := .F.
 	Endif
 If Select((_cAliasPesq)) <> 0
@@ -666,29 +632,8 @@ If Select((_cAliasPesq)) <> 0
 Endif 
 Return _lRet 	
 
-/* localização operação
-	BeginSql Alias _cAliasPesq
-		SELECT 	 SX5.R_E_C_N_O_ AS NREGSX5
-		FROM %Table:SX5% SX5
-       	WHERE SX5.%notDel% 
-			AND SX5.X5_FILIAL  	= %XFilial:SX5%
-			AND SX5.X5_TABELA 	= %Exp:_cTab%
-			AND SX5.X5_CHAVE	= %Exp:_cOper%
-	EndSql      
-	//operação incluir
-	If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGSX5 == 0
-		Aadd(_aMsgErro,"Nao localizado regra para a operacao "+_cOper+" referente ao item "+_cItem+" !") 
-		_lRet .F.
-	Else 
-		SX5->(DbGoto((_cAliasPesq)->NREGSX5))
-
-*/
-
-
-
 
 //Verifica campos alterados no REST caso seja alteração
-
 Static Function ZRESTPRVAlterados( _cTab, _cCampo, _xConteudo, _aAuto, _aAlterado, _lNovo )
 Local _lRet 		:= .T.
 Local _cConteudo	:= ""
@@ -739,11 +684,10 @@ Return _lRet
 
 /*/{Protheus.doc} ValidOJson
 Valida os dados do oJson
-@author DAC - Denilso
+@author 	DAC - Denilso
 @since 
-@version undefined
-@param nCode, numeric, descricao
-@param cMsg, characters, descricao
+@version 	undefined
+@param 		_oJson, _cTipo
 @type function
 /*/
 Static Function ValidOJson(_oJson, _cTipo)
@@ -760,12 +704,12 @@ Return _lRet
 
 
 /*/{Protheus.doc} ZRESTPRVMsg
-//Carrega Numero do Erro para retorno
-@author DAC
-@since 12/11/2021
-@version undefined
-@param _aMsg, array, descrição
-@type function
+Carrega Numero do Erro para retorno
+@author 	DAC
+@since 		
+@version 	undefined
+@param 
+@type 		function
 /*/
 Static Function ZRESTPRVMsg()
 Local _aRet := {}
@@ -862,18 +806,18 @@ Obs
 								Implementação de envio de campos a serem gravados para SZ1	
 =====================================================================================
 */
-Static Function	ZRESTSA1Monitor(_cStatus, _cTab, _cDoc, _cMens, _cErro, _dDataIni, _cHsIni, _nErro, _nReg )	
-Local _cUserName := "REST ZRESTSA1"   
+Static Function	ZRESTPRVMonitor(_cStatus, _cTab, _cDoc, _cMens, _cErro, _dDataIni, _cHsIni, _nErro, _nReg )	
+Local _cUserName := "REST PEDIDO"   
 Local _aCampos	 := {}  //Adicionar campos a serem gravador na tabela DAC  15/02/2023 
 
-Default _cTab 		:= "SA1"
+Default _cTab 		:= "SC5"
 Default _dDataIni	:= Date()
 Default _cHsIni		:= Time()
 
 	//AAdd(_aCampos,{"Z1_NTPINTG"	, "ZRESTSA1" 	})
 	U_CAOAGRVM(XFilial(_cTab),;		//Filail
 				_cStatus,;				//Status
-				"100",;					//Código do Processo  REST IMPORTACAO CLIENTES                          
+				"200",;					//Código do Processo  REST IMPORTACAO CLIENTES                          
 				/*cCodtpint*/,;			//Código do tipo
 				Upper(_cErro),;			//Mensagem de retorno
 				_cDoc,;					//Documento
@@ -886,3 +830,65 @@ Default _cHsIni		:= Time()
 				_aCampos)				//Campos pré definidos para gravar no SZ1 
 Return Nil
 
+
+
+
+
+
+
+/////////////////////////////////////////
+//vERIFICAR SE UTILIZA DAC***
+
+/*
+=======================================================================================
+Programa.:            VlrPret  
+Autor....:              
+Data.....:              
+Descricao / Objetivo: Calcula o Valor Pretendido
+=======================================================================================
+*/
+
+Static Function ZRESTPRCVPret(_cCodMar, _cModVei, _cSegMod, _nValTab, _nValPre, _nValMov,cCabAlias,lCalMov)
+Local _cForm121 As Character
+
+Default _lCalMNov := .F.
+
+	_cForm121 := GetNewPar("MV_MIL0121","") //U_CMVVEI01()
+
+	// Se o usuario zerar o valore pretendido, volta o valor de tabela...
+	If nValPre == 0
+		_nValMovimento := iif( _lCalMov, _nValMov, _nValTab)
+	Else
+		If Empty(_cForm121)
+			_nValMovimento := iif( _lCalMov, _nValMov, _nValPre)//nValPre
+		Else
+			_nValMovimento 	:= iif( _lCalMov, _nValMov, _nValPre)//nValPre
+			_nValorPre 		:= iif( _lCalMov, _nValMov, _nValPre)//nValPre // Valor utilizada na formula...
+			_nValorMov 		:= CalcRev(_nValorPre, _cCabAlias)  //verificar funcionalidade
+
+			If _nValorMov <> _nValPre
+				_nValMovimento := _nValorMov
+			EndIf
+		EndIf
+	EndIf
+Return .T.
+
+
+
+/* localização operação
+	BeginSql Alias _cAliasPesq
+		SELECT 	 SX5.R_E_C_N_O_ AS NREGSX5
+		FROM %Table:SX5% SX5
+       	WHERE SX5.%notDel% 
+			AND SX5.X5_FILIAL  	= %XFilial:SX5%
+			AND SX5.X5_TABELA 	= %Exp:_cTab%
+			AND SX5.X5_CHAVE	= %Exp:_cOper%
+	EndSql      
+	//operação incluir
+	If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGSX5 == 0
+		Aadd(_aMsgErro,"Nao localizado regra para a operacao "+_cOper+" referente ao item "+_cItem+" !") 
+		_lRet .F.
+	Else 
+		SX5->(DbGoto((_cAliasPesq)->NREGSX5))
+
+*/
