@@ -1,7 +1,6 @@
 #Include 'Protheus.ch'
 #Include 'Topconn.ch'
 #Include "TOTVS.CH"
-
 /*
 =====================================================================================
 Programa.:              ZFISR001
@@ -136,7 +135,7 @@ Static Function zRel0001(cArquivo)
 	cQuery += " D1_DESC, FT_CLASFIS, FT_BASERET, FT_ICMSRET, D1_DESCZFP, D1_DESCZFC,  " + CRLF
 	cQuery += " F1_UFORITR, F1_MUORITR, F1_UFDESTR, F1_MUDESTR,  " + CRLF
 	cQuery += " FT_BASEICM, FT_ALIQICM, FT_VALICM, " + CRLF
-	cQuery += " FT_BASEIPI, FT_ALIQIPI, FT_VALIPI, FT_ARETPIS, FT_ARETCOF, FT_VRETPIS, FT_VRETCOF, FT_BRETPIS, " + CRLF
+	cQuery += " FT_BASEIPI, FT_ALIQIPI, FT_VALIPI, FT_ARETPIS, FT_ARETCOF, FT_VRETPIS, FT_VRETCOF, FT_BRETPIS, FT_BRETCSL, FT_ARETCSL, FT_VRETCSL,  " + CRLF
 	cQuery += " D1_BASIMP6, D1_ALQIMP6, D1_VALIMP6, FT_BRETCOF, " + CRLF
 	cQuery += " D1_BASIMP5, D1_ALQIMP5, D1_VALIMP5, " + CRLF
 	cQuery += " FT_BASEPIS, FT_ALIQPIS, FT_VALPIS, FT_ALIQPS3, FT_VALPS3, " + CRLF
@@ -284,7 +283,7 @@ Static Function zRel0001(cArquivo)
 	
 	cQuery += " 			FT_VALCONT, FT_DESCONT, FT_MVALPIS, FT_MVALCOF, FT_CODBCC , FT_INDNTFR, FT_BASEINS, FT_ALIQINS, " + CRLF
 	cQuery += " 			FT_BASEICM, FT_ALIQICM, FT_VALICM , FT_CTIPI  , FT_CSTPIS , FT_CSTCOF , FT_VALINS , FT_CHVNFE , " + CRLF
-	cQuery += " 			FT_BASEIPI, FT_ALIQIPI, FT_VALIPI , FT_ARETPIS, FT_ARETCOF, FT_VRETPIS, FT_VRETCOF, FT_BRETPIS, " + CRLF
+	cQuery += " 			FT_BASEIPI, FT_ALIQIPI, FT_VALIPI , FT_ARETPIS, FT_ARETCOF, FT_VRETPIS, FT_VRETCOF, FT_BRETPIS, FT_BRETCSL, FT_ARETCSL, FT_VRETCSL, " + CRLF
 	cQuery += " 			FT_BASEPIS, FT_ALIQPIS, FT_VALPIS , FT_ALIQPS3, FT_VALPS3 , FT_CLASFIS, FT_BASERET, FT_ICMSRET, " + CRLF
 	cQuery += " 			FT_BASECOF, FT_ALIQCOF, FT_VALCOF , FT_DIFAL  , FT_BASECF3, FT_ALIQCF3, FT_VALCF3 , FT_BASEPS3, " + CRLF
 	cQuery += " 			FT_BASEIRR, FT_ALIQIRR, FT_VALIRR , FT_BASECSL, FT_ALIQCSL, FT_VALCSL ," + CRLF
@@ -446,6 +445,9 @@ Static Function zRel0001(cArquivo)
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Base Cofins Retenção"			,3	,2	,.F.	) // Right - Number
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Aliq. Cofins Retenção"		,3	,2	,.F.	) // Right - Number
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Valor Cofins Retenção"		,3	,2	,.F.	) // Right - Number
+		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Base CSLL Retenção"			,3	,2	,.F.	) // Right - Number
+		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Aliq. CSLL Retenção"		,3	,2	,.F.	) // Right - Number
+		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Valor CSLL Retenção"		,3	,2	,.F.	) // Right - Number
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Msgn Nota Fiscal"				,2	,1	,.F.	) // Center - Texto
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Log. de Inclusão"				,2	,1	,.F.	) // Center - Texto
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Log. de Alteração"			,2	,1	,.F.	) // Center - Texto
@@ -803,6 +805,9 @@ Static Function zRel0001(cArquivo)
 														(cAliasTRB)->FT_BRETCOF,;    //--Base Cofins Retenção
 														(cAliasTRB)->FT_ARETCOF,;    //--Aliq. Cofins Retenção
 														(cAliasTRB)->FT_VRETCOF,;    //--Valor Cofins Retenção
+														(cAliasTRB)->FT_BRETCSL,;    //--Base CSLL Retenção
+														(cAliasTRB)->FT_ARETCSL,;    //--Aliq. CSLL Retenção
+														(cAliasTRB)->FT_VRETCSL,;    //--Valor CSLL Retenção
 														(cAliasTRB)->F1_MENNOTA,;    //--Msgn Nota Fiscal
 														cLogInc,;    //--Log. de Inclusão
 														cLogAlt,;    //--Log. de Alteração
@@ -1039,7 +1044,7 @@ Static Function zRel0002(cArquivo)
 	cQuery += " FT_VALCONT, FT_DESCONT, F2_FORMUL, D2_CONTA, D2_NFORI, D2_SERIORI, D2_PRUNIT,D2_TOTAL, "					+ CRLF
 	cQuery += " D2_DESC, FT_CLASFIS, D2_DESCZFP, D2_DESCZFC, D2_TIPO, D2_DESCON,"														+ CRLF
 	cQuery += " FT_BASEICM, FT_ALIQICM, FT_VALICM, C6_CHASSI, "																+ CRLF
-	cQuery += " FT_BASEIPI, FT_ALIQIPI, FT_VALIPI, FT_ARETPIS, FT_ARETCOF, FT_VRETPIS, FT_VRETCOF, FT_BRETPIS, "			+ CRLF
+	cQuery += " FT_BASEIPI, FT_ALIQIPI, FT_VALIPI, FT_ARETPIS, FT_ARETCOF, FT_VRETPIS, FT_VRETCOF, FT_BRETPIS, FT_BRETCSL, FT_ARETCSL, FT_VRETCSL, "			+ CRLF
 	cQuery += " FT_BASERET, FT_ICMSRET, FT_DIFAL, FT_BRETCOF, "																+ CRLF
 	cQuery += " D2_BASIMP6,D2_ALQIMP6,D2_VALIMP6,   " 																		+ CRLF
 	cQuery += " D2_BASIMP5,D2_ALQIMP5,D2_VALIMP5,   " 																		+ CRLF
@@ -1159,7 +1164,7 @@ Static Function zRel0002(cArquivo)
 	cQuery += " FT_VALCONT, FT_DESCONT, F2_FORMUL, D2_CONTA, D2_NFORI, D2_SERIORI, D2_PRUNIT,D2_TOTAL, "					+ CRLF
 	cQuery += " D2_DESC, FT_CLASFIS, D2_DESCZFP, D2_DESCZFC, D2_TIPO,D2_DESCON, "														+ CRLF
 	cQuery += " FT_BASEICM, FT_ALIQICM, FT_VALICM, C6_CHASSI, "																+ CRLF
-	cQuery += " FT_BASEIPI, FT_ALIQIPI, FT_VALIPI, FT_ARETPIS, FT_ARETCOF, FT_VRETPIS, FT_VRETCOF, FT_BRETPIS, "			+ CRLF
+	cQuery += " FT_BASEIPI, FT_ALIQIPI, FT_VALIPI, FT_ARETPIS, FT_ARETCOF, FT_VRETPIS, FT_VRETCOF, FT_BRETPIS, FT_BRETCSL, FT_ARETCSL, FT_VRETCSL, "			+ CRLF
 	cQuery += " FT_BASERET, FT_ICMSRET, FT_DIFAL, FT_BRETCOF, "																+ CRLF
 	cQuery += " D2_BASIMP6,D2_ALQIMP6,D2_VALIMP6,   " 																		+ CRLF
 	cQuery += " D2_BASIMP5,D2_ALQIMP5,D2_VALIMP5,   " 																		+ CRLF
@@ -1304,6 +1309,9 @@ Static Function zRel0002(cArquivo)
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Base Cofins Retenção"			,3	,2	,.F.	) // Right - Number
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Aliq. Cofins Retenção"		,3	,2	,.F.	) // Right - Number
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Valor Cofins Retenção"		,3	,2	,.F.	) // Right - Number
+		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Base CSLL Retenção"			,3	,2	,.F.	) // Right - Number
+		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Aliq. CSLL Retenção"		,3	,2	,.F.	) // Right - Number
+		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Valor CSLL Retenção"		,3	,2	,.F.	) // Right - Number
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Log. de Inclusão"				,2	,1	,.F.	) // Center - Texto
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Log. de Alteração"			,2	,1	,.F.	) // Center - Texto
 		oFWMsExcel:AddColumn( cAba1	,cTabela1	,"Dt. Log. de Alteração"		,2	,1	,.F.	) // Center - Texto
@@ -1672,6 +1680,9 @@ Static Function zRel0002(cArquivo)
 														(cAliasTRB)->FT_BRETCOF,;    //--Base Cofins Retenção
 														IIF( (cAliasTRB)->FT_BRETCOF > 0, (cAliasTRB)->FT_ARETCOF, 0 ),;    //--Aliq. Cofins Retenção
 														(cAliasTRB)->FT_VRETCOF,;    //--Valor Cofins Retenção
+														(cAliasTRB)->FT_BRETCSL,;    //--Base CSLL Retenção
+														IIF( (cAliasTRB)->FT_BRETCSL > 0, (cAliasTRB)->FT_ARETCSL, 0 ),;    //--Aliq. CSLL Retenção
+														(cAliasTRB)->FT_VRETCSL,;    //--Valor CSLL Retenção
 														cLogInc,;                    //--Log. de Inclusão
 													  	cLogAlt,;                    //--Log. de Alteração
 														cDtLogAlt,;                  //--Dt. Log. de Alteração
