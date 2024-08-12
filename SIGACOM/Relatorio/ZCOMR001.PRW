@@ -2363,8 +2363,8 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
 						MaFisLoad(cRefCols,aCols[nX][nY],nX)       //-- CARREGA O VALOR DO CAMPO DO aCols PARA A REFERENCIA NO aNFItem DA MATXFIS
 					EndIf
 				Next nY
+				MaFisEndLoad(nX,02)                                //-- ENCERRA A CARGA DO ITEM
 			Next nX
-			MaFisEndLoad(nX-1,02)                                //-- ENCERRA A CARGA DO ITEM
 
 		EndIf
 
@@ -2376,6 +2376,7 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
 
 		MaFisEnd()
 	EndIf
+ 
 
     If nPageCount == 000
         nPageCount := ATail(aElements)[ATT_PAGE][02]
