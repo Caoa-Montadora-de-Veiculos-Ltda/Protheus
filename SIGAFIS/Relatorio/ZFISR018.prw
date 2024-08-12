@@ -4,69 +4,62 @@
 
 /*
 =====================================================================================
-Programa.:              ZFISR019
+Programa.:              ZFISR018
 Autor....:              CAOA - Sandro Ferreira
-Data.....:              13/08/2024
-Descricao / Objetivo:   Relatório de Cabeçalho NF de Saída
+Data.....:              09/08/2024
+Descricao / Objetivo:   Relatório de Cabeçalho NF de Entrada
 Doc. Origem:            
-Solicitante:            Micaellen Pereira Leal.
+Solicitante:            Micaellen Pereira Leal
 Uso......:              
 Obs......:
 =====================================================================================
 */
 
-User Function ZFISR019()
-    
-	Local	aArea 		:= FwGetArea()
-	Local	oReport     := Nil
-	Local	aPergs		:= {}
+User Function ZFISR018()
+
+    Local aArea         := FWGetArea()
+    Local	aPergs		:= {}
 	Local	dDtEmiss	:= Ctod(Space(8)) 
-    Local	cNumNF		:= Space(TamSX3('F3_NFISCAL')[1]) 
-    Local	cSerieNF	:= Space(TamSX3('F3_SERIE')[1])
-	Local 	cCli 	:= Space(TamSX3('A1_COD')[1])
-	//Local 	cPedido		:= Space(TamSX3('C6_NUM')[1])
-	
-    Private cTabela 	:= GetNextAlias()
-    Private cAliasTMP   := GetNextAlias()
-
-    aAdd(aPergs, {1,"Emissao De"		,dDtEmiss	,/*Pict*/	,/*Valid*/	,/*F3*/		,/*When*/,50,.F.})  //MV_PAR01
-	aAdd(aPergs, {1,"Emissao Ate"		,dDtEmiss	,/*Pict*/,MV_PAR02 > MV_PAR01,/*F3*/,/*When*/,50,.F.})  //MV_PAR02
-	aAdd(aPergs, {1,"Nota Fiscal De"	,cNumNF		,/*Pict*/	,/*Valid*/	,"SF2"		,/*When*/,50,.F.})  //MV_PAR03
-	aAdd(aPergs, {1,"Nota Fiscal Ate"	,cNumNF		,/*Pict*/	,/*Valid*/	,"SF2"		,/*When*/,50,.F.})  //MV_PAR04
-    aAdd(aPergs, {1,"Serie"				,cSerieNF	,/*Pict*/	,/*Valid*/	,"_SF1SE"	    ,/*When*/,50,.F.})  //MV_PAR05
-    aAdd(aPergs, {1,"Cliente De"		,cCli	    ,/*Pict*/	,/*Valid*/	,"SA1"	    ,/*When*/,50,.F.})  //MV_PAR06
-	aAdd(aPergs, {1,"Cliente Ate"	    ,cCli	    ,/*Pict*/	,/*Valid*/	,"SA1"	    ,/*When*/,50,.F.})  //MV_PAR07
-	//aAdd(aPergs, {1,"Pedido De"			,cPedido	,/*Pict*/	,/*Valid*/	,"SC6"	    ,/*When*/,50,.F.}) 	//MV_PAR08
-    //aAdd(aPergs, {1,"Pedido Ate"		,cPedido	,/*Pict*/	,/*Valid*/	,"SC6"	    ,/*When*/,50,.F.}) 	//MV_PAR09
-
-	If ParamBox(aPergs, "Informe os parâmetros para Nota Fiscal de saída", , , , , , , , , .F., .F.)
-		 Processa({|| fGeraExce()})
-        //oReport := fReportDef()
-		//oReport:PrintDialog()
-	EndIf
-
-	FWRestArea(aArea)
+    Local	cNumNF		:= Space(TamSX3('F1_DOC')[1]) 
+    Local	cSerieNF	:= Space(TamSX3('F1_SERIE')[1])
+	Local 	cFornece 	:= Space(TamSX3('F1_FORNECE')[1])
+     
+    //Adicionando os parametros do ParamBox
+    aAdd(aPergs, {1,"Emissao De"		,dDtEmiss	,/*Pict*/	,/*Valid*/	        ,/*F3*/	  ,/*When*/,50,.F.})  //MV_PAR01
+	aAdd(aPergs, {1,"Emissao Ate"		,dDtEmiss	,/*Pict*/,MV_PAR02 > MV_PAR01   ,/*F3*/,/*When*/,50,.F.})     //MV_PAR02
+	aAdd(aPergs, {1,"Nota Fiscal De"	,cNumNF		,/*Pict*/	,/*Valid*/	        ,"SF1"    ,/*When*/,50,.F.})  //MV_PAR03
+	aAdd(aPergs, {1,"Nota Fiscal Ate"	,cNumNF		,/*Pict*/	,/*Valid*/	        ,"SF1"	  ,/*When*/,50,.F.})  //MV_PAR04
+    aAdd(aPergs, {1,"Serie"				,cSerieNF	,/*Pict*/	,/*Valid*/	        ,"_SF1SE" ,/*When*/,50,.F.})  //MV_PAR05
+    aAdd(aPergs, {1,"Fornecedor De"		,cFornece	,/*Pict*/	,/*Valid*/	        ,"SA2"	  ,/*When*/,50,.F.})  //MV_PAR06
+	aAdd(aPergs, {1,"Fornecedor Ate"	,cFornece	,/*Pict*/	,/*Valid*/	        ,"SA2"	  ,/*When*/,50,.F.})  //MV_PAR07
+//    aAdd(aPergs, {1, "Tipo Relat."      , nTipoRel, {"1=Excel XML", "2=Excel XLSX"},  80, ".T.", .T.})            //MV_PAR08
+     
+    //Se a pergunta for confirma, cria as definicoes do relatorio
+    If ParamBox(aPergs, "Informe os parâmetros para Nota Fiscal de entrada", , , , , , , , , .F., .F.)
+  //      MV_PAR08 := Val(cValToChar(MV_PAR08))
+        Processa({|| fGeraExcel()})
+    EndIf
+     
+    FWRestArea(aArea)
 Return
-
-
-
-/*/{Protheus.doc} fGeraExce
-Criacao do arquivo Excel na funcao ZFISR019
-@author sandro Ferreira
-@since 13/08/2024
+ 
+/*/{Protheus.doc} fGeraExcel
+Criacao do arquivo Excel na funcao ZFISR018
+@author Sandro Ferreira
+@since 12/08/2024
 @version 1.0
 @type function
 /*/
- 
-Static Function fGeraExce()
+
+Static Function fGeraExcel()
     Local cQryDad  := ""
     Local oFWMsExcel
     Local oExcel
-    Local cArquivo    := GetTempPath() + "ZFISR019.xml"
-    Local cWorkSheet  := "Notas Fiscais de Saida"
-    Local cWorkSh := "Notas Fiscais de Saida Canceladas"
-    Local cTitulo    := "Notas Fiscais de Saida"
-    Local cTitul    := "Notas Fiscais de Saida Canceladas"
+    Local cArquivo    := GetTempPath() + "ZFISR018.xml"
+    Local cWorkSheet  := "Notas Fiscais de Entrada"
+    Local cWorkSh := "Notas Fiscais de Entrada Canceladas"
+    Local cTitulo    := "Notas Fiscais de Entrada"
+    Local cTitul    := "Notas Fiscais de Entrada Canceladas"
     Local nAtual := 0
     Local nTotal := 0
     Private QRY_DAD   := GetNextAlias()
@@ -116,7 +109,7 @@ Static Function fGeraExce()
     cQryDad += "		, SF3.F3_BASEPS3 	AS PIS_ST_ZFM  "                + CRLF 
     cQryDad += "		, SF3.F3_VALPS3 	AS VAL_PISSTZFM  "              + CRLF     
     cQryDad += "		, SF3.F3_BASECF3 	AS COF_ST_ZFM  "                + CRLF 
-    cQryDad += "		, SF3.F3_VALCF3     AS VAL_COFST_ZFM  "             + CRLF 
+    cQryDad += "		, SF3.F3_VALCF3     AS VAL3_COFST_ZFM  "             + CRLF 
     cQryDad += "		, SF3.F3_OBSERV 	AS OBSERVACAO  "                + CRLF
     cQryDad += "		, SF3.F3_DTCANC "                                   + CRLF
     cQryDad += " FROM "       + RetSQLName( 'SF1' ) + " SF1 "            + CRLF //-- CAB. NOTA FISCAL DE ENTRADA
@@ -438,9 +431,3 @@ Static Function fGeraExce()
     oExcel:Destroy()
      
 Return
-
-
-
-
-//----------------------------------------------------------
-//----------------------------------------------------------
