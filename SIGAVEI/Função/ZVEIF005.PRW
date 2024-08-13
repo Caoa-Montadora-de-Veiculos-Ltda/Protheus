@@ -359,7 +359,8 @@ Local lFuncFrete := FindFunction("VA1800111_LevantaTodasNFsFretes")
 aMov005     := {}
 aInt005     := {}
 aAte005     := {}
-//cChaInt005 := left(cpesqv5,len(SC6->C6_CHAINT))
+cChaInt005  := U_PESQCHA(cpesqv5)
+cChaInt005  := left(cPesqV5,len(VV1->VV1_CHAINT))
 cChassi  := left(cpesqv5,len(SC6->C6_CHASSI))
 //cPlaVei  := left(cpesqv5,len(SC6->C6_PLAVEI))
 cSitVei  := ""
@@ -453,7 +454,7 @@ Else
 		If !( cQAlSC6 )->( Eof() )
 			lRet := .t.
 			cChassi    := ( cQAlSC6 )->( C6_CHASSI )
-			cChaInt005 := " "     //( cQAlSC6 )->( VV1_CHAINT)
+			//cChaInt005 := " "     //( cQAlSC6 )->( VV1_CHAINT)
 			cPlaVei    := " "     //( cQAlSC6 )->( VV1_PLAVEI )
 
 			// Informações Chassi - Descricao VEICULO (Padrão)
@@ -527,7 +528,7 @@ Else
 		cQuery += "  FROM "+RetSqlName("SB1") + " SB1 "
 		cQuery += " WHERE SB1.B1_FILIAL  = '" + xFilial("SB1") + "'"
 		cQuery += "   AND SB1.B1_GRUPO   = '" + cGruVei +"'"
-		cQuery += "   AND SB1.B1_CHASSI  = '" + cChassi +"' "
+		cQuery += "   AND SB1.B1_CODITE  = '" + left(cChaT005+space(30),len(SB1->B1_CODITE))+"'"
 		cQuery += "   AND SB1.D_E_L_E_T_ = ' '"
 		dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cQAlSB1 , .F., .T. )
 		If !( cQAlSB1 )->( Eof() )
@@ -648,7 +649,7 @@ Else
 			cQuery +=             " AND VVF.VVF_TRACPA = VVG.VVG_TRACPA "
 			cQuery +=             " AND VVF.D_E_L_E_T_=' ' "
 			cQuery += "WHERE VVG.VVG_FILIAL = '" + xFilial("VVG") + "' AND "
-			cQuery +=      " VVG.VVG_CHAINT= '"+cChaInt005+"' AND "
+			cQuery +=      " VVG.VVG_CHAINT= '"+cChaT005+"' AND "
 			If !lVNFCanc // Nao mostrar NFs Canceladas
 				cQuery +=   " VVF.VVF_SITNFI <> '0' AND "
 			EndIf
@@ -1799,3 +1800,21 @@ Static Function FG_POSVEI(cCampo,cRet)
 		&(cCampo) := &(cRet)
 	EndIf
 Return(lRet)
+
+
+USER FUNCTION PESQCHA(cChassi)
+Local cQuery  := " "
+Local cQAlVV1 := "SQLVV5"
+Local lRet    := .F.
+
+	cQuery := "SELECT VV1.VV1_CHAINT"
+	cQuery += " FROM " + RetSqlName("VV1") + " VV1 "
+	cQuery += "WHERE VV1.VV1_FILIAL = '" + xFilial("VV1") + " ' "
+	cQuery += "  AND VV1.VV1_CHASSI = '" + Alltrim(cChassi) + "' "
+	cQuery += "  AND VV1.D_E_L_E_T_ = ' ' "		
+	dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cQAlVV1, .F., .T. )
+	If !( cQAlVV1 )->( Eof() )
+		lRet := .t.
+		cChaInt005 := ( cQAlVV1 )->( VV1_CHAINT )
+	EndIf
+Return(cChaInt005)
