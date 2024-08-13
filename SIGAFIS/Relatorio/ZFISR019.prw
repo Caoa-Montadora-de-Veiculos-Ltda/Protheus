@@ -40,8 +40,6 @@ User Function ZFISR019()
 
 	If ParamBox(aPergs, "Informe os parâmetros para Nota Fiscal de saída", , , , , , , , , .F., .F.)
 		 Processa({|| fGeraExce()})
-        //oReport := fReportDef()
-		//oReport:PrintDialog()
 	EndIf
 
 	FWRestArea(aArea)
@@ -123,7 +121,7 @@ Static Function fGeraExce()
     cQryDad += "     ON SA1.A1_FILIAL  = '" + FWxFilial('SA1') + "' "    + CRLF 
     cQryDad += "    AND SA1.A1_COD     = SF2.F2_CLIENTE"                 + CRLF 
     cQryDad += "    AND SA1.A1_LOJA    = SF2.F2_LOJA "                   + CRLF 
-    cQryDad += "    AND SA1.D_E_L_E_T_ = ' ' "	                        + CRLF
+  //  cQryDad += "    AND SA1.D_E_L_E_T_ = ' ' "	                        + CRLF
 	cQryDad += " LEFT JOIN "  + RetSQLName( 'SD2' ) + " SD2 "            + CRLF //-- ITENS DOCUMENTO DE ENTRADA
     cQryDad += "     ON SD2.D2_FILIAL  = '" + FWxFilial('SD2') + "' "    + CRLF
     cQryDad += "    AND SD2.D2_DOC     = SF2.F2_DOC"                     + CRLF
@@ -150,13 +148,13 @@ Static Function fGeraExce()
     cQryDad += "    AND SF3.D_E_L_E_T_ = ' ' "	                        + CRLF
 
 
-
-
     cQryDad += " WHERE  "	                                            + CRLF         
     cQryDad += "    SF2.F2_FILIAL 		= '" + FWxFilial('SF2') + "' "  + CRLF
-	
+	cQryDad += "    AND SF2.D_E_L_E_T_ 	= ' ' "                         + CRLF
     If !Empty(DtoS(MV_PAR02)) //DATA EMISSAO ATE
-		cQryDad += " AND SF2.F2_EMISSAO BETWEEN '" + DtoS(MV_PAR01) + "' AND '" + DtoS(MV_PAR02) + "'"   + CRLF //--DATA DE EMISSAO
+		cQryDad += " AND (SF2.F2_EMISSAO BETWEEN '" + DtoS(MV_PAR01) + "' AND '" + DtoS(MV_PAR02) + "')"   + CRLF //--DATA DE EMISSAO
+		cQryDad += " OR (SF3.F3_DTCANC BETWEEN '" + DtoS(MV_PAR01) + "' AND '" + DtoS(MV_PAR02) + "')"   + CRLF //--DATA DE EMISSAO
+
 	EndIf
 
     If !Empty(MV_PAR04) //NOTA FISCAL
@@ -213,8 +211,7 @@ Static Function fGeraExce()
 	cQryDad += " 	, SF3.F3_DTCANC "                                 + CRLF  
 
     //Executando consulta e setando o total da regua
-    //PlsQuery(cQryDad, "QRY_DAD")
-    DbUseArea( .T., "TOPCONN", TcGenQry(,,cQryDad), QRY_DAD, .T., .T. )
+     DbUseArea( .T., "TOPCONN", TcGenQry(,,cQryDad), QRY_DAD, .T., .T. )
     DbSelectArea(QRY_DAD)
      
     //Cria a planilha do excel

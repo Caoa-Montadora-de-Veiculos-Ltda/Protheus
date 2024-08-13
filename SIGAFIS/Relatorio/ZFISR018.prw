@@ -109,7 +109,7 @@ Static Function fGeraExcel()
     cQryDad += "		, SF3.F3_BASEPS3 	AS PIS_ST_ZFM  "                + CRLF 
     cQryDad += "		, SF3.F3_VALPS3 	AS VAL_PISSTZFM  "              + CRLF     
     cQryDad += "		, SF3.F3_BASECF3 	AS COF_ST_ZFM  "                + CRLF 
-    cQryDad += "		, SF3.F3_VALCF3     AS VAL3_COFST_ZFM  "             + CRLF 
+    cQryDad += "		, SF3.F3_VALCF3     AS VAL_COFST_ZFM  "             + CRLF 
     cQryDad += "		, SF3.F3_OBSERV 	AS OBSERVACAO  "                + CRLF
     cQryDad += "		, SF3.F3_DTCANC "                                   + CRLF
     cQryDad += " FROM "       + RetSQLName( 'SF1' ) + " SF1 "            + CRLF //-- CAB. NOTA FISCAL DE ENTRADA
@@ -117,7 +117,7 @@ Static Function fGeraExcel()
     cQryDad += "     ON SA2.A2_FILIAL  = '" + FWxFilial('SA2') + "' "    + CRLF 
     cQryDad += "    AND SA2.A2_COD     = SF1.F1_FORNECE"                 + CRLF 
     cQryDad += "    AND SA2.A2_LOJA    = SF1.F1_LOJA "                   + CRLF 
-    cQryDad += "    AND SA2.D_E_L_E_T_ = ' ' "	                        + CRLF
+ //   cQryDad += "    AND SA2.D_E_L_E_T_ = ' ' "	                        + CRLF
 	cQryDad += " LEFT JOIN "  + RetSQLName( 'SD1' ) + " SD1 "            + CRLF //-- ITENS DOCUMENTO DE ENTRADA
     cQryDad += "     ON SD1.D1_FILIAL  = '" + FWxFilial('SD1') + "' "    + CRLF
     cQryDad += "    AND SD1.D1_DOC     = SF1.F1_DOC"                     + CRLF
@@ -125,7 +125,6 @@ Static Function fGeraExcel()
     cQryDad += "    AND SD1.D1_FORNECE = SF1.F1_FORNECE"                 + CRLF
     cQryDad += "    AND SD1.D1_LOJA    = SF1.F1_LOJA"                    + CRLF
     cQryDad += "    AND SD1.D1_EMISSAO = SF1.F1_EMISSAO"                 + CRLF
-//    cQryDad += "    AND SD1.D_E_L_E_T_ = ' ' "	                        + CRLF
     cQryDad += " LEFT JOIN "  + RetSQLName( 'SFT' ) + " SFT "            + CRLF //-- ITENS LIVROS FISCAIS
 	cQryDad += "     ON SFT.FT_FILIAL  = '" + FWxFilial('SFT') + "' "    + CRLF 
     cQryDad += "    AND SFT.FT_NFISCAL = SF1.F1_DOC"                     + CRLF
@@ -139,7 +138,7 @@ Static Function fGeraExcel()
     cQryDad += "     ON SF3.F3_FILIAL  = '" + FWxFilial('SF3') + "' "    + CRLF 
     cQryDad += "    AND SF3.F3_NFISCAL = SF1.F1_DOC"               + CRLF
     cQryDad += "    AND SF3.F3_SERIE   = SF1.F1_SERIE "                    + CRLF
-    cQryDad += "    AND SF3.F3_EMISSAO = SF1.F1_DTDIGIT"               + CRLF
+    cQryDad += "    AND SF3.F3_EMISSAO = SF1.F1_EMISSAO"               + CRLF
     cQryDad += "    AND SF3.F3_CFO     = SD1.D1_CF  "                     + CRLF
     cQryDad += "    AND SF3.D_E_L_E_T_ = ' ' "	                        + CRLF
 
@@ -150,7 +149,9 @@ Static Function fGeraExcel()
     cQryDad += "    SF1.F1_FILIAL 		= '" + FWxFilial('SF1') + "' "  + CRLF
 	
     If !Empty(DtoS(MV_PAR02)) //DATA EMISSAO ATE
-		cQryDad += " AND SF1.F1_EMISSAO BETWEEN '" + DtoS(MV_PAR01) + "' AND '" + DtoS(MV_PAR02) + "'"   + CRLF //--DATA DE EMISSAO
+		cQryDad += " AND (SF1.F1_EMISSAO BETWEEN '" + DtoS(MV_PAR01) + "' AND '" + DtoS(MV_PAR02) + "')"   + CRLF //--DATA DE EMISSAO
+		cQryDad += " OR (SF3.F3_DTCANC BETWEEN '" + DtoS(MV_PAR01) + "' AND '" + DtoS(MV_PAR02) + "')"   + CRLF //--DATA DE EMISSAO
+
 	EndIf
 
     If !Empty(MV_PAR04) //NOTA FISCAL
@@ -165,8 +166,8 @@ Static Function fGeraExcel()
 		cQryDad += " AND SF1.F1_FORNECE BETWEEN '" + MV_PAR06 + "' AND '" + MV_PAR07 + "'"               + CRLF //--FORNECEDOR
 	EndIf
 
- //   cQryDad += "    AND SF1.D_E_L_E_T_ 	= ' ' "                         + CRLF
-    cQryDad += " GROUP BY  "	                                            + CRLF 
+    cQryDad += "    AND SF1.D_E_L_E_T_ 	= ' ' "                          + CRLF
+    cQryDad += " GROUP BY  "	                                         + CRLF 
     cQryDad += "         SF1.F1_FILIAL "                                 + CRLF    
     cQryDad += "         , SD1.D1_CF "                                   + CRLF  
     cQryDad += "         , SA2.A2_CGC "                                  + CRLF     
