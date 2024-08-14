@@ -11,15 +11,14 @@
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
 ±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
-User Function ZVEIF005(cParCHASSI, cParChaInt)
+*/User Function ZVEIF005(cParCHASSI, cParChaInt)
 Local aObjects  := {}, aInfo := {}, aPos := {}
 Local aSizeHalf := MsAdvSize(.f.)  // Tamanho Maximo da Janela (.t.=TOOLBAR,.f.=SEM TOOLBAR)
 //
 Local c005FilAnt  := cFilAnt
 Local nCont       := 0
 Local nRadio      := 1
-Local aVeiAux     := {}
+//Local aVeiAux     := {}
 Local lPEVC140VEI := ExistBlock("VC140VEI")
 Local cVMvOutFil  := "0" // 0 = Sem Permissao ( Não Ver Movimentacoes de Filiais se o usuario nao tem acesso )
 //
@@ -123,11 +122,11 @@ Aadd(aVei, { "Fabr/Mod", 35, "" }) // Fabr/Mod
 Aadd(aVei, { "Placa"   , 25, "" }) // Placa
 
 // Colunas customizadas pelo Ponto de Entrada referente ao Veículo
-If lPEVC140VEI
-	For nCont := 1 to Len(aVeiAux)
-		Aadd(aVei, { aVeiAux[nCont,1], aVeiAux[nCont,2], "" })
-	Next
-EndIf
+//If lPEVC140VEI
+//	For nCont := 1 to Len(aVeiAux)
+//		Aadd(aVei, { aVeiAux[nCont,1], aVeiAux[nCont,2], "" })
+//	Next
+//EndIf
 
 // Pesquisa
 If !Empty(cParCHASSI) .OR. !Empty(cParChaInt)
@@ -297,17 +296,11 @@ Local sQAL2D    := "SQAL2D" // VV0/VVA/VV9
 Local cQAlSD1   := "SQLSD1"  // SD1
 Local cQAlSD2   := "SQLSD2"  // SD2
 Local cQAlSD3   := "SQLSD3"  // SD3
-Local cQALNFS   := getLastQuery()
-Local cQryTmp   := getLastQuery()
 
 Local cSTATUS   := ""
-Local aVV1      := {}
-Local cGetKey   := Alltrim(cpesqv5)
 Local cNroNF    := ""
 Local cSerNF    := ""
 Local cB1COD    := ""
-Local lAchouVV1 := .f.
-Local lAchouSD2 := .f.
 Local nCont     := 0
 Local nCntFor   := 0
 Local aNFsTodas := {} // TODAS NFs de Frete relacionadas
@@ -340,19 +333,16 @@ Local cAgrDes   := ""
 Local cDescTES  := ""
 //
 Local c005FilAnt := cFilAnt5
-Local cAuxEmpresa := ""
 //
 Local nRECVOO   := 0
 //
-Local lVVF_TIPDOC := ( VVF->(FieldPos("VVF_TIPDOC")) > 0 )
 Local lVV0_TIPDOC := ( VV0->(FieldPos("VV0_TIPDOC")) > 0 )
-Local lVV1_MSBLQL := ( VV1->(FieldPos("VV1_MSBLQL")) > 0 )
 //
 Local xOrd01    := ctod("")
 Local xOrd11    := ""
 //
-Local nTamPadrao := 0
-Local aVeiAux := {} // Informações Chassi - Descricao VEICULO (Customizado)
+//Local nTamPadrao := 0
+//Local aVeiAux := {} // Informações Chassi - Descricao VEICULO (Customizado)
 //
 Local lFuncFrete := FindFunction("VA1800111_LevantaTodasNFsFretes")
 //
@@ -848,7 +838,7 @@ Else
 				// Se não encontra VV0 e VV9, deve pesquisar pelo CHASSI do Veiculo na SD2
 				( sQAL2D )->( dbCloseArea() )  //fechar a query
 				cQuery := "SELECT SD2.D2_FILIAL,SD2.D2_EMISSAO VV0_DTHEMI, SD2.D2_DOC VV0_NUMTRA, SD2.D2_TIPO VV0_OPEMOV, '1' VV0_SITNFI, "  //D2_SITNFI
-				cQuery += "'0' VV0_TIPMOV, ' ' VV9_STATUS,  SD2.D2_EMISSAO VV0_DATMOV, 'C' VV0_CLIFOR, SD2.D2_TES VVA_CODTES,'2' VV0_TIPFAT, "   
+				cQuery += "'0' VV0_TIPMOV, SD2.D2_EMISSAO VV0_DATMOV, 'C' VV0_CLIFOR, SD2.D2_TES VVA_CODTES,'2' VV0_TIPFAT, "   
 				cQuery += "'A' VV0_STATUS, SD2.D2_DOC VV0_NUMNFI, SD2.D2_SERIE VV0_SERNFI, SD2.D2_DOC VV0_NNFFDI, SD2.D2_SERIE VV0_SNFFDI, " 
 				cQuery += "SF2.F2_CLIENTE VV0_CODCLI, SF2.F2_LOJA VV0_LOJA,SF2.F2_VALBRUT VVA_VALVDA, SD2.D2_CUSTO1 VVA_VCAVEI, SD2.D2_VALFET VVA_VALFRE, '1' VV0_TIPDOC, "
 				cQuery += "SD2.R_E_C_D_E_L_ RECSDD, SD2.R_E_C_N_O_ RECVV0
@@ -874,7 +864,7 @@ Else
 				//cTipDoc := PadR( X3CBOXDESC("VV0_TIPDOC", ( sQAL2D )->VV0_TIPDOC ) , 15 )
 
 				IF ( sQAL2D )->VV0_TIPDOC = '1'
-                    cTipDoc := 'NOTA FISCAL'
+                    cTipDoc := 'NF'
 				ENDIF 
 
 				If lTIPMOV .and. ( sQAL2D )->( VV0_TIPMOV ) <> "0"
@@ -888,7 +878,7 @@ Else
 			        IF ( sQAL2D )->( VV0_OPEMOV ) = 'N'
 					    cOpeVV0 := 'VENDA'
 			        ELSEIF ( sQAL2D )->( VV0_OPEMOV ) = 'D'
-					    cOpeVV0 := 'DEVOLUCA0'						
+					    cOpeVV0 := 'DEVOLUCAO'						
 			        ENDIF
 				EndIf
 
@@ -912,7 +902,7 @@ Else
 					cDescTES := " " // Mov.Interna - Agrega/Desagrega
 				EndIf
 				
-				cSTATUS := ( sQAL2D )->( VV9_STATUS )
+				//cSTATUS := ( sQAL2D )->( VV9_STATUS )
 				
 				/*If cSTATUS == "A" .and. lVendid
 					cSTATUS := "X"
@@ -1126,7 +1116,6 @@ Local cFilSB1    := ""
 Local nTam       := 0
 Local cQuery     := ""
 Local c005FilAnt := cFilAnt5
-Local cAuxEmpresa
 Local nCont
 Default cGruVei  := ""
 Default cNamSB1  := ""
@@ -1595,6 +1584,7 @@ Static Function FG_POSVEI(cCampo,cRet)
 	Local cQueryVV2:= ""
 	Local cQuerAux := ""
 	Local lAchouVV1:= .f.
+	Local lAchouSD2 := .f.
 	Local aVV1     := {}
 	Local cPesq    := &(cCampo)
 	Local _cPlaVei := ""
@@ -1799,12 +1789,13 @@ Static Function FG_POSVEI(cCampo,cRet)
 	If lRet
 		&(cCampo) := &(cRet)
 	EndIf
+	( cQAlSD2 )->( dbCloseArea() )
 Return(lRet)
 
 
 USER FUNCTION PESQCHA(cChassi)
 Local cQuery  := " "
-Local cQAlVV1 := "SQLVV5"
+Local cQAlVV1 := "VV1B"
 Local lRet    := .F.
 
 	cQuery := "SELECT VV1.VV1_CHAINT"
@@ -1817,4 +1808,5 @@ Local lRet    := .F.
 		lRet := .t.
 		cChaInt005 := ( cQAlVV1 )->( VV1_CHAINT )
 	EndIf
+	( cQAlVV1 )->( dbCloseArea() )
 Return(cChaInt005)
