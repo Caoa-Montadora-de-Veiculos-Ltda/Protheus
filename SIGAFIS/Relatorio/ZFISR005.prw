@@ -7,6 +7,7 @@ User Function ZFISR005()
     Local oSection
     Private cAliasTMP  := GetNextAlias()
     Private lMvNFLeiZF := SuperGetMV("MV_NFLEIZF",,.F.)
+    Private __cSelNfs := ""
     
 	oReport:= TReport():New("ZFISR005",;
                             "Saidas",;
@@ -22,7 +23,7 @@ User Function ZFISR005()
     //oReport:SetEdit(.T.) 
 	
 	//Verifica os parâmetros selecionados via Pergunte
-    Pergunte(oReport:GetParam(),.F.)
+    Pergunte(oReport:GetParam(),.T.)
 	
 	oSection := TRSection():New(oReport    ,"Colunas"    ,{cAliasTMP}) 
 
@@ -82,6 +83,7 @@ User Function ZFISR005()
     TRCell():New( oSection  ,"ModNot"      ,cAliasTMP  ,"Modelo"						)
     TRCell():New( oSection  ,"D2_EMISSAO"  ,cAliasTMP  ,"Dt. de Emissão"				)
     TRCell():New( oSection  ,"D2_CLIENTE"  ,cAliasTMP  ,"Cliente\Fornecedor"			)
+    TRCell():New( oSection  ,"GRP_TRIB"    ,cAliasTMP  ,'Grupo Tributario'             ) 
     TRCell():New( oSection  ,"D2_LOJA"     ,cAliasTMP  ,"Loja"							)
     TRCell():New( oSection  ,"CliFor"      ,cAliasTMP  ,"Nome"							)
     TRCell():New( oSection  ,"C6_CHASSI"   ,cAliasTMP  ,"Chassi"						)
@@ -187,6 +189,7 @@ Static Function ReportPrint(oReport)
 	Local cCodMun		:= ""
 	Local cTpCliFor		:= ""
 	Local cTpPessoa		:= ""
+    Local cGRPTRIB    := ""
 	Local cTpNF			:= ""
 	Local cNumPed 		:= ""
 	Local cMenNota		:= ""
@@ -268,6 +271,7 @@ Static Function ReportPrint(oReport)
         cDescTipo	:= ""
         cTpCliFor	:= ""
         cTpPessoa	:= ""
+        cGRPTRIB    := ""
         If (cAliasTMP)->F2_TIPO $ "B|D" // Benefeciamento ou devolução
             If SA2->(DbSeek( xFilial("SA2") + (cAliasTMP)->D2_CLIENTE + (cAliasTMP)->D2_LOJA ))
                 cCliFor		:= SA2->A2_NOME
@@ -276,7 +280,7 @@ Static Function ReportPrint(oReport)
                 cEstCli 	:= SA2->A2_EST
                 cCodMun		:= SA2->A2_COD_MUN
                 cTpCliFor	:= "Fornecedor"
-
+                cGRPTRIB    := SA1->A1_GRPTRIB
                 // Busca o Tipo do Fornecedor.
                 If SA2->A2_TIPO == "J"
                     cDescTipo := "Juridico"
@@ -299,6 +303,7 @@ Static Function ReportPrint(oReport)
                 cCodMun		:= ""
                 cTpCliFor	:= "Fornecedor"
                 cTpPessoa	:= ""
+                cGRPTRIB    := ""
             EndIf
         Else
             If SA1->(DbSeek( xFilial("SA1") + (cAliasTMP)->D2_CLIENTE + (cAliasTMP)->D2_LOJA ))
@@ -308,7 +313,7 @@ Static Function ReportPrint(oReport)
                 cEstCli		:= SA1->A1_EST
                 cCodMun		:= SA1->A1_COD_MUN
                 cTpCliFor	:= "Cliente"
-
+                cGRPTRIB    := SA1->A1_GRPTRIB
                 If SA1->A1_PESSOA == "J"
                     cTpPessoa := "Juridico"
                 ElseIf SA1->A1_PESSOA == "F"
@@ -342,6 +347,7 @@ Static Function ReportPrint(oReport)
                 cCodMun		:= ""
                 cTpCliFor	:= "Cliente"
                 cTpPessoa	:= ""
+                cGRPTRIB    := ""
             EndIf
         EndIf
 
@@ -479,6 +485,7 @@ Static Function ReportPrint(oReport)
         oSection:Cell( "ModNot"      ):SetValue( AModNot( (cAliasTMP)->F2_ESPECIE ) ) //--Modelo
         oSection:Cell( "D2_EMISSAO"  ):SetValue( IIF( Empty( SToD( (cAliasTMP)->D2_EMISSAO ) ), "", SToD( (cAliasTMP)->D2_EMISSAO ) ) ) //--Dt. de Emissão
         oSection:Cell( "D2_CLIENTE"  ):SetValue( (cAliasTMP)->D2_CLIENTE ) //--Cliente\Fornecedor
+        oSection:Cell( "GRP_TRIB"   ):SetValue( cGRPTRIB                 ) //--Nome
         oSection:Cell( "D2_LOJA"     ):SetValue( (cAliasTMP)->D2_LOJA    ) //--Loja
         oSection:Cell( "CliFor"      ):SetValue( cCliFor                 ) //--Nome
         oSection:Cell( "C6_CHASSI"   ):SetValue( AllTrim( (cAliasTMP)->C6_CHASSI ) ) //--Chassi
@@ -570,6 +577,10 @@ Return
 //----------------------------------------------------------
 Static Function zTmpRadio3()
     Local cQuery    := ""
+
+    If MV_PAR22 == 1
+	  zSelNfs5()
+    EndIf	
     
 	If Select( cAliasTMP ) > 0
 		(cAliasTMP)->(DbCloseArea())
@@ -605,22 +616,11 @@ Static Function zTmpRadio3()
 	cQuery += CRLF + "		AND SF2.F2_ESPECIE BETWEEN '" + MV_PAR03 + "' AND '" + MV_PAR04 + "' "
 	cQuery += CRLF + "		AND SF2.D_E_L_E_T_ = ' ' "
 
-	If !Empty( MV_PAR17 )
-		cQuery += CRLF + " 	AND SF2.F2_EST = '" + MV_PAR17 + "' "
-	EndIf
-	
+
 	cQuery += CRLF + " INNER JOIN " + RetSQLName("SB1") + " SB1 "
 	cQuery += CRLF + "		ON  SB1.B1_FILIAL  = '" + FWxFilial('SB1') + "' "
 	cQuery += CRLF + "		AND SB1.B1_COD     = SD2.D2_COD "
 	cQuery += CRLF + "		AND SB1.D_E_L_E_T_ = ' ' "
-
-	If !Empty( MV_PAR18 )
-		cQuery += CRLF + " 	AND SB1.B1_GRUPO = '" + MV_PAR18 + "' "
-	EndIf
-
-	If !Empty( MV_PAR19 )
-		cQuery += CRLF + " 	AND SB1.B1_POSIPI = '" + MV_PAR19 + "' "
-	EndIf
 
 	cQuery += CRLF + " INNER JOIN " + RetSQLName("SF4") + " SF4 "
 	cQuery += CRLF + "		ON  SF4.F4_FILIAL  = '" + FWxFilial('SF4') + "' "
@@ -691,7 +691,27 @@ Static Function zTmpRadio3()
 		cQuery += CRLF + " 	AND SD2.D2_CF = '" + MV_PAR16 + "' "
 	EndIf  
 
-    If !Empty( MV_PAR20 ) .OR. !Empty( MV_PAR21)
+    If !Empty( __cSelNfs )
+		cQuery += " AND SD2.D2_DOC IN " + FormatIn(__cSelNfs, ";")   	+ CRLF
+    Else
+    	cQuery += " 	AND SD2.D2_DOC     BETWEEN '" +       MV_PAR05   + "' AND '" +       MV_PAR06   + "' " 												
+	EndIf
+
+
+	If !Empty( MV_PAR17 )
+		cQuery += CRLF + " 	AND SF2.F2_EST = '" + MV_PAR17 + "' "
+	EndIf
+
+	If !Empty( MV_PAR18 )
+		cQuery += CRLF + " 	AND SB1.B1_GRUPO = '" + MV_PAR18 + "' "
+	EndIf
+
+	If !Empty( MV_PAR19 )
+		cQuery += CRLF + " 	AND SB1.B1_POSIPI = '" + MV_PAR19 + "' "
+	EndIf
+
+
+    If !Empty( alltrim(MV_PAR20) ) .OR. !Empty( alltrim(MV_PAR21))
 	   cQuery += CRLF + " 	AND SC6.C6_CHASSI  BETWEEN '" + MV_PAR20 + "' AND '" + MV_PAR21 + "' "
     Endif
 
@@ -783,3 +803,83 @@ Static Function zRel0003( nVlIPIRegi, nVlIPIPres, cEspecie, cDoc, cSerie, cCodCl
 	( cAliasTRB )->( DbCloseArea() )
 	RestArea( aArea )
 Return
+
+
+/*
+=======================================================================================
+Programa.:              zSelNfs5
+Autor....:              CAOA - Sandro Ferreira
+Data.....:              27/06/2024
+Descricao / Objetivo:   Monta markbrowse para seleção de notas fiscais   
+Solicitante:			Thaynara
+Gap:					    
+=======================================================================================
+*/
+Static Function zSelNfs5()
+    Local oMarkBrw  := Nil
+    Local cMark     := GetMark()
+	Local cAliasQry	:= GetNextAlias()
+
+    oMarkBrw := FWMarkBrowse():New()
+    oMarkBrw:SetDescription("Selecionar Notas Fiscais")
+    oMarkBrw:SetAlias("SF3")
+    oMarkBrw:SetFieldMark( "F3_OK" )
+    oMarkBrw:SetMark( cMark, "SF3", "F3_OK" )
+    oMarkBrw:SetMenuDef('')
+	oMarkBrw:SetFilterDefault("@"+zFilNf5())
+    oMarkBrw:DisableReport()
+    oMarkBrw:AddButton( "Confirmar", {|| Self:End()} )
+    oMarkBrw:Activate()
+
+    BeginSql Alias cAliasQry
+        SELECT R_E_C_N_O_ AS RECSF3, F3_NFISCAL
+        FROM %Table:SF3% SF3
+        WHERE SF3.F3_OK = %Exp:cMark%
+        AND SF3.%NotDel%
+    EndSql
+    
+    (cAliasQry)->( DbGoTop() )
+    While (cAliasQry)->( !Eof() )
+
+		//--Carrega notas fiscais selecionadas
+        If Empty(__cSelNfs)
+            __cSelNfs := AllTrim( ( cAliasQry )->F3_NFISCAL )
+        Else
+            __cSelNfs := __cSelNfs + ";" + AllTrim( ( cAliasQry )->F3_NFISCAL )
+        EndIf
+        
+        //--Limpa marcação
+        SF3->( DbGoTo( ( cAliasQry )->RECSF3 ) )
+        RecLock("SF3", .F.)
+        SF3->F3_OK := ""
+        SF3->( MsUnLock() )
+
+        (cAliasQry)->( DbSkip() )
+
+    EndDo
+
+    (cAliasQry)->( DbCloseArea() )
+    oMarkBrw:DeActivate()
+
+Return
+
+/*
+=======================================================================================
+Programa.:              zFilNf5
+Autor....:              CAOA - Sandro Ferreira
+Data.....:              27/06/2024
+Descricao / Objetivo:   Filtra notas fiscais
+=======================================================================================
+*/
+Static Function zFilNf5()
+	Local cFiltro := ""
+
+	cFiltro  +=  "      F3_FILIAL  BETWEEN  '" + MV_PAR01         + "'  AND '" + MV_PAR02        + "' " + CRLF
+	cFiltro  +=  "  AND F3_ESPECIE BETWEEN  '" + MV_PAR03         + "'  AND '" + MV_PAR04        + "' " + CRLF
+   	cFiltro  +=  "  AND F3_NFISCAL     BETWEEN  '" + MV_PAR05         + "'  AND '" + MV_PAR06        + "' " + CRLF
+	cFiltro  +=  "  AND F3_SERIE   BETWEEN  '" + MV_PAR07         + "'  AND '" + MV_PAR08        + "' " + CRLF
+	cFiltro  +=  "  AND F3_CLIEFOR BETWEEN  '" + MV_PAR09         + "'  AND '" + MV_PAR10        + "' " + CRLF
+	cFiltro  +=  "	AND F3_EMISSAO BETWEEN '" + DToS( MV_PAR11 )  + "' AND '" + DToS( MV_PAR12 )  + "' " +CRLF
+ 	cFiltro  +=  "	AND D_E_L_E_T_ = ' ' " + CRLF
+
+Return cFiltro
