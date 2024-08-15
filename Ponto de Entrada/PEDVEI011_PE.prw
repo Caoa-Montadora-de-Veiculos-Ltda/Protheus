@@ -12,9 +12,9 @@
 */
 
 User Function PEDVEI011()
-
+  
 	Local nPosTES
-
+ 
 	//alert("PEDVEI011")
 	Conout("PEDVEI011")
 	Conout("PEDVEI011 - C6_XBASST " + cValToChar(VVA->VVA_XBASST))
@@ -22,9 +22,11 @@ User Function PEDVEI011()
 	aAdd(aCabPV,  {"C5_XMENSER" ,E_MSMM(VV0->VV0_OBSMNF)   ,Nil}) 
 	aAdd(aCabPV,  {"C5_CLIREM"  , VV0->VV0_CLIRET 		   ,Nil}) 
 	aAdd(aCabPV,  {"C5_LOJAREM" , VV0->VV0_LOJRET 		   ,Nil}) 
+	aAdd(aCabPV,  {"C5_TIPOCLI" , VRJ->VRJ_TIPOCL 		   ,Nil}) // Adicionado Por Cintia Araujo - 08/2024 para trazer informação do Pedido Montadora e considerar a Exceçao Fiscal conforme Tipo de Pedido
+
 	AADD(aIteTPv, {"C6_NUMSERI" , VVA->VVA_CHASSI          ,NIL})
 	AADD(aIteTPv, {"C6_XBASST"  , VVA->VVA_XBASST          ,NIL})
-	AADD(aIteTPv, {"C6_QTDLIB"  , 1                        ,NIL}) // Para correÃ§Ã£o de Erro do PadrÃ£o Protheus
+	AADD(aIteTPv, {"C6_QTDLIB"  , 1                        ,NIL}) // Para correca de Erro do Padrao Protheus
 	AADD(aIteTPv, {"C6_XBASPI"  , VVA->VVA_XBASPI          ,NIL})
 	AADD(aIteTPv, {"C6_XBASCO"  , VVA->VVA_XBASCO          ,NIL})
 	AADD(aIteTPv, {"C6_XBASIP"  , VVA->VVA_XBASIP          ,NIL})
