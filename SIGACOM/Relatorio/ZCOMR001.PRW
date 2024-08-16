@@ -2363,19 +2363,19 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
 						MaFisLoad(cRefCols,aCols[nX][nY],nX)       //-- CARREGA O VALOR DO CAMPO DO aCols PARA A REFERENCIA NO aNFItem DA MATXFIS
 					EndIf
 				Next nY
+				MaFisEndLoad(nX,02)                                //-- ENCERRA A CARGA DO ITEM
+
+				/** =============================================== */
+				/** === MATA120.PRX Executa o Refresh do Folder === */
+				/** === ExpA1 = Array com os valores do Rodape  === */
+				/** =============================================== */
+				A120Refresh(@aValores) 
 			Next nX
-			MaFisEndLoad(nX-1,02)                                //-- ENCERRA A CARGA DO ITEM
-
 		EndIf
-
-		/** =============================================== */
-		/** === MATA120.PRX Executa o Refresh do Folder === */
-		/** === ExpA1 = Array com os valores do Rodape  === */
-		/** =============================================== */
-		A120Refresh(@aValores)
 
 		MaFisEnd()
 	EndIf
+ 
 
     If nPageCount == 000
         nPageCount := ATail(aElements)[ATT_PAGE][02]
