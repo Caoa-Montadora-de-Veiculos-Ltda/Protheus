@@ -22,29 +22,29 @@ Static Function zOpc(nRadio)
    
    Do Case
         Case nRadio == 1 //--Nfs de entrada
-           // If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
+            If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
                 FWMsgRun( ,{|| U_ZFISR003() } ,"Carregando tela de impressão Treport de Nfs de entrada!" ,"Por favor aguarde...")
-            //ElseIf ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
-            //    FWMsgRun( ,{|| U_ZFISR010() } ,"Carregando tela de impressão Treport de Nfs de entrada!" ,"Por favor aguarde...")
-            //EndIf
+            ElseIf ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
+                FWMsgRun( ,{|| U_ZFISR010() } ,"Carregando tela de impressão Treport de Nfs de entrada!" ,"Por favor aguarde...")
+            EndIf
         Case nRadio == 2 //--Nfs de entrada canceladas
-            //If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
+            If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
                 FWMsgRun( ,{|| U_ZFISR004() } ,"Carregando tela de impressão Treport de Nfs de entrada canceladas!" ,"Por favor aguarde...")
-            //ElseIf ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
-            //    FWMsgRun( ,{|| U_ZFISR013() } ,"Carregando tela de impressão Treport de Nfs de entrada canceladas!" ,"Por favor aguarde...")
-            //EndIf
+            ElseIf ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
+                FWMsgRun( ,{|| U_ZFISR013() } ,"Carregando tela de impressão Treport de Nfs de entrada canceladas!" ,"Por favor aguarde...")
+            EndIf
         Case nRadio == 3 //--Nfs de saida
-            //If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
+            If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
                 FWMsgRun( ,{|| U_ZFISR005() } ,"Carregando tela de impressão Treport de Nfs de saida!" ,"Por favor aguarde...")
-            //ElseIf ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
-            //    FWMsgRun( ,{|| U_ZFISR011() } ,"Carregando tela de impressão Treport de Nfs de saida!" ,"Por favor aguarde...")
-            //EndIF
+            ElseIf ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
+                FWMsgRun( ,{|| U_ZFISR011() } ,"Carregando tela de impressão Treport de Nfs de saida!" ,"Por favor aguarde...")
+            EndIF
         Case nRadio == 4 //--Nfs de saida canceladas
-            //If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
+            If ( AllTrim(FwCodEmp()) == "2010" .And. AllTrim(FwFilial()) == "2001" ) //Empresa Anapolis
                 FWMsgRun( ,{|| U_ZFISR006() } ,"Carregando tela de impressão Treport de Nfs de saida canceladas!" ,"Por favor aguarde...")
-            //ElseIf ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
-            //    FWMsgRun( ,{|| U_ZFISR014() } ,"Carregando tela de impressão Treport de Nfs de saida canceladas!" ,"Por favor aguarde...")
-            //EndIf
+            ElseIf ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
+                FWMsgRun( ,{|| U_ZFISR014() } ,"Carregando tela de impressão Treport de Nfs de saida canceladas!" ,"Por favor aguarde...")
+            EndIf
     EndCase
 
 Return
