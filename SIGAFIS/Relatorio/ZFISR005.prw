@@ -280,7 +280,7 @@ Static Function ReportPrint(oReport)
                 cEstCli 	:= SA2->A2_EST
                 cCodMun		:= SA2->A2_COD_MUN
                 cTpCliFor	:= "Fornecedor"
-                cGRPTRIB    := SA1->A1_GRPTRIB
+                cGRPTRIB    := SA2->A2_GRPTRIB
                 // Busca o Tipo do Fornecedor.
                 If SA2->A2_TIPO == "J"
                     cDescTipo := "Juridico"
