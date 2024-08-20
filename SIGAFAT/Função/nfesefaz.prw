@@ -9141,7 +9141,7 @@ If Len(aCOFINS)>0
 	cString += '<vlTrib>'+ConvType(aCOFINS[06],15,4)+'</vlTrib>'
 	cString += '<qTrib>'+ConvType(aCOFINS[05],16,4)+'</qTrib>'
 	cString += '<valor>'+ConvType(aCOFINS[04],15,2)+'</valor>'
-	//cString += If(retNT2005(), '<indSomaCOFINSST>'+ Iif(aCOFINSST[07] == "1", ConvType(aCOFINSST[07],1), "0") +'</indSomaCOFINSST>', '')  //************ Especifico Caoa ******************
+	//cString += If(retNT2005(), '<indSomaCOFINSST>'+ Iif(aCOFINSST[07] == "1", ConvType(aCOFINSST[07],1), "0") +'</indSomaCOFINSST>', '')  //*************** Especifico Caoa ********************
 	cString += '</Tributo>'
 	nValCof += aCOFINS[04]
 Else
