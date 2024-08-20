@@ -232,6 +232,9 @@ Local _cFaseOrc 		:= AllTrim(GetNewPar("MV_FASEORC","023R45F"))
 Local _cConectWis  		:= AllTrim(SuperGetMV( "CMV_PEC031"  ,,"WIS.V_ENDERECO_ESTOQUE@DBLINK_WISPROD")) 
 Local _cTPedTransf 		:= AllTrim(SuperGetMV( "CMV_PEC038" ,,"" ))   //Parâmetro para indicação de tipo de pedido de transferencia
 
+Local xCMVPEC052 		:= GetNewPar("CMV_PEC052","300") // Fase de Conferencia e Separacao
+Local xCMvPEC053 		:= Alltrim(GetNewPar("CMV_PEC053","")) // Fase de Conferencia e Separacao
+
 Local _nRegProcess		:= 0
 Local _nProcessado		:= 0
 Local _nGerado			:= 0
@@ -586,7 +589,9 @@ Begin Sequence
 							_lInconSaldo := .T.
            					Disarmtransaction()
 						EndIf  
-					
+
+
+
 						//Caso esteja com bloqueio de limite verificar se é possivel utilizar o limite para os itens existentes em quanto o valor estiver atendendo a quantidade
 						If _lRet 
 							//Verifica Limite de Crédito
@@ -636,6 +641,24 @@ Begin Sequence
 						EndIf	
 					Endif   //Fim tratamento por tipo pedido transferencia FDR
 					
+
+
+                    //GAP169 - Faturamento Mínimo (Sandro Ferreira - 23/08/24)
+					//Incio da Rotina - GAP169
+					//alert(cUserName) //Login
+					//alert(__cUserID) //Codigo usuario
+					//alert(UsrFullName(__cUserID)) //nome completo do usuário
+					If VS1->VS1_VTOTNF <= val(xCMVPEC052) .and. __cUserID <>  alltrim(xCMVPEC053)   //Codigo do Usuario
+					   _lRet     := .F.
+					   Disarmtransaction()	
+					   Alert("Orçamento não atingiu o valor do faturamento minimo - Revisar Parametro: CMV_PEC039")
+					Else
+					   Alert("Orçamento Ok - Acima do faturamento minimo!")
+					Endif
+					//Fim da Rotina - GAP169
+
+
+
 					//Atualiza fase para Separação e se necessário gera Backorder
 					//Retorno para o registro VS1 pode ter sido disposicionado DAC 20/06/2022
 					//Mesmo que esta bloqueado por limite de crédito deixo fazer o carregamento devido os arquivos em bakorder
