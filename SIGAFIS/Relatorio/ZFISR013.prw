@@ -8,7 +8,7 @@ User Function ZFISR013()
     Private cAliasTMP := GetNextAlias()
     Private __cSelNfs := ""
 
-	oReport:= TReport():New("ZFISR013",;
+	oReport:= TReport():New("ZFISR004",;
                             "Entradas Canc.",;
                             "ZFISR001R1",;
                             {|oReport|  ReportPrint(oReport)},;
