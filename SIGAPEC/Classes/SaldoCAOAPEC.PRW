@@ -72,8 +72,8 @@ Method CarregaCAOAPEC(cCodProd, cArmazem, cGrupo, cMarca, nSaldoSB2) class Saldo
 	DeFault nSaldoSB2	:= 0
 
 	Begin Sequence
-		::_cCodProd 	:= cCodProd
-		::_cArmazem		:= cArmazem 
+		::_cCodProd 	:= PADR(ALLTRIM(cCodProd),TAMSX3("B1_COD"  )[1]) // cCodProd
+		::_cArmazem		:= PADR(ALLTRIM(cArmazem),TAMSX3("B2_LOCAL")[1]) //cArmazem 
 		::_cGrupo   	:= cGrupo
 		::_cMarca 		:= cMarca
 		::_nSaldoEST	:= nSaldoSB2  	//Saldo Protheus
@@ -101,8 +101,8 @@ Method RetSldCAOAPEC() class SaldoCAOAPEC
 	Local _cAliasPesq	:= GetNextAlias()   
 	Local cWhere 		:= ""
 	Local aSaldo		:= {}
-	Local cCodProd 		:= AllTrim(::_cCodProd)
-	Local cArmazem 		:= ""
+	Local cCodProd 		:= ::_cCodProd
+	Local cArmazem 		:= ::_cArmazem
 	Local nSaldoSB2     := 0
 	Local oZPEC08Peca
 	Local nPos
@@ -203,8 +203,12 @@ Method RetSldCAOAPEC() class SaldoCAOAPEC
 		//Garantir que carrega saldo WIS
 		::_nSaldoWIS := Self:RetSaldoWIS()  //carrego o valor do saldo WIS
 
-		If ::_nSaldoWIS == 0 .Or. ::_nSaldoEST == 0 
-			Aadd(::_aError, "Produto "+AllTrim(cCodProd)+", com saldo Protheus "+AllTrim(Str(::_nSaldoEST))+" Saldo atual Wis "+AllTrim(Str(::_nSaldoWis))+" Armazem "+cArmazem+", possui saldo zerado em uma das opções, SALDO INVALIDO ! ")
+		If ::_nSaldoWIS == 0 
+			Aadd(::_aError, "Produto "+AllTrim(cCodProd)+", Saldo atual Protheus "+AllTrim(Str(::_nSaldoEST))+" Saldo atual Wis "+AllTrim(Str(::_nSaldoWis))+" Armazem "+cArmazem+", possui saldo zerado no WIS, SALDO INVALIDO ! ")
+			Break
+		Endif
+		If ::_nSaldoEST == 0 
+			Aadd(::_aError, "Produto "+AllTrim(cCodProd)+", Saldo atual Protheus "+AllTrim(Str(::_nSaldoEST))+" Saldo atual Wis "+AllTrim(Str(::_nSaldoWis))+" Armazem "+cArmazem+", possui saldo zerado no Protheus, SALDO INVALIDO ! ")
 			Break
 		Endif
 		If ::_nSaldoWIS < nSaldoSB2 
@@ -296,6 +300,7 @@ Method RetSaldoWIS() class SaldoCAOAPEC
 		Else
 			nSaldoWIS := 0
 		EndIf
+		//nSaldoWIS := 1000 // para Simular saldo no WIS
 		//apaga arquivo temporario criado
 		If Select((cAlsWis)) <> 0
 			(cAlsWis)->(DbCloseArea())

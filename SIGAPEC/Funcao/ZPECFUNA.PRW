@@ -846,7 +846,7 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 			VS3->(DbGoto(_aRegVS3Del[_nPos]))
 			VS3->(RecLock("VS3",.F.))
 			_cObs 	:= "REFERENTE AO PROCESSO AGLUTINAÇÃO NR. "+_cAglutina + CRLF
-			_cObs	+= "REGISTRO EXCLUÍDO NO PROCESSO DE CLONAGEM DO ITEM "+AllTrim(VS3->VS3_CODITE)+" EM "+DtoC(Date())+" "+Time()	
+			_cObs	+= "REGISTRO EXCLUÝDO NO PROCESSO DE CLONAGEM DO ITEM "+AllTrim(VS3->VS3_CODITE)+" EM "+DtoC(Date())+" "+Time()	
 			VS3->VS3_OBSAGL	:= Upper(_cObs) +CRLF+ VS3->VS3_OBSAGL
 			//Não zerar causara erros somente apagar
 			VS3->(DbDelete())
@@ -3264,6 +3264,7 @@ User Function XMOVA261(_cNumOrc, _cCodProd, _cArmorig, _cArmdes, _nQtde, _nRegvs
 	Local _aMsgErro		:= {}
 	Local _cErro
 	Local _nPos
+	Local _nSaldo       :=0
 
 	Default _cCodProd	:= ""
 	Default _cNumOrc	:= ""
@@ -3343,7 +3344,29 @@ User Function XMOVA261(_cNumOrc, _cCodProd, _cArmorig, _cArmdes, _nQtde, _nRegvs
 			MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
 			_lRet := .F.
 			Break
-		Endif	
+		Endif
+		
+		DbSelectArea('SB2')
+		SB2->(DbSetOrder(1))
+		if SB2->(dBseek(xFilial("SB2") + SB1->B1_COD + _cArmorig))
+			
+			_nSaldo := SaldoSB2()
+			
+			if _nSaldo <= 0
+				_cErro := "Produto " + _cCodProd+ "  n�o Possue saldo no Armazem " + _cArmorig+ "  !!! " 
+				AAdd(_aMsgErro,_cErro)
+				MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
+				_lRet := .F.
+				Break
+			endif
+		
+		Else
+			_cErro := "Produto " + _cCodProd+ "  n�o encontrado no Armazem " + _cArmorig+ "  !!! " 
+			AAdd(_aMsgErro,_cErro)
+			MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
+			_lRet := .F.
+			Break
+		EndIf
 		_aLinha 	:= {}
 		//origem
 		//aadd(aLinha,{"D3_FILIAL" ,  	xFilial("SD3")			, Nil})
@@ -4382,6 +4405,28 @@ Static Function XRESCAOATR(_cNumOrc, _lReserva, _aRegVS3, _cArmorig, _cArmdes, _
 				Break
 			ElseIf _cOrigem == _cDestino
 				AAdd(_aMsg,"Verificar armazem origem "+_cOrigem+" e ou destino "+_cDestino+" para orçamento " +_cNumOrc+ " os mesmos estão iguais, não será realizada processo de Reserva comunicar ADM Sistemas!!! ")
+				_lRet := .F.
+				Break
+			EndIf
+			DbSelectArea('SB2')
+			SB2->(DbSetOrder(1))
+			if SB2->(dBseek(xFilial("SB2") + _cCodProd + _cOrigem))
+			
+				_nSaldo := SaldoSB2()
+				
+				if _nSaldo <= 0
+					_cErro := "Produto " + _cCodProd + "  n�o Possue saldo no Armazem " + _cOrigem + "  !!! " 
+					AAdd(_aMsgErro,_cErro)
+					//MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
+					_lRet := .F.
+					(_cAliasPesq)->(DbSkip())
+					Loop
+				endif
+			
+			Else
+				_cErro := "Produto " + _cCodProd + "  n�o encontrado no Armazem " + _cOrigem + "  !!! " 
+				AAdd(_aMsgErro,_cErro)
+				//MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
 				_lRet := .F.
 				Break
 			EndIf
