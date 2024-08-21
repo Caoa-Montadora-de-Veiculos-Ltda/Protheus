@@ -1105,14 +1105,14 @@ Local _nCount
 		oZPEC08Peca:SetGrupo(_cGrupo)
 		oZPEC08Peca:SetCodigo(_cCodItem)
 		_aItemRelac := oZPEC08Peca:ItensSubstituidos()
-
+		aSort(_aItemRelac,,,{|x,y| x[4] > y[4]})
 		If Len(_aItemRelac) == 0 .or. Empty(AllTrim(_aItemRelac[1,2]))
 			Aadd(_aMensAglu,"Não existe item Substitutos para o produto " +AllTrim(_cCodItem))	
 			Break	
 		Endif
 		For _nPos := 1 To Len(_aItemRelac)
 			_cGrupoSubst	:= _aItemRelac[_nPos,1]
-			_cCodSubst 		:= AllTrim(_aItemRelac[_nPos,2])
+			_cCodSubst 		:= _aItemRelac[_nPos,2]//AllTrim(_aItemRelac[_nPos,2])
 			_nSaldoSB2 		:= _aItemRelac[_nPos,7]
 			
 			//GAP098 | Desmembrar itens bloqueados por inventário - Alteração funcionalidade de verificação saldo WIS e Protheus DAC 08/11/2023
@@ -1192,14 +1192,14 @@ Static Function ZPECF08SIM( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _
 		oZPEC08Peca:SetCodigo(_cCodItem)
 		_aItemSim := oZPEC08Peca:ItensRelacionados()
 		//aAuxAtu := oZPEC08Peca:EstqSaldo(,.t.,.t.)
-
-		If Len(_aItemSim) == 0 .or. Empty(AllTrim(_aItemSim[1,2]))
+		aSort(_aItemSim,,,{|x,y| x[4] > y[4]})
+ 		If Len(_aItemSim) == 0 .or. Empty(AllTrim(_aItemSim[1,2]))
 			Aadd(_aMensAglu,"Não existe item Similar para o produto " +AllTrim(_cCodItem))	
 			Break	
 		Endif
 		For _nPos := 1 To Len(_aItemSim)
 			_cGrupoSubst	:= _aItemSim[_nPos,1]
-			_cCodSimilar	:= AllTrim(_aItemSim[_nPos,2])
+			_cCodSimilar	:= _aItemSim[_nPos,2]//AllTrim(_aItemSim[_nPos,2])
 			_nSaldoSB2 		:= _aItemSim[_nPos,4] //SB2->(SaldoSB2())
 
 			//GAP098 | Desmembrar itens bloqueados por inventário - Alteração funcionalidade de verificação saldo WIS e Protheus DAC 08/11/2023
@@ -1210,7 +1210,8 @@ Static Function ZPECF08SIM( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _
 				For _nCount := 1 To Len(_oSaldoPec:_aError)
 					Aadd(_aMensAglu, _oSaldoPec:_aError[_nCount])
 				Next _nCount
-				Break 
+				Break
+				//Loop 
 			Endif	
 			_nSaldoSB2 := _oSaldoPec:_nSaldoPEC
 			//Caso esteja zerado
@@ -1232,7 +1233,7 @@ Static Function ZPECF08SIM( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _
 			//Se zerou é por que conseguiu atingir todos os produtos
 			//VERIFICAR POSTERIORMENTE SE IRA PODER SER COM PARCIAL CASO SEJA AI TEM QUE RETORNAR VERDADEIRO E MONTAR OUTRO ORÇAMENTO COM A QUANTIDADE FALTANTE
 			If Len(_oSaldoPec:_aMsg) > 0  //ocorreu problemas no calculo
-				Aadd(_aMensAglu,"Utiizado saldo do item Similar " +AllTrim(_cCodSimilar)+ " para o produto " +AllTrim(_cCodItem))	
+				Aadd(_aMensAglu,"Utilizado saldo do item Similar " +AllTrim(_cCodSimilar)+ " para o produto " +AllTrim(_cCodItem))	
 				For _nCount := 1 To Len(_oSaldoPec:_aMsg)
 					Aadd(_aMensAglu, _oSaldoPec:_aMsg[_nCount])
 				Next _nCount
@@ -1852,7 +1853,7 @@ Static Function ZPECF08PARC( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, 
 			Aadd(_aMensAglu,"Não foi possivel alterar registro na tabela VS3 (ZPECF08PARC) !")
 			Break
 		EndIf	
-		If _nQtdReal <= 0 .and. _nItenNovo == VS3->VS3_QTDINI
+		If _nQtdReal <= 0 .and. (_nItenNovo == VS3->VS3_QTDINI .or._nItenNovo == 0)
 			VS3->(DbDelete())
 			VS3->(MsUnlock())
 			Break
