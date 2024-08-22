@@ -56,7 +56,7 @@ User Function ZPECF008()
 	Local _cCodMarca	:= Space(TamSx3("VE1_CODMAR")[1])
 	Local _aVar			:= {}
 	Local _aCampos		:= {}
-	Local _cAliasPesq   := GetNextAlias()      
+	Local _cAliasPesq   := GetNextAlias()    
 	Local _aChave 		:= {}
 	Local _lJob   		:=	If( IsBlind(),.T.,.F.)
 	Local _oSay			:= Nil
@@ -226,7 +226,7 @@ Local _aVS1				:= {}
 Local _lRet				:= .T.
 Local _lSepara			:= .F.
 Local _lValCred  		:= .T. 	
-
+Local _cAliasTP         := GetNextAlias()   
 Local _cFaseConf 		:= Alltrim(GetNewPar("MV_MIL0095","4")) // Fase de Conferencia e Separacao
 Local _cFaseOrc 		:= AllTrim(GetNewPar("MV_FASEORC","023R45F"))
 Local _cConectWis  		:= AllTrim(SuperGetMV( "CMV_PEC031"  ,,"WIS.V_ENDERECO_ESTOQUE@DBLINK_WISPROD")) 
@@ -490,6 +490,32 @@ Begin Sequence
 		Endif	
 		*/
 		//organizar para geração do Picking após o acumuo dos orçamentos DAC 14/06/2022
+       
+	    If _cLocal = '02'
+			BeginSql Alias _cAliasTP //Define o nome do alias temporário 
+				SELECT 	VX5.VX5_CHAVE,
+						VX5.VX5_CODIGO,
+						VX5.VX5_DESCRI
+				FROM  %Table:VX5% VX5 
+				WHERE 	VX5.VX5_FILIAL 	=  %xFilial:VX5% 
+					AND VX5.VX5_CHAVE 	= 'Z06'
+					AND VX5.%notDel%
+				ORDER BY VX5.VX5_CHAVE, VX5.VX5_CODIGO	
+			EndSql
+
+    		_Arm02 := .F.
+			While (_cAliasTP)->(!Eof())
+                iF (_cAliasTP)->VX5_CODIGO = (_cAliasTRB)->VS1_XTPPED
+                   _Arm02 := .T.
+				Endif
+				(_cAliasTP)->(DbSkip())
+			EndDo	
+			If !_Arm02
+				(_cAliasTRB)->(DbSkip())
+				Loop
+			Endif
+        Endif
+
 		_cTipoPed		:= (_cAliasTRB)->VS1_XTPPED
 		_cTipoModal		:= (_cAliasTRB)->VS1_XTPTRA
 	 	_cCliFat		:= (_cAliasTRB)->VS1_CLIFAT
