@@ -21,7 +21,7 @@ Descricao / Objetivo:   Processa pedidos do Portal Autoware Veiculos
 Doc. Origem:            
 Solicitante:            
 Uso......:              
-Obs......:
+Obs......:  GAP228- ESTE FONTE SERÁ DESCONTINUADO SUBSTITUIDO PELO ZWR018 DAC- 08/2024
 =====================================================================================
 */
 WSSTRUCT RetPedido

@@ -4,10 +4,12 @@
 
 /*/{Protheus.doc} CMVAUT02
 //TODO WS de envio dos dados do carro para autware (Xml Nota Fiscal).
-@author marcos cavalaro
-@since 25/10/2018
-@version 1.0
-@type function
+@author 	marcos cavalaro
+@since 		25/10/2018
+@version 	1.0
+@type 		function
+@Obs 		GAP228 -  GAP228 -Integração Faturamento Autoware
+						lteração trocar tabela VRK Por SC6 - - DAC AGO/2024
 /*/
 
 User Function CMVAUT02()
@@ -39,7 +41,9 @@ IF lIsBlind
 	
 EndIF
 
-cQuery += " SELECT F2.*, F2.R_E_C_N_O_ RECNOF2, A1.A1_CGC, VRJ_PEDCOM, VRJ_TIPVEN, VRK_FILIAL, VRK_PEDIDO "
+//GAP228
+//cQuery += " SELECT F2.*, F2.R_E_C_N_O_ RECNOF2, A1.A1_CGC, VRJ_PEDCOM, VRJ_TIPVEN, VRK_FILIAL, VRK_PEDIDO "
+cQuery += " SELECT F2.*, F2.R_E_C_N_O_ RECNOF2, A1.A1_CGC, SC6.C6_XTIPVEN "
 cQuery += " FROM "+ RetSQLname("SF2") + " F2 "
 cQuery += "      JOIN "+ RetSQLname("SA1") + " A1 "
 cQuery += "					ON  A1.A1_COD     = F2.F2_CLIENTE "
@@ -53,17 +57,23 @@ cQuery += "                 AND VV0.VV0_LOJA   = F2.F2_LOJA  "
 cQuery += "                 AND VV0.VV0_NUMNFI = F2.F2_DOC  "
 cQuery += "                 AND VV0.VV0_SERNFI = F2.F2_SERIE "
 cQuery += "					AND VV0.D_E_L_E_T_ = ' '  "
-
+/* GAP228
 cQuery += "      JOIN " + RetSQLname("VRK") + " VRK  
 cQuery += "					ON    VRK.VRK_FILIAL  = '" + xFilial('VRK') + "'  "
 cQuery += "                 AND ( VRK.VRK_NUMTRA  = VV0.VV0_NUMTRA OR SUBSTR(VRK.VRK_NUMTRA,2,9) = F2.F2_DOC) "
 cQuery += "                 AND   VRK.D_E_L_E_T_  =' '  "
-
+*/
+cQuery += "      JOIN " + RetSQLname("SC6") + " SC6 "
+cQuery += "					ON  SC6.C6_FILIAL  	= '" + xFilial('SC6') + "'  "
+cQuery += "                 AND SC6.C6_NOTA	   	= F2.F2_DOC "
+cQuery += "                 AND SC6.C6_SERIE	= F2.F2_SERIE "
+cQuery += "                 AND SC6.D_E_L_E_T_  =' '  "
+/* GAP228
 cQuery += "      JOIN " + RetSQLname("VRJ") + " VRJ 
 cQuery += "					ON  VRJ.VRJ_FILIAL    = '" + xFilial('VRJ') + "'  "
 cQuery += "                 AND VRJ.VRJ_PEDIDO    = VRK.VRK_PEDIDO "
 cQuery += "                 AND VRJ.D_E_L_E_T_=' '  "
-
+*/
 cQuery += " 	WHERE   F2.D_E_L_E_T_  = ' '   "
 cQuery += "			AND F2.F2_FILIAL   = '" + xFilial('SF2') + "' "
 cQuery += "			AND F2.F2_XINTEG   = ' '   "
@@ -120,7 +130,10 @@ IF qryNF->(!EOF())
 			cSoap += "            <ListaNotaFiscal>                                                       "
 			cSoap += "                <DadosNotaFiscal>                                                   "
 			cSoap += putTag('xmlDANFE',cXMLnf)
+			// gap228
 			cSoap += putTag('tipo',           Alltrim(qryNF->VRJ_TIPVEN))
+			cSoap += putTag('tipo',           Alltrim(qryNF->C6_XTIPVEN))
+
 			//cSoap += putTag('tipo', 'vendaVeiculoVarejo')
 		    //cSoap += putTag('Pedido',VRJ->VRJ_PEDCOM)
 		    cSoap += "                </DadosNotaFiscal>                                                  "
