@@ -2680,15 +2680,9 @@ If cTipo == "1"
 						Else
 							cMunPres := ConvType(aUF[aScan(aUF,{|x| x[1] == aDest[09]})][02]+aDest[07])
 						EndIf
-
-						//************ Especifico Caoa ******************
-						//Ajuste realizado para atender a venda dos HR para a HMB
-						If AllTrim(SC6->C6_TES) == '802' .And. AllTrim(SC6->C6_CLI) == '000008' .And. AllTrim(SC6->C6_LOJA) == '05'
-							aadd(aPedCom,{"5500012312","10"})
-							//*******************************************
-
+ 
 						// Tags xPed e nItemPed (controle de B2B) para nota de saída
-						ElseIf SC6->(FieldPos("C6_NUMPCOM")) > 0 .And. SC6->(FieldPos("C6_ITEMPC")) > 0
+						If SC6->(FieldPos("C6_NUMPCOM")) > 0 .And. SC6->(FieldPos("C6_ITEMPC")) > 0
 							If !Empty(SC6->C6_NUMPCOM) .And. !Empty(SC6->C6_ITEMPC) 
 								aadd(aPedCom,{SC6->C6_NUMPCOM,SC6->C6_ITEMPC})
 							Else
@@ -2698,6 +2692,26 @@ If cTipo == "1"
 							aadd(aPedCom,{})
 						EndIf
 						
+						//************ Especifico Caoa ******************
+						//Ajuste realizado para atender a venda dos HR para a HMB
+						If Len(aPedCom) <= 0
+							If AllTrim(SC6->C6_TES) == '802' .And. AllTrim(SC6->C6_CLI) == '000008' .And. AllTrim(SC6->C6_LOJA) == '05'
+								If !Empty(SC6->C6_NUMPCOM) .And. !Empty(SC6->C6_ITEMPC) 
+									aadd(aPedCom,{SC6->C6_NUMPCOM,SC6->C6_ITEMPC})
+								Else
+									aadd(aPedCom,{"5500012312","10"})
+								EndIf 
+
+							Elseif AllTrim(SC6->C6_TES) == '801' .And. AllTrim(SC6->C6_CLI) == '000008' .And. AllTrim(SC6->C6_LOJA) == '05'
+								If !Empty(SC6->C6_NUMPCOM) .And. !Empty(SC6->C6_ITEMPC) 
+									aadd(aPedCom,{SC6->C6_NUMPCOM,SC6->C6_ITEMPC})
+								Else
+									aadd(aPedCom,{"5500012312","20"})
+								EndIf
+ 							EndIf
+						EndIf
+
+						//************ 
 						//Conforme Decreto RICM, N 43.080/2002 valido somente em MG deduzir o
 						//imposto dispensado na operação
 						nDescRed := 0
@@ -2804,7 +2818,7 @@ If cTipo == "1"
 		
 						cCodProd  := (cAliasSD2)->D2_COD	            
 						cDescProd := IIF(Empty(SC6->C6_DESCRI),SB1->B1_DESC,SC6->C6_DESCRI) 
-						 
+						  
 						If !Empty((cAliasSD2)->D2_IDENTB6) .And. lNFPTER  
 				         	If SC5->C5_TIPO == "N" 
 						         //--A7_FILIAL + A7_CLIENTE + A7_LOJA + A7_PRODUTO
@@ -2821,7 +2835,7 @@ If cTipo == "1"
 						            cDescProd := SA5->A5_DESREF 	            
 						         EndIf 	
 					      	EndIf  
-			         	EndIf 
+			         	EndIf  
 			         
 			            nDescZF := (cAliasSD2)->D2_DESCZFR 
 			            
@@ -2879,7 +2893,7 @@ If cTipo == "1"
 							If (cAliasSD2)->(FieldPos("D2_FCICOD")) > 0 .And. !Empty((cAliasSD2)->D2_FCICOD)
 								aadd(aFCI,{(cAliasSD2)->D2_FCICOD}) 
 								
-								If lFCI
+								If lFCI 
 									cMsgFci	:= "Resolucao do Senado Federal núm. 13/12"
 									cInfAdic  += cMsgFci + ", Numero da FCI " + Alltrim((cAliasSD2)->D2_FCICOD) + "."
 								EndIf
@@ -2890,6 +2904,13 @@ If cTipo == "1"
 						Else 
 							aadd(aFCI,{})
 						EndIf
+
+						//************ Especifico Caoa ******************
+						//Ajuste realizado para atender a venda dos HR para a HMB			
+						If Len(aFCI) <= 0 .And. AllTrim(SD2->D2_TES) == '801' .And. AllTrim(SD2->D2_CLIENTE) == '000008' .And. AllTrim(SD2->D2_LOJA) == '05'
+							aadd(aFCI,{"D4746E77-0A66-4782-B107-864BBEBE3A68"}) 
+						EndIf
+
 						// Retirada a validação devido a criação da tag nFCI (NT 2013/006)
 						//--------------------------------------------------------------------------------
 						//Campo SD2->D2_FCICOD só é preenchido nos casos de Industrialização Interestadual
@@ -9141,7 +9162,7 @@ If Len(aCOFINS)>0
 	cString += '<vlTrib>'+ConvType(aCOFINS[06],15,4)+'</vlTrib>'
 	cString += '<qTrib>'+ConvType(aCOFINS[05],16,4)+'</qTrib>'
 	cString += '<valor>'+ConvType(aCOFINS[04],15,2)+'</valor>'
-	//cString += If(retNT2005(), '<indSomaCOFINSST>'+ Iif(aCOFINSST[07] == "1", ConvType(aCOFINSST[07],1), "0") +'</indSomaCOFINSST>', '')  //*************** Especifico Caoa ********************
+	//cString += If(retNT2005(), '<indSomaCOFINSST>'+ Iif(aCOFINSST[07] == "1", ConvType(aCOFINSST[07],1), "0") +'</indSomaCOFINSST>', '')  //************ Especifico Caoa ******************
 	cString += '</Tributo>'
 	nValCof += aCOFINS[04]
 Else
