@@ -2688,8 +2688,6 @@ If cTipo == "1"
 							Else
 								aadd(aPedCom,{})
 							EndIf
-						Else
-							aadd(aPedCom,{})
 						EndIf
 						
 						//************ Especifico Caoa ******************
@@ -2699,16 +2697,15 @@ If cTipo == "1"
 								If !Empty(SC6->C6_NUMPCOM) .And. !Empty(SC6->C6_ITEMPC) 
 									aadd(aPedCom,{SC6->C6_NUMPCOM,SC6->C6_ITEMPC})
 								Else
-									aadd(aPedCom,{"5500012312","10"})
+									aadd(aPedCom,{"5500012312","000020"})
 								EndIf 
-
-							Elseif AllTrim(SC6->C6_TES) == '801' .And. AllTrim(SC6->C6_CLI) == '000008' .And. AllTrim(SC6->C6_LOJA) == '05'
-								If !Empty(SC6->C6_NUMPCOM) .And. !Empty(SC6->C6_ITEMPC) 
-									aadd(aPedCom,{SC6->C6_NUMPCOM,SC6->C6_ITEMPC})
-								Else
-									aadd(aPedCom,{"5500012312","20"})
-								EndIf
+							//Else
+							//	aadd(aPedCom,{})
  							EndIf
+						EndIf
+
+						If Len(aPedCom) <= 0
+							aadd(aPedCom,{})
 						EndIf
 
 						//************ 
@@ -2893,22 +2890,24 @@ If cTipo == "1"
 							If (cAliasSD2)->(FieldPos("D2_FCICOD")) > 0 .And. !Empty((cAliasSD2)->D2_FCICOD)
 								aadd(aFCI,{(cAliasSD2)->D2_FCICOD}) 
 								
-								If lFCI 
+								If lFCI  
 									cMsgFci	:= "Resolucao do Senado Federal núm. 13/12"
 									cInfAdic  += cMsgFci + ", Numero da FCI " + Alltrim((cAliasSD2)->D2_FCICOD) + "."
 								EndIf
 								
-							Else
-								aadd(aFCI,{})
+							//Else
+							//	aadd(aFCI,{})
 							EndIf
-						Else 
-							aadd(aFCI,{})
 						EndIf
 
 						//************ Especifico Caoa ******************
 						//Ajuste realizado para atender a venda dos HR para a HMB			
-						If Len(aFCI) <= 0 .And. AllTrim(SD2->D2_TES) == '801' .And. AllTrim(SD2->D2_CLIENTE) == '000008' .And. AllTrim(SD2->D2_LOJA) == '05'
+						If Len(aFCI) <= 0 .And. AllTrim(SD2->D2_TES) == '802' .And. AllTrim(SD2->D2_CLIENTE) == '000008' .And. AllTrim(SD2->D2_LOJA) == '05'
 							aadd(aFCI,{"D4746E77-0A66-4782-B107-864BBEBE3A68"}) 
+						EndIf
+
+						If Len(aFCI) <= 0
+							aadd(aFCI,{})
 						EndIf
 
 						// Retirada a validação devido a criação da tag nFCI (NT 2013/006)
