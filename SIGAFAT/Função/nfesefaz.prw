@@ -2681,20 +2681,22 @@ If cTipo == "1"
 							cMunPres := ConvType(aUF[aScan(aUF,{|x| x[1] == aDest[09]})][02]+aDest[07])
 						EndIf
  
-						// Tags xPed e nItemPed (controle de B2B) para nota de saída
-						If SC6->(FieldPos("C6_NUMPCOM")) > 0 .And. SC6->(FieldPos("C6_ITEMPC")) > 0
-							If !Empty(SC6->C6_NUMPCOM) .And. !Empty(SC6->C6_ITEMPC) 
-								aadd(aPedCom,{SC6->C6_NUMPCOM,SC6->C6_ITEMPC})
-							//Else 
-							//	aadd(aPedCom,{})
-							EndIf
-						EndIf
-						
 						//************ Especifico Caoa ******************
 						//Ajuste realizado para atender a venda dos HR para a HMB
-						If Len(aPedCom) <= 0 .And. AllTrim(SC6->C6_TES) == '802' .And. AllTrim(SC6->C6_CLI) == '000008' .And. AllTrim(SC6->C6_LOJA) == '05'
+						If AllTrim(SC6->C6_TES) == '802' .And. AllTrim(SC6->C6_CLI) == '000008' .And. AllTrim(SC6->C6_LOJA) == '05'
 							aadd(aPedCom,{"5500012312","000020"})
-						EndIf 
+							//*******************************************
+
+						// Tags xPed e nItemPed (controle de B2B) para nota de saída
+						ElseIf SC6->(FieldPos("C6_NUMPCOM")) > 0 .And. SC6->(FieldPos("C6_ITEMPC")) > 0
+							If !Empty(SC6->C6_NUMPCOM) .And. !Empty(SC6->C6_ITEMPC) 
+								aadd(aPedCom,{SC6->C6_NUMPCOM,SC6->C6_ITEMPC})
+							Else
+								aadd(aPedCom,{})
+							EndIf
+						Else
+							aadd(aPedCom,{})
+						EndIf
 
 						If Len(aPedCom) <= 0
 							aadd(aPedCom,{})
@@ -2877,25 +2879,33 @@ If cTipo == "1"
 						// - Informar o valor da parcela importada do exterior, o número da FCI e o Conteúdo de
 						//   Importação expresso percentualmente (Industrialização)
 						//----------------------------------------------------------------------------------------- 
+
 						cCsosn2:= alltrim((cAliasSD2)->D2_CSOSN)
 						If (cOrigem $"1-2-3-4-5-6-8" .And. (cCSTrib $ "00-10-20-30-40-41-50-51-60-70-90" .or. cCsosn2 $ "101-102-103-201-202-201-300-400-500-900"))
 							If (cAliasSD2)->(FieldPos("D2_FCICOD")) > 0 .And. !Empty((cAliasSD2)->D2_FCICOD)
 								aadd(aFCI,{(cAliasSD2)->D2_FCICOD}) 
 								
-								If lFCI  
+								If lFCI
 									cMsgFci	:= "Resolucao do Senado Federal núm. 13/12"
 									cInfAdic  += cMsgFci + ", Numero da FCI " + Alltrim((cAliasSD2)->D2_FCICOD) + "."
+								EndIf								
+							Else
+								//************ Especifico Caoa ******************
+								//Ajuste realizado para atender a venda dos HR para a HMB			
+								If AllTrim(SD2->D2_TES) == '802' .And. AllTrim(SD2->D2_CLIENTE) == '000008' .And. AllTrim(SD2->D2_LOJA) == '05'
+									aadd(aFCI,{"D4746E77-0A66-4782-B107-864BBEBE3A68"}) 
+								Else
+									aadd(aFCI,{})
 								EndIf
-								
-							//Else
-							//	aadd(aFCI,{})
 							EndIf
-						EndIf
-
-						//************ Especifico Caoa ******************
-						//Ajuste realizado para atender a venda dos HR para a HMB			
-						If Len(aFCI) <= 0 .And. AllTrim(SD2->D2_TES) == '802' .And. AllTrim(SD2->D2_CLIENTE) == '000008' .And. AllTrim(SD2->D2_LOJA) == '05'
-							aadd(aFCI,{"D4746E77-0A66-4782-B107-864BBEBE3A68"}) 
+						Else 
+							//************ Especifico Caoa ******************
+							//Ajuste realizado para atender a venda dos HR para a HMB			
+							If AllTrim(SD2->D2_TES) == '802' .And. AllTrim(SD2->D2_CLIENTE) == '000008' .And. AllTrim(SD2->D2_LOJA) == '05'
+								aadd(aFCI,{"D4746E77-0A66-4782-B107-864BBEBE3A68"}) 
+							Else
+								aadd(aFCI,{})
+							EndIf
 						EndIf
 
 						If Len(aFCI) <= 0
