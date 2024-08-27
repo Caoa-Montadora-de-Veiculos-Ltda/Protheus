@@ -16,22 +16,23 @@
 User Function VEIA060()
 
 // ======================================================================= //
-
+  
 	Local aParam     := PARAMIXB
 	Local xRet       := .T.
 	Local oObj 
-	Local cIdPonto   := "" 
-	Local cIdModel   := "" 
+	Local cIdPonto   := ""
+	Local cIdModel   := ""
 
-	Local cTpVdNaoPe := "" 
+	Local cTpVdNaoPe := ""
 	Local _cPgNF     := AllTrim( GetMV('CMV_FAT011') )
 
 	Private _cParc   := ""
 
+
 	If aParam <> Nil 
-		oObj      := aParam[1] 
-		cIdPonto  := aParam[2] 
-		cIdModel  := aParam[3] 
+		oObj      := aParam[1]
+		cIdPonto  := aParam[2]
+		cIdModel  := aParam[3]
 
 	//	u_MVCLogPR(aParam)
 
@@ -41,12 +42,12 @@ User Function VEIA060()
 				Do Case
 				Case cIdModel == "MODEL_VRK"
 				//	ConOut(cIdModel + " - " + cIdPonto + " - " + aParam[5] + " - " + aParam[6])
-				//	VarInfo("aParam",aParam) 
-				//	If aParam[6] == "VRK_VALTAB" 
-				//		If oObj:GetValue("VRK_VALPRE") == 0 
-				//			oObj:SetValue("VRK_VALPRE", FWFldGet("VRK_VALTAB")) 
-				//		EndIf 
-				//	EndIf 
+				//	VarInfo("aParam",aParam)
+				//	If aParam[6] == "VRK_VALTAB"
+				//		If oObj:GetValue("VRK_VALPRE") == 0
+				//			oObj:SetValue("VRK_VALPRE", FWFldGet("VRK_VALTAB"))
+				//		EndIf
+				//	EndIf
 
 				Case cIdModel == "MODEL_VRL"
 					If aParam[6] == "VRL_XFORPA"
@@ -55,18 +56,18 @@ User Function VEIA060()
 							oObj:SetValue("VRL_XFORMA",SE4->E4_XFORMA)
 							If ! Empty(FWFldGet("VRL_E1DTEM"))
 								oObj:SetValue("VRL_E1DTVE",Condicao(1, SE4->E4_CODIGO , ,FWFldGet("VRL_E1DTEM"))[1,1] )
-							EndIf 
-						EndIf 
-					EndIf 
-					If aParam[6] == "VRL_XFORMA" 
+							EndIf
+						EndIf
+					EndIf
+					If aParam[6] == "VRL_XFORMA"
 						If AllTrim(FWFldGet("STATUS_FIN")) == "SEM_FINANC"
 							If AllTrim(FWFldGet("VRL_XFORMA")) $ "TED/BOL/FBA/CTE/FIE/LEA"
-								oObj:SetValue("VRL_GERTIT","1") 
+								oObj:SetValue("VRL_GERTIT","1")
 							Else
-								oObj:SetValue("VRL_GERTIT","0") 
-							EndIf 
-						EndIf 
-					EndIf 
+								oObj:SetValue("VRL_GERTIT","0")
+							EndIf
+						EndIf
+					EndIf
 
 	// --> Incluso  CRISTIANO  14/12/2021   (*INICIO*) ----------------------- //
 	/*
@@ -105,19 +106,19 @@ User Function VEIA060()
 							If Empty(FWFldGet("VRK_CHASSI")) 
 								MsgInfo("O 'Tipo Venda' (VRJ_TIPVEN) está cadastrado com um desses tipos ["+cTpVdNaoPe+"]  .e.  o campo 'Chassi' (VRK_CHASSI) não está preenchido !!!" + Chr(13)+Chr(10) + Chr(13)+Chr(10) + ;
 										"Será necessário o preenchimento do campo 'Chassi' para permissão da gravação do Pedido de Venda.", "VEIA060CAOA_PE.prw - VRL_E1NATU") 
-							EndIf 
-						EndIf 
-					EndIf 
-					If aParam[6] == "VRL_E1VALO" 
+							EndIf
+						EndIf
+					EndIf
+					If aParam[6] == "VRL_E1VALO"
 						cTpVdNaoPe := SuperGetMV("MV_ZTPVDCH" , .F. , "03/05/")	// --> Define Tipos de Vendas com obrigatoriedade de CHASSI para gerar financeiro.
-						cTpVdNaoPe := AllTrim(cTpVdNaoPe) 
+						cTpVdNaoPe := AllTrim(cTpVdNaoPe)
 						If AllTrim(FWFldGet("VRJ_TIPVEN")) $ cTpVdNaoPe 		// --> "03/05/"
-							If Empty(FWFldGet("VRK_CHASSI")) 
+							If Empty(FWFldGet("VRK_CHASSI"))
 								MsgInfo("O 'Tipo Venda' (VRJ_TIPVEN) está cadastrado com um desses tipos ["+cTpVdNaoPe+"]  .e.  o campo 'Chassi' (VRK_CHASSI) não está preenchido !!!" + Chr(13)+Chr(10) + Chr(13)+Chr(10) + ;
 										"Será necessário o preenchimento do campo 'Chassi' para permissão da gravação do Pedido de Venda.", "VEIA060CAOA_PE.prw - VRL_E1VALO") 
-							EndIf 
-						EndIf 
-					EndIf 
+							EndIf
+						EndIf
+					EndIf
 	// --> Incluso  CRISTIANO  14/12/2021   (*FINAL* ) ----------------------- //
 
 				EndCase
@@ -134,11 +135,11 @@ User Function VEIA060()
 			EndIf 
 
 		Case cIdPonto == "FORMCOMMITTTSPOS"
-			If cIdModel == "MODEL_VRJ" 			// "VEIA060" 
+			If cIdModel == "MODEL_VRJ" 			// "VEIA060"
 				If FWIsInCallStack("VA0600183_IntegraVEIXX002") .And. !Empty( AllTrim( FWFldGet("VRJ_PEDCOM") ) )// INTEGRAÃ‡ÃƒO DO VEIA060 - AVANCAR PEDIDO.
-					oObj:SetValue("VRJ_XINTEG","X") 
-				EndIf 
-			EndIf 
+					oObj:SetValue("VRJ_XINTEG","X")
+				EndIf
+			EndIf
 
 	// --> Incluso  CRISTIANO  14/12/2021   (*INICIO*) ----------------------- //
 	/*
@@ -150,22 +151,22 @@ User Function VEIA060()
 	E também, só será considerada para as opções (menu) de "Incluir" ou "Alterar". Contempla condicional para não passar nesta regra, caso 
 	seja via opção (meny) de "Faturar Atendimentos".
 	*/
-		Case cIdPonto == "MODELPOS" 
+		Case cIdPonto == "MODELPOS"
 			If !AtIsRotina(Upper("VA0600273_TelaFaturarAtendimentos")) 			// --> Não entrar se estiver rodando da rotina "Faturar Atendimentos"
 				cTpVdNaoPe := SuperGetMV( "MV_ZTPVDCH" , .F. , "03/05/" ) 		// --> Define Tipos de Vendas com obrigatoriedade de CHASSI para gerar financeiro.
 				cTpVdNaoPe := AllTrim(cTpVdNaoPe)
 				If AllTrim(FWFldGet("VRJ_TIPVEN")) $ cTpVdNaoPe 				// --> "03/05/"
 					If FWFldGet("VRL_CANCEL") <> "1" 							// --> 1 = Titulo Cancelado 
-						If Empty(FWFldGet("VRK_CHASSI")) 
-							If FWFldGet("VRL_E1VALO") 
+						If Empty(FWFldGet("VRK_CHASSI"))
+							If FWFldGet("VRL_E1VALO")
 								MsgAlert("O 'Tipo Venda' (VRJ_TIPVEN) está cadastrado com um dos tipos ["+cTpVdNaoPe+"]  .e.  o campo 'Chassi' (VRK_CHASSI) não está preenchido !!!" + Chr(13)+Chr(10) + Chr(13)+Chr(10) + ;
-										"Preencha o campo 'Chassi' para gravação do Pedido de Venda.", "VEIA060CAOA_PE.prw") 
-								xRet := .F. 
-							EndIf 
-						EndIf 
-					EndIf 
-				EndIf 
-			EndIf 
+										"Preencha o campo 'Chassi' para gravação do Pedido de Venda.", "VEIA060CAOA_PE.prw")
+								xRet := .F.
+							EndIf
+						EndIf
+					EndIf
+				EndIf
+			EndIf
 
 	// --> Incluso  CRISTIANO  14/12/2021   (*FINAL* ) ----------------------- //
 
@@ -173,8 +174,8 @@ User Function VEIA060()
 			If VRJ->VRJ_FORPAG $ _cPgNF .AND. VRJ->VRJ_STATUS = 'F' .AND. SE1->E1_PARCELA <> "1" //Forçar a parcela 1 no título p/Atribuição
 				//SE1->(dbSetOrder(1))
 				//If SE1->(dbSeek(xFilial("SE1") + '5  ' + cE1NUM  ))
-					IF Empty(SE1->E1_PARCELA) .AND. SE1->(!EOF()) 
-						RecLock("SE1",.F.) 
+					IF Empty(SE1->E1_PARCELA) .AND. SE1->(!EOF())
+						RecLock("SE1",.F.)
 							SE1->E1_PARCELA := "1"
 						SE1->(MsUnlock())
 					ENDIF
@@ -183,9 +184,32 @@ User Function VEIA060()
 
 		EndCase
 
+	EndIf  
+	
+	If (aParam <> Nil) .And. (aParam[2] <> "MODELVLDACTIVE") .And. (aParam[3] <> "VEIA060")
+
+		LPARA := .T.
+
+		If ((aParam[2] == "FORMPRE") .And. (aParam[3] == "MODEL_RESUMO") .And. (aParam[4] == 1) .And. ;
+		   (aParam[5] == "SETVALUE") .And. (aParam[6] == "RESVALTOT"))
+
+			oModel      := FWModelActive()
+			oModelVRK   := oModel:GetModel("MODEL_VRK")
+			oModelVRK:SetValue("VRK_XPECOM", VV2->&('VV2_XCOM'+StrZero(Val(VRJ_TIPVEN),1)) )
+			oModelVRK:SetValue("VRK_XVLCOM", oModelVRK:GetValue("VRK_VALVDA") * VV2->&('VV2_XCOM'+StrZero(Val(VRJ_TIPVEN),1))/100)
+
+		ElseIf ((aParam[2] == "FORMLINEPRE") .And. (aParam[3] == "MODEL_VRK") .And. (aParam[4] == 1) .And. ;
+		       (aParam[5] == "SETVALUE") .And. (aParam[6] == "VRK_VALMOV"))
+
+			oModel      := FWModelActive()
+			oModelVRK   := oModel:GetModel("MODEL_VRK")
+			oModelVRK:SetValue("VRK_XPECOM", VV2->&('VV2_XCOM'+StrZero(Val(VRJ_TIPVEN),1)) )
+			oModelVRK:SetValue("VRK_XVLCOM", oModelVRK:GetValue("VRK_VALVDA") * VV2->&('VV2_XCOM'+StrZero(Val(VRJ_TIPVEN),1))/100)
+
+		EndIf
 	EndIf
 	
-Return xRet 
+Return xRet
 
 
 /*/{Protheus.doc} nomeStaticFunction
