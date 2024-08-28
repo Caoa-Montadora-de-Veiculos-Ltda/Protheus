@@ -218,27 +218,29 @@ Begin Sequence
 	_cPedCli 	:= AllTrim(_oJson:GetJsonText("pedidovei"))
 
 	If _lNovo
-		_cNumPed := ""
+		_cNumPed := "" //GetSxeNum("SC5","C5_NUM")
 		ZRESTPRVAlterados( "SC5"	,"C5_FILIAL"	, FWxFilial('SC5')		, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
 		ZRESTPRVAlterados( "SC5"	,"C5_NUM"		, _cNumPed				, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
 	Else 
 		_cNumPed := SC5->C5_NUM	
 	Endif
 
-	ZRESTPRVAlterados( "SC5"	,"C5_CLIENTE"	, SA1->A1_COD								, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
-	ZRESTPRVAlterados( "SC5"	,"C5_LOJACLI"	, SA1->A1_LOJA								, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
-	ZRESTPRVAlterados( "SC5"	,"C5_CLIENT"	, SA1->A1_COD								, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
-	ZRESTPRVAlterados( "SC5"	,"C5_LOJAENT"	, SA1->A1_LOJA								, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
-	ZRESTPRVAlterados( "SC5"	,"C5_EMISSAO"	, StoD(_oJson:GetJsonText("dataemissao"))	, @_aCabSC5, @_aAlterado, _lNovo )   // Tipo 
-	ZRESTPRVAlterados( "SC5"	,"C5_CONDPAG"	, _oJson:GetJsonText("cdcondpgto")    		, @_aCabSC5, @_aAlterado, _lNovo )   // Tipo 
-	ZRESTPRVAlterados( "SC5"	,"C5_NATUREZ"	, _oJson:GetJsonText("cdnatureza")   		, @_aCabSC5, @_aAlterado, _lNovo )   // Endereco
-	ZRESTPRVAlterados( "SC5"	,"C5_TIPLIB"	, "1"   									, @_aCabSC5, @_aAlterado, _lNovo )   // Endereco
-	ZRESTPRVAlterados( "SC5"	,"C5_MOEDA"		, _nMoeda									, @_aCabSC5, @_aAlterado, _lNovo )   // Endereco
-	ZRESTPRVAlterados( "SC5"	,"C5_TIPOCLI"	, SA1->A1_TIPO   							, @_aCabSC5, @_aAlterado, _lNovo )   // Endereco
-	ZRESTPRVAlterados( "SC5"	,"C5_TPFRETE"	, _oJson:GetJsonText("tpfrete")   			, @_aCabSC5, @_aAlterado, _lNovo )   // Endereco
-	ZRESTPRVAlterados( "SC5"	,"C5_TRANSP" 	, _cCodTransp   							, @_aCabSC5, @_aAlterado, _lNovo )   //  Nome reduz.
-	ZRESTPRVAlterados( "SC5"	,"C5_XTIPVEN" 	, _oJson:GetJsonText("tpvenda")   			, @_aCabSC5, @_aAlterado, _lNovo )   //  Nome reduz.
-
+	Aadd( _aCabSC5, { "C5_CLIENTE"	, SA1->A1_COD								, Nil } )         
+	Aadd( _aCabSC5, { "C5_LOJACLI"	, SA1->A1_LOJA								, Nil } )         
+	Aadd( _aCabSC5, { "C5_CLIENT"	, SA1->A1_COD								, Nil } )         
+	Aadd( _aCabSC5, { "C5_LOJAENT"	, SA1->A1_LOJA								, Nil } )         
+	Aadd( _aCabSC5, { "C5_EMISSAO"	, StoD(_oJson:GetJsonText("dataemissao"))	, Nil } )          
+	Aadd( _aCabSC5, { "C5_CONDPAG"	, _oJson:GetJsonText("cdcondpgto")    		, Nil } )          
+	Aadd( _aCabSC5, { "C5_NATUREZ"	, _oJson:GetJsonText("cdnatureza")   		, Nil } )         
+	Aadd( _aCabSC5, { "C5_TIPLIB"	, "1"   									, Nil } )         
+	Aadd( _aCabSC5, { "C5_MOEDA"	, _nMoeda									, Nil } )         
+	Aadd( _aCabSC5, { "C5_TIPOCLI"	, SA1->A1_TIPO   							, Nil } )         
+	Aadd( _aCabSC5, { "C5_TPFRETE"	, _oJson:GetJsonText("tpfrete")   			, Nil } )         
+	Aadd( _aCabSC5, { "C5_TRANSP" 	, _cCodTransp   							, Nil } )        
+	Aadd( _aCabSC5, { "C5_XTIPVEN" 	, _oJson:GetJsonText("tpvenda")   			, Nil } )        
+	/* VERIFICAR SE SERA UTILIZADO NUMERO EXTERNO DO PEDIDO
+		C5_NUMEXT	c	 36
+	*/	 
 	//processar os itens
 	_cItem		:= CriaVar("C6_ITEM")
 	_nTam 		:= Len(_oJson["Itens"])
@@ -276,67 +278,72 @@ Begin Sequence
 		_cUnidade 	:= AllTrim(SB1->B1_UM)
 
  		//If _lNovo
-		//ZRESTPRVAlterados("SC6", "C6_FILIAL"	, FWxFilial('SC6')						, @_aLinha,	@_aAlterado, _lNovo )   
-		//ZRESTPRVAlterados("SC6", "C6_NUM"		, _cNumPed								, @_aLinha, @_aAlterado, _lNovo )   
+		//	ZRESTPRVAlterados("SC6", "C6_FILIAL"	, FWxFilial('SC6')						, @_aLinha,	@_aAlterado, _lNovo )   
+		//	ZRESTPRVAlterados("SC6", "C6_NUM"		, _cNumPed								, @_aLinha, @_aAlterado, _lNovo )   
 		//Endif
-		ZRESTPRVAlterados("SC6", "C6_ITEM"		, _cItem								, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_PRODUTO"	, _cCodProd								, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_UM"		, _cUnidade								, @_aLinha,	@_aAlterado, _lNovo )   
-     
-		ZRESTPRVAlterados("SC6", "C6_QTDVEN"	, _nQtdeItem							, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_PRCVEN"	, _nValUnit								, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_VALOR"		, _nValUnit								, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_PRUNIT"	, _nValUnit								, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_OPER"		, _cOper								, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_TES"		, _cCodTes								, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_PEDCLI"	, _cPedCli								, @_aLinha,	@_aAlterado, _lNovo )   
+		Aadd( _aLinha, { "C6_ITEM"		, _cItem					, Nil } )   
+		Aadd( _aLinha, { "C6_PRODUTO"	, _cCodProd					, Nil } )   
+		Aadd( _aLinha, { "C6_UM"		, _cUnidade					, Nil } )   
+		Aadd( _aLinha, { "C6_QTDVEN"	, _nQtdeItem				, Nil } )   
+		Aadd( _aLinha, { "C6_PRCVEN"	, _nValUnit					, Nil } )   
+		Aadd( _aLinha, { "C6_VALOR"		, _nValUnit					, Nil } )   
+		Aadd( _aLinha, { "C6_PRUNIT"	, _nValUnit					, Nil } )   
+		Aadd( _aLinha, { "C6_OPER"		, _cOper					, Nil } )   
+		Aadd( _aLinha, { "C6_TES"		, _cCodTes					, Nil } )   
+		Aadd( _aLinha, { "C6_PEDCLI"	, _cPedCli					, Nil } )   
+		Aadd( _aLinha, { "C6_XCODMAR"	, _cCodMar					, Nil } )   
+		Aadd( _aLinha, { "C6_XMODVEI"	, _cModVei					, Nil } )   
+		Aadd( _aLinha, { "C6_XDESMAR"	, VE1->VE1_DESMAR			, Nil } )   
+		Aadd( _aLinha, { "C6_XCORINT"	, _cCorInterna				, Nil } )   
+		Aadd( _aLinha, { "C6_XCOREXT"	, _cCorExterna				, Nil } )   
+		Aadd( _aLinha, { "C6_XDESMOD"	, VV2->VV2_DESMOD			, Nil } )   
+		Aadd( _aLinha, { "C6_XSEGMOD"	, _cSegMod					, Nil } )   
+		Aadd( _aLinha, { "C6_XDESSEG"	, VVX->VVX_DESSEG  			, Nil } )   
+		Aadd( _aLinha, { "C6_XFABMOD"	, _cFabMod					, Nil } )   
+		Aadd( _aLinha, { "C6_XGRPMOD"	, _cGrupoMod				, Nil } )   
+		Aadd( _aLinha, { "C6_XPRCTAB"	, _nValTab					, Nil } )   
+		Aadd( _aLinha, { "C6_XVLRPRD"	, _nValTab					, Nil } )   
+		Aadd( _aLinha, { "C6_XVLRMVT"	, _nValUnit					, Nil } )   
+		Aadd( _aLinha, { "C6_XVLRVDA"	, _nValTab					, Nil } )   
+		Aadd( _aLinha, { "C6_XBASST"	, VVP->VVP_BASEST			, Nil } )   
+		Aadd( _aLinha, { "C6_ITEMCTA"	, _cItemcta					, Nil } )   
+		Aadd( _aLinha, { "C6_CONTA"		, _cConta					, Nil } )   
+		Aadd( _aLinha, { "C6_CLVL"		, _cCLVL					, Nil } )   
 
-		ZRESTPRVAlterados("SC6", "C6_XCODMAR"	, _cCodMar								, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_XMODVEI"	, _cModVei								, @_aLinha,	@_aAlterado, _lNovo )   
+    	//Verificar como validar estes campos    
+		Aadd( _aLinha, {  "C6_CHASSI"	, CriaVar("C6_CHASSI" )		,	Nil })  
+		Aadd( _aLinha, {  "C6_LOCALIZ"	, CriaVar("C6_LOCALIZ")		,	Nil })   
+		Aadd( _aLinha, {  "C6_NUMSERI"	, CriaVar("C6_NUMSERI")		,	Nil })   
 
-		ZRESTPRVAlterados("SC6", "C6_XDESMAR"	, 										, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_XCORINT"	, _cCorInterna							, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_XCOREXT"	, _cCorExterna							, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_XDESMOD"	, VV2->VV2_DESMOD						, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_XSEGMOD"	, _cSegMod								, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_XDESSEG"	, VVX->VVX_DESSEG  						, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_XFABMOD"	, _cFabMod								, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_XGRPMOD"	, _cGrupoMod							, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_XPRCTAB"	, _nValTab								, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_XVLRPRD"	, _nValTab								, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_XVLRMVT"	, _nValUnit								, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_XVLRVDA"	, _nValTab								, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_XBASST"	, VVP->VVP_BASEST						, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_ITEMCTA"	, _cItemcta								, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_CONTA"		, _cConta								, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_CLVL"		, _cCLVL								, @_aLinha,	@_aAlterado, _lNovo )   
+		Aadd( _aLinha, {  "C6_XFILPVR"	, FWxFilial("ZZN")			,	Nil })   
+		Aadd( _aLinha, {  "C6_XCODPVR"	, "PREVISAO"				,	Nil })   
 
 		If SC6->(FieldPos("C6_XOPCION"))
-			ZRESTPRVAlterados("SC6", "C6_XOPCION"	, _oJson["itens"][_nPos]:GetJsonText("cdopcional")	, @_aLinha,	@_aAlterado, _lNovo )   
+			Aadd( _aLinha, {  "C6_XOPCION"	, _oJson["itens"][_nPos]:GetJsonText("cdopcional") 	, Nil })   
 		Endif
-    	//Verificar como validar estes campos    
-		ZRESTPRVAlterados("SC6", "C6_CHASSI"	, CriaVar("C6_CHASSI" )					, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_LOCALIZ"	, CriaVar("C6_LOCALIZ")					, @_aLinha,	@_aAlterado, _lNovo )   
-		ZRESTPRVAlterados("SC6", "C6_NUMSERI"	, CriaVar("C6_NUMSERI")					, @_aLinha,	@_aAlterado, _lNovo )   
+		If SC6->(FieldPos("C6_XIDITEM"))
+			Aadd( _aLinha, {  "C6_XOPCION"	, _oJson["itens"][_nPos]:GetJsonText("iditem") 		, Nil })   
+		Endif
+
     	Aadd( _aItens , _aLinha )
 	Next _nPos 
 	If Len(_aCabSC5) == 0 .Or. Len(_aItens) == 0 
 		U_ZRETMsgJson("erropad","Nao foi possivel carregar parametos dos campos para o Pedido "+_cPedCli+" !")
 		_lRet := .F. 
 	Endif	
-	//Mensagens extraidas no processo
-	_cMsg := ZRESTPRVMErros(_oJson, _aAlterado, _cPedCli, _lNovo, _lRet) 
     //Executa a inclusão do pedido e gravação da Previsão
 	If _lRet 
-		StartJob("U_ZJPRVGPE",GetEnvServer(),.T., _cPedCli, _aCabSC5, _aItens, _nOper, _cMsg, cEmpAnt, cFilAnt)
+		StartJob("U_ZJPRVGPE",GetEnvServer(),.T., _cPedCli, _aCabSC5, _aItens, _nOper,  cEmpAnt, cFilAnt)
 	Endif
 End Sequence
+//Mensagens extraidas no processo
+_cMsg := ZRESTPRVMErros(_oJson, _cPedCli, _lNovo, _lRet) 
 
 Return _lRet 
 
 
 //Monta msg de Erro a ser gravada
-Static Function ZRESTPRVMErros(_oJson, _aAlterado, _cPedCli, _lNovo, _lRet)
+Static Function ZRESTPRVMErros(_oJson,  _cPedCli, _lNovo, _lRet)
 //Local _aCampos	:= {}
 //Local _nReg 	:= If(_lRet,SC5->(RECNO()),0 ) 
 Local _cMsg		AS Character
@@ -350,14 +357,6 @@ _nError	:= 0
 	If _lRet 
 		_cStatus 	:=	"1"
 		_cMsg 		:=  "Pedido "+_cPedCli+If(_lNovo," Incluído"," Alterado")+" enviado para processo"+CRLF
-		//Indica que alterou campos
-		If Len(_aAlterado) > 0 
-			_cMsg 	:= "Alteracoes cadastro de Clientes Responsavel "+_cResp+" em "+DtOC(Date())+" - "+Time()
-			_cMsg 	+= CRLF
-			For _nPos := 1 To Len(_aAlterado)
-				_cMsg += _aAlterado[_nPos] +CRLF
-			Next 
-		Endif 
 	Else 
 		_cStatus 	:=	"2"
 		_cMsg 		:=  "Pedido "+_cPedCli+"referente a "+If(_lNovo,"inclusao","Alteracao")+" apresentou inconsistencias"+CRLF
@@ -366,12 +365,8 @@ _nError	:= 0
 			_cMsg += StrZero(_nError,3)+" - "+_aMsgRet[_nPos,2] + CRLF
 		Next
 	Endif 
-	//Adiciono para gravar msgem de alteração
-	//AAdd(_aCampos,{"Z1_MSGLOG"	, Upper(_cMsg)	})
-
-	//ZRESTPRVMonitor(_cStatus, "_cTab", _cDoc, _cMens, _cErro, _dDataIni, _cHsIni, _nErro, _nReg )
-	//ZRESTPRVMonitor(_cStatus, SC5, _cPedCli, _cMsg, _cError, _dDataIni, _cHsIni, _nError, _nReg )
 Return _cMsg
+
 
 
 //Valida campos enviados no REST
@@ -693,7 +688,7 @@ Private aHeader         := {}
 	_lRet			:= .T.
 	_cOper1  		:= AllTrim(SuperGetMV("CAOA_AUT1D", ,'92'))
 	_cOper2 		:= AllTrim(SuperGetMV("CAOA_AUT1E", ,'93'))
-	_cTesPar 		:= AllTrim(SuperGetMV("CAOA_AUT1F", ,'501'))
+	_cTesPar 		:= AllTrim(SuperGetMV("CAOA_AUT1F", ,'508'))
 	_cOperIni 		:= _cOper
 
 	//Caso  tenha sido informado operação
@@ -711,7 +706,7 @@ Private aHeader         := {}
     	_cCodTes 	:= MaTesInt(2, _cOper, SA1->A1_COD, SA1->A1_LOJA, "C", _cCodProd, "C6_TES") 
 	Endif		
 	//caso não localize ainda tenho a TES do parâmetro
-	_cOper := _cOperIni
+	_cOper := If(Empty(_cOperIni), _cOper1, _cOperIni)
 	If Empty(_cCodTes) .And. !Empty(_cTesPar)
 		_cCodTes := _cTesPar 
 	Endif
@@ -903,7 +898,7 @@ Return Nil
 
 //Gravar Pedido funcionalidade chamada por JOB
 //User Function ZJPRVGPE( _aCabPed, _aItens, _cMsg )
-FUNCTION U_ZJPRVGPE( _cPedCli, _aCabPed, _aItens,  _nOpc, _cMsg, _cEmpresa, _cFilial )
+FUNCTION U_ZJPRVGPE( _cPedCli, _aCabPed, _aItens,  _nOpc, _cEmpresa, _cFilial )
 Local _cError 		AS Character
 Local _cNumPed		AS Character
 Local _cItem		AS Character
@@ -932,6 +927,7 @@ Default _cFilial    := ""
 
 Begin Sequence
 	//se for JOB	
+	_lJob	:= IsBlind()
 	If _lJob 
 		//Tratar abertura da empresa conforme enviado no parametro
 		Conout("U_ZJPRVGPE - Iniciando JOB")
@@ -949,11 +945,11 @@ Begin Sequence
 		Break 
 	Endif 
 
+	DbSelectArea("SC5")
 	_lRet 			:= .F.
-	_lJob			:= IsBlind()
 	_aRetMsg 		:= {}  //Gravar os retornos
 	_lNovo 			:= If(_nOpc == 3, .T., .F.)
-	_cNumPed		:= Spae(Len(SC5->C5_NUM))
+	_cNumPed		:= ""
 	_nPosItem		:= 0
 	_nPosQtdItem	:= 0
 
@@ -982,18 +978,21 @@ Begin Sequence
 		Aadd(_aRetMsg, _cError)
 		Break 
 	Endif	
+	
 	If _lNovo
 		_cNumPed := GetSxeNum("SC5","C5_NUM")
 	Else 
 		_cNumPed := SC5->C5_NUM	
 	Endif
+	
 	_aCabPed[_nPosCpo,2] := _cNumPed
- 
+	
 	//Private lMsHelpAuto 	:= .T.  // força a gravação das informações de erro em array para manipulação da gravação ao invés de gravar direto no arquivo temporário 
 	Private lMsErroAuto 	:= .F.	// variável que define que o help deve ser gravado no arquivo de log e que as informações estão vindo à partir da rotina automática.
 	Private lAutoErrNoFile 	:= .T.  //Variavel de Controle do GetAutoGRLog
 
 	//Será processado produto a produto Fazer Ajustes
+	DbSelectArea("SC6")
     For _nCount := 1 To Len(_aItens) 
 		_cItem		:= CriaVar("C6_ITEM")
 		_nQtdeItem	:= _aItens[_nCount, _nPosQtdItem, 2]  //_aItens[1][21][2] ="20242025"
@@ -1002,7 +1001,7 @@ Begin Sequence
 			_cItem 			:= Soma1(_cItem)  
 			_aItens[_nCount, _nPosItem,2] 		:= _cItem  //Atualiza o numerdo do item  
 			_aItens[_nCount, _nPosQtdItem, 2] 	:= 1  //Atualiza o numerdo do item  
-			AAdd(_aGrvItens, _aItens[_nCount])
+			AAdd(_aGrvItens, Aclone(_aItens[_nCount]))
 		Next _nPos	
 		lMsErroAuto 	:= .F.	// variável que define que o help deve ser gravado no arquivo de log e que as informações estão vindo à partir da rotina automática.
 		lAutoErrNoFile 	:= .T.  //Variavel de Controle do GetAutoGRLog
@@ -1044,13 +1043,30 @@ Aadd( _aDctos, {"pedidovei"		, _cPedCli})
 Aadd( _aDctos, {"cnpjcpf"		, SA1->A1_CGC}) 
 Aadd( _aDctos, {"pedidoadd"		, If(_lRet,_cNumPed,"")}) 
 Aadd( _aDctos, {"pedidoemissao"	, DtoS(dDataBase)})
-Aadd( _aDctos, {"pedidoblq"		, "1"})
+Aadd( _aDctos, {"pedidoblq"		, "2"})  
 Aadd( _aDctos, {"status"		, _nStatus})
 Aadd( _aDctos, {"ocorrencias"	, _cError})
-
-
 //Enviar informações conectando nova API
 U_ZJPRVAUT( _aDctos, _aRetMsg, _lJob)
+
+/*  Avaliar alterações
+		//Indica que alterou campos
+	//Adiciono para gravar msgem de alteração
+	//AAdd(_aCampos,{"Z1_MSGLOG"	, Upper(_cMsg)	})
+
+	//ZRESTPRVMonitor(_cStatus, "_cTab", _cDoc, _cMens, _cErro, _dDataIni, _cHsIni, _nErro, _nReg )
+	//ZRESTPRVMonitor(_cStatus, SC5, _cPedCli, _cMsg, _cError, _dDataIni, _cHsIni, _nError, _nReg )
+
+		If Len(_aAlterado) > 0 
+			_cMsg 	:= "Alteracoes cadastro de Clientes Responsavel "+_cResp+" em "+DtOC(Date())+" - "+Time()
+			_cMsg 	+= CRLF
+			For _nPos := 1 To Len(_aAlterado)
+				_cMsg += _aAlterado[_nPos] +CRLF
+			Next 
+		Endif 
+
+*/
+
 Return Nil	
 
 
@@ -1059,6 +1075,7 @@ Return Nil
 FUNCTION U_ZJPRVAUT( _aDctos, _aRetMsg, _lJob)
 Local _oJsonRet 	AS Object
 Local _nPosCpo 		As Numeric
+Local _aMsgRet		AS Array
 //Local _cUsuario		:= SuperGetMV( "CMV_WSR009"  ,,"caoa.totvs" )  //Alltrim(Getmv("CMV_WSR009"))  
 //Local _cSenha	 		:= SuperGetMV( "CMV_WSR010"  ,,"CAgka2694X" )	//Alltrim(Getmv("CMV_WSR010"))  
 
@@ -1079,22 +1096,25 @@ Default _aRetMsg 	:= {}
 	_oJsonRet['notafiscalemissao']	:= If( (_nPosCpo := Ascan(_aDctos,{|x| x[1] == "notafiscalemissao"})) > 0	, _aDctos[_nPosCpo,2],"" )
 	_oJsonRet['ocorrencias']		:= If( (_nPosCpo := Ascan(_aDctos,{|x| x[1] == "ocorrencias"})) > 0			, _aDctos[_nPosCpo,2],"" )
 	_oJsonRet['notafiscalxml']		:= If( (_nPosCpo := Ascan(_aDctos,{|x| x[1] == "notafiscalxml"})) > 0		, _aDctos[_nPosCpo,2],"" )
-	ZWSRENVPOS( _oJsonRet, _lJob)
+	_aMsgRet := ZWSRENVPOS( _oJsonRet, _lJob)
+	If Len(_aMsgRet) == 0 
+		Aadd(_aMsgRet,{999,"Erro Interno verificar com ADM Sistemas"})
+	Endif
+    //Gravar dados em tabela de log	
 Return Nil
 
 // Envio do Picking para carregamento
 Static Function ZWSRENVPOS( _oJson, _lJob) //zPostRg(_oJson)  
-
 Local _cUrl			AS Character
 //Local _cPathUrl    AS Character	
 Local _aHeader     	AS Character
 Local _cHeaderGet  	AS Character  
 Local _cApi 		AS Character
 Local _cJson 		AS Character	   	
-Local _lRet			AS Logical
 Local _nCont		AS numeric
 Local _nTempo		AS numeric
-Local _oJsRet		as Object        	
+Local _oJsRet		AS Object        
+Local _aMsgRet		AS Array	
 Local _cRes        	
 
 _cUrl			:= Alltrim(Getmv("CMV_WSR001"))  //"wmsapi.rgtracking.com.br:8080/interfacewis/entrada/pedido/"
@@ -1102,64 +1122,59 @@ _cUrl			:= Alltrim(Getmv("CMV_WSR001"))  //"wmsapi.rgtracking.com.br:8080/interf
 _aHeader     	:= {"Content-Type: application/json; charset=utf-8"}  //"Content-Type: application/json"
 _cRes        	:= Nil
 _cHeaderGet  	:= ""  
-_lRet			:= .T.
 _nCont			:= 0
-_cApi 			:= SubStr( cUrl, At("/", cUrl) )
+_cApi 			:= SubStr( _cUrl, At("/", _cUrl) )
 _nTempo			:= 3	//reduzido o tempo pois podera tentar enviar novamente apÃ³s o final do processamento ZPECF08
 _cJson 	   		:= ""
+_aMsgRet		:= {}
 
+Begin Sequence
+	If Empty(_cUrl)
+		Aadd(_aMsgRet,{999,"Erro Retorno Padrao, Não esta informada URL"})
+		Break 
+	Endif
 	_oJsRet	:= JsonObject():New()
-	Begin Sequence
-		_cJson 	:= _oJson:toJSON()
-		_cJson 	:= EncodeUTF8( _cJson )
-
-		While Valtype(_cRes) = "U"
-			_nCont ++
-			If !_lJob
-				_oSay:SetText("Conectando a API " + _cApi + " - RGLog... " + "Tentativa " + cValToChar(_nCont) + " de " + cValToChar(10)  )
-			EndIf
-			_cRes 	:= HttpPost( _cUrl, "", _cJson, 60, _aheader, @_cHeaderGet)
-			If Valtype(_cRes) = "U"
-				Sleep(3000)
-			EndIf
-			If _nCont == _nTempo  
-				Exit
-			EndIf 
-		EndDo
-
-		if Valtype(_cRes) = "U"
-			_lRet := .F.
-			//Return {.f., "Sen retorno do Host"}
-			Aadd(_aMsgRet,{999,"Nao existe retorno do Host, excedido o numero de tentativas de conexÃ£o"})
-			Break
+	_cJson 	:= _oJson:toJSON()
+	_cJson 	:= EncodeUTF8( _cJson )
+	While Valtype(_cRes) = "U"
+		_nCont ++
+		If !_lJob
+			_oSay:SetText("Conectando a API " + _cApi + " - RGLog... " + "Tentativa " + cValToChar(_nCont) + " de " + cValToChar(10)  )
 		EndIf
-
-		_oJsRet:FromJSON(_cRes)
-		if _oJsRet:hasProperty("status") = .F.
-			_lRet := .F.
-			Aadd(_aMsgRet,{999,"Nao retornou Status de Processamento:" + _cRes})
-			Break
-		Endif
-
-		if  _oJsRet["status"] = 100  
-			Aadd(_aMsgRet,{_oJsRet["status"],"Processado com Sucesso "+_cRes})
-			Break
+		_cRes 	:= HttpPost( _cUrl, "", _cJson, 60, _aheader, @_cHeaderGet)
+		If Valtype(_cRes) = "U"
+			Sleep(3000)
 		EndIf
-
-		if  _oJsRet["status"] >= 500  .Or. _oJsRet["status"] <= 599
-			_lRet := .F.
-			Aadd(_aMsgRet,{_oJsRet["status"],"Erro interno do servidor Autoware "+_cRes})
-			Break
-		EndIf
-
-		if  _oJsRet["status"] >= 600  .Or. _oJsRet["status"] <= 700
-			_lRet := .F.
-			Aadd(_aMsgRet,{_oJsRet["status"],"Erro Retorno Padrao "+_cRes})
-			Break
-		EndIf
-	End Sequence
-	//SetRestFault(_aMsgRet[1,1],_aMsgRet[1,2])
-Return _lRet
+		If _nCont == _nTempo  
+			Exit
+		EndIf 
+	EndDo
+	if Valtype(_cRes) = "U"
+		//Return {.f., "Sen retorno do Host"}
+		Aadd(_aMsgRet,{999,"Nao existe retorno do Host, excedido o numero de tentativas de conexÃ£o"})
+		Break
+	EndIf
+	_oJsRet:FromJSON(_cRes)
+	if _oJsRet:hasProperty("status") = .F.
+		Aadd(_aMsgRet,{999,"Nao retornou Status de Processamento:" + _cRes})
+		Break
+	Endif
+	if  _oJsRet["status"] = 100  
+		Aadd(_aMsgRet,{_oJsRet["status"],"Processado com Sucesso "+_cRes})
+		Break
+	EndIf
+	if  _oJsRet["status"] >= 500  .Or. _oJsRet["status"] <= 599
+		Aadd(_aMsgRet,{_oJsRet["status"],"Erro interno do servidor Autoware "+_cRes})
+		Break
+	EndIf
+	if  _oJsRet["status"] >= 600  .Or. _oJsRet["status"] <= 700
+		Aadd(_aMsgRet,{_oJsRet["status"],"Erro Retorno Padrao "+_cRes})
+		Break
+	EndIf
+End Sequence
+Conout("U_ZRESTPRV : "+_aMsgRet[1,2])
+//SetRestFault(_aMsgRet[1,1],_aMsgRet[1,2])
+Return _aMsgRet
 
 
 
@@ -1225,7 +1240,138 @@ Return .T.
 */
 
 
+/*
+	_aAlterado 	:= {}  //indicação de alteração do campo
+	_aCabSC5	:= {}
+	//_nOper		:= 3   //operação inclusão
+	_cHsIni		:= SubsTr(Time(),1,5)
+	_dDataIni	:= Date()
+	_nMoeda		:= 1
+	_cTipoLib	:= "1"
+	_cTipoOper	:= AllTrim(_oJson:GetJsonText("tpoperacao"))
+	If _cTipoOper == "1"	//inclui
+		_lNovo := .T.
+		_nOper := 3
+	ElseIf _cTipoOper == "2"  //Altera
+		_lNovo := .F.
+		_nOper := 4
+	ElseIf _cTipoOper == "3"  //Exclui
+		_nOper := 5
+	Endif
 
+	_aCabSC5	:= {}
+	_aItens 	:= {}
+	_cPedCli 	:= AllTrim(_oJson:GetJsonText("pedidovei"))
+
+	If _lNovo
+		_cNumPed := "" //GetSxeNum("SC5","C5_NUM")
+		ZRESTPRVAlterados( "SC5"	,"C5_FILIAL"	, FWxFilial('SC5')		, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
+		ZRESTPRVAlterados( "SC5"	,"C5_NUM"		, _cNumPed				, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
+	Else 
+		_cNumPed := SC5->C5_NUM	
+	Endif
+
+	ZRESTPRVAlterados( "SC5"	,"C5_CLIENTE"	, SA1->A1_COD								, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
+	ZRESTPRVAlterados( "SC5"	,"C5_LOJACLI"	, SA1->A1_LOJA								, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
+	ZRESTPRVAlterados( "SC5"	,"C5_CLIENT"	, SA1->A1_COD								, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
+	ZRESTPRVAlterados( "SC5"	,"C5_LOJAENT"	, SA1->A1_LOJA								, @_aCabSC5, @_aAlterado, _lNovo )   // Nome
+	ZRESTPRVAlterados( "SC5"	,"C5_EMISSAO"	, StoD(_oJson:GetJsonText("dataemissao"))	, @_aCabSC5, @_aAlterado, _lNovo )   // Tipo 
+	ZRESTPRVAlterados( "SC5"	,"C5_CONDPAG"	, _oJson:GetJsonText("cdcondpgto")    		, @_aCabSC5, @_aAlterado, _lNovo )   // Tipo 
+	ZRESTPRVAlterados( "SC5"	,"C5_NATUREZ"	, _oJson:GetJsonText("cdnatureza")   		, @_aCabSC5, @_aAlterado, _lNovo )   // Endereco
+	ZRESTPRVAlterados( "SC5"	,"C5_TIPLIB"	, "1"   									, @_aCabSC5, @_aAlterado, _lNovo )   // Endereco
+	ZRESTPRVAlterados( "SC5"	,"C5_MOEDA"		, _nMoeda									, @_aCabSC5, @_aAlterado, _lNovo )   // Endereco
+	ZRESTPRVAlterados( "SC5"	,"C5_TIPOCLI"	, SA1->A1_TIPO   							, @_aCabSC5, @_aAlterado, _lNovo )   // Endereco
+	ZRESTPRVAlterados( "SC5"	,"C5_TPFRETE"	, _oJson:GetJsonText("tpfrete")   			, @_aCabSC5, @_aAlterado, _lNovo )   // Endereco
+	ZRESTPRVAlterados( "SC5"	,"C5_TRANSP" 	, _cCodTransp   							, @_aCabSC5, @_aAlterado, _lNovo )   //  Nome reduz.
+	ZRESTPRVAlterados( "SC5"	,"C5_XTIPVEN" 	, _oJson:GetJsonText("tpvenda")   			, @_aCabSC5, @_aAlterado, _lNovo )   //  Nome reduz.
+
+	//processar os itens
+	_cItem		:= CriaVar("C6_ITEM")
+	_nTam 		:= Len(_oJson["Itens"])
+	For _nPos := 1 To _nTam
+		_aLinha		:= {}
+		_nQtdeItem 	:= 	Val(AllTrim(_oJson["Itens"][_nPos]:GetJsonText("qtdeitem")))
+		_cFabMod	:= AllTrim(_oJson["Itens"][_nPos]:GetJsonText("anofabricacao"))+AllTrim(_oJson["Itens"][_nPos]:GetJsonText("anomodelo"))
+		_cCodMar 	:= AllTrim(_oJson["Itens"][_nPos]:GetJsonText("cdmarca"))
+		_cModVei 	:= AllTrim(_oJson["Itens"][_nPos]:GetJsonText("cdmodvei"))
+		_cSegMod 	:= AllTrim(_oJson["Itens"][_nPos]:GetJsonText("cdsegmod"))
+		_cGrupoMod 	:= AllTrim(_oJson["Itens"][_nPos]:GetJsonText("cdgrupomod"))
+		_cCorInterna:= AllTrim(_oJson["Itens"][_nPos]:GetJsonText("cdcorinterna"))
+		_cCorExterna:= AllTrim(_oJson["Itens"][_nPos]:GetJsonText("cdcorexterna"))
+		_nValUnit	:= Val(_oJson["Itens"][_nPos]:GetJsonText("valorunitario"))
+	    _cCodProd 	:= _cModVei + _cSegMod	//montagem do codigo produto
+		_nValTab 	:= ZRESTPRVPTabela( _cCodMar, _cModVei, _cSegMod, _cFabMod)  //tabela de veiculo
+		//_cItem 		:= Soma1(_cItem)
+		//localizar relacionamento veiculo
+		If ! ZRESTPRVRVeiculo(_cCodProd, _cCodMar, _cModVei, _cSegMod, _cItem)
+			_lRet := .F. 
+			Exit
+		Endif
+		If !Empty(_oJson["Itens"][_nPos]:GetJsonText("cdoperacao"))
+			_cOper := _oJson["Itens"][_nPos]:GetJsonText("cdoperacao")
+		Endif	
+		//valida Operação
+		If !ZRESTPRVOper(@_cOper, @_cCodTes, _cItem, _cCodProd)
+			_lRet := .F. 
+			Exit 
+		Endif
+		_cItemcta 	:= AllTrim(SB1->B1_ITEMCC)	
+		_cConta  	:= AllTrim(SB1->B1_CONTA)
+		_cCLVL    	:= AllTrim(SB1->B1_CLVL)
+		_cGrupoSB1	:= AllTrim(SB1->B1_GRUPO)
+		_cUnidade 	:= AllTrim(SB1->B1_UM)
+
+ 		//If _lNovo
+		//	ZRESTPRVAlterados("SC6", "C6_FILIAL"	, FWxFilial('SC6')						, @_aLinha,	@_aAlterado, _lNovo )   
+		//	ZRESTPRVAlterados("SC6", "C6_NUM"		, _cNumPed								, @_aLinha, @_aAlterado, _lNovo )   
+		//Endif
+		ZRESTPRVAlterados("SC6", "C6_ITEM"		, _cItem								, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_PRODUTO"	, _cCodProd								, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_UM"		, _cUnidade								, @_aLinha,	@_aAlterado, _lNovo )   
+     
+		ZRESTPRVAlterados("SC6", "C6_QTDVEN"	, _nQtdeItem							, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_PRCVEN"	, _nValUnit								, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_VALOR"		, _nValUnit								, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_PRUNIT"	, _nValUnit								, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_OPER"		, _cOper								, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_TES"		, _cCodTes								, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_PEDCLI"	, _cPedCli								, @_aLinha,	@_aAlterado, _lNovo )   
+
+		ZRESTPRVAlterados("SC6", "C6_XCODMAR"	, _cCodMar								, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XMODVEI"	, _cModVei								, @_aLinha,	@_aAlterado, _lNovo )   
+
+		ZRESTPRVAlterados("SC6", "C6_XDESMAR"	, 										, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XCORINT"	, _cCorInterna							, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XCOREXT"	, _cCorExterna							, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XDESMOD"	, VV2->VV2_DESMOD						, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XSEGMOD"	, _cSegMod								, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XDESSEG"	, VVX->VVX_DESSEG  						, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XFABMOD"	, _cFabMod								, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XGRPMOD"	, _cGrupoMod							, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XPRCTAB"	, _nValTab								, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XVLRPRD"	, _nValTab								, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XVLRMVT"	, _nValUnit								, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XVLRVDA"	, _nValTab								, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_XBASST"	, VVP->VVP_BASEST						, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_ITEMCTA"	, _cItemcta								, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_CONTA"		, _cConta								, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_CLVL"		, _cCLVL								, @_aLinha,	@_aAlterado, _lNovo )   
+
+		If SC6->(FieldPos("C6_XOPCION"))
+			ZRESTPRVAlterados("SC6", "C6_XOPCION"	, _oJson["itens"][_nPos]:GetJsonText("cdopcional")	, @_aLinha,	@_aAlterado, _lNovo )   
+		Endif
+    	//Verificar como validar estes campos    
+		ZRESTPRVAlterados("SC6", "C6_CHASSI"	, CriaVar("C6_CHASSI" )					, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_LOCALIZ"	, CriaVar("C6_LOCALIZ")					, @_aLinha,	@_aAlterado, _lNovo )   
+		ZRESTPRVAlterados("SC6", "C6_NUMSERI"	, CriaVar("C6_NUMSERI")					, @_aLinha,	@_aAlterado, _lNovo )   
+    	Aadd( _aItens , _aLinha )
+	Next _nPos 
+	If Len(_aCabSC5) == 0 .Or. Len(_aItens) == 0 
+		U_ZRETMsgJson("erropad","Nao foi possivel carregar parametos dos campos para o Pedido "+_cPedCli+" !")
+		_lRet := .F. 
+	Endif	
+
+*/
 
 
 /*
