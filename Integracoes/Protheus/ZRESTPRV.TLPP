@@ -1071,6 +1071,453 @@ Return Nil
 
 
 
+
+Static Function ZFATF025G1( _cCodPrv, _aMsgErro, _lMens, _oSay )
+Local _cAliasPesq 	AS Character 
+Local _lRet 		AS Logical
+Local _cFilPrv		AS Character
+Local _cNumPrev		AS Character
+Local _cChave		AS Character
+Local _cQuery		AS Character 
+Local _cMens		AS Character
+Local _nStatus 		AS Number 
+
+Local _aMsg 		:= {}
+Local _aRet 		:= {}
+Local _lIncGeral 	:= FWIsInCallStack("ZFATF025Inclui")
+Local _aRegZZP		:= {}
+Local _cOrderTab	:= "C6_FILIAL, C6_CLI, C6_LOJA, C6_PRODUTO, VRK_FABMOD, VRK_MODVEI, VRK_SEGMOD, C6_PEDCLI, C6_ITEM " 
+Local _cAliasPrev 	:= GetNextAlias()
+Local _cLinhaPrev    := ""
+
+Local _nPos 
+Local _cCliente 	
+Local _cLoja   
+Local _cCGC 	
+Local _cProduto 	
+Local _nVlrVen  	
+Local _nVlrUnit  	
+Local _nQtVen		
+Local _cModelo
+Local _cSegMod
+Local _cFabAno 
+Local _cItem
+Local _aRegSC6
+Local _nQtdeReg
+Local _nQtdeLidos
+Local _cMens
+
+Default _cChave		:='PREVISAO'
+Default _lMens		:= .T.
+Default _aMsgErro  	:= {}
+
+
+
+
+Begin Sequence 
+	_cAliasPesq := GetNextAlias()
+	_cChave		:= "PREVISAO"    //Valor guardado quando da importação autoware
+	_cNumPrev	:= "" 
+	_cFilPrv	:= FwxFilial("ZZN")
+
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+		SELECT 	MAX(ZZN.ZZN_CODPRV) AS NPREVISAO
+		FROM  	%Table:ZZN% ZZN
+		WHERE 	ZZN.%notDel% 
+			AND ZZN.ZZN_FILIAL 	= %xFilial:ZZN%
+	EndSql
+	_cNumPrev := Soma1((_cAliasPesq)->NPREVISAO) 
+	If Select(_cAliasPesq) <> 0
+		(_cAliasPesq)->(DbCloseArea())
+	Endif	
+
+	_cQuery	:= "UPDATE " + RetSqlName("SC6") +" SC6 "				+ CRLF
+	_cQuery	:= "SET		SC6.C6_XCODPVR 	= "+ _cNumPrev 				+ CRLF
+	_cQuery	:= "		SC6.C6_XCODPVR 	= "+ _cFilPrv 				+ CRLF
+	_cQuery	:= "WHERE  	SC6.D_E_L_E_T_  = ' ' " 					+ CRLF
+	_cQuery	:= "	AND SC6.C6_FILIAL 	= "+ FwxFilial("SC6") 		+ CRLF 
+	_cQuery	:= "	AND SC6.C6_XCODPVR	= "+ _cChave% 				+ CRLF
+    _cQuery	:= " 	AND SC6.C6_QTDVEN  	> "+ SC6.C6_QTDENT 			+ CRLF
+    _cQuery	:= " 	AND SC5.C5_TIPO   	=  'N'"  					+ CRLF
+    _cQuery	:= " 	AND SC6.C6_PEDCLI 	<> ' '" 					+ CRLF
+    _cQuery	:= " 	AND SC6.C6_NOTA     = ' ' "						+ CRLF
+    _cQuery	:= " 	AND SC6.C6_BLQ      = ' ' "						+ CRLF
+
+    _nStatus := TCSqlExec(_cQuery)
+	If _nStatus < 0
+ 		_cMens := "Não encontrado Pedidos para o Produto "+_cProduto+" Ano Fab "+_cFabAno+" referente ao Cliente "+_cCliente+" "+_cLinhaPrev
+		Aadd(_aMsgErro,_cMens)
+		If _lMens
+	    	ApMsgStop(_cMens, "Previsão Faturamento")
+		Endif 
+		Break 
+	Endif	
+
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+        %NoParser%
+		SELECT	SC6.C6_CLI
+				, SC6.C6_LOJA
+				, SC6.C6_PRODUTO
+				, SC6.C6_XFABMOD
+				, SC6.C6_XMODVEI
+				, SC6.C6_XSEGMOD
+				, SC5.C5_XTIPVEN
+				, SUM(SC6->C6_QTDVEN) AS C6_QTDVEN 
+				, MAX(SC6.C6_VALTAB)  AS C6_VALTAB
+				, MAX(SC6.C6_PRUNIT)  AS C6_PRUNIT
+		FROM  	%Table:SC6% SC6 
+   		JOIN 	%Table:SC5% SC5
+			ON  SC5.%notDel% 
+			AND SC5.C5_FILIAL 	= %xFilial:SC5%  
+			AND SC5.C5_NUM 		= SC6.C6_NUM 	  
+      	JOIN %Table:SA1% SA1
+   			ON  SA1.%notDel%
+			AND SA1.A1_FILIAL  	= %xFilial:SA1% 
+   			AND SA1.A1_COD     	= SC6.C6_CLI 
+   			AND SA1.A1_LOJA    	= SC6.C6_LOJA 
+    	JOIN %Table:SB1% SB1
+   			ON  SB1.%notDel%
+    	    AND SB1.B1_FILIAL  	=  %xFilial:SB1% 
+    	    AND SB1.B1_COD     	= SC6.C6_PRODUTO 
+    	    AND SB1.B1_GRUPO   	= 'VEIA' 
+
+		WHERE  	SC6.%notDel% 
+			AND SC6.C6_XFILPVR 	= %xFilial:ZZP%  
+			AND SC6.C6_XCODPVR	= %Exp:_cCodPrv%
+     		AND SC6.C6_QTDVEN  	> SC6.C6_QTDENT 
+     		AND SC5.C5_TIPO   	= 'N' 
+     		AND SC6.C6_PEDCLI 	<> ' ' 
+     		AND SC6.C6_NOTA     = ' ' 
+     		AND SC6.C6_BLQ      = ' ' 
+		GROUP BY SC6.C6_CLI
+				, SC6.C6_LOJA
+				, SC6.C6_PRODUTO
+				, SC6.C6_XFABMOD
+				, SC6.C6_XMODVEI
+				, SC6.C6_XSEGMOD 
+				, SC5.C5_XTIPVEN
+		ORDER BY 1,2,3,4,5,6
+	EndSql
+	(_cAliasPesq)->(DbGoTop())
+	If (_cAliasPesq)->(Eof())
+		_cMens := "Não existem registros para Previsão "
+		Aadd(_aMsgErro,_cMens)
+		If _lMens
+	    	ApMsgStop(_cMens, "Previsão Faturamento")
+		Endif 
+		_lRet := .F.
+		Break
+	Endif 
+	//Realizar o Select
+	_oSay:SetText("Aguarde Selecionando registros ... Hora: "+Time() )
+	ProcessMessage()
+
+	DbSelectArea(_cAliasPrev)
+	Count To _nQtdeReg	  //Conta quantos chassis estão disponiveis
+    (_cAliasPrev)->(DbGoTop())
+
+	_oSay:SetText("Aguarde Montando Previsão de "+StrZero(_nQtdeReg,6)+" registros ... Hora: "+Time() )
+	ProcessMessage()
+	//Gravar Previsão Itens
+    //_nRegZZN 	:= 0
+	_nQtdeLidos	:= 0
+	While (_cAliasPrev)->(!Eof()) 
+
+		//Não encontrou nenhum
+		If _nQtVen == 0 .Or. Len(_aRegSC6) == 0
+			//Esta tratando por Produto não pode deixar o processo encerrar	
+			If !_lIncGeral
+				_cMens := "Não encontrado Pedidos para o Produto "+_cProduto+" Ano Fab "+_cFabAno+" referente ao Cliente "+_cCliente+" "+_cLinhaPrev
+				Aadd(_aMsgErro,_cMens)
+				If _lMens
+	    			ApMsgStop(_cMens, "Previsão Faturamento")
+				Endif 
+			Endif	
+			Loop
+		Endif
+		//Caso ja tenha sido informado a quantidade liberada ela não pode ser maior que a venda
+		If _nQtdeLib > 0 .And. _nQtdeLib > _nQtVen 
+			_cMens := "Qtde de pedidos "+AllTrim(Str(_nQtVen))+" menor que a qtde a ser liberada "+AllTrim(Str(_nQtdeLib))+" para o Produto "+_cProduto+" Ano Fab "+_cFabAno+" referente ao Cliente "+_cCliente+" "+_cLinhaPrev
+			Aadd(_aMsgErro,_cMens)
+			If _lMens
+	    		ApMsgStop(_cMens, "Previsão Faturamento")
+				_lRet := .F.
+				Break
+			Endif 
+		Endif
+		//Criar Cabeçalho
+		If _nRegZZN == 0
+			If !RecLock("ZZN",.T.) 
+				_lRet := .F.
+				Break
+			Endif
+			//Gravar Previsão Cabeçalho
+			ZZN->ZZN_FILIAL := FwXFilial("ZZN") 
+			ZZN->ZZN_CODPRV := _cNumPrev
+			ZZN->ZZN_STATUS := "A"
+			ZZN->ZZN_DTINC  := Date()
+			ZZN->ZZN_USUINC := RetCodUsr()
+			ZZN->(MsUnlock())
+			_nRegZZN		:= ZZN->(Recno())
+		Endif
+		If ! RecLock("ZZP",.T.)
+			_lRet := .F.
+			Break
+		Endif
+		//Gravar Previsão 
+		ZZP->ZZP_FILIAL := FwXFilial("ZZP") 
+		ZZP->ZZP_CODPRV := _cNumPrev
+		ZZP->ZZP_CODCLI := _cCliente
+		ZZP->ZZP_LOJCLI := _cLoja
+		ZZP->ZZP_CNPJCP := _cCGC
+		ZZP->ZZP_CODPRD := _cProduto
+		ZZP->ZZP_QTEPED := If(_nQtdeLib == 0,_nQtVen, _nQtdeLib)
+		ZZP->ZZP_CHSDIS := 0 //CHASSI QTDE
+		ZZP->ZZP_QTEDIS := 0 
+		ZZP->ZZP_QTELIB := 0 //ZZP->ZZP_QTEPED - ZZP->ZZP_QTEDIS
+		ZZP->ZZP_QTEFAT := 0
+		ZZP->ZZP_VLRTAB := _nVlrVen
+		ZZP->ZZP_TOTLIB := If(ZZP->ZZP_QTELIB > 0, _nVlrVen * ZZP->ZZP_QTELIB, 0)
+		ZZP->ZZP_OBS	:= 	AllTrim(ZZP->ZZP_OBS) + CRLF + Upper(_cMens)  
+		ZZP->ZZP_STATUS := "A"
+		ZZP->ZZP_DTINC  := Date()
+		ZZP->ZZP_USUINC := RetCodUsr()
+		ZZP->ZZP_DTALT  := Date()
+		ZZP->ZZP_USUALT := RetCodUsr()
+		ZZP->ZZP_MODVEI	:= _cModelo
+		ZZP->ZZP_SEGMOD	:= _cSegMod
+		ZZP->ZZP_FABMOD	:= _cFabAno
+		ZZP->(MsUnlock())
+		Aadd(_aRegZZP, ZZP->(Recno()))
+		//Atualizar SC6
+		For _nPos := 1 To Len(_aRegSC6) 
+			SC6->(DbGoto(_aRegSC6[_nPos]))
+			If !RecLock("SC6",.F.)
+				_lRet := .F.
+				Break 
+			Endif 
+			SC6->C6_XFILPVR := FwXFilial("ZZP")
+			SC6->C6_XCODPVR := _cNumPrev
+			SC6->C6_XDTPVR 	:= Date()
+			SC6->C6_XUSUPVR	:= RetCodUsr()
+			_cMens := "Pedido "+SC6->C6_NUM+" item "+SC6->C6_ITEM+"incluido paraa Previsao "+_cNumPrev+" "+_cLinhaPrev
+			Aadd(_aMsg, _cMens)
+			If !Empty(_cMens)
+				SC6->C6_MOPC    := AllTrim(SC6->C6_MOPC) + CRLF + Upper(_cMens) + CRLF 
+			Endif
+			SC6->(MsUnLock())
+		Next	
+		If !_lRet  
+			Exit 
+		Endif
+	EndDo
+	If Len(_aRegZZP) > 0
+		_lRet := .T.
+	Endif	
+End Sequence 
+
+If _nRegZZN <> 0
+	//Gravar msg
+	ZZN->(DbGotop())
+	ZZN->(DbGoto(_nRegZZN))
+	If Len(_aMsg) > 0
+		For _nPos := 1 To Len(_aMsg)
+			If !RecLock("ZZN",.F.)
+				Exit
+			Endif
+			ZZN->ZZN_OBS := AllTrim(ZZN->ZZN_OBS) + CRLF +Upper(AllTrim(_aMsg[_nPos])) + CRLF
+			ZZN->(MsUnlock())
+		Next
+	Endif 
+Endif
+If !Empty(_cAliasPesq) .And. Select(_cAliasPesq) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif
+If !Empty(_cAliasPrev) .And. Select(_cAliasPrev) <> 0
+	(_cAliasPrev)->(DbCloseArea())
+	Ferase(_cAliasPrev+GetDBExtension())
+Endif
+
+Return _lRet
+
+
+//=========================================================
+//Funcionalidade MVC Previsao
+Static Function ZFAT25MVC( _cNumPrev, _aGravaPrev, _nOper, )
+Local _cAliasPesq 	:= GetNextAlias()
+Local _cNumPrev	:= ""
+Local _nPos
+Local _oModel
+Local _aLog
+Local _cLog
+
+Default _nOper 		:= 3
+Default _cNumPrev	:= ""
+Default _aGravaPrev := {}
+Begin Sequence 
+	ZZP->(DbSetOrder(1))
+	If _nOper == 3 .And. Empty(_cNumPrev)
+		BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+			SELECT 	MAX(ZZN_CODPRV) AS NPREVISAO
+			FROM  	%Table:ZZN% ZZN
+			WHERE 	ZZN.%notDel% 
+				AND ZZN.ZZN_FILIAL 	= %xFilial:ZZN%
+		EndSql
+		_cNumPrev := Soma1((_cAliasPesq)->NPREVISAO) 
+	Else 
+		_cNumPrev := ZZN->ZZN_CODPRV	
+	Endif 
+	//Carregar model Previsão Faturamento
+    _oModel := FWLoadModel( 'ZFATF025' )
+    _oModel:SetOperation( _nOper )
+    _oModel:Activate()
+    // Capturando submodelos que possuem grid para preenchimento dos itens
+    //_oModelZZN := oModel:GetModel("ZZNMASTER")
+    //_oModelZZP := oModel:GetModel("ZZPDETAIL")
+	//    _oModel:SetOperation(MODEL_OPERATION_INSERT)
+	//Gravar dados 
+
+	
+
+	_oModel:SetValue("ZZNMASTER","ZZN_FILIAL"        , FwXFilial("ZZN") )	
+	_oModel:SetValue("ZZNMASTER","ZZN_CODPRV"        , _cNumPrev)	
+	_oModel:SetValue("ZZNMASTER","ZZN_STATUS"        , "A" )	
+	_oModel:SetValue("ZZNMASTER","ZZN_DTINC"         , Date() )	
+	_oModel:SetValue("ZZNMASTER","ZZN_USUINC"        , RetCodUsr() )	
+
+	For _nPos := 1 To Len()
+	_oModel:SetValue("ZZPDETAIL","ZZP_FILIAL"        , FwXFilial("ZZP") )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_CODPRV"        , _cNumPrev )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_CODCLI"        , SA1->A1_COD )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_LOJCLI"        , SA1->A1_LOJA )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_CNPJCP"        , SA1->A1_CGC )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_CODPRD"        , SB1->B1_COD )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_QTEPED"        , _nQtVen )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_CHSDIS"        , 0 )	//CHASSI QTDE
+	_oModel:SetValue("ZZPDETAIL","ZZP_QTEDIS"        , 0 )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_QTELIB"        , 0 )	//ZZP->ZZP_QTEPED - ZZP->ZZP_QTEDIS
+	_oModel:SetValue("ZZPDETAIL","ZZP_QTEFAT"        , 0 )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_VLRTAB"        , _nVlrVen )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_TOTLIB"        , If(ZZP->ZZP_QTELIB > 0, _nVlrVen * ZZP->ZZP_QTELIB, 0) )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_OBS"        	 , AllTrim(ZZP->ZZP_OBS) + CRLF + Upper(_cMens) )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_STATUS"        , "A" )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_DTINC"        , Date() )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_USUINC"       , RetCodUsr() )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_DTALT"        , Date() )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_USUALT"       , RetCodUsr() )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_MODVEI"        , _cModelo )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_FABMOD"        , _cFabAno() )	
+
+    If _oModel:VldData()
+        _oModel:CommitData()
+            //_cLog := "[ZFATF025] - Registro ! " + cCod + "  Opcao: " + cOperacao
+            //GERLOG()
+    Else
+        _aLog  	:= _oModel:GetErrorMessage()
+        _cLog 	:= ""
+        For _nPos := 1 To Len(_aLog)
+        	If !Empty(_aLog[_nPos]) .AND. _nI = 6
+                _cLog += Alltrim(_aLog[_nPos]) + " Produto " + cCod + CRLF
+            	//GERLOG()
+            EndIf
+        Next
+    EndIf       
+	_oModel:DeActivate()
+	_oModel:Destroy()
+	_oModel := NIL
+
+End Sequence 
+If Select(_cAliasPesq) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif
+
+Return Nil 
+
+
+
+
+/*/{Protheus.doc} MenuModelDef
+Modelo de Dados 		
+@author 	DAC
+@since 		
+@version 	undefined
+@param 		
+@type 		Static function
+@ Obs		
+@history    
+/*/
+Static Function ModelDef()
+Local _oModel    := Nil
+Local _oStruZZN  := FWFormStruct(1, "ZZN")
+Local _oStruZZP  := FWFormStruct(1, "ZZP")
+
+	_oModel := FWModelActive()
+	// Cria o objeto do Modelo de Dados
+	_oModel := MPFormModel():New('ZPF25MDL',  /*bPreValidacao*/, /*bPosValidacao*/, /*bCommit*/, /*bCancel*/ )
+	// Adiciona ao modelo uma estrutura de formulário de edição por campo
+	_oModel:AddFields( 'ZZNMASTER', /*cOwner*/, _oStruZZN, /*bPreValidacao*/, /*bPosValidacao*/, /*bCarga*/ )
+   	_oModel:AddGrid('ZZPDETAIL','ZZNMASTER',_oStruZZP,/*bLinePreValid*/,/*bLinePosValid*/,/*bPreValid*/,/*bPosValid*/, /*bCarga*/)
+ 	_oModel:SetRelation("ZZPDETAIL",{{"ZZP_FILIAL","xFilial('ZZP')"},{"ZZP_CODPRV", "ZZN_CODPRV"}},ZZP->(IndexKey(1)))
+	//_oModel:SetPrimaryKey({'ZO_FILIAL', 'ZO_CODIGO' })
+    _oModel:SetPrimaryKey({})
+
+   	//_oModel:GetModel( 'ZZNMASTER' ):SetOnlyQuery ( .T. )
+   	//_oModel:GetModel( 'ZZPDETAIL' ):SetOnlyQuery ( .T. )
+
+	// Adiciona a descricao do Modelo de Dados
+    _oModel:SetDescription("Previsão Faturamento")
+	// Adiciona a descricao do Componente do Modelo de Dados
+    _oModel:GetModel("ZZNMASTER"):SetDescription("Previsao Faturamento")
+
+    // É necessário que haja alguma alteração na estrutura Field
+    //_oModel:setActivate({ |_oModel| onActivate(_oModel)})
+
+	/*
+	If _oModel:IsActive() 
+		_oModel:DeActivate() 
+	EndIf
+	_oModel:Activate()
+	*/
+Return _oModel
+
+
+/*/{Protheus.doc} ViewDef
+View 		
+@author 	DAC
+@since 		15/07/2023
+@version 	undefined
+@param 		
+@type 		Static function
+@ Obs		
+@history    
+/*/
+Static Function ViewDef()
+    Local _oModel       := ModelDef()                       // Cria um objeto de Modelo de Dados baseado no ModelDef do fonte informado
+    Local _oStruZZN     := FWFormStruct(2, "ZZN")           // Cria a estrutura a ser usada na View
+    Local _oStruZZP     := FWFormStruct(2, "ZZP")           // Cria a estrutura a ser usada na View
+    Local _oView         := Nil
+
+    _oView := FWFormView():New()
+    _oView:SetModel(_oModel)
+    _oView:AddField("VIEW_ZZN" , _oStruZZN , "ZZNMASTER")
+    _oView:AddGrid('VIEW_ZZP'  , _oStruZZP , "ZZPDETAIL")
+    //Setando o dimensionamento de tamanho
+    _oView:CreateHorizontalBox('PAI' ,20)
+    _oView:CreateHorizontalBox('FILHO',80)
+
+    //Amarrando a view com as box
+    _oView:SetOwnerView('VIEW_ZZN','PAI')
+    _oView:SetOwnerView('VIEW_ZZP','FILHO')
+
+    //Habilitando título
+    _oView:EnableTitleView('VIEW_ZZN','Cabeçalho - Previsão Faturamento')
+    _oView:EnableTitleView('VIEW_ZZP','Itens - Previsão Faturamento')
+
+Return _oView
+
+
 //Enviar retorno  do processo para Autoware
 FUNCTION U_ZJPRVAUT( _aDctos, _aRetMsg, _lJob)
 Local _oJsonRet 	AS Object

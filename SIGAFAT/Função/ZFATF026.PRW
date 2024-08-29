@@ -13,7 +13,7 @@
 #define DATA_LC 		5
 #define DATA_TOTCLI 	6
 #define DATA_SALDOLC 	7
-
+ 
 #define DATA_PRODUTO 	1
 #define DATA_DESCPRD	2
 #define DATA_QTDEPRD    3
@@ -176,7 +176,7 @@ Begin Sequence
     _oBrWCli:SetOwner(_oFolder:aDialogs[2])
 	ZFAT026MCli()
 	_oBrWCli:Activate()
-	_oBrWCli:GoTop(.T.)
+	_oBrWCli:GoTop(.T.) 
 	_oBrWCli:Refresh(.T.)
 
 	// Define o Browse Relacionados Produto
@@ -386,7 +386,7 @@ Return Nil
 @type function
 /*/
 Static Function ValidCampo(_cCol, _oBrW)
-Local _lRet := .T. 
+Local _lRet := .F. 
 Local _nPos := (_cAliasZF026)->(Recno())
  //Guarda o posicionamento do temporÃ¡rio
 //Local _aOrd 	:= SaveOrd(_cAliasPlan)
@@ -411,21 +411,20 @@ Begin Sequence
 	
 	//Verificar quantidades para avaliar se possui chassis
 	ZZP->( DbGoto(_nRegZZP) )
+	_nQtdeLZZP 	:= ZZP->ZZP_QTELIB
+	_nQtde 		:= ZZP->ZZP_QTELIB   //sempre deixar quantidade anterior caso não execute o calculo volta para anterior
 	//neste caso não foi alterado
 	If ZZP->ZZP_QTELIB  == _nQtdeLib
 		Break
 	Endif 
-	_nQtdeLZZP 	:= ZZP->ZZP_QTELIB
-	_nQtde 		:= ZZP->ZZP_QTELIB   //sempre deixar quantidade anterior caso não execute o calculo volta para anterior
+
 	//Não deixar liberar mas que existe em pedido
 	If _nQtdeLib > _nQtdePed
 		MSGINFO( "Quantidade liberada não pode ser maior que quantidade do Pedido", "Atencao" )
-		_lRet 	:= .F.
 		Break  
 	Endif 
 	If _nQtdeLib > (_nQtdePed - _nQtdeFat)
 		MSGINFO( "Quantidade liberada não pode ser maior que quantidade do Pedido menos quantidade Faturada", "Atencao" )
-		_lRet 	:= .F.
 		Break  
 	Endif 
 
@@ -437,7 +436,7 @@ Begin Sequence
 	If _nQtdeLZZP > _nQtdeLib
 		_nQtde := ZFATF026RE( _nQtdeLZZP, _nQtdeLib)
 		If _nQtde < 0
-			_lRet 	:= .F.
+			_nQtde := _nQtdeLZZP
 			Break
 		Endif	
 	Else 
@@ -447,13 +446,13 @@ Begin Sequence
 			//Qtde utilizada na previsão (com Chassi) e qtde empenho Disponivel
 			_nQtdeChassi := ZFATF026AV(ZZP->ZZP_CODPRD, ZZP->ZZP_FABMOD, ZZP->ZZP_CODPRV, _nQtdeLZZP, _nQtdeLib, @_nQtdEmpenho) 
 			If _nQtdeChassi >= _nQtdeCalc 	
-				_lRet := ZFATF26EMP( 1, ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, ZZP->ZZP_CODCLI, ZZP->ZZP_LOJCLI, ZZP->ZZP_CODPRD, ZZP->ZZP_FABMOD, _nQtdeCalc, /*_lMens*/ )
+				FwMsgRun(,{ |_oSay| _lRet := ZFATF26EMP( @_oSay, 1, ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, ZZP->(RECNO()), _nQtdeCalc, /*_lMens*/ ) }, "Preparando dados", "Aguarde...")  
 				If _lRet
 					_nQtde	:= _nQtdeCalc + _nQtdeLZZP
 				Endif 	
 			Else 
 				MSGINFO( "Quantidade de chassi nao Empenhada  "+AllTrim(Str(_nQtdeChassi))+" disponivel, nao atende a necessidade ", "Atencao" )
-				_lRet 	:= .F. 
+				Break 
 			Endif
 		Endif
 	Endif
@@ -462,27 +461,31 @@ End Sequence
 //_oBrW:FWBrowse(): ColPos 
 //Atualizar para que possa ser dado o refresh 
 //Sempre deixar atualiza com a quantidade
-If !_lRet  //Caso de problemas na atualização voltar a qtde anterior 
-	_nQtde 	:= _nQtdeLZZP
-ElseIf ValType(_nQtde) <> "N"  //pode não passar pelas definições acima
-	_nQtde := _nQtdeLib
-Endif 
+//If !_lRet  //Caso de problemas na atualização voltar a qtde anterior 
+//	_nQtde 	:= _nQtdeLZZP
+//ElseIf ValType(_nQtde) <> "N"  //pode não passar pelas definições acima
+//	_nQtde := _nQtdeLib
+//Else 	
+//	_nQtde 	:= _nQtdeLZZP
+//Endif 
+ZZP->( DbGoto(_nRegZZP) )
+//Browser atualizar
 If RecLock(_cAliasZF026,.F.)
 	(_cAliasZF026)->(FieldPut(FieldPos("ZZP_QTELIB"),_nQtde))
 	(_cAliasZF026)->(MsUnLock())
 Endif		
-ZZP->( DbGoto(_nRegZZP) )
-//Grava tabela Principal pelo motivo de estar empenhando direto
-If RecLock("ZZP",.F.)
-	ZZP->(FieldPut(FieldPos("ZZP_QTELIB"), _nQtde))
-	ZZP->(MsUnLock())
-Endif
-
-If _lRet  
-	//Atualizar dados
-	ZFAT026Total(ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, /*_lCarrega*/)
-Endif
-//_oBrW:Refresh()
+If ZZP->ZZP_QTELIB <> _nQtde
+	//Grava tabela Principal pelo motivo de estar empenhando direto
+	If RecLock("ZZP",.F.)
+		ZZP->(FieldPut(FieldPos("ZZP_QTELIB"), _nQtde))
+		ZZP->(MsUnLock())
+	Endif
+	If _lRet  
+		//Atualizar dados
+		ZFAT026Total(ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, /*_lCarrega*/)
+	Endif
+	//_oBrW:Refresh()
+Endif	
 Return .T. //_lRet
 
 //Função que verifica se possui mais empenho que o solicitado e retira o empenho caso confirmado
@@ -496,7 +499,7 @@ Begin Sequence
 	Endif
 	_nQtdeCalc := _nQtdeLZZP - _nQtdeLib  
 	//montar regra 	retornar caso de certo a quantidade a ser liberada
-	ZFATF26EMP( 2, ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, ZZP->ZZP_CODCLI, ZZP->ZZP_LOJCLI, ZZP->ZZP_CODPRD, ZZP->ZZP_FABMOD, _nQtdeCalc, /*_lMens*/ )
+	FwMsgRun(,{ |_oSay| ZFATF26EMP( @_oSay, 2, ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, ZZP->(Recno()), _nQtdeCalc, /*_lMens*/ ) }, "Preparando dados", "Aguarde...")  
 End Sequence
 Return _nQtdeLib
 
@@ -729,26 +732,25 @@ Return _nQtdeChassi  //Qtde de chacssi disponivel para gerar empenho
 //Realiza o Empenho 
 //_nOpc == 1 Criar Empenho
 //_nOpc == 2 Retirar Empenho
-Static Function ZFATF26EMP( _nOpcEmp, _cFilPrev, _cCodPrev, _cCodCli, _cLojaCli, _cCodProd, _cFabMod, _nQtde, _lMens )
+Static Function ZFATF26EMP( _oSay, _nOpcEmp, _cFilPrev, _cCodPrev, _nRegZZP, _nQtde, _lMens, _aMsgErro )
 Local _cAliasEmp	:= GetNextAlias()
 Local _lRet 		:= .T.
+Local _cWCampos		:= ""
 Local _cCampos		:= ""
 Local _cWhere		:= ""
-Local _cJoin 		:= ""
 Local _nRow			:= 0 
 Local _aCampos 		:= {}
 Local _aPrevisao 	:= {}
 Local _nPos
+Local _cJoinSC6
 
 Default _nOpcEmp	:= 0
 Default	_cFilPrev   := FwxFilial("ZZP")
 Default _cCodPrev   := ""
-Default _cCodCli 	:= ""
-Default _cLojaCli	:= "" 
-Default _cCodProd   := ""
+Default _nRegZZP 	:= 0
 Default _nQtde		:= 0
 Default _lMens 		:= .T. 
-Default	_cFabMod	:= ""
+Default _aMsgErro   := {}
 
 Begin Sequence
 	//nao pode vir em branco
@@ -760,87 +762,40 @@ Begin Sequence
 		Break 
 	Endif
 
-	_aCampos 	:=   U_XZFT19CP()
-	_cCampos 	:= CRLF +" 'F' AS LUPD "
+	_aCampos 	:= U_XZFT19CP()
+	_cCampos	:= ""
+	_cWCampos 	:= CRLF +" 'F' AS LUPD "
 	For _nPos := 1 To Len( _aCampos )	
 		If SubsTr(_aCampos[_nPos],1,3) == "C6_"
-			_cCampos += CRLF + ", "+_aCampos[_nPos]
-		ElseIf SubsTr(_aCampos[_nPos],1,3) == "C5_"
-			_cCampos += CRLF + ", "+_aCampos[_nPos]
+			If AllTrim(_aCampos[_nPos]) == "C6_ITEM"   //neste caso acrescento zero a esquerda para pesquisa VRK
+				_cWCampos += CRLF + ", '0' || "+_aCampos[_nPos]+ " AS  ITEMSC6" 
+			Endif
+			_cWCampos += CRLF + ", "+_aCampos[_nPos]
+		//ElseIf SubsTr(_aCampos[_nPos],1,3) == "C5_"
+		//	_cCampos += CRLF + ", "+_aCampos[_nPos]
 		ElseIf SubsTr(_aCampos[_nPos],1,4) == "VRJ_"
 			_cCampos += CRLF + ", "+_aCampos[_nPos]
 		ElseIf SubsTr(_aCampos[_nPos],1,4) == "VRK_"
 			_cCampos += CRLF + ", "+_aCampos[_nPos]
 		Endif
 	Next _nPos
-	_cCampos += CRLF
-	_cCampos := "%"+_cCampos+"%"
+	//Acrescentar ZZP
+	_cWCampos += CRLF + ", ZZP_FABMOD "
+	_cWCampos += CRLF
+	_cWCampos := "%"+_cWCampos+"%"
 
-	//If  _nOpcEmp == 2
-	/*
-		_cJoin 	+= " JOIN "+RetSqlName("SC5")+" SC5 "
-		_cJoin 	+= " ON  SC5.D_E_L_E_T_  	= ' ' 	"
-		_cJoin 	+= " AND SC5.C5_FILIAL		= '" + FWxFilial("SC5") + "' "
-		_cJoin 	+= " AND SC5.C5_NUM 		= SC6.C6_NUM "
-		_cJoin 	:= "%"+_cJoin+"%"
-	*/
+	_cCampos  += CRLF
+	_cCampos  := "%"+_cCampos+"%"
 
-	_cJoin 	+=  CRLF +" JOIN " + RetSqlName("VRJ") + " VRJ "
-	_cJoin 	+=  CRLF +"		ON  VRJ.VRJ_FILIAL = '" + xFilial("VRJ") + "' "
-	_cJoin 	+=  CRLF +" 	AND VRJ.VRJ_PEDCOM = SC6.C6_PEDCLI "
-	_cJoin 	+= 	CRLF +"		AND VRJ.VRJ_STATUS in ('A','F') "
-	_cJoin 	+= 	CRLF +"		AND VRJ.D_E_L_E_T_ = ' ' "
-
-    _cJoin 	+= CRLF + " JOIN " + RetSqlName("VRK") + " VRK "
-    _cJoin 	+= CRLF + "     ON  VRK.VRK_FILIAL = '" + FWxFilial("VRK") + "' "
-    _cJoin 	+= CRLF + "     AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
-    _cJoin 	+= CRLF + "     AND VRK.VRK_ITEPED = LPad(SC6.C6_ITEM,3,'0') "
-	If !Empty(_cFabMod)
-    	_cJoin 	+= CRLF + "     AND VRK.VRK_FABMOD = '"+_cFabMod+"' "
-	Endif
-	_cJoin 	+= 	CRLF +"		AND VRK.D_E_L_E_T_ = ' ' "
-
-    _cJoin 	+= CRLF + " JOIN " + RetSqlName("ZZP") + " ZZP "
-    _cJoin 	+= CRLF + "     ON  ZZP.ZZP_FILIAL = C6_XFILPVR "
-    _cJoin 	+= CRLF + "     AND ZZP.ZZP_CODPRV = SC6.C6_XCODPVR " 
-    _cJoin 	+= CRLF + "     AND ZZP.ZZP_CODCLI = SC6.C6_CLI " 
-    _cJoin 	+= CRLF + "     AND ZZP.ZZP_LOJCLI = SC6.C6_LOJA " 
-    _cJoin 	+= CRLF + "     AND ZZP.ZZP_CODPRD = C6_PRODUTO " 
-	If !Empty(_cFabMod)
-    	_cJoin 	+= CRLF + "     AND ZZP.ZZP_FABMOD = '"+_cFabMod+"' "  
-	Endif
-	_cJoin 	+= 	CRLF +"		AND ZZP.D_E_L_E_T_ = ' ' "
-
-	_cJoin 	+= CRLF 
-	//Endif 
-	_cJoin 	:= "%"+_cJoin+"%"
-
-	//Cliente ou todos
-	If !Empty(_cCodCli)
-		_cWhere	+= CRLF + " AND SC6.C6_CLI  = '"+_cCodCli+"' "
+	_cWhere := " "
+	If _nRegZZP > 0
+		_cWhere	+= CRLF + " AND ZZP.R_E_C_N_O_ = "+AllTrim(Str(_nRegZZP))
+	Else
+		_cWhere 	+= CRLF +"		AND ZZP.ZZP_FILIAL = '"+_cFilPrev+"' "
+    	_cWhere 	+= CRLF + "     AND ZZP.ZZP_CODPRV = '"+_cCodPrev+"' " 
 	Endif 
-	//loja ou todos
-	If !Empty(_cLojaCli)
-		_cWhere	+= CRLF + " AND SC6.C6_LOJA  = '"+_cLojaCli+"' "
-	Endif 
-	//Produto ou todos
-	If !Empty(_cCodProd)
-		_cWhere	+= CRLF + " AND SC6.C6_PRODUTO  = '"+_cCodProd+"' "
-	Endif 
-	//incluir empenho 
-	If _nOpcEmp == 1  
-		//_cWhere	+= " AND SC6.C6_CHASSI  = ' ' "
-		_cWhere	+= CRLF + " AND (SC6.C6_CHASSI  = ' ' OR VRK.VRK_CHASSI  = ' ') "
-	//Retirar empenho 
-	ElseIf  _nOpcEmp == 2
-		//_cWhere	+= CRLF + " AND SC6.C6_CHASSI  <> ' ' "
-		_cWhere	+= CRLF + " AND SC6.C6_CHASSI  <> ' '  "
-	Endif 
-	//Qtde de colunas, quando informado este campo será validado até a quantidade enviada
-	//Acrescentar  + 1 no select não valida = somente > ou <
 	If _nQtde > 0
 		_nRow		:= AllTrim(Str(_nQtde + 1))
-		//_nRow 		:= "%"+_nRow+"%"
 		_cWhere	+= CRLF + " AND ROWNUM 	<  "+_nRow
 	Endif 
 	If !Empty(_cWhere)
@@ -848,23 +803,56 @@ Begin Sequence
 	Endif
 	_cWhere := "%"+_cWhere+"%"
 
+	//incluir empenho 
+	_cJoinSC6 := ""
+	If _nOpcEmp == 1  
+		_cJoinSC6	+= CRLF + " AND SC6.C6_CHASSI = ' '  "
+	//Retirar empenho 
+	ElseIf  _nOpcEmp == 2
+		_cJoinSC6	+= CRLF + " AND SC6.C6_CHASSI  <> ' '  "
+	Endif 
+	//Qtde de colunas, quando informado este campo será validado até a quantidade enviada
+	//Acrescentar  + 1 no select não valida = somente > ou <
+
+	If !Empty(_cJoinSC6)
+		_cJoinSC6	+= CRLF
+	Endif
+	_cJoinSC6 := "%"+_cJoinSC6+"%"
+
 	BeginSql Alias _cAliasEmp //Define o nome do alias temporário 
-		SELECT 	%Exp:_cCampos% 
-		FROM  	%Table:SC6% SC6 
- 		JOIN 	%Table:SC5% SC5 
-	 		ON  SC5.%notDel% 	
-	 		AND SC5.C5_FILIAL	= %xFilial:SC5%
-	 		AND SC5.C5_NUM 		= SC6.C6_NUM
-			AND SC5.C5_CLIENTE 	= SC6.C6_CLI
-			AND SC5.C5_LOJACLI 	= SC6.C6_LOJA
-		%Exp:_cJoin%
-		WHERE SC6.%notDel%	
-			AND SC6.C6_FILIAL 	= %xFilial:SC6%
-			AND SC6.C6_XFILPVR	= %Exp:_cFilPrev%
-			AND SC6.C6_XCODPVR 	= %Exp:_cCodPrev%
-			AND SC6.C6_NOTA    	= ' '
-			%Exp:_cWhere%
-			ORDER BY SC6.C6_NUM 
+        %NoParser%
+		WITH PEDIDOS_FAT AS (
+								SELECT 	%Exp:_cWCampos% 
+								FROM  	%Table:ZZP% ZZP 
+   								JOIN 	%Table:SC6% SC6
+									ON  SC6.%notDel% 
+									AND SC6.C6_FILIAL 	= %xFilial:SC6%  
+									AND SC6.C6_XFILPVR 	= ZZP.ZZP_FILIAL  
+									AND SC6.C6_XCODPVR 	= ZZP.ZZP_CODPRV
+ 									AND SC6.C6_CLI  	= ZZP.ZZP_CODCLI 
+									AND SC6.C6_LOJA  	= ZZP.ZZP_LOJCLI 
+ 									AND SC6.C6_PRODUTO  = ZZP.ZZP_CODPRD 
+									AND SC6.C6_XFABMOD	= ZZP.ZZP_FABMOD
+									AND SC6.C6_NOTA 	= ' '   
+ 									%Exp:_cJoinSC6%
+								WHERE  	ZZP.%notDel% 
+										%Exp:_cWhere%
+								) 
+		SELECT  PEDIDOS_FAT.* 
+				%Exp:_cCampos% 
+		FROM PEDIDOS_FAT		
+		JOIN %Table:VRJ% VRJ 
+			ON 	VRJ.%notDel%
+			AND VRJ.VRJ_FILIAL = %xFilial:SC6%
+			AND VRJ.VRJ_PEDCOM = PEDIDOS_FAT.C6_PEDCLI
+			AND VRJ.VRJ_STATUS in ('A','F') "
+ 		JOIN %Table:VRK% VRK
+			ON 	VRK.%notDel%
+        	AND VRK.VRK_FILIAL = %xFilial:VRK%
+        	AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO 
+        	AND VRK.VRK_ITEPED = PEDIDOS_FAT.ITEMSC6
+   	 		AND VRK.VRK_FABMOD = PEDIDOS_FAT.ZZP_FABMOD
+		ORDER BY C6_NUM, C6_ITEM	
 	EndSql
 	iF (_cAliasEmp)->(Eof()) 
 		If _lMens
@@ -875,7 +863,22 @@ Begin Sequence
 	Endif  
 	//Esta com problemas nas tabelas descompasado o chassi tem que estar igual nas duas
 	If (_cAliasEmp)->C6_CHASSI <> (_cAliasEmp)->VRK_CHASSI
-		ApMsgStop("Não foi possivel realizar empenho XZFT19EP, Chassi esta divergente entre Ped. Venda "+AllTrim((_cAliasEmp)->C6_NUM)+" e Ped.Veiculo "+AllTrim((_cAliasEmp)->C6_PEDCLI) , "Previsao Faturamento")
+		_cMens := "Não foi possivel realizar empenho XZFT19EP, Chassi esta divergente entre Ped. Venda "+AllTrim((_cAliasEmp)->C6_NUM)+" e Ped.Veiculo "+AllTrim((_cAliasEmp)->C6_PEDCLI)
+		Aadd(_aMsgErro, _cMens)
+		If _lMens
+			ApMsgStop( _cMens, "Previsao Faturamento")
+		Endif	
+		_lRet := .F. 
+		Break
+	Endif
+
+	//Esta com problemas nas tabelas descompasado o chassi tem que estar igual nas duas
+	If Val((_cAliasEmp)->C6_ITEM) <> Val((_cAliasEmp)->VRK_ITEPED)
+		_cMens := "Não foi possivel realizar empenho XZFT19EP, Chassi esta divergente entre Ped. Venda "+AllTrim((_cAliasEmp)->C6_NUM)+" e Ped.Veiculo "+AllTrim((_cAliasEmp)->C6_PEDCLI)
+		Aadd(_aMsgErro, _cMens)
+		If _lMens
+			ApMsgStop(_cMens , "Previsao Faturamento")
+		Endif 
 		_lRet := .F. 
 		Break
 	Endif
@@ -883,7 +886,11 @@ Begin Sequence
 	If _nOpcEmp == 1
 		_aPrevisao := U_XZFT19EP(_cAliasEmp)   //localizado em ZFATF019
 		If Len(_aPrevisao) == 0 
-	    	ApMsgStop("Não foi possivel realizar empenho XZFT19EP, verificar com ADM Sistemas", "Previsao Faturamento")
+			_cMens := "Não foi possivel realizar empenho XZFT19EP, verificar com ADM Sistemas"
+			Aadd(_aMsgErro, _cMens)
+			If _lMens
+	    		ApMsgStop(_cMens, "Previsao Faturamento")
+			Endif
 			_lRet := .F. 
 			Break
 		Endif  
@@ -1019,6 +1026,8 @@ Begin Sequence
 		Endif 
 		//If _nOpc <> 5  //Não fazer refresh na exclusão pois não abre tela
 		ZFAT026Total( _cFilPrev, _cCodPrev, /*_lCarrega*/)
+		ZZN->(DbSetOrder(1))  //volto para ordem decrescente
+
 		_oBrW:Refresh()
 	Endif
 End Sequence 
@@ -1035,8 +1044,8 @@ Local _nPos
 Begin Sequence
 	//Se for Cancelar retirar empenho caso exista
 	If _nOpc == 5   
-		//Verifica se tem empenho para retirar
-		ZFATF26EMP( 2, _cFilPrev, _cCodPrev, /*_cCodCli*/, /*_cLojaCli*/, /*_cCodProd*/,  /*MODFAB*/, /*_nQtde*/, .F. /*_lMens*/ )
+		//Verifica se tem empenho para retirar   
+		FwMsgRun(,{ |_oSay| ZFATF26EMP( @_oSay, 2, _cFilPrev, _cCodPrev, /*_nRegZZP*/, /*_nQtde*/, .F. /*_lMens*/ ) }, "Preparando dados", "Aguarde...")  
 	Endif 
 	//Apagar registros que estão zerados
 	For _nPos := 1 To Len(_aReg)
@@ -1187,3 +1196,20 @@ Begin Sequence
 End Sequence 
 Return _oColumn
 
+
+
+//Receber dados de outros programaspara realizar emprenho
+User Function XZFT26E1(_oSay, _nQtdeCalc, _nRegZZP)
+Local _aArea		:= GetArea()
+Local _lRet			:= .T.
+
+Default _nRegZZP	:= 0
+Default _nQtdeCalc	:= ZZP->ZZP_QTELIB  //ASSUMO QUE ESTA POSICIONADO NO ZZP
+
+	DbSelectArea("ZZP")
+	If _nRegZZP > 0 
+		ZZP->(DbGoto(_nRegZZP))
+	Endif
+	FwMsgRun(,{ |_oSay| _lRet := ZFATF26EMP( @_oSay, 1, ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, ZZP->(RECNO()), _nQtdeCalc, .F. ) }, "Preparando dados", "Aguarde...")  
+	RestArea(_aArea)
+Return _lRet
