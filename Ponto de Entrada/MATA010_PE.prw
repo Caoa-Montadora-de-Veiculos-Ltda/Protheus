@@ -176,7 +176,7 @@ If aParam <> NIL
 	
 	ElseIf cIdPonto =="FORMPRE" 
 		if cTipo == 'SETVALUE'
-		
+		    /*
 			if  cCampo == 'B1_LOJPROC'
 				
 				cFornece := oObj:GetModel(cIdPonto):GetValue('SB1MASTER','B1_PROC'   )
@@ -220,6 +220,7 @@ If aParam <> NIL
 				oModelSB5:GetModel(cIdPonto):SetValue("SB5DETAIL","B5_XDESCMA", cDescMarc )
 				
 			EndIf
+			*/
 		Endif
 	EndIf
 

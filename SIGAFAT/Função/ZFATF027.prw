@@ -57,6 +57,13 @@ User Function ZFATF027()
     Private cALTURA   := (TamSX3( "B5_ALTURA"  )[1])
     Private cCODLIN   := (TamSX3( "B5_CODLIN"  )[1])
     Private cCODFAM   := (TamSX3( "B5_CODFAM"  )[1])
+    Private cCOMPRLC  := (TamSX3( "B5_COMPRLC"  )[1])
+    Private cLARGLC   := (TamSX3( "B5_LARGLC"  )[1])
+    Private cALTURLC  := (TamSX3( "B5_ALTURLC"  )[1])
+    
+
+
+
     Private nQuant    := 0
     Private cFornece  := (TamSX3( "A5_FORNECE" )[1])
     Private cLolja    := (TamSX3( "A5_LOJA"    )[1])
@@ -316,7 +323,8 @@ Local _cString	 := ''
 Local cSeparador := ""						// Separador do arquivo
 Local cLinha     := ""                      // Linha importar do arquivo
 Local aDados 	 := {}						// Array dos dados da linha do laco
-Local aLog   	 := {}	
+Local aLog   	 := {}
+Local aStru      := {}	
 Local _nY        := 0
 Local _nI        := 0
 //Local _nX        := 0
@@ -335,14 +343,20 @@ Local _nItem     := 0
 Local oFile
 Local linha
 Local cLinAtu
+Local nI      
+Local cMoed
+Local cItem := ""
+Local lAte := .T.   
 Local cCodForn   := ""
 Local cLojForn   := ""
 Local cObserv    := ""
 Local cRazaoSoc  := ""
+Local cCest      := ""
 Local nCont      := 0 
 Local nLinhaAtu  := 0
-    IncProc()
-    FT_FUSE(_nAqr)
+Local cPeso      := 0
+IncProc()
+FT_FUSE(_nAqr)
 
 //    FT_FGOTOP()
 //    nLinTot := FT_FLastRec()-1      //total de linhas do arquivo
@@ -376,213 +390,326 @@ If (oFile:Open())
             //Incrementa na tela a mensagem
             nLinhaAtu++
             IncProc("Analisando linha " + cValToChar(nLinhaAtu-1) + " de " + cValToChar(nTotLinhas-1) + "...")
-           
-                
+
             //Buscando o texto da linha atual
             cLinAtu := oFile:GetLine()
             aLinha  := StrTokArr2(cLinAtu, ";", .T.)
+            //Monta array para execauto MATA010
             If nCont > 0  
-               cCodForn   := aLinha[nPosCodigo]
-               cLojForn   := aLinha[nPosLojFor]
-               cRazaoSoc  := aLinha[nPosRazSoc]
-               cObserv    := aLinha[nPosObserv]
+                cCod := AllTrim( aLinha[03])
+
+                IF AllTrim( aLinha[225]) = 'USD'
+                   cMoed := '2'
+                ELSE
+                   cMoed := '1'
+                ENDIF
+                //Tira R-
+                If SUBSTR(AllTrim( aLinha[109]),3,1) = '0'
+                   cPeso := GetDtoVal( aLinha[109]) / 1000
+                else
+                   cPeso := GetDtoVal( aLinha[109]) / 100
+                Endif
+
+                If Substr(cCod,1,2) = "R-"
+                   cCod := SUBSTR(AllTrim( aLinha[03]),3,20)
+                Endif
+
+                cCest := substr(alinha[160],1,2) + substr(alinha[160],4,3) + substr(alinha[160],8,2)
+                
+                oModel  := FwLoadModel ("MATA010")
+                oModel:SetOperation(MODEL_OPERATION_INSERT)
+                oModel:Activate()                
+                
+                oModel:SetValue("SB1MASTER","B1_AFAMAD"   , GetDtoVal(aLinha[01]))
+                oModel:SetValue("SB1MASTER","B1_FILIAL"   , AllTrim( aLinha[02]))
+                oModel:SetValue("SB1MASTER","B1_COD"      , AllTrim( aLinha[03]))
+                oModel:SetValue("SB1MASTER","B1_CODITE"   , AllTrim( aLinha[03]))
+                oModel:SetValue("SB1MASTER","B1_DESC"     , AllTrim( aLinha[04]))
+                oModel:SetValue("SB1MASTER","B1_TIPO"     , AllTrim( aLinha[05]))
+                oModel:SetValue("SB1MASTER","B1_LOCPAD"   , AllTrim( aLinha[07]))
+                oModel:SetValue("SB1MASTER","B1_GRUPO"    , strzero(val(aLinha[08]),4))
+                oModel:SetValue("SB1MASTER","B1_XDESCGR"  , AllTrim( aLinha[09]))
+                oModel:SetValue("SB1MASTER","B1_PICM"     , GetDtoVal( aLinha[10]))
+                oModel:SetValue("SB1MASTER","B1_POSIPI"   , StrTran( aLinha[11],'.',''))
+                oModel:SetValue("SB1MASTER","B1_ESPECIE"  , AllTrim( aLinha[12]))
+                oModel:SetValue("SB1MASTER","B1_EX_NCM"   , AllTrim( aLinha[13]))
+                oModel:SetValue("SB1MASTER","B1_EX_NBM "  , AllTrim( aLinha[14]))
+                oModel:SetValue("SB1MASTER","B1_ALIQISS"  , GetDtoVal( aLinha[15]))
+                oModel:SetValue("SB1MASTER","B1_CLASFIS"  , AllTrim( aLinha[16]))
+                oModel:SetValue("SB1MASTER","B1_IPI"      , GetDtoVal( aLinha[17]))
+                oModel:SetValue("SB1MASTER","B1_PIS"      , AllTrim( aLinha[18]))
+                oModel:SetValue("SB1MASTER","B1_COFINS"   , AllTrim( aLinha[19]))
+                oModel:SetValue("SB1MASTER","B1_GRTRIB"   , AllTrim( aLinha[20]))
+                oModel:SetValue("SB1MASTER","B1_CODISS"   , AllTrim( aLinha[21]))
+                oModel:SetValue("SB1MASTER","B1_BITMAP"   , AllTrim( aLinha[22]))
+                oModel:SetValue("SB1MASTER","B1_SEGUM"    , AllTrim( aLinha[23]))
+                oModel:SetValue("SB1MASTER","B1_TE"       , AllTrim( aLinha[24]))
+                oModel:SetValue("SB1MASTER","B1_TS"       , AllTrim( aLinha[25]))
+                oModel:SetValue("SB1MASTER","B1_PICMRET"  , GetDtoVal( aLinha[26])/100)
+                oModel:SetValue("SB1MASTER","B1_PICMENT"  , GetDtoVal( aLinha[27]))
+                oModel:SetValue("SB1MASTER","B1_IMPZFRC"  , substr(alinha[28],1,1))  //AllTrim( aLinha[28]))
+                oModel:SetValue("SB1MASTER","B1_CONV"     , GetDtoVal( aLinha[29]))
+                oModel:SetValue("SB1MASTER","B1_TIPCONV"  , AllTrim( aLinha[30]))
+                oModel:SetValue("SB1MASTER","B1_QE"       , GetDtoVal( aLinha[32]))
+                oModel:SetValue("SB1MASTER","B1_EMIN"     , GetDtoVal( aLinha[33]))
+                oModel:SetValue("SB1MASTER","B1_UCOM"     , CTOD(AllTrim( aLinha[34])))
+                oModel:SetValue("SB1MASTER","B1_CUSTD"    , GetDtoVal( aLinha[35]))
+                oModel:SetValue("SB1MASTER","B1_UCALSTD"  , CTOD(AllTrim( aLinha[36])))
+                oModel:SetValue("SB1MASTER","B1_ESTFOR"   , AllTrim( aLinha[37]))
+                oModel:SetValue("SB1MASTER","B1_UPRC"     , GetDtoVal( aLinha[38])/100)
+                oModel:SetValue("SB1MASTER","B1_MCUSTD"   , AllTrim( aLinha[39]))
+                oModel:SetValue("SB1MASTER","B1_ESTSEG"   , AllTrim( aLinha[40]))
+                oModel:SetValue("SB1MASTER","B1_FORPRZ"   , AllTrim( aLinha[41]))
+                oModel:SetValue("SB1MASTER","B1_PE"       , GetDtoVal( aLinha[42]))
+                oModel:SetValue("SB1MASTER","B1_TIPE"     , AllTrim( aLinha[43]))
+                oModel:SetValue("SB1MASTER","B1_LE"       , GetDtoVal( aLinha[44]))
+                oModel:SetValue("SB1MASTER","B1_LM"       , GetDtoVal( aLinha[45]))
+                oModel:SetValue("SB1MASTER","B1_CONTA"    , AllTrim( aLinha[46]))
+                oModel:SetValue("SB1MASTER","B1_TOLER"    , GetDtoVal( aLinha[47]))
+                
+                //Sabado Inicio ***************************************************************************
+
+                oModel:SetValue("SB1MASTER","B1_CC"       , GetDtoVal( aLinha[48]))
+                oModel:SetValue("SB1MASTER","B1_ITEMCC"   , AllTrim( aLinha[49]))
+                oModel:SetValue("SB1MASTER","B1_PROC"     , strzero(val(aLinha[50]),6))
+                oModel:SetValue("SB1MASTER","B1_LOJPROC"  , STRZERO(VAL( aLinha[51]),2))
+                oModel:SetValue("SB1MASTER","B1_FAMILIA"  , AllTrim( aLinha[52]))
+                oModel:SetValue("SB1MASTER","B1_QB"       , GetDtoVal( aLinha[53]))
+                oModel:SetValue("SB1MASTER","B1_APROPRI"   , GetDtoVal(aLinha[54]))
+                oModel:SetValue("SB1MASTER","B1_TIPODEC"  , AllTrim( aLinha[55]))
+                oModel:SetValue("SB1MASTER","B1_ORIGEM"   , alltrim(aLinha[56]))
+                oModel:SetValue("SB1MASTER","B1_UREV"     , CTOD( aLinha[57]))
+                oModel:SetValue("SB1MASTER","B1_DATREF"   , CTOD( aLinha[58]))
+
+                oModel:SetValue("SB1MASTER","B1_FANTASM"  , substr(alinha[59],1,1)) //AllTrim( aLinha[59]))  
+                oModel:SetValue("SB1MASTER","B1_RASTRO "  , AllTrim( aLinha[60]))
+                oModel:SetValue("SB1MASTER","B1_FORAEST"  , alltrim(aLinha[61]))
+                oModel:SetValue("SB1MASTER","B1_COMIS"    , GetDtoVal( aLinha[62]))
+                oModel:SetValue("SB1MASTER","B1_DTREFP1"  , CTOD( aLinha[63]))
+                oModel:SetValue("SB1MASTER","B1_PERINV"   , GetDtoVal( aLinha[64]))
+                oModel:SetValue("SB1MASTER","B1_MRP"      , substr(alinha[65],1,1)) //AllTrim( aLinha[65]))
+                oModel:SetValue("SB1MASTER","B1_NOTAMIN"  , AllTrim( aLinha[66]))
+                oModel:SetValue("SB1MASTER","B1_PRVALID"  , AllTrim( aLinha[67]))
+                oModel:SetValue("SB1MASTER","B1_CONINI"   , CTOD( aLinha[68]))
+                oModel:SetValue("SB1MASTER","B1_CONTSOC"  , AllTrim( aLinha[69]))
+                oModel:SetValue("SB1MASTER","B1_CODBAR"   , AllTrim( aLinha[70]))
+                oModel:SetValue("SB1MASTER","B1_IRRF"     , substr(alinha[71],1,1)) //AllTrim( aLinha[71]))
+                oModel:SetValue("SB1MASTER","B1_FORMLOT"  , ALLTRIM( aLinha[72]))
+                oModel:SetValue("SB1MASTER","B1_CODGTIN"  , ALLTRIM( aLinha[73]))
+                oModel:SetValue("SB1MASTER","B1_LOCALIZ"  , AllTrim( aLinha[74]))
+                oModel:SetValue("SB1MASTER","B1_CONTRAT"  , ALLTRIM( aLinha[75]))
+                oModel:SetValue("SB1MASTER","B1_ANUENTE"  , AllTrim( aLinha[76]))
+                oModel:SetValue("SB1MASTER","B1_IMPORT"   , substr(alinha[77],1,1)) //ALLTRIM( aLinha[77]))
+                oModel:SetValue("SB1MASTER","B1_FABRIC"   , ALLTRIM( aLinha[78]))
+                oModel:SetValue("SB1MASTER","B1_TIPOCQ"   , ALLTRIM( aLinha[79]))
+                oModel:SetValue("SB1MASTER","B1_SOLICIT"  , ALLTRIM( aLinha[80]))
+                oModel:SetValue("SB1MASTER","B1_AGREGCU"  , ALLTRIM( aLinha[81]))
+                oModel:SetValue("SB1MASTER","B1_GRUPCOM"  , AllTrim( aLinha[82]))
+                oModel:SetValue("SB1MASTER","B1_DESPIMP"  , ALLTRIM( aLinha[83]))
+                oModel:SetValue("SB1MASTER","B1_QUADPRO"  , AllTrim( aLinha[84]))
+                oModel:SetValue("SB1MASTER","B1_BASE3"    , AllTrim( aLinha[85]))
+                oModel:SetValue("SB1MASTER","B1_DESBSE3"  , ALLTRIM( aLinha[86]))
+                oModel:SetValue("SB1MASTER","B1_NUMCQPR"  , GetDtoVal( aLinha[87]))
+                oModel:SetValue("SB1MASTER","B1_REVATU"   , ALLTRIM( aLinha[88]))
+                oModel:SetValue("SB1MASTER","B1_INSS"     , ALLTRIM( aLinha[89]))
+                oModel:SetValue("SB1MASTER","B1_REDINSS"  , GetDtoVal( aLinha[90]))
+                oModel:SetValue("SB1MASTER","B1_REDIRRF"  , GetDtoVal( aLinha[91]))
+                oModel:SetValue("SB1MASTER","B1_TAB_IPI"  , ALLTRIM( aLinha[92]))
+                oModel:SetValue("SB1MASTER","B1_REDPIS"   , GetDtoVal( aLinha[93]))
+                oModel:SetValue("SB1MASTER","B1_DATASUB"  , AllTrim( aLinha[94]))
+                oModel:SetValue("SB1MASTER","B1_REDCOF"   , GetDtoVal( aLinha[95]))
+                oModel:SetValue("SB1MASTER","B1_PCSLL"    , GetDtoVal( aLinha[96]))
+                oModel:SetValue("SB1MASTER","B1_PCOFINS"  , GetDtoVal( aLinha[97]))
+                oModel:SetValue("SB1MASTER","B1_PPIS"     , GetDtoVal( aLinha[98]))
+                oModel:SetValue("SB1MASTER","B1_MTBF"     , GetDtoVal( aLinha[99]))
+                oModel:SetValue("SB1MASTER","B1_MTTR"     , GetDtoVal( aLinha[100]))
+
+                //PARTE 2
+
+                oModel:SetValue("SB1MASTER","B1_FLAGSUG"  , AllTrim( aLinha[101]))
+                oModel:SetValue("SB1MASTER","B1_VLR_IPI"  , ALLTRIM( aLinha[102]))
+                oModel:SetValue("SB1MASTER","B1_QTDSER"   , AllTrim( aLinha[103]))
+                oModel:SetValue("SB1MASTER","B1_SERIE"    , AllTrim( aLinha[104]))
+                oModel:SetValue("SB1MASTER","B1_CLVL"     , AllTrim( aLinha[105]))
+                oModel:SetValue("SB1MASTER","B1_ATIVO"    , AllTrim( aLinha[106]))
+                oModel:SetValue("SB1MASTER","B1_EMAX"     , GetDtoVal( aLinha[107]))
+                oModel:SetValue("SB1MASTER","B1_PESBRU"   , GetDtoVal( aLinha[108]) / 1000 )
+                oModel:SetValue("SB1MASTER","B1_PESO"     , cPeso )
+                oModel:SetValue("SB1MASTER","B1_UM"   , AllTrim( aLinha[110]))
+                oModel:SetValue("SB1MASTER","B1_PRV1"   , GetDtoVal( aLinha[111])/100)
+
+                oModel:SetValue("SB1MASTER","B1_YCPEE"   , AllTrim( aLinha[112]))
+                oModel:SetValue("SB1MASTER","B1_XRANGE"   , AllTrim( aLinha[113]))
+                oModel:SetValue("SB1MASTER","B1_XQTUNIT"   , AllTrim( aLinha[114]))
+                oModel:SetValue("SB1MASTER","B1_XIDUNIT"   , AllTrim( aLinha[115]))
+                oModel:SetValue("SB1MASTER","B1_XMARB"   , AllTrim( aLinha[116]))
+                oModel:SetValue("SB1MASTER","B1_XPCPSEQ"   , AllTrim( aLinha[117]))
+                oModel:SetValue("SB1MASTER","B1_FRACPER"   , GetDtoVal( aLinha[118]))
+                oModel:SetValue("SB1MASTER","B1_INT_ICM"   , GetDtoVal( aLinha[119]))
+                oModel:SetValue("SB1MASTER","B1_VLR_ICM"   , GetDtoVal( aLinha[120]))
+                oModel:SetValue("SB1MASTER","B1_SELO"   , AllTrim( aLinha[121]))
+                oModel:SetValue("SB1MASTER","B1_LOTVEN"   , GetDtoVal( aLinha[122]))
+                oModel:SetValue("SB1MASTER","B1_USAFEFO"   , AllTrim( aLinha[123]))
+                oModel:SetValue("SB1MASTER","B1_CNATREC"   , AllTrim( aLinha[124]))
+                oModel:SetValue("SB1MASTER","B1_TNATREC"   , ALLTRIM( aLinha[125]))
+                oModel:SetValue("SB1MASTER","B1_AFASEMT"   , GetDtoVal( aLinha[126]))
+                oModel:SetValue("SB1MASTER","B1_TERUM"   , AllTrim( aLinha[127]))
+                oModel:SetValue("SB1MASTER","B1_AIMAMT"   , GetDtoVal( aLinha[128]))
+                oModel:SetValue("SB1MASTER","B1_AFUNDES"   , GetDtoVal( aLinha[129]))
+                oModel:SetValue("SB1MASTER","B1_CPOTENC"   , ALLTRIM( aLinha[130]))
+                oModel:SetValue("SB1MASTER","B1_POTENCI"   , ALLTRIM( aLinha[131]))
+                oModel:SetValue("SB1MASTER","B1_GCCUSTO"   , ALLTRIM( aLinha[132]))
+                oModel:SetValue("SB1MASTER","B1_CRICMS"   , ALLTRIM( aLinha[133]))
+                oModel:SetValue("SB1MASTER","B1_ESCRIPI"   , ALLTRIM( aLinha[134]))
+                oModel:SetValue("SB1MASTER","B1_MSBLQL"   , AllTrim( aLinha[135]))
+                oModel:SetValue("SB1MASTER","B1_CCCUSTO"   , ALLTRIM( aLinha[136]))
+                oModel:SetValue("SB1MASTER","B1_PARCEI"   , AllTrim( aLinha[137]))
+                oModel:SetValue("SB1MASTER","B1_VLR_PIS"   , GetDtoVal( aLinha[138]))
+                oModel:SetValue("SB1MASTER","B1_FUSTF"   , ALLTRIM( aLinha[139]))
+                oModel:SetValue("SB1MASTER","B1_TIPOBN"   , AllTrim( aLinha[140]))
+                oModel:SetValue("SB1MASTER","B1_VLCIF"   , GetDtoVal( aLinha[141]))
+                oModel:SetValue("SB1MASTER","B1_GRPNATR"   , ALLTRIM( aLinha[142]))
+                oModel:SetValue("SB1MASTER","B1_DTFIMNT"   , CTOD( aLinha[143]))
+                oModel:SetValue("SB1MASTER","B1_FECP"   , GetDtoVal( aLinha[144]))
+                oModel:SetValue("SB1MASTER","B1_CODPROC"   , ALLTRIM( aLinha[145]))
+                oModel:SetValue("SB1MASTER","B1_CHASSI"   , AllTrim( aLinha[146]))
+                oModel:SetValue("SB1MASTER","B1_VALEPRE"   , AllTrim( aLinha[147]))
+                oModel:SetValue("SB1MASTER","B1_TPREG"   , AllTrim( aLinha[148]))
+                oModel:SetValue("SB1MASTER","B1_REFBAS"   , AllTrim( aLinha[149]))
+                oModel:SetValue("SB1MASTER","B1_CODQAD"   , AllTrim( aLinha[150]))
+                oModel:SetValue("SB1MASTER","B1_PMACNUT"   , GetDtoVal( aLinha[151]))
+                oModel:SetValue("SB1MASTER","B1_PMICNUT"   , GetDtoVal( aLinha[152]))
+                oModel:SetValue("SB1MASTER","B1_HREXPO"   , AllTrim( aLinha[153]))
+
+
+                //PARTE 3
+
+                oModel:SetValue("SB1MASTER","B1_CLASSE"   , AllTrim( aLinha[154]))
+                oModel:SetValue("SB1MASTER","B1_DIFCNAE"   , AllTrim( aLinha[155]))
+                oModel:SetValue("SB1MASTER","B1_DTCORTE"   , CTOD( aLinha[156]))
+                oModel:SetValue("SB1MASTER","B1_AFABOV"   , GetDtoVal( aLinha[157]))
+                oModel:SetValue("SB1MASTER","B1_VEREAN"   , AllTrim( aLinha[158]))
+                oModel:SetValue("SB1MASTER","B1_VIGENC"   , CTOD( aLinha[159]))
+                oModel:SetValue("SB1MASTER","B1_CEST"   ,     cCest ) //StrTran( aLinha[160],'.','')) //AllTrim( aLinha[160]))
+                oModel:SetValue("SB1MASTER","B1_GRPCST"   , AllTrim( aLinha[161]))
+                oModel:SetValue("SB1MASTER","B1_MARKUP"   , GetDtoVal( aLinha[162]))
+                oModel:SetValue("SB1MASTER","B1_TPPROD"   , AllTrim( aLinha[163]))
+                oModel:SetValue("SB1MASTER","B1_RETOPER"   , AllTrim( aLinha[164]))
+                oModel:SetValue("SB1MASTER","B1_CNAE"   , AllTrim( aLinha[165]))
+                oModel:SetValue("SB1MASTER","B1_CSLL"   , AllTrim( aLinha[166]))
+                oModel:SetValue("SB1MASTER","B1_VLR_COF"   , GetDtoVal( aLinha[167]))
+                oModel:SetValue("SB1MASTER","B1_RICM65"   , AllTrim( aLinha[168]))
+                oModel:SetValue("SB1MASTER","B1_SELOEN"   , AllTrim( aLinha[169]))
+                oModel:SetValue("SB1MASTER","B1_PRDORI"   , AllTrim( aLinha[170]))
+                oModel:SetValue("SB1MASTER","B1_PRFDSUL"   , GetDtoVal( aLinha[171]))
+                oModel:SetValue("SB1MASTER","B1_CRDEST"   , GetDtoVal( aLinha[172]))
+                oModel:SetValue("SB1MASTER","B1_ADMIN"   , AllTrim( aLinha[173]))
+                oModel:SetValue("SB1MASTER","B1_PERGART"   , GetDtoVal( aLinha[174]))
+                oModel:SetValue("SB1MASTER","B1_GARANT"   , AllTrim( aLinha[175]))
+                oModel:SetValue("SB1MASTER","B1_IVAAJU"   , AllTrim( aLinha[176]))
+                oModel:SetValue("SB1MASTER","B1_ALFUMAC"   , GetDtoVal( aLinha[177]))
+                oModel:SetValue("SB1MASTER","B1_FETHAB"   , ALLTRIM( aLinha[178]))
+                oModel:SetValue("SB1MASTER","B1_PR43080"   , GetDtoVal( aLinha[179]))
+                oModel:SetValue("SB1MASTER","B1_MEPLES"   , AllTrim( aLinha[180]))
+                oModel:SetValue("SB1MASTER","B1_REGESIM"   , ALLTRIM( aLinha[181]))
+                oModel:SetValue("SB1MASTER","B1_RSATIVO"   , AllTrim( aLinha[182]))
+                oModel:SetValue("SB1MASTER","B1_TFETHAB"   , ALLTRIM( aLinha[183]))
+                oModel:SetValue("SB1MASTER","B1_TPDP"   , ALLTRIM( aLinha[184]))
+                oModel:SetValue("SB1MASTER","B1_CRDPRES"   , GetDtoVal( aLinha[185]))
+                oModel:SetValue("SB1MASTER","B1_CRICMST"   , ALLTRIM( aLinha[186]))
+                oModel:SetValue("SB1MASTER","B1_FECOP"   , ALLTRIM( aLinha[187]))
+                oModel:SetValue("SB1MASTER","B1_AFACS"   , GetDtoVal( aLinha[188]))
+                oModel:SetValue("SB1MASTER","B1_AJUDIF"   , ALLTRIM( aLinha[189]))
+                oModel:SetValue("SB1MASTER","B1_ALFECRN"   , GetDtoVal( aLinha[190]))
+                oModel:SetValue("SB1MASTER","B1_CFEM"   , AllTrim( aLinha[191]))
+                oModel:SetValue("SB1MASTER","B1_CFEMS"   , ALLTRIM( aLinha[192]))
+                oModel:SetValue("SB1MASTER","B1_SITTRIB"   , AllTrim( aLinha[193]))
+                oModel:SetValue("SB1MASTER","B1_PORCPRL"   , ALLTRIM( aLinha[194]))
+                oModel:SetValue("SB1MASTER","B1_IMPNCM"   , GetDtoVal( aLinha[195]))
+                oModel:SetValue("SB1MASTER","B1_AFETHAB"   , GetDtoVal( aLinha[196]))
+                oModel:SetValue("SB1MASTER","B1_ALFECOP"   , GetDtoVal( aLinha[197]))
+                oModel:SetValue("SB1MASTER","B1_MSEXP"   , ALLTRIM( aLinha[198]))
+                oModel:SetValue("SB1MASTER","B1_PAFMD5"   , AllTrim( aLinha[199]))
+                oModel:SetValue("SB1MASTER","B1_ALFECST"   , GetDtoVal( aLinha[200]))
+                oModel:SetValue("SB1MASTER","B1_TRIBMUN"   , AllTrim( aLinha[201]))
+                oModel:SetValue("SB1MASTER","B1_CFEMA"   , GetDtoVal( aLinha[202]))
+                oModel:SetValue("SB1MASTER","B1_FECPBA"   , GetDtoVal( aLinha[203]))
+                oModel:SetValue("SB1MASTER","B1_IDHIST"   , AllTrim( aLinha[204]))
+                oModel:SetValue("SB1MASTER","B1_PRINCMG"   , GetDtoVal( aLinha[205]))
+                oModel:SetValue("SB1MASTER","B1_REGRISS"   , AllTrim( aLinha[206]))
+
+                //PARTE 4
+
+                oModel:SetValue("SB1MASTER","B1_CODANT"   , AllTrim( aLinha[207]))
+                oModel:SetValue("SB1MASTER","B1_GRPTI"   , AllTrim( aLinha[208]))
+                oModel:SetValue("SB1MASTER","B1_DESLOGI"   , AllTrim( aLinha[209]))
+                oModel:SetValue("SB1MASTER","B1_XDESCL1"   , AllTrim( aLinha[210]))
+                oModel:SetValue("SB1MASTER","B1_XDESCL2"   , AllTrim( aLinha[211]))
+                oModel:SetValue("SB1MASTER","B1_XLOCARM"   , AllTrim( aLinha[212]))
+                oModel:SetValue("SB1MASTER","B1_RPRODEP"   , AllTrim( aLinha[213]))
+                oModel:SetValue("SB1MASTER","B1_PRN944I"   , AllTrim( aLinha[214]))
+                oModel:SetValue("SB1MASTER","B1_LOCREC"   , AllTrim( aLinha[215]))
+                oModel:SetValue("SB1MASTER","B1_XKANMIN"   , GetDtoVal( aLinha[216]))
+                oModel:SetValue("SB1MASTER","B1_XKANSEG"   , GetDtoVal( aLinha[217]))
+                oModel:SetValue("SB1MASTER","B1_XKANMAX"   , GetDtoVal( aLinha[218]))
+                oModel:SetValue("SB1MASTER","B1_APOPRO"   , AllTrim( aLinha[219]))
+                oModel:SetValue("SB1MASTER","B1_XNUMINM"   , AllTrim( aLinha[220]))
+                oModel:SetValue("SB1MASTER","B1_XDTULT"   , CTOD( aLinha[221]))
+                oModel:SetValue("SB1MASTER","B1_XVLDINM"   , CTOD( aLinha[222]))
+                oModel:SetValue("SB1MASTER","B1_XINTEG"   , "N")              // INTEGRA RLOG
+                oModel:SetValue("SB1MASTER","B1_XPRCFOB"   , GetDtoVal( aLinha[224])/100)
+                oModel:SetValue("SB1MASTER","B1_XMOEFOB"   , AllTrim( aLinha[39]) ) //MOEDA FOB
+                oModel:SetValue("SB1MASTER","B1_XRESTEC"   , GetDtoVal( aLinha[226]))
+                oModel:SetValue("SB1MASTER","B1_XDTINC"    , CTOD(aLinha[227]))
+                oModel:SetValue("SB1MASTER","B1_XVENLEG"   , CTOD(aLinha[228]))
+                oModel:SetValue("SB1MASTER","B1_X1CLEG"    , CTOD(aLinha[229]))
+                oModel:SetValue("SB1MASTER","B1_XUCLEG"    , CTOD(aLinha[230]))
+                oModel:SetValue("SB1MASTER","B1_X1VLEG"    , CTOD(aLinha[231]))
+                oModel:SetValue("SB1MASTER","B1_XUVLEG"    , CTOD(aLinha[232]))
+
+              //Sabado Fim   ***************************************************************************
+
+                If oModel:VldData()
+                   nOpca := 3
+                   oModel:CommitData()
+
+
+                    RecLock('SB1', .F.)
+                        SB1->B1_MSBLQL := "2"  //Desbloqueado
+                        SB1->B1_COD    := cCod
+                        SB1->B1_CODITE := cCod
+                        SB1->B1_CEST   := cCest 
+                    SB1->(MsUnlock())
+           
+                   U_Z027Compl(AllTrim(aLinha[03]), nOpca, aItens, cCod)
+    
+                Else
+                    aLog  := oModel:GetErrorMessage()
+                    _cLog := ""
+                
+                    For _nI := 1 To Len(aLog)
+                        If !Empty(aLog[_nI]) .AND. _nI = 6
+                            _cLog += Alltrim(aLog[_nI]) + " Produto " + Alltrim(cCod) + CRLF
+                            GERLOG()
+                        EndIf
+                    Next
+                EndIf       
+                
+                oModel:DeActivate()
+                oModel:Destroy()
+                
+                oModel := NIL
+ 
             endif
+
             nCont ++
-          EndDo
+        EndDo
     EndIf
      
     //Fecha o arquivo e finaliza o processamento
     oFile:Close()
 EndIf
-
-//
-    
-    oFile := FWFileReader():New(_nAqr)
-    cLinhax  := FT_FREADLN()
-    FT_FSKIP(1)  //Linhas a saltar
-   // oFile := FWFileReader():New(cFile)
-    //Begin Transaction
-    
-    While !FT_FEOF() .AND. lRet = .T.
-        _nItem  ++
-
-        linha := oFile:GetLine()
-        IncProc("Processando registro " + cValToChar(_nItem) + " de " + cValToChar(nLinTot) + ", aguarde.")
-
-        cLinha  := FT_FREADLN()
-        _nPos01 := AT(Chr(09),cLinha)
-
-        cSeparador := Substr(cLinha,_nPos01,1)
-        If !(cSeparador $ (";,"+Chr(09)))
-            MSGINFO("Separador do arquivo invalido! "+"[ZFATF027]")
-	        fErase(_nAqr+GetDbExtension())
-	        fErase(cSysPath+AllTrim(_nAqr))
-            lRet := .F.
-	        Return(.F.)
-        Endif
-
-        aDados  := Separa(cLinha,cSeparador)
-
-        IF LEN(aDados) < 4
-            MSGINFO("Lay-Out do arquivo invalido! Verifique o Fleg p/ somente FOB. "+"[ZFATF027]")
-            lRet := .F.
-            Exit 
-        ENDIF
-
-        cItens    :=    '0000'
-
-        FOR _nY := 1 TO LEN(aDados)
-            // Realiza tratamento do campo usado de acordo com o Tipo
-            IF ((_nY < 5 .OR. _nY = 13) .OR. (_nY > 21 .and. _nY < 27) ) //R. _nY = 18 )
-                _cRetorno := aDados[_nY]
-                DO CASE
-                   CASE _nY = 13
-                      _nX = 5
-                   CASE _nY = 22
-                      _nX = 6
-                   CASE _nY = 24
-                      _nX = 7
-                   CASE _nY = 23
-                      _nX = 8
-                   CASE _nY = 26
-                      _nX = 9
-                   CASE _nY = 25
-                      _nX = 10
-                   //CASE _nY = 18
-                   //  _nX = 35  
-                   Otherwise
-                   _nX = _nY
-                ENDCASE
-                _cTipo    := _aCelulas[_nX][4]
-                _cTamanho := _aCelulas[_nX][5]
-                _cDecimal := _aCelulas[_nX][6]
-                If _cTipo == 'N' // Numerico
-                    _cString   := ' '
-                    _cNewRet   := ' '
-                    _cString   := STRTRAN(_cRetorno, '"', '')
-                    _cString   := STRTRAN(_cString, ',', '')
-                    _cString   := STRTRAN(_cString, '$', '')
-                    _cNewRet   := Val(_cString)
-                    _cRetorno  := Round(_cNewRet,_cDecimal)
-                Endif
-
-                If _cTipo == 'D' // Data 21/01/2006
-                    _nPos02 := AT("/",_cRetorno)  //posição da primeira barra  até aqui é o mês  
-                    _nPos03 := AT("/",_cRetorno,_nPos02+1)  //posição da segunda barra  até aqui é o mês    
-
-                    IF _nPos02 <> 0 .AND.  _nPos03 <> 0
-                    
-                        _cMes := Substr(_cRetorno,1,_nPos02-1)
-                        _cMes := PADL(_cMes,02,"0") 
-
-                        _cDia := Substr(_cRetorno,_nPos02+1,2)
-                        _cDia := PADL(_cDia,02,"0") 
-                        
-                        _cAno := Substr(_cRetorno,_nPos03+1,4)
-                        _cAno := PADL(_cAno,04,"0")
-                            
-                        _cNewRet  := CtoD(_cDia+"/"+_cMes+"/"+_cAno)
-                        _cRetorno := _cNewRet
-
-                    ENDIF
-                Endif
-
-                If _cTipo == 'C'   // .AND. _lExtrai // Caracter e extração de caracteres
- 
-                    _cString := ' '
-                    _cNewRet := ' '
- 
-                    //For _nElem	 := 1 To Len(_cRetorno)
-                    //    _cString := SubStr(_cRetorno,_nElem,1)
-                    //    If _cString $ '#/#,#.#-'
-                    //        Loop
-                    //    Endif
-                    //Next _nElem
-                    
-                    _cNewRet  := Alltrim(_cRetorno)+_cString
-                    _cRetorno := FwNoAccent(_cNewRet) 
-
-                Endif
-
-                If _cTipo == 'C'   // Ajusta O Tamanho da variavel
-                    _cRetorno := Alltrim(_cRetorno)
-                    _cRetorno := _cRetorno+Space(_cTamanho-Len(_cRetorno))
-                Endif
-                aDados[_nY] := _cRetorno
-            ENDIF
-
-        NEXT
-        
-        cCOD      := AllTrim( aDados[02] )
-        cDESC     := AllTrim( aDados[04] )   //3
-     /*   cFILIAL   := AllTrim( aDados[01] ) 
-        cTIPO     := AllTrim( aDados[05] )   //4
-        cCODITE   := AllTrim( aDados[03] )   //5
-        cUM       := AllTrim( aDados[15] )   //6
-        cLOCPAD   := AllTrim( aDados[21] )   //7
-        cGRUPO    := AllTrim( aDados[06] )   //8
-        cPICM     := Val(AllTrim( aDados[22] ) )  //9
-        cPOSIPI   := AllTrim( aDados[23] )   //10
-        cEX_NCM   := AllTrim( aDados[24] )   //11
-        cIMPORT   := AllTrim( aDados[25] )   //11
-        cGRTRIB   := AllTrim( aDados[26] )   //12
-        cSEGUM    := AllTrim( aDados[30] )   //13
-        cIMPZFRC  := AllTrim( aDados[27] )   //14
-               
-        IF !Empty(aDados[31])                //15
-            cCONV := Val(AllTrim( aDados[31] ) )
-        ELSE
-            cCONV := 1
-        ENDIF
-        IF !Empty(aDados[32])                //16
-            cTIPCONV := Val(AllTrim( aDados[32] ) )
-        ELSE
-            cTIPCONV := 'M'
-        ENDIF
-        cQE       := Val(AllTrim( aDados[07] ) )    //17
-        cCUSTD    := Val(AllTrim( aDados[08] ) )    //18
-        cMCUSTD   := AllTrim( aDados[09] )          //19
-        cPESO     := Val(AllTrim( aDados[14] ) )    //20
-        cCONTA    := AllTrim( aDados[35] )          //21
-        cITEMCC   := AllTrim( aDados[36] )          //22
-        cLOJPROC  := AllTrim( aDados[11] )          //23
-        cPROC     := AllTrim( aDados[10] )          //24
-        cGARANT   := AllTrim( aDados[32] )          //25
-        cORIGEM   := AllTrim( aDados[12] )          //26
-        cRASTRO   := AllTrim( aDados[34] )          //27
-        cCLVL     := AllTrim( aDados[37] )          //28
-        cPESBRU   := Val(AllTrim( aDados[13] ) )    //29
-        cLOTVEN   := Val(AllTrim( aDados[16] ) )    //30
-        cCEST     := AllTrim( aDados[28] )          //31
-        cLOCREC   := AllTrim( aDados[29] )          //32
-     */   cXNUMINM  := AllTrim( aDados[17] )          //33
-        cXVLDINM  := STOD(AllTrim( aDados[18] ) )   //34
-        cXDTULT   := STOD(AllTrim( aDados[38] ) )   //35
-        //cXINTEG   := AllTrim( aDados[39] )          //36
-        cCEME     := AllTrim( aDados[42] )          //39
-        cMARPEC   := AllTrim( aDados[43] )          //40
-        cPORTMS   := AllTrim( aDados[44] )          //41
-        cCOMPR    := Val(AllTrim( aDados[45] ) )    //42
-        cLARG     := Val(AllTrim( aDados[46] ) )    //43
-        cALTURA   := Val(AllTrim( aDados[47] ) )    //44
-        cCODLIN   := AllTrim( aDados[48] )          //45
-        cCODFAM   := AllTrim( aDados[49] )          //46
-        //cXPRCFOB  := Val(AllTrim( aDados[19] ) )    //39 
-        //cXMOEFOB  := AllTrim( aDados[20] )          //40
-        cFornece  := AllTrim( aDados[50] )
-        cLolja    := AllTrim( aDados[51] )
-        cCodprf   := AllTrim( aDados[52] )
-        cFabr     := AllTrim( aDados[53] )
-        cFaloja   := AllTrim( aDados[54] )
-        cMSBLQL   := "2"   //Não Bloqueado
-
-        IncProc("Montando dados de entrada...")
-
-        If Empty(cCod) 
-           //lRet := .F.
-           Exit
-        Endif
-
+/*
         If Select( (_cQAlias) ) > 0
 			(_cQAlias)->(DbCloseArea())
 		EndIf
@@ -628,9 +755,6 @@ EndIf
             IF Empty(aDados[15])        
                 aDados[15] := (_cQAlias)->B1_UM
             ENDIF
-            /*IF Empty(aDados[21])        
-                aDados[21]  := (_cQAlias)->B1_LOCPAD
-            ENDIF*/                                  //a pedido do Andre
             IF Empty(aDados[06])        
                 aDados[06] := (_cQAlias)->B1_GRUPO
             ENDIF
@@ -643,9 +767,6 @@ EndIf
             IF Empty(aDados[34])        
                 aDados[34] := (_cQAlias)->B1_RASTRO
             ENDIF
-            /*IF Empty(aDados[29])        
-                aDados[29] := (_cQAlias)->B1_LOCREC  //a pedido do Andre
-            ENDIF*/
             IF Empty(aDados[23])        
                 aDados[23] := (_cQAlias)->B1_POSIPI
             ENDIF
@@ -883,22 +1004,22 @@ EndIf
             oModel:SetValue("SB1MASTER","B1_DESC"       ,AllTrim( aDados[04] ))
             oModel:SetValue("SB1MASTER","B1_TIPO"       ,AllTrim( aDados[05] ))
             oModel:SetValue("SB1MASTER","B1_GRUPO"      ,AllTrim( aDados[06] ))
-            oModel:SetValue("SB1MASTER","B1_QE"         ,Val(AllTrim( aDados[07] ) ) )
-            oModel:SetValue("SB1MASTER","B1_CUSTD"      ,Val(AllTrim( aDados[08] )))
+            oModel:SetValue("SB1MASTER","B1_QE"         ,GetDtoVal(AllTrim( aDados[07] ) ) )
+            oModel:SetValue("SB1MASTER","B1_CUSTD"      ,GetDtoVal(AllTrim( aDados[08] )))
             oModel:SetValue("SB1MASTER","B1_MCUSTD"     ,AllTrim( aDados[09] ))
             oModel:SetValue("SB1MASTER","B1_PROC"       ,AllTrim( aDados[10] ))
             oModel:SetValue("SB1MASTER","B1_LOJPROC"    ,AllTrim( aDados[11] ))
             oModel:SetValue("SB1MASTER","B1_ORIGEM"     ,AllTrim( aDados[12] ))
-            oModel:SetValue("SB1MASTER","B1_PESBRU"     ,Val(AllTrim( aDados[13] ) ) )
-            oModel:SetValue("SB1MASTER","B1_PESO"       ,Val(AllTrim( aDados[14] ) ))
+            oModel:SetValue("SB1MASTER","B1_PESBRU"     ,GetDtoVal(AllTrim( aDados[13] ) ) )
+            oModel:SetValue("SB1MASTER","B1_PESO"       ,GetDtoVal(AllTrim( aDados[14] ) ))
             oModel:SetValue("SB1MASTER","B1_UM"         ,AllTrim( aDados[15] ))
-            oModel:SetValue("SB1MASTER","B1_LOTVEN"     ,Val(AllTrim( aDados[16] ) ))
+            oModel:SetValue("SB1MASTER","B1_LOTVEN"     ,GetDtoVal(AllTrim( aDados[16] ) ))
             oModel:SetValue("SB1MASTER","B1_XNUMINM"    ,AllTrim( aDados[17] )  )
-            oModel:SetValue("SB1MASTER","B1_XVLDINM"    ,STOD(AllTrim( aDados[18] ) ) )
-            oModel:SetValue("SB1MASTER","B1_XPRCFOB"    ,Val(AllTrim( aDados[19] ) )   )
+            oModel:SetValue("SB1MASTER","B1_XVLDINM"    ,CTOD(AllTrim( aDados[18] ) ) )
+            oModel:SetValue("SB1MASTER","B1_XPRCFOB"    ,GetDtoVal(AllTrim( aDados[19] ) )   )
             oModel:SetValue("SB1MASTER","B1_XMOEFOB"    ,AllTrim( aDados[20] ) )
             //oModel:SetValue("SB1MASTER","B1_LOCPAD"     ,AllTrim( aDados[21] ))  //a pedido do Andre
-            oModel:SetValue("SB1MASTER","B1_PICM"       ,Val(AllTrim( aDados[22] ) ))
+            oModel:SetValue("SB1MASTER","B1_PICM"       ,GetDtoVal(AllTrim( aDados[22] ) ))
             oModel:SetValue("SB1MASTER","B1_POSIPI"     ,AllTrim( aDados[23] ))
             oModel:SetValue("SB1MASTER","B1_EX_NCM"     ,AllTrim( aDados[24] ) )
             oModel:SetValue("SB1MASTER","B1_IMPORT"     ,AllTrim( aDados[25] ) )
@@ -912,7 +1033,7 @@ EndIf
             oModel:SetValue("SB1MASTER","B1_CONTA"      ,AllTrim( aDados[35] ))
             oModel:SetValue("SB1MASTER","B1_ITEMCC"     ,AllTrim( aDados[36] ))
             oModel:SetValue("SB1MASTER","B1_CLVL"       ,AllTrim( aDados[37] ))
-            oModel:SetValue("SB1MASTER","B1_XDTULT"     ,STOD(AllTrim( aDados[38] ) ))
+            oModel:SetValue("SB1MASTER","B1_XDTULT"     ,CTOD(AllTrim( aDados[38] ) ))
             oModel:SetValue("SB1MASTER","B1_XINTEG"     ,AllTrim( aDados[39] ))
             oModel:SetValue("SB1MASTER","B1_CONV"       ,AllTrim( aDados[31] ))
             oModel:SetValue("SB1MASTER","B1_TIPCONV"    ,AllTrim( aDados[32] ))
@@ -961,7 +1082,7 @@ EndIf
     //End Transaction
 
     FT_FUSE("TRB1")
-
+*/
 Return()
 
 
@@ -975,15 +1096,15 @@ Função que gera o complemento do produto (SB5) através do produto (SB1)
 @type function
 @obs 
 /*/
-User Function Z027Compl(cCod,nOpca,aItens)
-    Processa({|| fProcessa(cCod,nOpca,aItens)}, "Processando...")
+User Function Z027Compl(cCod,nOpca,aItens,cPROD)
+    Processa({|| fProcessa(cCod,nOpca,aItens,cPROD)}, "Processando...")
 Return
  
 /*----------------------------------------------------------*
  | Func.: fProcessa                                         |
  | Desc.: Função de processamento para gravar o complemento |
  *----------------------------------------------------------*/
-Static Function fProcessa(cCod,nOpca,aItens)
+Static Function fProcessa(cCod,nOpca,aItens,cPROD)
 Local aArea    := GetArea()
 //Local lPosUM   := ( SB5->(FieldPos('B5_UMIND')) != 0)
 Local _lExist  := .F.
@@ -999,7 +1120,7 @@ EndIf
 _lExist := .F.
 _cQuery := " "
 
-_cQuery := " SELECT B5_FILIAL,B5_COD,B5_CEME,B5_MARPEC,B5_PORTMS,B5_COMPR,B5_LARG,B5_ALTURA,B5_CODLIN,B5_CODFAM "
+_cQuery := " SELECT B5_FILIAL,B5_COD,B5_CEME,B5_MARPEC,B5_PORTMS,B5_COMPR,B5_LARG,B5_ALTURA,B5_CODLIN,B5_CODFAM, B5_COMPRLC, B5_LARGLC , B5_ALTURLC"
 _cQuery += " ,R_E_C_N_O_ RECORD"
 _cQuery += " FROM "+retsqlName('SB5')
 _cQuery += " WHERE B5_FILIAL = '" + xFilial('SB5')+"'"
@@ -1011,45 +1132,50 @@ dbUseArea( .T., "TOPCONN", TcGenQry( ,, _cQuery ), _cQAlias, .F., .T. )
 If !(_cQAlias)->(Eof())
     SB5->( dbGoto( (_cQAlias)->RECORD ))     // posiciona o registro
     _lExist := .T.
-    IF Empty(cCEME)      
+    //IF Empty(cCEME)      
         cCEME := (_cQAlias)->B5_CEME
-    ENDIF
-    IF Empty(cMARPEC)      
+    //ENDIF
+    //IF Empty(cMARPEC)      
 
-        VQS->(DbSetOrder(4))
+    //    VQS->(DbSetOrder(4))
     
-        If VQS->(DbSeek(xFilial("VQS") + cFornece + cLojaFor ))
-            cMarPec  := VQS->VQS_MARPEC
-        else
+    //    If VQS->(DbSeek(xFilial("VQS") + cFornece + cLojaFor ))
+    //        cMarPec  := VQS->VQS_MARPEC
+    //    else
             cMARPEC  := (_cQAlias)->B5_MARPEC
-        EndIf
+    //    EndIf
 
-    ENDIF
-    IF Empty(cPORTMS)      
+    //ENDIF
+    //IF Empty(cPORTMS)      
         cPORTMS := (_cQAlias)->B5_PORTMS
-    ENDIF
-    IF Empty(cCOMPR)      
+    //ENDIF
+    //IF Empty(cCOMPR)      
         cCOMPR := (_cQAlias)->B5_COMPR
-    ENDIF
-    IF Empty(cLARG)      
+    //ENDIF
+    //IF Empty(cLARG)      
         cLARG := (_cQAlias)->B5_LARG
-    ENDIF
-    IF Empty(cALTURA)      
+    //ENDIF
+    //IF Empty(cALTURA)      
         cALTURA := (_cQAlias)->B5_ALTURA
-    ENDIF
-    IF Empty(cCODLIN)      
+    //ENDIF
+    //IF Empty(cCODLIN)      
         cCODLIN := (_cQAlias)->B5_CODLIN
-    ENDIF
-    IF Empty(cCODFAM)      
+    //ENDIF
+    //IF Empty(cCODFAM)      
         cCODFAM := (_cQAlias)->B5_CODFAM
-    ENDIF
+
+   cCOMPRLC  := (_cQAlias)->B5_COMPRLC
+   cLARGLC   := (_cQAlias)->B5_LARGLC
+   cALTURLC  := (_cQAlias)->B5_ALTURLC
+
+    //ENDIF
 Endif
 
 oModel := FwLoadModel("MATA180")
 oModel:SetOperation(nOpca)
 oModel:Activate()
 oModel:LoadValue("SB5MASTER","B5_FILIAL"  ,xFilial('SB5') )
-oModel:LoadValue("SB5MASTER","B5_COD"     ,cCOD )
+oModel:LoadValue("SB5MASTER","B5_COD"     ,cPROD )
 oModel:LoadValue("SB5MASTER","B5_CEME"    ,cCEME )
 oModel:LoadValue("SB5MASTER","B5_MARPEC"  ,cMARPEC )
 oModel:LoadValue("SB5MASTER","B5_COMPR"   ,cCOMPR )
@@ -1058,6 +1184,10 @@ oModel:LoadValue("SB5MASTER","B5_ALTURA"  ,cALTURA )
 oModel:LoadValue("SB5MASTER","B5_CODLIN"  ,cCODLIN )
 oModel:LoadValue("SB5MASTER","B5_CODFAM"  ,cCODFAM )
 oModel:LoadValue("SB5MASTER","B5_UMIND"   ,'1')
+
+oModel:LoadValue("SB5MASTER","B5_COMPRLC"  ,cCOMPRLC )
+oModel:LoadValue("SB5MASTER","B5_LARGLC"   ,cLARGLC )
+oModel:LoadValue("SB5MASTER","B5_ALTURLC"  ,cALTURLC)
 
 If oModel:VldData()
     oModel:CommitData()
@@ -1295,12 +1425,12 @@ Private lMsErroAuto := .F.
 
 
         IF !Empty(aDados[31])                
-            cCONV := Val(AllTrim( aDados[31] ) )
+            cCONV := GetDtoVal(AllTrim( aDados[31] ) )
         ELSE
             cCONV := 1
         ENDIF
         IF !Empty(aDados[32])                
-            cTIPCONV := Val(AllTrim( aDados[32] ) )
+            cTIPCONV := GetDtoVal(AllTrim( aDados[32] ) )
         ELSE
             cTIPCONV := 'M'
         ENDIF
@@ -1321,22 +1451,22 @@ oModel:SetValue("SB1MASTER","B1_CODITE"     ,AllTrim( aDados[03] ))
 oModel:SetValue("SB1MASTER","B1_DESC"       ,AllTrim( aDados[04] ))
 oModel:SetValue("SB1MASTER","B1_TIPO"       ,AllTrim( aDados[05] ))
 oModel:SetValue("SB1MASTER","B1_GRUPO"      ,AllTrim( aDados[06] ))
-oModel:SetValue("SB1MASTER","B1_QE"         ,Val(AllTrim( aDados[07] ) ) )
-oModel:SetValue("SB1MASTER","B1_CUSTD"      ,Val(AllTrim( aDados[08] )))
+oModel:SetValue("SB1MASTER","B1_QE"         ,GetDtoVal(AllTrim( aDados[07] ) ) )
+oModel:SetValue("SB1MASTER","B1_CUSTD"      ,GetDtoVal(AllTrim( aDados[08] )))
 oModel:SetValue("SB1MASTER","B1_MCUSTD"     ,AllTrim( aDados[09] ))
 oModel:SetValue("SB1MASTER","B1_PROC"       ,AllTrim( aDados[10] ))
 oModel:SetValue("SB1MASTER","B1_LOJPROC"    ,AllTrim( aDados[11] ))
 oModel:SetValue("SB1MASTER","B1_ORIGEM"     ,AllTrim( aDados[12] ))
-oModel:SetValue("SB1MASTER","B1_PESBRU"     ,Val(AllTrim( aDados[13] ) ) )
-oModel:SetValue("SB1MASTER","B1_PESO"       ,Val(AllTrim( aDados[14] ) ))
+oModel:SetValue("SB1MASTER","B1_PESBRU"     ,GetDtoVal(AllTrim( aDados[13] ) ) )
+oModel:SetValue("SB1MASTER","B1_PESO"       ,GetDtoVal(AllTrim( aDados[14] ) ))
 oModel:SetValue("SB1MASTER","B1_UM"         ,AllTrim( aDados[15] ))
-oModel:SetValue("SB1MASTER","B1_LOTVEN"     ,Val(AllTrim( aDados[16] ) ))
+oModel:SetValue("SB1MASTER","B1_LOTVEN"     ,GetDtoVal(AllTrim( aDados[16] ) ))
 oModel:SetValue("SB1MASTER","B1_XNUMINM"    ,AllTrim( aDados[17] )  )
-oModel:SetValue("SB1MASTER","B1_XVLDINM"    ,STOD(AllTrim( aDados[18] ) ) )
-oModel:SetValue("SB1MASTER","B1_XPRCFOB"    ,Val(AllTrim( aDados[19] ) )   )
+oModel:SetValue("SB1MASTER","B1_XVLDINM"    ,CTOD(AllTrim( aDados[18] ) ) )
+oModel:SetValue("SB1MASTER","B1_XPRCFOB"    ,GetDtoVal(AllTrim( aDados[19] ) )   )
 oModel:SetValue("SB1MASTER","B1_XMOEFOB"    ,AllTrim( aDados[20] ) )
 //oModel:SetValue("SB1MASTER","B1_LOCPAD"     ,AllTrim( aDados[21] ))  //a pedido do Andre
-oModel:SetValue("SB1MASTER","B1_PICM"       ,Val(AllTrim( aDados[22] ) ))
+oModel:SetValue("SB1MASTER","B1_PICM"       ,GetDtoVal(AllTrim( aDados[22] ) ))
 oModel:SetValue("SB1MASTER","B1_POSIPI"     ,AllTrim( aDados[23] ))
 oModel:SetValue("SB1MASTER","B1_EX_NCM"     ,AllTrim( aDados[24] ) )
 oModel:SetValue("SB1MASTER","B1_IMPORT"     ,AllTrim( aDados[25] ) )
@@ -1350,7 +1480,7 @@ oModel:SetValue("SB1MASTER","B1_RASTRO"     ,AllTrim( aDados[34] ))
 oModel:SetValue("SB1MASTER","B1_CONTA"      ,AllTrim( aDados[35] ))
 oModel:SetValue("SB1MASTER","B1_ITEMCC"     ,AllTrim( aDados[36] ))
 oModel:SetValue("SB1MASTER","B1_CLVL"       ,AllTrim( aDados[37] ))
-oModel:SetValue("SB1MASTER","B1_XDTULT"     ,STOD(AllTrim( aDados[38] ) ))
+oModel:SetValue("SB1MASTER","B1_XDTULT"     ,CTOD(AllTrim( aDados[38] ) ))
 oModel:SetValue("SB1MASTER","B1_XINTEG"     ,AllTrim( aDados[39] ))
 oModel:SetValue("SB1MASTER","B1_CONV"       ,cCONV)
 oModel:SetValue("SB1MASTER","B1_TIPCONV"    ,cTIPCONV)
