@@ -4350,6 +4350,7 @@ Static Function XRESCAOATR(_cNumOrc, _lReserva, _aRegVS3, _cArmorig, _cArmdes, _
 
 		While (_cAliasPesq)->(!Eof()) 
 			_aItem := {}
+			_lRet  := .T.
 			VS3->(DbGoto( (_cAliasPesq)->NREGVS3 ))
 			If Len(SB1->B1_COD) < Len(VS3->VS3_CODITE)
 				_cCodProd := SubsTr(VS3->VS3_CODITE,1,Len(SB1->B1_COD))
@@ -4416,7 +4417,7 @@ Static Function XRESCAOATR(_cNumOrc, _lReserva, _aRegVS3, _cArmorig, _cArmdes, _
 				
 				if _nSaldo <= 0
 					_cErro := "Produto " + _cCodProd + "  n�o Possue saldo no Armazem " + _cOrigem + "  !!! " 
-					AAdd(_aMsgErro,_cErro)
+					AAdd(_aMsg,_cErro)
 					//MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
 					_lRet := .F.
 					(_cAliasPesq)->(DbSkip())
@@ -4425,7 +4426,7 @@ Static Function XRESCAOATR(_cNumOrc, _lReserva, _aRegVS3, _cArmorig, _cArmdes, _
 			
 			Else
 				_cErro := "Produto " + _cCodProd + "  n�o encontrado no Armazem " + _cOrigem + "  !!! " 
-				AAdd(_aMsgErro,_cErro)
+				AAdd(_aMsg,_cErro)
 				//MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
 				_lRet := .F.
 				Break

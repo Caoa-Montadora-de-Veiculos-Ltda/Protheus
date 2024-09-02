@@ -875,7 +875,7 @@ Begin Sequence
 		//_cArmazem	:= (_cAliasPesq)->VS3_LOCAL
 		_cCodProd 	:= AllTrim((_cAliasPesq)->VS3_CODITE)
 		_cGrupo		:= (_cAliasPesq)->VS3_GRUITE
-
+		_lSepara	:= .T.  
 		//Conforme solicitação JC e Fabio caso não tenha TES Abortar o orçamento inteiro
 		If 	Empty((_cAliasPesq)->VS3_CODTES)
 			Aadd(_aMensAglu,"Produto "+ AllTrim(_cCodProd) +" com TES não informado no item do orçamento !")
@@ -1098,6 +1098,7 @@ Local _cGrupoSubst
 Local _nQtdePrd  
 Local _nPos
 Local _nCount
+Local _cItemAux := ""
 
 	//Local _lSaldoItSubs	:= GetNewPar("MV_CHKQSUB","N") == "S"  //indica se verifica saldo do SB2 para dar continuidade no processamento
 
@@ -1105,7 +1106,7 @@ Local _nCount
 		oZPEC08Peca:SetGrupo(_cGrupo)
 		oZPEC08Peca:SetCodigo(_cCodItem)
 		_aItemRelac := oZPEC08Peca:ItensSubstituidos()
-		aSort(_aItemRelac,,,{|x,y| x[4] > y[4]})
+		aSort(_aItemRelac,,,{|x,y| x[7] > y[7]})
 		If Len(_aItemRelac) == 0 .or. Empty(AllTrim(_aItemRelac[1,2]))
 			Aadd(_aMensAglu,"Não existe item Substitutos para o produto " +AllTrim(_cCodItem))	
 			Break	
@@ -1114,6 +1115,12 @@ Local _nCount
 			_cGrupoSubst	:= _aItemRelac[_nPos,1]
 			_cCodSubst 		:= _aItemRelac[_nPos,2]//AllTrim(_aItemRelac[_nPos,2])
 			_nSaldoSB2 		:= _aItemRelac[_nPos,7]
+			
+			if alltrim(_cCodSubst) $ _cItemAux
+				Loop
+			Else
+				_cItemAux += alltrim(_cCodSubst) +"|"
+			endIf
 			
 			//GAP098 | Desmembrar itens bloqueados por inventário - Alteração funcionalidade de verificação saldo WIS e Protheus DAC 08/11/2023
 			//Calcular o Saldo
@@ -1150,7 +1157,7 @@ Local _nCount
 			If _nQtdeItem <= 0
 				Exit
 			EndIf		
-		Next
+		Next _nPos
 		If _nQtdeAnt <> _nQtdeItem  //no caso gravou movimentos
 			_lRet := .T.
 		EndIf
@@ -1811,6 +1818,7 @@ Static Function ZPECF08PARC( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, 
 			If ! _lRet
 				Break
 			Else
+				_nItenNovo := VS3->VS3_QTDITE
 				_lInclui := .F.
 			EndIf
 		Else
@@ -1825,6 +1833,11 @@ Static Function ZPECF08PARC( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, 
 						
 		//Após processar ajusto os valores dos campos
 		VS3->(DbGoto(_nRegVS3))  //volta para o item principal
+		
+		If RecLock("VS3",.F.)
+			VS3->VS3_QTDATE	 += _nItenNovo
+			VS3->(MsUnlock())
+		EndIf	
 		//indica que ainda não é para encerrar o processo de kit somente no ultimo registro do kit que encerra pois o mesmo é relativo a quentidade total DAC 09/02/2022
 		If _cTpSub == "3" .and. !_lEncKit  
 			If RecLock("VS3",.F.)
@@ -1853,7 +1866,8 @@ Static Function ZPECF08PARC( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, 
 			Aadd(_aMensAglu,"Não foi possivel alterar registro na tabela VS3 (ZPECF08PARC) !")
 			Break
 		EndIf	
-		If _nQtdReal <= 0 .and. (_nItenNovo == VS3->VS3_QTDINI .or._nItenNovo == 0)
+		If (_nQtdReal <= 0 .and. (_nItenNovo == VS3->VS3_QTDINI .or. _nItenNovo == 0)) .or. VS3->VS3_QTDATE >= VS3->VS3_QTDINI 
+
 			VS3->(DbDelete())
 			VS3->(MsUnlock())
 			Break
