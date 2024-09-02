@@ -1,0 +1,267 @@
+#INCLUDE "TOTVS.CH"
+#Include "FWMVCDEF.CH"
+#INCLUDE "RESTFUL.CH"
+#Include "PROTHEUS.CH"
+#INCLUDE "TopConn.ch"
+#INCLUDE "MSGRAPHI.CH"
+#Include "FWMVCDEF.CH"
+
+Static  _cMark   := GetMark() 
+
+#define CRLF chr(13) + chr(10)
+
+
+/*/{Protheus.doc} ZFATF030
+Serviço de integração faturamento para Previsãove Pedido 
+Atualização da separação dos orçamentos baixando conforme informaçção recebida
+@author 	DAC 
+@since 		30/07/2024
+@version 	undefined
+@param		nao utilizado
+@type 		User Function
+@client   	CAOA 
+@return   	_aMsg - Array com retorno Json código e ocorrencia
+@project 	
+			https://tdn.totvs.com/display/tec/DecodeUTF8
+			https://jsonformatter.curiousconcept.com/  VERIFICAR SE JSON ESTA CORRETO
+			https://jsonlint.com/?code=   //VALIDAR JSON
+            https://jsoneditoronline.org/#left=local.sowavu  //estrutura do json
+/*/
+
+//User Function ZRESTPRV(_oJson, _cEmpFil, _cResp)
+FUNCTION U_ZFATF030()
+Local _oMark AS Object
+Begin Sequence
+
+    _oMark := FWMarkBrowse():New()
+    _oMark:SetDescription("Previsão de Faturamento")
+    _oMark:SetAlias("ZZP")
+    _oMark:SetFieldMark( "ZZP_OK" )
+    _oMark:SetMark( _cMark, "ZZPP", "ZZP_OK" )
+    _oMark:SetMenuDef('ZFATF030')
+    //_oMark:SetAllMark({|| zMarkAll( oMarkBrw, _cMark, "ZZP" ) }) // Ação ao marcar tudo
+    _oMark:ForceQuitButton()                  
+    _oMark:SetAmbiente(.T.) 	// Habilita a utilização da funcionalidade Ambiente no Browse
+    _oMark:SetFixedBrowse(.T.)
+    _oMark:SetWalkThru(.F.)  // Habilita a utilização da funcionalidade Walk-Thru no Browse
+	_oMark:SetFilterDefault( "ZZP_STATUS == 'A'" ) // Exemplo de como inserir um filtro padrão >>> "TR_ST == 'A'"
+	_oMark:SetUseFilter(.T.)
+	_oMark:SetDBFFilter(.T.)
+    _oMark:DisableDetails()
+	_oMark:DisableReport()
+
+	_oMark:AddLegend("ZZP_STATUS == 'A'", "GREEN"	, "Aberto"         		)    
+	_oMark:AddLegend("ZZP_STATUS == 'L'", "YELLOW"	, "Liberado Faturamento") 
+    _oMark:AddLegend("ZZP_STATUS == 'F'", "BLUE"   	, "Faturado"          	) 
+	_oMark:AddLegend("ZZP_STATUS == ' '", "RED"    	, "Pendente"         	) 
+	_oMark:DisableReport()
+    _oMark:Activate()
+    _oMark:DeActivate()
+End Sequence	
+Return Nil 
+
+
+/*/{Protheus.doc} MenuModelDef
+Modelo de Dados 		
+@author 	DAC CAOA
+@since 		
+@version 	undefined
+@param 		
+@type 		Static function
+@ Obs		
+@history    
+/*/
+Static Function ModelDef()
+Local _oModel    := Nil						AS Object	
+Local _oStruZZN  := FWFormStruct(1, "ZZN")	AS Object
+Local _oStruZZP  := FWFormStruct(1, "ZZP")	AS Object
+	_oModel := FWModelActive()
+	// Cria o objeto do Modelo de Dados
+	_oModel := MPFormModel():New('ZFT30MDL',  /*bPreValidacao*/, /*bPosValidacao*/, /*bCommit*/, /*bCancel*/ )
+	// Adiciona ao modelo uma estrutura de formulário de edição por campo
+	_oModel:AddFields( 'ZZNMASTER'	, /*cOwner*/, _oStruZZN, /*bPreValidacao*/, /*bPosValidacao*/, /*bCarga*/ )
+   	_oModel:AddGrid('ZZPDETAIL'		,'ZZNMASTER', _oStruZZP,/*bLinePreValid*/,/*bLinePosValid*/,/*bPreValid*/,/*bPosValid*/, /*bCarga*/)
+ 	_oModel:SetRelation("ZZPDETAIL",{{"ZZP_FILIAL","xFilial('ZZP')"},{"ZZP_CODPRV", "ZZN_CODPRV"}},ZZP->(IndexKey(1)))
+	//_oModel:SetPrimaryKey({'ZO_FILIAL', 'ZO_CODIGO' })
+    _oModel:SetPrimaryKey({})
+
+   	//_oModel:GetModel( 'ZZNMASTER' ):SetOnlyQuery ( .T. )
+   	//_oModel:GetModel( 'ZZPDETAIL' ):SetOnlyQuery ( .T. )
+
+	// Adiciona a descricao do Modelo de Dados
+    _oModel:SetDescription("Previsão Faturamento")
+	// Adiciona a descricao do Componente do Modelo de Dados
+    _oModel:GetModel("ZZNMASTER"):SetDescription("Previsao Faturamento")
+
+    // É necessário que haja alguma alteração na estrutura Field
+    //_oModel:setActivate({ |_oModel| onActivate(_oModel)})
+
+	/*
+	If _oModel:IsActive() 
+		_oModel:DeActivate() 
+	EndIf
+	_oModel:Activate()
+	*/
+Return _oModel
+
+
+/*/{Protheus.doc} ViewDef
+View 		
+@author 	DAC CAOA
+@since 		
+@version 	undefined
+@param 		
+@type 		Static function
+@ Obs		
+@history    
+/*/
+Static Function ViewDef()
+    Local _oModel       := ModelDef() 				AS Object 	// Cria um objeto de Modelo de Dados baseado no ModelDef do fonte informado
+    Local _oStruZZN     := FWFormStruct(2, "ZZN")   AS Object	// Cria a estrutura a ser usada na View
+    Local _oStruZZP     := FWFormStruct(2, "ZZP")   AS Object	// Cria a estrutura a ser usada na View
+    Local _oView        := Nil						AS Object
+
+    _oView := FWFormView():New()
+    _oView:SetModel(_oModel)
+    _oView:AddField("VIEW_ZZN" , _oStruZZN , "ZZNMASTER")
+    _oView:AddGrid('VIEW_ZZP'  , _oStruZZP , "ZZPDETAIL")
+    //Setando o dimensionamento de tamanho
+    _oView:CreateHorizontalBox('PAI' 	, 020)
+    _oView:CreateHorizontalBox('FILHO'	, 080)
+
+    //Amarrando a view com as box
+    _oView:SetOwnerView('VIEW_ZZN','PAI')
+    _oView:SetOwnerView('VIEW_ZZP','FILHO')
+
+    //Habilitando título
+    _oView:EnableTitleView('VIEW_ZZN','Cabeçalho - Previsão Faturamento')
+    _oView:EnableTitleView('VIEW_ZZP','Itens - Previsão Faturamento')
+Return _oView
+
+
+
+
+/*/{Protheus.doc} zMarkAll
+Mark all 		
+@author 	CAOA
+@since 		
+@version 	undefined
+@param 		
+@type 		Static function
+@ Obs		
+@history    
+/*/
+Static Function zMarkAll( oMark, cMarkOk, cTrbAux )
+	dbSelectArea( ZPP )
+	ZPP->(dbGotop())
+	While !Eof()
+		RecLock( "ZPP", .F. )
+		If Empty( ZPP->ZA3_OK )
+			ZPP->ZA3_OK := cMarkOk
+		Else
+			ZPP->ZA3_OK := "  "
+		EndIf
+		ZPP->(MsUnLock())
+		ZPP->( dbSkip() )
+	EndDo
+	ZPP->(dbGotop())
+	oMark:Refresh()
+Return Nil 
+
+
+/*/{Protheus.doc} MenuDef
+Mark all 		
+@author 	CAOA DAC
+@since 		
+@version 	undefined
+@param 		
+@type 		Static function
+@ Obs		
+@history    
+/*/
+Static Function MenuDef()
+Local _aRotina := {} AS Character
+
+    ADD OPTION aRotina TITLE "Pesquisar"        ACTION "PesqBrw"  			OPERATION 2 ACCESS 0 // "Visualizar"
+    ADD OPTION aRotina TITLE "Visualizar"   	ACTION "VIEWDEF.ZFATF030" 	OPERATION 2 ACCESS 0 // "Visualizar"
+	ADD OPTION aRotina TITLE "Alterar"   		ACTION "VIEWDEF.ZFATF030" 	OPERATION 4 ACCESS 0 // "Alterar"
+//	ADD OPTION aRotina TITLE "Excluir"           ACTION "VIEWDEF.ZFATF030"  OPERATION 5 ACCESS 0 // "Excluir"
+//	ADD OPTION aRotina TITLE "Exc. Selecionados" ACTION "U_zExclMark()"     OPERATION 5 ACCESS 0 // "Excluir Todos"
+
+Return _aRotina
+
+//=========================================================
+//Funcionalidade MVC Previsao
+Static Function ZFATGRMVC( _nOper, _cNumPrev )
+Local _oModel 	AS Object
+Local _nPos 	AS Numeric
+Local _aLog		AS Array
+Local _cLog		AS Character
+
+Default _nOper 		:= 3
+Default _cNumPrev	:= ""
+
+Begin Sequence 
+	//Carregar model Previsão Faturamento
+    _oModel := FWLoadModel( 'ZFATF025' )
+    _oModel:SetOperation( _nOper )
+    _oModel:Activate()
+    // Capturando submodelos que possuem grid para preenchimento dos itens
+    //_oModelZZN := oModel:GetModel("ZZNMASTER")
+    //_oModelZZP := oModel:GetModel("ZZPDETAIL")
+	//    _oModel:SetOperation(MODEL_OPERATION_INSERT)
+	//Gravar dados 
+
+	_oModel:SetValue("ZZNMASTER","ZZN_FILIAL"        , FwXFilial("ZZN") )	
+	_oModel:SetValue("ZZNMASTER","ZZN_CODPRV"        , _cNumPrev)	
+	_oModel:SetValue("ZZNMASTER","ZZN_STATUS"        , "A" )	
+	_oModel:SetValue("ZZNMASTER","ZZN_DTINC"         , Date() )	
+	_oModel:SetValue("ZZNMASTER","ZZN_USUINC"        , RetCodUsr() )	
+
+	_oModel:SetValue("ZZPDETAIL","ZZP_FILIAL"        , FwXFilial("ZZP") )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_CODPRV"        , _cNumPrev )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_CODCLI"        , SA1->A1_COD )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_LOJCLI"        , SA1->A1_LOJA )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_CNPJCP"        , SA1->A1_CGC )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_CODPRD"        , SB1->B1_COD )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_QTEPED"        , _nQtVen )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_CHSDIS"        , 0 )	//CHASSI QTDE
+	_oModel:SetValue("ZZPDETAIL","ZZP_QTEDIS"        , 0 )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_QTELIB"        , 0 )	//ZZP->ZZP_QTEPED - ZZP->ZZP_QTEDIS
+	_oModel:SetValue("ZZPDETAIL","ZZP_QTEFAT"        , 0 )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_VLRTAB"        , _nVlrVen )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_TOTLIB"        , If(ZZP->ZZP_QTELIB > 0, _nVlrVen * ZZP->ZZP_QTELIB, 0) )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_OBS"        	 , AllTrim(ZZP->ZZP_OBS) + CRLF + Upper(_cMens) )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_STATUS"        , "A" )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_DTINC"        , Date() )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_USUINC"       , RetCodUsr() )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_DTALT"        , Date() )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_USUALT"       , RetCodUsr() )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_MODVEI"        , _cModelo )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_FABMOD"        , _cFabAno() )	
+
+    If _oModel:VldData()
+        _oModel:CommitData()
+            //_cLog := "[ZFATF025] - Registro ! " + cCod + "  Opcao: " + cOperacao
+            //GERLOG()
+    Else
+        _aLog  	:= _oModel:GetErrorMessage()
+        _cLog 	:= ""
+        For _nPos := 1 To Len(_aLog)
+        	If !Empty(_aLog[_nPos]) .AND. _nI = 6
+                _cLog += Alltrim(_aLog[_nPos]) + " Produto " + cCod + CRLF
+            	//GERLOG()
+            EndIf
+        Next
+    EndIf       
+	_oModel:DeActivate()
+	_oModel:Destroy()
+	_oModel := NIL
+End Sequence 
+If Select(_cAliasPesq) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif
+
+Return Nil 
+

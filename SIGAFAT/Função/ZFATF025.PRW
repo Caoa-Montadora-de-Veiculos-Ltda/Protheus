@@ -230,6 +230,9 @@ Contas a Receber, Contas a Pagar ou Tesouraria:
 Method CreateLeftColumn() Class TelAcWindow
 
 Begin Sequence
+	DbSelectArea("ZZP")
+	DbSelectArea("ZZN")
+
 	ZZN->(DbSetOrder(1))
 	Self:oArea:AddCollumn(COL_LEFT , 30, .T.)
 	Self:oArea:SetColSplit(COL_LEFT, CONTROL_ALIGN_RIGHT)
@@ -267,6 +270,8 @@ Begin Sequence
 	Self:_oBrowseZZN:AddButton("Cancelar"		, { || Self:MenuPrev(5)	})
 	Self:_oBrowseZZN:AddButton("Visualizar"		, { || Self:MenuPrev(2)})
 	Self:_oBrowseZZN:AddButton("Importar CSV"	, { || Self:MenuPrev(6)})
+	Self:_oBrowseZZN:AddButton("Autoware"		, { || Self:MenuPrev(7)})
+
 
 	//mudanca de linha
 	Self:_oBrowseZZN:setChange({||  Self:ZFT25Change(), Self:RefreshPrev()})
@@ -728,6 +733,8 @@ Local _cCodPrev
 		Self:_oBrowseZZN:GoTop(.T.)
 		Self:_oBrowseZZN:Refresh(.T.)
 		ZFAT025Total( ZZN->ZZN_FILIAL, ZZN->ZZN_CODPRV,  /*_lCarrega*/)
+	ElseIf _nOpc ==  7 	//Importar CSV
+		U_ZFATF030()
 	Else	
 		FwMsgRun(,{ |_oSay| U_ZFATF026(_nOpc, _cFilPrev, _cCodPrev , @_oSay ) }, "Selecionando dados", "Aguarde...")  
 	Endif

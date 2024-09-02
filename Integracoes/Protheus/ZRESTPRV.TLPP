@@ -5,6 +5,7 @@
 #INCLUDE "TopConn.ch"
 #INCLUDE "MSGRAPHI.CH"
 #Include "FWMVCDEF.CH"
+#Include "tlpp-core.th"
 
 Static  _aAlterado 
 
@@ -908,7 +909,7 @@ Local _aGrvItens	AS Array
 Local _lRet 		AS Logical
 Local _lJob 		AS Logical	
 Local _lNovo		AS Logical	
-Local _nStatus 		AS Numeric 
+//Local _nStatus 		AS Numeric 
 Local _nQtdeItem	AS Numeric
 Local _nPosItem		AS Numeric
 Local _nPosQtdItem	AS Numeric
@@ -1080,13 +1081,11 @@ Local _cNumPrev		AS Character
 Local _cChave		AS Character
 Local _cQuery		AS Character 
 Local _cMens		AS Character
-Local _nStatus 		AS Number 
+//Local _nStatus 		AS Number 
 
 Local _aMsg 		:= {}
-Local _aRet 		:= {}
 Local _lIncGeral 	:= FWIsInCallStack("ZFATF025Inclui")
 Local _aRegZZP		:= {}
-Local _cOrderTab	:= "C6_FILIAL, C6_CLI, C6_LOJA, C6_PRODUTO, VRK_FABMOD, VRK_MODVEI, VRK_SEGMOD, C6_PEDCLI, C6_ITEM " 
 Local _cAliasPrev 	:= GetNextAlias()
 Local _cLinhaPrev    := ""
 
@@ -1096,16 +1095,13 @@ Local _cLoja
 Local _cCGC 	
 Local _cProduto 	
 Local _nVlrVen  	
-Local _nVlrUnit  	
 Local _nQtVen		
 Local _cModelo
 Local _cSegMod
 Local _cFabAno 
-Local _cItem
 Local _aRegSC6
 Local _nQtdeReg
 Local _nQtdeLidos
-Local _cMens
 
 Default _cChave		:='PREVISAO'
 Default _lMens		:= .T.
@@ -1136,7 +1132,7 @@ Begin Sequence
 	_cQuery	:= "		SC6.C6_XCODPVR 	= "+ _cFilPrv 				+ CRLF
 	_cQuery	:= "WHERE  	SC6.D_E_L_E_T_  = ' ' " 					+ CRLF
 	_cQuery	:= "	AND SC6.C6_FILIAL 	= "+ FwxFilial("SC6") 		+ CRLF 
-	_cQuery	:= "	AND SC6.C6_XCODPVR	= "+ _cChave% 				+ CRLF
+	_cQuery	:= "	AND SC6.C6_XCODPVR	= "+ _cChave 				+ CRLF
     _cQuery	:= " 	AND SC6.C6_QTDVEN  	> "+ SC6.C6_QTDENT 			+ CRLF
     _cQuery	:= " 	AND SC5.C5_TIPO   	=  'N'"  					+ CRLF
     _cQuery	:= " 	AND SC6.C6_PEDCLI 	<> ' '" 					+ CRLF
@@ -1344,9 +1340,8 @@ Return _lRet
 
 //=========================================================
 //Funcionalidade MVC Previsao
-Static Function ZFAT25MVC( _cNumPrev, _aGravaPrev, _nOper, )
+Static Function ZFAT25MVC( _cNumPrev, _aGravaPrev, _nOper )
 Local _cAliasPesq 	:= GetNextAlias()
-Local _cNumPrev	:= ""
 Local _nPos
 Local _oModel
 Local _aLog
@@ -1357,28 +1352,11 @@ Default _cNumPrev	:= ""
 Default _aGravaPrev := {}
 Begin Sequence 
 	ZZP->(DbSetOrder(1))
-	If _nOper == 3 .And. Empty(_cNumPrev)
-		BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
-			SELECT 	MAX(ZZN_CODPRV) AS NPREVISAO
-			FROM  	%Table:ZZN% ZZN
-			WHERE 	ZZN.%notDel% 
-				AND ZZN.ZZN_FILIAL 	= %xFilial:ZZN%
-		EndSql
-		_cNumPrev := Soma1((_cAliasPesq)->NPREVISAO) 
-	Else 
-		_cNumPrev := ZZN->ZZN_CODPRV	
-	Endif 
-	//Carregar model Previsão Faturamento
-    _oModel := FWLoadModel( 'ZFATF025' )
-    _oModel:SetOperation( _nOper )
-    _oModel:Activate()
     // Capturando submodelos que possuem grid para preenchimento dos itens
     //_oModelZZN := oModel:GetModel("ZZNMASTER")
     //_oModelZZP := oModel:GetModel("ZZPDETAIL")
 	//    _oModel:SetOperation(MODEL_OPERATION_INSERT)
 	//Gravar dados 
-
-	
 
 	_oModel:SetValue("ZZNMASTER","ZZN_FILIAL"        , FwXFilial("ZZN") )	
 	_oModel:SetValue("ZZNMASTER","ZZN_CODPRV"        , _cNumPrev)	
@@ -1386,7 +1364,6 @@ Begin Sequence
 	_oModel:SetValue("ZZNMASTER","ZZN_DTINC"         , Date() )	
 	_oModel:SetValue("ZZNMASTER","ZZN_USUINC"        , RetCodUsr() )	
 
-	For _nPos := 1 To Len()
 	_oModel:SetValue("ZZPDETAIL","ZZP_FILIAL"        , FwXFilial("ZZP") )	
 	_oModel:SetValue("ZZPDETAIL","ZZP_CODPRV"        , _cNumPrev )	
 	_oModel:SetValue("ZZPDETAIL","ZZP_CODCLI"        , SA1->A1_COD )	
