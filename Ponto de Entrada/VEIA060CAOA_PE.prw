@@ -875,7 +875,7 @@ Begin Transaction
 			SE1->(MsUnlock())
 		
 		Endif
-		
+/*		
 		VS9->(DbGoTo((_cTmpAlias)->VS9RECNO))
 		IF VS9->(!EOF()) .AND. VS9->VS9_PARCEL <> VS9->VS9_SEQUEN
 			//Ajusto as Parcelas da Negociação conforme os Titulos Gerados pelo Faturamento
@@ -884,7 +884,7 @@ Begin Transaction
 			VS9->(MsUnlock())
 		
 		EndIf
-
+		
 		VRL->(DbGoTo((_cTmpAlias)->VRLRECNO))
 		IF VRL->(!EOF()) .AND. VRL->VRL_E1PARC <> VS9->VS9_SEQUEN
 			//Ajusto as Parcelas da Negociação conforma as Geradas pelo Faturamento
@@ -904,10 +904,11 @@ Begin Transaction
 			SE1->(MsUnlock())
 
 		EndIf
+		*/
 		(_cTmpAlias)->(DbSkip())
 
 	EndDo
-
+/*
 	For x:= 1 To Len(aKeySe1)
 
 		if aKeySe1[x,6] > 0
@@ -921,7 +922,7 @@ Begin Transaction
 		EndIf
 
 	Next x
-
+*/
 End Transaction
 
 RestArea(aAreaVS9)
