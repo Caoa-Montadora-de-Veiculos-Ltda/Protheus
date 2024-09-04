@@ -22,21 +22,21 @@ User Function ZFISR019()
 	Local	dDtEmiss	:= Ctod(Space(8)) 
     Local	cNumNF		:= Space(TamSX3('F3_NFISCAL')[1]) 
     Local	cSerieNF	:= Space(TamSX3('F3_SERIE')[1])
-	Local 	cCli 	:= Space(TamSX3('A1_COD')[1])
-	//Local 	cPedido		:= Space(TamSX3('C6_NUM')[1])
+	Local 	cCli        := Space(TamSX3('A1_COD')[1])
+//  Local 	cPedido		:= Space(TamSX3('C6_NUM')[1])
 	
-    Private cTabela 	:= GetNextAlias()
+    Private cTabela     := GetNextAlias()
     Private cAliasTMP   := GetNextAlias()
 
-    aAdd(aPergs, {1,"Emissao De"		,dDtEmiss	,/*Pict*/	,/*Valid*/	,/*F3*/		,/*When*/,50,.F.})  //MV_PAR01
-	aAdd(aPergs, {1,"Emissao Ate"		,dDtEmiss	,/*Pict*/,MV_PAR02 > MV_PAR01,/*F3*/,/*When*/,50,.F.})  //MV_PAR02
-	aAdd(aPergs, {1,"Nota Fiscal De"	,cNumNF		,/*Pict*/	,/*Valid*/	,"SF2"		,/*When*/,50,.F.})  //MV_PAR03
-	aAdd(aPergs, {1,"Nota Fiscal Ate"	,cNumNF		,/*Pict*/	,/*Valid*/	,"SF2"		,/*When*/,50,.F.})  //MV_PAR04
-    aAdd(aPergs, {1,"Serie"				,cSerieNF	,/*Pict*/	,/*Valid*/	,"_SF1SE"	    ,/*When*/,50,.F.})  //MV_PAR05
-    aAdd(aPergs, {1,"Cliente De"		,cCli	    ,/*Pict*/	,/*Valid*/	,"SA1"	    ,/*When*/,50,.F.})  //MV_PAR06
-	aAdd(aPergs, {1,"Cliente Ate"	    ,cCli	    ,/*Pict*/	,/*Valid*/	,"SA1"	    ,/*When*/,50,.F.})  //MV_PAR07
-	//aAdd(aPergs, {1,"Pedido De"			,cPedido	,/*Pict*/	,/*Valid*/	,"SC6"	    ,/*When*/,50,.F.}) 	//MV_PAR08
-    //aAdd(aPergs, {1,"Pedido Ate"		,cPedido	,/*Pict*/	,/*Valid*/	,"SC6"	    ,/*When*/,50,.F.}) 	//MV_PAR09
+    aAdd(aPergs, {1,"Emissao De"      ,dDtEmiss	,/*Pict*/ ,/*Valid*/	       ,/*F3*/   ,/*When*/ ,50 ,.F.}) //MV_PAR01
+	aAdd(aPergs, {1,"Emissao Ate"     ,dDtEmiss	,/*Pict*/ ,MV_PAR02 > MV_PAR01 ,/*F3*/   ,/*When*/ ,50 ,.F.}) //MV_PAR02
+	aAdd(aPergs, {1,"Nota Fiscal De"  ,cNumNF	,/*Pict*/ ,/*Valid*/	       ,"SF2"	 ,/*When*/ ,50 ,.F.}) //MV_PAR03
+	aAdd(aPergs, {1,"Nota Fiscal Ate" ,cNumNF	,/*Pict*/ ,/*Valid*/	       ,"SF2"	 ,/*When*/ ,50 ,.F.}) //MV_PAR04
+    aAdd(aPergs, {1,"Serie"			  ,cSerieNF	,/*Pict*/ ,/*Valid*/	       ,"_SF1SE" ,/*When*/ ,50 ,.F.}) //MV_PAR05
+    aAdd(aPergs, {1,"Cliente De"	  ,cCli	    ,/*Pict*/ ,/*Valid*/	       ,"SA1"	 ,/*When*/ ,50 ,.F.}) //MV_PAR06
+	aAdd(aPergs, {1,"Cliente Ate"	  ,cCli	    ,/*Pict*/ ,/*Valid*/	       ,"SA1"	 ,/*When*/ ,50 ,.F.}) //MV_PAR07
+//  aAdd(aPergs, {1,"Pedido De"		  ,cPedido	,/*Pict*/ ,/*Valid*/	       ,"SC6"	 ,/*When*/ ,50 ,.F.}) //MV_PAR08
+//  aAdd(aPergs, {1,"Pedido Ate"	  ,cPedido	,/*Pict*/ ,/*Valid*/	       ,"SC6"	 ,/*When*/ ,50 ,.F.}) //MV_PAR09
 
 	If ParamBox(aPergs, "Informe os parâmetros para Nota Fiscal de saída", , , , , , , , , .F., .F.)
 		 Processa({|| fGeraExce()})
@@ -74,83 +74,87 @@ Static Function fGeraExce()
      
     //Montando consulta de dados
 
-    cQryDad := " "                                                       + CRLF
-    cQryDad += "     SELECT "                                            + CRLF
-    cQryDad += "         SF2.F2_FILIAL    AS FILIAL "                    + CRLF
-    cQryDad += "         , SA1.A1_CGC   	 AS CNPJ "                      + CRLF
-    cQryDad += "         , SA1.A1_INSCR 	 AS INS_EST "                   + CRLF
-    cQryDad += "         , SA1.A1_COD   	 AS CODIGO "                    + CRLF  
-    cQryDad += "         , SA1.A1_LOJA  	 AS LOJA "                      + CRLF       
-    cQryDad += "         , SA1.A1_NOME    AS FORNECEDOR "                + CRLF
-    cQryDad += "         , SA1.A1_EST     AS ESTADO "                    + CRLF
-    cQryDad += "         , SF2.F2_DOC     AS NOTA_FISCAL "               + CRLF 
-    cQryDad += "         , SF2.F2_SERIE   AS SERIE "                     + CRLF
-    cQryDad += "         , SF2.F2_DTDIGIT AS DT_ENTRADA "                + CRLF
-    cQryDad += "         , SF2.F2_CHVNFE  AS CHAVE "                     + CRLF
-    cQryDad += "         , SF2.F2_USERLGI AS UINCLUI" 		            + CRLF
-    cQryDad += "         , SF2.F2_USERLGA AS UALTERA" 		            + CRLF
-    cQryDad += "         , SD2.D2_CF      AS CFOP "                      + CRLF
-    cQryDad += "         , SUM(FT_VALPIS) AS VALOR_PIS "                 + CRLF
-    cQryDad += "         , SUM(FT_VALCOF) AS VALOR_COF "                 + CRLF
-	cQryDad += "	    , SF3.F3_ESPECIE    AS ESPECIE "                    + CRLF 
-	cQryDad += "		, SF3.F3_CFO 		AS CFOP "                       + CRLF 
-	cQryDad += "		, SF3.F3_ENTRADA    AS DT_LANC "                    + CRLF 
-	cQryDad += "		, SF3.F3_VALCONT 	AS VALOR_CONTABIL "             + CRLF 
-	cQryDad += "		, SF3.F3_BASEICM 	AS BASE_ICMS "                  + CRLF 
-	cQryDad += "		, SF3.F3_VALICM 	AS VAL_ICMS "                   + CRLF 
-	cQryDad += "		, SF3.F3_ISENICM 	AS ICMS_ISENTO "                + CRLF 
-	cQryDad += "		, SF3.F3_OUTRICM 	AS ICMS_OUTROS  "               + CRLF 
-    cQryDad += "		, SF3.F3_BASERET 	AS BASE_SUBST  "                + CRLF 
-    cQryDad += "		, SF3.F3_ICMSRET 	AS VALOR_SUBST   "              + CRLF 
-    cQryDad += "		, SF3.F3_BASEIPI 	AS BASE_IPI  "                  + CRLF 
-    cQryDad += "		, SF3.F3_VALIPI 	AS VAL_IPI  "                   + CRLF 
-    cQryDad += "		, SF3.F3_ISENIPI 	AS IPI_ISENTO  "                + CRLF 
-    cQryDad += "		, SF3.F3_OUTRIPI 	AS IPI_OUTROS  "                + CRLF 
-    cQryDad += "		, SF3.F3_DESPESA 	AS OUTRAS_DESPESAS  "           + CRLF 
-    cQryDad += "		, SF3.F3_VALOBSE 	AS DESCONTO  "                  + CRLF 
-    cQryDad += "		, SF3.F3_BASIMP6	AS BASE_PIS  "                  + CRLF 
-    cQryDad += "		, SF3.F3_BASIMP5	AS BASE_COF  "                  + CRLF 
-    cQryDad += "		, SF3.F3_BASEPS3 	AS PIS_ST_ZFM  "                + CRLF 
-    cQryDad += "		, SF3.F3_VALPS3 	AS VAL_PISSTZFM  "              + CRLF     
-    cQryDad += "		, SF3.F3_BASECF3 	AS COF_ST_ZFM  "                + CRLF 
-    cQryDad += "		, SF3.F3_VALCF3     AS VAL_COFST_ZFM  "             + CRLF 
-    cQryDad += "		, SF3.F3_OBSERV 	AS OBSERVACAO  "                + CRLF
-    cQryDad += "		, SF3.F3_DTCANC "                                   + CRLF
-    cQryDad += " FROM "       + RetSQLName( 'SF2' ) + " SF2 "            + CRLF //-- CAB. NOTA FISCAL DE ENTRADA
-    cQryDad += " LEFT JOIN "  + RetSQLName( 'SA1' ) + " SA1 "            + CRLF //-- FORNECEDORES
-    cQryDad += "     ON SA1.A1_FILIAL  = '" + FWxFilial('SA1') + "' "    + CRLF 
-    cQryDad += "    AND SA1.A1_COD     = SF2.F2_CLIENTE"                 + CRLF 
-    cQryDad += "    AND SA1.A1_LOJA    = SF2.F2_LOJA "                   + CRLF 
-  //  cQryDad += "    AND SA1.D_E_L_E_T_ = ' ' "	                        + CRLF
-	cQryDad += " LEFT JOIN "  + RetSQLName( 'SD2' ) + " SD2 "            + CRLF //-- ITENS DOCUMENTO DE ENTRADA
-    cQryDad += "     ON SD2.D2_FILIAL  = '" + FWxFilial('SD2') + "' "    + CRLF
-    cQryDad += "    AND SD2.D2_DOC     = SF2.F2_DOC"                     + CRLF
-    cQryDad += "    AND SD2.D2_SERIE   = SF2.F2_SERIE"                   + CRLF
-    cQryDad += "    AND SD2.D2_CLIENTE = SF2.F2_CLIENTE"                 + CRLF
-    cQryDad += "    AND SD2.D2_LOJA    = SF2.F2_LOJA"                    + CRLF
-    cQryDad += "    AND SD2.D2_EMISSAO = SF2.F2_EMISSAO"                 + CRLF
-//    cQryDad += "    AND SD1.D_E_L_E_T_ = ' ' "	                        + CRLF
-    cQryDad += " LEFT JOIN "  + RetSQLName( 'SFT' ) + " SFT "            + CRLF //-- ITENS LIVROS FISCAIS
-	cQryDad += "     ON SFT.FT_FILIAL  = '" + FWxFilial('SFT') + "' "    + CRLF 
-    cQryDad += "    AND SFT.FT_NFISCAL = SF2.F2_DOC"                     + CRLF
-    cQryDad += "    AND SFT.FT_SERIE   = SF2.F2_SERIE"                   + CRLF
-    cQryDad += "    AND SFT.FT_CLIEFOR = SF2.F2_CLIENTE"                 + CRLF
-    cQryDad += "    AND SFT.FT_LOJA	  = SF2.F2_LOJA"                    + CRLF
-    cQryDad += "    AND SFT.FT_PRODUTO = SD2.D2_COD"                     + CRLF
-//    cQryDad += "    AND SFT.D_E_L_E_T_ = ' ' "	                        + CRLF
+    cQryDad := " "                                                              + CRLF
+    cQryDad += " SELECT "                                                       + CRLF
+    cQryDad += "        SF2.F2_FILIAL       AS FILIAL "                         + CRLF
+    cQryDad += "        , SA1.A1_CGC   	    AS CNPJ "                           + CRLF
+    cQryDad += "        , SA1.A1_INSCR 	    AS INS_EST "                        + CRLF
+    cQryDad += "        , SA1.A1_COD   	    AS CODIGO "                         + CRLF  
+    cQryDad += "        , SA1.A1_LOJA  	    AS LOJA "                           + CRLF       
+    cQryDad += "        , SA1.A1_NOME       AS FORNECEDOR "                     + CRLF
+    cQryDad += "        , SA1.A1_EST        AS ESTADO "                         + CRLF
+    cQryDad += "        , SF2.F2_DOC        AS NOTA_FISCAL "                    + CRLF 
+    cQryDad += "        , SF2.F2_SERIE      AS SERIE "                          + CRLF
+    cQryDad += "        , SF2.F2_TIPO       AS TIPO "                           + CRLF
+    cQryDad += "        , SF2.F2_FORMUL     AS FORMULARIO "                     + CRLF
+    cQryDad += "        , SF2.F2_DTDIGIT    AS DT_ENTRADA "                     + CRLF
+    cQryDad += "        , SF2.F2_CHVNFE     AS CHAVE "                          + CRLF
+    cQryDad += "        , SF2.F2_USERLGI    AS UINCLUI" 		                + CRLF
+    cQryDad += "        , SF2.F2_USERLGA    AS UALTERA" 		                + CRLF
+    cQryDad += "        , SD2.D2_CF         AS CFOP "                           + CRLF
+    cQryDad += "        , SUM(FT_VALPIS)    AS VALOR_PIS "                      + CRLF
+    cQryDad += "        , SUM(FT_VALCOF)    AS VALOR_COF "                      + CRLF
+	cQryDad += "	    , SF3.F3_ESPECIE    AS ESPECIE "                        + CRLF 
+	cQryDad += "		, SF3.F3_CFO 		AS CFOP "                           + CRLF 
+	cQryDad += "		, TO_DATE(SF3.F3_ENTRADA, 'YYYYMMDD')    AS DT_LANC "   + CRLF
+    cQryDad += "        , SF2.F2_VALMERC    AS VALOR_ITENS "                    + CRLF
+	cQryDad += "		, SF3.F3_VALCONT 	AS VALOR_CONTABIL "                 + CRLF 
+	cQryDad += "		, SF3.F3_BASEICM 	AS BASE_ICMS "                      + CRLF 
+	cQryDad += "		, SF3.F3_VALICM 	AS VAL_ICMS "                       + CRLF 
+	cQryDad += "		, SF3.F3_ISENICM 	AS ICMS_ISENTO "                    + CRLF 
+	cQryDad += "		, SF3.F3_OUTRICM 	AS ICMS_OUTROS  "                   + CRLF 
+    cQryDad += "        , SF3.F3_ICMSDIF    AS ICMS_DIFAL "                     + CRLF
+    cQryDad += "		, SF3.F3_BASERET 	AS BASE_SUBST  "                    + CRLF 
+    cQryDad += "		, SF3.F3_ICMSRET 	AS VALOR_SUBST   "                  + CRLF 
+    cQryDad += "		, SF3.F3_BASEIPI 	AS BASE_IPI  "                      + CRLF 
+    cQryDad += "		, SF3.F3_VALIPI 	AS VAL_IPI  "                       + CRLF 
+    cQryDad += "		, SF3.F3_ISENIPI 	AS IPI_ISENTO  "                    + CRLF 
+    cQryDad += "		, SF3.F3_OUTRIPI 	AS IPI_OUTROS  "                    + CRLF 
+    cQryDad += "		, SF3.F3_DESPESA 	AS OUTRAS_DESPESAS  "               + CRLF 
+    cQryDad += "		, SF3.F3_VALOBSE 	AS DESCONTO  "                      + CRLF 
+    cQryDad += "		, SF3.F3_BASIMP6	AS BASE_PIS  "                      + CRLF 
+    cQryDad += "		, SF3.F3_BASIMP5	AS BASE_COF  "                      + CRLF 
+    cQryDad += "		, SF3.F3_BASEPS3 	AS PIS_ST_ZFM  "                    + CRLF 
+    cQryDad += "		, SF3.F3_VALPS3 	AS VAL_PISSTZFM  "                  + CRLF     
+    cQryDad += "		, SF3.F3_BASECF3 	AS COF_ST_ZFM  "                    + CRLF 
+    cQryDad += "		, SF3.F3_VALCF3     AS VAL_COFST_ZFM  "                 + CRLF 
+    cQryDad += "		, SF3.F3_OBSERV 	AS OBSERVACAO  "                    + CRLF
+    cQryDad += "		, SF3.F3_DTCANC "                                       + CRLF
+    cQryDad += "FROM "       + RetSQLName( 'SF2' ) + " SF2 "                    + CRLF //-- CAB. NOTA FISCAL DE ENTRADA
+    cQryDad += "LEFT JOIN "  + RetSQLName( 'SA1' ) + " SA1 "                    + CRLF //-- FORNECEDORES
+    cQryDad += "    ON SA1.A1_FILIAL  = '" + FWxFilial('SA1') + "' "            + CRLF 
+    cQryDad += "    AND SA1.A1_COD     = SF2.F2_CLIENTE"                        + CRLF 
+    cQryDad += "    AND SA1.A1_LOJA    = SF2.F2_LOJA "                          + CRLF 
+//  cQryDad += "    AND SA1.D_E_L_E_T_ = ' ' "	                                + CRLF
+	cQryDad += "LEFT JOIN "  + RetSQLName( 'SD2' ) + " SD2 "                    + CRLF //-- ITENS DOCUMENTO DE ENTRADA
+    cQryDad += "    ON SD2.D2_FILIAL  = '" + FWxFilial('SD2') + "' "            + CRLF
+    cQryDad += "    AND SD2.D2_DOC     = SF2.F2_DOC"                            + CRLF
+    cQryDad += "    AND SD2.D2_SERIE   = SF2.F2_SERIE"                          + CRLF
+    cQryDad += "    AND SD2.D2_CLIENTE = SF2.F2_CLIENTE"                        + CRLF
+    cQryDad += "    AND SD2.D2_LOJA    = SF2.F2_LOJA"                           + CRLF
+    cQryDad += "    AND SD2.D2_EMISSAO = SF2.F2_EMISSAO"                        + CRLF
+//  cQryDad += "    AND SD1.D_E_L_E_T_ = ' ' "	                                + CRLF
+    cQryDad += "LEFT JOIN "  + RetSQLName( 'SFT' ) + " SFT "                    + CRLF //-- ITENS LIVROS FISCAIS
+	cQryDad += "    ON SFT.FT_FILIAL  = '" + FWxFilial('SFT') + "' "            + CRLF 
+    cQryDad += "    AND SFT.FT_NFISCAL = SF2.F2_DOC"                            + CRLF
+    cQryDad += "    AND SFT.FT_SERIE   = SF2.F2_SERIE"                          + CRLF
+    cQryDad += "    AND SFT.FT_CLIEFOR = SF2.F2_CLIENTE"                        + CRLF
+    cQryDad += "    AND SFT.FT_LOJA	  = SF2.F2_LOJA"                            + CRLF
+    cQryDad += "    AND SFT.FT_PRODUTO = SD2.D2_COD"                            + CRLF
+//  cQryDad += "    AND SFT.D_E_L_E_T_ = ' ' "	                                + CRLF
 
-    cQryDad += " LEFT JOIN "  + RetSQLName( 'SF3' ) + " SF3 "            + CRLF //-- LIVROS FISCAIS CABEÇALHO
-    cQryDad += "     ON SF3.F3_FILIAL  = '" + FWxFilial('SF3') + "' "    + CRLF 
-    cQryDad += "    AND SF3.F3_NFISCAL = SF2.F2_DOC"               + CRLF
-    cQryDad += "    AND SF3.F3_SERIE   = SF2.F2_SERIE "                    + CRLF
-    cQryDad += "    AND SF3.F3_EMISSAO = SF2.F2_EMISSAO"               + CRLF
-    cQryDad += "    AND SF3.F3_CFO     = SD2.D2_CF  "                     + CRLF
-    cQryDad += "    AND SF3.D_E_L_E_T_ = ' ' "	                        + CRLF
+    cQryDad += "LEFT JOIN "  + RetSQLName( 'SF3' ) + " SF3 "                    + CRLF //-- LIVROS FISCAIS CABEÇALHO
+    cQryDad += "    ON SF3.F3_FILIAL  = '" + FWxFilial('SF3') + "' "            + CRLF 
+    cQryDad += "    AND SF3.F3_NFISCAL = SF2.F2_DOC"                            + CRLF
+    cQryDad += "    AND SF3.F3_SERIE   = SF2.F2_SERIE "                         + CRLF
+    cQryDad += "    AND SF3.F3_EMISSAO = SF2.F2_EMISSAO"                        + CRLF
+    cQryDad += "    AND SF3.F3_CFO     = SD2.D2_CF  "                           + CRLF
+    cQryDad += "    AND SF3.D_E_L_E_T_ = ' ' "	                                + CRLF
 
 
-    cQryDad += " WHERE  "	                                            + CRLF         
-    cQryDad += "    SF2.F2_FILIAL 		= '" + FWxFilial('SF2') + "' "  + CRLF
-	cQryDad += "    AND SF2.D_E_L_E_T_ 	= ' ' "                         + CRLF
+    cQryDad += "WHERE "	                                                        + CRLF         
+    cQryDad += "    SF2.F2_FILIAL 		= '" + FWxFilial('SF2') + "' "          + CRLF
+	cQryDad += "    AND SF2.D_E_L_E_T_ 	= ' ' "                                 + CRLF
     If !Empty(DtoS(MV_PAR02)) //DATA EMISSAO ATE
 		cQryDad += " AND (SF2.F2_EMISSAO BETWEEN '" + DtoS(MV_PAR01) + "' AND '" + DtoS(MV_PAR02) + "')"   + CRLF //--DATA DE EMISSAO
 		cQryDad += " OR (SF3.F3_DTCANC BETWEEN '" + DtoS(MV_PAR01) + "' AND '" + DtoS(MV_PAR02) + "')"   + CRLF //--DATA DE EMISSAO
@@ -170,45 +174,49 @@ Static Function fGeraExce()
 	EndIf
 
  //   cQryDad += "    AND SF1.D_E_L_E_T_ 	= ' ' "                         + CRLF
-    cQryDad += " GROUP BY  "	                                            + CRLF 
-    cQryDad += "         SF2.F2_FILIAL "                                 + CRLF    
-    cQryDad += "         , SD2.D2_CF "                                   + CRLF  
-    cQryDad += "         , SA1.A1_CGC "                                  + CRLF     
-	cQryDad += "         , SA1.A1_INSCR "                                + CRLF  	   
-    cQryDad += "         , SA1.A1_COD "                                  + CRLF 
-    cQryDad += "         , SA1.A1_LOJA "                                 + CRLF
-    cQryDad += "         , SA1.A1_NOME "                                 + CRLF  
-    cQryDad += "         , SA1.A1_EST "                                  + CRLF  	   
-    cQryDad += "         , SF2.F2_DOC "                                  + CRLF 
-    cQryDad += "         , SF2.F2_SERIE  "                               + CRLF
-    cQryDad += "         , SF2.F2_DTDIGIT "                              + CRLF 
-    cQryDad += "         , SF2.F2_CHVNFE "                               + CRLF        
-    cQryDad += "         , SF2.F2_USERLGI "                              + CRLF
-    cQryDad += "         , SF2.F2_USERLGA "                             + CRLF     
-    cQryDad += "     , SF3.F3_ESPECIE      "                                 + CRLF 
-	cQryDad += " 	, SF3.F3_CFO 		 "                                 + CRLF 
-	cQryDad += " 	, SF3.F3_ENTRADA    "                                 + CRLF 
-	cQryDad += " 	, SF3.F3_VALCONT  "                                 + CRLF 
-	cQryDad += " 	, SF3.F3_BASEICM 	 "                                 + CRLF 
-	cQryDad += " 	, SF3.F3_VALICM 	 "                                 + CRLF 
-	cQryDad += " 	, SF3.F3_ISENICM 	 "                                 + CRLF 
-	cQryDad += " 	, SF3.F3_OUTRICM  "                                 + CRLF 	  
-	cQryDad += " 	, SF3.F3_BASERET  "                                 + CRLF 
-	cQryDad += " 	, SF3.F3_ICMSRET  "                                 + CRLF 	  
-	cQryDad += " 	, SF3.F3_BASEIPI  "                                 + CRLF 	 
-	cQryDad += " 	, SF3.F3_VALIPI  "                                 + CRLF 	
-	cQryDad += " 	, SF3.F3_ISENIPI  "                                 + CRLF 
-	cQryDad += " 	, SF3.F3_OUTRIPI  "                                 + CRLF 	
-	cQryDad += " 	, SF3.F3_DESPESA   "                                 + CRLF 
-	cQryDad += " 	, SF3.F3_VALOBSE  "                                 + CRLF 	 
-	cQryDad += " 	, SF3.F3_BASIMP6 "                                 + CRLF 	
-	cQryDad += " 	, SF3.F3_BASIMP5  "                                 + CRLF 
-	cQryDad += " 	, SF3.F3_BASEPS3  "                                 + CRLF 	
-	cQryDad += " 	, SF3.F3_VALPS3  "                                 + CRLF 	 
-	cQryDad += " 	, SF3.F3_BASECF3  "                                 + CRLF 	
-	cQryDad += " 	, SF3.F3_VALCF3   "                                 + CRLF    
-	cQryDad += " 	, SF3.F3_OBSERV  "                                 + CRLF 	
-	cQryDad += " 	, SF3.F3_DTCANC "                                 + CRLF  
+    cQryDad += "GROUP BY "                      + CRLF 
+    cQryDad += "    SF2.F2_FILIAL "             + CRLF    
+    cQryDad += "    , SD2.D2_CF "               + CRLF  
+    cQryDad += "    , SA1.A1_CGC "              + CRLF     
+	cQryDad += "    , SA1.A1_INSCR "            + CRLF  	   
+    cQryDad += "    , SA1.A1_COD "              + CRLF 
+    cQryDad += "    , SA1.A1_LOJA "             + CRLF
+    cQryDad += "    , SA1.A1_NOME "             + CRLF  
+    cQryDad += "    , SA1.A1_EST "              + CRLF  	   
+    cQryDad += "    , SF2.F2_DOC "              + CRLF 
+    cQryDad += "    , SF2.F2_SERIE "            + CRLF
+    cQryDad += "    , SF2.F2_TIPO "             + CRLF
+    cQryDad += "    , SF2.F2_FORMUL "           + CRLF
+    cQryDad += "    , SF2.F2_DTDIGIT "          + CRLF 
+    cQryDad += "    , SF2.F2_CHVNFE "           + CRLF        
+    cQryDad += "    , SF2.F2_USERLGI "          + CRLF
+    cQryDad += "    , SF2.F2_USERLGA "          + CRLF     
+    cQryDad += "    , SF3.F3_ESPECIE "          + CRLF 
+	cQryDad += " 	, SF3.F3_CFO "              + CRLF 
+	cQryDad += " 	, SF3.F3_ENTRADA "          + CRLF
+    cQryDad += "    , SF2.F2_VALMERC "          + CRLF
+	cQryDad += " 	, SF3.F3_VALCONT "          + CRLF 
+	cQryDad += " 	, SF3.F3_BASEICM "          + CRLF 
+	cQryDad += " 	, SF3.F3_VALICM "           + CRLF 
+	cQryDad += " 	, SF3.F3_ISENICM "          + CRLF 
+	cQryDad += " 	, SF3.F3_OUTRICM "          + CRLF
+    cQryDad += "    , SF3.F3_ICMSDIF "          + CRLF
+	cQryDad += " 	, SF3.F3_BASERET "          + CRLF 
+	cQryDad += " 	, SF3.F3_ICMSRET "          + CRLF 	  
+	cQryDad += " 	, SF3.F3_BASEIPI "          + CRLF 	 
+	cQryDad += " 	, SF3.F3_VALIPI "           + CRLF 	
+	cQryDad += " 	, SF3.F3_ISENIPI "          + CRLF 
+	cQryDad += " 	, SF3.F3_OUTRIPI "          + CRLF 	
+	cQryDad += " 	, SF3.F3_DESPESA "          + CRLF 
+	cQryDad += " 	, SF3.F3_VALOBSE "          + CRLF 	 
+	cQryDad += " 	, SF3.F3_BASIMP6 "          + CRLF 	
+	cQryDad += " 	, SF3.F3_BASIMP5 "          + CRLF 
+	cQryDad += " 	, SF3.F3_BASEPS3 "          + CRLF 	
+	cQryDad += " 	, SF3.F3_VALPS3 "           + CRLF 	 
+	cQryDad += " 	, SF3.F3_BASECF3 "          + CRLF 	
+	cQryDad += " 	, SF3.F3_VALCF3 "           + CRLF    
+	cQryDad += " 	, SF3.F3_OBSERV "           + CRLF 	
+	cQryDad += " 	, SF3.F3_DTCANC "           + CRLF  
 
     //Executando consulta e setando o total da regua
      DbUseArea( .T., "TOPCONN", TcGenQry(,,cQryDad), QRY_DAD, .T., .T. )
@@ -225,7 +233,7 @@ Static Function fGeraExce()
     oFWMsExcel:AddworkSheet(cWorkSheet)
      
     //Criando a Tabela e as colunas
-   oFWMsExcel:AddTable(cWorkSheet, cTitulo)
+    oFWMsExcel:AddTable(cWorkSheet, cTitulo)
 	oFWMsExcel:AddColumn(cWorkSheet, cTitulo, "CNPJ", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSheet, cTitulo, "INS_EST", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSheet, cTitulo, "CODIGO", 1, 1, .F.)
@@ -234,15 +242,19 @@ Static Function fGeraExce()
 	oFWMsExcel:AddColumn(cWorkSheet, cTitulo, "ESTADO", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSheet, cTitulo, "NOTA_FISCAL", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSheet, cTitulo, "SERIE", 1, 1, .F.)
+    oFWMSExcel:AddColumn(cWorkSheet, cTitulo, "TIPO", 1, 1, .F.)
+    oFWMSExcel:AddColumn(cWorksheet, cTitulo, "FORMULARIO", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSheet, cTitulo, "ESPECIE", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSheet, cTitulo, "CFOP", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSheet, cTitulo, "DT_ENTRADA", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSheet, cTitulo, "DATA LANCAMENTO", 1, 1, .F.)
+    oFWMSExcel:AddColumn(cWorkSheet, cTitulo, "VALOR_ITENS", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSheet, cTitulo, "VALOR_CONTABIL", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSheet, cTitulo, "BASE_ICMS", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSheet, cTitulo, "VAL_ICMS", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSheet, cTitulo, "ICMS_ISENTO", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSheet, cTitulo, "ICMS_OUTROS", 1, 1, .F.)
+    oFWMsExcel:AddColumn(cWorkSheet, cTitulo, "ICMS_DIFAL", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSheet, cTitulo, "BASE_SUBST ", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSheet, cTitulo, " VALOR_SUBST", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSheet, cTitulo, "BASE_IPI ", 1, 1, .F.)
@@ -287,15 +299,19 @@ Static Function fGeraExce()
                      (QRY_DAD)->ESTADO  ,;
                      (QRY_DAD)->NOTA_FISCAL  ,;
                      (QRY_DAD)->SERIE  ,;
+                     (QRY_DAD)->TIPO ,;
+                     (QRY_DAD)->FORMULARIO   ,;
                      (QRY_DAD)->ESPECIE  ,;
                      (QRY_DAD)->CFOP  ,;
                      (QRY_DAD)->DT_ENTRADA  ,;
                      (QRY_DAD)->DT_LANC  ,;
+                     (QRY_DAD)->VALOR_ITENS  ,;
                      (QRY_DAD)->VALOR_CONTABIL  ,;
                      (QRY_DAD)->BASE_ICMS  ,;
                      (QRY_DAD)->VAL_ICMS  ,;					
                      (QRY_DAD)->ICMS_ISENTO  ,;
                      (QRY_DAD)->ICMS_OUTROS  ,;
+                     (QRY_DAD)->ICMS_DIFAL   ,;
                      (QRY_DAD)->BASE_SUBST  ,;
                      (QRY_DAD)->VALOR_SUBST  ,;
                      (QRY_DAD)->BASE_IPI  ,;
@@ -333,15 +349,19 @@ Static Function fGeraExce()
 	oFWMsExcel:AddColumn(cWorkSh, cTitul, "ESTADO", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSh, cTitul, "NOTA_FISCAL", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSh, cTitul, "SERIE", 1, 1, .F.)
+    oFWMSExcel:AddColumn(cWorkSh, cTitul, "TIPO", 1, 1, .F.)
+    oFWMSExcel:AddColumn(cWorksh, cTitul, "FORMULARIO", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSh, cTitul, "ESPECIE", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSh, cTitul, "CFOP", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSh, cTitul, "DT_ENTRADA", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSh, cTitul, "DATA CANCELAMENTO", 1, 1, .F.)
+    oFWMSExcel:AddColumn(cWorkSh, cTitul, "VALOR_ITENS", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSh, cTitul, "VALOR_CONTABIL", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSh, cTitul, "BASE_ICMS", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSh, cTitul, "VAL_ICMS", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSh, cTitul, "ICMS_ISENTO", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSh, cTitul, "ICMS_OUTROS", 1, 1, .F.)
+    oFWMsExcel:AddColumn(cWorkSh, cTitul, "ICMS_DIFAL", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSh, cTitul, "BASE_SUBST ", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSh, cTitul, " VALOR_SUBST", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSh, cTitul, "BASE_IPI ", 1, 1, .F.)
@@ -385,15 +405,19 @@ Static Function fGeraExce()
                      (QRY_DAD)->ESTADO  ,;
                      (QRY_DAD)->NOTA_FISCAL  ,;
                      (QRY_DAD)->SERIE  ,;
+                     (QRY_DAD)->TIPO ,;
+                     (QRY_DAD)->FORMULARIO   ,;
                      (QRY_DAD)->ESPECIE  ,;
                      (QRY_DAD)->CFOP  ,;
                      (QRY_DAD)->DT_ENTRADA  ,;
                      (QRY_DAD)->DT_LANC  ,;
+                     (QRY_DAD)->VALOR_ITENS  ,;
                      (QRY_DAD)->VALOR_CONTABIL  ,;
                      (QRY_DAD)->BASE_ICMS  ,;
                      (QRY_DAD)->VAL_ICMS  ,;					
                      (QRY_DAD)->ICMS_ISENTO  ,;
                      (QRY_DAD)->ICMS_OUTROS  ,;
+                     (QRY_DAD)->ICMS_DIFAL   ,;
                      (QRY_DAD)->BASE_SUBST  ,;
                      (QRY_DAD)->VALOR_SUBST  ,;
                      (QRY_DAD)->BASE_IPI  ,;
