@@ -52,6 +52,7 @@ Local _cHsIni		:= Time()
 Local _aDivergencia	:= {}
 Local _nRetJson		:= 0
 Local _cChave		:= "ZPECF008_ONDA"
+Local _lSemaforo	:= SuperGetMV( "CMV_PEC052" ,, .F. )
 Local _nPos
 Local _lRet
 
@@ -166,6 +167,8 @@ Private _aJson		:= {}
 	EndIf
 
 	//Caso esteja rodando onda não será permitido fazer a transferencia
+	_cChave += AllTrim(cEmpAnt)+AllTrim(cFilAnt)
+	_lSemaforo := .F. 	//Caso não utilize o semaforo para RGLOG desabilitar
 	If !LockByName(_cChave,.T.,.T.)  
 		//tentar locar por 10 segundos caso não consiga não prosseguir
 		_lRet := .F.
@@ -185,8 +188,10 @@ Private _aJson		:= {}
 			Return(.T.)
 		EndIf
 	EndIf
-	//Liberar a chave	
-	UnLockByName(_cChave,.T.,.T.)
+	//Caso não utilize o semaforo para RGLOG desabilitar
+	If !_lSemaforo
+		UnLockByName(_cChave,.T.,.T.)
+	Endif 
 
 	_cNfFor 	:= AllTrim(StrZero(Val(oParseJSON:nota_fiscal),9))
 	_cSerFor 	:= AllTrim(oParseJSON:serie_nf)
@@ -210,6 +215,10 @@ Private _aJson		:= {}
 		oJsonRet['errorCode'] 		:= 400
 		oJsonRet['errorMessage']	:= AllTrim(_cErro)
 		::SetResponse( oJsonRet:ToJson() )
+		//Liberar a chave	
+		If _lSemaforo
+			UnLockByName(_cChave,.T.,.T.)
+		Endif 
 		Return(.T.)
  	EndIf
 
@@ -220,6 +229,10 @@ Private _aJson		:= {}
 		oJsonRet['errorCode'] 		:= 400
 		oJsonRet['errorMessage']	:= AllTrim(_cErro)
 		::SetResponse( oJsonRet:ToJson() )
+		//Liberar a chave	
+		If _lSemaforo
+			UnLockByName(_cChave,.T.,.T.)
+		Endif 
 		Return(.T.)
  	EndIf
 
@@ -233,6 +246,10 @@ Private _aJson		:= {}
 		oJsonRet['errorCode'] 		:= 400
 		oJsonRet['errorMessage']	:= AllTrim(_cErro)
 		::SetResponse( oJsonRet:ToJson() )
+		//Liberar a chave	
+		If _lSemaforo
+			UnLockByName(_cChave,.T.,.T.)
+		Endif 
 		Return(.T.)
 	Endif
 	//Para Transferência
@@ -276,7 +293,11 @@ Private _aJson		:= {}
 	//Caso tenha divergencia ESPFUN.-.PEC042.
 	If Len(_aDivergencia) > 0					
 		NotificaDiv(_aDivergencia)
-	Endif	
+	Endif
+	//Liberar a chave	
+	If _lSemaforo
+		UnLockByName(_cChave,.T.,.T.)
+	Endif 
 Return .T.
 
 /*

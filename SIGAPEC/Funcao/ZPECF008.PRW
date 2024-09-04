@@ -72,21 +72,6 @@ Begin Sequence
 	If !_lZPECF008                             
 		Break
 	Endif        
-	//Garantir que o processamento seja unico
-	If !LockByName(_cChave,.T.,.T.)  
-		//tentar locar por 10 segundos caso não consiga não prosseguir
-		_lRet := .F.
-		For _nPos := 1 To 10
-			Sleep( 300 ) // Para o processamento por 3 segundos
-			If LockByName(_cChave,.T.,.T.)
-				_lRet := .T.
-			EndIf
-		Next		
-		If !_lRet
-			MSGINFO("Já existe um processamento em execução rotina "+_cChave+" , aguarde!", "[ZPECF008] - Atenção" )
-			Break
-		EndIf
-	EndIf
 	/* Retirado para utilizar as duas situações onde o orçamento total avalia fator de redução e o de item não  DAC 21/03/2023
 	If _lAvaliaOrc  .And. _lAvaliaItem  
 		Help( , ,"Atenção",,"Não é permitido avaliação de Crédito Total e por Item, rever parametrização com o ADM Sistemas !",4,1) //Atenção / Necessário informar os parâmetros 
@@ -182,6 +167,23 @@ Begin Sequence
 	_cAglutina 	:= ""
 	_aMensAglu	:= {}
 	//Carregar processo
+
+	//Garantir que o processamento seja unico
+	_cChave += AllTrim(cEmpAnt)+AllTrim(cFilAnt)
+	If !LockByName(_cChave,.T.,.T.)  
+		//tentar locar por 10 segundos caso não consiga não prosseguir
+		_lRet := .F.
+		For _nPos := 1 To 10
+			Sleep( 300 ) // Para o processamento por 3 segundos
+			If LockByName(_cChave,.T.,.T.)
+				_lRet := .T.
+			EndIf
+		Next		
+		If !_lRet
+			MSGINFO("Já existe um processamento em execução rotina "+_cChave+" , aguarde!", "[ZPECF008] - Atenção" )
+			Break
+		EndIf
+	EndIf
 	For _nPos := 1 To Len(_aArmazem)
 		NNR->(DbSetOrder(1)) //NNR_FILIAL+NNR_CODIGO                                                                                                                                           
 		NNR->(DbSeek(XFilial("NNR")+_aArmazem[_nPos]))
@@ -191,12 +193,13 @@ Begin Sequence
 			FwMsgRun(,{ |_oSay| ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave, _aArmazem[_nPos], @_aOndaRel, @_oSay ) }, "Separação Orçamentos armazém "+_aArmazem[_nPos]+" - "+AllTrim(NNR->NNR_DESCRI)+", Aguarde...")  //Separação Orçamentos / Aguarde
 		Endif
 	Next
+	//Liberar a chave
+	UnLockByName(_cChave,.T.,.T.)
+
 	ZPECF08RESumo(_aOndaRel)
 	//Validadr aondarel se possui enviado
 	ZPECF08R07(_aOndaRel)
 End Sequence 
-//Liberar a chave
-UnLockByName(_cChave,.T.,.T.)
 If Select(_cAliasPesq) <> 0
 	(_cAliasPesq)->(DbCloseArea())
 	Ferase(_cAliasPesq+GetDBExtension())
