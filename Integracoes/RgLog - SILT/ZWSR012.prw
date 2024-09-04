@@ -168,7 +168,6 @@ Private _aJson		:= {}
 
 	//Caso esteja rodando onda não será permitido fazer a transferencia
 	_cChave += AllTrim(cEmpAnt)+AllTrim(cFilAnt)
-	_lSemaforo := .F. 	//Caso não utilize o semaforo para RGLOG desabilitar
 	If !LockByName(_cChave,.T.,.T.)  
 		//tentar locar por 10 segundos caso não consiga não prosseguir
 		_lRet := .F.
