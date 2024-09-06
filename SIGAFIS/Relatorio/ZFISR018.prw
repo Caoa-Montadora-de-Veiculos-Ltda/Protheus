@@ -17,22 +17,27 @@ Obs......:
 
 User Function ZFISR018()
 
-    Local aArea         := FWGetArea()
-    Local	aPergs		:= {}
-	Local	dDtEmiss	:= Ctod(Space(8)) 
-    Local	cNumNF		:= Space(TamSX3('F1_DOC')[1]) 
-    Local	cSerieNF	:= Space(TamSX3('F1_SERIE')[1])
-	Local 	cFornece 	:= Space(TamSX3('F1_FORNECE')[1])
+    Local aArea    := FWGetArea()
+    Local aPergs   := {}
+	Local dDtEmiss := Ctod(Space(8))
+    Local dDtDigit := Ctod(Space(8))
+    Local cNumNF   := Space(TamSX3('F1_DOC')[1]) 
+    Local cSerieNF := Space(TamSX3('F1_SERIE')[1])
+	Local cFornece := Space(TamSX3('F1_FORNECE')[1])
      
     //Adicionando os parametros do ParamBox
-    aAdd(aPergs, {1,"Emissao De"		,dDtEmiss	,/*Pict*/	,/*Valid*/	            ,/*F3*/     ,/*When*/   ,50 ,.F.})  //MV_PAR01
-	aAdd(aPergs, {1,"Emissao Ate"		,dDtEmiss	,/*Pict*/   ,MV_PAR02 > MV_PAR01    ,/*F3*/     ,/*When*/   ,50 ,.F.})  //MV_PAR02
-	aAdd(aPergs, {1,"Nota Fiscal De"	,cNumNF		,/*Pict*/	,/*Valid*/	            ,"SF1"      ,/*When*/   ,50 ,.F.})  //MV_PAR03
-	aAdd(aPergs, {1,"Nota Fiscal Ate"   ,cNumNF		,/*Pict*/	,/*Valid*/	            ,"SF1"      ,/*When*/   ,50 ,.F.})  //MV_PAR04
-    aAdd(aPergs, {1,"Serie"				,cSerieNF	,/*Pict*/	,/*Valid*/	            ,"_SF1SE"   ,/*When*/   ,50 ,.F.})  //MV_PAR05
-    aAdd(aPergs, {1,"Fornecedor De"		,cFornece	,/*Pict*/	,/*Valid*/	            ,"SA2"      ,/*When*/   ,50 ,.F.})  //MV_PAR06
-	aAdd(aPergs, {1,"Fornecedor Ate"	,cFornece	,/*Pict*/	,/*Valid*/	            ,"SA2"      ,/*When*/   ,50 ,.F.})  //MV_PAR07
-//  aAdd(aPergs, {1, "Tipo Relat."      ,nTipoRel   ,{"1=Excel XML", "2=Excel XLSX"}    ,80         ,".T."      ,.T.    })  //MV_PAR08
+    aAdd(aPergs, {1,"Emissao De"	  ,dDtEmiss	,/*Pict*/	,/*Valid*/	            ,/*F3*/     ,/*When*/   ,50 ,.F.})  //MV_PAR01
+	aAdd(aPergs, {1,"Emissao Ate"	  ,dDtEmiss	,/*Pict*/   ,MV_PAR02 > MV_PAR01    ,/*F3*/     ,/*When*/   ,50 ,.F.})  //MV_PAR02
+
+    aAdd(aPergs, {1,"Digitacao De"    ,dDtDigit ,/*Pict*/   ,/*Valid*/              ,/*F3*/     ,/*When*/   ,50 ,.F.})  //MV_PAR03
+    aAdd(aPergs, {1,"Digitacao Ate"   ,dDtDigit ,/*Pict*/   ,MV_PAR04 > MV_PAR03    ,/*F3*/     ,/*When*/   ,50 ,.F.})  //MV_PAR04
+
+	aAdd(aPergs, {1,"Nota Fiscal De"  ,cNumNF	,/*Pict*/	,/*Valid*/	            ,"SF1"      ,/*When*/   ,50 ,.F.})  //MV_PAR05
+	aAdd(aPergs, {1,"Nota Fiscal Ate" ,cNumNF	,/*Pict*/	,/*Valid*/	            ,"SF1"      ,/*When*/   ,50 ,.F.})  //MV_PAR06
+    aAdd(aPergs, {1,"Serie"			  ,cSerieNF	,/*Pict*/	,/*Valid*/	            ,"_SF1SE"   ,/*When*/   ,50 ,.F.})  //MV_PAR07
+    aAdd(aPergs, {1,"Fornecedor De"	  ,cFornece	,/*Pict*/	,/*Valid*/	            ,"SA2"      ,/*When*/   ,50 ,.F.})  //MV_PAR08
+	aAdd(aPergs, {1,"Fornecedor Ate"  ,cFornece	,/*Pict*/	,/*Valid*/	            ,"SA2"      ,/*When*/   ,50 ,.F.})  //MV_PAR09
+//  aAdd(aPergs, {1, "Tipo Relat."    ,nTipoRel ,{"1=Excel XML", "2=Excel XLSX"}    ,80         ,".T."      ,.T.    })  //MV_PAR10
      
     //Se a pergunta for confirma, cria as definicoes do relatorio
     If ParamBox(aPergs, "Informe os parâmetros para Nota Fiscal de entrada", , , , , , , , , .F., .F.)
@@ -62,6 +67,12 @@ Static Function fGeraExcel()
     Local cTitul     := "Notas Fiscais de Entrada Canceladas"
     Local nAtual     := 0
     Local nTotal     := 0
+
+    Local cLogInc    := ''
+    Local cLogAlt    := ''
+    Local aLog       := {}
+    Local cKey       := ''
+
     Private QRY_DAD  := GetNextAlias()
 
     If Select(QRY_DAD) > 0
@@ -158,16 +169,22 @@ Static Function fGeraExcel()
 
 	EndIf
 
-    If !Empty(MV_PAR04) //NOTA FISCAL
-		cQryDad += " AND SF1.F1_DOC BETWEEN '" + MV_PAR03 + "' AND '" + MV_PAR04 + "'"  + CRLF //--NOTA FISCAL
-	EndIf
-    
-    If !Empty(MV_PAR05) // NUM SERIE NF
-		cQryDad += "	AND SF1.F1_SERIE = '" + MV_PAR05 + "'"  + CRLF //--SERIE
+    If !Empty(DtoS(MV_PAR04)) //DATA DIGITACAO ATE
+	
+    	cQryDad += " AND (SF1.F1_DTDIGIT BETWEEN '" + DtoS(MV_PAR03) + "' AND '" + DtoS(MV_PAR04) + "')"    + CRLF //--DATA DE DIGITACAO
+
 	EndIf
 
-    If !Empty(MV_PAR07) //FORNECEDOR
-		cQryDad += " AND SF1.F1_FORNECE BETWEEN '" + MV_PAR06 + "' AND '" + MV_PAR07 + "'"  + CRLF //--FORNECEDOR
+    If !Empty(MV_PAR06) //NOTA FISCAL
+		cQryDad += " AND SF1.F1_DOC BETWEEN '" + MV_PAR05 + "' AND '" + MV_PAR06 + "'"  + CRLF //--NOTA FISCAL
+	EndIf
+    
+    If !Empty(MV_PAR07) // NUM SERIE NF
+		cQryDad += "	AND SF1.F1_SERIE = '" + MV_PAR07 + "'"  + CRLF //--SERIE
+	EndIf
+
+    If !Empty(MV_PAR09) //FORNECEDOR
+		cQryDad += " AND SF1.F1_FORNECE BETWEEN '" + MV_PAR08 + "' AND '" + MV_PAR09 + "'"  + CRLF //--FORNECEDOR
 	EndIf
 
     cQryDad += "    AND SF1.D_E_L_E_T_ 	= ' ' " + CRLF
@@ -287,8 +304,15 @@ Static Function fGeraExcel()
         IncProc("Adicionando registro " + cValToChar(nAtual) + " de " + cValToChar(nTotal) + "...")
         IF Empty((QRY_DAD)->F3_DTCANC) 
          nAtual++
-        //Adicionando uma nova linha
-       oFWMsExcel:AddRow(cWorkSheet, cTitulo, {;
+
+         	// TRATAMENTO PARA BUSCAR O LOG DO USUÁRIO.
+            cKey := (QRY_DAD)->FILIAL + (QRY_DAD)->NOTA_FISCAL + (QRY_DAD)->SERIE + (QRY_DAD)->CODIGO + (QRY_DAD)->LOJA + (QRY_DAD)->TIPO
+            aLog := ConvUsr( cKey )
+            cLogInc := aLog[1]
+            cLogAlt := aLog[2]
+
+         //Adicionando uma nova linha
+         oFWMsExcel:AddRow(cWorkSheet, cTitulo, {;
                      (QRY_DAD)->CNPJ  ,;
                      (QRY_DAD)->INS_EST  ,;
                      (QRY_DAD)->CODIGO  ,;
@@ -328,8 +352,8 @@ Static Function fGeraExcel()
                      (QRY_DAD)->COF_ST_ZFM  ,;
                      (QRY_DAD)->VAL_COFST_ZFM  ,;					
                      (QRY_DAD)->OBSERVACAO  ,;
-                     (QRY_DAD)->UINCLUI  ,;
-                     (QRY_DAD)->UALTERA   })
+                     cLogInc  ,;
+                     cLogAlt   })
         ENDIF
         (QRY_DAD)->(DbSkip())
     EndDo
@@ -382,8 +406,8 @@ Static Function fGeraExcel()
 	oFWMsExcel:AddColumn(cWorkSh, cTitul, "USERALT ", 1, 1, .F.) 
      
     //Definindo o tamanho da regua
-    Count To nTotal
-    ProcRegua(nTotal)
+    //Count To nTotal
+    //ProcRegua(nTotal)
     (QRY_DAD)->(DbGoTop())
      
     //Percorrendo os dados da query
@@ -393,6 +417,13 @@ Static Function fGeraExcel()
              IncProc("Adicionando registro " + cValToChar(nAtual) + " de " + cValToChar(nTotal) + "...")
         IF !Empty((QRY_DAD)->F3_DTCANC) 
          nAtual++
+
+         	// TRATAMENTO PARA BUSCAR O LOG DO USUÁRIO.
+            cKey := (QRY_DAD)->FILIAL + (QRY_DAD)->NOTA_FISCAL + (QRY_DAD)->SERIE + (QRY_DAD)->CODIGO + (QRY_DAD)->LOJA + (QRY_DAD)->TIPO
+            aLog := ConvUsr( cKey )
+            cLogInc := aLog[1]
+            cLogAlt := aLog[2]
+
         //Adicionando uma nova linha
        oFWMsExcel:AddRow(cWorkSh, cTitul, {;
                      (QRY_DAD)->CNPJ  ,;
@@ -434,8 +465,8 @@ Static Function fGeraExcel()
                      (QRY_DAD)->COF_ST_ZFM  ,;
                      (QRY_DAD)->VAL_COFST_ZFM  ,;					
                      (QRY_DAD)->OBSERVACAO  ,;
-                     (QRY_DAD)->UINCLUI  ,;
-                     (QRY_DAD)->UALTERA   })
+                     cLogInc  ,;
+                     cLogAlt   })
         ENDIF
         (QRY_DAD)->(DbSkip())
     EndDo
@@ -456,3 +487,39 @@ Static Function fGeraExcel()
     oExcel:Destroy()
      
 Return
+
+/*/{Protheus.doc} ConvUsr
+    Função para conversão dos campos F1_USERLGI e F1_USERLGA
+    @type  Function
+    @author Victor G. Matos
+    @since 05/09/2024
+    @version 1.0
+    @param cUser, Caractere, Usuário
+    @param cTipo, Caractere, Tipo 'I' (inclusão), ou 'A' (Alteração)
+    @return cRet, Caractere, Nome do usuário registrado
+    @example
+    (examples)
+    @see (links_or_references)
+/*/
+
+Static Function ConvUsr( cKey )
+    
+Local aRet := {}
+
+    DbSelectArea('SF1')
+    SF1->( DbSetOrder(1) ) // F1_FILIAL + F1_DOC + F1_SERIE + F1_FORNECE + F1_LOJA + F1_TIPO
+
+        If SF1->(dbSeek( cKey ))
+            
+            aAdd(aRet, FWLeUserlg( "F1_USERLGI" ) )
+            aAdd(aRet, FWLeUserlg( "F1_USERLGA" ) )
+        
+        Else
+
+            aRet := { '' , '' }
+
+        EndIf
+    
+    SF1->(DbCloseArea())
+
+Return aRet

@@ -289,6 +289,14 @@ Static Function fGeraExce()
         IncProc("Adicionando registro " + cValToChar(nAtual) + " de " + cValToChar(nTotal) + "...")
         IF Empty((QRY_DAD)->F3_DTCANC) 
          nAtual++
+
+        // TRATAMENTO PARA BUSCAR O LOG DO USUÁRIO.
+        // F2_FILIAL + F2_DOC + F2_SERIE + F2_CLIENTE + F2_LOJA + F2_FORMUL + F2_TIPO
+        cKey := (QRY_DAD)->FILIAL + (QRY_DAD)->NOTA_FISCAL + (QRY_DAD)->SERIE + (QRY_DAD)->CODIGO + (QRY_DAD)->LOJA + (QRY_DAD)->FORMULARIO + (QRY_DAD)->TIPO
+        aLog := ConvUsr( cKey )
+        cLogInc := aLog[1]
+        cLogAlt := aLog[2]
+
         //Adicionando uma nova linha
        oFWMsExcel:AddRow(cWorkSheet, cTitulo, {;
                      (QRY_DAD)->CNPJ  ,;
@@ -330,8 +338,8 @@ Static Function fGeraExce()
                      (QRY_DAD)->COF_ST_ZFM  ,;
                      (QRY_DAD)->VAL_COFST_ZFM  ,;					
                      (QRY_DAD)->OBSERVACAO  ,;
-                     (QRY_DAD)->UINCLUI  ,;
-                     (QRY_DAD)->UALTERA   })
+                     cLogInc  ,;
+                     cLogAlt   })
         ENDIF
         (QRY_DAD)->(DbSkip())
     EndDo
@@ -384,8 +392,8 @@ Static Function fGeraExce()
 	oFWMsExcel:AddColumn(cWorkSh, cTitul, "USERALT ", 1, 1, .F.) 
      
     //Definindo o tamanho da regua
-    Count To nTotal
-    ProcRegua(nTotal)
+    //Count To nTotal
+    //ProcRegua(nTotal)
     (QRY_DAD)->(DbGoTop())
      
     //Percorrendo os dados da query
@@ -395,6 +403,14 @@ Static Function fGeraExce()
              IncProc("Adicionando registro " + cValToChar(nAtual) + " de " + cValToChar(nTotal) + "...")
         IF !Empty((QRY_DAD)->F3_DTCANC) 
          nAtual++
+
+        // TRATAMENTO PARA BUSCAR O LOG DO USUÁRIO.
+        // F2_FILIAL + F2_DOC + F2_SERIE + F2_CLIENTE + F2_LOJA + F2_FORMUL + F2_TIPO
+        cKey := (QRY_DAD)->FILIAL + (QRY_DAD)->NOTA_FISCAL + (QRY_DAD)->SERIE + (QRY_DAD)->CODIGO + (QRY_DAD)->LOJA + (QRY_DAD)->FORMULARIO + (QRY_DAD)->TIPO
+        aLog := ConvUsr( cKey )
+        cLogInc := aLog[1]
+        cLogAlt := aLog[2]
+
         //Adicionando uma nova linha
        oFWMsExcel:AddRow(cWorkSh, cTitul, {;
                      (QRY_DAD)->CNPJ  ,;
@@ -436,8 +452,8 @@ Static Function fGeraExce()
                      (QRY_DAD)->COF_ST_ZFM  ,;
                      (QRY_DAD)->VAL_COFST_ZFM  ,;					
                      (QRY_DAD)->OBSERVACAO  ,;
-                     (QRY_DAD)->UINCLUI  ,;
-                     (QRY_DAD)->UALTERA   })
+                     cLogInc  ,;
+                     cLogAlt   })
         ENDIF
         (QRY_DAD)->(DbSkip())
     EndDo
@@ -459,8 +475,38 @@ Static Function fGeraExce()
      
 Return
 
+/*/{Protheus.doc} ConvUsr
+    Função para conversão dos campos F2_USERLGI e F2_USERLGA
+    @type  Function
+    @author Victor G. Matos
+    @since 05/09/2024
+    @version 1.0
+    @param cUser, Caractere, Usuário
+    @param cTipo, Caractere, Tipo 'I' (inclusão), ou 'A' (Alteração)
+    @return cRet, Caractere, Nome do usuário registrado
+    @example
+    (examples)
+    @see (links_or_references)
+/*/
 
+Static Function ConvUsr( cKey )
+    
+Local aRet := {}
 
+    DbSelectArea('SF2')
+    SF2->( DbSetOrder(1) ) // F2_FILIAL + F2_DOC + F2_SERIE + F2_CLIENTE + F2_LOJA + F2_FORMUL + F2_TIPO
 
-//----------------------------------------------------------
-//----------------------------------------------------------
+        If SF2->(dbSeek( cKey ))
+            
+            aAdd(aRet, FWLeUserlg( "F2_USERLGI" ) )
+            aAdd(aRet, FWLeUserlg( "F2_USERLGA" ) )
+        
+        Else
+
+            aRet := { '' , '' }
+
+        EndIf
+    
+    SF2->(DbCloseArea())
+
+Return aRet
