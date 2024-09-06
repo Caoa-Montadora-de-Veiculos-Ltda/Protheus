@@ -36,6 +36,7 @@ User Function ZPECR014()
     TRCell():New( oSection ,"COD_CLI"         ,cAliasTMP ,"Cliente"             , PesqPict( "VS1" , "VS1_CLIFAT" ) , TamSx3("VS1_CLIFAT")[1] , /*lPixel*/ , /* {|| }*/ )
     TRCell():New( oSection ,"LOJA"            ,cAliasTMP ,"Loja"                , PesqPict( "VS1" , "VS1_LOJA"   ) , TamSx3("VS1_LOJA"  )[1] , /*lPixel*/ , /* {|| }*/ )
     TRCell():New( oSection ,"NOME_CLI"        ,cAliasTMP ,"Nome"                , PesqPict( "VS1" , "VS1_NCLIFT" ) , TamSx3("VS1_NCLIFT")[1] , /*lPixel*/ , /* {|| }*/ )
+    TRCell():New( oSection ,"ESTADO"          ,cAliasTMP ,"UF"                  , PesqPict( "SA1" , "A1_EST"     ) , TamSx3("A1_EST")[1]     , /*lPixel*/ , /* {|| }*/ )    
     TRCell():New( oSection ,"COND_PGTO"       ,cAliasTMP ,"Cond.Pagto"          , PesqPict( "VS1" , "VS1_FORPAG" ) , TamSx3("VS1_FORPAG")[1] , /*lPixel*/ , /* {|| }*/ )
     TRCell():New( oSection ,"DESC_COND_PGTO"  ,cAliasTMP ,"Desc.Cond.Pagto"     , PesqPict( "SE4" , "E4_DESCRI"  ) , TamSx3("E4_DESCRI" )[1] , /*lPixel*/ , /* {|| }*/ )
     TRCell():New( oSection ,"PROD_SOLIC"      ,cAliasTMP ,"Produto"             , PesqPict( "VS3" , "VS3_XITSUB" ) , TamSx3("VS3_XITSUB")[1] , /*lPixel*/ , /* {|| }*/ )
@@ -81,6 +82,7 @@ Static Function  ReportPrint(oReport)
         oSection:Cell( "COD_CLI"         ):SetValue( Alltrim(      (cAliasTMP)->COD_CLI           ) )
         oSection:Cell( "LOJA"            ):SetValue( Alltrim(      (cAliasTMP)->LOJA              ) )
         oSection:Cell( "NOME_CLI"        ):SetValue( Alltrim(      (cAliasTMP)->NOME_CLI          ) )
+        oSection:Cell( "ESTADO"          ):SetValue( AllTrim(      (cAliasTMP)->ESTADO            ) )
         oSection:Cell( "COND_PGTO"       ):SetValue( Alltrim(      (cAliasTMP)->COND_PGTO         ) )
         oSection:Cell( "DESC_COND_PGTO"  ):SetValue( Alltrim(      (cAliasTMP)->DESC_COND_PGTO    ) )
         oSection:Cell( "PROD_SOLIC"      ):SetValue( Alltrim(      (cAliasTMP)->PROD_SOLIC        ) )
@@ -123,6 +125,7 @@ Static Function zTmpQry()
     cQuery += CRLF + " 					VS1.VS1_CLIFAT      AS  COD_CLI, "
     cQuery += CRLF + " 					VS1.VS1_LOJA        AS  LOJA, "
     cQuery += CRLF + " 					VS1.VS1_NCLIFT      AS  NOME_CLI,"
+    cQuery += CRLF + "                  SA1.A1_EST          AS  ESTADO,"
     cQuery += CRLF + " 					RTRIM(VX5_DESCRI)	AS	TIPO_PEDIDO,"
     cQuery += CRLF + " 					VS1.VS1_FORPAG		AS	COND_PGTO,"
     cQuery += CRLF + " 					SE4.E4_DESCRI		AS	DESC_COND_PGTO,"
@@ -159,6 +162,12 @@ Static Function zTmpQry()
     cQuery += CRLF + " 					ON  SB1.B1_FILIAL = '" + FWxFilial('SB1') + "'"
     cQuery += CRLF + " 					AND SB1.B1_COD = VS3.VS3_XITSUB"
     cQuery += CRLF + " 					AND SB1.D_E_L_E_T_ = ' '"
+
+    cQuery += CRLF + " 				INNER JOIN " + RetSQLName( 'SA1' ) + " SA1"
+    cQuery += CRLF + " 					ON  SA1.A1_FILIAL = '" + FWxFilial('SA1') + "' "
+    cQuery += CRLF + " 					AND SA1.A1_COD = VS1.VS1_CLIFAT "
+    cQuery += CRLF + "                  AND SA1.A1_LOJA = VS1.VS1_LOJA "
+    cQuery += CRLF + " 					AND SA1.D_E_L_E_T_ = ' ' "
     
     cQuery += CRLF + " 				LEFT JOIN " + RetSQLName( 'SE4' ) + " SE4"
     cQuery += CRLF + " 					ON SE4.E4_FILIAL = '" + FWxFilial('SE4') + "'"
