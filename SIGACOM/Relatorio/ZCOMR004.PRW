@@ -2090,8 +2090,8 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
 			cWhile := "SC7->C7_FILIAL+SC7->C7_NUM"
 			/** SINTAXE DA FillGetDados(nOpcX,Alias,nOrdem,cSeek,bSeekWhile,uSeekFor,aNoFields,aYesFields,lOnlyYes,cQuery,bMontCols,lEmpty,aHeaderAux,aColsAux,bAfterCols,bBeforeCols,bAfterHeader,cAliasQry,bCriaVar,lUserFields,aYesUsado) **/
 			FillGetDados(nOpcX, cAliasC7, nOrderC7,cSeek,{|| &cWhile },,,,,,,.F.,aHeader,aCols)
-
-			//-- CARREGA O CABECALHO DO DOCUMENTO FISCAL NO aNFCab MATXFIS
+  
+			//-- CARREGA O CABECALHO DO DOCUMENTO FISCAL NO aNFCab MATXFIS 
 			MaFisIni((cAliasSC7)->(C7_FORNECE),;                   // 1-Codigo Cliente/Fornecedor
 				(cAliasSC7)->(C7_LOJA),;                           // 2-Loja do Cliente/Fornecedor
 				"F",;                                              // 3-C:Cliente , F:Fornecedor
@@ -2112,17 +2112,17 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
 						MaFisLoad(cRefCols,aCols[nX][nY],nX)       //-- CARREGA O VALOR DO CAMPO DO aCols PARA A REFERENCIA NO aNFItem DA MATXFIS
 					EndIf
 				Next nY
+				MaFisEndLoad(nX,02)                                //-- ENCERRA A CARGA DO ITEM
+ 
+				/** =============================================== */
+				/** === MATA120.PRX Executa o Refresh do Folder === */
+				/** === ExpA1 = Array com os valores do Rodape  === */
+				/** =============================================== */
+				A120Refresh(@aValores)  
+				//aValores[3] := aTotals[5][1]
 			Next nX
-			MaFisEndLoad(nX - 1,02)                                //-- ENCERRA A CARGA DO ITEM
-
 		EndIf
 
-		/** =============================================== */
-		/** === MATA120.PRX Executa o Refresh do Folder === */
-		/** === ExpA1 = Array com os valores do Rodape  === */
-		/** =============================================== */
-		A120Refresh(@aValores)
-        //aValores[3] := aTotals[5][1]
 		MaFisEnd()
 	EndIf
 
