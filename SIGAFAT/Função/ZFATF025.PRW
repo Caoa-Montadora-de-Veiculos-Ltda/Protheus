@@ -1969,134 +1969,160 @@ Return Nil
 
 
 
+//=========================================================
+//Funcionalidade MVC Previsao
+Static Function ZFAT25MVC( _cNumPrev, _aGravaPrev, _nOper )
+Local _cAliasPesq 	:= GetNextAlias()
+Local _nPos
+Local _oModel
+Local _aLog
+Local _cLog
 
+Default _nOper 		:= 3
+Default _cNumPrev	:= ""
+Default _aGravaPrev := {}
+Begin Sequence 
+	ZZP->(DbSetOrder(1))
+    // Capturando submodelos que possuem grid para preenchimento dos itens
+    //_oModelZZN := oModel:GetModel("ZZNMASTER")
+    //_oModelZZP := oModel:GetModel("ZZPDETAIL")
+	//    _oModel:SetOperation(MODEL_OPERATION_INSERT)
+	//Gravar dados 
 
-/* substituido por U_XZFAT9CH
-//Verifica se existem  chassis ver função [fAtuPeds ZFATF018]
-User Function XZFT25CH(_cProduto, _cLocal)
-Local _cQuery 		:= ""
+	_oModel:SetValue("ZZNMASTER","ZZN_FILIAL"        , FwXFilial("ZZN") )	
+	_oModel:SetValue("ZZNMASTER","ZZN_CODPRV"        , _cNumPrev)	
+	_oModel:SetValue("ZZNMASTER","ZZN_STATUS"        , "A" )	
+	_oModel:SetValue("ZZNMASTER","ZZN_DTINC"         , Date() )	
+	_oModel:SetValue("ZZNMASTER","ZZN_USUINC"        , RetCodUsr() )	
 
-Default _cProduto 	:= "" 
-Default _cLocal 	:= ""
+	_oModel:SetValue("ZZPDETAIL","ZZP_FILIAL"        , FwXFilial("ZZP") )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_CODPRV"        , _cNumPrev )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_CODCLI"        , SA1->A1_COD )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_LOJCLI"        , SA1->A1_LOJA )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_CNPJCP"        , SA1->A1_CGC )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_CODPRD"        , SB1->B1_COD )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_QTEPED"        , _nQtVen )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_CHSDIS"        , 0 )	//CHASSI QTDE
+	_oModel:SetValue("ZZPDETAIL","ZZP_QTEDIS"        , 0 )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_QTELIB"        , 0 )	//ZZP->ZZP_QTEPED - ZZP->ZZP_QTEDIS
+	_oModel:SetValue("ZZPDETAIL","ZZP_QTEFAT"        , 0 )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_VLRTAB"        , _nVlrVen )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_TOTLIB"        , If(ZZP->ZZP_QTELIB > 0, _nVlrVen * ZZP->ZZP_QTELIB, 0) )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_OBS"        	 , AllTrim(ZZP->ZZP_OBS) + CRLF + Upper(_cMens) )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_STATUS"        , "A" )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_DTINC"        , Date() )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_USUINC"       , RetCodUsr() )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_DTALT"        , Date() )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_USUALT"       , RetCodUsr() )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_MODVEI"        , _cModelo )	
+	_oModel:SetValue("ZZPDETAIL","ZZP_FABMOD"        , _cFabAno() )	
 
-	If Empty(_cProduto)
-		_cQuery := "LEFT JOIN ( "			+CRLF
-	Endif	
-	_cQuery += "SELECT A.* "				+CRLF
-	_cQuery += "FROM ( SELECT " 			+CRLF
-	_cQuery += "	VV1.VV1_FILIAL, "		+CRLF	
-	_cQuery += "	SBF.BF_PRODUTO, "		+CRLF
-	_cQuery += "	VV1.VV1_CHASSI, "		+CRLF
-	_cQuery += "	VV1.VV1_CODMAR, "		+CRLF
-	_cQuery += "	VV1.VV1_MODVEI, "		+CRLF
-	_cQuery += "	VV1.VV1_SEGMOD, "		+CRLF
-	_cQuery += "	VV1.VV1_FABMOD, "		+CRLF
-	_cQuery += "	VV1.VV1_CORVEI, "		+CRLF
-	_cQuery += "	SBF.BF_LOCAL,   "		+CRLF
-	_cQuery += "	SBF.BF_LOCALIZ, "		+CRLF
-	_cQuery += "	SBF.BF_QUANT,   "		+CRLF
-	_cQuery += "    SUM(SBF.BF_QUANT) OVER (ORDER BY BF_PRODUTO) AS QTDETOT, " 	+CRLF
-	_cQuery += " 	(	SELECT MAX(SDB.DB_NUMSEQ) " 	+CRLF
-	_cQuery += "  		FROM SDB010 SDB "	+CRLF
-	_cQuery += "  		WHERE  SDB.DB_FILIAL       = '"+FwXFilial("SDB") +"' "	+CRLF
-	_cQuery += "     		AND SDB.DB_ESTORNO      = ' ' "						+CRLF
-	_cQuery += "     		AND SDB.DB_ATUEST       = 'S' "						+CRLF
-	_cQuery += "     		AND SDB.DB_LOCAL        = SBF.BF_LOCAL   "			+CRLF
-	_cQuery += "     		AND SDB.DB_LOCALIZ      = SBF.BF_LOCALIZ "			+CRLF
-	_cQuery += "     		AND SDB.DB_NUMSERI      = SBF.BF_NUMSERI "			+CRLF
-	_cQuery += "     		AND SDB.DB_PRODUTO      = SBF.BF_PRODUTO "			+CRLF
-	_cQuery += "     		AND SDB.D_E_L_E_T_      = ' ') DB_NUMSEQ, "			+CRLF
-	_cQuery += "     		NVL(	(	SELECT VB0_DATDES  "					+CRLF
-	_cQuery += "     					FROM VB0010  VB0   "					+CRLF	
-	_cQuery += "          				WHERE VB0.VB0_DATBLO||VB0.VB0_HORBLO = ( "	+CRLF
-	_cQuery += "                                             					SELECT max(VB0A.VB0_DATBLO||VB0A.VB0_HORBLO) as DATBLOQ  " +CRLF
-	_cQuery += "                                             					FROM VB0010  VB0A "	+CRLF
-	_cQuery += "                                                				WHERE VB0A.VB0_FILIAL = VB0.VB0_FILIAL   "	+CRLF
-	_cQuery += "                                                  					AND VB0A.VB0_CHAINT = VB0.VB0_CHAINT " 	+CRLF
-	_cQuery += "                                                  					AND VB0A.D_E_L_E_T_ = ' ')           "	+CRLF
-	_cQuery += "         															AND VB0.VB0_FILIAL = '"+FwXFilial("VB0") +"' "	+CRLF 
-	_cQuery += "         															AND VB0.VB0_CHAINT = VV1.VV1_CHAINT  "	+CRLF
-	_cQuery += "         															AND VB0.D_E_L_E_T_ = ' '             "	+CRLF
-	_cQuery += "         														),'99999999' "	+CRLF
-	_cQuery += "         				) AS VB0_DATDES "						+CRLF
-
-	_cQuery += "		FROM VV1010 VV1 "										+CRLF
-	_cQuery += "		INNER JOIN SBF010 SBF "									+CRLF
-	_cQuery += "  			ON  SBF.BF_FILIAL  = '"+FwXFilial("SBF") +"' " 		+CRLF
-	_cQuery += "  			AND SBF.BF_NUMSERI = VV1.VV1_CHASSI " 				+CRLF
-	_cQuery += "  			AND SBF.D_E_L_E_T_ = VV1.D_E_L_E_T_ "				+CRLF
-	_cQuery += "  			AND SBF.BF_QUANT   > 0              "				+CRLF
-	_cQuery += "  			AND SBF.BF_EMPENHO = 0              "				+CRLF
-	_cQuery += "  			AND SBF.BF_LOCAL   = 'VN '          "				+CRLF
-	If !Empty(_cProduto)
-		_cQuery += "  		AND SBF.BF_PRODUTO = '" +_cProduto+"' "				+CRLF
-	Endif	
-	If !Empty(_cLocal)
-    	cQuery += CRLF + "  AND SBF.BF_LOCAL   = '" +_cLocal+ "' "				+CRLF
-	Endif	
-
-	_cQuery += "		WHERE   VV1.VV1_FILIAL      = '"+FwXFilial("VV1") +"' " +CRLF	
-	_cQuery += "			AND VV1.VV1_SITVEI      = '0' 		"				+CRLF
-	_cQuery += "			AND VV1.VV1_IMOBI       = '0' 		"				+CRLF
-	_cQuery += "		AND VV1.D_E_L_E_T_      = ' '			"				+CRLF
-	_cQuery += "		) A 									"				+CRLF
-	_cQuery += "	WHERE A.VB0_DATDES > '        ' 			"				+CRLF
-	//_cQuery += "	ORDER BY A.VV1_FILIAL,A.BF_PRODUTO,A.DB_NUMSEQ,A.VV1_CHASSI "
-	If Empty(_cProduto)
-		_cQuery += "			) 	SQLPRD 							"			+CRLF
-		_cQuery += "				ON SQLPRD.BF_PRODUTO = SC6.C6_PRODUTO "  	+CRLF
-	Endif
-Return _cQuery
-*/
-
-
-
-
-			/*
-            cProduto := StrTran(AllTrim(aDadosLi[nI][6]),"-","")
-
-            If SB1->( DbSeek( FwXFilial("SB1") + Padr(cProduto, TamSX3("B1_COD")[1]) ) )
-
-                If ZZH->( DbSeek( FwXFilial("ZZH") +;
-                        PadR(aDadosLi[nI][2]    ,TamSX3("ZZH_CODBID")[1])   +;
-                        PadR(aDadosLi[nI][5]    ,TamSX3("ZZH_CODBOX")[1])   +;
-                        PadR(cProduto           ,TamSX3("ZZH_PRODUT")[1])   +;
-                        PadR(aDadosLi[nI][7]    ,TamSX3("ZZH_QTD")[1]) ) )
-
-                    cLog := "Registro Cod. Bar. Unit: " + aDadosLi[nI][2] +;
-                            " Cod. Bar. Box: " + aDadosLi[nI][5] +;
-                            " Produto: " + cProduto +;
-                            " Qtd: " + aDadosLi[nI][7] +;
-                            " ja existe no sistema!"
-                    GrvLog(cArqLog, cLog)
-                Else
-                    //-- Gravação dos dados	
-                    RecLock("ZZH",.T.)
-                        ZZH->ZZH_FILIAL :=  FwXFilial()
-                        ZZH->ZZH_CONTAI :=  aDadosLi[nI][1]
-                        ZZH->ZZH_CODBID :=  aDadosLi[nI][2]
-                        ZZH->ZZH_IDUNIT :=  aDadosLi[nI][3]
-                        ZZH->ZZH_BOX    :=  aDadosLi[nI][4] 
-                        ZZH->ZZH_CODBOX :=  aDadosLi[nI][5]
-                        ZZH->ZZH_PRODUT :=  cProduto
-                        ZZH->ZZH_QTD    :=  Val(aDadosLi[nI][7]) 
-                        ZZH->ZZH_RANGE	:=  SB1->B1_XRANGE
-                        ZZH->ZZH_DESPRD :=  SB1->B1_DESC
-                        ZZH->ZZH_DATA   :=  dDataBase
-                        ZZH->ZZH_HORA   :=  Time()
-                        ZZH->ZZH_USRIMP :=  cUserName
-                    ZZH->( MsUnLock() )	
-
-                EndIf
-
-            Else
-                cLog := "Produto " + cProduto + " não foi localizado no Protheus!"
-                GrvLog(cArqLog, cLog)
+    If _oModel:VldData()
+        _oModel:CommitData()
+            //_cLog := "[ZFATF025] - Registro ! " + cCod + "  Opcao: " + cOperacao
+            //GERLOG()
+    Else
+        _aLog  	:= _oModel:GetErrorMessage()
+        _cLog 	:= ""
+        For _nPos := 1 To Len(_aLog)
+        	If !Empty(_aLog[_nPos]) .AND. _nI = 6
+                _cLog += Alltrim(_aLog[_nPos]) + " Produto " + cCod + CRLF
+            	//GERLOG()
             EndIf
-			*/
-		/*
-        If !Empty(cLog)
-            MsgAlert("Falha na importação dos registros, por favor, consulte arquivo de log!")
-            Disarmtransaction()
-        EndIf
-		*/
+        Next
+    EndIf       
+	_oModel:DeActivate()
+	_oModel:Destroy()
+	_oModel := NIL
+
+End Sequence 
+If Select(_cAliasPesq) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif
+
+Return Nil 
+
+
+
+
+/*/{Protheus.doc} MenuModelDef
+Modelo de Dados 		
+@author 	DAC
+@since 		
+@version 	undefined
+@param 		
+@type 		Static function
+@ Obs		
+@history    
+/*/
+Static Function ModelDef()
+Local _oModel    := Nil
+Local _oStruZZN  := FWFormStruct(1, "ZZN")
+Local _oStruZZP  := FWFormStruct(1, "ZZP")
+
+	_oModel := FWModelActive()
+	// Cria o objeto do Modelo de Dados
+	_oModel := MPFormModel():New('ZPF25MDL',  /*bPreValidacao*/, /*bPosValidacao*/, /*bCommit*/, /*bCancel*/ )
+	// Adiciona ao modelo uma estrutura de formulário de edição por campo
+	_oModel:AddFields( 'ZZNMASTER', /*cOwner*/, _oStruZZN, /*bPreValidacao*/, /*bPosValidacao*/, /*bCarga*/ )
+   	_oModel:AddGrid('ZZPDETAIL','ZZNMASTER',_oStruZZP,/*bLinePreValid*/,/*bLinePosValid*/,/*bPreValid*/,/*bPosValid*/, /*bCarga*/)
+ 	_oModel:SetRelation("ZZPDETAIL",{{"ZZP_FILIAL","xFilial('ZZP')"},{"ZZP_CODPRV", "ZZN_CODPRV"}},ZZP->(IndexKey(1)))
+	//_oModel:SetPrimaryKey({'ZO_FILIAL', 'ZO_CODIGO' })
+    _oModel:SetPrimaryKey({})
+
+   	//_oModel:GetModel( 'ZZNMASTER' ):SetOnlyQuery ( .T. )
+   	//_oModel:GetModel( 'ZZPDETAIL' ):SetOnlyQuery ( .T. )
+
+	// Adiciona a descricao do Modelo de Dados
+    _oModel:SetDescription("Previsão Faturamento")
+	// Adiciona a descricao do Componente do Modelo de Dados
+    _oModel:GetModel("ZZNMASTER"):SetDescription("Previsao Faturamento")
+
+    // É necessário que haja alguma alteração na estrutura Field
+    //_oModel:setActivate({ |_oModel| onActivate(_oModel)})
+
+	/*
+	If _oModel:IsActive() 
+		_oModel:DeActivate() 
+	EndIf
+	_oModel:Activate()
+	*/
+Return _oModel
+
+
+/*/{Protheus.doc} ViewDef
+View 		
+@author 	DAC
+@since 		15/07/2023
+@version 	undefined
+@param 		
+@type 		Static function
+@ Obs		
+@history    
+/*/
+Static Function ViewDef()
+    Local _oModel       := ModelDef()                       // Cria um objeto de Modelo de Dados baseado no ModelDef do fonte informado
+    Local _oStruZZN     := FWFormStruct(2, "ZZN")           // Cria a estrutura a ser usada na View
+    Local _oStruZZP     := FWFormStruct(2, "ZZP")           // Cria a estrutura a ser usada na View
+    Local _oView         := Nil
+
+    _oView := FWFormView():New()
+    _oView:SetModel(_oModel)
+    _oView:AddField("VIEW_ZZN" , _oStruZZN , "ZZNMASTER")
+    _oView:AddGrid('VIEW_ZZP'  , _oStruZZP , "ZZPDETAIL")
+    //Setando o dimensionamento de tamanho
+    _oView:CreateHorizontalBox('PAI' ,20)
+    _oView:CreateHorizontalBox('FILHO',80)
+
+    //Amarrando a view com as box
+    _oView:SetOwnerView('VIEW_ZZN','PAI')
+    _oView:SetOwnerView('VIEW_ZZP','FILHO')
+
+    //Habilitando título
+    _oView:EnableTitleView('VIEW_ZZN','Cabeçalho - Previsão Faturamento')
+    _oView:EnableTitleView('VIEW_ZZP','Itens - Previsão Faturamento')
+
+Return _oView
+
+
