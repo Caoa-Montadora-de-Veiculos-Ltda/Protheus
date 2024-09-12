@@ -56,7 +56,7 @@ If aParam <> NIL
 
 	If cIdPonto == 'FORMCOMMITTTSPOS'
 	
-		IF ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) .AND. Substr(M->B1_COD,1,1) = "R" //somente Peças Barueri
+		IF ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //.AND. Substr(M->B1_COD,1,1) = "R" //somente Peças Barueri
 	
 			If nOpcx == 3  .or.  nOpcx == 4  .or.  nOpcx == 5  //Inclusão ou Alteração ou Excluir
         		cCodProd := M->B1_COD
