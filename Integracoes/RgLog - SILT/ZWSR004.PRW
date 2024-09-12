@@ -108,7 +108,8 @@ Local aResRg     := { .F. }
 Private _cEmpWis := ""
 Private _cDepWis := "RGLOG"
 
-Default cCodProd    := ""
+Default cCodProd   := ""
+Default _lVisual   := .F.
 
 Conout("WSR004 - Integraçao de envio de produto para RGLOG - Inicio "+DtoC(date())+" "+Time())
 
@@ -129,11 +130,14 @@ Conout("WSR004 - Integraçao de envio de produto para RGLOG - Inicio "+DtoC(date(
 	cQrySB1 += " 	AND	SB1.D_E_L_E_T_ = ' '"						                                                                    + CRLF
     cQrySB1 += " 	AND	SB1.B1_XINTEG = 'S'"	       				                                                                    + CRLF
 
-    If Empty(cCodProd) 
-        //--Chamada via schedule
-        cQrySB1 += "    AND SB1.B1_COD LIKE 'R%' "  + CRLF //--Regra semelhante a utilizada no PE_MATA010
-    Else
+    If !Empty(cCodProd) 
+   
         cQrySB1 += " 	AND	SB1.B1_COD   = '" + alltrim(cCodProd) + "'"		        + CRLF
+    
+    Elseif AllTrim(FwCodEmp()) <> "9010"
+        //--Chamada via schedule
+        cQrySB1 += "    AND SB1.B1_COD LIKE 'R%' "  + CRLF 
+    
     EndIf
 
 	DbUseArea(.T.,"TOPCONN",TcGenQry(,,cQrySB1),_cAlsSB1,.T.,.F.)
