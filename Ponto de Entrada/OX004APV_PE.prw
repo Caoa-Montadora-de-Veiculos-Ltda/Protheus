@@ -23,7 +23,7 @@ Begin Sequence
     Endif    
 	If Type("aOrcs") == "A" .and. _lRet
 		//funcionalidade para gravar mensagens e dados faltantes DAC 22/02/2022
-		OX004APVMS()  
+		_lRet := OX004APVMS()  
 	Endif
 	_lPrcZPECF013 := .T.  //indica que esta sendo processado faturamento
 End Sequence
@@ -207,6 +207,8 @@ Local _nPesoC	:= 0
 Local _nPosCpo 
 Local _nPos
 Local _cNumOrc
+Local _cModal := ""
+local _cTped  := ""
 
 Begin Sequence
 	VS1->(DbSetOrder(1))
@@ -281,9 +283,13 @@ Begin Sequence
 		VX5->(dbSetOrder(1))
 		If VX5->(dbSeek(xFilial("VX5")+"Z00"+VS1->VS1_XTPPED))
             _cTped := VX5->VX5_DESCRI
+		ELSE
+			_lRet := .F.
 		EndIf
         If VX5->(dbSeek(xFilial("VX5")+"Z01"+VS1->VS1_XTPTRA))
             _cModal := VX5->VX5_DESCRI
+		ELSE
+			_lRet := .F.
 		EndIf
 	EndIf
 	//_cTped   := POSICIONE("VX5",1,XFILIAL("VX5")+"Z00"+VS1->VS1_XTPPED,"VX5_DESCRI")   //X3CBOXDESC('VS1_TIPORC', VS1->VS1_TIPORC)                                                                                       

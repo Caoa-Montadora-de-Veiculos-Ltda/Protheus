@@ -177,104 +177,104 @@ Static Function ZWSR007PRC(_cAglutina, _cPicking, _lDataEnv, _oSay, _lJob)
 				Aadd(_aMsgRet, {301,"Problemas no envio RG LOG Não localizados registros Cabeçalho Picking "+_cPicking+" para envio Separação "}) 
 				_lRet	:= .F.
 				Break
-			Endif	
-		//Caso não seja processamento em job chamo para liberar o processo de encio	
-		Else
-			StartJob("U_XFUNIPOSTO",GetEnvServer(),.F.,VS1->VS1_NUMORC, cEmpAnt, cFilAnt, /*_nReprocessado*/, /*_oSay*/)
-		Endif
+			
+				//Caso não seja processamento em job chamo para liberar o processo de encio	
+			Else
+				StartJob("U_XFUNIPOSTO",GetEnvServer(),.F.,VS1->VS1_NUMORC, cEmpAnt, cFilAnt, /*_nReprocessado*/, /*_oSay*/)
+			Endif
 
-		_cEmpWis := ""
-		_cDepWis := ""
-        If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
-            If AllTrim(VS1->VS1_XMARCA) =="CHE"
-                _cEmpWis := "1002"
-			    _cDepWis := "PREP"
-            ElseIf AllTrim(VS1->VS1_XMARCA) =="SBR"
-                _cEmpWis := "1006"
-			    _cDepWis := "RGLOG"
-            ElseIf AllTrim(VS1->VS1_XMARCA) =="HYU"
-                _cEmpWis := "1006"
-			    _cDepWis := "RGLOG"
-            EndIf
-        ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
-            If AllTrim(VS1->VS1_XMARCA) =="HYU"
-                _cEmpWis := "1008"
-			    _cDepWis := "RGLOG"
-            EndIf
-		EndIf
-	
-	    FreeObj(_oJson)
-    	_oJson 				:= JsonObject():new()
-		_oJson['usuario']	:= _cUsuario
-		_oJson['senha']		:= _cSenha
-    	_oJson['pedido'] 	:= JSonObject():New()
-		_oJson['pedido'] ['nu_pedido']			:= _cPicking
-		_oJson['pedido'] ['cd_cliente']			:= Val(SA1->A1_CGC) //Conversão para inteiro - Alteração solicitada por Sidney em 31/01/2022
-		_oJson['pedido'] ['cd_empresa']			:= _cEmpWis
-		_oJson['pedido'] ['cd_situacao']		:= _nSituacao
-		_oJson['pedido'] ['dt_addrow']			:= ""  	//DtoC(Date())+" "+SubsTr(time(),1,8)
-		_oJson['pedido'] ['id_processado']		:= "N"
-		_oJson['pedido'] ['cd_error']			:= ""
-		_oJson['pedido'] ['dt_processado']		:= ""		//DtoC(Date())+" "+SubsTr(time(),1,8)
-		_oJson['pedido'] ['tp_pedido']			:= zBuscaTp(AllTrim(VS1->VS1_XTPPED)) //"C" 		//AllTrim(VS1->VS1_XTPPED) precisar de uma tabela de /para Cirilo ira passar os códigos DAC 21/12/2021
-		_oJson['pedido'] ['cd_rota']			:= "2"
-		_oJson['pedido'] ['ds_arquivo']			:= ""
-		_oJson['pedido'] ['referencia']			:= ""
-		_oJson['pedido'] ['cd_assunto']			:= ""
-		_oJson['pedido'] ['ds_assunto']			:= ""
-		_oJson['pedido'] ['cd_posto']			:= ""
-		_oJson['pedido'] ['descricao']			:= ""
-		_oJson['pedido'] ['nr_kit']				:= ""
-		_oJson['pedido'] ['cd_linha_montagem']	:= ""
-		_oJson['pedido'] ['nu_interface']		:= ""
-		_oJson['pedido'] ['cd_porta']			:= "1"      	//Verificar valor default sera definido Sidney
-		_oJson['pedido'] ['nu_pedido_origem']	:= _cPicking
-		_oJson['pedido'] ['cd_produto']			:= ""
-		_oJson['pedido'] ['cd_carga']			:= "1"
-		_oJson['pedido'] ['dt_faturamento']		:= ""
-		_oJson['pedido'] ['tp_frete']			:= ""
-		_oJson['pedido'] ['id_cliente_retira']	:= ""
-		_oJson['pedido'] ['cd_onda']			:= ""	
-		_oJson['pedido'] ['cd_transportador']	:= ""
-		_oJson['pedido'] ['ds_transportadora']	:= ""
-		_oJson['pedido'] ['cd_registro']		:= ""
-		_oJson['pedido'] ['ds_cliente']			:= AllTrim(SA1->A1_NOME)
-		_oJson['pedido'] ['nu_seq_entrega']		:= 0
-		_oJson['pedido'] ['qt_itens']			:= ""
-		_oJson['pedido'] ['id_cross_docking']	:= ""
-		_oJson['pedido'] ['cd_deposito']		:= _cDepWis
-		_oJson['pedido'] ['cd_roteiro']			:= ""
-		_oJson['pedido'] ['nu_agenda']			:= ""
-		_oJson['pedido'] ['ds_placa']			:= SA1->A1_EST	//"" alterado conforme solicitação Sidnei RG LOG tem que ser UF do cliente  DAC 16/02/2022
-		_oJson['pedido'] ['cd_freteiro']		:= ""
-		_oJson['pedido'] ['nm_municipio']		:= ""
-		_oJson['pedido'] ['dt_liberacao_pedido']:= ""
-		_oJson['pedido'] ['cd_cgc_cliente']		:= Val(SA1->A1_CGC) //Conversão para inteiro - Alteração solicitada por Sidney em 31/01/2022
-		_oJson['pedido'] ['nm_representante']	:= ""
-		_oJson['pedido'] ['cd_representante']	:= ""
-		_oJson['pedido'] ['ds_bairro']			:= AllTrim(SA1->A1_BAIRRO)
-		_oJson['pedido'] ['ds_cidade']			:= AllTrim(SA1->A1_MUN)
-		_oJson['pedido'] ['ds_endereco']		:= AllTrim(SA1->A1_END)
-		_oJson['pedido'] ['nm_solicitante']		:= ""
-		_oJson['pedido'] ['nm_destinatario']	:= ""
-		_oJson['pedido'] ['nu_picking']			:= _cPicking
-		_oJson['pedido'] ['nu_pedido_referencia']:= ""
-		_oJson['pedido'] ['ds_meio_transp']		:= ""
-    	_oJson['pedido'] ['item']  				:= ZWSR007ITE( _oJson, _cPicking, @_lRet, @_aMsgRet)
+			_cEmpWis := ""
+			_cDepWis := ""
+			If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
+				If AllTrim(VS1->VS1_XMARCA) =="CHE"
+					_cEmpWis := "1002"
+					_cDepWis := "PREP"
+				ElseIf AllTrim(VS1->VS1_XMARCA) =="SBR"
+					_cEmpWis := "1006"
+					_cDepWis := "RGLOG"
+				ElseIf AllTrim(VS1->VS1_XMARCA) =="HYU"
+					_cEmpWis := "1006"
+					_cDepWis := "RGLOG"
+				EndIf
+			ElseIf( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
+				If AllTrim(VS1->VS1_XMARCA) =="HYU"
+					_cEmpWis := "1008"
+					_cDepWis := "RGLOG"
+				EndIf
+			EndIf
+		
+			FreeObj(_oJson)
+			_oJson 				:= JsonObject():new()
+			_oJson['usuario']	:= _cUsuario
+			_oJson['senha']		:= _cSenha
+			_oJson['pedido'] 	:= JSonObject():New()
+			_oJson['pedido'] ['nu_pedido']			:= _cPicking
+			_oJson['pedido'] ['cd_cliente']			:= Val(SA1->A1_CGC) //Conversão para inteiro - Alteração solicitada por Sidney em 31/01/2022
+			_oJson['pedido'] ['cd_empresa']			:= _cEmpWis
+			_oJson['pedido'] ['cd_situacao']		:= _nSituacao
+			_oJson['pedido'] ['dt_addrow']			:= ""  	//DtoC(Date())+" "+SubsTr(time(),1,8)
+			_oJson['pedido'] ['id_processado']		:= "N"
+			_oJson['pedido'] ['cd_error']			:= ""
+			_oJson['pedido'] ['dt_processado']		:= ""		//DtoC(Date())+" "+SubsTr(time(),1,8)
+			_oJson['pedido'] ['tp_pedido']			:= zBuscaTp(AllTrim(VS1->VS1_XTPPED)) //"C" 		//AllTrim(VS1->VS1_XTPPED) precisar de uma tabela de /para Cirilo ira passar os códigos DAC 21/12/2021
+			_oJson['pedido'] ['cd_rota']			:= "2"
+			_oJson['pedido'] ['ds_arquivo']			:= ""
+			_oJson['pedido'] ['referencia']			:= ""
+			_oJson['pedido'] ['cd_assunto']			:= ""
+			_oJson['pedido'] ['ds_assunto']			:= ""
+			_oJson['pedido'] ['cd_posto']			:= ""
+			_oJson['pedido'] ['descricao']			:= ""
+			_oJson['pedido'] ['nr_kit']				:= ""
+			_oJson['pedido'] ['cd_linha_montagem']	:= ""
+			_oJson['pedido'] ['nu_interface']		:= ""
+			_oJson['pedido'] ['cd_porta']			:= "1"      	//Verificar valor default sera definido Sidney
+			_oJson['pedido'] ['nu_pedido_origem']	:= _cPicking
+			_oJson['pedido'] ['cd_produto']			:= ""
+			_oJson['pedido'] ['cd_carga']			:= "1"
+			_oJson['pedido'] ['dt_faturamento']		:= ""
+			_oJson['pedido'] ['tp_frete']			:= ""
+			_oJson['pedido'] ['id_cliente_retira']	:= ""
+			_oJson['pedido'] ['cd_onda']			:= ""	
+			_oJson['pedido'] ['cd_transportador']	:= ""
+			_oJson['pedido'] ['ds_transportadora']	:= ""
+			_oJson['pedido'] ['cd_registro']		:= ""
+			_oJson['pedido'] ['ds_cliente']			:= AllTrim(SA1->A1_NOME)
+			_oJson['pedido'] ['nu_seq_entrega']		:= 0
+			_oJson['pedido'] ['qt_itens']			:= ""
+			_oJson['pedido'] ['id_cross_docking']	:= ""
+			_oJson['pedido'] ['cd_deposito']		:= _cDepWis
+			_oJson['pedido'] ['cd_roteiro']			:= ""
+			_oJson['pedido'] ['nu_agenda']			:= ""
+			_oJson['pedido'] ['ds_placa']			:= SA1->A1_EST	//"" alterado conforme solicitação Sidnei RG LOG tem que ser UF do cliente  DAC 16/02/2022
+			_oJson['pedido'] ['cd_freteiro']		:= ""
+			_oJson['pedido'] ['nm_municipio']		:= ""
+			_oJson['pedido'] ['dt_liberacao_pedido']:= ""
+			_oJson['pedido'] ['cd_cgc_cliente']		:= Val(SA1->A1_CGC) //Conversão para inteiro - Alteração solicitada por Sidney em 31/01/2022
+			_oJson['pedido'] ['nm_representante']	:= ""
+			_oJson['pedido'] ['cd_representante']	:= ""
+			_oJson['pedido'] ['ds_bairro']			:= AllTrim(SA1->A1_BAIRRO)
+			_oJson['pedido'] ['ds_cidade']			:= AllTrim(SA1->A1_MUN)
+			_oJson['pedido'] ['ds_endereco']		:= AllTrim(SA1->A1_END)
+			_oJson['pedido'] ['nm_solicitante']		:= ""
+			_oJson['pedido'] ['nm_destinatario']	:= ""
+			_oJson['pedido'] ['nu_picking']			:= _cPicking
+			_oJson['pedido'] ['nu_pedido_referencia']:= ""
+			_oJson['pedido'] ['ds_meio_transp']		:= ""
+			_oJson['pedido'] ['item']  				:= ZWSR007ITE( _oJson, _cPicking, @_lRet, @_aMsgRet)
 
-		If !_lRet
-			_lRet := .F.
-			Break
-		EndIf
-		_aNumOrc := {}
-		//Guardo orçamentos para poder agrupar os produtos nos itens
-		//desta forma passo os orçamentos que ja foram enviados em ZWSR007ITE enviara somente VS3 nesta função conforme numero do picking
-		_cObs := "Pick "+AllTrim(_cPicking)+" ref.orc.fases " 
-  		While (_cAlias)->(!Eof()) .And. (_cAlias)->VS1_XPICKI == _cPicking 
-			_nPos := Ascan(_aNumOrc,{|x| x[1] == (_cAlias)->VS1_NUMORC})
-			If  _nPos == 0 .and. (_cAlias)->NREGVS1 > 0
-				Aadd(_aNumOrc,{(_cAlias)->VS1_NUMORC,(_cAlias)->NREGVS1})
-				//_cObs += AllTrim( (_cAlias)->VS1_NUMORC )+" "  //Não sera necessário mandar será tratado no SC5 conforme alinhado com Zé DAC  22/02/2022 
+			If !_lRet
+				_lRet := .F.
+				Break
+			EndIf
+			_aNumOrc := {}
+			//Guardo orçamentos para poder agrupar os produtos nos itens
+			//desta forma passo os orçamentos que ja foram enviados em ZWSR007ITE enviara somente VS3 nesta função conforme numero do picking
+			_cObs := "Pick "+AllTrim(_cPicking)+" ref.orc.fases " 
+			While (_cAlias)->(!Eof()) .And. (_cAlias)->VS1_XPICKI == _cPicking 
+				_nPos := Ascan(_aNumOrc,{|x| x[1] == (_cAlias)->VS1_NUMORC})
+				If  _nPos == 0 .and. (_cAlias)->NREGVS1 > 0
+					Aadd(_aNumOrc,{(_cAlias)->VS1_NUMORC,(_cAlias)->NREGVS1})
+					//_cObs += AllTrim( (_cAlias)->VS1_NUMORC )+" "  //Não sera necessário mandar será tratado no SC5 conforme alinhado com Zé DAC  22/02/2022 
 				EndIf
 				//-- Guardo recnos para gravação do VS1_PICKI em todos os registros da VS1
 				//-- em caso de sucesso na integração do pedido - Fagner - 07/01/2021

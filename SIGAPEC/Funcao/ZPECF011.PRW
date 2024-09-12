@@ -30,6 +30,7 @@ F 	- Função
 
 User Function ZPECF011(_oJson)
 Local _aMsg		:= {}
+Private _lResWIS:= .F.
 
 Begin Sequence
 	Conout("INICIANDO FUNCIONALIDADE ZPECF011 em "+DtoC(Date())+" as "+Time())
@@ -192,7 +193,7 @@ If !_lRet .Or. _lDivergeWis
  		Conout( "[ZPECF011] Não foi possivel gravar Status divergencia WIS, ERRO UPD SZK "+TCSQLError())
 	Endif
 	//Se estiver com divergencia cancelar picking
-	If _lDivergeWis
+	If _lDivergeWis //.and. !_lResWIS
 		_lCancela := U_XAPAGAPicking(_cPicking, _cFaseCancela, .F. /*_lMsg*/, @_aMsg)
 		If !_lCancela
 			_cObs += "Não foi possivel cancelar o Picking "+_cPicking+" o mesmo estara com inciação de divergente (Status = D) verificar " 
@@ -340,7 +341,7 @@ Static Function ZPEC11GPIK(_oJson, _cTipo, _aRegVS1, _lDivergencia )
 			Endif 
 			//Caso tenha dado problema abortar
 			If !_lRet	
-				Disarmtransaction()
+				//Disarmtransaction()
 			Endif
 		End Transaction 
 		
@@ -619,12 +620,15 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
 		Endif
 
 		//Não reconhece BeginSQL
-		Aadd(_aStru, { "PED"		, TamSX3("ZK_XPICKI")[3]	, TamSX3("ZK_XPICKI")[1]	, TamSX3("ZK_XPICKI")[2]	, PesqPict("SZK","ZK_XPICKI")  })
-		Aadd(_aStru, { "PROD"		, TamSX3("VS3_CODITE")[3]	, TamSX3("VS3_CODITE")[1]	, TamSX3("VS3_CODITE")[2]	, PesqPict("VS3","VS3_CODITE") })
-		Aadd(_aStru, { "QT_PROT"	, TamSX3("VS3_QTDITE")[3]	, TamSX3("VS3_QTDITE")[1]	, TamSX3("VS3_QTDITE")[2]	, PesqPict("VS3","VS3_QTDITE") })
-		Aadd(_aStru, { "QT_WIS"		, TamSX3("VS3_QTDITE")[3]	, TamSX3("VS3_QTDITE")[1]   , TamSX3("VS3_QTDITE")[2]	, PesqPict("VS3","VS3_QTDITE") })
-		Aadd(_aStru, { "ARMAZEM"	, TamSX3("VS3_LOCAL")[3]	, TamSX3("VS3_LOCAL")[1]	, TamSX3("VS3_LOCAL")[2]	, PesqPict("VS3","VS3_LOCAL")  })
-		Aadd(_aStru, { "DT_INV"	    , TamSX3("B2_DTINV")[3]		, TamSX3("B2_DTINV")[1]   	, TamSX3("B2_DTINV")[2]		, PesqPict("SB2","B2_DTINV")   })
+		Aadd(_aStru, { "NUMORC"		, TamSX3("VS3_NUMORC" )[3]	, TamSX3("VS3_NUMORC" )[1]	, TamSX3("VS3_NUMORC" )[2]	, PesqPict("VS3","VS3_NUMORC" ) })
+		Aadd(_aStru, { "SEQ"		, TamSX3("VS3_SEQUENC")[3]	, TamSX3("VS3_SEQUENC")[1]	, TamSX3("VS3_SEQUENC")[2]	, PesqPict("VS3","VS3_SEQUENC") })
+		Aadd(_aStru, { "RECNOS"		, "N"	                    , 15	                    , 0                      	, "@E 999999999999999"          })
+		Aadd(_aStru, { "PED"		, TamSX3("ZK_XPICKI"  )[3]	, TamSX3("ZK_XPICKI"  )[1]	, TamSX3("ZK_XPICKI"  )[2]	, PesqPict("SZK","ZK_XPICKI" )  })
+		Aadd(_aStru, { "PROD"		, TamSX3("VS3_CODITE" )[3]	, TamSX3("VS3_CODITE" )[1]	, TamSX3("VS3_CODITE" )[2]	, PesqPict("VS3","VS3_CODITE")  })
+		Aadd(_aStru, { "QT_PROT"	, TamSX3("VS3_QTDITE" )[3]	, TamSX3("VS3_QTDITE" )[1]	, TamSX3("VS3_QTDITE" )[2]	, PesqPict("VS3","VS3_QTDITE")  })
+		Aadd(_aStru, { "QT_WIS"		, TamSX3("VS3_QTDITE" )[3]	, TamSX3("VS3_QTDITE" )[1]  , TamSX3("VS3_QTDITE" )[2]	, PesqPict("VS3","VS3_QTDITE")  })
+		Aadd(_aStru, { "ARMAZEM"	, TamSX3("VS3_LOCAL"  )[3]	, TamSX3("VS3_LOCAL"  )[1]	, TamSX3("VS3_LOCAL"  )[2]	, PesqPict("VS3","VS3_LOCAL" )  })
+		Aadd(_aStru, { "DT_INV"	    , TamSX3("B2_DTINV"   )[3]	, TamSX3("B2_DTINV"   )[1]  , TamSX3("B2_DTINV"   )[2]	, PesqPict("SB2","B2_DTINV"  )  })
 
 
 		_oTable := FWTemporaryTable():New()
@@ -694,30 +698,41 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
 
 		_cQuery += " SELECT DISTINCT MRG_PED.* "													+ CRLF
 		_cQuery += "				, NVL(SEP_PROT.QT,0) QT_PROT "									+ CRLF
-		_cQuery += "				, NVL(SEP_WIS.CONF,0) QT_WIS "									+ CRLF
+		
+		//if alltrim(_cPicking) <> "01138221"
+		_cQuery += "				, NVL(SEP_WIS.CONF,0) QT_WIS "								+ CRLF
+		//Else
+		//	_cQuery += "				, 0 as  QT_WIS "											+ CRLF
+		//EndIf
+		
 		_cQuery += "				, SEP_PROT.ARMAZ ARMAZEM "									    + CRLF
 		_cQuery += "				, SEP_PROT.DT_INV DT_INV "									    + CRLF
 		_cQuery += " FROM ( "																		+ CRLF
-		_cQuery += "		SELECT 	CAST(DETWIS.NU_PEDIDO AS VARCHAR(8)) PED "						+ CRLF
-		_cQuery += "				,CAST(DETWIS.CD_PRODUTO AS CHAR(27)) PROD "						+ CRLF
+		_cQuery += "		SELECT 	'WIS' AS NUMORC "												+ CRLF
+		_cQuery += "				, CAST(DETWIS.NU_SEQ_PEDIDO AS VARCHAR(3)) AS SEQ, 0 AS RECNOS "				+ CRLF
+		_cQuery += "				, CAST(DETWIS.NU_PEDIDO AS VARCHAR(8)) PED "					+ CRLF
+		_cQuery += "				, CAST(DETWIS.CD_PRODUTO AS CHAR(27)) PROD "					+ CRLF
 		_cQuery += " 		FROM " 		 + _cConectDetWis + " DETWIS "								+ CRLF
 		_cQuery += "		WHERE DETWIS.DT_UPROW 		>= TO_DATE('2022-05-22','YYYY-MM-DD') " 	+ CRLF
 		_cQuery += "			AND DETWIS.NU_PEDIDO 	= "+ AllTrim(Str(_nPedido))      			+ CRLF	//--AND DETWIS.CD_PRODUTO = 'R-59122SC041'
 		//--VALIDAÇÃO DE PARIDADE DE LINHAS
 		_cQuery += "		UNION "																	+ CRLF	
-		_cQuery += "		SELECT LTRIM(VS3.VS3_XPICKI,0) PED_PROT, VS3.VS3_CODITE PROD_PROT "		+ CRLF
-		_cQuery += "		FROM "+RetSqlName("VS3")+" VS3  "										+ CRLF
+		_cQuery += "		SELECT 	VS3.VS3_NUMORC AS NUMORC "										+ CRLF
+		_cQuery += "				,VS3.VS3_SEQUEN AS SEQ , R_E_C_N_O_ AS RECNOS" 										+ CRLF	
+		_cQuery += "				,LTRIM(VS3.VS3_XPICKI,0) PED_PROT"								+ CRLF	
+		_cQuery += "				,VS3.VS3_CODITE PROD_PROT "										+ CRLF
+		_cQuery += "		FROM " + RetSqlName("VS3") + " VS3  "										+ CRLF
 		_cQuery += "		WHERE VS3.D_E_L_E_T_ 	= ' ' "											+ CRLF
-		_cQuery += "			AND VS3.VS3_FILIAL 	= '"+FwXFilial("VS3")+"' " 						+ CRLF
-		_cQuery += "			AND VS3.VS3_XPICKI 	= '"+_cPicking+"' " 							+ CRLF
-		_cQuery += "		GROUP BY VS3.VS3_XPICKI, VS3.VS3_CODITE "								+ CRLF
+		_cQuery += "			AND VS3.VS3_FILIAL 	= '" + FwXFilial("VS3") + "' " 						+ CRLF
+		_cQuery += "			AND VS3.VS3_XPICKI 	= '" + _cPicking + "' " 							+ CRLF
+		_cQuery += "		GROUP BY VS3.VS3_XPICKI, VS3.VS3_CODITE,VS3.VS3_NUMORC,VS3.VS3_SEQUEN,VS3.R_E_C_N_O_  "	+ CRLF
 		_cQuery += "	 ) MRG_PED "																+ CRLF
 		_cQuery += "LEFT JOIN SEP_WIS "																+ CRLF
 		_cQuery += "	ON LTRIM(RTRIM(SEP_WIS.PROD))=LTRIM(RTRIM(MRG_PED.PROD)) "					+ CRLF
 		_cQuery += "LEFT JOIN SEP_PROT "															+ CRLF
 		_cQuery += "	ON LTRIM(RTRIM(SEP_PROT.PROD))=LTRIM(RTRIM(MRG_PED.PROD)) "					+ CRLF
-		//--WHERE NVL(SEP_WIS.CONF,'0') != NVL(SEP_PROT.QT,'0')
-		_cQuery += "ORDER BY MRG_PED.PED "															+ CRLF
+		_cQuery += " WHERE MRG_PED.NUMORC <> 'WIS' " 												+ CRLF
+		_cQuery += "ORDER BY MRG_PED.PED,MRG_PED.NUMORC,MRG_PED.SEQ "								+ CRLF
 				
 		//Alterado conforme acima DAC 31/08/2023
 		/* 
@@ -787,7 +802,7 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
 			_lRet := .T.
 			Break	
 		Endif 	
-
+		_lResWIS    := .F.
 		_aDiverge 	:= {}
 		_aMsgCAOA	:= {}
 		_lAborta 	:= .F.
@@ -902,7 +917,14 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
 									(_cAliasPesq)->QT_WIS,;  
 									(_cAliasPesq)->QT_PROT,;
 									_cErro}) 
-				Endif	
+				Endif
+				If (_cAliasPesq)->QT_WIS == 0 .and. (_cAliasPesq)->QT_PROT > 0
+					dbselectarea("VS3")
+					VS3->(dbsetorder(1))
+					VS3->(DBGoto((_cAliasPesq)->RECNOS))
+					//U_XMOVA261((_cAliasPesq)->NUMORC, (_cAliasPesq)->PROD, (_cAliasPesq)->ARMAZEM, nil, (_cAliasPesq)->QT_PROT, (_cAliasPesq)->RECNOS,"ZPEC11VWIS")	
+					//_lResWIS := .T.
+				EndIf
 			Endif
 			(_cAliasPesq)->(DbSkip())
 		EndDo
@@ -1195,7 +1217,7 @@ Begin Sequence
 		If _lReserva
 			_cMsg := "Não foi possivel criar a reserva do item, orçamento "+_cNumOrc+" devido a Divergencia na qtde "
 		Else 
-			Aadd(_aMsgCAOA, "Não foi possivel retirar a reserva do item, alterado orçamento "+_cNumOrc+" devido a Divergencia na qtde")
+			_cMsg := "Não foi possivel retirar a reserva do item, alterado orçamento "+_cNumOrc+" devido a Divergencia na qtde"
 		Endif 	
 		Aadd(_aMsgCAOA, _cMsg )
 		Break
