@@ -39,6 +39,7 @@ Local _lZPECF008    := SuperGetMV( "CMV_PEC009"  ,,.T. )   //Parâmetro para indi
 //Local _lAvaliaOrc   := SuperGetMV( "CMV_PEC032"  ,,.F. )   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
 //Local _lAvaliaItem  := SuperGetMV( "CMV_PEC033"  ,,.F. )   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
 //Local _cArmazemFDR 	:= AllTrim(SuperGetMV( "CMV_PEC036" ,,"" ))   //Parâmetro para indicação de utilização de validação armazem Franco da Rocha
+
 Local _cArmazem    	:= AllTrim(SuperGetMV( "CMV_PEC050"  ,,"" ))   //Parâmetro para indicação de utilização do programa tendo como Default Verdadeiro, não é necessário a criação do mesmo
 Local _aArmazem 	:= {}
 //Local _cFilDe 	:= Space(TamSx3("VS1_FILIAL")[1])
@@ -80,6 +81,7 @@ Begin Sequence
 	Endif
 	*/
 	//If U_ZGENUSER( RetCodUsr() ,"ZPECF008" ,.T.)
+
 	If Empty(_cArmazem)
 		Help( , ,"Atenção",,"Não informado parâmetro CMV_PEC050 de Armazém a ser avaliado na Onda !",4,1) //Atenção / 
 		_lRet := .F.
@@ -103,6 +105,7 @@ Begin Sequence
 		_lRet := .F.
 		Break	
 	Endif 
+
 	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
 		SELECT 	VX5.VX5_CHAVE,
 				VX5.VX5_CODIGO,
@@ -145,6 +148,7 @@ Begin Sequence
 	Next
 	aAdd(_aPar,{3,OemToAnsi(STR0039) ,2 ,{STR0005,STR0006}	,80,"",.F.})  //Todas Alternativas / 1=Sim 2=Não
 	aAdd(_aPar,{3,OemToAnsi(STR0044) ,2 ,{STR0005+" (Se orçamento inicial não preenchido e final com ZZZZZZZZ)",STR0006}	,175,"",.T.})  //BY PASS / 1=Sim 2=Não
+
 	// Monta Tela principal
 	AADD(_aSays,OemToAnsi(STR0020)) //Este Programa tem  como  Objetivo  realizar a separação de Produtos
 	AADD(_aSays,OemToAnsi(STR0030)) //constantes  no Orçamento, sendo aglutinado conforme  definições 
@@ -153,9 +157,11 @@ Begin Sequence
 	AADD(_aSays,OemToAnsi(STR0033)) //Depois clique no Botão OK.
 	AADD(_aSays,OemToAnsi("")) 		//""
 	AADD(_aSays,OemToAnsi("ARMAZÉNS DE PROCESSAMENTO DA ONDA ==> "+ AllTrim(_cArmazem))) //Depois clique no Botão OK.
+
 	AADD(_aButtons, { 1,.T.,{|o| FechaBatch(),_nRet:=1											}})
 	AADD(_aButtons, { 2,.T.,{|o| FechaBatch()													}})
 	AADD(_aButtons, { 5,.T.,{|o| ParamBox(_aPar,_cTitle,@_aRet,,,.T.,,,,"ZPECF008",.T.,.T.) 			}})
+
 	FormBatch( _cCadastro, _aSays, _aButtons )
 	If _nRet <> 1
 		Break
@@ -334,12 +340,13 @@ Begin Sequence
 	EndIf
 	//Verificar por código de produto conforme solicitado por Zé DAC 21/12/2021
 	If !Empty(_cCodProd)
-		_cWhere += "AND (SELECT VS3.VS3_NUMORC "
-		_cWhere += " 	FROM "+ RetSQLName('VS3') +" VS3 "
-		_cWhere += "		WHERE 	VS3.VS3_FILIAL = '"+ XFilial("VS3")  +"' "	
-		_cWhere += "			AND VS3.VS3_NUMORC = VS1.VS1_NUMORC  "	
-		_cWhere += "			AND VS3.VS3_CODITE = '"+ _cCodProd		 +"' "
-		_cWhere += "			AND VS3.D_E_L_E_T_ = ' ' ) = VS1.VS1_NUMORC  " + CRLF
+		_cWhere += CRLF + " 	AND VS1.VS1_NUMORC in (SELECT VS3.VS3_NUMORC "
+        _cWhere += CRLF + " 		FROM " + RetSQLName('VS3') + " VS3 "
+       	_cWhere += CRLF + "  		WHERE   VS3.VS3_FILIAL = '" + XFilial("VS3") + "' "
+        _cWhere += CRLF + "     		AND VS3.VS3_NUMORC = VS1.VS1_NUMORC "
+        _cWhere += CRLF + "     		AND VS3.VS3_CODITE = '" + _cCodProd + "' "
+        _cWhere += CRLF + "     		AND VS3.D_E_L_E_T_ = ' ' ) "
+
 	EndIf
 
 	If _nXBO == 1
@@ -363,16 +370,16 @@ Begin Sequence
 	//acrecentado validações gerais
 	_cWhere += 	" AND VS1.VS1_FILIAL	= '" +XFilial("VS1")+ "' " + CRLF
 	//caso seja armazem Franco da Rocha não pode tratar com o numero do orçamento somente com o numero de aglutinação DAC 02/02/2023
-	_cWhere += 	" AND VS1.VS1_NUMORC BETWEEN '" +_cNumOrcDe+ "'	AND '" +_cNumOrcAte+ "' " + CRLF 
+	_cWhere += 	" AND VS1.VS1_NUMORC BETWEEN '" +      _cNumOrcDe + "' AND '" +      _cNumOrcAte  + "' " + CRLF 
+	_cWhere += 	" AND VS1.VS1_CLIFAT BETWEEN '" +      _cCliFatDe + "' AND '" +      _cCliFatAte  + "' " + CRLF
+	_cWhere += 	" AND VS1.VS1_LOJA   BETWEEN '" +      _cLojaCFDe + "' AND '" +      _cLojaCFAte  + "' " + CRLF
+	_cWhere += 	" AND VS1.VS1_XDTIMP BETWEEN '" + DtOS(_dDataIni) + "' AND '" + DtOS(_dDataFim)   + "' " + CRLF 
+	_cWhere += 	" AND VS1.VS1_XMARCA = '"  + _cMarca +  "' " + CRLF 
 	_cWhere += 	" AND VS1.VS1_TIPORC = '1' " + CRLF
-	_cWhere += 	" AND VS1.VS1_XMARCA = '"    +_cMarca+ "' " + CRLF 
 	_cWhere += 	" AND VS1.VS1_XPICKI = ' ' " + CRLF
-	_cWhere += 	" AND VS1.VS1_CLIFAT BETWEEN '" +_cCliFatDe+ "'	AND '" +_cCliFatAte+ "' " + CRLF
-	_cWhere += 	" AND VS1.VS1_LOJA   BETWEEN '" +_cLojaCFDe+ "'	AND '" +_cLojaCFAte+ "' " + CRLF
 	If !Empty(_cStatus)
 		_cWhere += 	" AND VS1.VS1_STATUS IN  (" +_cStatus+ ") " + CRLF
 	EndIf
-	_cWhere += 	" AND VS1.VS1_XDTIMP BETWEEN '" +DtOS(_dDataIni)+ "'	AND '" +DtOS(_dDataFim)+   "' " + CRLF 
 	
 	/*
 	VS1->VS1_STATUS == "0"  //Digitado
@@ -1056,10 +1063,13 @@ Begin Sequence
 			Loop
 		EndIf
 		//EndIf
-		If _nQtdePrd > 0  //significa que utilizou parcial não podendo zerar
+		If _nQtdePrd > 0  .or. !_lRet//significa que utilizou parcial não podendo zerar
 			_lZera := .F.
 		Else
 			_lZera := .T.
+			//if !_lRet
+			//	_lZera := .F.
+			//endIf
 		Endif	 
 
 		_cObs := If(Len(_aBak) > 0,"","Não possui Saldo total conforme parametrização  armazém "+_cArmazem) 
@@ -1349,7 +1359,7 @@ Static Function ZPECF08KIT( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _
 				_cCodKit	:= VEH->VEH_CODKIT
 				_aKit  	:= {}
 				_aBak	:= {}
-				_aRet 	:= ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodKit, _cCodItem, _cLocal, _nRegVS3, _cMarca)
+				_aRet 	:= ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodKit, _cCodItem, _cLocal, _nRegVS3, _cMarca, _cGrupo)
 				If Len(_aRet) == 0 .or. Len(_aRet[1]) == 0  //sempre tem que ter um KIT
 					_lRet := .F.
 					Break	
@@ -1385,7 +1395,7 @@ Static Function ZPECF08KIT( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _
 Return _lRet
 
 //Avaliar itens do KIT
-Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodKit, _cCodItem, _cLocal, _nRegVS3, _cMarca)
+Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodKit, _cCodItem, _cLocal, _nRegVS3, _cMarca,_cGrupo)
 	Local _lRet			:= .T.
 	Local _cAliasPesq	:= GetNextAlias()
 	Local _aKit			:= {}
@@ -1435,7 +1445,7 @@ Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodK
 			EndIf
 			SB2->(DbSetOrder(1))  //B2_FILIAL+B2_COD+B2_LOCAL
 			If !SB2->(MsSeek(XFilial("SB2")+_cCodSubst+_cLocal))
-				Aadd(_aMensAglu,"KIT - Não existe saldo do item KIT " +AllTrim(_cCodSubst)+ " para o produto " +AllTrim(_cCodKit)+" armazém "+_cLocal)	
+				Aadd(_aMensAglu,"KIT - Não existe cadastro do item KIT " +AllTrim(_cCodSubst)+ " para o produto " +AllTrim(_cCodKit)+" armazém "+_cLocal + "(SB2)")	
 				//Caso seja mandatório e não tenha saldo nenhum abortar
 				If VE8->VE8_TIPO == "1" 	
 					_aKit := {}
@@ -1479,7 +1489,7 @@ Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodK
 				Aadd(_aMensAglu,"KIT - Não existe saldo do item " +AllTrim(_cCodSubst)+ " para o produto KIT " +AllTrim(_cCodKit)+" tipo "+_cTipo)	
 				//Aadd(_aBak,{(_cAliasPesq)->NREGVE8,_nQtdePrd})  //Deverá gerar backorder caso algum atenda	
 				_nQtde 		:= _nQtdePrd   			//diferença para backorder
-				_nQtdePrd	:= _nSaldoSB2
+				_nQtdePrd	:= 0//_nSaldoSB2
 				Aadd(_aBak,{ 	_cTipo,;			//01- Tipo VEH
 								_cGrupoSubst,;		//02- Grupo do KIT a ser utilizado
 								_cCodSubst,; 		//03- Cód produto do KIT a ser utilizado
@@ -1576,8 +1586,8 @@ Static Function ZPECF8KITProcessa(_aKit, _nQtdeItem, _nRegVS3, _lParcial)
 			_lEncKit	:= If( Len(_aKit) == _nPos , .T.,.F. )  //controlar quando encerra o processo 
 			If !ZPECF08PARC( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, _cGrupoSubst, @_nQtdeItem, _nQtdePrd, _nSaldoSB2, "3", _lEncKit, _cPecKit )
 				Aadd(_aMensAglu,"KIT - Não foi possivel montar PARCIAL do Produto "+AllTrim(_cCodItem))	
-				_lRet := .F.
-				Break
+				//_lRet := .F.
+				//Break
 			Endif
 		Next _nPos
 	End Sequence
@@ -1886,7 +1896,12 @@ Static Function ZPECF08PARC( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, 
 
 			VS3->(DbDelete())
 			VS3->(MsUnlock())
+			
+			//If _cTpSub == "3"
+			//	_lRet := .T.
+			//EndIf
 			Break
+
 		Else
 			_nQtdReal := VS3->VS3_QTDITE	
 		EndIf	
@@ -1990,7 +2005,7 @@ Static Function ALTERAITParcial( _nRegVS3Sub, _cNumOrc, _cGrupo, _cCodItem, _cLo
 			VS3->VS3_GRUKIT	:= _cGrupo
 		EndIf	
 		If _cTpSub == "0"
-			_cObs := "ITEM PRODUTO " +AllTrim(_cCodItem)+ " AJUSTADO QANTIDADE PARA ORCAMENTO "+_cNumOrc
+			_cObs := "ITEM PRODUTO " +AllTrim(_cCodItem)+ " AJUSTADO QUANTIDADE PARA ORCAMENTO "+_cNumOrc
 			_cObs += " QTDE ANTERIOR "+AllTrim(STR(_nQtdeAtu))+ " ALTERADO PARA "+AllTrim(STR(_nQtdePrd))+" EM ITEM JA EXISTENTE"
 			_cObs += " OPERAÇÃO PARCIAL"
 		Else
