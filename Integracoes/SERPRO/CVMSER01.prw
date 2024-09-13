@@ -1,4 +1,4 @@
-#Include "Protheus.ch"
+//#Include "Protheus.ch"
 #Include "TopConn.ch"
 #Include "ParmType.ch"
 
@@ -38,6 +38,7 @@ User Function CVMSER01()
 	Local aCampos 		:= {}
 	Local aSay    		:= {}
 	Local aButton 		:= {}
+	Local y 			:=0
 	
 	Private cMarca      := "OK"
 	Private cCadastro   := OemToAnsi("Integração com o SERPRO")
@@ -47,6 +48,8 @@ User Function CVMSER01()
 	Private nTotal      := 0
 	Private aRotina     := {}
 	Private aColors     := {}
+	Private aDadosLi	:= {}
+	
 	
 	// Monta tela de interação
 	aAdd(aSay,cDesc1)
@@ -95,11 +98,24 @@ User Function CVMSER01()
 	Next
 
     cFiltro := " "
-    If !Empty(MV_PAR03) 
-       //cFiltro := "SUBS(SZ4->Z4_VEIC,1,3)=SUBS(MV_PAR03,1,3)"   
-	   cFiltro := "SUBS(SZ4->Z4_CODMAR,1,3)=SUBS(MV_PAR03,1,3)"   
-    Endif
-    
+
+If !Empty(MV_PAR03) 
+       //cFiltro := "SUBS(SZ4->Z4_VEIC,1,3)=SUBS(MV_PAR03,1,3)" 
+	    cFiltro += "SUBS(SZ4->Z4_CODMAR,1,3)=SUBS(MV_PAR03,1,3)"   
+	    If MV_PAR04 == 1 
+	   		ZVEIF006()
+			If Len(aDadosLi) > 0
+				cFiltro += " .AND. ( "
+	        	For y := 1 TO Len(aDadosLi)
+		    		If aDadosLi[y][1] <> "CHASSI"   
+        	         	cFiltro += "ALLTRIM(SZ4->Z4_CHASSI) = '" + aDadosLi[y][1] +"' "+ If(y < Len(aDadosLi) , " .OR. "," )")
+        			ENDIF
+        		Next y
+			MsgInfo("Foram localizados: "+ cValToChar(Len(aDadosLi)) ,"Chassis")	
+    		Endif
+		Endif 
+Endif
+   
     /*If !Empty(MV_PAR05)    
        cFiltro += SZ4->Z4_MODELO=AllTrim(MV_PAR05)
     Endif
@@ -412,7 +428,7 @@ Local _cTipoMontgem		:= ""
 	
 	nHandle := FCreate(cArqDir + cArqName)
 	If nHandle < 0
-		MsgAlert("Não foi possível criar o arquivo!")
+		MSGINFO( "Não foi possível localizar o arquivo!!! ", "[CVMSER01] - Atenção" )
 		lRet := .F.
 		Return lRet
 	EndIf
@@ -828,7 +844,6 @@ Local aCor := {}
 	BrwLegenda(cCadastro,OemToAnsi("Registros de processamentos"),aCor)
 Return Nil 
 
-
 /*/{Protheus.doc} CriaSx1
 //TODO Cria grupo de perguntas, caso não exista.
 
@@ -838,6 +853,7 @@ Return Nil
 @type 		function
 /*/
 Static Function CriaSx1()
+
 Local aAreaAnt 	:= GetArea()
 Local aAreaSX1 	:= SX1->(GetArea())
 Local nY 		:= 0
@@ -847,7 +863,8 @@ Local aReg 		:= {}
 	aAdd(aReg,{cPerg,"01","Data Inicial  ","mv_ch1","D", 08,0,0,"G","","mv_par01","","","","","","","","","","","","","","",""})
 	aAdd(aReg,{cPerg,"02","Data Final    ","mv_ch2","D", 08,0,0,"G","(mv_par02>=mv_par01)","mv_par02","","","","","","","","","","","","","","",""})
 	aAdd(aReg,{cPerg,"03","Marca         ","mv_ch3","C", 03,0,0,"G","","mv_par03","","","","","","","","","","","","","","","VE1_A"})
-	//aAdd(aReg,{cPerg,"04","Chassi      ","mv_ch4","C", 17,0,0,"G","","mv_par04","","","","","","","","","","","","","","","V11"})
+	aAdd(aReg,{cPerg,"04","Importar CSV	 ","mv_ch4","N", 01,0,0,"C","","mv_par04","Sim","","","","","Não","","","","","","","","",""})
+	
 	//aAdd(aReg,{cPerg,"05","Modelo      ","mv_ch5","C", 03,0,0,"G","","mv_par05","","","","","","","","","","","","","","","VV2"})
 	//aAdd(aReg,{cPerg,"06","Ano Fab/Modelo","mv_ch6","C", 09,0,0,"G","","mv_par06","","","","","","","","","","","","","","","","","","","@R 9999-9999"})
 	aAdd(aReg,{"X1_GRUPO","X1_ORDEM","X1_PERGUNT","X1_VARIAVL","X1_TIPO","X1_TAMANHO","X1_DECIMAL","X1_PRESEL","X1_GSC","X1_VALID","X1_VAR01","X1_DEF01","X1_CNT01","X1_VAR02","X1_DEF02","X1_CNT02","X1_VAR03","X1_DEF03","X1_CNT03","X1_VAR04","X1_DEF04","X1_CNT04","X1_VAR05","X1_DEF05","X1_CNT05","X1_F3","X1_PYME","X1_GRPSXG","X1_HELP","X1_PICTURE"})
@@ -868,3 +885,105 @@ Local aReg 		:= {}
 	RestArea(aAreaAnt)
 
 Return Nil
+
+Static Function ZVEIF006()
+	Local cTitulo1  := "Selecione o arquivo para Carga "
+	Local cExtens   := "Arquivo CSV | *.CSV"
+	Local cMainPath := "C:\"
+	Local cArqLog   := ""
+	Public _cFile990:= ""
+
+	////U_ZGENUSER( <ID User> , <"NOME DA FUNÇÃO"> , <.F.=Não Exibe Msg; .T.=Exibe Msg> )
+	//IF U_ZGENUSER( RetCodUsr() ,"ZVEIF006" ,.T.) = .F.
+	//	RETURN Nil
+	//ENDIF
+
+	_cFile990 := cGetFile(cExtens,cTitulo1,,cMainPath,.T.)
+
+	If !File(_cFile990)
+		MsgAlert("Arquivo CSV: " + _cFile990 + " não localizado","[ZVEIF006] - Atenção")
+	Else
+
+		Processa({|| ZCOMF99B(_cFile990,@cArqLog)}, "[ZVEIF006] - Carga de Dados.", "Aguarde .... Realizando a carga dos registros...." )
+
+	Endif
+
+Return NIL
+
+
+/*/
+	{Protheus.doc} ZVEIF006
+	@param
+	@author Antonio Oliveira ZCOMF99B
+	@version P12.1.23
+	@since 25/04/2023
+	@return NIL
+	@obs e chamdo pelo PE MA140BUT_PE cria opções: Importa Itens
+	@project
+	@history Importar itens da planilha excel (CSV)
+/*/
+Static Function ZCOMF99B(_cFile990,cArqLog)
+	Local cSeparador     := ";" // Separador do arquivo
+	Local aDados         := {} // Array dos dados da linha do laco
+	Local n              := 0
+	//Local _cAliasQry     := GetNextAlias()
+
+	Local nPosPesq       := 1 //Posição a pesquisar no Array
+	//Local aItens         := {}
+
+	Private _cFil  	     := FWCodFil()
+	Private aItsoma      := {}
+	Private aArea        := GetArea()
+	Private nQtdent      := 0
+	Private nCont        := 0
+	Private lErroGer
+
+	Public _nCtItem      := 0
+	Public _nLinAc       := 0
+
+	ProcRegua(311)    //311
+	IncProc()
+	FT_FUSE(_cFile990)
+	FT_FGOTOP()
+	//FT_FSKIP()
+
+	While !FT_FEOF()
+		cLinha	:= FT_FREADLN()
+
+		aDados	:= Separa(Alltrim(cLinha),cSeparador)
+
+		nCont++
+
+        IF nCont > 1
+		    aadd(aDadosLi, aClone(aDados))
+        ENDIF
+
+		FT_FSKIP(1)
+		IncProc()
+	EndDo
+
+
+	//FT_FUSE()
+
+	//lErroGer := CompacItem(aDadosli,nPosPesq)  //Somar itens idênticos + divisão 200
+
+	//IF !lErroGer
+
+		For n := 1 to Len(aDadosli)
+
+    		IncProc("Analisando linha " + cValToChar(n-1) + " de " + cValToChar(nCont-1) + "...")
+
+			IF  Empty(aDadosLi[nPosPesq])
+				LOOP
+			ENDIF
+
+
+		Next n
+
+
+
+	//ENDIF
+
+	RestArea(aArea)
+
+Return(aDadosLi)
