@@ -1,4 +1,5 @@
-#INCLUDE "PROTHEUS.CH"
+#INCLUDE "TOTVS.CH"
+#INCLUDE "PROTHEUS.CH" 
 STATIC lPCPREVATU	:= FindFunction('PCPREVATU')  .AND.  SuperGetMv("MV_REVFIL",.F.,.F.)
 
 #DEFINE STR0001 FWI18NLang("MATR225","STR0001",1)
@@ -41,32 +42,29 @@ STATIC lPCPREVATU	:= FindFunction('PCPREVATU')  .AND.  SuperGetMv("MV_REVFIL",.F
 #DEFINE STR0038 FWI18NLang("MATR225","STR0038",38)
 
 /*/{Protheus.doc} ZPCPR001
-    Relatório de Estruturas Simples Customizado (Relatório base: MATR225).
-    Customização para atender a necessidade de seleção individual de produtos, ao invés do "De" "Ate". (GAP254)
-
-    @type  Function
-    @author Victor Gisoldi Matos
-    @since 09/09/2024
-    @version 1.0
-    @param param_name, param_type, param_descr
-    @return return_var, return_type, return_description
-    @example
-    (examples)
-    @see (links_or_references)
-/*/
-
+	(long_description)
+	@type  Function
+	@author user
+	@since 12/09/2024
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	@example
+	(examples)
+	@see (links_or_references)
+	/*/
 User Function ZPCPR001()
-    
+
 Local oReport
 
 If TRepInUse()
 	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 	//³Interface de impressao                                                  ³
 	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-	oReport:= ReportDefb()
+	oReport:= ReportDef()
 	oReport:PrintDialog()
 Else
-	MATR225R3b()
+	MATR225R3()
 EndIf
 
 Return
@@ -75,9 +73,9 @@ Return
 ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
 ±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
 ±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Programa  ³ReportDefb ³ Autor ³ Marcos V. Ferreira    ³ Data ³16.05.2006³±±
+±±³Programa  ³ReportDef ³ Autor ³ Marcos V. Ferreira    ³ Data ³16.05.2006³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descri‡…o ³A funcao estatica ReportDefb devera ser criada para todos os ³±±
+±±³Descri‡…o ³A funcao estatica ReportDef devera ser criada para todos os ³±±
 ±±³          ³relatorios que poderao ser agendados pelo usuario.          ³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Parametros³Nenhum                                                      ³±±
@@ -87,11 +85,14 @@ Return
 ±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 /*/
-Static Function ReportDefb()
+Static Function ReportDef()
 Local oReport
 Local oSection1
 Local oSection2
 Local oSection3
+
+Static aSelect := {}
+Static cRet := '' 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //³Criacao do componente de impressao                                      ³
 //³                                                                        ³
@@ -103,29 +104,29 @@ Local oSection3
 //³ExpC5 : Descricao                                                       ³
 //³                                                                        ³
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-oReport:= TReport():New("MATR225",OemToAnsi(STR0001),"MTR225", {|oReport| ReportPrint(oReport)},OemToAnsi(STR0002)+" "+OemToAnsi(STR0003)+" "+OemToAnsi(STR0004))  //"Este programa emite a relacao de estrutura de um determinado produto"##"selecionado pelo usuario. Esta relacao nao demonstra custos. Caso o"##"produto use opcionais, sera listada a estrutura com os opcionais padrao."
+oReport:= TReport():New("MATR225",OemToAnsi(STR0001),"ZPCPR001", {|oReport| ReportPrint(oReport)},OemToAnsi(STR0002)+" "+OemToAnsi(STR0003)+" "+OemToAnsi(STR0004))  //"Este programa emite a relacao de estrutura de um determinado produto"##"selecionado pelo usuario. Esta relacao nao demonstra custos. Caso o"##"produto use opcionais, sera listada a estrutura com os opcionais padrao."
 oReport:SetLandscape()
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //³ Verifica as perguntas selecionadas                           ³
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-//³ Variaveis utilizadas para parametros ³
-//³ mv_par01   // Produto de             ³
-//³ mv_par02   // Produto ate            ³
-//³ mv_par03   // Tipo de                ³
-//³ mv_par04   // Tipo ate               ³
-//³ mv_par05   // Grupo de               ³
-//³ mv_par06   // Grupo ate              ³
-//³ mv_par07   // Salta Pagina: Sim/Nao  ³
-//³ mv_par08   // Qual Rev da Estrut     ³
-//³ mv_par09   // Imprime Ate Nivel ?    ³
-//³ mv_par10   // Data de referência?    ³
+//³ Variaveis utilizadas para parametros ³ minhas variaveis                
+//³ mv_par01   // Produto de             ³ MV_PAR01 = Produtos selecionados
+//³ mv_par02   // Produto ate            ³ MV_PAR02 = Tipo de              
+//³ mv_par03   // Tipo de                ³ MV_PAR03 = Tipo ate             
+//³ mv_par04   // Tipo ate               ³ MV_PAR04 = Grupo de             
+//³ mv_par05   // Grupo de               ³ MV_PAR05 = Grupo ate            
+//³ mv_par06   // Grupo ate              ³ MV_PAR06 = Salta Pagina: Sim/Nao
+//³ mv_par07   // Salta Pagina: Sim/Nao  ³ MV_PAR07 = Qual Rev da Estrut   
+//³ mv_par08   // Qual Rev da Estrut     ³ MV_PAR08 = Imprime Ate Nivel ?  
+//³ mv_par09   // Imprime Ate Nivel ?    ³ MV_PAR09 = Data de referência?  
+//³ mv_par10   // Data de referência?    ³                                 
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 Pergunte(oReport:uParam,.F.)
 
 //Verifica se o MV_PAR10 existe no pergunte MTR225 -> Protecao de fonte.
-AjstPergtb()
+AjstPergt()
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //³Criacao da secao utilizada pelo relatorio                               ³
@@ -220,7 +221,7 @@ Static Function ReportPrint(oReport)
 
 Local cProduto 	:= ""
 Local lContinua := .T.
-Local lDatRef   := !Empty(mv_par10)
+Local lDatRef   := !Empty( mv_par09/*mv_par10*/ )
 Local nNivel   	:= 0
 Local oSection1 := oReport:Section(1)
 Local oSection2 := oReport:Section(1):Section(1)
@@ -235,15 +236,15 @@ Private lNegEstr:=GETMV("MV_NEGESTR")
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 dbSelectArea('SG1')
 dbSetOrder(1)
-MsSeek(xFilial('SG1')+mv_par01,.T.)
+MsSeek(xFilial('SG1')+ mv_par01 ,.T.)
 oReport:SetMeter(SG1->(LastRec()))
 oSection1:Init(.F.)
 
-While !oReport:Cancel() .And. !Eof() .And. SG1->G1_FILIAL+SG1->G1_COD <= xFilial('SG1')+mv_par02
+While !oReport:Cancel() .And. !Eof() .And. SG1->G1_FILIAL+SG1->G1_COD <= xFilial('SG1')+ mv_par02 
 
 	oReport:IncMeter()
 
-	If lDatRef .And. (SG1->G1_INI > mv_par10 .Or. SG1->G1_FIM < mv_par10)
+	If lDatRef .And. (SG1->G1_INI > mv_par09/*mv_par10*/ .Or. SG1->G1_FIM < mv_par09/*mv_par10*/)
 		SG1->(dbSkip())
 		Loop
 	EndIf
@@ -255,7 +256,7 @@ While !oReport:Cancel() .And. !Eof() .And. SG1->G1_FILIAL+SG1->G1_COD <= xFilial
 	dbSelectArea('SB1')
 	MsSeek(xFilial('SB1')+cProduto)
 		
-	If Eof() .Or. SB1->B1_TIPO < mv_par03 .Or. SB1->B1_TIPO > mv_par04 .Or. SB1->B1_GRUPO < mv_par05 .Or. SB1->B1_GRUPO > mv_par06
+	If Eof() .Or. SB1->B1_TIPO < mv_par02/*mv_par03*/ .Or. SB1->B1_TIPO > mv_par03/*mv_par04*/ .Or. SB1->B1_GRUPO < mv_par04/*mv_par05*/ .Or. SB1->B1_GRUPO > mv_par05/*mv_par06*/ 
 		dbSelectArea('SG1')
 		While !oReport:Cancel() .And. !Eof() .And. xFilial('SG1')+cProduto == SG1->G1_FILIAL+SG1->G1_COD
 			dbSkip()
@@ -293,12 +294,12 @@ While !oReport:Cancel() .And. !Eof() .And. SG1->G1_FILIAL+SG1->G1_COD <= xFilial
 		EndIf
 
 		//-- Explode Estrutura
-		MR225ExplG(oReport,oSection2,cProduto,IIf(RetFldProd(SB1->B1_COD,"B1_QB")==0,1,RetFldProd(SB1->B1_COD,"B1_QB")),nNivel,RetFldProd(SB1->B1_COD,"B1_OPC"),IIf(RetFldProd(SB1->B1_COD,"B1_QB")==0,1,RetFldProd(SB1->B1_COD,"B1_QB"))	,IIf(Empty(mv_par08),IIF(lPCPREVATU , PCPREVATU(SB1->B1_COD), SB1->B1_REVATU ),mv_par08))
+		MR225ExplG(oReport,oSection2,cProduto,IIf(RetFldProd(SB1->B1_COD,"B1_QB")==0,1,RetFldProd(SB1->B1_COD,"B1_QB")),nNivel,RetFldProd(SB1->B1_COD,"B1_OPC"),IIf(RetFldProd(SB1->B1_COD,"B1_QB")==0,1,RetFldProd(SB1->B1_COD,"B1_QB"))	,IIf(Empty( mv_par07/*mv_par08*/ ),IIF(lPCPREVATU , PCPREVATU(SB1->B1_COD), SB1->B1_REVATU ), mv_par07/*mv_par08*/ ))
 
 		oSection2:Finish()
 		
 		//-- Verifica se salta ou nao pagina
-		If mv_par07 == 1
+		If mv_par06/*mv_par07*/ == 1
 			oSection1:SetPageBreak(.T.)
 		Else    
 			oReport:ThinLine() //-- Impressao de Linha Simples
@@ -339,9 +340,9 @@ Return
 */
 Static Function MR225ExplG(oReport,oSection2,cProduto,nQuantPai,nNivel,cOpcionais,nQtdBase,cRevisao)
 Local aTamG1Grp   := TamSX3("G1_GROPC")
-Local cAteNiv     := If(mv_par09=Space(3),"999",mv_par09)
+Local cAteNiv     := If( mv_par08/*mv_par09*/ =Space(3),"999", mv_par08/*mv_par09*/ )
 Local cRevEst	  := ''
-Local lDatRef     := !Empty(mv_par10)
+Local lDatRef     := !Empty( mv_par09/*mv_par10*/ )
 Local lVlOpc      := .T.
 Local nOpc        := 1
 Local nPrintNivel := 0
@@ -370,7 +371,7 @@ While !oReport:Cancel() .And. !Eof() .And. G1_FILIAL+G1_COD == xFilial('SG1')+cP
 		lVlOpc := .F.
 	EndIf
 		
-	nQuantItem := ExplEstr(nQuantPai,Iif(lDatRef,mv_par10,Nil),cOpcionais,cRevisao,,,,,,,,,lVlOpc)
+	nQuantItem := ExplEstr(nQuantPai,Iif(lDatRef,mv_par09/*mv_par10*/,Nil),cOpcionais,cRevisao,,,,,,,,,lVlOpc)
 	dbSelectArea('SG1')
 	If nNivel <= Val(cAteNiv) // Verifica ate qual Nivel devera ser impresso
 		If (lNegEstr .Or. (!lNegEstr .And. QtdComp(nQuantItem,.T.) > QtdComp(0) )) .And. (QtdComp(nQuantItem,.T.) # QtdComp(0,.T.))
@@ -394,7 +395,7 @@ While !oReport:Cancel() .And. !Eof() .And. G1_FILIAL+G1_COD == xFilial('SG1')+cP
 			MsSeek(xFilial('SG1')+G1_COMP)
 			cRevEst := IIF(lPCPREVATU , PCPREVATU(SB1->B1_COD), SB1->B1_REVATU )
 			If Found()
-				MR225ExplG(oReport,oSection2,G1_COD,nQuantItem,nNivel+1,SB1->B1_OPC,IIf(RetFldProd(SB1->B1_COD,"B1_QB")==0,1,RetFldProd(SB1->B1_COD,"B1_QB")),If(!Empty(cRevEst),cRevEst,mv_par08))
+				MR225ExplG(oReport,oSection2,G1_COD,nQuantItem,nNivel+1,SB1->B1_OPC,IIf(RetFldProd(SB1->B1_COD,"B1_QB")==0,1,RetFldProd(SB1->B1_COD,"B1_QB")),If(!Empty(cRevEst),cRevEst, mv_par07/*mv_par08*/ ))
 			EndIf
 
 			dbGoto(nReg)
@@ -408,7 +409,7 @@ EndDo
 ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
 ±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
 ±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Fun‡…o    ³ MATR225R3b³ Autor ³ Marcos V. Ferreira    ³ Data ³ 08/09/92 ³±±
+±±³Fun‡…o    ³ MATR225R3³ Autor ³ Marcos V. Ferreira    ³ Data ³ 08/09/92 ³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Descri‡…o ³ Relacao simplificada das estruturas - Release 3            ³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
@@ -419,7 +420,7 @@ EndDo
 ±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 */
-Static Function MATR225R3b
+Static Function MATR225R3
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //³ Variaveis obrigatorias dos programas de relatorio            ³
@@ -437,7 +438,7 @@ LOCAL wnrel	   := "MATR225"
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 PRIVATE lNegEstr:=GETMV("MV_NEGESTR")
 PRIVATE aReturn := {OemToAnsi(STR0005), 1,OemToAnsi(STR0006), 2, 2, 1, "",1 }		//"Zebrado"###"Administracao"
-PRIVATE nLastKey:= 0 ,cPerg := "MTR225"
+PRIVATE nLastKey:= 0 ,cPerg := "ZPCPR001"//"MTR225"
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //³ Verifica as perguntas selecionadas                           ³
@@ -458,7 +459,7 @@ PRIVATE nLastKey:= 0 ,cPerg := "MTR225"
 Pergunte(cPerg,.F.)
 
 //Verifica se o MV_PAR10 existe no pergunte MTR225 -> Proteção de fonte.
-AjstPergtb()
+AjstPergt()
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //³ Envia controle para a funcao SETPRINT                        ³
@@ -512,7 +513,7 @@ LOCAL nLen
 LOCAL nCol      :=0
 LOCAL aAreaSG1 := {}
 Local aCampo
-Local lDatRef  := !Empty(mv_par10)
+Local lDatRef  := !Empty( mv_par09/*mv_par10*/)
 Local cRevEst  := ""
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -582,9 +583,9 @@ dbSetOrder(1)
 dbSelectArea("SG1")
 SetRegua(LastRec())
 Set SoftSeek On
-dbSeek(xFilial("SG1")+mv_par01)
+dbSeek(xFilial("SG1")+ mv_par01 )
 Set SoftSeek Off
-While !Eof() .And. G1_FILIAL+G1_COD <= xFilial("SG1")+mv_par02
+While !Eof() .And. G1_FILIAL+G1_COD <= xFilial("SG1")+ mv_par02 
 	If lEnd
 		@ PROW()+1,001 PSAY STR0010	//"CANCELADO PELO OPERADOR"
 		Exit
@@ -592,7 +593,7 @@ While !Eof() .And. G1_FILIAL+G1_COD <= xFilial("SG1")+mv_par02
 	IncRegua()
 
 	//Valida a data de validade da estrutura, se o pergunte 10 estiver preenchido.
-	If lDatRef .And. (SG1->G1_INI > mv_par10 .Or. SG1->G1_FIM < mv_par10)
+	If lDatRef .And. (SG1->G1_INI > mv_par09/*mv_par10*/ .Or. SG1->G1_FIM < mv_par09/*mv_par10*/)
 		SG1->(dbSkip())
 		Loop
 	EndIf
@@ -604,7 +605,7 @@ While !Eof() .And. G1_FILIAL+G1_COD <= xFilial("SG1")+mv_par02
 	aAreaSG1:=GetArea("SG1")
 	
 	dbSeek(xFilial("SB1")+cProduto)
-	If !Empty(mv_par08)			
+	If !Empty( mv_par07/*mv_par08*/ )			
 		
 		cRevEst := IIF(lPCPREVATU , PCPREVATU(SB1->B1_COD), SB1->B1_REVATU )
 
@@ -618,8 +619,8 @@ While !Eof() .And. G1_FILIAL+G1_COD <= xFilial("SG1")+mv_par02
 		EndIf
 	EndIf
 	dbSelectArea("SB1")
-	If EOF() .Or. B1_TIPO < mv_par03 .Or. B1_TIPO > mv_par04 .Or.;
-		B1_GRUPO < mv_par05 .Or. B1_GRUPO > mv_par06
+	If EOF() .Or. B1_TIPO < mv_par02/*mv_par03*/ .Or. B1_TIPO > mv_par03/*mv_par04*/ .Or.;
+		B1_GRUPO < mv_par04/*mv_par05*/ .Or. B1_GRUPO > mv_par05/*mv_par06*/ 
 		dbSelectArea("SG1")
 		While !EOF() .And. xFilial("SG1")+cProduto == G1_FILIAL+G1_COD
 			dbSkip()
@@ -679,13 +680,13 @@ While !Eof() .And. G1_FILIAL+G1_COD <= xFilial("SG1")+mv_par02
 		EndIf
 		Li += 2
 		nPosOld:=nPosCnt
-		nPosCnt+=MR225Expl(cProduto,IF(RetFldProd(SB1->B1_COD,"B1_QB")==0,1,RetFldProd(SB1->B1_COD,"B1_QB")),nNivel,cPictQuant,cPictPerda,RetFldProd(SB1->B1_COD,"B1_OPC"),IF(RetFldProd(SB1->B1_COD,"B1_QB")==0,1,RetFldProd(SB1->B1_COD,"B1_QB")),titulo,cabec1,cabec2,wnrel,Tamanho,nTipo,If(Empty(mv_par08),IIF(lPCPREVATU , PCPREVATU(SB1->B1_COD), SB1->B1_REVATU ),mv_par08))
+		nPosCnt+=MR225Expl(cProduto,IF(RetFldProd(SB1->B1_COD,"B1_QB")==0,1,RetFldProd(SB1->B1_COD,"B1_QB")),nNivel,cPictQuant,cPictPerda,RetFldProd(SB1->B1_COD,"B1_OPC"),IF(RetFldProd(SB1->B1_COD,"B1_QB")==0,1,RetFldProd(SB1->B1_COD,"B1_QB")),titulo,cabec1,cabec2,wnrel,Tamanho,nTipo,If(Empty( mv_par07/*mv_par08*/ ),IIF(lPCPREVATU , PCPREVATU(SB1->B1_COD), SB1->B1_REVATU ), mv_par07/*mv_par08*/ ))
 		For i:=nPosOld to nPosCnt
 			IncRegua()
 		Next I
 
 		//-- Verifica se salta ou nao pagina	
-		If mv_par07 == 1
+		If mv_par06/*mv_par07*/ == 1
 		    Li:= 90
 		Else    
 	 		@ li,000 PSAY __PrtThinLine()
@@ -740,13 +741,13 @@ LOCAL nPrintNivel
 LOCAL nX        := 0
 LOCAL aObserv   := {}
 LOCAL aAreaSB1:={}
-LOCAL cAteNiv   := If(mv_par09=Space(3),"999",mv_par09) 
+LOCAL cAteNiv   := If( mv_par08/*mv_par09*/ =Space(3),"999", mv_par08/*mv_par09*/ ) 
 LOCAL nEstouro
 LOCAL nLen 
 LOCAL cComp
 LOCAL nCol := 0
 LOCAL cRevEst	:= ''
-Local lDatRef  := !Empty(mv_par10)
+Local lDatRef  := !Empty( mv_par09/*mv_par10*/)
 Local lVlOpc      := .T.
 
 dbSelectArea("SG1")
@@ -758,7 +759,7 @@ While !Eof() .And. G1_FILIAL+G1_COD == xFilial("SG1")+cProduto
 		lVlOpc := .F.
 	EndIf
 	
-	nQuantItem := ExplEstr(nQuantPai,Iif(lDatRef,mv_par10,Nil),cOpcionais,cRevisao,,,,,,,,,lVlOpc)
+	nQuantItem := ExplEstr(nQuantPai,Iif(lDatRef, mv_par09/*mv_par10*/ ,Nil),cOpcionais,cRevisao,,,,,,,,,lVlOpc)
 	dbSelectArea("SG1")
 	If nNivel <= Val(cAteNiv) // Verifica ate qual Nivel devera ser impresso
 		If (lNegEstr .Or. (!lNegEstr .And. QtdComp(nQuantItem,.T.) > QtdComp(0) )) .And. (QtdComp(nQuantItem,.T.) # QtdComp(0,.T.))
@@ -887,7 +888,7 @@ While !Eof() .And. G1_FILIAL+G1_COD == xFilial("SG1")+cProduto
 			dbSeek(xFilial("SG1")+G1_COMP)
 			cRevEst := IIF(lPCPREVATU , PCPREVATU(SB1->B1_COD), SB1->B1_REVATU )
 			If Found()
-				MR225Expl(G1_COD,nQuantItem,nNivel+1,cPictQuant,cPictPerda,cOpcionais,IF(RetFldProd(SB1->B1_COD,"B1_QB")==0,1,RetFldProd(SB1->B1_COD,"B1_QB")),titulo,cabec1,cabec2,wnrel,Tamanho,nTipo,If(!Empty(cRevEst),cRevEst,mv_par08))
+				MR225Expl(G1_COD,nQuantItem,nNivel+1,cPictQuant,cPictPerda,cOpcionais,IF(RetFldProd(SB1->B1_COD,"B1_QB")==0,1,RetFldProd(SB1->B1_COD,"B1_QB")),titulo,cabec1,cabec2,wnrel,Tamanho,nTipo,If(!Empty(cRevEst),cRevEst, mv_par07/*mv_par08*/ ))
 			EndIf
 			dbGoto(nReg)
 		EndIf
@@ -899,7 +900,7 @@ nCntItens--
 Return nCntItens
 
 //----------------------------------------------------------------------
-/*/{Protheus.doc} AjstPergtb
+/*/{Protheus.doc} AjstPergt
 Verifica se o pergunte 10 existe para o pergunte MTR225.
 Se nao existir, inicializa o MV_PAR10 como branco para o programa manter o seu funcionamento.
  
@@ -910,18 +911,164 @@ Se nao existir, inicializa o MV_PAR10 como branco para o programa manter o seu f
 @return Nil
 /*/
 //----------------------------------------------------------------------
-Static Function AjstPergtb()
+Static Function AjstPergt()
 	Local oUtilX1 := FWSX1Util():New()
 	Local nPos    := 0
 
-	oUtilX1:AddGroup('MTR225')
+	oUtilX1:AddGroup('ZPCPR001')//('MTR225')
 	oUtilX1:SearchGroup()
 	
-	nPos := aScan(oUtilX1:aGrupo,{|x| AllTrim(x[1]) == "MTR225" })
+	nPos := aScan(oUtilX1:aGrupo,{|x| AllTrim(x[1]) == 'ZPCPR001'/*"MTR225"*/ })
 	If nPos > 0
-		If Len(oUtilX1:aGrupo[nPos][2]) < 10
+		If Len(oUtilX1:aGrupo[nPos][2]) < 09//10
 			//Nao existe o pergunte 10 para o MTR225. Inicializa o MV_PAR10.
-			mv_par10 := StoD('')
+			mv_par09/*mv_par10*/ := StoD('')
 		EndIf
 	EndIf
 Return Nil
+
+
+/*/{Protheus.doc} ListPrd
+	(long_description)
+	@type  Function
+	@author Victor Gisoldi Matos
+	@since 12/09/2024
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	@example
+	(examples)
+	@see https://tdn.totvs.com/display/public/framework/FWMarkBrowse
+/*/
+User Function ListPrd()
+
+Private lMarker     := .T.
+Private aDespes := {}
+//Static aSelect := {}
+ 
+//Alimenta o array
+BUSDATA()
+
+DEFINE MsDIALOG o3Dlg TITLE 'Produtos' From 0, 4 To 500, 1090 Pixel
+     
+    oPnMaster := tPanel():New(0,0,,o3Dlg,,,,,,0,0)
+    oPnMaster:Align := CONTROL_ALIGN_ALLCLIENT
+ 
+    oDespesBrw := fwBrowse():New()
+    oDespesBrw:setOwner( oPnMaster )
+ 
+    oDespesBrw:setDataArray()
+    oDespesBrw:setArray( aDespes )
+    oDespesBrw:disableConfig()
+    oDespesBrw:disableReport()
+ 
+    oDespesBrw:SetLocate() // Habilita a Localização de registros
+ 
+    //Create Mark Column
+    oDespesBrw:AddMarkColumns({|| IIf(aDespes[oDespesBrw:nAt,01], "LBOK", "LBNO")},; //Code-Block image
+        {|| SelectOne(oDespesBrw, aDespes)},; //Code-Block Double Click
+        {|| SelectAll(oDespesBrw, 01, aDespes) } ) //Code-Block Header Click
+ 
+    oDespesBrw:addColumn({"Codigo"    , {||aDespes[oDespesBrw:nAt,02]} , "C" , "@!" , 1 ,  20 , , .T. , , .F. , , "aDespes[oDespesBrw:nAt,02]" , , .F. , .T. , , "ETDESPES1" } )
+    oDespesBrw:addColumn({"Descrição" , {||aDespes[oDespesBrw:nAt,03]} , "C" , "@!" , 1 , 100 , , .T. , , .F. , , "aDespes[oDespesBrw:nAt,03]" , , .F. , .T. , , "ETDESPES2" } )
+    oDespesBrw:addColumn({"Grupo"	  , {||aDespes[oDespesBrw:nAt,04]} , "C" , "@!" , 1 ,  20 , , .T. , , .F. , , "aDespes[oDespesBrw:nAt,04]" , , .F. , .T. , , "ETDESPES3" } )
+ 
+    oDespesBrw:setEditCell( .T. , { || .T. } ) //activa edit and code block for validation
+ 
+    oDespesBrw:Activate(.T.)
+ 
+Activate MsDialog o3Dlg
+ 
+return .t.
+
+User Function ListPrdA()
+Return cRet
+ 
+/*/{Protheus.doc} SelectOne
+	(long_description)
+	@type  Function
+	@author Victor Gisoldi Matos
+	@since 12/09/2024
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	@example
+	(examples)
+	@see
+/*/
+Static Function SelectOne(oBrowse, aArquivo)
+
+aArquivo[oDespesBrw:nAt,1] := !aArquivo[oDespesBrw:nAt,1]
+
+	If aArquivo[oDespesBrw:nAt,1] == .T.
+		aAdd( aSelect, aArquivo[oDespesBrw:nAt,2])
+	EndIf
+
+cRet := ArrTokStr(aSelect, ";")
+
+Return .T.
+ 
+/*/{Protheus.doc} SelectAll
+	(long_description)
+	@type  Function
+	@author Victor Gisoldi Matos
+	@since 12/09/2024
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	@example
+	(examples)
+	@see
+/*/
+Static Function SelectAll(oBrowse, nCol, aArquivo)
+
+Local _ni := 1
+
+For _ni := 1 to len(aArquivo)
+    aArquivo[_ni,1] := lMarker
+Next
+
+//oBrowse:Refresh()
+lMarker:=!lMarker
+
+Return .T.
+ 
+/*/{Protheus.doc} BUSDATA
+	(long_description)
+	@type  Function
+	@author Victor Gisoldi Matos
+	@since 12/09/2024
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	@example
+	(examples)
+	@see
+/*/
+//Alimenta a tabela temporaria
+Static Function BUSDATA()
+
+Local cQuery    as Character
+Local cQryT3    as Character
+ 
+cQuery      := ""
+cQryT3      := GetNextAlias()
+aDespes := {}
+ 
+cQuery+="SELECT B1_COD, B1_DESC, B1_GRUPO FROM " + RetSqlName("SB1")
+cQuery+=" WHERE D_E_L_E_T_=''"
+cQuery:=ChangeQuery(cQuery)
+
+dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ) , cQryT3, .T., .F. )
+ 
+(cQryT3)->(DbGoTop())
+While (cQryT3)->(!EOF())
+ 
+    aadd(aDespes,{.f.,alltrim((cQryT3)->B1_COD),alltrim((cQryT3)->B1_DESC),alltrim((cQryT3)->B1_GRUPO) } )
+ 
+    (cQryT3)->(dbSkip())
+EndDo
+(cQryT3)->(dbCloseArea())
+DbSelectArea('SB1')
+ 
+Return .t.
