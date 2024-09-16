@@ -42,9 +42,9 @@ STATIC lPCPREVATU	:= FindFunction('PCPREVATU')  .AND.  SuperGetMv("MV_REVFIL",.F
 #DEFINE STR0038 FWI18NLang("MATR225","STR0038",38)
 
 /*/{Protheus.doc} ZPCPR001
-	(long_description)
+	Essa rotina tem como objetivo imprimir em relatório a Estrutura Simplificada dos produtos selecionados.
 	@type  Function
-	@author user
+	@author Victor Gisoldi Matos
 	@since 12/09/2024
 	@version version
 	@param param_name, param_type, param_descr
