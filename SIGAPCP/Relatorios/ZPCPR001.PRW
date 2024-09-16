@@ -935,7 +935,7 @@ Return Nil
 
 
 /*/{Protheus.doc} ListPrd
-	(long_description)
+	Consulta padrão para retornar uma lista de produtos com CheckBox
 	@type  Function
 	@author Victor Gisoldi Matos
 	@since 12/09/2024
@@ -991,7 +991,7 @@ User Function ListPrdA()
 Return cRet
  
 /*/{Protheus.doc} SelectOne
-	(long_description)
+	Função para seleção de um item da lista
 	@type  Function
 	@author Victor Gisoldi Matos
 	@since 12/09/2024
@@ -1015,7 +1015,7 @@ cRet := ArrTokStr(aSelect, ";")
 Return .T.
  
 /*/{Protheus.doc} SelectAll
-	(long_description)
+	Função para seleção completa da lista de produtos
 	@type  Function
 	@author Victor Gisoldi Matos
 	@since 12/09/2024
@@ -1040,7 +1040,7 @@ lMarker:=!lMarker
 Return .T.
  
 /*/{Protheus.doc} BUSDATA
-	(long_description)
+	Busca a lista da tabela SB1
 	@type  Function
 	@author Victor Gisoldi Matos
 	@since 12/09/2024
