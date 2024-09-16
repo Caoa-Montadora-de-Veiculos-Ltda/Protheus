@@ -225,7 +225,7 @@ Local lDatRef   := !Empty( mv_par09/*mv_par10*/ )
 Local nNivel   	:= 0
 Local oSection1 := oReport:Section(1)
 Local oSection2 := oReport:Section(1):Section(1)
-
+Local y := 1
 
 Private aMopc := {}
 Private lNegEstr:=GETMV("MV_NEGESTR")
@@ -236,11 +236,11 @@ Private lNegEstr:=GETMV("MV_NEGESTR")
 //읕컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴켸
 dbSelectArea('SG1')
 dbSetOrder(1)
-MsSeek(xFilial('SG1')+ mv_par01 ,.T.)
+MsSeek(xFilial('SG1')+ aSelect[1] ,.T.) // MsSeek(xFilial('SG1')+ mv_par01 ,.T.)
 oReport:SetMeter(SG1->(LastRec()))
 oSection1:Init(.F.)
 
-While !oReport:Cancel() .And. !Eof() .And. SG1->G1_FILIAL+SG1->G1_COD <= xFilial('SG1')+ mv_par02 
+While !oReport:Cancel() .And. !Eof() .And. SG1->G1_FILIAL+SG1->G1_COD = xFilial('SG1')+ aSelect[y]//mv_par02 
 
 	oReport:IncMeter()
 
@@ -307,6 +307,9 @@ While !oReport:Cancel() .And. !Eof() .And. SG1->G1_FILIAL+SG1->G1_COD <= xFilial
 	
 	EndIf
 	dbSelectArea("SG1")
+	If y < len(aSelect)
+		y++
+	EndIf
 EndDo
 
 //-- Devolve a condicao original do arquivo principal
@@ -515,7 +518,7 @@ LOCAL aAreaSG1 := {}
 Local aCampo
 Local lDatRef  := !Empty( mv_par09/*mv_par10*/)
 Local cRevEst  := ""
-
+Local y := 1
 //旼컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴커
 //� Contadores de linha e pagina                                 �
 //읕컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴켸
@@ -583,9 +586,9 @@ dbSetOrder(1)
 dbSelectArea("SG1")
 SetRegua(LastRec())
 Set SoftSeek On
-dbSeek(xFilial("SG1")+ mv_par01 )
+dbSeek(xFilial("SG1")+ aSelect[1] ) // dbSeek(xFilial("SG1")+ mv_par01 )
 Set SoftSeek Off
-While !Eof() .And. G1_FILIAL+G1_COD <= xFilial("SG1")+ mv_par02 
+While !Eof() .And. G1_FILIAL+G1_COD = xFilial("SG1")+ aSelect[y]//mv_par02 
 	If lEnd
 		@ PROW()+1,001 PSAY STR0010	//"CANCELADO PELO OPERADOR"
 		Exit
@@ -694,6 +697,9 @@ While !Eof() .And. G1_FILIAL+G1_COD <= xFilial("SG1")+ mv_par02
 	 	EndIf	 
 	EndIf
 	dbSelectArea("SG1")
+	If y < len(aSelect)
+		y++
+	EndIf
 EndDo
 If li != 80
 	Roda(nCntImpr,cRodaTxt,Tamanho)
