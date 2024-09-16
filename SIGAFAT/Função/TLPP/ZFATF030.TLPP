@@ -61,6 +61,148 @@ End Sequence
 Return Nil 
 
 
+/*/{Protheus.doc} zMarkAll
+Mark all 		
+@author 	CAOA
+@since 		
+@version 	undefined
+@param 		
+@type 		Static function
+@ Obs		
+@history    
+/*/
+Static Function zMarkAll( _oMark, _cMarkOk )
+	ZPP->(dbGotop())
+	While !ZPP->(Eof())
+		RecLock( "ZPP", .F. )
+		If Empty( ZPP->ZA3_OK )
+			ZPP->ZPP_OK := _cMarkOk
+		Else
+			ZPP->ZPP_OK := "  "
+		EndIf
+		ZPP->(MsUnLock())
+		ZPP->( dbSkip() )
+	EndDo
+	ZPP->(dbGotop())
+	_oMark:Refresh()
+Return Nil 
+
+
+/*/{Protheus.doc} MenuDef
+Mark all 		
+@author 	CAOA DAC
+@since 		
+@version 	undefined
+@param 		
+@type 		Static function
+@ Obs		
+@history    
+/*/
+Static Function MenuDef()
+Local _aRotina := {} AS Character
+
+    ADD OPTION aRotina TITLE "Pesquisar"        ACTION "PesqBrw"  			OPERATION 2 ACCESS 0 // "Visualizar"
+    ADD OPTION aRotina TITLE "Visualizar"   	ACTION "VIEWDEF.ZFATF030" 	OPERATION 2 ACCESS 0 // "Visualizar"
+	ADD OPTION aRotina TITLE "Alterar"   		ACTION "VIEWDEF.ZFATF030" 	OPERATION 4 ACCESS 0 // "Alterar"
+//	ADD OPTION aRotina TITLE "Excluir"           ACTION "VIEWDEF.ZFATF030"  OPERATION 5 ACCESS 0 // "Excluir"
+//	ADD OPTION aRotina TITLE "Exc. Selecionados" ACTION "U_zExclMark()"     OPERATION 5 ACCESS 0 // "Excluir Todos"
+
+Return _aRotina
+
+
+
+//Verificar saldo de chassi disponivel
+Function U_XZFT30CH(_cProduto, _cLocal, _cNumSerie, _cFabMod, _aCampos)
+Local _cQuery 		AS Character
+Local _nPos 		AS Numeric
+
+Default _cProduto	:= ""
+Default _cLocal 	:= "VN "
+Default _cNumSerie	:= ""
+Default _cChassi	:= ""
+Default _cFabMod    := ""
+Default _aCampos    := { 	"VV1.VV1_FILIAL",;
+							"SBF.BF_PRODUTO",;
+							"VV1.VV1_CHASSI",;
+							"VV1.VV1_CODMAR",;
+							"VV1.VV1_MODVEI",;
+							"VV1.VV1_SEGMOD",;
+							"VV1.VV1_FABMOD",;
+							"VV1.VV1_CORVEI",;
+							"SBF.BF_LOCAL"	,;
+							"SBF.BF_LOCALIZ",;
+							"SBF.BF_QUANT"	;
+						}
+    _cQuery := ""
+    _cQuery += CrLf + " SELECT A.* "
+    _cQuery += CrLf + "  FROM (  "
+    _cQuery += CrLf + "      SELECT "
+
+    For _nPos := 1 To Len(_aCampos)
+        _cQuery += CrLf + If(_nPos > 1,"    , ","     ")+_aCampos[_nPos]
+    Next
+
+	_cQuery += CrLf + "     , SUM(SBF.BF_QUANT) OVER (ORDER BY BF_PRODUTO) AS QTDETOT " 	
+
+    _cQuery += CrLf + "     , (SELECT MAX(SDB.DB_NUMSEQ) "
+    _cQuery += CrLf + "          FROM " + RetSqlName("SDB") + " SDB"
+    _cQuery += CrLf + "          WHERE  SDB.DB_FILIAL       = '"+xFilial("SDB")+"'"
+    _cQuery += CrLf + "             AND SDB.DB_ESTORNO      = ' '"
+    _cQuery += CrLf + "             AND SDB.DB_ATUEST       = 'S'"
+    _cQuery += CrLf + "             AND SDB.DB_LOCAL        = SBF.BF_LOCAL"
+    _cQuery += CrLf + "             AND SDB.DB_LOCALIZ      = SBF.BF_LOCALIZ"
+    _cQuery += CrLf + "             AND SDB.DB_NUMSERI      = SBF.BF_NUMSERI"
+    _cQuery += CrLf + "             AND SDB.DB_PRODUTO      = SBF.BF_PRODUTO"
+    _cQuery += CrLf + "             AND SDB.D_E_L_E_T_      = ' ') DB_NUMSEQ,"
+    _cQuery += CrLf + "             NVL((SELECT VB0_DATDES FROM " + RetSqlName("VB0") + "  VB0 "
+    _cQuery += CrLf + "                  WHERE VB0.VB0_DATBLO||VB0.VB0_HORBLO =( "
+    _cQuery += CrLf + "                                                     SELECT max(VB0A.VB0_DATBLO||VB0A.VB0_HORBLO) as DATBLOQ "
+    _cQuery += CrLf + "                                                     FROM " + RetSqlName("VB0") + "  VB0A "
+    _cQuery += CrLf + "                                                        WHERE VB0A.VB0_FILIAL = VB0.VB0_FILIAL "
+    _cQuery += CrLf + "                                                          AND VB0A.vb0_chaint = VB0.VB0_CHAINT "
+    _cQuery += CrLf + "                                                          AND VB0A.D_E_L_E_T_ = ' ') "
+    _cQuery += CrLf + "                 AND VB0.VB0_FILIAL = '" + xFilial("VB0") + "' "
+    _cQuery += CrLf + "                 AND VB0.VB0_CHAINT = VV1.VV1_CHAINT "
+    _cQuery += CrLf + "                 AND VB0.D_E_L_E_T_ = ' '),'99999999') AS VB0_DATDES "
+    _cQuery += CrLf + "     , NVL(VRK.VRK_CHASSI,'OK' ) AS CHASSI
+//    _cQuery += CrLf + "     , NVL(VV1.VV1_CHASSI,'OK' ) AS CHASSI
+    _cQuery += CrLf + " FROM " + RetSqlName("VV1") + " VV1 "
+    _cQuery += CrLf + "      INNER JOIN " + RetSqlName("SBF") + " SBF "
+    _cQuery += CrLf + "          ON  SBF.BF_FILIAL  = '" + xFilial("SBF") + "'"
+    _cQuery += CrLf + "          AND SBF.BF_NUMSERI = VV1.VV1_CHASSI "
+    _cQuery += CrLf + "          AND SBF.D_E_L_E_T_ = VV1.D_E_L_E_T_ "
+    _cQuery += CrLf + "          AND SBF.BF_QUANT   > 0 "
+    _cQuery += CrLf + "          AND SBF.BF_EMPENHO = 0 "
+    //_cQuery += CrLf + "          AND SBF.BF_PRODUTO = '" + (cCabAlias)->C6_PRODUTO + "' "
+    //_cQuery += CrLf + "          AND SBF.BF_LOCAL   = '" + (cCabAlias)->C6_LOCAL   + "' "
+	If !Empty(_cProduto)
+		_cQuery += CrLf + "		    AND SBF.BF_PRODUTO = '" +_cProduto+"' "	
+	Endif	
+	If !Empty(_cLocal)
+    	_cQuery += CrLf + "         AND SBF.BF_LOCAL   = '" +_cLocal+ "' "					
+    Endif	
+    If !Empty(Alltrim(_cNumSerie))
+        _cQuery += CrLf + "         AND SBF.BF_NUMSERI      = '" + _cNumSerie + "' "
+    EndIf
+	_cQuery += CrLf + "      LEFT JOIN " + RetSqlName("VRK") + " SC6 "
+    _cQuery += CrLf + "          ON  SC6.C6_FILIAL   = '" + xFilial("SC6") + "' "
+    _cQuery += CrLf + "          AND SC6.C6_XCHASSI  = VV1.VV1_CHASSI "
+    _cQuery += CrLf + "          AND SC6.D_E_L_E_T_ = ' ' "
+ 
+    _cQuery += CrLf + "      WHERE   VV1.VV1_FILIAL      = '" + xFilial("VV1") + "' "
+    //_cQuery += CrLf + "          AND VV1.VV1_CHASSI      = '" +cChassi+ "' "
+    _cQuery += CrLf + "          AND VV1.VV1_SITVEI      = '0' "
+    _cQuery += CrLf + "          AND VV1.VV1_IMOBI       = '0' "
+    _cQuery += CrLf + "          AND VV1.VV1_FABMOD      = '" + _cFabMod + "' "
+    _cQuery += CrLf + "          AND VV1.D_E_L_E_T_      = ' ') A "
+    _cQuery += CrLf + " WHERE A.VB0_DATDES > '        ' "
+    _cQuery += CrLf + "   AND A.CHASSI     = 'OK' " 
+    _cQuery += CrLf + " ORDER BY A.VV1_FILIAL,A.BF_PRODUTO,A.DB_NUMSEQ,A.VV1_CHASSI "
+Return _cQuery
+
+
+
+
 /*/{Protheus.doc} MenuModelDef
 Modelo de Dados 		
 @author 	DAC CAOA
@@ -137,131 +279,3 @@ Static Function ViewDef()
     _oView:EnableTitleView('VIEW_ZZN','Cabeçalho - Previsão Faturamento')
     _oView:EnableTitleView('VIEW_ZZP','Itens - Previsão Faturamento')
 Return _oView
-
-
-
-
-/*/{Protheus.doc} zMarkAll
-Mark all 		
-@author 	CAOA
-@since 		
-@version 	undefined
-@param 		
-@type 		Static function
-@ Obs		
-@history    
-/*/
-Static Function zMarkAll( oMark, cMarkOk, cTrbAux )
-	dbSelectArea( ZPP )
-	ZPP->(dbGotop())
-	While !Eof()
-		RecLock( "ZPP", .F. )
-		If Empty( ZPP->ZA3_OK )
-			ZPP->ZA3_OK := cMarkOk
-		Else
-			ZPP->ZA3_OK := "  "
-		EndIf
-		ZPP->(MsUnLock())
-		ZPP->( dbSkip() )
-	EndDo
-	ZPP->(dbGotop())
-	oMark:Refresh()
-Return Nil 
-
-
-/*/{Protheus.doc} MenuDef
-Mark all 		
-@author 	CAOA DAC
-@since 		
-@version 	undefined
-@param 		
-@type 		Static function
-@ Obs		
-@history    
-/*/
-Static Function MenuDef()
-Local _aRotina := {} AS Character
-
-    ADD OPTION aRotina TITLE "Pesquisar"        ACTION "PesqBrw"  			OPERATION 2 ACCESS 0 // "Visualizar"
-    ADD OPTION aRotina TITLE "Visualizar"   	ACTION "VIEWDEF.ZFATF030" 	OPERATION 2 ACCESS 0 // "Visualizar"
-	ADD OPTION aRotina TITLE "Alterar"   		ACTION "VIEWDEF.ZFATF030" 	OPERATION 4 ACCESS 0 // "Alterar"
-//	ADD OPTION aRotina TITLE "Excluir"           ACTION "VIEWDEF.ZFATF030"  OPERATION 5 ACCESS 0 // "Excluir"
-//	ADD OPTION aRotina TITLE "Exc. Selecionados" ACTION "U_zExclMark()"     OPERATION 5 ACCESS 0 // "Excluir Todos"
-
-Return _aRotina
-
-//=========================================================
-//Funcionalidade MVC Previsao
-Static Function ZFATGRMVC( _nOper, _cNumPrev )
-Local _oModel 	AS Object
-Local _nPos 	AS Numeric
-Local _aLog		AS Array
-Local _cLog		AS Character
-
-Default _nOper 		:= 3
-Default _cNumPrev	:= ""
-
-Begin Sequence 
-	//Carregar model Previsão Faturamento
-    _oModel := FWLoadModel( 'ZFATF025' )
-    _oModel:SetOperation( _nOper )
-    _oModel:Activate()
-    // Capturando submodelos que possuem grid para preenchimento dos itens
-    //_oModelZZN := oModel:GetModel("ZZNMASTER")
-    //_oModelZZP := oModel:GetModel("ZZPDETAIL")
-	//    _oModel:SetOperation(MODEL_OPERATION_INSERT)
-	//Gravar dados 
-
-	_oModel:SetValue("ZZNMASTER","ZZN_FILIAL"        , FwXFilial("ZZN") )	
-	_oModel:SetValue("ZZNMASTER","ZZN_CODPRV"        , _cNumPrev)	
-	_oModel:SetValue("ZZNMASTER","ZZN_STATUS"        , "A" )	
-	_oModel:SetValue("ZZNMASTER","ZZN_DTINC"         , Date() )	
-	_oModel:SetValue("ZZNMASTER","ZZN_USUINC"        , RetCodUsr() )	
-
-	_oModel:SetValue("ZZPDETAIL","ZZP_FILIAL"        , FwXFilial("ZZP") )	
-	_oModel:SetValue("ZZPDETAIL","ZZP_CODPRV"        , _cNumPrev )	
-	_oModel:SetValue("ZZPDETAIL","ZZP_CODCLI"        , SA1->A1_COD )	
-	_oModel:SetValue("ZZPDETAIL","ZZP_LOJCLI"        , SA1->A1_LOJA )	
-	_oModel:SetValue("ZZPDETAIL","ZZP_CNPJCP"        , SA1->A1_CGC )	
-	_oModel:SetValue("ZZPDETAIL","ZZP_CODPRD"        , SB1->B1_COD )	
-	_oModel:SetValue("ZZPDETAIL","ZZP_QTEPED"        , _nQtVen )	
-	_oModel:SetValue("ZZPDETAIL","ZZP_CHSDIS"        , 0 )	//CHASSI QTDE
-	_oModel:SetValue("ZZPDETAIL","ZZP_QTEDIS"        , 0 )	
-	_oModel:SetValue("ZZPDETAIL","ZZP_QTELIB"        , 0 )	//ZZP->ZZP_QTEPED - ZZP->ZZP_QTEDIS
-	_oModel:SetValue("ZZPDETAIL","ZZP_QTEFAT"        , 0 )	
-	_oModel:SetValue("ZZPDETAIL","ZZP_VLRTAB"        , _nVlrVen )	
-	_oModel:SetValue("ZZPDETAIL","ZZP_TOTLIB"        , If(ZZP->ZZP_QTELIB > 0, _nVlrVen * ZZP->ZZP_QTELIB, 0) )	
-	_oModel:SetValue("ZZPDETAIL","ZZP_OBS"        	 , AllTrim(ZZP->ZZP_OBS) + CRLF + Upper(_cMens) )	
-	_oModel:SetValue("ZZPDETAIL","ZZP_STATUS"        , "A" )	
-	_oModel:SetValue("ZZPDETAIL","ZZP_DTINC"        , Date() )	
-	_oModel:SetValue("ZZPDETAIL","ZZP_USUINC"       , RetCodUsr() )	
-	_oModel:SetValue("ZZPDETAIL","ZZP_DTALT"        , Date() )	
-	_oModel:SetValue("ZZPDETAIL","ZZP_USUALT"       , RetCodUsr() )	
-	_oModel:SetValue("ZZPDETAIL","ZZP_MODVEI"        , _cModelo )	
-	_oModel:SetValue("ZZPDETAIL","ZZP_FABMOD"        , _cFabAno() )	
-
-    If _oModel:VldData()
-        _oModel:CommitData()
-            //_cLog := "[ZFATF025] - Registro ! " + cCod + "  Opcao: " + cOperacao
-            //GERLOG()
-    Else
-        _aLog  	:= _oModel:GetErrorMessage()
-        _cLog 	:= ""
-        For _nPos := 1 To Len(_aLog)
-        	If !Empty(_aLog[_nPos]) .AND. _nI = 6
-                _cLog += Alltrim(_aLog[_nPos]) + " Produto " + cCod + CRLF
-            	//GERLOG()
-            EndIf
-        Next
-    EndIf       
-	_oModel:DeActivate()
-	_oModel:Destroy()
-	_oModel := NIL
-End Sequence 
-If Select(_cAliasPesq) <> 0
-	(_cAliasPesq)->(DbCloseArea())
-	Ferase(_cAliasPesq+GetDBExtension())
-Endif
-
-Return Nil 
-

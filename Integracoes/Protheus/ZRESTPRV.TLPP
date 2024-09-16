@@ -305,14 +305,14 @@ Begin Sequence
 		Aadd( _aLinha, {  "C6_LOCALIZ"	, CriaVar("C6_LOCALIZ")		,	Nil })   
 		Aadd( _aLinha, {  "C6_NUMSERI"	, CriaVar("C6_NUMSERI")		,	Nil })   
 
-		Aadd( _aLinha, {  "C6_XFILPVR"	, FWxFilial("ZZN")			,	Nil })   
+		Aadd( _aLinha, {  "C6_XFILPVR"	, FWxFilial("ZZP")			,	Nil })   
 		Aadd( _aLinha, {  "C6_XCODPVR"	, "PREVISAO"				,	Nil })   
 
 		If SC6->(FieldPos("C6_XOPCION"))
 			Aadd( _aLinha, {  "C6_XOPCION"	, _oJson["itens"][_nPos]:GetJsonText("cdopcional") 	, Nil })   
 		Endif
 		If SC6->(FieldPos("C6_XIDITEM"))
-			Aadd( _aLinha, {  "C6_XOPCION"	, _oJson["itens"][_nPos]:GetJsonText("iditem") 		, Nil })   
+			Aadd( _aLinha, {  "C6_XIDITEM"	, _oJson["itens"][_nPos]:GetJsonText("iditem") 		, Nil })   
 		Endif
 
     	Aadd( _aItens , _aLinha )
@@ -895,6 +895,9 @@ Begin Sequence
 			ConfirmSX8()
 		Endif
 	Next _nCount 
+	//Selecionar Chassis
+	ZJPRVCHA(SC5->C5_NUM)
+
 	_lRet := .T. 
 End Sequence
 If _lRet 
@@ -938,7 +941,6 @@ U_ZJPRVAUT( _aDctos, _aRetMsg, _lJob)
 */
 
 Return Nil	
-
 
 
 /*/{Protheus.doc} U_ZJPRVAUT Enviar retorno  do processo para Autoware
