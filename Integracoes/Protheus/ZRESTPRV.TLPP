@@ -251,6 +251,7 @@ Begin Sequence
 		_nValUnit	:= Val(_oJson["Itens"][_nPos]:GetJsonText("valorunitario"))
 	    _cCodProd 	:= _cModVei + _cSegMod	//montagem do codigo produto
 		_nValTab 	:= ZRESTPRVPTabela( _cCodMar, _cModVei, _cSegMod, _cFabMod)  //tabela de veiculo
+		//_nDesconto	:= Val(_oJson["Itens"][_nPos]:GetJsonText("desconto"))
 		//_cItem 		:= Soma1(_cItem)
 		//localizar relacionamento veiculo
 		If ! ZRESTPRVRVeiculo(_cCodProd, _cCodMar, _cModVei, _cSegMod, _cItem)
@@ -304,6 +305,8 @@ Begin Sequence
 		Aadd( _aLinha, {  "C6_CHASSI"	, CriaVar("C6_CHASSI" )		,	Nil })  
 		Aadd( _aLinha, {  "C6_LOCALIZ"	, CriaVar("C6_LOCALIZ")		,	Nil })   
 		Aadd( _aLinha, {  "C6_NUMSERI"	, CriaVar("C6_NUMSERI")		,	Nil })   
+		Aadd( _aLinha, {  "C6_LOTECTL"	, CriaVar("C6_LOTECTL")		,	Nil })   
+		Aadd( _aLinha, {  "C6_LOTECTL"	, CriaVar("C6_DTVALID")		,	Nil })   
 
 		Aadd( _aLinha, {  "C6_XFILPVR"	, FWxFilial("ZZP")			,	Nil })   
 		Aadd( _aLinha, {  "C6_XCODPVR"	, "PREVISAO"				,	Nil })   
@@ -769,22 +772,26 @@ Modelo de Dados
 @history    
 /*/
 FUNCTION U_ZJPRVGPE( _cPedCli, _aCabPed, _aItens,  _nOpc, _cEmpresa, _cFilial )
-Local _cError 		AS Character
-Local _cNumPed		AS Character
-Local _cItem		AS Character
-Local _aError 		AS Array	
-Local _aRetMsg 		AS Array	
-Local _aGrvItens	AS Array	
-Local _lRet 		AS Logical
-Local _lJob 		AS Logical	
-Local _lNovo		AS Logical	
+Local _cError 		As Character
+Local _cNumPed		As Character
+Local _cItem		As Character
+
+Local _aError 		As Array	
+Local _aRetMsg 		As Array	
+Local _aGrvItens	As Array	
+
+Local _lRet 		As Logical
+Local _lJob 		As Logical	
+Local _lNovo		As Logical	
+Local _lBloqueado	As Logical
+
 //Local _nStatus 		AS Numeric 
-Local _nQtdeItem	AS Numeric
-Local _nPosItem		AS Numeric
-Local _nPosQtdItem	AS Numeric
-Local _nPosCpo		AS Numeric
-Local _nPos     	AS Numeric 
-Local _nCount     	AS Numeric 
+Local _nQtdeItem	As Numeric
+Local _nPosItem		As Numeric
+Local _nPosQtdItem	As Numeric
+Local _nPosCpo		As Numeric
+Local _nPos     	As Numeric 
+Local _nCount     	As Numeric 
 
 Default _cPedCli 	:= "" 
 Default _aCabPed 	:= {} 
@@ -817,6 +824,7 @@ Begin Sequence
 
 	DbSelectArea("SC5")
 	_lRet 			:= .F.
+	_lBloqueado		:= .F.
 	_aRetMsg 		:= {}  //Gravar os retornos
 	_lNovo 			:= If(_nOpc == 3, .T., .F.)
 	_cNumPed		:= ""
@@ -863,8 +871,8 @@ Begin Sequence
 
 	//Será processado produto a produto Fazer Ajustes
 	DbSelectArea("SC6")
+	_cItem		:= CriaVar("C6_ITEM")
     For _nCount := 1 To Len(_aItens) 
-		_cItem		:= CriaVar("C6_ITEM")
 		_nQtdeItem	:= _aItens[_nCount, _nPosQtdItem, 2]  //_aItens[1][21][2] ="20242025"
 		_aGrvItens 	:= {}
 		For _nPos := 1 To _nQtdeItem
@@ -873,32 +881,36 @@ Begin Sequence
 			_aItens[_nCount, _nPosQtdItem, 2] 	:= 1  //Atualiza o numerdo do item  
 			AAdd(_aGrvItens, Aclone(_aItens[_nCount]))
 		Next _nPos	
-		lMsErroAuto 	:= .F.	// variável que define que o help deve ser gravado no arquivo de log e que as informações estão vindo à partir da rotina automática.
-		lAutoErrNoFile 	:= .T.  //Variavel de Controle do GetAutoGRLog
-	
-		MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, _aCabPed, _aGrvItens, _nOpc , .F.)
-		If lMsErroAuto
-			_aError	:= {}
-			_cError := "Erro Padrao Pedido "+ _cPedCli + CRLF
-			// se estiver em debug, pega o log inteiro do erro para uma analise mais detalhada
-			_aError := GetAutoGRLog()
-			For _nPos := 1 To Len(_aError)
-				If !Empty((AllTrim(_aError[_nPos])))  	
-					_cError	+= 	Upper(AllTrim(_aError[_nPos])) + CRLF
-				EndIf		
-			Next _nPos			
-			Aadd(_aRetMsg, _cError)
-			//U_ZRETMsgJson("erropad",_cError)  //Talvez não seja ieal gravar este erro desta forma pois esta em job ja foi processado o REST e será enviado novo REST com os problemas em outro layout verificar se só retorna erro
-			RollBackSX8()
-			Break
-		Else 
-			ConfirmSX8()
-		Endif
 	Next _nCount 
+	lMsErroAuto 	:= .F.	// variável que define que o help deve ser gravado no arquivo de log e que as informações estão vindo à partir da rotina automática.
+	lAutoErrNoFile 	:= .T.  //Variavel de Controle do GetAutoGRLog
+	
+	MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, _aCabPed, _aGrvItens, _nOpc , .F.)
+	If lMsErroAuto
+		_aError	:= {}
+		_cError := "Erro Padrao Pedido "+ _cPedCli + CRLF
+		// se estiver em debug, pega o log inteiro do erro para uma analise mais detalhada
+		_aError := GetAutoGRLog()
+		For _nPos := 1 To Len(_aError)
+			If !Empty((AllTrim(_aError[_nPos])))  	
+				_cError	+= 	Upper(AllTrim(_aError[_nPos])) + CRLF
+			EndIf		
+		Next _nPos			
+		Aadd(_aRetMsg, _cError)
+		//U_ZRETMsgJson("erropad",_cError)  //Talvez não seja ieal gravar este erro desta forma pois esta em job ja foi processado o REST e será enviado novo REST com os problemas em outro layout verificar se só retorna erro
+		RollBackSX8()
+		Break
+	Else 
+		ConfirmSX8()
+	Endif
 	//Selecionar Chassis
-	ZJPRVCHA(SC5->C5_NUM)
-
-	_lRet := .T. 
+	//Neste Caso não ira abortar processo somente avisara que possui itens que não tem chassi ou ocorrerão erros na seleção do chassi
+	U_ZTF30EMP(SC5->C5_FILIAL, SC5->C5_NUM, /*_cItem*/, /*_nLimChassi*/, _lJob, @_aRetMsg, /*_oSay*/ )
+	If Len(_aRetMsg) > 0
+		_lBloqueado := .T.
+	Else
+		_lRet := .T. 
+	Endif
 End Sequence
 If _lRet 
 	_nStatus 	:= 100
@@ -916,7 +928,7 @@ Aadd( _aDctos, {"pedidovei"		, _cPedCli})
 Aadd( _aDctos, {"cnpjcpf"		, SA1->A1_CGC}) 
 Aadd( _aDctos, {"pedidoadd"		, If(_lRet,_cNumPed,"")}) 
 Aadd( _aDctos, {"pedidoemissao"	, DtoS(dDataBase)})
-Aadd( _aDctos, {"pedidoblq"		, "2"})  
+Aadd( _aDctos, {"pedidoblq"		, If(_lBloqueado,"1","2")})  
 Aadd( _aDctos, {"status"		, _nStatus})
 Aadd( _aDctos, {"ocorrencias"	, _cError})
 //Enviar informações conectando nova API
@@ -941,6 +953,7 @@ U_ZJPRVAUT( _aDctos, _aRetMsg, _lJob)
 */
 
 Return Nil	
+
 
 
 /*/{Protheus.doc} U_ZJPRVAUT Enviar retorno  do processo para Autoware

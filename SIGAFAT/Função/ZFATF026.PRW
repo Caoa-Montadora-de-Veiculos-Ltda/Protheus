@@ -912,7 +912,7 @@ Local _cQuery 		:= ""
 Local _nQtdeChassi  := 0
 
 	//_cQuery  := U_XZFT25CH(_cCodProd)
-	_cQuery  := U_XZFT19CH(_cCodProd, /*_cLocal*/, /*_cNumSerie*/, /*cChassi*/, _cFabMod, /*_aCampos*/)
+	_cQuery  := U_XZFT30CH(_cCodProd, /*_cLocal*/, /*_cNumSerie*/, /*cChassi*/, _cFabMod, /*_aCampos*/)
 	TcQuery _cQuery new alias (_cAlias)
 	DbSelectArea(_cAlias)
 	If (_cAlias)->(!Eof())
