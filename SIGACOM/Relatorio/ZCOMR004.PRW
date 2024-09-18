@@ -3,7 +3,7 @@
 #INCLUDE "RPTDEF.CH"
 #INCLUDE "FWPrintSetup.ch"
 
-#DEFINE IMP_SPOOL 2
+#DEFINE IMP_SPOOL 2 
 
 #DEFINE VBOX      080
 #DEFINE HMARGEM   030
@@ -54,7 +54,7 @@
 #DEFINE NTRIB     010  // Valor das despesas nao tributadas - Portugal
 #DEFINE TARA      011  // Valor da Tara - Portugal
 
-#DEFINE MB_YESNO         004
+#DEFINE MB_YESNO         004 
 #DEFINE MB_ICONQUESTION  032
 #DEFINE IDYES            006
 #DEFINE IDNO             007
@@ -96,7 +96,7 @@ USER FUNCTION ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 	PRIVATE aColsMail  := {} //-- aCols RETORNA COM DADOS DO GRID DO PEDIDO
 
 	PRIVATE cPictCabec := ""
-
+ 
 	PRIVATE cAliasSC7  := GetNextAlias()
 	PRIVATE cAliasSZV  := GetNextAlias()
 	PRIVATE lRascunho	:= .F.
@@ -139,7 +139,7 @@ USER FUNCTION ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 		fGetTabela(nRecJob)
 	endif
 	//Posiciona no pedido da PO
-	SC7->(DBSeek(xFilial("SC7")+SW2->W2_PO_SIGA))
+	//SC7->(DBSeek(xFilial("SC7")+SW2->W2_PO_SIGA))
     
 	//Busca IMPORTADORES / CONSIGNATARIOS
 	SYT->(DBSeek(xFilial("SYT")+SW2->W2_IMPORT))
@@ -202,6 +202,10 @@ USER FUNCTION ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 		If Type("oReport") == "U" //NIL
 			If !Empty(cPathInServer)
 				lViewPDF := .F.
+
+				If File(cPathInServer+cFilePrt+".PDF")
+					fErase(cPathInServer+cFilePrt+".PDF")
+				EndIf
 			Else
 				lViewPDF := .T.
 			EndIf
@@ -214,7 +218,6 @@ USER FUNCTION ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 			oReport:SetMargin(60,60,60,60)
 			// nEsquerda, nSuperior, nDireita, nInferior
 			oReport:cPathPDF := IIF( !Empty(cPathInServer), cPathInServer, "C:\\spool\\" ) // "c:\projetos\"
-
 		EndIf
 
 		PixelX := oReport:nLogPixelX()
@@ -232,7 +235,7 @@ USER FUNCTION ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 		If !Empty(cPathInServer)
 		    if !File(oReport:cPathPDF + cFilePrt + ".pdf")
 			   oReport:Print()
-			Endif   
+			Endif
 		Else
 			If oReport:GetViewPDF()
 				oReport:Preview()	// VISUALIZAR DOCUMENTO GERADO
@@ -2090,8 +2093,8 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
 			cWhile := "SC7->C7_FILIAL+SC7->C7_NUM"
 			/** SINTAXE DA FillGetDados(nOpcX,Alias,nOrdem,cSeek,bSeekWhile,uSeekFor,aNoFields,aYesFields,lOnlyYes,cQuery,bMontCols,lEmpty,aHeaderAux,aColsAux,bAfterCols,bBeforeCols,bAfterHeader,cAliasQry,bCriaVar,lUserFields,aYesUsado) **/
 			FillGetDados(nOpcX, cAliasC7, nOrderC7,cSeek,{|| &cWhile },,,,,,,.F.,aHeader,aCols)
-
-			//-- CARREGA O CABECALHO DO DOCUMENTO FISCAL NO aNFCab MATXFIS
+  
+			//-- CARREGA O CABECALHO DO DOCUMENTO FISCAL NO aNFCab MATXFIS 
 			MaFisIni((cAliasSC7)->(C7_FORNECE),;                   // 1-Codigo Cliente/Fornecedor
 				(cAliasSC7)->(C7_LOJA),;                           // 2-Loja do Cliente/Fornecedor
 				"F",;                                              // 3-C:Cliente , F:Fornecedor
@@ -2112,17 +2115,17 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
 						MaFisLoad(cRefCols,aCols[nX][nY],nX)       //-- CARREGA O VALOR DO CAMPO DO aCols PARA A REFERENCIA NO aNFItem DA MATXFIS
 					EndIf
 				Next nY
+				MaFisEndLoad(nX,02)                                //-- ENCERRA A CARGA DO ITEM
+ 
+				/** =============================================== */
+				/** === MATA120.PRX Executa o Refresh do Folder === */
+				/** === ExpA1 = Array com os valores do Rodape  === */
+				/** =============================================== */
+				A120Refresh(@aValores)  
+				//aValores[3] := aTotals[5][1]
 			Next nX
-			MaFisEndLoad(nX - 1,02)                                //-- ENCERRA A CARGA DO ITEM
-
 		EndIf
 
-		/** =============================================== */
-		/** === MATA120.PRX Executa o Refresh do Folder === */
-		/** === ExpA1 = Array com os valores do Rodape  === */
-		/** =============================================== */
-		A120Refresh(@aValores)
-        //aValores[3] := aTotals[5][1]
 		MaFisEnd()
 	EndIf
 
@@ -2215,7 +2218,7 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
     /** =================================================================================================================================== **/
     /** ================================================== VALOR TOTAL DESCONTO - QUADRO ================================================== **/
 	/** =================================================================================================================================== **/
-	// oFont     := oFontLabel
+	oFont     := oFontValue //oFontLabel
    
     nLine     := nLine + oFont:nHeight // + nSpaceLine + (oFont:nHeight *3)
 	nRow      := nLine
@@ -2267,6 +2270,8 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
     /** =================================================================================================================================== **/
     /** ==================================================== VALOR TOTAL FRETE - QUADRO =================================================== **/
 	/** =================================================================================================================================== **/
+	oFont     := oFontValue //oFontLabel
+   
 	nRow      := nLine
     nItRef    := AScan(oSecTotals, {|aItem| aItem[ATT_NAME][02] == "BoxTotalsValueDesconto"})
 	nCol      := oSecTotals[nItRef][ATT_TAMH][02] + (oSecTotals[nItRef][ATT_POSH][02] - oBoxItems[ATT_POSH][02])
@@ -2300,7 +2305,7 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
     //** --- VALOR - TOTAL FRETE ----------------------------------------------------------------------------------------------------------- **/
 	//-- ALINHAMENTO A DIREITA
 	nAlignH   := ALIGRIGHT
-	nTotFrete := SW2->W2_FRETEIN
+	nTotFrete := IF(SW2->W2_FRETEIN > 0, SW2->W2_FRETEIN, (cAliasSC7)->C7_FRETE)
 	cText     := Transform(nTotFrete, "@E 99,999,999.99")
     cAux      := "TotalsValueSumFrete"
     aUltComp  := AAddComponent(oReport,@aElements,cAux,TYPE_TXT,cText,nRow,nCol,oFont,nWidth,nHeight,nAlignH,nAlignV)
@@ -2310,12 +2315,13 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
     /** =================================================================================================================================== **/
     /** =================================================== VALOR TOTAL PEDIDO - QUADRO =================================================== **/
 	/** =================================================================================================================================== **/
+	oFont     := oFontLabel
+	
 	nRow      := nLine
     nItRef    := AScan(oSecTotals, {|aItem| aItem[ATT_NAME][02] == "BoxTotalsValueFrete"})
     nCol      := oSecTotals[nItRef][ATT_TAMH][02] + nBoxSpace
     nHeight   := nRow + oFont:nHeight *3
     nWidth    := nCol + (nTamBoxTot * nCellSize) //+ (nCellSize * 045)
-    oFont     := oFontLabel
     //-- ALINHAMENTO A ESQUERDA
     nAlignH   := ALIGNLEFT
     nAlignV   := Nil
@@ -2354,6 +2360,57 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
     cAux      := "TotalsValueSumPedido"
     aUltComp  := AAddComponent(oReport,@aElements,cAux,TYPE_TXT,cText,nRow,nCol,oFont,nWidth,nHeight,nAlignH,nAlignV)
     Aadd(oSecTotals, aUltComp)
+
+    /** =================================================================================================================================== **/
+    /** ================================================== VALOR TOTAL  - QUADRO ========================================================== **/
+	/** =================================================================================================================================== **/
+	oFont     := oFontLabel
+   
+    nLine     := nLine + oFont:nHeight + nSpaceLine + (oFont:nHeight *3)
+	nRow      := nLine
+	nCol      := oBoxItems[ATT_POSH][02] + nBoxSpace //(nCellSize * 008)
+	nHeight   := nRow + oFont:nHeight * 003
+	nWidth    := nCol + (nTamBoxTot * nCellSize) //(nCellSize * 045)
+	nClrText  := Nil
+	nAlignH   := ALIGNLEFT
+	nAlignV   := Nil
+
+    // oReport:Box(nRow, nCol, nHeight, nWidth)
+    cAux      := "BoxTotalsValue"
+    aUltComp  := AAddComponent(oReport,@aElements,cAux,TYPE_BOX,NIL,nRow,nCol,NIL,nWidth,nHeight)
+    Aadd(oSecTotals, aUltComp)
+/*
+	/** =================================================================================================================================== **/
+    /** ================================================== VALOR TOTAL  - TEXTO =========================================================== **/
+	/** --- TITULO ------------------------------------------------------------------------------------------------------------------------ **/
+	/** =================================================================================================================================== **/
+	//-- REFERENCIA: PROPRIEDADES ELEMENTO ANTERIOR - QUADRO
+    nItRef    := AScan(oSecTotals, {|aItem| aItem[ATT_NAME][02] == "BoxTotalsValue"})
+    nRow      := nRow + nSpaceLine
+	nCol      := nCol + nMargin
+    cText     := "Total XXX:"
+    nHeight   := Nil
+    nWidth    := oSecTotals[nItRef][ATT_TAMH][02] - nCol - nMargin
+    cAux      := "TotalsValueTitle"
+    aUltComp  := AAddComponent(oReport,@aElements,cAux,TYPE_TXT,cText,nRow,nCol,oFont,nWidth,nHeight,nAlignH,nAlignV)
+    Aadd(oSecTotals, oBoxItems)
+
+    /** --- VALOR - SIMBOLO MOEDA --------------------------------------------------------------------------------------------------------- **/
+	//-- REFERENCIA: PROPRIEDADES ELEMENTO ANTERIOR - TITULO
+    nRow      := nRow + (oFont:nHeight * 1.3)
+	cText     := cMoedaSimb //"R$"
+    cAux      := "TotalsValueCurrency"
+    aUltComp  := AAddComponent(oReport,@aElements,cAux,TYPE_TXT,cText,nRow,nCol,oFont,nWidth,nHeight,nAlignH,nAlignV)
+    Aadd(oSecTotals, oBoxItems)
+
+	//** --- VALOR - VALOR TOTAL   -------------------------------------------------------------------------------------------------------- **/
+	//-- ALINHAMENTO A DIREITA
+	nAlignH   := ALIGRIGHT
+	nTotPed   := SW2->W2_FOB_TOT + IF(SW2->W2_FRETEIN > 0, SW2->W2_FRETEIN, (cAliasSC7)->C7_FRETE)
+	cText     := Transform(nTotPed, "@E 99,999,999.99")
+    cAux      := "TotalsValueSum"
+    aUltComp  := AAddComponent(oReport,@aElements,cAux,TYPE_TXT,cText,nRow,nCol,oFont,nWidth,nHeight,nAlignH,nAlignV)
+    Aadd(oSecTotals, oBoxItems)
 
 //FIM DOS TOTAIS
 
@@ -2475,17 +2532,17 @@ STATIC FUNCTION SecObsPC(oReport,lEnd,aElements,nLine,lNewPage,nPageCount)
 		oBoxObsPC[ATT_POSV][02] := nLine
 	EndIf
 	Aadd(oSecObsPC, oBoxObsPC)
-
+ 
     nLine    := oBoxObsPC[ATT_POSV][02]
 	/** = BOX - OBSERVACOES PEDIDO ======================================================================================================== **/
 	/** ==================================================== MOLDURA CABECALHO - QUADRO =================================================== **/
 	nRow     := nLine //+ nMargin
 	nCol     := INIBOXH
-	oFont    := oFont14N:oFont
+	oFont    := oFont14N:oFont 
 	nWidth   := MAXBOXH
 	nHeight  := nRow + oFont:nHeight * 1.2
 	aUltComp := AAddComponent(oReport,@aElements,"BoxHeaderObsPC",TYPE_BOX,,nRow,nCol,oFont,nWidth,nHeight)
-	Aadd(oSecObsPC, aUltComp)
+	Aadd(oSecObsPC, aUltComp) 
 
     /** = BOX - OBSERVACOES PEDIDO ======================================================================================================== **/
 	/** ============================================================= TITULO ============================================================== **/
@@ -2685,7 +2742,12 @@ STATIC FUNCTION PrtFooter(oReport,aElements)
 	LOCAL oFont := oFont07:oFont
 	// ISO REGISTER "F0764701"
 
-	AAddComponent(oReport, @aElements, "ReportFooterISORegister", TYPE_TXT, DOCSPEC, MAXBOXV, INIBOXH, oFont, MAXBOXH, (MAXBOXV + oFont:nHeight))
+	Local _cSrvConn  := ""
+
+	_cSrvConn  := GetEnvServer()
+	_cSrvConn  += " : " + cValToChar(GetServerPort())
+
+	AAddComponent(oReport, @aElements, "ReportFooterISORegister", TYPE_TXT, DOCSPEC + " - " + _cSrvConn, MAXBOXV, INIBOXH, oFont, MAXBOXH, (MAXBOXV + oFont:nHeight))
 RETURN(.T.)
 
 

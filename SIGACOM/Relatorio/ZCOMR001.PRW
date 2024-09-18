@@ -2,7 +2,7 @@
 #INCLUDE "REPORT.CH"
 #INCLUDE "RPTDEF.CH"
 #INCLUDE "FWPrintSetup.ch"
-
+ 
 #DEFINE IMP_SPOOL 2
 
 #DEFINE VBOX      080
@@ -47,7 +47,7 @@
 #DEFINE FRETE     003  // Valor total do Frete
 #DEFINE VALDESP   004  // Valor total da despesa
 #DEFINE TOTF1     005  // Total de Despesas Folder 1
-#DEFINE TOTPED    006  // Total do Pedido
+#DEFINE TOTPED    006  // Total do Pedido 
 #DEFINE SEGURO    007  // Valor total do seguro
 #DEFINE TOTF3     008  // Total utilizado no Folder 3
 #DEFINE IMPOSTOS  009  // Array contendo Os Valores de Impostos Exibidos no ListBox
@@ -1823,7 +1823,7 @@ STATIC FUNCTION SecItems(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage,
 		/** =================================================================================================================================== **/
 		/** ========================================================= ITEM - VALORES ========================================================== **/
 		/** = FRETE =========================================================================================================================== **/
-		Aadd(aIt_FRETE , (cAliasSC7)->(C7_FRETE ) )
+		Aadd(aIt_FRETE , IIf((cAliasSC7)->(C7_FRETE ) > 0, (cAliasSC7)->(C7_FRETE ),(cAliasSC7)->(C7_VALFRE)) )
 		/** = DESCONTO ======================================================================================================================== **/
 		Aadd(aIt_DESC  , (cAliasSC7)->(C7_VLDESC) )
 		/** = VALOR IPI ======================================================================================================================= **/
@@ -2363,19 +2363,19 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
 						MaFisLoad(cRefCols,aCols[nX][nY],nX)       //-- CARREGA O VALOR DO CAMPO DO aCols PARA A REFERENCIA NO aNFItem DA MATXFIS
 					EndIf
 				Next nY
-			Next nX
-			MaFisEndLoad(nX-1,02)                                //-- ENCERRA A CARGA DO ITEM
+				MaFisEndLoad(nX,02)                                //-- ENCERRA A CARGA DO ITEM
 
+				/** =============================================== */
+				/** === MATA120.PRX Executa o Refresh do Folder === */
+				/** === ExpA1 = Array com os valores do Rodape  === */
+				/** =============================================== */
+				A120Refresh(@aValores) 
+			Next nX
 		EndIf
 
-		/** =============================================== */
-		/** === MATA120.PRX Executa o Refresh do Folder === */
-		/** === ExpA1 = Array com os valores do Rodape  === */
-		/** =============================================== */
-		A120Refresh(@aValores)
-
-		MaFisEnd()
+		MaFisEnd() 
 	EndIf
+ 
 
     If nPageCount == 000
         nPageCount := ATail(aElements)[ATT_PAGE][02]
@@ -2749,7 +2749,7 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
     //** --- VALOR - TOTAL FRETE ----------------------------------------------------------------------------------------------------------- **/
 	//-- ALINHAMENTO A DIREITA
 	nAlignH   := ALIGRIGHT
-	nTotFrete := SC7->C7_FRETE   //aValores[FRETE]
+	nTotFrete := IIf(SC7->(C7_FRETE ) > 0, SC7->(C7_FRETE ),SC7->(C7_VALFRE)) //SC7->C7_FRETE   //aValores[FRETE]
 	cText     := Transform(nTotFrete, "@E 99,999,999.99")
 	// oReport:SayAlign(nRow, nCol, cText, oFont, nTextWidth, nHeight, nClrText, nAlignH, nAlignV)
     cAux      := "TotalsValueSumFrete"
