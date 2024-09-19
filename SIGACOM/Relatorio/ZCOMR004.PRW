@@ -76,7 +76,6 @@ USER FUNCTION ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 	LOCAL aArea     := GetArea()
 	LOCAL lEnd		:= .T.
 	LOCAL cFilePrt  := SubStr(ProcName(),3)
-
 	LOCAL nRet
 	LOCAL lSendMail
 	LOCAL lCpyErr
