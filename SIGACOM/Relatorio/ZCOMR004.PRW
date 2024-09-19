@@ -65,7 +65,7 @@ Programa.:              ZCOMR004
 Autor....:              Sandro Ferreira
 Data.....:              12/01/22
 Descricao / Objetivo:   Relatorio - Pedido de Compra
-Doc. Origem:            GAP_COM007 - Customizar impressÃ£o do PC conforme layout da
+Doc. Origem:            GAP_COM007 - Customizar impressão do PC conforme layout da
 						ISO enviado. O layout considerado deve ser o do SAP.
 Solicitante:            CAOA
 Uso......:              Pedido de Compra > Browse > Outras Acoes > Impr.PC.CAOA
@@ -76,6 +76,7 @@ USER FUNCTION ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 	LOCAL aArea     := GetArea()
 	LOCAL lEnd		:= .T.
 	LOCAL cFilePrt  := SubStr(ProcName(),3)
+
 	LOCAL nRet
 	LOCAL lSendMail
 	LOCAL lCpyErr
@@ -95,6 +96,7 @@ USER FUNCTION ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 	PRIVATE aColsMail  := {} //-- aCols RETORNA COM DADOS DO GRID DO PEDIDO
 
 	PRIVATE cPictCabec := ""
+ 
 	PRIVATE cAliasSC7  := GetNextAlias()
 	PRIVATE cAliasSZV  := GetNextAlias()
 	PRIVATE lRascunho	:= .F.
@@ -117,7 +119,7 @@ USER FUNCTION ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 	/** =================================================================== **/
 	DEFAULT cPictMarca := "/templates/compras/marca-dagua-rascunho.bmp"
 	DEFAULT lMarcaImpr := File(cPictMarca) // ARQUIVO MARCA D'AGUA EXISTE PARA IMPRESSAO
-	DEFAULT _aMatriz	:= {"01","2010022001"}
+	DEFAULT _aMatriz   := {"01","2010022001"}
 	lRascunho  := (lMarcaImpr .AND. "RASCUNHO" $ Upper(cPictMarca))
 	aDest  := aClone(aEmails)
 
@@ -136,15 +138,13 @@ USER FUNCTION ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 	iF nRecJob > 0 .and. lJobMail
 		fGetTabela(nRecJob)
 	endif
-  
 	//Posiciona no pedido da PO
 	//SC7->(DBSeek(xFilial("SC7")+SW2->W2_PO_SIGA))
-
     
 	//Busca IMPORTADORES / CONSIGNATARIOS
 	SYT->(DBSeek(xFilial("SYT")+SW2->W2_IMPORT))
 
-	//Busca DescriÃ§Ã£o da moeda
+	//Busca Descrição da moeda
 	SYF->(DBSeek(xFilial("SYF")+SW2->W2_MOEDA))
 
 	//Busca Tipo de Transporte
@@ -153,7 +153,7 @@ USER FUNCTION ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
     //Busca Forwarder
 	SY4->(DBSeek(xFilial("SY4")+SW2->W2_AGENTE))
 
-	//Busca ObservaÃ§Ã£o do Pedido
+	//Busca Observação do Pedido
 	SYP->(DBSeek(xFilial("SYP")+SW2->W2_OBS))
 
 	cNumPc := SC7->C7_NUM
@@ -206,19 +206,19 @@ USER FUNCTION ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 				If File(cPathInServer+cFilePrt+".PDF")
 					fErase(cPathInServer+cFilePrt+".PDF")
 				EndIf
-
 			Else
 				lViewPDF := .T.
 			EndIf
 
 			oReport  := FWMSPrinter():New(cFilePrt, IMP_PDF, lAdjustToLegacy, cPathInServer, lDisableSetup,,,,,,, lViewPDF)
 
-			oReport:SetResolution(78) //-- FwMsPrinter : SetResolution - Atualmente a versÃ£o da Totvsprinter somente trabalha com o valor fixo de 72. #TODO VERIFICAR
+			oReport:SetResolution(78) //-- FwMsPrinter : SetResolution - Atualmente a versão da Totvsprinter somente trabalha com o valor fixo de 72. #TODO VERIFICAR
 			oReport:SetLandscape()
 			oReport:SetPaperSize(DMPAPER_A4)
 			oReport:SetMargin(60,60,60,60)
 			// nEsquerda, nSuperior, nDireita, nInferior
 			oReport:cPathPDF := IIF( !Empty(cPathInServer), cPathInServer, "C:\\spool\\" ) // "c:\projetos\"
+		EndIf
 
 		PixelX := oReport:nLogPixelX()
 		PixelY := oReport:nLogPixelY()
@@ -236,7 +236,7 @@ USER FUNCTION ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 		    if !File(oReport:cPathPDF + cFilePrt + ".pdf")
 			   oReport:Print()
 			Endif
-	Else
+		Else
 			If oReport:GetViewPDF()
 				oReport:Preview()	// VISUALIZAR DOCUMENTO GERADO
 			EndIf
@@ -305,7 +305,7 @@ USER FUNCTION ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 
 					lCpyErr := CpyT2S( oReport:cPathPDF+cFilePrt + ".pdf", "\spool\" )
 					If !lCpyErr
-						MESSAGEBOX( "Erro ao copiar arquivo (Client -> Server).", "Falha na cÃ³pia do arquivo", MB_OK )
+						MESSAGEBOX( "Erro ao copiar arquivo (Client -> Server).", "Falha na cópia do arquivo", MB_OK )
 					Else
 						RptSendMail(aElements, aDest, ("\spool\" + cFilePrt + ".pdf") )
 
@@ -333,9 +333,9 @@ USER FUNCTION ZCOMR004(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 		EndIf
 	else
 	    IF SC7->C7_ORIGEM <> "EICPO400" 
-	       MSGINFO( "OpÃ§Ã£o permitida somente para os tipos de pedidos originados do modulo de ImportaÃ§Ã£o.", "Tipo de pedido invalido", 0)
+	       MSGINFO( "Opção permitida somente para os tipos de pedidos originados do modulo de Importação.", "Tipo de pedido invalido", 0)
 		ELSEIF SC7->C7_CONAPRO = "B"
-		   MSGINFO( "OpÃ§Ã£o permitida somente para os pedidos aprovados.", "Verifique o Status do Pedido!", 0)
+		   MSGINFO( "Opção permitida somente para os pedidos aprovados.", "Verifique o Status do Pedido!", 0)
 		ENDIF
     Endif
 
@@ -1142,7 +1142,7 @@ STATIC FUNCTION ReportCab(oReport,aElements,lEnd,nPosV,nFolha,nFolhas,nLine,nBas
 		{"F", "FOB"}                    , ;
 		{"T", "Por Conta Terceiros"}    , ;
 		{"R", "Por Conta Remetente"}    , ;
-		{"D", "Por Conta DestinatÃ¡rio"} , ;
+		{"D", "Por Conta Destinatário"} , ;
 		{"S", "Sem Frete"}                ;
 		}
 	nOptFrete := AScan(aCBoxFrete, {|x| x[1] == (cAliasSC7)->(C7_TPFRETE)})
@@ -1683,9 +1683,9 @@ STATIC FUNCTION SecItems(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage,
 	If Len(oColumns) < 1
 		//-- oColumns { nRow, nCol, nHeight, nWidth, nCell, nAlignHorz }
 		Aadd(oColumns, {000, (nCellLeft += 000), 006, (nCellCount += 010), 010, ALIGNCENT }) // Item
-		Aadd(oColumns, {000, (nCellLeft += 010), 006, (nCellCount += 094), 094, ALIGNLEFT }) // Material/ServiÃ§o
+		Aadd(oColumns, {000, (nCellLeft += 010), 006, (nCellCount += 094), 094, ALIGNLEFT }) // Material/Serviço
 		Aadd(oColumns, {000, (nCellLeft += 094), 006, (nCellCount += 022), 022, ALIGRIGHT }) // Quant.
-		Aadd(oColumns, {000, (nCellLeft += 022), 006, (nCellCount += 022), 022, ALIGRIGHT }) // PreÃ§o Unit.
+		Aadd(oColumns, {000, (nCellLeft += 022), 006, (nCellCount += 022), 022, ALIGRIGHT }) // Preço Unit.
 		Aadd(oColumns, {000, (nCellLeft += 022), 006, (              022), 022, ALIGNCENT }) // Moeda
 	EndIf
 
@@ -2219,7 +2219,8 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
     /** ================================================== VALOR TOTAL DESCONTO - QUADRO ================================================== **/
 	/** =================================================================================================================================== **/
 	oFont     := oFontValue //oFontLabel
-  nLine     := nLine + oFont:nHeight // + nSpaceLine + (oFont:nHeight *3)
+   
+    nLine     := nLine + oFont:nHeight // + nSpaceLine + (oFont:nHeight *3)
 	nRow      := nLine
 	nCol      := oBoxItems[ATT_POSH][02] + nBoxSpace //(nCellSize * 008)
 	nHeight   := nRow + oFont:nHeight * 003
@@ -2269,8 +2270,8 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
     /** =================================================================================================================================== **/
     /** ==================================================== VALOR TOTAL FRETE - QUADRO =================================================== **/
 	/** =================================================================================================================================== **/
-
 	oFont     := oFontValue //oFontLabel
+   
 	nRow      := nLine
     nItRef    := AScan(oSecTotals, {|aItem| aItem[ATT_NAME][02] == "BoxTotalsValueDesconto"})
 	nCol      := oSecTotals[nItRef][ATT_TAMH][02] + (oSecTotals[nItRef][ATT_POSH][02] - oBoxItems[ATT_POSH][02])
@@ -2304,7 +2305,6 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
     //** --- VALOR - TOTAL FRETE ----------------------------------------------------------------------------------------------------------- **/
 	//-- ALINHAMENTO A DIREITA
 	nAlignH   := ALIGRIGHT
-
 	nTotFrete := IF(SW2->W2_FRETEIN > 0, SW2->W2_FRETEIN, (cAliasSC7)->C7_FRETE)
 	cText     := Transform(nTotFrete, "@E 99,999,999.99")
     cAux      := "TotalsValueSumFrete"
@@ -2316,12 +2316,12 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
     /** =================================================== VALOR TOTAL PEDIDO - QUADRO =================================================== **/
 	/** =================================================================================================================================== **/
 	oFont     := oFontLabel
+	
 	nRow      := nLine
     nItRef    := AScan(oSecTotals, {|aItem| aItem[ATT_NAME][02] == "BoxTotalsValueFrete"})
     nCol      := oSecTotals[nItRef][ATT_TAMH][02] + nBoxSpace
     nHeight   := nRow + oFont:nHeight *3
     nWidth    := nCol + (nTamBoxTot * nCellSize) //+ (nCellSize * 045)
-
     //-- ALINHAMENTO A ESQUERDA
     nAlignH   := ALIGNLEFT
     nAlignV   := Nil
@@ -2532,7 +2532,7 @@ STATIC FUNCTION SecObsPC(oReport,lEnd,aElements,nLine,lNewPage,nPageCount)
 		oBoxObsPC[ATT_POSV][02] := nLine
 	EndIf
 	Aadd(oSecObsPC, oBoxObsPC)
-
+ 
     nLine    := oBoxObsPC[ATT_POSV][02]
 	/** = BOX - OBSERVACOES PEDIDO ======================================================================================================== **/
 	/** ==================================================== MOLDURA CABECALHO - QUADRO =================================================== **/
@@ -2672,7 +2672,7 @@ STATIC FUNCTION PrtHeader(oReport, aElements)
 	/** = BOX - HEADER ==================================================================================================================== **/
 	/** ============================================================= TITULO ============================================================== **/
 	nItRef   := AScan(aElements, {|aItem| aItem[ATT_NAME][02] == "ReportHeaderBox"})
-	cText    := "                           PURCHASE ORDER NÂº:" + Space(1)
+	cText    := "                           PURCHASE ORDER Nº:" + Space(1)
 	cText    := cText + SW2->W2_PO_NUM
 	nRow     := aElements[nItRef][ATT_POSV][02] + nMargin
 	nCol     := aElements[nItRef][ATT_POSH][02]
@@ -2741,13 +2741,13 @@ Descricao:              Numero de registro do modelo homologado na ISO do formul
 STATIC FUNCTION PrtFooter(oReport,aElements)
 	LOCAL oFont := oFont07:oFont
 	// ISO REGISTER "F0764701"
+
 	Local _cSrvConn  := ""
 
 	_cSrvConn  := GetEnvServer()
 	_cSrvConn  += " : " + cValToChar(GetServerPort())
 
 	AAddComponent(oReport, @aElements, "ReportFooterISORegister", TYPE_TXT, DOCSPEC + " - " + _cSrvConn, MAXBOXV, INIBOXH, oFont, MAXBOXH, (MAXBOXV + oFont:nHeight))
-
 RETURN(.T.)
 
 
@@ -2760,11 +2760,11 @@ Parametros:             ExpX1: Objeto grafico de impressao / Numero da pagina
 						ExpC3: Nome identificador do elemento grafico no relatorio
 						ExpC4: Tipo do elemento grafico (BOX, SAY, LINE, ...)
 						ExpC5: Texto contido no elemento (SAY, SAYALIGN)
-						ExpN6: PosiÃ§Ã£o vertical / linha do elemento na pagina
-						ExpN7: PosiÃ§Ã£o horizontal / coluna do elemento na pagina
+						ExpN6: Posição vertical / linha do elemento na pagina
+						ExpN7: Posição horizontal / coluna do elemento na pagina
 						ExpO8: Objeto TFont formatacao do texto
-						ExpN9: PosiÃ§Ã£o vertical final / largura do elemento
-						ExpN10: PosiÃ§Ã£o horizontal final / altura do elemento
+						ExpN9: Posição vertical final / largura do elemento
+						ExpN10: Posição horizontal final / altura do elemento
 						ExpN11: Alinhamento horizontal do texto (esq., dir., centr.)
 						ExpN12: Alinhamento vertical do texto (topo, meio, baixo)
 						ExpC13: Cor do elemento grafico (CLR_BLACK, CLR_HRED)
@@ -3121,7 +3121,7 @@ STATIC FUNCTION RptSendMail(aElements,aDest,cArqPedido)
 	LOCAL lMsgErro 	 := .T.
 	LOCAL lMsgOK 	 := .T.
 	LOCAL cMsgTitle  := "CAOA"
-	LOCAL cMsgSending := "Enviando e-mail de notificaÃ§Ã£o. Aguarde!!!"
+	LOCAL cMsgSending := "Enviando e-mail de notificação. Aguarde!!!"
 	LOCAL nItRef
 	LOCAL nAux
 	LOCAL cNumPC     := ""
@@ -3140,8 +3140,8 @@ STATIC FUNCTION RptSendMail(aElements,aDest,cArqPedido)
 	// ** VERIFICAR EXISTENCIA DO TEMPLATE DE EMAIL ****************** ** //
 	// ** ************************************************************ ** //
 	If !FindFunction("H_ZCOMR004") .AND. !oFile:Open()
-		MsgStop("OperaÃ§Ã£o cancelada!" + CRLF + CRLF + "Nenhuma mensagem enviada." + CRLF + ;
-			"Template de e-mail indisponÃ­vel.", "[ZCOMR004] - Pedido de Compras")
+		MsgStop("Operação cancelada!" + CRLF + CRLF + "Nenhuma mensagem enviada." + CRLF + ;
+			"Template de e-mail indisponível.", "[ZCOMR004] - Pedido de Compras")
 		RETURN()
 	EndIf
 
@@ -3170,7 +3170,7 @@ STATIC FUNCTION RptSendMail(aElements,aDest,cArqPedido)
 	// ** ************************************************************ ** //
 	Aadd(aAnexos, "/templates/compras/" + cPictImg)
 	//	Aadd(aAnexos, "/templates/compras/" + "Comunicado a Fornecedores e Bancos.pdf")
-	//	Aadd(aAnexos, "/templates/compras/" + "InstruÃ§Ã£o de pagamento - compras indiretas.pdf")
+	//	Aadd(aAnexos, "/templates/compras/" + "Instrução de pagamento - compras indiretas.pdf")
 
 	// ** ************************************************************ ** //
 	// ** DADOS DO PEDIDO ******************************************** ** //
@@ -3243,23 +3243,23 @@ Autor....:              Sandro Ferreira
 Data.....:              20/05/19
 Manutencao efetuada:    Criacao
 -------------------------------------------------------------------------------------
-Descricao:              Tela de seleÃ§Ã£o, ediÃ§Ã£o de email para envio PC anexado
+Descricao:              Tela de seleção, edição de email para envio PC anexado
 =====================================================================================
 */
 STATIC FUNCTION DlgSendMail(aElements,aColsMail)
-	LOCAL cTitulo       := "Enviar e-mail - Listagem de destinatÃ¡rios"
+	LOCAL cTitulo       := "Enviar e-mail - Listagem de destinatários"
 	LOCAL cAux
 	LOCAL lRet
-	LOCAL aACampos  	:= {"CONTATO","EMAIL"} 	// VariÃ¡vel contendo o campo editÃ¡vel no Grid
-	LOCAL aBotoes		:= {}         			// VariÃ¡vel onde serÃ¡ incluido o botÃ£o para a legenda
+	LOCAL aACampos  	:= {"CONTATO","EMAIL"} 	// Variável contendo o campo editável no Grid
+	LOCAL aBotoes		:= {}         			// Variável onde será incluido o botão para a legenda
 	PRIVATE oLista                    			// Declarando o objeto do Browser
-	PRIVATE aCabecalho  := {}         			// VariÃ¡vel que montarÃ¡ o aHeader do Grid
+	PRIVATE aCabecalho  := {}         			// Variável que montará o aHeader do Grid
 	PRIVATE lIsBlind	:= IsBlind() .OR. Type("__LocalDriver") == "U"
 	PRIVATE cFornMail := ""						// DEFAULT
 	PRIVATE cCmprMail := ""						// DEFAULT
 	PRIVATE cUserMail := AllTrim(UsrRetMail(RetCodUsr()))
 	
-	DEFAULT aColsMail 	:= {}         			// VariÃ¡vel que receberÃ¡ os dados
+	DEFAULT aColsMail 	:= {}         			// Variável que receberá os dados
 
 	//-- ENDERECO EMAIL DO FORNECEDOR - IMPRESSO NO RELATORIO
 	nItRef  := AScan(aElements, {|aElem| aElem[ATT_NAME][02] == "DetailCellSupplierMail"})
@@ -3351,7 +3351,7 @@ STATIC FUNCTION CriaCabec()
                   "C",;						// X3_TIPO
                   "",;						// X3_F3
                   "V",;						// X3_CONTEXT
-				  "F=Fornecedor;C=Comprador;R=Requisitante;U=UsuÃ¡rio;X=CÃ³pia",;			//X3_CBOX
+				  "F=Fornecedor;C=Comprador;R=Requisitante;U=Usuário;X=Cópia",;			//X3_CBOX
                   "",;						// X3_RELACAO
 				  ""})						// X3_WHEN
 				  
@@ -3382,7 +3382,7 @@ Autor....:              Sandro Ferreira
 Data.....:              20/05/19
 Manutencao efetuada:    Criacao
 -------------------------------------------------------------------------------------
-Descricao:              Constroi grid de destinatÃ¡rios (MsNewGetDados), aCols
+Descricao:              Constroi grid de destinatários (MsNewGetDados), aCols
 =====================================================================================
 */
 STATIC FUNCTION Carregar(aColsMail)
@@ -3427,18 +3427,18 @@ Autor....:              Sandro Ferreira
 Data.....:              20/05/19
 Manutencao efetuada:    Criacao
 -------------------------------------------------------------------------------------
-Descricao:              Tela de seleÃ§Ã£o, ediÃ§Ã£o de email para envio PC anexado
+Descricao:              Tela de seleção, edição de email para envio PC anexado
 =====================================================================================
 */
 STATIC FUNCTION DlgSendMa(aElements,aColsMail)
-	LOCAL cTitulo       := "Enviar e-mail - Listagem de destinatÃ¡rios"
+	LOCAL cTitulo       := "Enviar e-mail - Listagem de destinatários"
 	LOCAL cAux
 	LOCAL lRet
-	LOCAL aACampos  	:= {"CONTATO","EMAIL"} 	// VariÃ¡vel contendo o campo editÃ¡vel no Grid
-	LOCAL aBotoes		:= {}         			// VariÃ¡vel onde serÃ¡ incluido o botÃ£o para a legenda
+	LOCAL aACampos  	:= {"CONTATO","EMAIL"} 	// Variável contendo o campo editável no Grid
+	LOCAL aBotoes		:= {}         			// Variável onde será incluido o botão para a legenda
 	PRIVATE oLista                    			// Declarando o objeto do Browser
-	PRIVATE aCabecalho  := {}         			// VariÃ¡vel que montarÃ¡ o aHeader do Grid
-	DEFAULT aColsMail 	:= {}         			// VariÃ¡vel que receberÃ¡ os dados
+	PRIVATE aCabecalho  := {}         			// Variável que montará o aHeader do Grid
+	DEFAULT aColsMail 	:= {}         			// Variável que receberá os dados
 
 	PRIVATE cFornMail := ""						// DEFAULT
 	PRIVATE cCmprMail := ""						// DEFAULT
@@ -3500,7 +3500,7 @@ Autor....:              Sandro Ferreira
 Data.....:              20/05/19
 Manutencao efetuada:    Criacao
 -------------------------------------------------------------------------------------
-Descricao:              Constroi grid de destinatÃ¡rios (MsNewGetDados), aCols
+Descricao:              Constroi grid de destinatários (MsNewGetDados), aCols
 =====================================================================================
 */
 STATIC FUNCTION Carrega(aColsMail)
@@ -3546,7 +3546,7 @@ DbSelectArea("SYT")
 SYT->(DbSetOrder(1))
 //SYT->(DBSeek(xFilial("SYT")+SW2->W2_IMPORT))
 
-//Busca DescriÃ§Ã£o da moeda
+//Busca Descrição da moeda
 DbSelectArea("SYF")
 SYF->(DbSetOrder(1))
 //SYF->(DBSeek(xFilial("SYF")+SW2->W2_MOEDA))
@@ -3561,7 +3561,7 @@ DbSelectArea("SY4")
 SY4->(DbSetOrder(1))
 //SY4->(DBSeek(xFilial("SY4")+SW2->W2_AGENTE))
 
-//Busca ObservaÃ§Ã£o do Pedido
+//Busca Observação do Pedido
 DbSelectArea("SYP")
 SYP->(DbSetOrder(1))
 //SYP->(DBSeek(xFilial("SYP")+SW2->W2_OBS))
