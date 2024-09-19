@@ -14,11 +14,11 @@
 User Function PEDVEI011()
 
 	Local nPosTES
-
+ 
 	//alert("PEDVEI011")
 	Conout("PEDVEI011")
 	Conout("PEDVEI011 - C6_XBASST " + cValToChar(VVA->VVA_XBASST))
-	
+	 
 	aAdd(aCabPV,  {"C5_XMENSER" ,E_MSMM(VV0->VV0_OBSMNF)   ,Nil}) 
 	aAdd(aCabPV,  {"C5_CLIREM"  , VV0->VV0_CLIRET 		   ,Nil}) 
 	aAdd(aCabPV,  {"C5_LOJAREM" , VV0->VV0_LOJRET 		   ,Nil}) 
@@ -28,11 +28,15 @@ User Function PEDVEI011()
 	AADD(aIteTPv, {"C6_XBASPI"  , VVA->VVA_XBASPI          ,NIL})
 	AADD(aIteTPv, {"C6_XBASCO"  , VVA->VVA_XBASCO          ,NIL})
 	AADD(aIteTPv, {"C6_XBASIP"  , VVA->VVA_XBASIP          ,NIL})
+	
+	If VRJ->(FieldPos("VRJ_PEDCOM")) > 0 .And. VRJ->(FieldPos("VRJ_XITEMP")) > 0 
+		AADD(aIteTPv, {"C6_NUMPCOM" , VRJ->VRJ_PEDCOM      ,NIL})
+		AADD(aIteTPv, {"C6_ITEMPC"  , VRJ->VRJ_XITEMPC     ,NIL})
+	EndIf
+
 	If ! Empty(VVA->VVA_VRKNUM)
 		VRK->(dbSetOrder(1))
 		If VRK->(dbSeek(xFilial("VRK") + Left(VVA->VVA_VRKNUM, TamSX3("VRK_PEDIDO")[1]) + VVA->VVA_VRKITE))
-
-
 			AADD(aIteTPv, {"C6_XPECOM"  , VRK->VRK_XPECOM ,NIL})
 			AADD(aIteTPv, {"C6_XVLCOM"  , VRK->VRK_XVLCOM ,NIL})
 

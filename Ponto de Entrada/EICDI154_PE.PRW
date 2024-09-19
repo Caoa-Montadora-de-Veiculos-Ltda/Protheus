@@ -213,7 +213,7 @@ user function EICDI154
 				If nPosPed <> 0 .AND.  nPosItem <> 0  .AND. nPosLocal <> 0
 					If SC7->(DbSeek(xFilial('SC7')+aItens[01,nPosPed,2]+aItens[01,nPosItem,2]))
 						IF Empty(SC7->C7_NUMSC)
-							aItens[01,nPosPed,3] := GetAdvFVal( "SB1", "B1_LOCREC", xFilial('SB1')+SC7->C7_PRODUTO, 1, "" )
+							aItens[01,nPosLocal,2] := GetAdvFVal( "SB1", "B1_LOCREC", xFilial('SB1')+SC7->C7_PRODUTO, 1, "" )
 						EndIf
 					EndIF
 				EndIF

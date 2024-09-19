@@ -6,6 +6,7 @@ User Function ZFISR010()
     Local oReport,  oSection
 
     Private cAliasTMP := GetNextAlias()
+    Private __cSelNfs := ""
 
 	oReport:= TReport():New("ZFISR003",;
                             "Entradas",;
@@ -81,6 +82,7 @@ User Function ZFISR010()
     TRCell():New( oSection  ,"D1_DTDIGIT"   ,cAliasTMP  ,'Dt. de Entrada'                 )
     TRCell():New( oSection  ,"D1_EMISSAO"   ,cAliasTMP  ,'Dt. de Emissão'                 )
     TRCell():New( oSection  ,"D1_FORNECE"   ,cAliasTMP  ,'Fornecedor\Cliente'             )
+    TRCell():New( oSection  ,"GRP_TRIB"     ,cAliasTMP  ,'Grupo Tributario'            )
     TRCell():New( oSection  ,"D1_LOJA"      ,cAliasTMP  ,'Loja'                           )
     TRCell():New( oSection  ,"CliFor"       ,cAliasTMP  ,'Nome'                           )
     TRCell():New( oSection  ,"Chassi"       ,cAliasTMP  ,'Chassi'                         )
@@ -190,6 +192,7 @@ Static Function  ReportPrint(oReport)
 	Local cModVei		:= ""
 	Local cDesMod		:= ""
 	Local cCliFor		:= ""
+    Local cGRPTRIB      := ""
 	Local cCgcCpf		:= ""
 	Local cIncEst		:= ""
 	Local cEstCli		:= ""
@@ -277,6 +280,7 @@ Static Function  ReportPrint(oReport)
         cDescTipo	:= ""
         cTpCliFor	:= ""
         cTpPessoa	:= ""
+        cGRPTRIB    := ""
         If (cAliasTMP)->F1_TIPO $ "B|D" // Benefeciamento ou devolução
             If SA1->(DbSeek( xFilial("SA1") + (cAliasTMP)->D1_FORNECE + (cAliasTMP)->D1_LOJA ))
                 cCliFor		:= SA1->A1_NOME
@@ -285,7 +289,7 @@ Static Function  ReportPrint(oReport)
                 cEstCli 	:= SA1->A1_EST
                 cCodMun		:= SA1->A1_COD_MUN
                 cTpCliFor	:= "Cliente"
-
+                cGRPTRIB    := SA1->A1_GRPTRIB
                 If SA1->A1_PESSOA == "J"
                     cTpPessoa := "Juridico"
                 ElseIf SA1->A1_PESSOA == "F"
@@ -333,6 +337,7 @@ Static Function  ReportPrint(oReport)
                 cCodMun		:= ""
                 cTpCliFor	:= "Cliente"
                 cTpPessoa	:= ""
+                cGRPTRIB    := ""
             EndIf
         Else
             If SA2->(DbSeek( xFilial("SA2") + (cAliasTMP)->D1_FORNECE + (cAliasTMP)->D1_LOJA ))
@@ -342,7 +347,7 @@ Static Function  ReportPrint(oReport)
                 cEstCli		:= SA2->A2_EST
                 cCodMun		:= SA2->A2_COD_MUN
                 cTpCliFor	:= "Fornecedor"
-
+                cGRPTRIB    := SA2->A2_GRPTRIB
                 // Busca o Tipo do Fornecedor.
                 If SA2->A2_TIPO == "J"
                     cDescTipo := "Juridico"
@@ -373,6 +378,7 @@ Static Function  ReportPrint(oReport)
                 cCodMun		:= ""
                 cTpCliFor	:= "Fornecedor"
                 cTpPessoa	:= ""
+                cGRPTRIB    := ""
             EndIf
         EndIf
 
@@ -457,6 +463,7 @@ Static Function  ReportPrint(oReport)
          oSection:Cell( "D1_DTDIGIT"):SetValue( IIF( Empty( SToD( (cAliasTMP)->D1_DTDIGIT ) ), "", SToD( (cAliasTMP)->D1_DTDIGIT ) ) ) //--Dt. de Entrada
          oSection:Cell( "D1_EMISSAO"):SetValue( IIF( Empty( SToD( (cAliasTMP)->D1_EMISSAO ) ), "", SToD( (cAliasTMP)->D1_EMISSAO ) ) ) //--Dt. de Emissão
          oSection:Cell( "D1_FORNECE"):SetValue( (cAliasTMP)->D1_FORNECE ) //--Fornecedor\Cliente
+         oSection:Cell( "GRP_TRIB"   ):SetValue( cGRPTRIB                                                                                       ) //--Loja
          oSection:Cell( "D1_LOJA"   ):SetValue( (cAliasTMP)->D1_LOJA ) //--Loja
          oSection:Cell( "CliFor"    ):SetValue( cCliFor ) //--Nome
          oSection:Cell( "Chassi"    ):SetValue( IIF( (cAliasTMP)->F1_TIPO $ "B|D" , cCodChassi ,AllTrim( (cAliasTMP)->D1_CHASSI ) ) ) //--Chassi
@@ -558,6 +565,10 @@ Return
 Static Function zTmpRadio1()
     Local cQuery    	:= ""
     
+    If MV_PAR24 == 1
+	  zSelNfs10()
+    EndIf
+
 	If Select( cAliasTMP ) > 0
 		(cAliasTMP)->(DbCloseArea())
 	EndIf
@@ -620,6 +631,7 @@ Static Function zTmpRadio1()
 	If !Empty( MV_PAR21 )
 		cQuery += " 	AND SB1.B1_POSIPI = '" + MV_PAR21 + "' "																	+ CRLF
 	EndIf
+
 
 	cQuery += " INNER JOIN " + RetSQLName("SF4") + " SF4 " 																			+ CRLF
 	cQuery += " 	ON  SF4.F4_FILIAL  = '" + FWxFilial('SF4') + "'  "															    + CRLF
@@ -699,6 +711,12 @@ Static Function zTmpRadio1()
 	If !Empty( MV_PAR18 )
 		cQuery += " 	AND SD1.D1_CF = '" + MV_PAR18 + "' " 																		+ CRLF
 	EndIf  
+
+    If !Empty( __cSelNfs )
+		cQuery += " AND SD1.D1_DOC IN " + FormatIn(__cSelNfs, ";")   	+ CRLF
+    Else
+    	cQuery += " 	AND SD1.D1_DOC     BETWEEN '" +       MV_PAR05   + "' AND '" +       MV_PAR06   + "' " 												
+	EndIf
 
 	cQuery += " GROUP BY 	D1_FILIAL, D1_COD, D1_DOC, D1_SERIE, D1_TES, D1_CF, D1_FORNECE, D1_LOJA, D1_EMISSAO, D1_DTDIGIT, " 		+ CRLF
 	cQuery += " D1_ITEM, F4_FINALID, F4_TEXTO, FT_CTIPI, FT_CSTPIS, FT_CSTCOF,  F4_ICM, F4_IPI, F4_CREDICM, F4_CREDIPI, F4_DUPLIC, "+ CRLF
@@ -789,3 +807,86 @@ Static Function zRel0003( nVlIPIRegi, nVlIPIPres, cEspecie, cDoc, cSerie, cCodCl
 	( cAliasTRB )->( DbCloseArea() )
 	RestArea( aArea )
 Return
+
+/*
+=======================================================================================
+Programa.:              zSelNfs10
+Autor....:              CAOA - Sandro Ferreira
+Data.....:              26/06/2024
+Descricao / Objetivo:   Monta markbrowse para seleção de notas fiscais   
+Solicitante:			Thaynara
+Gap:					    
+=======================================================================================
+*/
+Static Function zSelNfs10()
+    Local oMarkBrw  := Nil
+    Local cMark     := GetMark()
+	Local cAliasQry	:= GetNextAlias()
+
+    oMarkBrw := FWMarkBrowse():New()
+    oMarkBrw:SetDescription("Selecionar Notas Fiscais")
+    oMarkBrw:SetAlias("SF3")
+    oMarkBrw:SetFieldMark( "F3_OK" )
+    oMarkBrw:SetMark( cMark, "SF3", "F3_OK" )
+    oMarkBrw:SetMenuDef('')
+	oMarkBrw:SetFilterDefault("@"+zFilNf10())
+    oMarkBrw:DisableReport()
+    oMarkBrw:AddButton( "Confirmar", {|| Self:End()} )
+    oMarkBrw:Activate()
+
+    BeginSql Alias cAliasQry
+        SELECT R_E_C_N_O_ AS RECSF3, F3_NFISCAL
+        FROM %Table:SF3% SF3
+        WHERE SF3.F3_OK = %Exp:cMark%
+        AND SF3.%NotDel%
+    EndSql
+    
+    (cAliasQry)->( DbGoTop() )
+    While (cAliasQry)->( !Eof() )
+
+		//--Carrega notas fiscais selecionadas
+        If Empty(__cSelNfs)
+            __cSelNfs := AllTrim( ( cAliasQry )->F3_NFISCAL )
+        Else
+            __cSelNfs := __cSelNfs + ";" + AllTrim( ( cAliasQry )->F3_NFISCAL )
+        EndIf
+        
+        //--Limpa marcação
+        SF3->( DbGoTo( ( cAliasQry )->RECSF3 ) )
+        RecLock("SF3", .F.)
+        SF3->F3_OK := ""
+        SF3->( MsUnLock() )
+
+        (cAliasQry)->( DbSkip() )
+
+    EndDo
+
+    (cAliasQry)->( DbCloseArea() )
+    oMarkBrw:DeActivate()
+
+Return
+
+/*
+=======================================================================================
+Programa.:              zFilNf10
+Autor....:              CAOA - Sandro Ferreira
+Data.....:              26/06/2024
+Descricao / Objetivo:   Filtra notas fiscais
+=======================================================================================
+*/
+Static Function zFilNf10()
+	Local cFiltro := ""
+
+	cFiltro  +=  "      F3_FILIAL  BETWEEN  '" + MV_PAR01         + "'  AND '" + MV_PAR02        + "' " + CRLF
+	cFiltro  +=  "  AND F3_ESPECIE BETWEEN  '" + MV_PAR03         + "'  AND '" + MV_PAR04        + "' " + CRLF
+   	cFiltro  +=  "  AND F3_NFISCAL BETWEEN  '" + MV_PAR05         + "'  AND '" + MV_PAR06        + "' " + CRLF
+	cFiltro  +=  "  AND F3_SERIE   BETWEEN  '" + MV_PAR07         + "'  AND '" + MV_PAR08        + "' " + CRLF
+	cFiltro  +=  "  AND F3_CLIEFOR BETWEEN  '" + MV_PAR09         + "'  AND '" + MV_PAR10        + "' " + CRLF
+	cFiltro  +=  "	AND F3_ENTRADA BETWEEN '" + DToS( MV_PAR11 )  + "' AND '" + DToS( MV_PAR12 )  + "' " +CRLF
+	cFiltro  +=  "	AND F3_EMISSAO BETWEEN '" + DToS( MV_PAR13 )  + "' AND '" + DToS( MV_PAR14 )  + "' " +CRLF
+ 	cFiltro  +=  "	AND D_E_L_E_T_ = ' ' " + CRLF
+
+Return cFiltro
+
+
+

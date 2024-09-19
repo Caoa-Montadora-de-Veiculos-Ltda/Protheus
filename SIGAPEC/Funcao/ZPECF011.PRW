@@ -8,12 +8,12 @@ Static _aMsgRet 	:= {}				//carregar msg de retorno json
 Static _aMsgCAOA 	:= {}				//carrega mensagens para gravar nas tabelas Protheus
 
 /*/{Protheus.doc} ZPECF011
-Servi√ßo de integra√ß√£o RECEBIMENTO SEPARA√á√ÉO DE PEDIDOS rg log
-Atualiza√ß√£o da separa√ß√£o dos or√ßamentos baixando conforme informa√ß√ß√£o recebida
+ServiÁo de integraÁ„o RECEBIMENTO SEPARA«√O DE PEDIDOS rg log
+AtualizaÁ„o da separaÁ„o dos orÁamentos baixando conforme informaÁÁ„o recebida
 @author 	DAC 
 @since 		17/12/2021
 @version 	V.03 
-@param		N√£o utilizado
+@param		N„o utilizado
 @type 		User Function
 @client   	CAOA BARUERI
 @return   	_aMsg - Array com retorno Json c√≥digo e ocorrencia
@@ -24,7 +24,7 @@ Atualiza√ß√£o da separa√ß√£o dos or√ßamentos baixando conforme informa√ß√ß√£o re
             https://jsoneditoronline.org/#left=local.sowavu  //estrutura do json
 Z	-Customizado
 PEC	- Modulo
-F 	- Fun√ß√£o
+F 	- FunÁ„o
 011 - Sequencial
 /*/
 
@@ -35,14 +35,14 @@ Begin Sequence
 	Conout("INICIANDO FUNCIONALIDADE ZPECF011 em "+DtoC(Date())+" as "+Time())
 	_aMsgRet 	:= {}
     If ZPECF011PR( @_oJson )
-		ZPEC11RMsg("ok", "Atualiza√ß√£o realizada com Sucesso !")
+		ZPEC11RMsg("ok", "AtualizaÁ„oo realizada com Sucesso !")
 		_aMsg := SetMsgRet()
 	Else
 		_aMsg := SetMsgRet()
 	Endif
 End Sequence
 
-IF Len(_aMsg) == 0 		//Prevens√£o for√ßar o envia da mensagem para o REST
+IF Len(_aMsg) == 0 		//Prevens„o forÁar o envia da mensagem para o REST
 	_aMsg := SetMsgRet()
 EndIf
 
@@ -57,7 +57,7 @@ Recebe 		Json RG LOG PUT
 @version 	undefined
 @param 		oJson
 @type 		function
-@ Obs		Os paremetros de token, empresa e filial ser√£o enviados no cabe√ßalho reader Json
+@ Obs		Os paremetros de token, empresa e filial ser„o enviados no cabeÁalho reader Json
 /*/
 Static Function ZPECF011PR( _oJson )
 //OneGate001 - nova empresa 90 | HMB
@@ -89,8 +89,6 @@ Begin Sequence
 	_cUsuario 	:= AllTrim(_oJson:GetJsonText("usuario"))
 	_cSenha		:= AllTrim(_oJson:GetJsonText("senha"))	 	 
 
-
-
     If Empty ( _cEmpresa )
 		ZPEC11RMsg("_cEmpresa", "Campo cEmpresa: Empresa nao pode ser branco, favor verificar !")
         Break
@@ -104,13 +102,13 @@ Begin Sequence
 
 	If "_PRD" $ AllTrim(GetEnvServer()) //CASO SEJA PRD, ENVIAR TOKER REFERENTE A PRD.
 		If Empty ( _cToken ) .or. AllTrim(_cToken) <> "PRD_RGLOGXTOTVS"
-			 ZPEC11RMsg("cToken", "Aplica√ß√£o Web n√£o est√° autorizada a acessar os servi√ßos Protheus (Token Failed) !")
+			 ZPEC11RMsg("cToken", "AplicaÁ„o Web n„o esta autorizada a acessar os serviÁos Protheus (Token Failed) !")
 			_lRet := .F.
          	Break
  		EndIf
 	Else
 		If Empty ( _cToken ) .or. AllTrim(_cToken) <> "HOM_RGLOGXTOTVS"
-			 ZPEC11RMsg("cToken", "Aplica√ß√£o Web n√£o est√° autorizada a acessar os servi√ßos Protheus (Token Failed) !")
+			 ZPEC11RMsg("cToken", "AplicaÁ„o Web n„o esta autorizada a acessar os serviÁos Protheus (Token Failed) !")
 			_lRet := .F.
          	Break
  		EndIf
@@ -119,11 +117,11 @@ Begin Sequence
 	//Fim - OneGate001 - nova empresa 90 | HMB
 	If Empty ( _cUsuario ) .or. AllTrim(_cUsuario) <> "RGLOG.REST"
 
- 		ZPEC11RMsg("_cUsuario", "Aplica√ß√£o Web n√£o est√° autorizada a acessar os servi√ßos Protheus (_cUsuario Failed) !")
+ 		ZPEC11RMsg("_cUsuario", "AplicaÁ„o Web n„o esta autorizada a acessar os serviÁos Protheus (_cUsuario Failed) !")
          Break
  	EndIf
     If Empty ( _cSenha ) .or. AllTrim(_cSenha) <> "CaOa!RgLogRest@2021"
- 		ZPEC11RMsg("_cSenha", "Aplica√ß√£o Web n√£o est√° autorizada a acessar os servi√ßos Protheus (_cUsuario Failed) !")
+ 		ZPEC11RMsg("_cSenha", "AplicaÁ„o Web n„o esta autorizada a acessar os serviÁos Protheus (_cUsuario Failed) !")
          Break
  	EndIf
     //Tratar abertura da empresa conforme enviado no parametro
@@ -138,20 +136,20 @@ Begin Sequence
 	If !_lRet
 		Break
 	EndIf	
-	_lRet := .F.   //necess√°rio pois estara com o ultimo que √© verdadeiro caso de erro no programa
+	_lRet := .F.   //necessario pois estara com o ultimo que √© verdadeiro caso de erro no programa
 	_lRet := ZPEC11GPIK(@_oJson,"I", @_aRegVS1, @_lDivergencia)
 	If !_lRet 
 		Break
 	EndIf
 End Sequence
 
-//neste caso deverei gravar as informa√ß√µes dos erros em todos os or√ßamentos que confiveram erro
+//neste caso deverei gravar as informaÁ√µes dos erros em todos os orÁamentos que confiveram erro
 _cPicking 	:= AllTrim(_oJson["nu_pedidoorigem"][1]:GetJsonText("nu_pedido")) //"00000510"
-//Gravar observa√ß√£o
-_cObs		:= "[ZPECF011] RETORNO DE SEPARA√á√ÉO RG LOG "+If(!_lRet,"APRESENTOU PROBLEMAS ","")+" REFERENTE PICKING "+_cPicking+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+ CRLF		
+//Gravar observaÁ„o
+_cObs		:= "[ZPECF011] RETORNO DE SEPARA«√O RG LOG "+If(!_lRet,"APRESENTOU PROBLEMAS ","")+" REFERENTE PICKING "+_cPicking+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+ CRLF		
 _cObs 		+= "Status " + CRLF
 For _nPos := 1 To Len(_aMsgRet)
-	//GAP002 quando posui divergencia com Wis tem que atualizar Picking e alterar c√≥digo pois n√£o possuem este c√≥digo para retorno 800, passar para 615
+	//GAP002 quando posui divergencia com Wis tem que atualizar Picking e alterar c√≥digo pois n„o possuem este c√≥digo para retorno 800, passar para 615
 	If _lDivergencia    
 		_lDivergeWis 	:= .T.
 		_cMsgInconWis	:= Upper(If(Len(_aMsgRet[_nPos,2]) > 100,SubsTr(_aMsgRet[_nPos,2],1,100),_aMsgRet[_nPos,2]))
@@ -171,9 +169,9 @@ Conout(_cObs)
 _cJson 	:= _oJson:toJSON()
 _cJson 	:= EncodeUTF8( _cJson )
 
-//GAP002 Caso possua divergencia na quantidade WIS maior n√£o deixar utilizar picking alterar status para D=Diverg√™ncia WIS
+//GAP002 Caso possua divergencia na quantidade WIS maior n„o deixar utilizar picking alterar status para D=Divergencia WIS
 If !_lRet .Or. _lDivergeWis
-	//Atualizar Status SZK, n√£o ser√° mais atualizado este picking
+	//Atualizar Status SZK, n„o sera mais atualizado este picking
 	_cQueryUPD := " UPDATE " + RetSqlName("SZK") + " SZK " + CRLF 
 	_cQueryUPD += " SET  SZK.ZK_XJSSTRE = '3' " + CRLF  //1=RECEBIDO;2=NAO RECEBIDO;3=INCONSISTENCIA
 	If _lDivergeWis
@@ -181,7 +179,7 @@ If !_lRet .Or. _lDivergeWis
 		_cQueryUPD += " 	,SZK.ZK_OBSCON  = '"+_cMsgInconWis+"' " + CRLF
 	Endif 
 	_cQueryUPD += " 	,SZK.ZK_XJSREC 	= RAWTOHEX('"+_cJson+ chr(13) + chr(10) +"' ||  NVL(UTL_RAW.CAST_TO_VARCHAR2(dbms_lob.substr(SZK.ZK_XJSREC 	, 2000, 1)),' ') )" + CRLF
-	//Campo informa√ß√µes sobre processamento SZK
+	//Campo informaÁ√µes sobre processamento SZK
 	If SZK->(FieldPos("ZK_INFO")) > 0
 		_cQueryUPD += " 	,SZK.ZK_INFO 	= RAWTOHEX('"+_cObs+ chr(13) + chr(10) +"' ||  NVL(UTL_RAW.CAST_TO_VARCHAR2(dbms_lob.substr(SZK.ZK_INFO 	, 2000, 1)),' ') )" + CRLF
 	Endif
@@ -190,27 +188,27 @@ If !_lRet .Or. _lDivergeWis
 	_nStatus := TcSqlExec(_cQueryUPD)
 	if (_nStatus < 0)
 		_lRet := .F.
- 		ZPEC11RMsg("divergencia", "N√£o foi possivel gravar Status divergencia WIS")
- 		Conout( "[ZPECF011] N√£o foi possivel gravar Status divergencia WIS, ERRO UPD SZK "+TCSQLError())
+ 		ZPEC11RMsg("divergencia", "N„o foi possivel gravar Status divergencia WIS")
+ 		Conout( "[ZPECF011] N„o foi possivel gravar Status divergencia WIS, ERRO UPD SZK "+TCSQLError())
 	Endif
-	//Se estiver com diverg√™ncia cancelar picking
+	//Se estiver com divergencia cancelar picking
 	If _lDivergeWis
 		_lCancela := U_XAPAGAPicking(_cPicking, _cFaseCancela, .F. /*_lMsg*/, @_aMsg)
 		If !_lCancela
-			_cObs += "N√£o foi possivel cancelar o Picking "+_cPicking+" o mesmo estara com incia√ß√£o de divergente (Status = D) verificar " 
+			_cObs += "N„o foi possivel cancelar o Picking "+_cPicking+" o mesmo estara com inciaÁ„o de divergente (Status = D) verificar " 
 		Endif
 	Endif 	 
 Endif
 
-//Existindo or√ßamentos gravar mensagens
-//NO CASO DE ERRO E TENHA PROCESSADO ALGUM OR√áAMENTO IRA RETORNAR OS PROBLEMAS ENCONTRADOS
+//Existindo orÁamentos gravar mensagens
+//NO CASO DE ERRO E TENHA PROCESSADO ALGUM OR«AMENTO IRA RETORNAR OS PROBLEMAS ENCONTRADOS
 If Len(_aRegVS1) > 0
-	//Gravar em todos os or√ßamentos
+	//Gravar em todos os orÁamentos
 	For _nPos := 1 To Len(_aRegVS1)
 		VS1->(DbGoto(_aRegVS1[_nPos]))
 		VS1->(RecLock("VS1",.F.))
 		VS1->VS1_OBSAGL	:= Upper(_cObs) + CRLF + VS1->VS1_OBSAGL
-		//Garantir que deixara os or√ßamentos com a fase anterior que √© de confer√™ncia DAC 29/06/2022
+		//Garantir que deixara os orÁamentos com a fase anterior que √© de conferencia DAC 29/06/2022
 		//If !_lRet .And. VS1->VS1_STATUS <> _cFaseConf
 		//	VS1->VS1_STATUS := _cFaseConf  //volto a fase anterior
 		//Endif	
@@ -222,7 +220,7 @@ Return _lRet
 
 
 /*/{Protheus.doc} ZPEC11GPIK
-Realiza a atualiza√ß√£o do piking recebido pela RG LOG
+Realiza a atualizaÁ„o do piking recebido pela RG LOG
 @author DAC Denilso 
 @since 18/10/2021
 @version undefined
@@ -268,7 +266,7 @@ Static Function ZPEC11GPIK(_oJson, _cTipo, _aRegVS1, _lDivergencia )
 		_cPicking 	:= AllTrim(_oJson["nu_pedidoorigem"][1]:GetJsonText("nu_pedido")) 
 		If !ZPEC11LPIK( _cPicking ) 
 			//GAP002 tratar al√©m de processado se esta bloqueado cancelado
-			//ZPEC11RMsg("nu_pedido","Pedido "+_cPicking+" ja consta no cadastro Picking como recebido, n√£o sera processado !")
+			//ZPEC11RMsg("nu_pedido","Pedido "+_cPicking+" ja consta no cadastro Picking como recebido, n„o sera processado !")
 			Break
 		EndIf
 
@@ -280,25 +278,25 @@ Static Function ZPEC11GPIK(_oJson, _cTipo, _aRegVS1, _lDivergencia )
 				AND VS1.%notDel%		  
 		EndSql      
 		If (_cAlias)->(Eof()) 	
-			ZPEC11RMsg("nexistepick","Pedido "+_cPicking+" n√£o localizou itens !")
+			ZPEC11RMsg("nexistepick","Pedido "+_cPicking+" n„o localizou itens !")
 			Break
 		Endif   
-		//GAP002  guardar oe or√ßamentos antes de processar
+		//GAP002  guardar oe orÁamentos antes de processar
 		While (_cAlias)->(!Eof())
 			Aadd(_aRegVS1, (_cAlias)->NREGVS1)
 			(_cAlias)->(DbSkip())
 		EndDo
-		//Repito a passagem VS1 para que seja atualizado todos os or√ßamentos existentes no picking
+		//Repito a passagem VS1 para que seja atualizado todos os orÁamentos existentes no picking
 		For _nPos := 1 To Len(_aRegVS1)
 			VS1->(DbGoto(_aRegVS1[_nPos]))
 			//MESMO COM FASE DE CONFER√äNCIA N√ÉO GRAVOU NO PICKING SZK DAC 08/06/2022
 			If VS1->VS1_STATUS  <> _cFaseConf
-				ZPEC11RMsg("nostatusorc","Item do Pedido "+_cPicking+" correspondente a numera√ß√£o "+VS1->VS1_NUMORC+" com fase "+VS1->VS1_STATUS+", diferente de Separa√ß√£o, n√£o sera processado !")
+				ZPEC11RMsg("nostatusorc","Item do Pedido "+_cPicking+" correspondente a numeraÁ„o "+VS1->VS1_NUMORC+" com fase "+VS1->VS1_STATUS+", diferente de SeparaÁ„o, n„o sera processado !")
 				Break
 			EndIf
 		Next
 
-		//Controlar a grava√ß√£o dos dados do or√ßamento caso tenha 
+		//Controlar a gravaÁ„o dos dados do orÁamento caso tenha 
 		Begin Transaction 
 			_lRet := ZPEC11VWIS(_cPicking, @_lDivergencia)//, @_lBloqInv)
 			//DAC Selecionar processo VS5 e VS6 de carregamento e efetuar baixa
@@ -311,32 +309,32 @@ Static Function ZPEC11GPIK(_oJson, _cTipo, _aRegVS1, _lDivergencia )
 					If ! _lRet
 						Exit  //sair do for
 					Endif
-					_cObs 	:= "Gravado a confer√™ncia (VM5) para os itens de separa√ß√£o  corretamente no recebimento do REST, para o or√ßamento "+VS1->VS1_NUMORC 
+					_cObs 	:= "Gravado a conferencia (VM5) para os itens de separaÁ„o  corretamente no recebimento do REST, para o orÁamento "+VS1->VS1_NUMORC 
 					Aadd(_aMsgCAOA, Upper(_cObs) )
 
-					//efetua a grava√ß√£o da tabela para controle de picking obten√ß√£o de pesos e medidas para a nota
+					//efetua a gravaÁ„o da tabela para controle de picking obtenÁ„o de pesos e medidas para a nota
 					_lRet := U_ZPEC11GSZK(_oJson, /*_lGravaIni*/, _cPicking, /*_cObsMenNF*/, /*_cMarca*/, _lRet)
 					If ! _lRet
-						_cObs	:= "OCORREU PROBLEMAS NO RETORNO DE SEPARA√á√ÉO REFERENTE PEDIDO "+_cPicking+", PARA O OR√áAMENTO "+VS1->VS1_NUMORC+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+" N√ÉO FOI GRAVADO" 
+						_cObs	:= "OCORREU PROBLEMAS NO RETORNO DE SEPARA«√O REFERENTE PEDIDO "+_cPicking+", PARA O OR«AMENTO "+VS1->VS1_NUMORC+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)+" N√ÉO FOI GRAVADO" 
 						ZPEC11RMsg("divergencia",_cObs)  
 						ZPEC11EMAI({_cObs}, _cPicking ) //ENVIA EMAIL COM PROBLEMA
 						Exit  //sair do for
 					Endif
-					_cObs	:= "RETORNO DE SEPARA√á√ÉO REFERENTE PICKING "+_cPicking+", PARA O OR√áAMENTO "+VS1->VS1_NUMORC+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5) 
+					_cObs	:= "RETORNO DE SEPARA«√O REFERENTE PICKING "+_cPicking+", PARA O OR«AMENTO "+VS1->VS1_NUMORC+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5) 
 					Aadd(_aMsgCAOA, Upper(_cObs) )
 
 					//Gravar como liberado para faturar
 					VS1->(RecLock("VS1",.F.))
 					VS1->VS1_STATUS := _cFaseFat
-					//VS1->VS1_OBSAGL	:= Upper(_cObs) +CRLF+ VS1->VS1_OBSAGL  //GAP002 ser√° gravado posteriormente _aMsgCAOA
+					//VS1->VS1_OBSAGL	:= Upper(_cObs) +CRLF+ VS1->VS1_OBSAGL  //GAP002 sera gravado posteriormente _aMsgCAOA
 					VS1->(MsUnLock())
 
-					//Gravo dados necess√°rio para o VS1 or√ßamento
+					//Gravo dados necessario para o VS1 orÁamento
 					//Atualiza TES Inteligente
 					If !U_ZPECREGFI(_cPicking, VS1->VS1_NUMORC) //cZK_XPICKI _cPicking
-						_cObs		:= 	"ERRO NA ATUALIZA√á√ÉO TES INTELIGENTE NO PICKING "+_cPicking+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)
+						_cObs		:= 	"ERRO NA ATUALIZA«√O TES INTELIGENTE NO PICKING "+_cPicking+" EM "+DtoC(Date())+" "+SubsTr(Time(),1,5)
 						ZPEC11EMAI({_cObs}, _cPicking )  //ENVIA E-MAIL
-						Aadd(_aMsgCAOA, Upper(_cObs) )  //GUARDA MENSAGEM  PARA GRAVAR NO OR√áAMENTO
+						Aadd(_aMsgCAOA, Upper(_cObs) )  //GUARDA MENSAGEM  PARA GRAVAR NO OR«AMENTO
 					EndIf
 				Next	 	 
 			Endif 
@@ -349,22 +347,22 @@ Static Function ZPEC11GPIK(_oJson, _cTipo, _aRegVS1, _lDivergencia )
 		While !_lProcessa
             
 			If ! LockByName(_cChave ,.T.,.T.)
-				_lProcessa := .F. //Se entrar aqui, rotina j√° lockada
+				_lProcessa := .F. //Se entrar aqui, rotina ja lockada
 			else			
-				_lProcessa := .T. //Se entrar aqui, rotina locka a 1¬™ vez
+				_lProcessa := .T. //Se entrar aqui, rotina locka a 1e vez
 			EndIf
 
 			If _lProcessa
-				//Ap√≥s receber tenho que tentar faturar, por√©m caso ocorra problemas os mesmos n√£o retornar√£o para RGLOG pois ja foi recebido o picking
+				//Ap√≥s receber tenho que tentar faturar, por√©m caso ocorra problemas os mesmos n„o retornar„o para RGLOG pois ja foi recebido o picking
 				If _lRet  .And. _lFatAutomaTico //.And. !_lBloqInv 
 					_aOrc := {}
-					//a funcionalidade de faturamento somente recebe dados relativos ao numero de or√ßamento
+					//a funcionalidade de faturamento somente recebe dados relativos ao numero de orÁamento
 					For _nPos := 1 To Len(_aRegVS1)
 						VS1->(DbGoto(_aRegVS1[_nPos]))
 						Aadd(_aOrc,VS1->VS1_NUMORC)
 					Next 
 					StartJob("U_ZPECF036",GetEnvServer(),.F.,_aOrc, _cPicking, cEmpAnt, cFilAnt, /*ENVIA EMAIL*/, /*Indica transaction*/,/*indica job*/)
-					//U_ZPECF036(_aOrc, _cPicking, /*ENVIA EMAIL*/, /*Indica para n√£o utilizar transaction*/)
+					//U_ZPECF036(_aOrc, _cPicking, /*ENVIA EMAIL*/, /*Indica para n„o utilizar transaction*/)
 				Endif
 				
 				UnLockByName(_cChave ,.T.,.T.)
@@ -384,14 +382,14 @@ Return _lRet
 
 
 /*/{Protheus.doc} ZPEC11Separa
-Recebe 		Verifica se os registros de separa√ß√£o est√£o informado e se est√£o de acordo com o VS3, finalizar carregamento VS3 e VM5 
+Recebe 		Verifica se os registros de separaÁ„o est„o informado e se est„o de acordo com o VS3, finalizar carregamento VS3 e VM5 
 @author 	DAC
 @since 		23/06/2022
 @version 	undefined
 @param 		oJson
 @type 		function
-@ Obs		Os paremetros de token, empresa e filial ser√£o enviados no cabe√ßalho reader Json
-@history    DAC - 23/06/2022 - Modificada a forma de gravar informa√ß√µes sobre o recebimento VM5, VM6 e VM2 verificando se existe e criando novo processo  
+@ Obs		Os paremetros de token, empresa e filial ser„o enviados no cabeÁalho reader Json
+@history    DAC - 23/06/2022 - Modificada a forma de gravar informaÁ√µes sobre o recebimento VM5, VM6 e VM2 verificando se existe e criando novo processo  
 /*/
 Static Function ZPEC11Separa( _cNumOrc, _cPicking )
 Local _lRet			:= .T.
@@ -399,11 +397,11 @@ Local _cAliasPesq	:= GetNextAlias()
 Local _cNroConf		:= ""
 
 Begin Sequence
-	//Verifica se foi gravado o numero de confer√™ncia
+	//Verifica se foi gravado o numero de conferencia
 	_cNroConf := OX0020071_ExisteConferencia( _cNumOrc )
 	If !Empty(_cNroConf)
 		If !U_XAPAVM5VM6Carregamento(_cNumOrc)	
-			ZPEC11RMsg("nosepara", "Pedido "+_cPicking+" n√£o foi possivel atualizar carregamento no Protheus, n√£o sera processado !")
+			ZPEC11RMsg("nosepara", "Pedido "+_cPicking+" n„o foi possivel atualizar carregamento no Protheus, n„o sera processado !")
 			_lRet := .F.
 			Break
 		EndIf	
@@ -411,7 +409,7 @@ Begin Sequence
 	_cNroConf := ""
 	_cNroConf := VS1->(OX0020041_GravaRegistroConferencia( _cNumOrc ))
 	If Empty(_cNroConf)
-		ZPEC11RMsg("nosepara", "Pedido "+_cPicking+" n√£o foi possivel atualizar carregamento no Protheus, n√£o sera processado !")
+		ZPEC11RMsg("nosepara", "Pedido "+_cPicking+" n„o foi possivel atualizar carregamento no Protheus, n„o sera processado !")
 		_lRet := .F.
 		Break
 	EndIf
@@ -450,18 +448,18 @@ Begin Sequence
 		ORDER BY VS3.VS3_SEQUEN
 	EndSql      
 	
-	//Caso existam registros preenchidos n√£o √© a carga inicial e n√£o pode receber da RG
+	//Caso existam registros preenchidos n„o √© a carga inicial e n„o pode receber da RG
 	If (_cAliasPesq)->(Eof()) 
-		ZPEC11RMsg("noitens","N√£o localizado itens referente ao carregmento para o pedido "+_cPicking)
+		ZPEC11RMsg("noitens","N„o localizado itens referente ao carregmento para o pedido "+_cPicking)
 		_lRet := .F.
 		Break
 	EndIf
 	//Localizando os registros validar de acordo com o Retorno
 	(_cAliasPesq)->(DbGoTop())
 	//Verifica o Status do Carregamento
-	//Garanto que n√£o vai estar sem o carregamento
+	//Garanto que n„o vai estar sem o carregamento
 	If (_cAliasPesq)->NREGVM5 == 0
-		ZPEC11RMsg("nosepara", "Pedido "+_cPicking+" n√£o possui carregamento no Protheus, n√£o sera processado !")
+		ZPEC11RMsg("nosepara", "Pedido "+_cPicking+" n„o possui carregamento no Protheus, n„o sera processado !")
 		_lRet := .F.
 		Break
 	EndIf
@@ -474,7 +472,7 @@ Begin Sequence
 	EndIf
 	While (_cAliasPesq)->(!Eof())
 		If (_cAliasPesq)->NREGVM6 == 0  //Verificar se possui numero de registro DAC 04/02/2023
-			ZPEC11RMsg("noseparaVM6", "Pedido "+_cPicking+" com problemas na sequencia do carregamento, verificar VS3_SQCONF, n√£o sera processado !")
+			ZPEC11RMsg("noseparaVM6", "Pedido "+_cPicking+" com problemas na sequencia do carregamento, verificar VS3_SQCONF, n„o sera processado !")
 			_lRet := .F.
 			Break
 		EndIf
@@ -483,11 +481,11 @@ Begin Sequence
 		VM5->(OX0020141_GravaQtdConferida( _nRegVM6 , VM6->VM6_QTORIG, "0", (_cAliasPesq)->NREGVS3 ))
 		(_cAliasPesq)->(DbSkip())
 	EndDo
-	//Ap√≥s a Grava√ß√£o Verificar se existe diverg√™ncia
+	//Ap√≥s a GravaÁ„o Verificar se existe divergencia
 	//VM5->(DbGoto((_cAliasPesq)->NREGVM5))
 	VM5->(OX0020131_VerificaDivergencias( VM5->VM5_CODIGO ))
 	If VM5->VM5_DIVERG == "1"
-		ZPEC11RMsg("divergencia","Pedido "+_cPicking+" com divergencia na separa√ß√£o, n√£o sera processado !")
+		ZPEC11RMsg("divergencia","Pedido "+_cPicking+" com divergencia na separaÁ„o, n„o sera processado !")
 		_lRet := .F.
 		Break
 	EndIf
@@ -497,7 +495,7 @@ Begin Sequence
 			VM5->(OX0020121_GravaConbar( VM5->VM5_NUMORC ))
 			VM5->(OX0020061_StatusConferencia( VM5->VM5_CODIGO , "4" ))
 		Else
-			ZPEC11RMsg("liberacao","Pedido "+_cPicking+" n√£o foi possivel fazer libera√ß√£o na separa√ß√£o, n√£o sera processado !")
+			ZPEC11RMsg("liberacao","Pedido "+_cPicking+" n„o foi possivel fazer liberaÁ„o na separaÁ„o, n„o sera processado !")
 			_lRet := .F.
 			Break
 		EndIf	
@@ -518,7 +516,7 @@ Recebe 		Verificar se ja existe picking processado na tabela SZK
 @version 	_cPicking
 @param 		oJson
 @type 		function
-@ Obs		Os paremetros de token, empresa e filial ser√£o enviados no cabe√ßalho reader Json
+@ Obs		Os paremetros de token, empresa e filial ser„o enviados no cabeÁalho reader Json
 @history      
 /*/
 Static Function ZPEC11LPIK(_cPicking )
@@ -535,25 +533,25 @@ Static Function ZPEC11LPIK(_cPicking )
 		//Alterado GAP002 28/03/2023
 		//		AND SZK.ZK_STREG	<> ' '
 		//If (_cAliasPesq)->(!Eof()) .or. (_cAliasPesq)->NREGSZK > 0
-		//Caso existam registros preenchidos n√£o √© a carga inicial e n√£o pode receber da RG
+		//Caso existam registros preenchidos n„o √© a carga inicial e n„o pode receber da RG
 		If (_cAliasPesq)->(Eof()) .or. (_cAliasPesq)->NREGSZK == 0
-			ZPEC11RMsg("nu_pedido","Pedido "+_cPicking+" Picking n√£o localizado, n√£o sera processado !")
+			ZPEC11RMsg("nu_pedido","Pedido "+_cPicking+" Picking n„o localizado, n„o sera processado !")
 			_lRet	:= .F.
 			Break
 		Endif
 		While (_cAliasPesq)->(!Eof())  
 			SZK->(DbGoto((_cAliasPesq)->NREGSZK)) 
-			//n√£o processar faturado, bloqueado, Cancelado e Diverg√™ncia 
+			//n„o processar faturado, bloqueado, Cancelado e Divergencia 
 			If !SZK->ZK_STATUS $ 'E_R'  //SZK->ZK_STATUS $ 'B_C_F_D'   //GAP002
 				_lRet	:= .F.
 				_cMens := If(SZK->ZK_STATUS == "B","Bloqueado",If(SZK->ZK_STATUS == "C","Cancelado",If(SZK->ZK_STATUS == "F","Faturado" ,If(SZK->ZK_STATUS == "D","Divergente WIS"," "+SZK->ZK_STATUS ))))
-				ZPEC11RMsg("nu_pedido","Pedido "+_cPicking+" com status "+_cMens+", n√£o sera processado !")
+				ZPEC11RMsg("nu_pedido","Pedido "+_cPicking+" com status "+_cMens+", n„o sera processado !")
 				Break
 			Endif
-			//o STREG s√≥ √© atuaiizado ap√≥s a recep√ß√£o do registro
+			//o STREG s√≥ √© atuaiizado ap√≥s a recepÁ„o do registro
 			If !Empty(SZK->ZK_STREG)
 				_lRet	:= .F.
-				ZPEC11RMsg("nu_pedido","Pedido "+_cPicking+" ja consta no cadastro Picking como recebido, n√£o sera processado !")
+				ZPEC11RMsg("nu_pedido","Pedido "+_cPicking+" ja consta no cadastro Picking como recebido, n„o sera processado !")
 				Break
 			Endif
 			(_cAliasPesq)->(DbSkip())
@@ -570,13 +568,13 @@ Return _lRet
 
 
 /*/{Protheus.doc} ZPEC11VWIS
-//Verificar se existem diverg√™ncias na Separa√ß√£o 
+//Verificar se existem divergencias na SeparaÁ„o 
 @author DAC
 @since 25/07/2023
 @version undefined
 @param _cPicking 
 @type function
-@project	GAP002 | Integra√ß√£o da separa√ß√£o - Informar produto e quantidade da cubagem
+@project	GAP002 | IntegraÁ„o da separaÁ„o - Informar produto e quantidade da cubagem
 @Obs		
 /*/
 Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
@@ -598,35 +596,35 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
 	Local _nPos
 	Local _oTable
 	Local _cQuery
-	//Local _lBloqInv 		:= .F. //Valida itens do Picking com bloqueio de inventario no armazem original -- se continuar .T. ent√£o todos itens estao bloqueados
+	//Local _lBloqInv 		:= .F. //Valida itens do Picking com bloqueio de inventario no armazem original -- se continuar .T. ent„o todos itens estao bloqueados
 
 	Default _lDivergencia 	:= .F.
 
 
-	//	--CONSULTA DIVERGENCIA SEPARA√á√ÉO SIGAPEC X WIS --
+	//	--CONSULTA DIVERGENCIA SEPARA«√O SIGAPEC X WIS --
 	Begin Sequence
 		If Empty(_cConectDetWis)
 			_lRet	:= .F.
-			ZPEC11RMsg("conexaowis","Problemas conex√£o com WIS, n√£o sera processado !")
+			ZPEC11RMsg("conexaowis","Problemas conex„o com WIS, n„o sera processado !")
 			//Enviar Email
-			ZPEC11EMAI({"Par√¢metro CMV_PEC044 de conex√£o WIS n√£o informado"}, _cPicking )
+			ZPEC11EMAI({"Par√¢metro CMV_PEC044 de conex„o WIS n„o informado"}, _cPicking )
 			Break
 		Endif
 		If Empty(_cConectCabWis)
 			_lRet	:= .F.
-			ZPEC11RMsg("conexaowis","Problemas conex√£o com WIS, n√£o sera processado !")
+			ZPEC11RMsg("conexaowis","Problemas conex„o com WIS, n„o sera processado !")
 			//Enviar Email
-			ZPEC11EMAI({"Par√¢metro CMV_PEC046 de conex√£o WIS n√£o informado"}, _cPicking )
+			ZPEC11EMAI({"Par√¢metro CMV_PEC046 de conex„o WIS n„o informado"}, _cPicking )
 			Break
 		Endif
 
-		//N√£o reconhece BeginSQL
-		Aadd(_aStru, { "PED"		, TamSX3("ZK_XPICKI")[3]	, TamSX3("ZK_XPICKI")[1]	, TamSX3("ZK_XPICKI")[2]	, PesqPict("SZK","ZK_XPICKI") })
+		//N„o reconhece BeginSQL
+		Aadd(_aStru, { "PED"		, TamSX3("ZK_XPICKI")[3]	, TamSX3("ZK_XPICKI")[1]	, TamSX3("ZK_XPICKI")[2]	, PesqPict("SZK","ZK_XPICKI")  })
 		Aadd(_aStru, { "PROD"		, TamSX3("VS3_CODITE")[3]	, TamSX3("VS3_CODITE")[1]	, TamSX3("VS3_CODITE")[2]	, PesqPict("VS3","VS3_CODITE") })
 		Aadd(_aStru, { "QT_PROT"	, TamSX3("VS3_QTDITE")[3]	, TamSX3("VS3_QTDITE")[1]	, TamSX3("VS3_QTDITE")[2]	, PesqPict("VS3","VS3_QTDITE") })
 		Aadd(_aStru, { "QT_WIS"		, TamSX3("VS3_QTDITE")[3]	, TamSX3("VS3_QTDITE")[1]   , TamSX3("VS3_QTDITE")[2]	, PesqPict("VS3","VS3_QTDITE") })
-		Aadd(_aStru, { "ARMAZEM"	, TamSX3("VS3_LOCAL")[3]	, TamSX3("VS3_LOCAL")[1]	, TamSX3("VS3_LOCAL")[2]	, PesqPict("VS3","VS3_LOCAL") })
-		Aadd(_aStru, { "DT_INV"	, TamSX3("B2_DTINV")[3]		, TamSX3("B2_DTINV")[1]   	, TamSX3("B2_DTINV")[2]		, PesqPict("SB2","B2_DTINV") })
+		Aadd(_aStru, { "ARMAZEM"	, TamSX3("VS3_LOCAL")[3]	, TamSX3("VS3_LOCAL")[1]	, TamSX3("VS3_LOCAL")[2]	, PesqPict("VS3","VS3_LOCAL")  })
+		Aadd(_aStru, { "DT_INV"	    , TamSX3("B2_DTINV")[3]		, TamSX3("B2_DTINV")[1]   	, TamSX3("B2_DTINV")[2]		, PesqPict("SB2","B2_DTINV")   })
 
 
 		_oTable := FWTemporaryTable():New()
@@ -637,7 +635,7 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
 
 		_cTable := _oTable:GetRealName()
 
-		_cQuery := " INSERT INTO "+_cTable+"                                                                                    "+(Chr(13)+Chr(10))
+		_cQuery := " INSERT INTO "+_cTable+" "+(Chr(13)+Chr(10))
 		_cQuery += " ("
 		For _nPos := 01 To Len(_aStru)
 			_cQuery += _aStru[_nPos,1]
@@ -647,8 +645,8 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
 		_cQuery += " ) "+ CRLF
 	
 		//Alterado conforme Select enviado por Z√© em 31/08/2023 para ajuste de corte 
-		//--CONSULTA DIVERGENCIA SEPARA√á√ÉO SIGAPEC X WIS -- V2
-		//--SEPARA√á√ÉO_WIS
+		//--CONSULTA DIVERGENCIA SEPARA«√O SIGAPEC X WIS -- V2
+		//--SEPARA«√O_WIS
 		_cQuery += "		WITH SEP_WIS AS" 														+ CRLF
 		_cQuery += "			( "																	+ CRLF
 		_cQuery += "				SELECT CABWIS.NU_PEDIDO PED "									+ CRLF					
@@ -666,7 +664,7 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
 		_cQuery += "				ORDER BY PED DESC " 											+ CRLF
 		_cQuery += "			)
 
-		//--SEPARA√á√ÉO PROTHEUS
+		//--SEPARA«√O PROTHEUS
 		_cQuery += ", SEP_PROT AS "																	+ CRLF
 		_cQuery += " ( "																			+ CRLF
 		_cQuery += "	SELECT 	VS3.VS3_XPICKI PED "												+ CRLF
@@ -705,7 +703,7 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
 		_cQuery += " 		FROM " 		 + _cConectDetWis + " DETWIS "								+ CRLF
 		_cQuery += "		WHERE DETWIS.DT_UPROW 		>= TO_DATE('2022-05-22','YYYY-MM-DD') " 	+ CRLF
 		_cQuery += "			AND DETWIS.NU_PEDIDO 	= "+ AllTrim(Str(_nPedido))      			+ CRLF	//--AND DETWIS.CD_PRODUTO = 'R-59122SC041'
-		//--VALIDA√á√ÉO DE PARIDADE DE LINHAS
+		//--VALIDA«√O DE PARIDADE DE LINHAS
 		_cQuery += "		UNION "																	+ CRLF	
 		_cQuery += "		SELECT LTRIM(VS3.VS3_XPICKI,0) PED_PROT, VS3.VS3_CODITE PROD_PROT "		+ CRLF
 		_cQuery += "		FROM "+RetSqlName("VS3")+" VS3  "										+ CRLF
@@ -776,7 +774,7 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
 		*/
 		nStatus := TCSqlExec(_cQuery)
 		If (nStatus < 0)
-			Aadd(_aMsgCAOA, Upper("[ZPECF011] Problemas na Sele√ß√£o de dados, comunicar ADM SISTEMA"+ CRLF +TCSQLError()) )
+			Aadd(_aMsgCAOA, Upper("[ZPECF011] Problemas na SeleÁ„o de dados, comunicar ADM SISTEMA"+ CRLF +TCSQLError()) )
 			_cMens := "[ZPEC11VWIS] Erro recebimento picking "+TCSQLError()
 			Conout(_cMens)
 			ZPEC11EMAI({_cMens}, _cPicking)
@@ -784,7 +782,7 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
 		Endif
 		
 		(_cAliasPesq)->(DbGoTop())
-		//n√£o existem inconsist√™ncias	
+		//n„o existem inconsistencias	
 		If (_cAliasPesq)->(Eof())
 			_lRet := .T.
 			Break	
@@ -801,7 +799,7 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
 			_cErro		:= "" //Limpa var para avaliar prox item
 			_lLibera 	:= .F.
 			
-			//Caso a quantidade WIS e Protheus esteja igual a Zero n√£o processar
+			//Caso a quantidade WIS e Protheus esteja igual a Zero n„o processar
 			If  (_cAliasPesq)->QT_WIS  == 0 .And. (_cAliasPesq)->QT_PROT  == 0
 				_cErro := "divergencia"
 				_cMens := "Pedido " 			+ _cPicking +" | "
@@ -810,7 +808,7 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
 				_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
 				_cMens += "Qtde zerado no WIS e Protheus"			
 				Aadd(_aMsgCAOA, Upper(_cMens) )
-			//No caso do Qtde WIS for maior que o Protheus n√£o prosseguir 	
+			//No caso do Qtde WIS for maior que o Protheus n„o prosseguir 	
 			ElseIf (_cAliasPesq)->QT_WIS > (_cAliasPesq)->QT_PROT
 				_cErro := "divergencia"
 				_cMens := "Pedido " 			+ _cPicking +" | "
@@ -833,7 +831,7 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
 				AAdd(_aMsgCAOA, _cMens)
 				_lProcessa	:= .T.  //indico que irei processar pelo menos um registro
 				_lQtdPRT	:= .T.
-			//No caso de a quantidade Protheus for maior que a quantidade WIS n√£o deixar Prosseguir 
+			//No caso de a quantidade Protheus for maior que a quantidade WIS n„o deixar Prosseguir 
 			ElseIf  (_cAliasPesq)->QT_PROT  == 0
 				_cErro := "divergewis"   //abortar somente o item
 				_cMens := "Pedido " 			+ _cPicking +" | "
@@ -850,7 +848,7 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
 				_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
 				_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+" | "
 				_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
-				_cMens += "Ser√° processado parcialmente devido Qtde maior no WIS, mas contendo Qtde no Protheus"			
+				_cMens += "Sera processado parcialmente devido Qtde maior no WIS, mas contendo Qtde no Protheus"			
 				AAdd(_aMsgCAOA, _cMens)
 				_lProcessa	:= .T.  //indico que irei processar pelo menos um registro
 				_lQtdWIS    := .T.
@@ -861,7 +859,7 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
 				_cMens += "Produto " 		   	+ AllTrim((_cAliasPesq)->PROD)+" | "
 				_cMens += "Qtde Estoque WIS "	+ AllTrim(Str((_cAliasPesq)->QT_WIS) )+" | "
 				_cMens += "Qtde Estoque CAOA "	+ AllTrim(Str((_cAliasPesq)->QT_PROT))+" | "
-				_cMens += "Ser√° processado parcialmente devido Qtde a menor no WIS"			
+				_cMens += "Sera processado parcialmente devido Qtde a menor no WIS"			
 				AAdd(_aMsgCAOA, _cMens)
 				_lProcessa	:= .T.  //indico que irei processar pelo menos um registro
 				_lQtdWprt 	:= .T.
@@ -871,7 +869,7 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
 				_lQtdprt 	:= .T. 
 			Endif
 
-			/* AJUSTE DE BLOQUEIO DE INVENT√ÅRIO
+			/* AJUSTE DE BLOQUEIO DE INVENT√ùRIO
 				//Caso o produto esteja bloqueado por inventario e tenha outros erros, cancela o picking.
 				If   (!Empty(_cErro) .and. _lBloqInv) ;
 				.or. (!Empty(_cErro) .and. dtoc((_cAliasPesq)->DT_INV) != "  /  /  ") //Caso tenha outros erros, cancela picking. 
@@ -910,25 +908,25 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
 		EndDo
 		
 		//Se tem bloqueio de invetario + erro para gerar BO, cancelar o picking (nao da pra gerar BO com bloq de inventario)
-		If !Empty(_cErro) .and. _lBloqInv 
-			_lAborta  := .T.
-			Break
-		EndIF
+		//If !Empty(_cErro) .and. _lBloqInv 
+		//	_lAborta  := .T.
+		//	Break
+		//EndIF
 
 		//caso seja para abortar processo   1 Abortar pois qtde WIS maior que PRT
-		//									2 Sair pois todas as qtdes WIS est√£o zeradas
-		//									3 Sair pois todas as quantidades Prothes est√£o Zeradas	
+		//									2 Sair pois todas as qtdes WIS est„o zeradas
+		//									3 Sair pois todas as quantidades Prothes est„o Zeradas	
 		If _lAborta .Or. ! _lQtdWIS .Or. ! _lQtdPRT 
 			//1 Abortar pois qtde WIS maior que PRT 	
 			If _lAborta
 				_cMens 		:= _aMsgCAOA[Len(_aMsgCAOA)]
-				//_aMsgCAOA	:= {_cMens}  //posso gerar as demais mensagens pois ser√° enviado para RG
-				ZPEC11RMsg("divergencia",_cMens)  //divergewis dever√° ser utilizada esta tag somente se ocorrer este processo
+				//_aMsgCAOA	:= {_cMens}  //posso gerar as demais mensagens pois sera enviado para RG
+				ZPEC11RMsg("divergencia",_cMens)  //divergewis devera ser utilizada esta tag somente se ocorrer este processo
 				//AAdd(_aMsgCAOA,_cMens)  
 				//ZPEC11EMAI({_cMens}, _cPicking, (_cAliasPesq)->QT_PROT)  //Envio e-mail
 			Else 
-				_cMens		:= "Todos os itens estao com quantidades zeradas para WIS ou Protheus,  Picking nao ser√° processado e status dos or√ßamentos voltar√£o ao status inicial, Picking sera cancelado"
-				ZPEC11RMsg("divergewis",_cMens)  //divergewis dever√° ser utilizada esta tag somente se ocorrer este processo
+				_cMens		:= "Todos os itens estao com quantidades zeradas para WIS ou Protheus,  Picking nao sera processado e status dos orÁamentos voltar„o ao status inicial, Picking sera cancelado"
+				ZPEC11RMsg("divergewis",_cMens)  //divergewis devera ser utilizada esta tag somente se ocorrer este processo
 				AAdd(_aMsgCAOA,_cMens)   
 				//rotina para cancelar picking
 				//Deixar continuar pois ira verificar todos os itens e enviar via e-mail
@@ -945,9 +943,9 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
 		Endif 
 
 		If ! _lProcessa
-			_cMens		:= "N√£o foi possivel processar Pedido "+_cPicking
-			ZPEC11RMsg("divergewis",_cMens)  //divergewis dever√° ser utilizada esta tag somente se ocorrer este processo
-			_AAdd(aMsgCAOA, _cMens)  //posso gerar as demais mensagens pois ser√° enviado para RG
+			_cMens		:= "N„o foi possivel processar Pedido "+_cPicking
+			ZPEC11RMsg("divergewis",_cMens)  //divergewis devera ser utilizada esta tag somente se ocorrer este processo
+			_AAdd(aMsgCAOA, _cMens)  //posso gerar as demais mensagens pois sera enviado para RG
 			Break  //Deixar continuar pois estara gravado hist√≥rico em _aMsgCaoa
 		Endif
 
@@ -955,8 +953,8 @@ Static Function	ZPEC11VWIS(_cPicking, _lDivergencia)//, _lBloqInv)
 		If Len(_aDiverge) > 0
 			_lRet := ZPEC11BKOR( _aDiverge )
 			If ! _lRet
-				_cMens		:= "N√£o foi possivel desmembrar Pedido "+_cPicking
-				ZPEC11RMsg("divergencia",_cMens)  //divergewis dever√° ser utilizada esta tag somente se ocorrer este processo
+				_cMens		:= "N„o foi possivel desmembrar Pedido "+_cPicking
+				ZPEC11RMsg("divergencia",_cMens)  //divergewis devera ser utilizada esta tag somente se ocorrer este processo
 				Break 
 			Endif 
 		Endif
@@ -977,14 +975,14 @@ Return _lRet
 
 
 /*/{Protheus.doc} ZPEC11BKOR
-//Fun√ß√£o para gerar BackOrder dos registros recebidos no Picking 
+//FunÁ„o para gerar BackOrder dos registros recebidos no Picking 
 @author DAC
 @since 28/07/2023
 @version undefined
 @param _aDiverge
 @type function
-@project	GAP002 | Integra√ß√£o da separa√ß√£o - Informar produto e quantidade da cubagem
-@Obs		Necess√°rio fazer este ajuste pois os or√ßamentos s√£o aglutinados para a gera√ß√£o do picking, podendo existir mais de um or√ßamento com o mesmo c√≥digo
+@project	GAP002 | IntegraÁ„o da separaÁ„o - Informar produto e quantidade da cubagem
+@Obs		Necessario fazer este ajuste pois os orÁamentos s„o aglutinados para a geraÁ„o do picking, podendo existir mais de um orÁamento com o mesmo c√≥digo
 /*/
 Static Function ZPEC11BKOR( _aDiverge )
 Local _lRet 		:= .F.
@@ -1030,15 +1028,15 @@ Begin Sequence
 				AND VS3.VS3_XPICKI = %Exp:_cPicking% 
 			ORDER BY VS3.VS3_NUMORC	
 		EndSql
-		//Caso n√£o localize um produto no picking abortar toda a opera√ß√£o
+		//Caso n„o localize um produto no picking abortar toda a operaÁ„o
 		If (_cAliasPesq)->(Eof())
 			Aadd(_aMsgCAOA,"Nao localizado Pedido "+_cPicking+" para o Produto "+_cCodProd) //_aMsgCAOA[2] := "Atualizando produdo R-151000079AA orcamento" + str((_cAliasPesq)->VS3_NUMORC) + " Qtde Protheus " + (_cAliasPesq)->VS3_QTDITE + "Qtde WIS 0"
 			Break
 		Endif	
 
-		//Processar podem existir mais de um or√ßamento pois o picking √© agrupamento de or√ßamentos
+		//Processar podem existir mais de um orÁamento pois o picking √© agrupamento de orÁamentos
 		//Aadd(_aMsgCAOA, "Atualizando produdo "+AllTrim(_cCodProd)+" orcamento "+VS3->VS3_NUMORC+", Qtde Protheus "+AllTrim(STR(VS3->VS3_QTDITE))+" Qtde WIS "+AllTrim(STR(_nQtdeDivWiS)))
-		//Ajuste a pedido do JUAREZ, GAP098, Mensagem estava sendo grava com n√∫mero de or√ßamento sempre com a informa√ß√£o da primeira linha da tabela VS3. Nicolas Lima 
+		//Ajuste a pedido do JUAREZ, GAP098, Mensagem estava sendo grava com n√∫mero de orÁamento sempre com a informaÁ„o da primeira linha da tabela VS3. Nicolas Lima 
 		Aadd(_aMsgCAOA, "Atualizando produdo " + AllTrim(_cCodProd) + " orcamento " + Alltrim((_cAliasPesq)->VS3_NUMORC) + " Qtde Protheus " + Alltrim(str((_cAliasPesq)->VS3_QTDITE)) + " Qtde WIS " + AllTrim(str(_nQtdeDivWiS)))
 		_nSaldoWis	:= _nQtdeDivWiS
 		_nSaldoProt := _nQtdeDivPRO
@@ -1047,20 +1045,20 @@ Begin Sequence
 			_nQtde 	:= 0
 			_cObs 	:= "Atualizacao de Divergencia Qtde Protheus X WIS , Picking "+_cPicking+" Valor correspondente a diferenca entre as Qtde  no produto, orcamento Principal "+VS1->VS1_NUMORC + CRLF
 			VS3->(DbGoto((_cAliasPesq)->NREGVS3))
-			//necess√°rio retirar a reserva
+			//necessario retirar a reserva
 			If _nSaldoWis == 0 .Or. _nSaldoProt == 0
 				_nQtde 		:= VS3->VS3_QTDITE
 				_lZera 	:= .T.
 				_cObs   += "Devido Qtde "+If(_nSaldoWis == 0,"WIS","Prothes")+" igual a zero" + CRLF
-				//Caso o or√ßamento seja maior que o Wis abater os valores
+				//Caso o orÁamento seja maior que o Wis abater os valores
 			ElseIf VS3->VS3_QTDITE > _nSaldoWis
 				_nQtde 		:= _nSaldoWis
 				_lZera 		:= .F.
 				_cMsg   	:= "Item "+AllTrim(VS3->VS3_SEQUEN) +", Qtde Protheus "+AllTrim(STR(VS3->VS3_QTDITE))+" Qtde Restante  "+AllTrim(STR(_nSaldoWis)) + CRLF
 				_cObs   	+= _cMsg
 				Aadd(_aMsgCAOA, _cMsg)
-			//Caso o saldo wis seja menor que o or√ßamento o mesmo ficar√° n√£o mecher somente abater da soma
-	   		//Caso seja o mesmo valor n√£o fazer movimenta√ß√£o
+			//Caso o saldo wis seja menor que o orÁamento o mesmo ficara n„o mecher somente abater da soma
+	   		//Caso seja o mesmo valor n„o fazer movimentaÁ„o
 			ElseIf VS3->VS3_QTDITE <= _nSaldoWis 
 				_nQtde 		:= VS3->VS3_QTDITE
 				_lZera 		:= If(VS3->VS3_QTDITE < _nSaldoWis,.F.,.T.)
@@ -1094,17 +1092,17 @@ Begin Sequence
 	If  Len(_aBak) == 0
 		_lRet := .T.
 	Endif 	
-	//Gravar BackOrder, necess√°rio fazer isto pois pode ser varios or√ßamentos
-	//Organizo por numero de or√ßamento
+	//Gravar BackOrder, necessario fazer isto pois pode ser varios orÁamentos
+	//Organizo por numero de orÁamento
 	Asort(_aBak,,, { |x, y| x[7] > y[7] } )
-	_cNumOrc 	:= _aBak[1,7]   //numero do or√ßamento --> ((_cAliasPesq)->VS3_NUMORC })
+	_cNumOrc 	:= _aBak[1,7]   //numero do orÁamento --> ((_cAliasPesq)->VS3_NUMORC })
 	_aRegVS3 	:= {}    		//registros para reserva
 	_aBackOrder	:= {}
 	
 	For _nPos := 1 To Len(_aBak)
 		Aadd(_aBackOrder,{_aBak[_nPos,1], _aBak[_nPos,2], _aBak[_nPos,3], _aBak[_nPos,4],_aBak[_nPos,5],_aBak[_nPos,6]})
-		//Sera necess√°rio retirar reserva
-		//mudando or√ßamento e ou no fim do for  
+		//Sera necessario retirar reserva
+		//mudando orÁamento e ou no fim do for  
 
 		_cOrcam := _aBak[_nPos, 7] //Isso pode ser alterado por _cNumOrc ?
 		If !aScan(_aBakUnico, _cOrcam) > 0
@@ -1112,28 +1110,28 @@ Begin Sequence
 			_cNumOrc := _aBak[_nPos,7]
 	
 			//If _cNumOrc <> _aBak[_nPos,7] .Or. _nPos == Len(_aBak)
-			//primeiro tiro as reservas do produto antes de abater as diferen√ßas
+			//primeiro tiro as reservas do produto antes de abater as diferenÁas
 			_lRet := ZPEC11BKRE( _cNumOrc, _cPicking, .F., /*_aRegVS3*/)  
 			If ! _lRet
-				_cMsg :=  "Problemas para retirar as reservas or√ßamento "+_cNumOrc
+				_cMsg :=  "Problemas para retirar as reservas orÁamento "+_cNumOrc
 				Aadd(_aMsgCAOA, _cMsg)
 				Break	
 			Endif
 			//Fazer a Clonagem do registro
 			_lRet := U_XOFUNCLO( _cNumOrc, /*_cGrupo*/, /*_cCodProd*/, /*_nQtdeItem*/, /*_lZera*/, /*_aVazioCpo*/, _aBackOrder)
 			If ! _lRet
-				_cMsg :=  "Ocorrer√£o problemas para clonar itens que n√£o possuem status para carregamento aos quais passariam para backorder"
+				_cMsg :=  "Ocorrer„o problemas para clonar itens que n„o possuem status para carregamento aos quais passariam para backorder"
 				Aadd(_aMsgCAOA, _cMsg)
 				Break	
 			EndIf
-			_cMsg := "Criado Backorder para or√ßamento(s) "+ _cNumOrc +" diferen√ßa de qtde Protheus  em rela√ß√£o ao retorno Picking WIS"
+			_cMsg := "Criado Backorder para orÁamento(s) "+ _cNumOrc +" diferenÁa de qtde Protheus  em relaÁ„o ao retorno Picking WIS"
 			Aadd(_aMsgCAOA, _cMsg)
 			//Ajustar as quantidades ap√≥s a Clonagem
 			ZPEC11BKAJ(_aBackOrder)
-			//Faz a reserva novamente, apenas dos itens com saldo (itens do BO n√£o s√£o reservados).
+			//Faz a reserva novamente, apenas dos itens com saldo (itens do BO n„o s„o reservados).
 			_lRet := ZPEC11BKRE( _cNumOrc, _cPicking, .T., /*_aRegVS3*/)  
 			If ! _lRet
-				_cMsg :=  "Problemas para criar as reservas or√ßamento "+_cNumOrc
+				_cMsg :=  "Problemas para criar as reservas orÁamento "+_cNumOrc
 				Aadd(_aMsgCAOA, _cMsg)
 				Break	
 			Endif
@@ -1153,13 +1151,13 @@ Endif
 Return _lRet
 
 /*/{Protheus.doc} ZPEC11BKRE
-//Fun√ß√£o para atualizar reserva e gerar BackOrder dos registros recebidos no Picking 
+//FunÁ„o para atualizar reserva e gerar BackOrder dos registros recebidos no Picking 
 @author DAC
 @since 28/07/2023
 @version undefined
 @param _cNumOrc, _cPicking, _lReserva, _aRegVS3
 @type function
-@project	GAP002 | Integra√ß√£o da separa√ß√£o - Informar produto e quantidade da cubagem
+@project	GAP002 | IntegraÁ„o da separaÁ„o - Informar produto e quantidade da cubagem
 @Obs		
 /*/
 Static Function ZPEC11BKRE(_cNumOrc, _cPicking, _lReserva, _aRegVS3)
@@ -1177,7 +1175,7 @@ Private _aMsgCAOAAglu	:= {}
 
 Begin Sequence 
 
-	//montar bakOrder da diferen√ßa
+	//montar bakOrder da diferenÁa
 	//posicionar VS1
 	VS1->(DbSetOrder(1))
 	VS1->(DbSeek(FwXFilial("VS1")+ _cNumOrc))
@@ -1195,17 +1193,17 @@ Begin Sequence
 	_cDocto := OX001RESITE(_cNumOrc,_lReserva,_aSeqVS3 )
 	if Empty(_cDocto) .or. _cDocto == "NA"
 		If _lReserva
-			_cMsg := "N√£o foi possivel criar a reserva do item, or√ßamento "+_cNumOrc+" devido a Divergencia na qtde "
+			_cMsg := "N„o foi possivel criar a reserva do item, orÁamento "+_cNumOrc+" devido a Divergencia na qtde "
 		Else 
-			Aadd(_aMsgCAOA, "N√£o foi possivel retirar a reserva do item, alterado or√ßamento "+_cNumOrc+" devido a Divergencia na qtde")
+			Aadd(_aMsgCAOA, "N„o foi possivel retirar a reserva do item, alterado orÁamento "+_cNumOrc+" devido a Divergencia na qtde")
 		Endif 	
 		Aadd(_aMsgCAOA, _cMsg )
 		Break
 	Endif
 	If _lReserva 
-		_cMsg := "Incluido reserva "+_cDocto+" do item, or√ßamento "+_cNumOrc+" devido a Divergencia na qtde "
+		_cMsg := "Incluido reserva "+_cDocto+" do item, orÁamento "+_cNumOrc+" devido a Divergencia na qtde "
 	Else
-		_cMsg := "Retirada reserva "+_cDocto+" do item, or√ßamento "+_cNumOrc+" devido a Divergencia na qtde"
+		_cMsg := "Retirada reserva "+_cDocto+" do item, orÁamento "+_cNumOrc+" devido a Divergencia na qtde"
 	Endif
 	Aadd(_aMsgCAOA, _cMsg )
 	_lRet := .T.
@@ -1215,13 +1213,13 @@ Return _lRet
 
 
 /*/{Protheus.doc} ZPEC11BKAJ
-//Fun√ß√£o para atualizar qtde de itens que sofreram backorder, abatndo do seu total existente 
+//FunÁ„o para atualizar qtde de itens que sofreram backorder, abatndo do seu total existente 
 @author DAC
 @since 14/08/2023
 @version undefined
 @param _aBackOrder
 @type function
-@project	GAP002 | Integra√ß√£o da separa√ß√£o - Informar produto e quantidade da cubagem
+@project	GAP002 | IntegraÁ„o da separaÁ„o - Informar produto e quantidade da cubagem
 @Obs		
 /*/
 Static Function ZPEC11BKAJ(_aBackOrder)
@@ -1232,7 +1230,7 @@ DeFault _aRegVS3 		:= {}
 
 Begin Sequence 
 	For _nPos := 1 To Len(_aBackOrder)
-		//Ajustar somente os itens que n√£o foram feitos backorder do seu total
+		//Ajustar somente os itens que n„o foram feitos backorder do seu total
 		If !_aBackOrder[_nPos,6]  
 			VS3->(DbGoto(_aBackOrder[_nPos,1]))
 			VS3->(RecLock("VS3",.F.))
@@ -1258,7 +1256,7 @@ Static Function ValidOJson(_oJson, _cTipo)
 Local _lRet			:= .T.
 Begin Sequence
 
-	If !ZPEC11Obri(_oJson)  //Tem a fun√ß√£o de validar os itens obrigat√≥rios neste caso o vabe√ßalho
+	If !ZPEC11Obri(_oJson)  //Tem a funÁ„o de validar os itens obrigat√≥rios neste caso o vabeÁalho
 		_lRet := .F.
 		Break
 	EndIf	
@@ -1268,7 +1266,7 @@ Return _lRet
 
 
 /*/{Protheus.doc} ZPEC11Obri
-//Verifica informa√ß√µes de campos obrigat√≥rios 
+//Verifica informaÁ√µes de campos obrigat√≥rios 
 @author DAC
 @since 12/11/2021
 @version undefined
@@ -1282,12 +1280,12 @@ Local _nPos
 Local _cMsgRet
 Local _nRet
 
-Default _lItem 	:= .F.  //identifica se lera item ou cabe√ßalho
+Default _lItem 	:= .F.  //identifica se lera item ou cabeÁalho
 Default _lTodos	:= .F.	//determina se retornara todos os erros obrigat√≥rios e ou somente o primeiro erro com obrigat√≥rio
 
 Begin Sequence
 	For _nPos := 1 To Len(_aRetMsg)
-		//Caso seja obrigat√≥rio devo verificar se item ou cabe√ßalho  
+		//Caso seja obrigat√≥rio devo verificar se item ou cabeÁalho  
 		If _aRetMsg[_nPos,4] .And. ;
 			((!_lItem .And. !_aRetMsg[_nPos,3]) .Or. (_lItem .And. _aRetMsg[_nPos,3]))  
 			//armazeno em uma variavel para validar
@@ -1302,7 +1300,7 @@ Begin Sequence
 		EndIf
 		If !_lRet
 			_nRet := _aRetMsg[_nPos,1] 
-			_cMsgRet := "Tag "+ _aRetMsg[_nPos,2]+" n√£o esta preenchido !"	
+			_cMsgRet := "Tag "+ _aRetMsg[_nPos,2]+" n„o esta preenchido !"	
 			If Len(_aRetMsg[_nPos]) >= 5 .and. ValType(_aRetMsg[_nPos,5]) == "C" .and. !Empty(_aRetMsg[_nPos,5])
 				_cMsgRet += " Ref. : "+_aRetMsg[_nPos,5]+" !" 
 			EndIf
@@ -1348,13 +1346,13 @@ Return _nRet
 @author DAC
 @since 12/11/2021
 @version undefined
-@param _aMsg, array, descri√ß√£o
+@param _aMsg, array, descriÁ„o
 @type function
 /*/
 Static Function ZPEC11AMsg()
 Local _aRet := {}
 Begin Sequence
-	//			Nr Ret	Tags Json				Item	Obrig	Descri√ß√£o	
+	//			Nr Ret	Tags Json				Item	Obrig	DescriÁ„o	
 	Aadd(_aRet, {100,	"ok"					, .F.	, .F., 	"Processo realizado com sucesso"})
 
 	Aadd(_aRet, {400,	"usuario"				, .F.	, .T., 	"Usuario"})
@@ -1363,7 +1361,7 @@ Begin Sequence
 
 
 	Aadd(_aRet, {600,	"nu_pedido"				, .T.	, .T., 	"Numero do pedido"})
-	Aadd(_aRet, {601,	"cd_situacao"			, .T.	, .T., 	"C√≥digo da situa√ß√£o do pedido"})
+	Aadd(_aRet, {601,	"cd_situacao"			, .T.	, .T., 	"C√≥digo da situaÁ„o do pedido"})
 	Aadd(_aRet, {602,	"vol_barcode"			, .T.	, .F., 	"C√≥digo de barras volume"})
 	Aadd(_aRet, {603,	"vol_sequencia"			, .T.	, .T., 	"Volume x de y"})
 	Aadd(_aRet, {604,	"vol_comprimento"		, .T.	, .T., 	"Comprimento do volume"})
@@ -1374,17 +1372,17 @@ Begin Sequence
 	Aadd(_aRet, {609,	"vl_cubagem"			, .T.	, .T., 	"Valor da cubagem do volume"})
 	Aadd(_aRet, {610,	"nu_serie_produto"		, .T.	, .F., 	"N√∫mero de s√©rie"})
 	Aadd(_aRet, {611,	"ds_observacao"			, .T.	, .F., 	"Obs conferente"})
-	Aadd(_aRet, {612,	"nexistepick"			, .F.	, .F., 	"N√£o localizado numero de Pedido"})
-	Aadd(_aRet, {613,	"nostatusconf"			, .F.	, .F., 	"Status Separa√ß√£o invalido para confer√™ncia"})
-	Aadd(_aRet, {613,	"noseparaVM6"			, .F.	, .F., 	"Sequencia Separa√ß√£o invalida entre confer√™ncia e PEdido"})
-	Aadd(_aRet, {614,	"nostatusorc"			, .F.	, .F., 	"Status Separa√ß√£o invalido para pedido"})
-	Aadd(_aRet, {615,	"divergencia"			, .F.	, .F., 	"Divergencia na separa√ß√£o"})
+	Aadd(_aRet, {612,	"nexistepick"			, .F.	, .F., 	"N„o localizado numero de Pedido"})
+	Aadd(_aRet, {613,	"nostatusconf"			, .F.	, .F., 	"Status SeparaÁ„o invalido para conferencia"})
+	Aadd(_aRet, {613,	"noseparaVM6"			, .F.	, .F., 	"Sequencia SeparaÁ„o invalida entre conferencia e PEdido"})
+	Aadd(_aRet, {614,	"nostatusorc"			, .F.	, .F., 	"Status SeparaÁ„o invalido para pedido"})
+	Aadd(_aRet, {615,	"divergencia"			, .F.	, .F., 	"Divergencia na separaÁ„o"})
 
-	Aadd(_aRet, {616,	"liberacao"				, .F.	, .F., 	"Problemas com libera√ß√£o na separa√ß√£o"})
-	Aadd(_aRet, {617,	"nosepara"				, .F.	, .F., 	"N√£o possui carregamento no Protheus"})
-	Aadd(_aRet, {618,	"noitens"				, .F.	, .F., 	"N√£o localizado itens para carregamento no Protheus"})
+	Aadd(_aRet, {616,	"liberacao"				, .F.	, .F., 	"Problemas com liberaÁ„o na separaÁ„o"})
+	Aadd(_aRet, {617,	"nosepara"				, .F.	, .F., 	"N„o possui carregamento no Protheus"})
+	Aadd(_aRet, {618,	"noitens"				, .F.	, .F., 	"N„o localizado itens para carregamento no Protheus"})
 
-	Aadd(_aRet, {616,	"divergewis"			, .F.	, .F., 	"Divergencia na separa√ß√£o WIS"})
+	Aadd(_aRet, {616,	"divergewis"			, .F.	, .F., 	"Divergencia na separaÁ„o WIS"})
 
 End Sequence
 Return _aRet
@@ -1392,7 +1390,7 @@ Return _aRet
 
 /*
 nu_pedido_origem		N√∫mero do pedido
-cd_situacao				C√≥digo da situa√ß√£o do pedido
+cd_situacao				C√≥digo da situaÁ„o do pedido
 vol_barcode				C√≥digo de barras volume
 vol_sequencia			Volume x de y
 vol_comprimento			Comprimento do volume
@@ -1420,9 +1418,9 @@ Local _cMsg  := ""
 Local _nPos
 
 Begin Sequence
-	If Len(_aMsgRet) == 0  //caso n√£o venha com nenhuma msg
+	If Len(_aMsgRet) == 0  //caso n„o venha com nenhuma msg
 		_nMsg	:= 999
-		_cMsg	:= "problemas na identifica√ßao do erro, n√£o processado !"
+		_cMsg	:= "problemas na identificaÁao do erro, n„o processado !"
 	ElseIf	Len(_aMsgRet) > 1 //caso seja mais de uma msg enviar os erros aglupados nas msgs
 		_nMsg	:= 999
 		_cMsg	:= ""
@@ -1447,7 +1445,7 @@ Funcionalidade Responsavel para enviar e-mail com divergencias ocorridas no proc
 @version undefined
 @param 
 @type function
-@project	GAP002 | Integra√ß√£o da separa√ß√£o - Informar produto e quantidade da cubagem
+@project	GAP002 | IntegraÁ„o da separaÁ„o - Informar produto e quantidade da cubagem
 @Obs		
 /*/
 Static Function ZPEC11EMAI(_aMsg, _cPicking, _cCodProd, _cAssunto)
@@ -1455,7 +1453,7 @@ Local _cAliasPesq	:= GetNextAlias()
 Local _cEmail		:= ""
 
 Begin Sequence 
-	BeginSql Alias _cAliasPesq //Define o nome do alias tempor√°rio 
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporario 
 		SELECT SX5.X5_DESCRI
 		FROM %Table:SX5% SX5	
 		WHERE SX5.%notDel%
@@ -1464,7 +1462,7 @@ Begin Sequence
 			AND SX5.X5_DESCRI 	<> ' '				
 	EndSql
 	If (_cAliasPesq)->(Eof())
-		Conout("[ZPECF011] - N√£o cadatrado email SX5 Tabela 2E, referente a problemas ocorridos no recebimento do Picking")
+		Conout("[ZPECF011] - N„o cadatrado email SX5 Tabela 2E, referente a problemas ocorridos no recebimento do Picking")
 		Break
 	Endif 
 	While (_cAliasPesq)->(!Eof())
@@ -1485,11 +1483,11 @@ Return Nil
 Programa.:              ZPCPF07EM
 @param 					_aMens   	= Mensagens de erro 
 						_cAssunto   = Assunto do e-mail 
-						_cEmails    = Destinat√°rio do e-mail 
+						_cEmails    = Destinatario do e-mail 
 						_cEMailCopia= Destinatarios em c√≥pia 
-						_aAnexos 	= Localiza√ß√£o e nome do arquivo anexo 
+						_aAnexos 	= LocalizaÁ„o e nome do arquivo anexo 
 						_cRotina    = Rotina que chamou o processo
-						lSchedule	= Esta rodando em job se verdadeiro n√£o emitira msg em tela
+						lSchedule	= Esta rodando em job se verdadeiro n„o emitira msg em tela
 Autor....:              CAOA - DAC Denilso 
 Data.....:              10/07/2020
 Descricao / Objetivo:   Funcao para processar o envio das notificacoes
@@ -1510,7 +1508,7 @@ Local _cReplyTo			:= ""
 Local _cCorItem			:= "FFFFFF"
 Local _lEnvia			:= .T.
 Local _cLogo  			:= 'https://tinyurl.com/logocaoa'  
-Local _cNomeUsu 		:= "RECEBIMENTO RETORNO PICKING RGLOG [ZPECF011]" //Upper(FwGetUserName(RetCodUsr())) //Retorna o nome completo do usu√°rio  __cUserId
+Local _cNomeUsu 		:= "RECEBIMENTO RETORNO PICKING RGLOG [ZPECF011]" //Upper(FwGetUserName(RetCodUsr())) //Retorna o nome completo do usuario  __cUserId
 Local _cCodUsu			:= "RGLOG_JS" //RetCodUsr()
 Local _cDescProd		:= ""
 Local _cRotina			:= "ZPECF011"
@@ -1520,7 +1518,7 @@ Default _aMsg			:= {}
 Default _cPicking		:= ""
 Default _cCodProd		:= ""
 Default _cAssunto		:= Upper("Informacoes Retorno Picking "+AllTrim(_cPicking)+" [ZPECF011]") 
-Default _cEmails 		:= "evandro.mariano@caoa.com.br"  //E-mail para envio problemas integra√ß√£o  
+Default _cEmails 		:= "evandro.mariano@caoa.com.br"  //E-mail para envio problemas integraÁ„o  
 Default _cEMailCopia	:= ""
 Default _aAnexos		:= {}
 Default _lSchedule   	:= IsBlind()
@@ -1528,8 +1526,8 @@ Default _lSchedule   	:= IsBlind()
 Begin Sequence 
 	_lMsgErro			:= IF( _lSchedule == .F., .T. , .F. )
 	If Empty(_cEmails)
-		_cTexto := "**** Erros referente ao processo de importa√ß√£o Retorno Picking fun√ß√£o [ZPECF011] n√£o possui e-mail cadastrado no SX5 Tabela 2E ****"
-		_cTexto += "     Os mesmos ser√£o gravados no log do Sistema conforme informa√ß√µes abaixo" 
+		_cTexto := "**** Erros referente ao processo de importaÁ„o Retorno Picking funÁ„o [ZPECF011] n„o possui e-mail cadastrado no SX5 Tabela 2E ****"
+		_cTexto += "     Os mesmos ser„o gravados no log do Sistema conforme informaÁ√µes abaixo" 
 		Conout(_cTexto)
 		For _nPos := 1 To Len(_aMsg)
 			Conout( _aMsg[_nPos])
@@ -1549,7 +1547,7 @@ Begin Sequence
 	_cHtml := ""
 	_cHtml += "<html>"+ CRLF
 	_cHtml += "	<head>"+ CRLF
-	_cHtml += "		<title>Processo de importa√ß√£o Retorno Picking [ZPECF011] Informa√ß√µes/Erros</title>"+ CRLF
+	_cHtml += "		<title>Processo de importaÁ„o Retorno Picking [ZPECF011] InformaÁ√µes/Erros</title>"+ CRLF
 	_cHtml += "	</head>"+ CRLF
 	_cHtml += "	<body leftmargin='0' topmargin='0' rightmargin='0' bottommargin='0'>"+ CRLF
 	_cHtml += "		<table width='100%' height='100%' border='0' cellpadding='0' cellspacing='0'>"+ CRLF
@@ -1561,7 +1559,7 @@ Begin Sequence
 	_cHtml += "								<table width='100%' height='60%' border='3' cellpadding='0' cellspacing='0' >"+ CRLF
 	_cHtml += "									<tr>"+ CRLF
 	_cHtml += "										<th width='12%' height='0' scope='col'><img src='" + _cLogo + "' width='118' height='40'></th>"+ CRLF
-	_cHtml += "										<td width='67%' align='center' valign='middle' scope='col'><font face='Arial' size='+1'><b>Recebimento PICKING RGLOG Informa√ß√µes</b></font></td>"+ CRLF
+	_cHtml += "										<td width='67%' align='center' valign='middle' scope='col'><font face='Arial' size='+1'><b>Recebimento PICKING RGLOG InformaÁ√µes</b></font></td>"+ CRLF
 	_cHtml += "									</tr>"+ CRLF
 	_cHtml += "								</table>"+ CRLF
 	_cHtml += "							</th>"+ CRLF
@@ -1574,7 +1572,7 @@ Begin Sequence
 	_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>"+AllTrim(FWFilialName(,SM0->M0_CODFIL))+"</font></td>"+ CRLF
 	_cHtml += "									</tr>"+ CRLF
 	_cHtml += "									<tr>"+ CRLF
-	_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Respons√°vel(is):	</b></font></td>"+ CRLF
+	_cHtml += "										<td width='12%' height='16' align='left'  valign='middle' bgcolor='#D3D3D3' scope='col'><font size='2' face='Arial'><b>Responsavel(is):	</b></font></td>"+ CRLF
 	_cHtml += "										<td width='88%' height='16' align='left'  valign='middle' scope='col'><font size='2' face='Arial'>" + _cCodUsu+"-"+_cNomeUsu + "</font></td>"+ CRLF
 	_cHtml += "									</tr>"+ CRLF
 	_cHtml += "									<tr>"+ CRLF
@@ -1592,7 +1590,7 @@ Begin Sequence
 	_cHtml += "							<td height='25' style='padding-top:1em;'>"+ CRLF
 	_cHtml += "								<table width='100%' height='100%' border='2' cellpadding='2' cellspacing='0' >"+ CRLF
 	_cHtml += "									<tr bgcolor='#4682B4'>"+ CRLF
-	_cHtml += "										<th width='10%' height='100%' align='center' valign='middle' scope='col'><font face='Arial' size='2'><b>Descri√ß√£o		</b></font></th>"+ CRLF
+	_cHtml += "										<th width='10%' height='100%' align='center' valign='middle' scope='col'><font face='Arial' size='2'><b>DescriÁ„o		</b></font></th>"+ CRLF
 	_cHtml += "									</tr>"+ CRLF
 
 	For _nPos := 1 To Len(_aMsg)
@@ -1617,23 +1615,23 @@ Begin Sequence
 	cMailCopia		- E-mail de c√≥pia
 	cAssunto		- Assunto do E-mail
 	cHtml			- Corpo do E-mail
-	aAnexos			- Anexos que ser√° enviado
+	aAnexos			- Anexos que sera enviado
 	lMsgErro		- .T. Exige msgn na tela - .F. Exibe somente por Conout
 	cReplyTo		- Responder para outra pessoa.
-	cRotina			- Rotina que est√° sendo executada.
-	cObsMail		- Observa√ß√£o para Grava√ß√£o do Log.
+	cRotina			- Rotina que esta sendo executada.
+	cObsMail		- ObservaÁ„o para GravaÁ„o do Log.
 	*/
 	If _lSchedule
 		_lEnvia := U_ZGENMAIL(_cEmailDest,_cEMailCopia,_cAssunto,_cHtml,_aAnexos,_lMsgErro,_lMsgOK,_cRotina,_cObsMail,_cReplyTo)
 	Else
-		MsgRun("Enviando e-mail de notifica√ß√£o. Aguarde!!!","CAOA",{|| _lEnvia := U_ZGENMAIL(_cEmailDest,_cEMailCopia,_cAssunto,_cHtml,_aAnexos,_lMsgErro,_lMsgOK,_cRotina,_cObsMail,_cReplyTo) })
+		MsgRun("Enviando e-mail de notificaÁ„o. Aguarde!!!","CAOA",{|| _lEnvia := U_ZGENMAIL(_cEmailDest,_cEMailCopia,_cAssunto,_cHtml,_aAnexos,_lMsgErro,_lMsgOK,_cRotina,_cObsMail,_cReplyTo) })
 	EndIf
 
 	If !_lEnvia
 		If lSchedule
-			ConOut("**** [ ZPCPF11EM ] - E-mail n√£o enviado por problemas no envio fun√ß√£o ZGENMAIL - Solicitar apoio do administrador! (Totvs Integra√ß√£o RETORNO PICKING) ****"+ CRLF)
+			ConOut("**** [ ZPCPF11EM ] - E-mail n„o enviado por problemas no envio funÁ„o ZGENMAIL - Solicitar apoio do administrador! (Totvs IntegraÁ„o RETORNO PICKING) ****"+ CRLF)
 		Else
-			ApMsgInfo("E-mail n√£o enviado - Solicitar apoio do administrador!! (Totvs Integra√ß√£o RETORNO PICKING)","ERRO EMAIL")
+			ApMsgInfo("E-mail n„o enviado - Solicitar apoio do administrador!! (Totvs IntegraÁ„o RETORNO PICKING)","ERRO EMAIL")
 		EndIf
 	EndIf
 End Sequence
