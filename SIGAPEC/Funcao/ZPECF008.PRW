@@ -666,7 +666,14 @@ Begin Sequence
 					If _lRet .and. !ZPECF08CAR(VS1->VS1_NUMORC, @_aBackOrder, @_aSeqVS3,(_cAliasTRB)->NREGVS1, @_aVS3Reg, _cLocal)
 						_lRet := .F.
            				Disarmtransaction()
-					EndIf	
+					EndIf
+					//if len(_aBackOrder[1]) > 6 .and. len( _aBackOrder[1]) > 1
+					//	if AScanX(  _aBackOrder, { | x, y | x[7] > 0  .And. y > 1 } ) > 0
+					//		_lRet := .T.
+					//	Else
+					//		_lRet := .F.
+					//	EndIF
+					//endif
 					//Cria separação e faz reserva
 					If _lRet  .And. VS1->VS1_STATUS <> "3"  //somente deixar criar se não for bloqueio de credito
 						_lRet := U_XOFUNLIB(VS1->VS1_NUMORC, _aSeqVS3, _aVS3Reg) 
@@ -828,7 +835,7 @@ Local _nPos
 Local _cGrupo
 //Local _aCpoVazio	:= {"VS1_XAGLU","VS1_XDTAGL","VS1_XHSAGL","VS1_XUSUGL","VS1_OBSAGL"}
 //Local _nTam			:= TamSx3("B2_LOCAL")[1]
-Local _nSaldoSB2
+Local _nSaldoSB2	:= 0
 Local _nQtdeItem 
 Local _cCodProd
 Local _nQtdePrd  
@@ -836,6 +843,11 @@ Local _nQtdeParc
 Local _lZera
 Local _cObs
 Local _nSAldo := 0
+Local _aRet := {}
+Local _cTipoSub := Space(3)
+Private _aSubsit := {}
+Private _aSimilar:= {}
+
 Begin Sequence
 	_cConectWis := "%"+_cConectWis+"%"
 	_cCdEmpWIS 	:= "%"+_cCdEmpWIS+"%"
@@ -898,7 +910,8 @@ Begin Sequence
 		//_cArmazem	:= (_cAliasPesq)->VS3_LOCAL
 		_cCodProd 	:= AllTrim((_cAliasPesq)->VS3_CODITE)
 		_cGrupo		:= (_cAliasPesq)->VS3_GRUITE
-		_lSepara	:= .T.  
+		_lSepara	:= .T. 
+		_aRet := {} 
 		//Conforme solicitação JC e Fabio caso não tenha TES Abortar o orçamento inteiro
 		If 	Empty((_cAliasPesq)->VS3_CODTES)
 			Aadd(_aMensAglu,"Produto "+ AllTrim(_cCodProd) +" com TES não informado no item do orçamento !")
@@ -915,7 +928,9 @@ Begin Sequence
 							(_cAliasPesq)->QTDE_TOTAL,;
 							_aMensAglu[Len(_aMensAglu)],; 
 							.T. ,;  					//_Lxbo
-							.T. })  					//_lZera
+							.T. ,;
+							_nSaldoSB2,;
+							_cTipoSub})  					//_lZera
    			(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
 			Loop
 		Endif
@@ -928,7 +943,9 @@ Begin Sequence
 							(_cAliasPesq)->QTDE_TOTAL,;
 							_aMensAglu[Len(_aMensAglu)],; 
 							.T. ,;							//_Lxbo 
-							.T. })							//_lZera	
+							.T. ,;
+							_nSaldoSB2,;
+							_cTipoSub})							//_lZera	
 	   		(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
 			Loop
 		EndIf		
@@ -943,7 +960,9 @@ Begin Sequence
 							(_cAliasPesq)->QTDE_TOTAL,;
 							_aMensAglu[Len(_aMensAglu)],; 
 							.T. ,;							//_Lxbo 
-							.T. })							//_lZera	
+							.T. ,;
+							_nSaldoSB2,;
+							_cTipoSub})							//_lZera	
    			(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
 			Loop
 		EndIf
@@ -958,7 +977,9 @@ Begin Sequence
 							(_cAliasPesq)->QTDE_TOTAL,;
 							_aMensAglu[Len(_aMensAglu)],; 
 							.T. ,;							//_Lxbo 
-							.T. })							//_lZera	
+							.T. ,;
+							_nSaldoSB2,;
+							_cTipoSub })							//_lZera	
 	   		(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
 			Loop
 		EndIf		
@@ -977,7 +998,9 @@ Begin Sequence
 								(_cAliasPesq)->QTDE_TOTAL,;
 								_aMensAglu[Len(_aMensAglu)],; 
 								.T. ,;							//_Lxbo 
-								.T. })							//_lZera	
+								.T. ,;
+								_oSaldoPec:_nSaldoPEC,;
+								_cTipoSub})							//_lZera	
 				(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
 				Loop
 			EndIf
@@ -998,6 +1021,7 @@ Begin Sequence
 			_nQtdeItem := (_cAliasPesq)->QTDE_TOTAL
 			Aadd(_aMensAglu,"Existe saldo no item principal, procurar item Substitutos para o produto " +AllTrim(_cCodProd)+ " armazem "+_cArmazem+"+ verificar se existe saldo produtos antigos !")	
 			_lRet := ZPECF08SUB( _cNumOrc, _cGrupo, _cCodProd, _cArmazem, @_nQtdeItem, _cMarca )
+			//Aadd(_aRet,_lRet)
 			//Caso seja feito parcial informar
 			If _lRet .and. _nQtdeItem <> (_cAliasPesq)->QTDE_TOTAL
 				Aadd(_aMensAglu,"Feita Sustituição "+If(_nQtdeItem > 0," parcial","")+ "do item principal, por item Substitutos para o produto " +AllTrim(_cCodProd)+ " armazem "+_cArmazem+" não possui saldo total no substituto ! ")	
@@ -1035,6 +1059,9 @@ Begin Sequence
 		//Verificar pelo padrão existem regras que verificam produtos com situações diferentes exemplo similar DAC 01/12/2022
 		//If (_cAliasPesq)->SLD_SUBSTI > 0
 		_lRet := ZPECF08SUB( _cNumOrc, _cGrupo, _cCodProd, _cArmazem, @_nQtdeItem, _cMarca )
+		Aadd(_aRet,_lRet)
+		_cTipoSub :=  iif(_lRet,"SUB" ,Space(3))
+		
 		//Caso consegui completar orçamento posso sair
 		If _lRet .and. _nQtdeItem <= 0
 			(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
@@ -1045,6 +1072,8 @@ Begin Sequence
 		//2- item similar
 		//If (_cAliasPesq)->SLD_SIMILAR > 0
 		_lRet := ZPECF08SIM( _cNumOrc, _cGrupo, _cCodProd, _cArmazem, @_nQtdeItem, _cMarca  )
+		Aadd(_aRet,_lRet)
+		_cTipoSub :=  iif(_lRet,"SIM" ,Space(3))
 		//Caso consegui completar orçamento posso sair
 		If _lRet .and. _nQtdeItem <= 0  
 			(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
@@ -1056,6 +1085,8 @@ Begin Sequence
 		Zé solicitou validação do KIT 03/02/2022 DAC */
 		//If (_cAliasPesq)->SLD_KIT	
 		_lRet := ZPECF08KIT( _cNumOrc, _cGrupo, _cCodProd, _cArmazem, @_nQtdeItem, (_cAliasPesq)->NREGVS3, _lParcial, _cMarca )
+		_cTipoSub :=  iif(_lRet,"KIT" ,Space(3))
+		Aadd(_aRet,_lRet)
 		//Caso consegui completar orçamento posso sair
 		If _lRet //.and. _nQtdeItem <= 0   //kit tem que ser tratado diferente na questão quantidade se retornar verdadeiro a quantidade do produto original ja foi zerada na funcionalidade
 			(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
@@ -1063,11 +1094,11 @@ Begin Sequence
 			Loop
 		EndIf
 		//EndIf
-		If _nQtdePrd > 0  .or. !_lRet//significa que utilizou parcial não podendo zerar
+		If _nQtdePrd > 0  //.or. !_lRet//significa que utilizou parcial não podendo zerar
 			_lZera := .F.
 		Else
 			_lZera := .T.
-			//if !_lRet
+			//if !(_aRet[1]) .and. !(_aRet[2]) .and. !(_aRet[3]) 
 			//	_lZera := .F.
 			//endIf
 		Endif	 
@@ -1078,7 +1109,9 @@ Begin Sequence
 						_nQtdeItem,; 
 						_cObs,;
 						.T.,;    ///*_LXBO*/
-						_lZera /*indica se zera ou*/})
+						_lZera,; //*indica se zera ou*/
+						_nSaldoSB2,;
+						_cTipoSub })
 	   (_cAliasPesq)->(DbSkip())
 	Enddo
 End Sequence
@@ -1137,6 +1170,7 @@ Local _cItemAux := ""
 			Aadd(_aMensAglu,"Não existe item Substitutos para o produto " +AllTrim(_cCodItem))	
 			Break	
 		Endif
+		_aSubsit := aClone(_aItemRelac)
 		For _nPos := 1 To Len(_aItemRelac)
 			_cGrupoSubst	:= _aItemRelac[_nPos,1]
 			_cCodSubst 		:= _aItemRelac[_nPos,2]//AllTrim(_aItemRelac[_nPos,2])
@@ -1230,11 +1264,17 @@ Static Function ZPECF08SIM( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _
 			Aadd(_aMensAglu,"Não existe item Similar para o produto " +AllTrim(_cCodItem))	
 			Break	
 		Endif
+		
 		For _nPos := 1 To Len(_aItemSim)
 			_cGrupoSubst	:= _aItemSim[_nPos,1]
 			_cCodSimilar	:= _aItemSim[_nPos,2]//AllTrim(_aItemSim[_nPos,2])
 			_nSaldoSB2 		:= _aItemSim[_nPos,4] //SB2->(SaldoSB2())
-
+			// Validação pois o Item Similar também pode estar cadastrado como Substituto e provocando movimentação de quantidade maior do que necessario.
+			if Ascan(_aSubsit,{|x| x[2] == _aItemSim[_nPos,2]}) <> 0
+				Aadd(_aMensAglu,"O item Similar " +AllTrim(_cCodSimilar)+ " já utilizado como Substituto")	
+				loop
+			endIf
+			
 			//GAP098 | Desmembrar itens bloqueados por inventário - Alteração funcionalidade de verificação saldo WIS e Protheus DAC 08/11/2023
 			//Calcular o Saldo
 			_oSaldoPec:CarregaCAOAPEC(_cCodSimilar, _cLocal, _cGrupoSubst, _cMarca, _nSaldoSB2)
@@ -1489,7 +1529,7 @@ Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodK
 				Aadd(_aMensAglu,"KIT - Não existe saldo do item " +AllTrim(_cCodSubst)+ " para o produto KIT " +AllTrim(_cCodKit)+" tipo "+_cTipo)	
 				//Aadd(_aBak,{(_cAliasPesq)->NREGVE8,_nQtdePrd})  //Deverá gerar backorder caso algum atenda	
 				_nQtde 		:= _nQtdePrd   			//diferença para backorder
-				_nQtdePrd	:= 0//_nSaldoSB2
+				_nQtdePrd	:= 0//0_nSaldoSB2
 				Aadd(_aBak,{ 	_cTipo,;			//01- Tipo VEH
 								_cGrupoSubst,;		//02- Grupo do KIT a ser utilizado
 								_cCodSubst,; 		//03- Cód produto do KIT a ser utilizado
@@ -1964,7 +2004,11 @@ Static Function ALTERAITParcial( _nRegVS3Sub, _cNumOrc, _cGrupo, _cCodItem, _cLo
 		If _cTpSub == "0"  //sendo somente parcial não somar pois no parcial altera o mesmo registro com a quantidade ja definida os demais soman-se
 			_nQtdTot 		:= _nQtdePrd
 		Else
+			IF _nSaldo < _nQtdePrd + _nQtdeAtu
+				_nQtdTot 		:= _nQtdeAtu 
+			else
 			_nQtdTot 		:= _nQtdeAtu + _nQtdePrd   //somo o que ja tinha no VS3 com o que irei acrescentar para obtr nova quantidade
+			endif
 		Endif	
 		//VERIFICO VALOR UNITÁRIO
 		_nValorUnit	:= U_XOFUNVTB(VS1->VS1_CLIFAT, VS1->VS1_LOJA, _cCodSubst)
@@ -3051,7 +3095,7 @@ Local _cAliasPesq	:= GetNextAlias()
 Local _cArmazem		:= _cLocal
 Local _aBak			:= {}
 Local _nPos
-Local _nSaldoSB2
+Local _nSaldoSB2  := 0
 Local _nQtdeItem 
 Local _cCodProd
 Local _nQtdePrd  
@@ -3142,7 +3186,8 @@ Begin Sequence
 							(_cAliasPesq)->QTDE_TOTAL,;
 							_aMensAglu[Len(_aMensAglu)],; 
 							.T. ,;  					//_Lxbo
-							.T. })  					//_lZera
+							.T. ,;
+							_nSaldoSB2})  					//_lZera
    			(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
 			Loop
 		Endif
@@ -3156,7 +3201,8 @@ Begin Sequence
 							(_cAliasPesq)->QTDE_TOTAL,;
 							_aMensAglu[Len(_aMensAglu)],; 
 							.T. ,;							//_Lxbo 
-							.T. })							//_lZera	
+							.T. ,;
+							_nSaldoSB2})							//_lZera	
 	   		(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
 			Loop
 		EndIf		
@@ -3172,7 +3218,8 @@ Begin Sequence
 							(_cAliasPesq)->QTDE_TOTAL,;
 							_aMensAglu[Len(_aMensAglu)],; 
 							.T. ,;							//_Lxbo 
-							.T. })							//_lZera	
+							.T. ,;
+							_oSaldoPec:_nSaldoPEC})							//_lZera	
 			(_cAliasPesq)->(DbSkip())  //Devo verificar se existem outros itens
 			Loop
 		EndIf
@@ -3222,7 +3269,8 @@ Begin Sequence
 						_nQtdeItem,; 
 						_cObs,;
 						.T.,;    ///*_LXBO*/
-						_lZera /*indica se zera ou*/})
+						_lZera,; //*indica se zera ou*/
+						_oSaldoPec:_nSaldoPEC})
 		If Len(_oSaldoPec:_aMsg) > 0	
 			For _nPos := 1 To Len(_oSaldoPec:_aMsg)
 				Aadd(_aMensAglu,_oSaldoPec:_aMsg[_nPos])
