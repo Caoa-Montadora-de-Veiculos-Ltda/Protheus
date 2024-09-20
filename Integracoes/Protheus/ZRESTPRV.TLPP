@@ -27,8 +27,8 @@ Serviço de integração Pedido Autoware
 FUNCTION U_ZRESTPRV(_oJson, _cEmpFil, _cResp)
 Local _aMsg		:= {}
 
-Private _aRetMsg := ZRESTPRVMsg()   //Carregar tabela com erros
-Private _aMsgRet := {}				//carregar msg de errp
+Private _aRetMsg := ZRESTPRVMsg()   	As Array	//Carregar tabela com erros
+Private _aMsgRet := {}					As Array	//carregar msg de errp
 
 Default _cEmpFil	:= ""
 Default _cResp		:= ""

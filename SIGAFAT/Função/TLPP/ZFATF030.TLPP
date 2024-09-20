@@ -919,24 +919,57 @@ End Sequence
 Return _aRet
 
 /*
-{"pedidovei":"021ABC000",
+{ "pedidovei":"021ABC000",
   "cnpjcpf" :"10213051001399",
- 	"Itens":
- 					[
-        		{ "iditem":"XXX01",
+ 	"previsaonr":"00000001",
+  "Itens":
+ 				[
+        	{ "iditem":"XXX01",
+						"status":"465", 
+						"ocorrencia":"Nao existem chassis disponivel para veiculo",
+						"qtderecebida":3,
+						"qtdeocorrencia":1,
+						"qtdefaturada":0,
+  					"notafiscalnr":"",
+  					"notafiscalserie":"",
+  					"notafiscalemissao":"",
+  					"notafiscalxml":""
+					},
+        	{ "iditem":"XXX01",
+						"status":"150", 
+						"ocorrencia":"Faturamento do item realizado com sucesso",
+						"qtderecebida":3,
+						"qtdeocorrencia":0,
+						"qtdefaturada":1,
+  					"notafiscalnr":"000000089",
+  					"notafiscalserie":"7  ",
+  					"notafiscalemissao":"20240920",
+  					"notafiscalxml":"formato xml "
+						},
+        	{ "iditem":"XXX01",
+						"status":"150", 
+						"ocorrencia":"Faturamento do item realizado com sucesso",
+						"qtderecebida":3,
+						"qtdeocorrencia":0,
+						"qtdefaturada":1,
+  					"notafiscalnr":"000000090",
+  					"notafiscalserie":"7  ",
+  					"notafiscalemissao":"20240920",
+  					"notafiscalxml":"formato xml "
+						},
+						{ "iditem":"XXX02",
 							"status":"100", 
-							"qtderecebida":10,
+							"ocorrencia":"Faturamento do item realizado com sucesso",
+						  "qtderecebida":1,
 							"qtdeocorrencia":0,
 						 	"qtdefaturada":1,
-						 	"previsaonr":"00000001",
-  						"notafiscalnr":"000000089",
+  						"notafiscalnr":"000000091",
   						"notafiscalserie":"7  ",
-  						"notafiscalemissao":"",
-  						"notafiscalxml":""
+  						"notafiscalemissao":"20240920",
+  						"notafiscalxml":"formato xm "
 						}
-					]
-}
-*/
+				]
+}*/
 
 
 
