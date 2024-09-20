@@ -8607,8 +8607,11 @@ If  !lIssQn
 				cString += '<valor>'+ConvType(nValDeson,15,4)+'</valor>'				
 			Else
 			    //************ Especifico Caoa ******************
-				cString += '<valor>'+ConvType(aICMSST[07],15,2)+'</valor>'
-	//			cString += '<valor>'+ConvType(0,15,2)+'</valor>'
+				If Len(aICMSST) >= 7
+					cString += '<valor>'+ConvType(aICMSST[07],15,2)+'</valor>'
+				Else
+					cString += '<valor>'+ConvType(0,15,2)+'</valor>'
+				EndIf
 			EndIf	
 	
 			cString += '<qtrib>'+ConvType(0,16,4)+'</qtrib>'
