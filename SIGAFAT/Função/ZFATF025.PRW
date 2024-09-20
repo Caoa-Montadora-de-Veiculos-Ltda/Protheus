@@ -260,8 +260,10 @@ Begin Sequence
     Self:_oBrowseZZN:SetFixedBrowse(.T.)
 	Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) = 'A'  "  ,"WHITE"     ,"Em Aberto")
 	Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) = 'L'  "  ,"GREEN"     ,"Liberado Fat")
-    Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) = 'F'  "  ,"BLUE" 	   	,"Faturado")
+    Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) = 'F'  "  ,"BLUE" 	   ,"Faturado")
 	Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) = 'C'  "  ,"RED"       ,"Cancelado")
+	Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) = 'B'  "  ,"BLACK"     ,"Bloqueado")
+
 	Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) <> ' '  " ,"GRAY"      ,"Pendente")
 
 	Self:_oBrowseZZN:AddButton("Incluir"		, { || Self:MenuPrev(3)	})
