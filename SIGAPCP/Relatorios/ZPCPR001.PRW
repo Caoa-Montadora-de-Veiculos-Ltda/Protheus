@@ -236,6 +236,10 @@ Private lNegEstr:=GETMV("MV_NEGESTR")
 //읕컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴켸
 dbSelectArea('SG1')
 dbSetOrder(1)
+if Empty(aSelect) // Verifica se foi selecionado algum produto para impressao
+	FWAlertWarning("Nenhum produto selecionado.", "Alerta!")
+	return
+EndIf
 MsSeek(xFilial('SG1')+ aSelect[1] ,.T.) // MsSeek(xFilial('SG1')+ mv_par01 ,.T.)
 oReport:SetMeter(SG1->(LastRec()))
 oSection1:Init(.F.)
@@ -972,8 +976,8 @@ DEFINE MsDIALOG o3Dlg TITLE 'Produtos' From 0, 4 To 500, 1090 Pixel
  
     //Create Mark Column
     oDespesBrw:AddMarkColumns({|| IIf(aDespes[oDespesBrw:nAt,01], "LBOK", "LBNO")},; //Code-Block image
-        {|| SelectOne(oDespesBrw, aDespes)},; //Code-Block Double Click
-        {|| SelectAll(oDespesBrw, 01, aDespes) } ) //Code-Block Header Click
+        {|| SelectOne(oDespesBrw, aDespes)})//,; //Code-Block Double Click
+        /*{|| SelectAll(oDespesBrw, 01, aDespes) } )*/ //Code-Block Header Click
  
     oDespesBrw:addColumn({"Codigo"    , {||aDespes[oDespesBrw:nAt,02]} , "C" , "@!" , 1 ,  20 , , .T. , , .F. , , "aDespes[oDespesBrw:nAt,02]" , , .F. , .T. , , "ETDESPES1" } )
     oDespesBrw:addColumn({"Descri豫o" , {||aDespes[oDespesBrw:nAt,03]} , "C" , "@!" , 1 , 100 , , .T. , , .F. , , "aDespes[oDespesBrw:nAt,03]" , , .F. , .T. , , "ETDESPES2" } )
@@ -1027,7 +1031,7 @@ Return .T.
 	@see
 /*/
 Static Function SelectAll(oBrowse, nCol, aArquivo)
-
+/*
 Local _ni := 1
 
 For _ni := 1 to len(aArquivo)
@@ -1036,7 +1040,7 @@ Next
 
 //oBrowse:Refresh()
 lMarker:=!lMarker
-
+*/
 Return .T.
  
 /*/{Protheus.doc} BUSDATA
@@ -1068,12 +1072,14 @@ cQuery:=ChangeQuery(cQuery)
 dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ) , cQryT3, .T., .F. )
  
 (cQryT3)->(DbGoTop())
-While (cQryT3)->(!EOF())
- 
-    aadd(aDespes,{.f.,alltrim((cQryT3)->B1_COD),alltrim((cQryT3)->B1_DESC),alltrim((cQryT3)->B1_GRUPO) } )
- 
-    (cQryT3)->(dbSkip())
-EndDo
+
+	While (cQryT3)->(!EOF())
+	
+		aadd(aDespes,{.f.,alltrim((cQryT3)->B1_COD),alltrim((cQryT3)->B1_DESC),alltrim((cQryT3)->B1_GRUPO) } )
+	
+		(cQryT3)->(dbSkip())
+	EndDo
+
 (cQryT3)->(dbCloseArea())
 DbSelectArea('SB1')
  
