@@ -56,13 +56,9 @@ User Function XOFUNLIB( _cNumOrc, _aSeqVS3, _aVS3Reg, _lAtualiza )
 		//Alterado para utilizar reserva CAOA - DAC 16/08/2022
 		//_cDocto := U_XRESCAOAPEC(_cNumOrc, .T., _aSeqVS3)
 		If _lAtualiza .And. (Empty(_cDocto) .or. _cDocto == "NA")
-			IF _cDocto == "NA"
-				Aadd(_aMensAglu,"Não foi possivel fazer reserva os status serão retornados!")
-			Else
-				Aadd(_aMensAglu,"Não foi possivel fazer reserva os status serão retornados, verificar com ADM SISTEMAS !")
-			EndIf
+			Aadd(_aMensAglu,"Não foi possivel fazer reserva os status serão retornados, verificar com ADM SISTEMAS !")
 			RecLock('VS1',.F.)
-				VS1->VS1_XBO := iif(_cDocto == "NA","S","E")
+				VS1->VS1_XBO := 'E'
 			VS1->(MsUnlock())
 			_lRet := .F.
 			Break
@@ -217,7 +213,6 @@ User Function XOFUNCLO( _cNumOrc, _cGrupo, _cCodProd, _nQtdeItem, _lZera, _aCpoV
 			Break
 		Endif
 		//Ajustado para chamar carga do VS3
-		 
 		_lRet := U_XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, /*_aObs*/)	
 	End Sequence
 	VS1->(DbGoto(_nRegVS1))
@@ -298,9 +293,6 @@ Static Function XAVLBACKOrder(_aBackOrder, _cNumOrc,  _cAglutina, _cOrcNovo, _aO
 			Else
 				_lApagaIT := .F.
 			EndIf
-			//if Len(_aBackOrder[_nPos]) == 8 .and. Empty(_aBackOrder[_nPos,8])
-			//	loop
-			//endif
 			Aadd(_aItem,{ "VS1_CLIFAT"	, VS1->VS1_CLIFAT})
 			Aadd(_aItem,{ "VS1_LOJA"	, VS1->VS1_LOJA})
 			Aadd(_aItem,{ "VS1_NUMORC"	,_cNumOrc})
@@ -3780,7 +3772,7 @@ User Function zSaldoWis(_cProduto, _cMarca, _cArmazem)
 	EndIf
 	//implementado por José Totvs 19/05/2023
 	If _lResIntegr
-		cQryWis := " SELECT CASE WHEN NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA),0)- MAX(ESTWIS.QT_TRANSITO_SAIDA)> 0 THEN NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA),0)- MAX(ESTWIS.QT_TRANSITO_SAIDA) ELSE 0 END AS QTDE_EST "
+		cQryWis := " SELECT CASE WHEN NVL((SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA-ESTWIS.QT_TRANSITO_SAIDA)),0) > 0 THEN NVL((SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA-ESTWIS.QT_TRANSITO_SAIDA)),0) ELSE 0 END AS QTDE_EST "
 	Else
 		cQryWis := " SELECT NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) AS QTDE_EST "
 	Endif
@@ -4358,7 +4350,6 @@ Static Function XRESCAOATR(_cNumOrc, _lReserva, _aRegVS3, _cArmorig, _cArmdes, _
 
 		While (_cAliasPesq)->(!Eof()) 
 			_aItem := {}
-			_lRet  := .T.
 			VS3->(DbGoto( (_cAliasPesq)->NREGVS3 ))
 			If Len(SB1->B1_COD) < Len(VS3->VS3_CODITE)
 				_cCodProd := SubsTr(VS3->VS3_CODITE,1,Len(SB1->B1_COD))
@@ -4425,7 +4416,7 @@ Static Function XRESCAOATR(_cNumOrc, _lReserva, _aRegVS3, _cArmorig, _cArmdes, _
 				
 				if _nSaldo <= 0
 					_cErro := "Produto " + _cCodProd + "  n�o Possue saldo no Armazem " + _cOrigem + "  !!! " 
-					AAdd(_aMsg,_cErro)
+					AAdd(_aMsgErro,_cErro)
 					//MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
 					_lRet := .F.
 					(_cAliasPesq)->(DbSkip())
@@ -4434,7 +4425,7 @@ Static Function XRESCAOATR(_cNumOrc, _lReserva, _aRegVS3, _cArmorig, _cArmdes, _
 			
 			Else
 				_cErro := "Produto " + _cCodProd + "  n�o encontrado no Armazem " + _cOrigem + "  !!! " 
-				AAdd(_aMsg,_cErro)
+				AAdd(_aMsgErro,_cErro)
 				//MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
 				_lRet := .F.
 				Break

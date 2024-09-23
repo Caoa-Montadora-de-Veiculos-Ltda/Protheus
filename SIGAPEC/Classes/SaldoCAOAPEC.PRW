@@ -119,11 +119,11 @@ Method RetSldCAOAPEC() class SaldoCAOAPEC
 		If SB2->B2_COD <> cCodProd .Or. AllTrim(SB2->B2_LOCAL) <> AllTrim(cArmazem)
 			SB2->(DbSetOrder(1))
 			If !SB2->(DbSeek(XFilial("SB2")+cCodProd+cArmazem))
-				Aadd(::_aError, "Produto " + AllTrim(cCodProd) + " não cadastrado no Armazém " + cArmazem + " [função RetSldCAOAPEC] !")
+				Aadd(::_aError, "Produto "+ AllTrim(cCodProd) +" Armazém "+cArmazem+" não localizao função RetSldCAOAPEC !")
 				Break
 			Endif
 			If !Empty(SB2->B2_DTINV)
-				Aadd(::_aError, "Produto "+ AllTrim(cCodProd) +" Armazém "+cArmazem+" com bloqueio de inventário em "+SB2->B2_DTINV+" [RetSldCAOAPEC] !")
+				Aadd(::_aError, "Produto "+ AllTrim(cCodProd) +" Armazém "+cArmazem+" com bloqueio de inventário em "+SB2->B2_DTINV+" RetSldCAOAPEC !")
 				Break
 			Endif
 		Endif 
@@ -161,8 +161,7 @@ Method RetSldCAOAPEC() class SaldoCAOAPEC
 					%Exp:cWhere%
 		EndSql
 		If (_cAliasPesq)->(Eof()) .or. (_cAliasPesq)->NREGSB1 == 0
-			Aadd(::_aError,"Não localizado Produto "+cCodProd+" "+If(Empty(cWhere),""," e Grupo de ref. " + ::_cGrupo) )
-			Aadd(::_aError,"Verificar Cadastro de Produto e/ou Grupo de Produto") 
+			Aadd(::_aError,"Não localizado Produto "+cCodProd+" "+If(Empty(cWhere),""," ref. "+cWhere) )
 			Break
 		EndIf	
 		SB1->(DbGoto((_cAliasPesq)->NREGSB1))
@@ -204,11 +203,11 @@ Method RetSldCAOAPEC() class SaldoCAOAPEC
 		//Garantir que carrega saldo WIS
 		::_nSaldoWIS := Self:RetSaldoWIS()  //carrego o valor do saldo WIS
 
-		If ::_nSaldoWIS == 0  .and. nSaldoSB2 > 0
+		If ::_nSaldoWIS == 0 
 			Aadd(::_aError, "Produto "+AllTrim(cCodProd)+", Saldo atual Protheus "+AllTrim(Str(::_nSaldoEST))+" Saldo atual Wis "+AllTrim(Str(::_nSaldoWis))+" Armazem "+cArmazem+", possui saldo zerado no WIS, SALDO INVALIDO ! ")
 			Break
 		Endif
-		If ::_nSaldoEST == 0 .and. ::_nSaldoWIS > 0  
+		If ::_nSaldoEST == 0 
 			Aadd(::_aError, "Produto "+AllTrim(cCodProd)+", Saldo atual Protheus "+AllTrim(Str(::_nSaldoEST))+" Saldo atual Wis "+AllTrim(Str(::_nSaldoWis))+" Armazem "+cArmazem+", possui saldo zerado no Protheus, SALDO INVALIDO ! ")
 			Break
 		Endif
@@ -255,7 +254,7 @@ Method RetSaldoWIS() class SaldoCAOAPEC
 		EndIf
 		//passado por José Totvs 19/05/2023
 		If lResIntegr   //trata reserva na integração
-			cQryWis := " SELECT CASE WHEN NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA),0)- MAX(ESTWIS.QT_TRANSITO_SAIDA) > 0 THEN NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA),0)- MAX(ESTWIS.QT_TRANSITO_SAIDA) ELSE 0 END AS QTDE_EST "
+			cQryWis := " SELECT CASE WHEN NVL((SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA-ESTWIS.QT_TRANSITO_SAIDA)),0) > 0 THEN NVL((SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA-ESTWIS.QT_TRANSITO_SAIDA)),0) ELSE 0 END AS QTDE_EST "
 		Else
 			cQryWis := " SELECT NVL(SUM(ESTWIS.QT_ESTOQUE - ESTWIS.QT_RESERVA_SAIDA), 0) AS QTDE_EST "
 		Endif
