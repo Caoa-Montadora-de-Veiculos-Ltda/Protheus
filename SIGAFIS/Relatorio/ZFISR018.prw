@@ -67,7 +67,11 @@ Static Function fGeraExcel()
     Local cTitul     := "Notas Fiscais de Entrada Canceladas"
     Local nAtual     := 0
     Local nTotal     := 0
-
+    Local cCGC  	 := ''  
+    Local cCodigo	 := ''    
+    Local cLoja 	 := ''
+    Local cCliFor	 := ''
+    Local cInsc 	 := ''    
     Local cLogInc    := ''
     Local cLogAlt    := ''
     Local aLog       := {}
@@ -296,6 +300,8 @@ Static Function fGeraExcel()
     ProcRegua(nTotal)
     (QRY_DAD)->(DbGoTop())
      
+    SA1->( DbSetOrder(1) ) // A1_FILIAL+A1_COD+A1_LOJA
+    
     //Percorrendo os dados da query
     While !(QRY_DAD)->(EoF())
          
@@ -311,20 +317,36 @@ Static Function fGeraExcel()
             cLogInc := aLog[1]
             cLogAlt := aLog[2]
 
+            If (QRY_DAD)->TIPO $ "B|D" // Benefeciamento ou devolução
+				If SA1->(DbSeek( xFilial("SA1") + (QRY_DAD)->CODIGO + (QRY_DAD)->LOJA ))
+					cCliFor	:= SA1->A1_NOME
+					cCGC	:= SA1->A1_CGC 
+                    cCodigo := SA1->A1_COD  
+                    cLoja   := SA1->A1_LOJA                                      
+				    cInsc   := SA1->A1_INSCR
+                EndIf
+            Else
+ 					cCliFor	:= (QRY_DAD)->FORNECEDOR
+                    cCGC	:= (QRY_DAD)->CNPJ
+                    cCodigo := (QRY_DAD)->CODIGO  
+                    cLoja   := (QRY_DAD)->LOJA
+				    cInsc   := (QRY_DAD)->INS_EST                    
+            EndIf 
+
          //Adicionando uma nova linha
          oFWMsExcel:AddRow(cWorkSheet, cTitulo, {;
-                     (QRY_DAD)->CNPJ  ,;
-                     (QRY_DAD)->INS_EST  ,;
-                     (QRY_DAD)->CODIGO  ,;
-                     (QRY_DAD)->LOJA  ,;
-                     (QRY_DAD)->FORNECEDOR  ,;
+                     cCGC     ,;
+                     cInsc    ,;
+                     cCodigo  ,;
+                     cLoja    ,;
+                     cCliFor  ,;
                      (QRY_DAD)->ESTADO  ,;
                      (QRY_DAD)->NOTA_FISCAL  ,;
                      (QRY_DAD)->SERIE  ,;
-                     (QRY_DAD)->TIPO ,;
+                     (QRY_DAD)->TIPO   ,;
                      (QRY_DAD)->FORMULARIO   ,;
                      (QRY_DAD)->ESPECIE  ,;
-                     (QRY_DAD)->CFOP  ,;
+                     (QRY_DAD)->CFOP   ,;
                      (QRY_DAD)->DT_ENTRADA  ,;
                      (QRY_DAD)->DT_LANC  ,;
                      (QRY_DAD)->VALOR_ITENS  ,;
