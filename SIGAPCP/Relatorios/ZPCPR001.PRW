@@ -52,19 +52,23 @@ STATIC lPCPREVATU	:= FindFunction('PCPREVATU')  .AND.  SuperGetMv("MV_REVFIL",.F
 	@example
 	(examples)
 	@see (links_or_references)
-	/*/
+/*/
 User Function ZPCPR001()
 
 Local oReport
 
 If TRepInUse()
+
 	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 	//³Interface de impressao                                                  ³
 	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 	oReport:= ReportDef()
 	oReport:PrintDialog()
+
 Else
+
 	MATR225R3()
+
 EndIf
 
 Return
@@ -89,7 +93,6 @@ Static Function ReportDef()
 Local oReport
 Local oSection1
 Local oSection2
-Local oSection3
 
 Static aSelect := {}
 Static cRet := '' 
@@ -104,28 +107,27 @@ Static cRet := ''
 //³ExpC5 : Descricao                                                       ³
 //³                                                                        ³
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-oReport:= TReport():New("MATR225",OemToAnsi(STR0001),"ZPCPR001", {|oReport| ReportPrint(oReport)},OemToAnsi(STR0002)+" "+OemToAnsi(STR0003)+" "+OemToAnsi(STR0004))  //"Este programa emite a relacao de estrutura de um determinado produto"##"selecionado pelo usuario. Esta relacao nao demonstra custos. Caso o"##"produto use opcionais, sera listada a estrutura com os opcionais padrao."
+oReport:= TReport():New("ZPCPR001",OemToAnsi(STR0001),"ZPCPR001", {|oReport| ReportPrint(oReport)},OemToAnsi(STR0002)+" "+OemToAnsi(STR0003)+" "+OemToAnsi(STR0004))  //"Este programa emite a relacao de estrutura de um determinado produto"##"selecionado pelo usuario. Esta relacao nao demonstra custos. Caso o"##"produto use opcionais, sera listada a estrutura com os opcionais padrao."
 oReport:SetLandscape()
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-//³ Verifica as perguntas selecionadas                           ³
+//³ Verifica as perguntas selecionadas - ZPCPR001                ³
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-//³ Variaveis utilizadas para parametros ³ minhas variaveis                
-//³ mv_par01   // Produto de             ³ MV_PAR01 = Produtos selecionados
-//³ mv_par02   // Produto ate            ³ MV_PAR02 = Tipo de              
-//³ mv_par03   // Tipo de                ³ MV_PAR03 = Tipo ate             
-//³ mv_par04   // Tipo ate               ³ MV_PAR04 = Grupo de             
-//³ mv_par05   // Grupo de               ³ MV_PAR05 = Grupo ate            
-//³ mv_par06   // Grupo ate              ³ MV_PAR06 = Salta Pagina: Sim/Nao
-//³ mv_par07   // Salta Pagina: Sim/Nao  ³ MV_PAR07 = Qual Rev da Estrut   
-//³ mv_par08   // Qual Rev da Estrut     ³ MV_PAR08 = Imprime Ate Nivel ?  
-//³ mv_par09   // Imprime Ate Nivel ?    ³ MV_PAR09 = Data de referência?  
-//³ mv_par10   // Data de referência?    ³                                 
+//³ Variaveis utilizadas para parametros              
+//³ MV_PAR01 = Produtos selecionados
+//³ MV_PAR02 = Tipo de              
+//³ MV_PAR03 = Tipo ate             
+//³ MV_PAR04 = Grupo de             
+//³ MV_PAR05 = Grupo ate            
+//³ MV_PAR06 = Salta Pagina: Sim/Nao
+//³ MV_PAR07 = Qual Rev da Estrut   
+//³ MV_PAR08 = Imprime Ate Nivel ?  
+//³ MV_PAR09 = Data de referência?                                
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 Pergunte(oReport:uParam,.F.)
 
-//Verifica se o MV_PAR10 existe no pergunte MTR225 -> Protecao de fonte.
+//Verifica se o MV_PAR09 existe no pergunte ZPCPR001 -> Protecao de fonte.
 AjstPergt()
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -221,25 +223,43 @@ Static Function ReportPrint(oReport)
 
 Local cProduto 	:= ""
 Local lContinua := .T.
-Local lDatRef   := !Empty( mv_par09/*mv_par10*/ )
+Local lDatRef   := !Empty( mv_par09 )
 Local nNivel   	:= 0
 Local oSection1 := oReport:Section(1)
 Local oSection2 := oReport:Section(1):Section(1)
-Local y := 1
+Local y 		:= 1
+Local cDigit	:= ''
 
-Private aMopc := {}
-Private lNegEstr:=GETMV("MV_NEGESTR")
+Private aMopc 		:= {}
+Private lNegEstr	:=GETMV("MV_NEGESTR")
 
+// Trata o conteúdo do MV_PAR01
+if Empty(aSelect) // Verifica se foi selecionado algum produto do Browse para impressao
+
+	If !Empty(mv_par01) // Verifica se foi digitado algum produto para impressão
+
+		cDigit := Upper(AllTrim(mv_par01))
+		aSelect := StrTokArr( cDigit, ";" )
+
+	Else
+
+		FWAlertWarning("Nenhum produto selecionado.", "Alerta!")
+		return
+
+	EndIf
+
+ElseIf Empty(mv_par01) // Caso a pessoa tenha selecionado e apagado a seleção no mv_par01
+
+	FWAlertWarning("Nenhum produto selecionado.", "Alerta!")
+	return
+
+EndIf
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //³	Processando a Sessao 1                                       ³
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 dbSelectArea('SG1')
 dbSetOrder(1)
-if Empty(aSelect) // Verifica se foi selecionado algum produto para impressao
-	FWAlertWarning("Nenhum produto selecionado.", "Alerta!")
-	return
-EndIf
 MsSeek(xFilial('SG1')+ aSelect[1] ,.T.) // MsSeek(xFilial('SG1')+ mv_par01 ,.T.)
 oReport:SetMeter(SG1->(LastRec()))
 oSection1:Init(.F.)
@@ -346,6 +366,7 @@ Return
 ±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
 */
 Static Function MR225ExplG(oReport,oSection2,cProduto,nQuantPai,nNivel,cOpcionais,nQtdBase,cRevisao)
+
 Local aTamG1Grp   := TamSX3("G1_GROPC")
 Local cAteNiv     := If( mv_par08/*mv_par09*/ =Space(3),"999", mv_par08/*mv_par09*/ )
 Local cRevEst	  := ''
@@ -357,7 +378,6 @@ Local nQuantItem  := 0
 Local nReg 		  := 0
 
 Default aMopc := {}
-
 
 dbSelectArea('SG1')
 While !oReport:Cancel() .And. !Eof() .And. G1_FILIAL+G1_COD == xFilial('SG1')+cProduto
@@ -465,7 +485,7 @@ PRIVATE nLastKey:= 0 ,cPerg := "ZPCPR001"//"MTR225"
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 Pergunte(cPerg,.F.)
 
-//Verifica se o MV_PAR10 existe no pergunte MTR225 -> Proteção de fonte.
+//Verifica se o MV_PAR09 existe no pergunte ZPCPR001 -> Proteção de fonte.
 AjstPergt()
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -911,8 +931,8 @@ Return nCntItens
 
 //----------------------------------------------------------------------
 /*/{Protheus.doc} AjstPergt
-Verifica se o pergunte 10 existe para o pergunte MTR225.
-Se nao existir, inicializa o MV_PAR10 como branco para o programa manter o seu funcionamento.
+Verifica se o pergunte 10 existe para o pergunte ZPCPR001.
+Se nao existir, inicializa o MV_PAR09 como branco para o programa manter o seu funcionamento.
  
 @author lucas.franca
 @since 07/12/2018
@@ -937,7 +957,6 @@ Static Function AjstPergt()
 	EndIf
 Return Nil
 
-
 /*/{Protheus.doc} ListPrd
 	Consulta padrão para retornar uma lista de produtos com CheckBox
 	@type  Function
@@ -952,48 +971,105 @@ Return Nil
 /*/
 User Function ListPrd()
 
-Private lMarker     := .T.
-Private aDespes := {}
-//Static aSelect := {}
- 
-//Alimenta o array
+Local oDlg		:= Nil
+Local oPnMaster	:= Nil
+Local oBrowse	:= Nil
+Local oGet		:= Nil
+Local cItem		:= Space(23) // Campo para o código do produto a ser buscado
+
+Local oFont 	:= TFont():New( "Arial" , , 20 , , .F. , , , , , .F. , .F. )
+Local oFont2 	:= TFont():New( "Arial" , , 18 , , .F. , , , , , .F. , .F. )
+
+Private lMarker	:= .T.
+Private aDados 	:= {}
+
+aSelect := {} // limpa array de seleção, caso já tenha preenchimento anterior
+cRet 	:= '' // limpa o preenchimento do mv_par01, caso tenha sido preenchido anteriormente
+
+//Alimenta o array do Browse
 BUSDATA()
 
-DEFINE MsDIALOG o3Dlg TITLE 'Produtos' From 0, 4 To 500, 1090 Pixel
-     
-    oPnMaster := tPanel():New(0,0,,o3Dlg,,,,,,0,0)
+// Define o Browse
+DEFINE MsDIALOG oDlg TITLE 'Produtos' From 0, 4 To 500, 1090 Pixel
+
+    oPnMaster := tPanel():New(0,0,,oDlg,,,,,,0,0)
     oPnMaster:Align := CONTROL_ALIGN_ALLCLIENT
- 
-    oDespesBrw := fwBrowse():New()
-    oDespesBrw:setOwner( oPnMaster )
- 
-    oDespesBrw:setDataArray()
-    oDespesBrw:setArray( aDespes )
-    oDespesBrw:disableConfig()
-    oDespesBrw:disableReport()
- 
-    oDespesBrw:SetLocate() // Habilita a Localização de registros
- 
+
+	// Campo de busca de produto
+    @ 15, 170 SAY "Buscar Produto:" SIZE 100, 19 FONT oFont Pixel
+    @ 10, 230 GET oGet VAR cItem SIZE 160, 19 FONT oFont2 Pixel
+    @ 11, 395 BUTTON "Buscar" ACTION BuscaProduto(oBrowse, cItem, aDados) SIZE 070, 19 FONT oFont2 Pixel
+    @ 11, 470 BUTTON "Confirma" ACTION oDlg:End() SIZE 070, 19 FONT oFont2 Pixel
+
+    oBrowse := fwBrowse():New()
+    oBrowse:setOwner( oPnMaster )
+
+    oBrowse:setDataArray()
+    oBrowse:setArray( aDados )
+    oBrowse:disableConfig()
+
     //Create Mark Column
-    oDespesBrw:AddMarkColumns({|| IIf(aDespes[oDespesBrw:nAt,01], "LBOK", "LBNO")},; //Code-Block image
-        {|| SelectOne(oDespesBrw, aDespes)})//,; //Code-Block Double Click
-        /*{|| SelectAll(oDespesBrw, 01, aDespes) } )*/ //Code-Block Header Click
- 
-    oDespesBrw:addColumn({"Codigo"    , {||aDespes[oDespesBrw:nAt,02]} , "C" , "@!" , 1 ,  20 , , .T. , , .F. , , "aDespes[oDespesBrw:nAt,02]" , , .F. , .T. , , "ETDESPES1" } )
-    oDespesBrw:addColumn({"Descrição" , {||aDespes[oDespesBrw:nAt,03]} , "C" , "@!" , 1 , 100 , , .T. , , .F. , , "aDespes[oDespesBrw:nAt,03]" , , .F. , .T. , , "ETDESPES2" } )
-    oDespesBrw:addColumn({"Grupo"	  , {||aDespes[oDespesBrw:nAt,04]} , "C" , "@!" , 1 ,  20 , , .T. , , .F. , , "aDespes[oDespesBrw:nAt,04]" , , .F. , .T. , , "ETDESPES3" } )
- 
-    oDespesBrw:setEditCell( .T. , { || .T. } ) //activa edit and code block for validation
- 
-    oDespesBrw:Activate(.T.)
- 
-Activate MsDialog o3Dlg
- 
+    oBrowse:AddMarkColumns({|| IIf(aDados[oBrowse:nAt,01], "LBOK", "LBNO")},; //Code-Block image
+        {|| SelectOne(oBrowse, aDados)})//,; //Code-Block Double Click
+        //{|| SelectAll(oBrowse, 01, aDados) } ) //Code-Block Header Click
+
+    oBrowse:addColumn({"Codigo"    , {||aDados[oBrowse:nAt,02]} , "C" , "@!" , 1 ,  20 , , .T. , , .F. , , "aDados[oBrowse:nAt,02]" , , .F. , .T. , , "ETDESPES1" } )
+    oBrowse:addColumn({"Descrição" , {||aDados[oBrowse:nAt,03]} , "C" , "@!" , 1 , 100 , , .T. , , .F. , , "aDados[oBrowse:nAt,03]" , , .F. , .T. , , "ETDESPES2" } )
+    oBrowse:addColumn({"Grupo"	   , {||aDados[oBrowse:nAt,04]} , "C" , "@!" , 1 ,  20 , , .T. , , .F. , , "aDados[oBrowse:nAt,04]" , , .F. , .T. , , "ETDESPES3" } )
+
+	oBrowse:Activate(.T.)
+
+Activate MsDialog oDlg
+
 return .t.
 
+/*/ Função para buscar o produto e posicionar no browse
+	@type  Function
+	@author Victor Gisoldi Matos
+	@since 12/09/2024
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	@example
+	(examples)
+	@see
+/*/
+Static Function BuscaProduto(oBrowse, cItem, aDados)
+
+	Local nPos := 0
+
+	// Procura pelo produto no array (comparando com o código)
+	For nPos := 1 To Len(aDados)
+
+		If Upper(AllTrim(cItem)) $ aDados[nPos, 02]
+
+			oBrowse:nAt := nPos // Posiciona o browse no registro encontrado
+			oBrowse:Refresh()   // Atualiza o browse para mostrar o registro selecionado
+			Return
+
+		EndIf
+		
+	Next
+
+    MsgStop("Produto não encontrado!", "Erro")
+
+Return
+
+/*/ Função de retorno dos itens selecionados na consulta padrão
+	@type  Function
+	@author Victor Gisoldi Matos
+	@since 12/09/2024
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	@example
+	(examples)
+	@see
+/*/
 User Function ListPrdA()
+
 Return cRet
- 
+
 /*/{Protheus.doc} SelectOne
 	Função para seleção de um item da lista
 	@type  Function
@@ -1008,16 +1084,36 @@ Return cRet
 /*/
 Static Function SelectOne(oBrowse, aArquivo)
 
-aArquivo[oDespesBrw:nAt,1] := !aArquivo[oDespesBrw:nAt,1]
+Local nPos
+Local aDel := {}
 
-	If aArquivo[oDespesBrw:nAt,1] == .T.
-		aAdd( aSelect, aArquivo[oDespesBrw:nAt,2])
+aArquivo[oBrowse:nAt,1] := !aArquivo[oBrowse:nAt,1]
+
+	If aArquivo[oBrowse:nAt,1] == .T.
+
+		aAdd( aSelect, aArquivo[oBrowse:nAt,2]) // adiciona o selecionado no array aSelect
+
+	Else
+
+		aDel := Aclone( aSelect ) // clona o Array aSelect no Array aDel
+		nPos := aScan(aDel, {|x| x = aArquivo[oBrowse:nAt,2] } ) // Busca no aDel o item a ser excluido
+		
+		If nPos > 0
+
+			aDel( aDel , nPos )			// exclui o item selecionado do array aDel
+			aSize(aDel , len(aDel) - 1)	// redimenciona o array aDel, para ficar do tamanho -1 item
+			aSelect := Aclone( aDel )	// cola o array aDel (ajustado) para o aSelect novamente
+
+		EndIf
+
 	EndIf
 
-cRet := ArrTokStr(aSelect, ";")
+cRet := "" // Limpa o retorno da Consulta Padrao
+cRet := ArrTokStr(aSelect, ";") // Atualiza o retorno da Consulta Padrao
+oBrowse:Refresh()
 
 Return .T.
- 
+
 /*/{Protheus.doc} SelectAll
 	Função para seleção completa da lista de produtos
 	@type  Function
@@ -1031,20 +1127,22 @@ Return .T.
 	@see
 /*/
 Static Function SelectAll(oBrowse, nCol, aArquivo)
-/*
+
 Local _ni := 1
 
 For _ni := 1 to len(aArquivo)
+
     aArquivo[_ni,1] := lMarker
+
 Next
 
 //oBrowse:Refresh()
 lMarker:=!lMarker
-*/
+
 Return .T.
- 
+
 /*/{Protheus.doc} BUSDATA
-	Busca a lista da tabela SB1
+	Busca a lista de itens da tabela SB1 para exibir no browse
 	@type  Function
 	@author Victor Gisoldi Matos
 	@since 12/09/2024
@@ -1058,29 +1156,27 @@ Return .T.
 //Alimenta a tabela temporaria
 Static Function BUSDATA()
 
-Local cQuery    as Character
-Local cQryT3    as Character
- 
-cQuery      := ""
-cQryT3      := GetNextAlias()
-aDespes := {}
- 
+Local cQuery	:= ""
+Local cAlias	:= GetNextAlias()
+
+aDados	:= {}
+
 cQuery+="SELECT B1_COD, B1_DESC, B1_GRUPO FROM " + RetSqlName("SB1")
 cQuery+=" WHERE D_E_L_E_T_=''"
 cQuery:=ChangeQuery(cQuery)
 
-dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ) , cQryT3, .T., .F. )
- 
-(cQryT3)->(DbGoTop())
+dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ) , cAlias, .T., .F. )
 
-	While (cQryT3)->(!EOF())
-	
-		aadd(aDespes,{.f.,alltrim((cQryT3)->B1_COD),alltrim((cQryT3)->B1_DESC),alltrim((cQryT3)->B1_GRUPO) } )
-	
-		(cQryT3)->(dbSkip())
+(cAlias)->(DbGoTop())
+
+	While (cAlias)->(!EOF())
+
+		aadd(aDados,{.f.,alltrim((cAlias)->B1_COD),alltrim((cAlias)->B1_DESC),alltrim((cAlias)->B1_GRUPO) } )
+		(cAlias)->(dbSkip())
+
 	EndDo
 
-(cQryT3)->(dbCloseArea())
+(cAlias)->(dbCloseArea())
 DbSelectArea('SB1')
- 
+
 Return .t.
