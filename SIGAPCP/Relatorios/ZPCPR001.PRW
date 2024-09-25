@@ -264,7 +264,7 @@ MsSeek(xFilial('SG1')+ aSelect[1] ,.T.) // MsSeek(xFilial('SG1')+ mv_par01 ,.T.)
 oReport:SetMeter(SG1->(LastRec()))
 oSection1:Init(.F.)
 
-While !oReport:Cancel() .And. !Eof() .And. SG1->G1_FILIAL+SG1->G1_COD = xFilial('SG1')+ aSelect[y]//mv_par02 
+While !oReport:Cancel() .And. !Eof() .And. SG1->G1_FILIAL+alltrim(SG1->G1_COD) == xFilial('SG1')+ aSelect[y] //mv_par02 
 
 	oReport:IncMeter()
 
@@ -333,6 +333,7 @@ While !oReport:Cancel() .And. !Eof() .And. SG1->G1_FILIAL+SG1->G1_COD = xFilial(
 	dbSelectArea("SG1")
 	If y < len(aSelect)
 		y++
+		MsSeek(xFilial('SG1')+ aSelect[y] ,.T.)
 	EndIf
 EndDo
 
@@ -1163,6 +1164,7 @@ aDados	:= {}
 
 cQuery+="SELECT B1_COD, B1_DESC, B1_GRUPO FROM " + RetSqlName("SB1")
 cQuery+=" WHERE D_E_L_E_T_=''"
+cQuery+=" ORDER BY B1_COD "
 cQuery:=ChangeQuery(cQuery)
 
 dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ) , cAlias, .T., .F. )
