@@ -1,0 +1,338 @@
+#INCLUDE "TOTVS.CH"
+#INCLUDE "PROTHEUS.CH"
+#INCLUDE "FWMVCDEF.CH"
+#INCLUDE "RESTFUL.CH"
+
+/*/{Protheus.doc} ZRESTPFC
+Serviço de integração Consulta Faturamento Pedido 
+@author 	DAC 
+@since 		26/09/2024
+@version 	undefined
+@param		nao utilizado
+@type 		User Function
+@client   	CAOA BARUERI
+@return   	_aMsg - Array com retorno Json código e ocorrencia
+@project 	GAP228 -Integração Faturamento Autoware
+			https://tdn.totvs.com/display/tec/DecodeUTF8
+			https://jsonformatter.curiousconcept.com/  VERIFICAR SE JSON ESTA CORRETO
+			https://jsonlint.com/?code=   //VALIDAR JSON
+            https://jsoneditoronline.org/#left=local.sowavu  //estrutura do json
+/*/
+
+Function U_ZRESTPFC(_oJson, _cEmpFil, _cResp)
+Local _aMsg		:= {}
+
+Private _aRetMsg := ZRESTPFCMsg()   //Carregar tabela com erros
+Private _aMsgRet := {}				//carregar msg de errp
+
+Default _cEmpFil	:= ""
+Default _cResp		:= ""
+
+Begin Sequence
+	Conout("INICIANDO FUNCIONALIDADE ZRESTPFC em "+DtoC(Date())+" as "+Time())
+	_aMsgRet 	:= {}
+
+    If ZRESTPFCPR( @_oJson, _cEmpFil, _cResp )
+		U_ZRETMsgJson("ok", "Atualizacao realizada com Sucesso !")
+		_aMsg := U_ZSetMsgJson()
+	Else
+		_aMsg := U_ZSetMsgJson()
+	Endif
+
+End Sequence
+
+IF Len(_aMsg) == 0 		//Prevensão forçar o envia da mensagem para o REST
+	_aMsg := U_ZSetMsgJson()
+EndIf
+
+Conout("TERMINO FUNCIONALIDADE ZRESTPFC em "+DtoC(Date())+" as "+Time())
+Return _aMsg
+
+
+/*/{Protheus.doc} ZRESTPFCPR
+Recebe 		Json CLIENTE PUT 
+@author 	DAC
+@since 		20/03/2024
+@version 	undefined
+@param 		oJson
+@type 		function
+@ Obs		Os paremetros de token, empresa e filial serão enviados no cabeçalho reader Json
+/*/
+Static Function ZRESTPFCPR( _oJson, _cEmpFil, _cResp )
+Local _cEmpresa     As Character
+Local _cFilAtu      As Character
+Local _lRet			As Logical
+//Local _cRespLib		:= AllTrim( superGetMv( "CAOA_RES03"	, , "00000000"		) )	
+
+Local _nPos
+Begin Sequence
+	_cEmpresa 	:= ""
+	_cFilAtu 	:= ""
+	_lRet		:= .F.
+	_nPos := At(",", _cEmpFil)
+	If _nPos <= 0 
+		U_ZRETMsgJson("empresa","nao informada tag empresa")
+        Break
+    EndIf
+	_cEmpresa := SubsTr(_cEmpFil,1,_nPos-1)
+	_cFilAtu  := SubsTr(_cEmpFil,_nPos+1)
+
+	If Empty(_cEmpresa)
+		U_ZRETMsgJson("empresa","nao informada tag empresa")
+        Break
+	Endif
+	If Empty(_cFilAtu)
+		U_ZRETMsgJson("filial","nao informada a filial na tag empresa")
+        Break
+	Endif
+	//Verifica a existencia empresa, para não ficar retornando erro 5, valida se a tabela esta abertar
+	If Select("SM0") > 0
+		SM0->(DbSetOrder(1))  //M0_CODIGO+M0_CODFIL
+		If !SM0->(DbSeek(_cEmpresa+_cFilAtu))
+			U_ZRETMsgJson("empresa","Dados da empresa inconsistentes")
+        	Break
+		Endif
+	Endif
+    //Tratar abertura da empresa conforme enviado no parametro
+	If cEmpAnt <> _cEmpresa .or. cFilAnt <> _cFilAtu
+    	RpcClearEnv() 
+    	RPCSetType(3) 
+    	If !RpcSetEnv(_cEmpresa,_cFilAtu,,,,GetEnvServer(),{ })
+			U_ZRETMsgJson("ambiente","Nao foi possivel acessar ambiente")
+        	Break
+		Endif
+	EndIf
+	//Valida se esta cadastrado 
+	/*
+	If !_cResp	$ _cRespLib //.Or. ("_PRD" $ AllTrim(GetEnvServer()) .And. _cResp == STRZero(0,8))
+		U_ZRETMsgJson("responsavel","Rensponsavel nao Autorizado")
+        Break
+	Endif
+	*/
+	//Verificar se existe cadastro fornecedor , o Genérico não sendo 
+	SA2->(DbSetOrder(3))  //FILIAL + CGC
+	// Valida os dados do oJson
+	If !SA2->(DbSeek(FWxFilial("SA2")+_cResp))  //.And. _cResp <> STRZero(0,8)  //Deixar passar com tudo zero para validaçoes
+		U_ZRETMsgJson("responsavel","Nao Autorizado, Falta Cadastro")
+        Break
+	Endif 	
+	If !ValidOJson(@_oJson,)
+		Break
+	EndIf
+	//processa json
+	_lRet := ZRESTPFCGR(_oJson, _cPedcli)
+
+End Sequence
+Return _lRet
+
+
+/*/{Protheus.doc} ZRESTPFCGR
+Gravar dados do oJson Consulta
+@author DAC - Denilso
+@since 
+@version undefined
+@param 
+@type function
+/*/
+Static Function ZRESTPFCGR(_oJson, _cPedcli )
+Local _lRet 		As Logical
+Local _aDctos		As Array
+Local _aItemRet		As Array
+Local _cAliasPesq	As Character
+Local _cPedido 		As Character
+Local _cCnPj 		As Character
+Local _cPrevisao	As Character
+
+Begin Sequence 
+	_cAliasPesq	:= GetNextAlias()
+	_lRet 		:= .F.
+	_aDctos		:= {}
+	_aItemRet	:= {}
+	BeginSql Alias _cAliasPesq
+		SELECT 	 SC6.C6_PEDCLI
+				, ZZP.ZZP_CODPRV
+				, ZZP.ZZP_CNPJCP
+				, SC6.C6_XIDITEM
+				, SC6.C6_PRODUTO 
+				, SC6.C6_NOTA
+				, SC6.C6_SERIE
+				, SC6.C6_DATFAT
+				, SUM(ZZP.ZZP_QTEPED) AS ZZP_QTEPED
+				, SUM(ZZP.ZZP_QTELIB) AS ZZP_QTELIB
+				, SUM(ZZP.ZZP_QTEFAT) AS ZZP_QTEFAT
+		FROM %Table:SC6% SC6
+		JOIN %Table:ZZP% ZZP
+			ON 	ZZP.%notDel%
+			AND ZZP.ZZP_FILIAL  = SC6.C6_XFILPVR
+			AND	ZZP.ZZP_CODPRV  = SC6.C6_XCODPVR
+       	WHERE SC6.C6_FILIAL  	= %XFilial:SC6%
+			AND SC6.C6_PEDCLI 	= %Exp:_cPedcli%
+		  	AND SC6.%notDel%		  
+		GROUP BY  SC6.C6_PEDCLI
+				, ZZP.ZZP_CODPRV
+				, ZZP.ZZP_CNPJCP
+				, SC6.C6_XIDITEM
+				, SC6.C6_PRODUTO 
+				, SC6.C6_NOTA
+				, SC6.C6_SERIE
+				, SC6.C6_DATFAT
+		ORDER BY SC6.C6_XIDITEM
+	EndSql      
+	//CC2.CC2_CODMUN
+	//			AND CC2.CC2_MUN 	= %Exp:_cMunicipio%
+	If (_cAliasPesq)->(Eof())  
+		U_ZRETMsgJson("pedcli","Pedido  "+_cPedcli+" nao localizado")
+		Break
+	Endif
+
+	While (_cAliasPesq)->(!Eof())
+		_aDctos := {} 
+		Aadd( _aDctos, {"pedidovei"		, (_cAliasPesq)->C6_PEDCLI})
+		Aadd( _aDctos, {"cnpjcpf"		, (_cAliasPesq)->ZZP_CNPJCP}) 
+		Aadd( _aDctos, {"previsaonr"	, (_cAliasPesq)->ZZP_CODPRV }) 
+		_cPedido 	:= (_cAliasPesq)->C6_PEDCLI
+		_cCnPj 		:= (_cAliasPesq)->ZZP_CNPJCP
+		_cPrevisao	:= (_cAliasPesq)->ZZP_CODPRV
+		While (_cAliasPesq)->(!Eof()) .AND. _cPedido == (_cAliasPesq)->C6_PEDCLI .AND. _cCnPj == (_cAliasPesq)->ZZP_CNPJCP ;
+									  .AND. _cPrevisao == (_cAliasPesq)->ZZP_CODPRV
+			Aadd( _aItemRet, {"iditem"				, _cIdItem})
+			Aadd( _aItemRet, {"status"				, _aMsgRet[Len(_aMsgRet),1]})
+			Aadd( _aItemRet, {"ocorrencia"			, _aMsgRet[Len(_aMsgRet),2]})
+			Aadd( _aItemRet, {"qtderecebida"		, _nQtdeItem })
+			Aadd( _aItemRet, {"qtdeocorrencia"		, 0 })
+			Aadd( _aItemRet, {"qtdefaturada"		, 0 })
+			Aadd( _aItemRet, {"notafiscalnr"		, ""})
+			Aadd( _aItemRet, {"notafiscalserie"		, ""})
+			Aadd( _aItemRet, {"notafiscalemissao"	, "" })
+			Aadd( _aItemRet, {"notafiscalxml"		, ""})
+			(_cAliasPesq)->(DbSkip())
+		EndDo
+		_lRet := U_ZFT030CT( _aDctos, _aItemRet, /*_lJob*/)
+	EndDo 	
+End Sequence
+
+If Select((_cAliasPesq)) <> 0
+	(_cAliasPesq)->(DbCloseArea())
+	Ferase(_cAliasPesq+GetDBExtension())
+Endif 
+Return _lRet 
+
+
+
+/*/{Protheus.doc} ValidOJson
+Valida os dados do oJson
+@author DAC - Denilso
+@since 
+@version undefined
+@param nCode, numeric, descricao
+@param cMsg, characters, descricao
+@type function
+/*/
+Static Function ValidOJson(_oJson, _cTipo)
+Local _lRet		:= .T.
+Local _aMens 	:= {}
+ 	//Tem a função de validar os itens obrigatórios neste caso o vabeçalho ZWSRFUN.PRW
+	_aMens := U_ZVLDOBRJ(_oJson, _aRetMsg, /*_lItem*/, /*_lTodos*/)
+	If Len(_aMens) > 0
+	  	_aMsgRet 	:= _aMens
+		_lRet		:= .F.	
+	Endif
+Return _lRet
+
+
+
+/*/{Protheus.doc} ZRESTPFCMsg
+//Carrega Numero do Erro para retorno
+@author DAC
+@since 12/11/2021
+@version undefined
+@param _aMsg, array, descrição
+@type function
+/*/
+Static Function ZRESTPFCMsg()
+Local _aRet := {}
+Begin Sequence
+	//			Nr Ret	Tags Json			Item	Obrig	Descrição	
+	Aadd(_aRet, {100,	"ok"				, .F.	, .F., 	"Processo realizado com sucesso"})
+
+	Aadd(_aRet, {300,	"empresa"			, .F.	, .F., 	"Empresa nao informada"})
+	Aadd(_aRet, {301,	"filial"			, .F.	, .F., 	"Filial nao informada"})
+	Aadd(_aRet, {302,	"token"				, .F.	, .F., 	"Token Invalido"})
+	Aadd(_aRet, {303,	"ambiente"			, .F.	, .F., 	"Nao foi possivel acessar ambiente"})
+	Aadd(_aRet, {304,	"responsavel"		, .F.	, .F., 	"Não Autorizado"})
+
+	Aadd(_aRet, {400,	"cnpjcpf"			, .F.	, .T., 	"CNPJ e OU cpf COM problemas"})
+	Aadd(_aRet, {401,	"nome"				, .F.	, .T., 	"Nome do Cliente com problemas"})
+	Aadd(_aRet, {402,	"ierg"				, .F.	, .F., 	"Inscricao Estadual e ou R.G. com problemas"})
+	Aadd(_aRet, {403,	"cep"				, .F.	, .F., 	"Cep do Cliente com problemas"})
+	Aadd(_aRet, {404,	"endereco"			, .F.	, .T., 	"Endereço do Cliente com problemas"})
+	Aadd(_aRet, {405,	"municipio"			, .F.	, .F., 	"Municipio do Cliente com problemas"})
+	Aadd(_aRet, {406,	"estado"			, .F.	, .F., 	"Estado do Cliente com problemas"})
+	Aadd(_aRet, {407,	"pais"				, .F.	, .T., 	"Pais do Cliente com problemas"})
+	Aadd(_aRet, {408,	"email"				, .F.	, .F., 	"E-mail do Cliente com problemas"})
+	Aadd(_aRet, {409,	"tipocli"			, .F.	, .T., 	"Tipo do Cliente com problemas"})
+
+	Aadd(_aRet, {600,	"erropad"			, .F.	, .T., 	"nao foi possivel atualizar Cliente"})
+End Sequence
+Return _aRet
+
+
+
+/*
+{
+   "pedidovei":"021ABC000",
+   "cnpjcpf":"10213051001399",
+   "previsaonr":"00000001",
+   "Itens":[
+      {
+         "iditem":"XXXXXXXX01",
+         "status":"465",
+         "ocorrencia":"Nao existem chassis disponivel para veiculo",
+         "qtderecebida":3,
+         "qtdeocorrencia":1,
+         "qtdefaturada":0,
+         "notafiscalnr":"",
+         "notafiscalserie":"",
+         "notafiscalemissao":"",
+         "notafiscalxml":""
+      },
+      {
+         "iditem":"XXXXXXXX01",
+         "status":"150",
+         "ocorrencia":"Faturamento do item realizado com sucesso",
+         "qtderecebida":3,
+         "qtdeocorrencia":0,
+         "qtdefaturada":1,
+         "notafiscalnr":"000000089",
+         "notafiscalserie":"7  ",
+         "notafiscalemissao":"20240920",
+         "notafiscalxml":"formato xml "
+      },
+      {
+         "iditem":"XXXXXXXX01",
+         "status":"150",
+         "ocorrencia":"Faturamento do item realizado com sucesso",
+         "qtderecebida":3,
+         "qtdeocorrencia":0,
+         "qtdefaturada":1,
+         "notafiscalnr":"000000090",
+         "notafiscalserie":"7  ",
+         "notafiscalemissao":"20240920",
+         "notafiscalxml":"formato xml "
+      },
+      {
+         "iditem":"XXXXXXXX02",
+         "status":"100",
+         "ocorrencia":"Faturamento do item realizado com sucesso",
+         "qtderecebida":1,
+         "qtdeocorrencia":0,
+         "qtdefaturada":1,
+         "notafiscalnr":"000000091",
+         "notafiscalserie":"7  ",
+         "notafiscalemissao":"20240920",
+         "notafiscalxml":"formato xm "
+      }
+   ]
+}
+
+*/

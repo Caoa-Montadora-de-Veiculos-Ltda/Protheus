@@ -137,50 +137,51 @@ Pre Validaçãp dos dados do oJson Pedido
 @type function
 /*/
 Static Function ZRESTPRVGR(_oJson, _cEmpresa, _cFilAtu, _cResp)
-Local _lRet 		AS Logical
-Local _lNovo    	AS Logical
-Local _cTipoOper	AS Character
+Local _lRet 		As Logical
+Local _lNovo    	As Logical
+Local _cTipoOper	As Character
 
-Local _aCabSC5 		AS Array	
-Local _aItens  		AS Array	
-Local _aLinha 		AS Array
-//Local _aError		AS Array
-//Local _aCampos		AS Array
+Local _aCabSC5 		As Array	
+Local _aItens  		As Array	
+Local _aLinha 		As Array
+//Local _aError		As Array
+//Local _aCampos		As Array
 
-Local _nOper 		AS Numeric
-Local _nTam			AS Numeric
-Local _nValTab		AS Numeric
+Local _nOper 		As Numeric
+Local _nTam			As Numeric
+Local _nValTab		As Numeric
 //Local _nReg			AS Numeric
-//Local _nError		AS Numeric
-Local _nValUnit		AS Numeric
-Local _nPos			AS Numeric
-Local _nMoeda 		AS Numeric 
+//Local _nError		As Numeric
+Local _nValUnit		As Numeric
+Local _nPos			As Numeric
+Local _nMoeda 		As Numeric 
 
-Local _cNumPed		AS Character
-Local _cOper 		AS Character 
-Local _cCodTes		AS Character
-Local _cCodProd		AS Character
-Local _cItem 		AS Character
-Local _cPedCli 		AS Character	
-Local _cFabMod		AS Character
-Local _cCodMar 		AS Character 
-Local _cModVei 		AS Character
-Local _cSegMod 		AS Character
-Local _cGrupoMod 	AS Character
-Local _cCorInterna	AS Character
-Local _cCorExterna	AS Character
+Local _cNumPed		As Character
+Local _cOper 		As Character 
+Local _cCodTes		As Character
+Local _cCodProd		As Character
+Local _cItem 		As Character
+Local _cPedCli 		As Character	
+Local _cFabMod		As Character
+Local _cCodMar 		As Character 
+Local _cModVei 		As Character
+Local _cSegMod 		As Character
+Local _cGrupoMod 	As Character
+Local _cCorInterna	As Character
+Local _cCorExterna	As Character
 //Local _cError 		AS Character
-Local _cMsg			AS Character
-Local _cItemcta 	AS Character
-Local _cConta  		AS Character
-Local _cCLVL  		AS Character  	
-Local _cGrupoSB1	AS Character
-Local _cUnidade 	AS Character
-Local _cCodTransp 	AS Character
-Local _cTipoLib 	AS Character
-Local _cHsIni		AS Character
+Local _cMsg			As Character
+Local _cItemcta 	As Character
+Local _cConta  		As Character
+Local _cCLVL  		As Character  	
+Local _cGrupoSB1	As Character
+Local _cUnidade 	As Character
+Local _cCodTransp 	As Character
+Local _cTipoLib 	As Character
+Local _cHsIni		As Character
+Local _cIdItem		//As Character	
 
-Local _dDataIni 	AS Date
+Local _dDataIni 	As Date
 
 Begin Sequence 
 	_lRet 		:= .f. 
@@ -197,6 +198,7 @@ Begin Sequence
 	_nMoeda		:= 1
 	_cTipoLib	:= "1"
 	_cTipoOper	:= AllTrim(_oJson:GetJsonText("tpoperacao"))
+	
 	If _cTipoOper == "1"	//inclui
 		_lNovo := .T.
 		_nOper := 3
@@ -210,6 +212,7 @@ Begin Sequence
 	_aCabSC5	:= {}
 	_aItens 	:= {}
 	_cPedCli 	:= AllTrim(_oJson:GetJsonText("pedidovei"))
+	_cCgc		:= SA1->A1_CGC
 
 	If _lNovo
 		_cNumPed := "" //GetSxeNum("SC5","C5_NUM")
@@ -248,13 +251,16 @@ Begin Sequence
 		_cCorInterna:= AllTrim(_oJson["Itens"][_nPos]:GetJsonText("cdcorinterna"))
 		_cCorExterna:= AllTrim(_oJson["Itens"][_nPos]:GetJsonText("cdcorexterna"))
 		_nValUnit	:= Val(_oJson["Itens"][_nPos]:GetJsonText("valorunitario"))
+		If SC6->(FieldPos("C6_XIDITEM"))
+			_cIdItem := _oJson["Itens"][_nPos]:GetJsonText("iditem")    
+		Endif
 	    _cCodProd 	:= _cModVei + _cSegMod	//montagem do codigo produto
 		_nValTab 	:= ZRESTPRVPTabela( _cCodMar, _cModVei, _cSegMod, _cFabMod)  //tabela de veiculo
 		_lGrava		:= .T.
 		//_nDesconto	:= Val(_oJson["Itens"][_nPos]:GetJsonText("desconto"))
-		//_cItem 		:= Soma1(_cItem)
+		_cItem 		:= Soma1(_cItem)
 		//localizar relacionamento veiculo
-		If ! ZRESTPRVRVeiculo(_cCodProd, _cCodMar, _cModVei, _cSegMod, _cItem)  
+		If ! ZRESTPRVRVeiculo(_cCodProd, _cCodMar, _cModVei, _cSegMod, _cIdItem)  
 			_lGrava := .F. 
 			Exit
 		Endif
@@ -315,7 +321,7 @@ Begin Sequence
 			Aadd( _aLinha, {  "C6_XOPCION"	, AllTrim(_oJson["Itens"][_nPos]:GetJsonText("cdopcional")) 	, Nil })   
 		Endif
 		If SC6->(FieldPos("C6_XIDITEM"))
-			Aadd( _aLinha, {  "C6_XIDITEM"	, _oJson["Itens"][_nPos]:GetJsonText("iditem") 		, Nil })   
+			Aadd( _aLinha, {  "C6_XIDITEM"	, _cIdItem 				, 	Nil })   
 		Endif
 
     	Aadd( _aItens , _aLinha )
@@ -330,7 +336,7 @@ Begin Sequence
 	_lRet := .T.
     //Executa a inclusão do pedido e gravação da Previsão
 	If _lRet 
-		StartJob("U_ZJPRVGPE",GetEnvServer(),.T., _cPedCli, _aCabSC5, _aItens, _nOper,  cEmpAnt, cFilAnt)
+		StartJob("U_ZFT030GP",GetEnvServer(),.T., _cPedCli, _cCgc, _aCabSC5, _aItens, _nOper,  cEmpAnt, cFilAnt)
 	Endif
 End Sequence
 //Mensagens extraidas no processo, após gravar no log
@@ -613,14 +619,17 @@ localizar relacionamento veiculo
 @param 
 @type function
 /*/
-Static Function ZRESTPRVRVeiculo(_cCodProd, _cCodMar, _cModVei, _cSegMod, _cItem)
+Static Function ZRESTPRVRVeiculo(_cCodProd, _cCodMar, _cModVei, _cSegMod, _cIdItem)
 Local _cAliasPesq   AS Character
 Local _lRet			AS Logical		
 
 Begin Sequence 
- 	_cAliasPesq   := GetNextAlias()
- 	_lRet			:= .F.		
+ 	_cAliasPesq	:= GetNextAlias()
+ 	_lRet		:= .F.		
 
+	If ValType(_cIdItem) == "N"  //Garantir que seja caracter
+		_cIdItem := AllTrim(Str(_cIdItem))
+	Endif
 	BeginSql Alias _cAliasPesq
 		SELECT 	 SB1.R_E_C_N_O_ AS NREGSB1 
 		FROM %Table:SB1% SB1
@@ -630,7 +639,7 @@ Begin Sequence
 	EndSql      
 	//operação incluir
 	If (_cAliasPesq)->(Eof()) .Or. (_cAliasPesq)->NREGSB1 == 0
-		U_ZRETMsgJson("produto","Produto "+_cCodProd+" para o item "+_cItem+" nao localizado !")
+		U_ZRETMsgJson("produto","Produto "+_cCodProd+" para o item "+_cIdItem+" nao localizado !")
 		Break 
 	Endif 
 	SB1->(DbGoto((_cAliasPesq)->NREGSB1))
@@ -646,7 +655,7 @@ Begin Sequence
 			AND VV2.VV2_SEGMOD = %Exp:_cSegMod%
 	EndSql      
 	If (_cAliasPesq)->(Eof()) .And. (_cAliasPesq)->NREGVV2
-		U_ZRETMsgJson("cdmodvei","Modelo de Veiculo não encontrado na tabela de Modelos para o item"+_cItem+" !")
+		U_ZRETMsgJson("cdmodvei","Modelo de Veiculo não encontrado na tabela de Modelos para o item"+_cIdItem+" !")
 		Break
 	Endif
 	VV2->(DbGoto((_cAliasPesq)->NREGVV2))
@@ -660,7 +669,7 @@ Begin Sequence
 			AND VE1.VE1_CODMAR = %Exp:_cCodMar%
 	EndSql      
 	If (_cAliasPesq)->(Eof()) .And. (_cAliasPesq)->NREGVE1
-		U_ZRETMsgJson("cdmodvei","Veiculo não encontrado na tabela de vEÍCULOS para o item"+_cItem+" !")
+		U_ZRETMsgJson("cdmodvei","Veiculo não encontrado na tabela de Veiculo para o item"+_cIdItem+" !")
 		Break
 	Endif
 	(_cAliasPesq)->(DbCloseArea())
@@ -674,7 +683,7 @@ Begin Sequence
 			AND VVX.VVX_SEGMOD = %Exp:_cSegMod%
 	EndSql      
 	If (_cAliasPesq)->(Eof()) .And. (_cAliasPesq)->NREGVVX
-		U_ZRETMsgJson("cdmodvei","Tabela de descrição modelo não localizada não encontrado na tabela de vEÍCULOS para o item"+_cItem+" !")
+		U_ZRETMsgJson("cdmodvei","Tabela de descrição modelo não localizada não encontrado na tabela de vEÍCULOS para o item"+_cIdItem+" !")
 		Break
 	Endif
 	_lRet := .T.

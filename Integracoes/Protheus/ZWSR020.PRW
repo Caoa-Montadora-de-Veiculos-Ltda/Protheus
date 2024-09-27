@@ -23,15 +23,14 @@ R  - resT OU W WebServer
 010- Sequencial
 /*/
 
-WSRESTFUL ZWSR018 DESCRIPTION "Integração Faturamento Autoware !" FORMAT APPLICATION_JSON 
+WSRESTFUL ZWSR020 DESCRIPTION "Integração Faturamento Autoware !" FORMAT APPLICATION_JSON 
 	WSMETHOD POST ; 
-	        DESCRIPTION "Integração Faturamento";
-	        WSSYNTAX "/ZWSR018"
+	        DESCRIPTION "Consulta Pedido / Faturamento";
+	        WSSYNTAX "/ZWSR020"
 END WSRESTFUL
 
 
-WSMETHOD POST WSSERVICE ZWSR018
-//WSMETHOD GET WSSERVICE ZWSR016
+WSMETHOD POST WSSERVICE ZWSR020
 Local _aRet				:= {}
 Local _oJsonRet 		:= Nil
 Local _oJson
@@ -42,7 +41,7 @@ Local _cUser
 Local _cPass 	
 
 Begin Sequence
-    Conout("ZWSR018 - Integraçao Faturamento Autoware REST POST- Inicio "+DtoC(date())+" "+Time())
+    Conout("ZWSR020 - Consulta Pedido Faturamento Autoware REST GET- Inicio "+DtoC(date())+" "+Time())
     ::SetContentType('application/json')
 	_cAuthorization := Self:GetHeader('Authorization')
 	_cEmpFil 		:= Self:GetHeader("tenantid", .F.)
@@ -59,7 +58,7 @@ Begin Sequence
 			_oJson := JsonObject():new()
    	 		_oJson:fromJson(DecodeUTF8(Self:GetContent(,.T.)))  //Correto
 			//    _cJson       := Self:GetContent(,.T.)
-			_aRet := U_ZRESTPRV(@_oJson, _cEmpFil, _cResp)
+			_aRet := U_ZRESTPFC(@_oJson, _cEmpFil, _cResp)
 			//Erro no programa
   		Else 
 			_aRet := {302,"Nao Autorizado"}
@@ -102,7 +101,7 @@ Begin Sequence
 End Sequence
 FreeObj(_oJson)
 FreeObj(_oJsonRet)
-Conout("ZWSR018 - Integraçao Recebimento Cadastro de Clientes GET REST - Final "+DtoC(date())+" "+Time())
+Conout("ZWSR020 - Consulta Pedido Faturamento Autoware REST GET - Final "+DtoC(date())+" "+Time())
 Return .T.
 
 
