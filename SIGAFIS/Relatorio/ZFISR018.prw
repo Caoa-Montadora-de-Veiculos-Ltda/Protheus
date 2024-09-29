@@ -123,8 +123,10 @@ Static Function fGeraExcel()
     cQryDad += "		, SF3.F3_OUTRIPI  AS IPI_OUTROS  "                      + CRLF 
     cQryDad += "		, SF3.F3_DESPESA  AS OUTRAS_DESPESAS  "                 + CRLF 
     cQryDad += "		, SF3.F3_VALOBSE  AS DESCONTO  "                        + CRLF 
-    cQryDad += "		, SF3.F3_BASIMP6  AS BASE_PIS  "                        + CRLF 
-    cQryDad += "		, SF3.F3_BASIMP5  AS BASE_COF  "                        + CRLF 
+    cQryDad += "		, SF1.F1_BASIMP6  AS BASE_PIS  "                        + CRLF 
+    //cQryDad += "		, SF3.F3_VALIMP6  AS VALOR_PIS  "                       + CRLF    
+    cQryDad += "		, SF1.F1_BASIMP5  AS BASE_COF  "                        + CRLF 
+    //cQryDad += "		, SF3.F3_VALIMP5  AS VALOR_COF  "                       + CRLF   
     cQryDad += "		, SF3.F3_BASEPS3  AS PIS_ST_ZFM  "                      + CRLF 
     cQryDad += "		, SF3.F3_VALPS3   AS VAL_PISSTZFM  "                    + CRLF     
     cQryDad += "		, SF3.F3_BASECF3  AS COF_ST_ZFM  "                      + CRLF 
@@ -227,8 +229,10 @@ Static Function fGeraExcel()
 	cQryDad += " 	, SF3.F3_OUTRIPI "          + CRLF 	
 	cQryDad += " 	, SF3.F3_DESPESA "          + CRLF 
 	cQryDad += " 	, SF3.F3_VALOBSE "          + CRLF 	 
-	cQryDad += " 	, SF3.F3_BASIMP6 "          + CRLF 	
-	cQryDad += " 	, SF3.F3_BASIMP5 "          + CRLF 
+	cQryDad += " 	, SF1.F1_BASIMP6 "          + CRLF 
+	//cQryDad += " 	, SF3.F3_VALIMP6 "          + CRLF     	
+	cQryDad += " 	, SF1.F1_BASIMP5 "          + CRLF
+	//cQryDad += " 	, SF3.F3_VALIMP5 "          + CRLF 
 	cQryDad += " 	, SF3.F3_BASEPS3 "          + CRLF 	
 	cQryDad += " 	, SF3.F3_VALPS3  "          + CRLF 	 
 	cQryDad += " 	, SF3.F3_BASECF3 "          + CRLF 	

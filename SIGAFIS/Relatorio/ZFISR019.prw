@@ -59,11 +59,17 @@ Static Function fGeraExce()
     Local cQryDad  := ""
     Local oFWMsExcel
     Local oExcel
-    Local cArquivo    := GetTempPath() + "ZFISR019.xml"
-    Local cWorkSheet  := "Notas Fiscais de Saida"
-    Local cWorkSh := "Notas Fiscais de Saida Canceladas"
+    Local cArquivo   := GetTempPath() + "ZFISR019.xml"
+    Local cWorkSheet := "Notas Fiscais de Saida"
+    Local cWorkSh    := "Notas Fiscais de Saida Canceladas"
     Local cTitulo    := "Notas Fiscais de Saida"
-    Local cTitul    := "Notas Fiscais de Saida Canceladas"
+    Local cTitul     := "Notas Fiscais de Saida Canceladas"
+    Local cCGC  	 := ''  
+    Local cCodigo	 := ''    
+    Local cLoja 	 := ''
+    Local cCliFor	 := ''
+    Local cInsc 	 := ''    
+ 
     Local nAtual := 0
     Local nTotal := 0
     Private QRY_DAD   := GetNextAlias()
@@ -91,7 +97,7 @@ Static Function fGeraExce()
     cQryDad += "        , SF2.F2_CHVNFE     AS CHAVE "                          + CRLF
     cQryDad += "        , SF2.F2_USERLGI    AS UINCLUI" 		                + CRLF
     cQryDad += "        , SF2.F2_USERLGA    AS UALTERA" 		                + CRLF
-    cQryDad += "        , SD2.D2_CF         AS CFOP "                           + CRLF
+    //cQryDad += "        , SD2.D2_CF         AS CFOP "                           + CRLF
     cQryDad += "        , SUM(FT_VALPIS)    AS VALOR_PIS "                      + CRLF
     cQryDad += "        , SUM(FT_VALCOF)    AS VALOR_COF "                      + CRLF
 	cQryDad += "	    , SF3.F3_ESPECIE    AS ESPECIE "                        + CRLF 
@@ -122,17 +128,17 @@ Static Function fGeraExce()
     cQryDad += "		, SF3.F3_DTCANC "                                       + CRLF
     cQryDad += "FROM "       + RetSQLName( 'SF2' ) + " SF2 "                    + CRLF //-- CAB. NOTA FISCAL DE ENTRADA
     cQryDad += "LEFT JOIN "  + RetSQLName( 'SA1' ) + " SA1 "                    + CRLF //-- FORNECEDORES
-    cQryDad += "    ON SA1.A1_FILIAL  = '" + FWxFilial('SA1') + "' "            + CRLF 
-    cQryDad += "    AND SA1.A1_COD     = SF2.F2_CLIENTE"                        + CRLF 
-    cQryDad += "    AND SA1.A1_LOJA    = SF2.F2_LOJA "                          + CRLF 
-//  cQryDad += "    AND SA1.D_E_L_E_T_ = ' ' "	                                + CRLF
-	cQryDad += "LEFT JOIN "  + RetSQLName( 'SD2' ) + " SD2 "                    + CRLF //-- ITENS DOCUMENTO DE ENTRADA
-    cQryDad += "    ON SD2.D2_FILIAL  = '" + FWxFilial('SD2') + "' "            + CRLF
-    cQryDad += "    AND SD2.D2_DOC     = SF2.F2_DOC"                            + CRLF
-    cQryDad += "    AND SD2.D2_SERIE   = SF2.F2_SERIE"                          + CRLF
-    cQryDad += "    AND SD2.D2_CLIENTE = SF2.F2_CLIENTE"                        + CRLF
-    cQryDad += "    AND SD2.D2_LOJA    = SF2.F2_LOJA"                           + CRLF
-    cQryDad += "    AND SD2.D2_EMISSAO = SF2.F2_EMISSAO"                        + CRLF
+    cQryDad += "    ON SA1.A1_FILIAL    = '" + FWxFilial('SA1') + "' "          + CRLF 
+    cQryDad += "    AND SA1.A1_COD      = SF2.F2_CLIENTE"                       + CRLF 
+    cQryDad += "    AND SA1.A1_LOJA     = SF2.F2_LOJA "                         + CRLF
+    cQryDad += "    AND SA1.D_E_L_E_T_ 	= ' ' "                                 + CRLF  
+	//cQryDad += "LEFT JOIN "  + RetSQLName( 'SD2' ) + " SD2 "                    + CRLF //-- ITENS DOCUMENTO DE ENTRADA
+    //cQryDad += "    ON SD2.D2_FILIAL  = '" + FWxFilial('SD2') + "' "            + CRLF
+    //cQryDad += "    AND SD2.D2_DOC     = SF2.F2_DOC"                            + CRLF
+    //cQryDad += "    AND SD2.D2_SERIE   = SF2.F2_SERIE"                          + CRLF
+    //cQryDad += "    AND SD2.D2_CLIENTE = SF2.F2_CLIENTE"                        + CRLF
+    //cQryDad += "    AND SD2.D2_LOJA    = SF2.F2_LOJA"                           + CRLF
+    //cQryDad += "    AND SD2.D2_EMISSAO = SF2.F2_EMISSAO"                        + CRLF
 //  cQryDad += "    AND SD1.D_E_L_E_T_ = ' ' "	                                + CRLF
     cQryDad += "LEFT JOIN "  + RetSQLName( 'SFT' ) + " SFT "                    + CRLF //-- ITENS LIVROS FISCAIS
 	cQryDad += "    ON SFT.FT_FILIAL  = '" + FWxFilial('SFT') + "' "            + CRLF 
@@ -140,7 +146,7 @@ Static Function fGeraExce()
     cQryDad += "    AND SFT.FT_SERIE   = SF2.F2_SERIE"                          + CRLF
     cQryDad += "    AND SFT.FT_CLIEFOR = SF2.F2_CLIENTE"                        + CRLF
     cQryDad += "    AND SFT.FT_LOJA	  = SF2.F2_LOJA"                            + CRLF
-    cQryDad += "    AND SFT.FT_PRODUTO = SD2.D2_COD"                            + CRLF
+    //cQryDad += "    AND SFT.FT_PRODUTO = SD2.D2_COD"                            + CRLF
 //  cQryDad += "    AND SFT.D_E_L_E_T_ = ' ' "	                                + CRLF
 
     cQryDad += "LEFT JOIN "  + RetSQLName( 'SF3' ) + " SF3 "                    + CRLF //-- LIVROS FISCAIS CABEÇALHO
@@ -148,7 +154,7 @@ Static Function fGeraExce()
     cQryDad += "    AND SF3.F3_NFISCAL = SF2.F2_DOC"                            + CRLF
     cQryDad += "    AND SF3.F3_SERIE   = SF2.F2_SERIE "                         + CRLF
     cQryDad += "    AND SF3.F3_EMISSAO = SF2.F2_EMISSAO"                        + CRLF
-    cQryDad += "    AND SF3.F3_CFO     = SD2.D2_CF  "                           + CRLF
+    //cQryDad += "    AND SF3.F3_CFO     = SD2.D2_CF  "                           + CRLF
     cQryDad += "    AND SF3.D_E_L_E_T_ = ' ' "	                                + CRLF
 
 
@@ -156,9 +162,8 @@ Static Function fGeraExce()
     cQryDad += "    SF2.F2_FILIAL 		= '" + FWxFilial('SF2') + "' "          + CRLF
 	cQryDad += "    AND SF2.D_E_L_E_T_ 	= ' ' "                                 + CRLF
     If !Empty(DtoS(MV_PAR02)) //DATA EMISSAO ATE
-		cQryDad += " AND (SF2.F2_EMISSAO BETWEEN '" + DtoS(MV_PAR01) + "' AND '" + DtoS(MV_PAR02) + "')"   + CRLF //--DATA DE EMISSAO
-		cQryDad += " OR (SF3.F3_DTCANC BETWEEN '" + DtoS(MV_PAR01) + "' AND '" + DtoS(MV_PAR02) + "')"   + CRLF //--DATA DE EMISSAO
-
+		cQryDad += " AND SF2.F2_EMISSAO BETWEEN '" + DtoS(MV_PAR01) + "' AND '" + DtoS(MV_PAR02) + "'"   + CRLF //--DATA DE EMISSAO
+		cQryDad += " OR (SF3.F3_DTCANC BETWEEN '"  + DtoS(MV_PAR01) + "' AND '" + DtoS(MV_PAR02) + "')"  + CRLF //--DATA DE EMISSAO
 	EndIf
 
     If !Empty(MV_PAR04) //NOTA FISCAL
@@ -176,7 +181,7 @@ Static Function fGeraExce()
  //   cQryDad += "    AND SF1.D_E_L_E_T_ 	= ' ' "                         + CRLF
     cQryDad += "GROUP BY "                      + CRLF 
     cQryDad += "    SF2.F2_FILIAL "             + CRLF    
-    cQryDad += "    , SD2.D2_CF "               + CRLF  
+ //   cQryDad += "    , SD2.D2_CF "               + CRLF  
     cQryDad += "    , SA1.A1_CGC "              + CRLF     
 	cQryDad += "    , SA1.A1_INSCR "            + CRLF  	   
     cQryDad += "    , SA1.A1_COD "              + CRLF 
@@ -297,13 +302,31 @@ Static Function fGeraExce()
         cLogInc := aLog[1]
         cLogAlt := aLog[2]
 
+        SA2->( DbSetOrder(1) ) // A2_FILIAL+A2_COD+A2_LOJA
+
+        If (QRY_DAD)->TIPO $ "B|D" // Benefeciamento ou devolução
+            If SA2->(DbSeek( xFilial("SA2") + (QRY_DAD)->CODIGO + (QRY_DAD)->LOJA ))
+                cCliFor	:= SA2->A2_NOME
+                cCGC	:= SA2->A2_CGC 
+                cCodigo := SA2->A2_COD  
+                cLoja   := SA2->A2_LOJA                                      
+                cInsc   := SA2->A2_INSCR
+            EndIf
+        Else
+                cCliFor	:= (QRY_DAD)->FORNECEDOR
+                cCGC	:= (QRY_DAD)->CNPJ
+                cCodigo := (QRY_DAD)->CODIGO  
+                cLoja   := (QRY_DAD)->LOJA
+                cInsc   := (QRY_DAD)->INS_EST                    
+        EndIf 
+
         //Adicionando uma nova linha
        oFWMsExcel:AddRow(cWorkSheet, cTitulo, {;
-                     (QRY_DAD)->CNPJ  ,;
-                     (QRY_DAD)->INS_EST  ,;
-                     (QRY_DAD)->CODIGO  ,;
-                     (QRY_DAD)->LOJA  ,;
-                     (QRY_DAD)->FORNECEDOR  ,;
+                     cCGC     ,;
+                     cInsc    ,;
+                     cCodigo  ,;
+                     cLoja    ,;
+                     cCliFor  ,;
                      (QRY_DAD)->ESTADO  ,;
                      (QRY_DAD)->NOTA_FISCAL  ,;
                      (QRY_DAD)->SERIE  ,;
