@@ -1615,7 +1615,7 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
                             (cCabAlias)->C6_XDESSEG := (cCabAlias)->VVX_DESSEG  
                         Endif    
                         (cCabAlias)->C6_XFABMOD := (cCabAlias)->VRK_FABMOD  
-                        //NÃO SERA MAIS NECESSÁRIO CARREGAR ESTES DADOS JA ESTÃO NA QUERY INICIAL XZFT19QY DAC 31/05/2024
+                        //NÃO SERA MAIS NECESSÝRIO CARREGAR ESTES DADOS JA ESTÃO NA QUERY INICIAL XZFT19QY DAC 31/05/2024
                         //(cCabAlias)->C6_XCODMAR	:= (cTrbAlias)->MARCA      
                         //(cCabAlias)->C6_XDESMAR := (cTrbAlias)->DESCMAR 
                         //(cCabAlias)->C6_XCORINT	:= (cTrbAlias)->CORINT     
@@ -3251,7 +3251,7 @@ aEval(aArea,{|x| RestArea(x)})
 
 Return Round(nVlrRet,2)
 
-/*
+/* 
 =======================================================================================
 Programa.:              FatComis
 Autor....:              
@@ -3267,7 +3267,11 @@ Local nRet := 0
 
 VV2->(dbSetOrder(7))
 If VV2->(dbSeek(xFilial("VV2")+cProd))
-	nRet := VV2->VV2_XCOMIS
+	nRet := VV2->&('VV2_XCOM'+StrZero(Val(FWFldGet("VRJ_TIPVEN")),1))
+
+	If nRet <= 0
+		nRet := VV2->VV2_XCOMIS
+	EndIf
 Endif
 
 aEval(aArea,{|x| RestArea(x)})

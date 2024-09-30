@@ -207,6 +207,7 @@ Local _nPesoC	:= 0
 Local _nPosCpo 
 Local _nPos
 Local _cNumOrc
+Local _cModal := " "
 
 Begin Sequence
 	VS1->(DbSetOrder(1))

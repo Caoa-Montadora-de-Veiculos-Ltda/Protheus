@@ -94,7 +94,7 @@ EndIf
 If FWFldGet("VRJ_TIPVEN") $ "02/03/05"
 	aEval(aArea,{|x| RestArea(x)})
 	Return nVlrRet
-Endif
+Endif 
 
 //Venda Direta convênio 51/00
 If FWFldGet("VRJ_TIPVEN") $ "04"
@@ -307,7 +307,11 @@ Local nRet := 0
 
 VV2->(dbSetOrder(7))
 If VV2->(dbSeek(xFilial("VV2")+cProd))
-	nRet := VV2->VV2_XCOMIS
+	nRet := VV2->&('VV2_XCOM'+StrZero(Val(FWFldGet("VRJ_TIPVEN")),1))
+
+	If nRet <= 0
+		nRet := VV2->VV2_XCOMIS
+	EndIf
 Endif
 
 aEval(aArea,{|x| RestArea(x)})

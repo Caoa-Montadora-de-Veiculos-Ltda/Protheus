@@ -51,6 +51,10 @@ Local _dDataIni 	:= Date()
 Local _cHsIni		:= Time()
 Local _aDivergencia	:= {}
 Local _nRetJson		:= 0
+Local _cChave		:= "ZPECF008_ONDA"
+Local _lSemaforo	:= SuperGetMV( "CMV_PEC052" ,, .F. )
+Local _nPos
+Local _lRet
 
 Private _aItens		:= {}
 Private _cErro		:= ""
@@ -90,14 +94,20 @@ Private _aJson		:= {}
 	If Empty ( _cEmpresa )
 		_cErro := "Necessario informar os parametros empresa, por favor, verifique!"
 		ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )	
-		SetRestFault(400, _cErro)
+		//SetRestFault(400, _cErro)
+		oJsonRet['errorCode'] 		:= 400
+		oJsonRet['errorMessage']	:= AllTrim(_cErro)
+		::SetResponse( oJsonRet:ToJson() )
 		Return(.T.)
     EndIf
 
     If Empty ( _cFilAtu )
 		_cErro := "Necessario informar os parametros da filial, por favor, verifique!"
 		ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )	
-		SetRestFault(400, _cErro)
+		//SetRestFault(400, _cErro)
+		oJsonRet['errorCode'] 		:= 400
+		oJsonRet['errorMessage']	:= AllTrim(_cErro)
+		::SetResponse( oJsonRet:ToJson() )
 		Return(.T.)
  	EndIf
 
@@ -105,14 +115,20 @@ Private _aJson		:= {}
 		If Empty ( _cToken ) .or. AllTrim(_cToken) <> "PRD_RGLOGXTOTVS"
 			_cErro := "Necessario informar o token correto para o ambiente, por favor, verifique!"
 			ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )	
-			SetRestFault(400, _cErro)
+			//SetRestFault(400, _cErro)
+			oJsonRet['errorCode'] 		:= 400
+			oJsonRet['errorMessage']	:= AllTrim(_cErro)
+			::SetResponse( oJsonRet:ToJson() )
 			Return(.T.)
  		EndIf
 	Else
 		If Empty ( _cToken ) .or. AllTrim(_cToken) <> "HOM_RGLOGXTOTVS"
 			_cErro := "Necessario informar o token correto para o ambiente, por favor, verifique!"
 			ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )	
-			SetRestFault(400, _cErro)
+			//SetRestFault(400, _cErro)
+			oJsonRet['errorCode'] 		:= 400
+			oJsonRet['errorMessage']	:= AllTrim(_cErro)
+			::SetResponse( oJsonRet:ToJson() )
 			Return(.T.)
  		EndIf
 	EndIf
@@ -120,14 +136,20 @@ Private _aJson		:= {}
     If Empty ( _cUsuario ) .or. AllTrim(_cUsuario) <> "RGLOG.REST"
  		_cErro := "Usuario nao esta autorizado a acessar os servicos Protheus!"
 		ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )	
-		SetRestFault(400, _cErro)
+		//SetRestFault(400, _cErro)
+		oJsonRet['errorCode'] 		:= 400
+		oJsonRet['errorMessage']	:= AllTrim(_cErro)
+		::SetResponse( oJsonRet:ToJson() )
 		Return(.T.)
  	EndIf
 
     If Empty ( _cSenha ) .or. AllTrim(_cSenha) <> "CaOa!RgLogRest@2021"
  		_cErro := "Senha invalida!"
 		ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )	
-		SetRestFault(400, _cErro)
+		//SetRestFault(400, _cErro)
+		oJsonRet['errorCode'] 		:= 400
+		oJsonRet['errorMessage']	:= AllTrim(_cErro)
+		::SetResponse( oJsonRet:ToJson() )
 		Return(.T.)
  	EndIf
 
@@ -143,6 +165,32 @@ Private _aJson		:= {}
     	RPCSetType(3) 
     	RpcSetEnv(_cEmpresa,_cFilAtu,,,,GetEnvServer(),{ })
 	EndIf
+
+	//Caso esteja rodando onda não será permitido fazer a transferencia
+	_cChave += AllTrim(cEmpAnt)+AllTrim(cFilAnt)
+	If !LockByName(_cChave,.T.,.T.)  
+		//tentar locar por 10 segundos caso não consiga não prosseguir
+		_lRet := .F.
+		For _nPos := 1 To 10
+			Sleep( 300 ) // Para o processamento por 3 segundos
+			If LockByName(_cChave,.T.,.T.)
+				_lRet := .T.
+			EndIf
+		Next		
+		If !_lRet
+			_cErro := "Esta sendo processada ONDA, nao sera confirmada Quantidade, verifique com ADM Sistema ! "
+			ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )	
+			//SetRestFault(400, _cErro)
+			oJsonRet['errorCode'] 		:= 400
+			oJsonRet['errorMessage']	:= AllTrim(_cErro)
+			::SetResponse( oJsonRet:ToJson() )
+			Return(.T.)
+		EndIf
+	EndIf
+	//Caso não utilize o semaforo para RGLOG desabilitar
+	If !_lSemaforo
+		UnLockByName(_cChave,.T.,.T.)
+	Endif 
 
 	_cNfFor 	:= AllTrim(StrZero(Val(oParseJSON:nota_fiscal),9))
 	_cSerFor 	:= AllTrim(oParseJSON:serie_nf)
@@ -162,14 +210,28 @@ Private _aJson		:= {}
 	If Empty( _cNfFor )
  		_cErro := "Nota Fiscal nao informada"
 		ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )	
-		SetRestFault(400, _cErro)
+		//SetRestFault(400, _cErro)
+		oJsonRet['errorCode'] 		:= 400
+		oJsonRet['errorMessage']	:= AllTrim(_cErro)
+		::SetResponse( oJsonRet:ToJson() )
+		//Liberar a chave	
+		If _lSemaforo
+			UnLockByName(_cChave,.T.,.T.)
+		Endif 
 		Return(.T.)
  	EndIf
 
 	If Empty( _cFornec )
  		_cErro := "Fornecedor nao informada"
 		ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )	
-		SetRestFault(400, _cErro)
+		//SetRestFault(400, _cErro)
+		oJsonRet['errorCode'] 		:= 400
+		oJsonRet['errorMessage']	:= AllTrim(_cErro)
+		::SetResponse( oJsonRet:ToJson() )
+		//Liberar a chave	
+		If _lSemaforo
+			UnLockByName(_cChave,.T.,.T.)
+		Endif 
 		Return(.T.)
  	EndIf
 
@@ -179,7 +241,14 @@ Private _aJson		:= {}
 	If _aItens == Nil  .Or. Len(_aItens) == 0
  		_cErro := "Nao informado itens"
 		ZWSR012Monitor("2",_cTab, _cDoc, _cErro, _dDataIni, _cHsIni, cJson, 400 /*_nErro*/ )	
-		SetRestFault(400, _cErro)
+		//SetRestFault(400, _cErro)
+		oJsonRet['errorCode'] 		:= 400
+		oJsonRet['errorMessage']	:= AllTrim(_cErro)
+		::SetResponse( oJsonRet:ToJson() )
+		//Liberar a chave	
+		If _lSemaforo
+			UnLockByName(_cChave,.T.,.T.)
+		Endif 
 		Return(.T.)
 	Endif
 	//Para Transferência
@@ -223,7 +292,11 @@ Private _aJson		:= {}
 	//Caso tenha divergencia ESPFUN.-.PEC042.
 	If Len(_aDivergencia) > 0					
 		NotificaDiv(_aDivergencia)
-	Endif	
+	Endif
+	//Liberar a chave	
+	If _lSemaforo
+		UnLockByName(_cChave,.T.,.T.)
+	Endif 
 Return .T.
 
 /*
