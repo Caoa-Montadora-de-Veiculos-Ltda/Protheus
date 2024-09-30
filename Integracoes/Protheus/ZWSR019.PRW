@@ -91,10 +91,10 @@ Begin Sequence
 
 	EndIf
 
-	If _aRet[1] == 100
+	If Len(_aRet) > 2//_aRet[1][1] == 100
 		_oJsonRet := JsonObject():new()
 		For _nPos := 1 to len(_aRet)
-			_oJsonRet[_aRet[nPos,2]]	:= _aRet[nPos,3] // cria o retorno com as chaves e os resultados
+			_oJsonRet[_aRet[_nPos,2]]	:= _aRet[_nPos,3] // cria o retorno com as chaves e os resultados
 		Next
 		//SetRestFault(_aRet[1],_aRet[2])
 		//_cJSONRet := '{"Orçamento":"' + VS1->VS1_NUMORC + '"'+'}'
