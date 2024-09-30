@@ -19,33 +19,23 @@ Serviço de integração Consulta Saldo em Estoque
 /*/
 User Function ZRESTESL( _oJson , _cEmpFil , _cResp )
 
-Local _aMsg := {}
+Local _aMsg As Array
 
-Private _aRetMsg := ZRESTESLMsg()   //Carregar tabela com erros
-Private _aMsgRet := {}				//carregar msg de errp
+Private _aRetMsg As Array
+Private _aMsgRet As Array
 
 Default _cEmpFil := ""
 Default _cResp   := ""
 
 Begin Sequence
-
 	Conout( "INICIADO FUNCIONALIDADE ZRESTESL em " + DtoC(Date()) + " as " + Time() )
-	_aMsgRet 	:= {}
+	_aMsg 	 := {}
+	_aRetMsg := ZRESTESLMsg()   //Carregar tabela com erros
+	_aMsgRet := {}				//carregar msg de errp
 
-/*
-    If ZRESTESLPR( @_oJson , _cEmpFil , _cResp )
-
-		//U_ZRETMsgJson( "ok" , "Consulta realizada com Sucesso !" )
-		_aMsg := U_ZSetMsgJson()
-
-	Else
-
-		_aMsg := U_ZSetMsgJson()
-
-	Endif
-*/
+	// Processa o Json
 	If ZRESTESLPR( @_oJson , _cEmpFil , _cResp )
-	_aMsg := _aMsgRet // _aMsg := U_ZSetMsgJson()
+		_aMsg := _aMsgRet // Recebe erro do processamento
 	EndIf
 
 End Sequence
@@ -83,56 +73,40 @@ Begin Sequence
 	_nPos 		:= At( "," , _cEmpFil )
 
 	If _nPos <= 0 
-	
 		U_ZRETMsgJson( "empresa" , "nao informada tag empresa" )
         Break
-    
-	EndIf
+    EndIf
 	
 	_cEmpresa := SubsTr( _cEmpFil , 1 , _nPos - 1 )
 	_cFilAtu  := SubsTr( _cEmpFil , _nPos + 1 )
 
 	If Empty( _cEmpresa )
-	
 		U_ZRETMsgJson( "empresa" , "nao informada tag empresa" )
         Break
-	
 	Endif
 	
 	If Empty( _cFilAtu )
-	
 		U_ZRETMsgJson( "filial" , "nao informada a filial na tag empresa" )
         Break
-	
 	Endif
 	
 	//Verifica a existencia empresa, para não ficar retornando erro 5, valida se a tabela esta abertar
 	If Select("SM0") > 0
-	
 		SM0->(DbSetOrder(1))  // M0_CODIGO + M0_CODFIL
-	
 		If !SM0->(DbSeek(_cEmpresa+_cFilAtu))
-	
 			U_ZRETMsgJson( "empresa" , "Dados da empresa inconsistentes" )
         	Break
-	
 		Endif
-	
 	Endif
     
 	//Tratar abertura da empresa conforme enviado no parametro
 	If cEmpAnt <> _cEmpresa .or. cFilAnt <> _cFilAtu
-    
-		RpcClearEnv() 
+    	RpcClearEnv() 
     	RPCSetType(3) 
-    
-		If !RpcSetEnv( _cEmpresa , _cFilAtu , , , , GetEnvServer() , { } )
-	
+    	If !RpcSetEnv( _cEmpresa , _cFilAtu , , , , GetEnvServer() , { } )
 			U_ZRETMsgJson( "ambiente" , "Nao foi possivel acessar ambiente" )
         	Break
-	
 		Endif
-	
 	EndIf
 	
 	//Verificar se existe cadastro fornecedor , o Genérico não sendo 
@@ -140,19 +114,15 @@ Begin Sequence
 	
 	// Valida os dados do oJson
 	If !SA2->(DbSeek(FWxFilial("SA2")+_cResp))  //.And. _cResp <> STRZero(0,8)  //Deixar passar com tudo zero para validaçoes
-	
 		U_ZRETMsgJson( "responsavel" , "Nao Autorizado, Falta Cadastro" )
         Break
-	
 	Endif 	
 	
 	If !ValidOJson( @_oJson , )
-	
 		Break
-	
 	EndIf
 	
-	//processa json
+	//Realiza a consulta
 	_lRet := ZRESTESLCO( _oJson , _cEmpresa , _cFilAtu , _cResp )
 
 End Sequence
@@ -170,7 +140,6 @@ Receber dados do oJson e Consultar Saldo
 Static Function ZRESTESLCO( _oJson , _cEmpresa , _cFilAtu , _cResp )
 
 Local _cAliasPesq	As Character
-
 Local _cModelo		As Character
 Local _cSegmento	As Character
 Local _cAnoFab		As Character
@@ -196,9 +165,7 @@ Begin Sequence
 	Endif
 
 	If Select( (_cAliasPesq) ) > 0
-
 		(_cAliasPesq)->(DbCloseArea())
-
 	EndIf
 
 	//Concatena Ano de Fabricação + Ano Modelo
@@ -231,14 +198,12 @@ Begin Sequence
 	DbSelectArea((_cAliasPesq))
 
 	If (_cAliasPesq)->(!Eof())
-		
 		_nSaldo := (_cAliasPesq)->SALDO
 		ZRETJson( "ok" , "cdmodvei"	  	 , _cModelo   )
 		ZRETJson( "ok" , "cdsegmod"	  	 , _cSegmento )
 		ZRETJson( "ok" , "anofabricacao" , _cAnoFab   )
 		ZRETJson( "ok" , "anomodelo"	 , _cAnoMod   )
 		ZRETJson( "ok" , "saldoestoque"  , _nSaldo	  )
-
 	EndIf
 
 	(_cAliasPesq)->(DbCloseArea())
@@ -246,7 +211,7 @@ End Sequence
 
 return _lRet
 
-//Valida campos enviados no REST
+//Valida os dados redebidos do Json
 Static Function ZRESTValida( _oJson , _cModelo , _cSegmento , _cAnoFab, _cAnoMod )
 
 Local _lRet As Logical
@@ -292,7 +257,7 @@ End Sequence
 Return _lRet
 
 /*/{Protheus.doc} ValidOJson
-Valida os dados do oJson
+Valida os Itens do oJson
 @author Victor Gisoldi Matos
 @since 18/09/2024
 @version 1.0
@@ -310,10 +275,8 @@ _aMens	:= U_ZVLDOBRJ( _oJson , _aRetMsg , /*_lItem*/ , /*_lTodos*/ )
 _lRet	:= .T.
 
 If Len(_aMens) > 0
-
   	_aMsgRet 	:= _aMens
 	_lRet		:= .F.	
-
 Endif
 
 Return _lRet
@@ -395,7 +358,7 @@ End Sequence
 Return _nRet
 
 /*/{Protheus.doc} VldMod
-	Valida de o codigo de modelo enviado é valido
+	Valida de o codigo de modelo recebido no Json é valido
 	@type  Function
 	@author Victor Matos
 	@since 30/09/2024
@@ -418,9 +381,7 @@ cMod 	:= ''
 cQuery 	:= ''
 
 If Select( (_cAlias) ) > 0
-
 	(_cAlias)->(DbCloseArea())
-
 EndIf
 
 cQuery := " SELECT VV1.VV1_MODVEI AS MODELO "
@@ -446,10 +407,10 @@ EndIf
 
 Return lRet
 
-/*/{Protheus.doc} nomeFunction
-	(long_description)
+/*/{Protheus.doc} VldSeg
+	Valida de o segmento recebido no json é válido
 	@type  Function
-	@author user
+	@author Victor Gisoldi Matos
 	@since 30/09/2024
 	@version version
 	@param param_name, param_type, param_descr
@@ -470,9 +431,7 @@ cSeg 	:= ''
 cQuery	:= ''
 
 If Select( (_cAlias) ) > 0
-
 	(_cAlias)->(DbCloseArea())
-
 EndIf
 
 cQuery := " SELECT VV1.VV1_SEGMOD AS SEGMENTO "
