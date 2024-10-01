@@ -39,11 +39,12 @@ FUNCTION U_ZFT030GP( _cPedCli, _cCgc, _aCabPed, _aItens,  _nOpc, _cEmpresa, _cFi
 Local _cError 		As Character
 Local _cNumPed		As Character
 Local _cItem		As Character
+Local _cIdItem		As Character
 
 Local _aError 		As Array	
 Local _aGrvItens	As Array	
 Local _aItemRet		As Array
-Local _aDctos 		As Array
+Local _aCab 		As Array
 
 Local _lRet 		As Logical
 Local _lJob 		As Logical	
@@ -60,7 +61,8 @@ Local _nCount     	As Numeric
 Local _nQtdeEmp		As Numeric	
 Local _nPosIdItem	As Numeric
 
-Local _cIdItem
+Local _oJsonRet		As Object 
+
 
 Default _cPedCli 	:= "" 
 Default _cCgc		:= ""
@@ -71,13 +73,15 @@ Default _cMsg 	 	:= ""
 Default _cEmpresa	:= "" 
 Default _cFilial    := ""
 
-Private _aRetMsg := ZRESTPRVMsg()   As Array     //Carregar tabela com erros
-Private _aMsgRet := {}				As Array    //carregar msg de errp
+Private _aRetMsg    As Array     //Carregar tabela com erros
+Private _aMsgRet 	As Array    //carregar msg de errp
 
 
 Begin Sequence
 	//se for JOB	
-	_aDctos 	:= {} 
+	_aRetMsg 	:= Aclone(ZRESTPRVMsg())
+	_aMsgRet 	:= {}
+	_aCab 		:= {} 
 	_aItemRet	:= {}
 	_lJob		:= IsBlind()
 	If _lJob 
@@ -92,9 +96,9 @@ Begin Sequence
 	Endif
 
 	_lRet 	:= .F.
-	Aadd( _aDctos, {"pedidovei"		, _cPedCli})
-	Aadd( _aDctos, {"cnpjcpf"		, _cCgc}) 
-	Aadd( _aDctos, {"previsaonr"	, "" }) 
+	Aadd( _aCab, {"pedidovei"		, _cPedCli})
+	Aadd( _aCab, {"cnpjcpf"		, _cCgc}) 
+	Aadd( _aCab, {"previsaonr"	, "" }) 
 
 
  	If Empty(_cPedCli) 	.Or. Len(_aCabPed) == 0 .Or. Len(_aItens) == 0 .Or. _nOpc == 0
@@ -105,7 +109,6 @@ Begin Sequence
 
 	DbSelectArea("SC5")
 	_lBloqueado		:= .F.
-	_aRetMsg 		:= {}  //Gravar os retornos
 	_lNovo 			:= If(_nOpc == 3, .T., .F.)
 	_cNumPed		:= ""
 	_nPosItem		:= 0
@@ -158,7 +161,9 @@ Begin Sequence
 		_nQtdeItem	:= _aItens[_nCount, _nPosQtdItem, 2]  //_aItens[1][21][2] ="20242025"
 		For _nPos := 1 To _nQtdeItem
 			_cItem 			:= Soma1(_cItem)  
-			_cIdItem 		:= _aItens[_nCount, _nPosIdItem, 2] 	 //Atualiza o numerdo do item  
+			If _nPosIdItem > 0
+				_cIdItem 		:= _aItens[_nCount, _nPosIdItem, 2] 	 //Atualiza o numerdo do item  
+			Endif
 			_aItens[_nCount, _nPosItem,2] 		:= _cItem  //Atualiza o numerdo do item  
 			_aItens[_nCount, _nPosQtdItem, 2] 	:= 1  //Atualiza o numerdo do item  
 			AAdd(_aGrvItens, Aclone(_aItens[_nCount]))
@@ -218,10 +223,8 @@ If Len(_aItemRet) == 0
 	Aadd( _aItemRet, {"qtdefaturada"	, 0 })
 Endif
 //Carregar informações dos documentos a serem enviados
-_lRet := U_ZFT030CT( _aDctos, _aItemRet, /*_lJob*/)
-
-
-
+_oJsonRet := U_ZFT030CT( _aCab, _aItemRet, _lJob)
+ZWSRENVPOS( _oJsonRet, _lJob)
 Return Nil	
 
 
@@ -236,11 +239,9 @@ Modelo de Dados
 @ Obs		GAP228 -Integração Faturamento Autoware
 @history    
 /*/
-
 FUNCTION U_ZFT030CT( _aCab, _aItemRet, _lJob)
 Local _oJsonRet 	AS Object
 Local _nPosCpo 		As Numeric
-Local _lRet			As Logical
 //Local _cUsuario		:= SuperGetMV( "CMV_WSR009"  ,,"caoa.totvs" )  //Alltrim(Getmv("CMV_WSR009"))  
 //Local _cSenha	 		:= SuperGetMV( "CMV_WSR010"  ,,"CAgka2694X" )	//Alltrim(Getmv("CMV_WSR010"))  
 
@@ -248,7 +249,7 @@ Default _aCab 		:= {}
 Default _aItemRet	:= {}
 Default _lJob 		:= IsBlind()
 
-	If Len(_aCab) .Or. Len(_aItemRet)
+	If Len(_aCab) == 0 .Or. Len(_aItemRet) == 0
 		_cError := "Nao Informado cabeçalho e ou item "
 		U_ZRETMsgJson("errointerno",_cError)
 		Return .F.
@@ -257,14 +258,12 @@ Default _lJob 		:= IsBlind()
 	//_oJsonRet['usuario']	:= _cUsuario
 	//_oJsonRet['senha']		:= _cSenha
     //_oJsonRet['pedido'] 	:= JSonObject():New()
-	_oJsonRet['pedidovei']			:= If( (_nPosCpo := Ascan(_aDctos,{|x| x[1] == "pedidovei"})) > 0			, _aDctos[_nPosCpo,2],"" )
-	_oJsonRet['cnpjcpf']			:= If( (_nPosCpo := Ascan(_aDctos,{|x| x[1] == "cnpjcpf"})) > 0				, _aDctos[_nPosCpo,2],"" )
-	_oJsonRet['previsaonr']			:= If( (_nPosCpo := Ascan(_aDctos,{|x| x[1] == "previsaonr"})) > 0			, _aDctos[_nPosCpo,2],"" )
+	_oJsonRet['pedidovei']			:= If( (_nPosCpo := Ascan(_aCab,{|x| x[1] == "pedidovei"})) > 0		, _aCab[_nPosCpo,2],"" )
+	_oJsonRet['cnpjcpf']			:= If( (_nPosCpo := Ascan(_aCab,{|x| x[1] == "cnpjcpf"})) > 0		, _aCab[_nPosCpo,2],"" )
+	_oJsonRet['previsaonr']			:= If( (_nPosCpo := Ascan(_aCab,{|x| x[1] == "previsaonr"})) > 0	, _aCab[_nPosCpo,2],"" )
 	//criar itens
-	_oJson['item']  				:= ZWSR007ITE( _oJsonRet, _aItemRet)
-
-	_lRet := ZWSRENVPOS( _oJsonRet, _lJob)
-Return _lRet
+	_oJsonRet['item']  				:= ZWSR007ITE( _oJsonRet, _aItemRet)
+Return _oJsonRet
 
 
 //Carregar o itens do envio
@@ -278,24 +277,24 @@ Local _nPosArr 		As Numeric
 	For _nPos := 1 To Len(_aItemRet)
     	Aadd(_aItens,JsonObject():new())
     	_nPosArr := Len(_aItens)
-		_aItens[_nPosArr] ['iditem']				:= If( (_nPosCpo := Ascan(_aItemRet[_nPos],{|x| x[1] == "iditem"})) > 0				, _aItemRet[_nPosCpo,2],999 )
-		_aItens[_nPosArr] ['status']				:= If( (_nPosCpo := Ascan(_aItemRet[_nPos],{|x| x[1] == "status"})) > 0				, _aItemRet[_nPosCpo,2],999 )
-		_aItens[_nPosArr] ['ocorrencia']			:= If( (_nPosCpo := Ascan(_aItemRet[_nPos],{|x| x[1] == "ocorrencia"})) > 0			, _aItemRet[_nPosCpo,2],"" )
-		_aItens[_nPosArr] ['qtderecebida']			:= If( (_nPosCpo := Ascan(_aItemRet[_nPos],{|x| x[1] == "qtderecebida"})) > 0		, _aItemRet[_nPosCpo,2],0 )
-		_aItens[_nPosArr] ['qtdeocorrencia']		:= If( (_nPosCpo := Ascan(_aItemRet[_nPos],{|x| x[1] == "qtdeocorrencia"})) > 0		, _aItemRet[_nPosCpo,2],0 )
-		_aItens[_nPosArr] ['qtdefaturada']			:= If( (_nPosCpo := Ascan(_aItemRet[_nPos],{|x| x[1] == "qtdefaturada"})) > 0		, _aItemRet[_nPosCpo,2],0 )
+		_aItens[_nPosArr] ['iditem']				:= If( (_nPosCpo := Ascan(_aItemRet[_nPos],{|x| x[1] == "iditem"})) > 0				, _aItemRet[_nPos, _nPosCpo,2],999 )
+		_aItens[_nPosArr] ['status']				:= If( (_nPosCpo := Ascan(_aItemRet[_nPos],{|x| x[1] == "status"})) > 0				, _aItemRet[_nPos, _nPosCpo,2],999 )
+		_aItens[_nPosArr] ['ocorrencia']			:= If( (_nPosCpo := Ascan(_aItemRet[_nPos],{|x| x[1] == "ocorrencia"})) > 0			, _aItemRet[_nPos, _nPosCpo,2],"" )
+		_aItens[_nPosArr] ['qtderecebida']			:= If( (_nPosCpo := Ascan(_aItemRet[_nPos],{|x| x[1] == "qtderecebida"})) > 0		, _aItemRet[_nPos, _nPosCpo,2],0 )
+		_aItens[_nPosArr] ['qtdeocorrencia']		:= If( (_nPosCpo := Ascan(_aItemRet[_nPos],{|x| x[1] == "qtdeocorrencia"})) > 0		, _aItemRet[_nPos, _nPosCpo,2],0 )
+		_aItens[_nPosArr] ['qtdefaturada']			:= If( (_nPosCpo := Ascan(_aItemRet[_nPos],{|x| x[1] == "qtdefaturada"})) > 0		, _aItemRet[_nPos, _nPosCpo,2],0 )
 
-		_aItens[_nPosArr] ['notafiscalnr']			:= If( (_nPosCpo := Ascan(_aItemRet[_nPos],{|x| x[1] == "notafiscalnr"})) > 0		, _aItemRet[_nPosCpo,2],"" )
-		_aItens[_nPosArr] ['notafiscalserie']		:= If( (_nPosCpo := Ascan(_aItemRet[_nPos],{|x| x[1] == "notafiscalserie"})) > 0	, _aItemRet[_nPosCpo,2],"" )
-		_aItens[_nPosArr] ['notafiscalemissao']		:= If( (_nPosCpo := Ascan(_aItemRet[_nPos],{|x| x[1] == "notafiscalemissao"})) > 0	, _aItemRet[_nPosCpo,2],"" )
-		_aItens[_nPosArr] ['notafiscalxml']			:= If( (_nPosCpo := Ascan(_aItemRet[_nPos],{|x| x[1] == "notafiscalxml"})) > 0		, _aItemRet[_nPosCpo,2],"" )
+		_aItens[_nPosArr] ['notafiscalnr']			:= If( (_nPosCpo := Ascan(_aItemRet[_nPos],{|x| x[1] == "notafiscalnr"})) > 0		, _aItemRet[_nPos, _nPosCpo,2],"" )
+		_aItens[_nPosArr] ['notafiscalserie']		:= If( (_nPosCpo := Ascan(_aItemRet[_nPos],{|x| x[1] == "notafiscalserie"})) > 0	, _aItemRet[_nPos, _nPosCpo,2],"" )
+		_aItens[_nPosArr] ['notafiscalemissao']		:= If( (_nPosCpo := Ascan(_aItemRet[_nPos],{|x| x[1] == "notafiscalemissao"})) > 0	, _aItemRet[_nPos, _nPosCpo,2],"" )
+		_aItens[_nPosArr] ['notafiscalxml']			:= If( (_nPosCpo := Ascan(_aItemRet[_nPos],{|x| x[1] == "notafiscalxml"})) > 0		, _aItemRet[_nPos, _nPosCpo,2],"" )
  	Next _nPos	
     //Gravar dados em tabela de log	
-Return _lRet
+Return _aItens
 
 
 // Envio do Picking para carregamento
-Static Function ZWSRENVPOS( _oJson, _lJob) //zPostRg(_oJson)  
+Static Function ZWSRENVPOS( _oJson, _lJob)   
 Local _lRet 		As Logical
 Local _cUrl			As Character
 //Local _cPathUrl    As Character	
@@ -389,7 +388,6 @@ Realiza o Empenho  de acordo com a seleção recebida
 @param 		_cAlias     = Pre selecao realizado baseado no SC6
             _nLimChassi = Qtde de limite, utilizado se possuo 10 mas somente irei realizar empenho de 2 envio na posição _nLimChassi 2
             _lJob       = Indica se esta sendo rodada por job
-            _aRetMsg   = Mensagens de erro geradas no processo sera retornado caso informado no parametro @
             _oSay       = Objeto para visualização de processamento
 @type 		User function
 @ Obs		
@@ -431,8 +429,7 @@ Default _cItem      := ""
 Default _nLimChassi := 0          
 Default _nQtdeEmp	:= 0  
 Default _lJob       := IsBlind()    
-DeFault _aRetMsg    := {}           
-//DeFault _oSay  As Object
+//DeFault _oSay  		As Object
 
 Begin Sequence
 	_lRet		:= .F.
@@ -558,144 +555,147 @@ Begin Sequence
             		(_cAliasEmp)->(DbSkip())
 				Endif 
 			Endif
-        	//Begin Transaction 
-            If Empty(SC5->C5_STATUS)
-                If ! SC5->(RecLock("SC5",.F.))
-                    _cMens := "Pedido "+SC6->C6_NUM+" nao foi possivel acessar tabela (SC5) Pedido para Empenho "
-					U_ZRETMsgJson("erropad",_cMens)
-                    Break 
-                Endif 
-                SC5->C5_STATUS := "XX"
-                SC5->(MsUnlock())
-            EndIf
+        	
+			Begin Transaction 
+            	If Empty(SC5->C5_STATUS)
+            	    If ! SC5->(RecLock("SC5",.F.))
+            	        _cMens := "Pedido "+SC6->C6_NUM+" nao foi possivel acessar tabela (SC5) Pedido para Empenho "
+						U_ZRETMsgJson("erropad",_cMens)
+            	        Break 
+            	    Endif 
+            	    SC5->C5_STATUS := "XX"
+            	    SC5->(MsUnlock())
+            	EndIf
 
-            If ! SC6->(RecLock("SC6",.F.))
-                _cMens := "Item "+SC6->C6_ITEM+" referente ao Pedido "+SC6->C6_NUM+" nao foi possivel acessar tabela de item (SC6) Pedido para Empenho "
-				U_ZRETMsgJson("erropad",_cMens)
-                Break
-                _lGrava := .F.  
-            Endif
-            If _lGrava
-                _nQtdLib  := 1
-				SC6->C6_QTDLIB  := _nQtdLib 
-                SC6->C6_LOTECTL := CriaVar("C6_LOTECTL")
-                SC6->C6_DTVALID := CriaVar("C6_DTVALID")
-                SC6->C6_NUMSERI := _cNumSeq		//(_cAliasCH)->DB_NUMSEQ
-                SC6->C6_CHASSI  := _cChassi		//(_cAliasCH)->VV1_CHASSI
-                SC6->C6_LOCALIZ := _cLocaliz	//(_cAliasCH)->BF_LOCALIZ
-				/*
-				    SC6->C6_XPRCTAB := (cCabAlias)->VRK_VALTAB	    //Valor de Tabela  
-				    SC6->C6_XVLRPRD := (cCabAlias)->VRK_VALPRE  	//Valor Pretendido   
-				    SC6->C6_XVLRMVT := (cCabAlias)->VRK_VALMOV  	//VALOR DO MOVIMENTO
-				    SC6->C6_XBASST 	:= (cCabAlias)->VRK_XBASST	    //Valor Base ICMS ST	
-        		    SC6->C6_XVLRVDA  = (cCabAlias)->VRK_VALVDA  	//VALOR DA VENDA          
-				*/
-                SC6->(MsUnLock())
+            	If ! SC6->(RecLock("SC6",.F.))
+            	    _cMens := "Item "+SC6->C6_ITEM+" referente ao Pedido "+SC6->C6_NUM+" nao foi possivel acessar tabela de item (SC6) Pedido para Empenho "
+					U_ZRETMsgJson("erropad",_cMens)
+            	    Break
+            	    _lGrava := .F.  
+            	Endif
+            	If _lGrava
+            	    _nQtdLib  := 1
+					SC6->C6_QTDLIB  := _nQtdLib 
+            	    SC6->C6_LOTECTL := CriaVar("C6_LOTECTL")
+            	    SC6->C6_DTVALID := CriaVar("C6_DTVALID")
+            	    SC6->C6_NUMSERI := _cNumSeq		//(_cAliasCH)->DB_NUMSEQ
+            	    SC6->C6_CHASSI  := _cChassi		//(_cAliasCH)->VV1_CHASSI
+            	    SC6->C6_LOCALIZ := _cLocaliz	//(_cAliasCH)->BF_LOCALIZ
+					/*
+					    SC6->C6_XPRCTAB := (cCabAlias)->VRK_VALTAB	    //Valor de Tabela  
+					    SC6->C6_XVLRPRD := (cCabAlias)->VRK_VALPRE  	//Valor Pretendido   
+					    SC6->C6_XVLRMVT := (cCabAlias)->VRK_VALMOV  	//VALOR DO MOVIMENTO
+					    SC6->C6_XBASST 	:= (cCabAlias)->VRK_XBASST	    //Valor Base ICMS ST	
+        			    SC6->C6_XVLRVDA  = (cCabAlias)->VRK_VALVDA  	//VALOR DA VENDA          
+					*/
+            	    SC6->(MsUnLock())
 
-                //Efetua a Liberacao por item 
-				//EX ABAIXO ESTORNA A LIBERAÇÃO CASO EXISTA 
-                //If SC9->(DbSeek(FWxFilial('SC9')+SC6->C6_NUM+SC6->C6_ITEM))
-                //    SC9->(a460Estorna(.T.))
-                //Endif    
-                _nQtdLib   := SC6->C6_QTDLIB
-                _nQtdLib   := SC6->( MaLibDoFat(SC6->(RecNo())  ;
-                                        , _nQtdLib      ;
-                                        , @_lCredito    ;    
-                                        , @_lEstoque    ;
-                                        , _lAvCred      ;
-                                        , _lAvEst       ;
-                                        , _lLiber       ;
-                                        , _lTrans) )
-				If !_lCredito
-               	 	_cMens := "Item "+SC6->C6_ITEM+" referente ao Pedido "+SC6->C6_NUM+" nao localizado bloqueado limite de Credito Pedido para Empenho "
-					U_ZRETMsgJson("erropad",_cMens)
-                	//(_cAliasCH)->(DbSkip())
-                	_lGrava := .F.   
-				Endif 	
-				If !_lEstoque
-                	_cMens := "Item "+SC6->C6_ITEM+" referente ao Pedido "+SC6->C6_NUM+" nao localizado bloqueado nao existe estoque Pedido para Empenho "
-					U_ZRETMsgJson("erropad",_cMens)
-                	//(_cAliasCH)->(DbSkip())
-                	_lGrava := .F.   
-				Endif 	
-			Endif 
-			If _lGrava
-                SDC->(DbSetOrder(1))
-                SDC->(DbGoTop())
-                //BF LOCALIZADA NA QUERY CHASSI DISPONIVES
-                If !SDC->(DbSeek(xFilial("SDC")+SC6->C6_PRODUTO         ;
-                                              +SC6->C6_LOCAL            ;
-                                              +"SC6"                    ;
-                                              +SC6->C6_NUM              ;
-                                              +SC6->C6_ITEM             ;
-                                              +SC9->C9_SEQUEN           ;
-                                              +CriaVar("DC_LOTECTL")    ;
-                                              +CriaVar("DC_NUMLOTE")    ;
-                                              +_cLocaliz  ;
-                                              +_cChassi ))
-                    _cMens := "Item "+SC6->C6_ITEM+" referente ao Pedido "+SC6->C6_NUM+" nao localizado Saldo Chassi Pedido para Empenho "
-					U_ZRETMsgJson("erropad",_cMens)
-                    (_cAliasCH)->(DbSkip())
-                    _lGrava := .F.   
-                Endif    
-            Endif
-            If _lGrava 
-                //Tabela SCC nao é gerada
-                If Empty(Alltrim(SC9->C9_BLCRED)) .And. Empty(Alltrim(SC9->C9_BLEST )) .And. Empty(Alltrim(SC9->C9_BLWMS ))
-                    cCC_STATUS  := "1"
-                ElseIf SC9->C9_BLCRED == "01" ; _cCC_STATUS  := "2"
-                ElseIf SC9->C9_BLCRED == "04" ; _cCC_STATUS  := "3"
-                ElseIf SC9->C9_BLCRED == "05" ; _cCC_STATUS  := "4"
-                ElseIf SC9->C9_BLCRED == "06" ; _cCC_STATUS  := "5"
-                ElseIf SC9->C9_BLCRED == "09" ; _cCC_STATUS  := "6"
-                ElseIf SC9->C9_BLEST  == "02" ; _cCC_STATUS  := "7"
-                ElseIf SC9->C9_BLEST  == "03" ; _cCC_STATUS  := "8"
-                ElseIf SC9->C9_BLWMS  == "01" ; _cCC_STATUS  := "9"
-                ElseIf SC9->C9_BLWMS  == "02" ; _cCC_STATUS  := "A"
-                ElseIf SC9->C9_BLWMS  == "03" ; _cCC_STATUS  := "B"
-                ElseIf SC9->C9_BLWMS  == "05" ; _cCC_STATUS  := "C"
-                ElseIf SC9->C9_BLWMS  == "06" ; _cCC_STATUS  := "D"
-                ElseIf SC9->C9_BLWMS  == "07" ; _cCC_STATUS  := "E"
-                EndIf
+            	    //Efetua a Liberacao por item 
+					//EX ABAIXO ESTORNA A LIBERAÇÃO CASO EXISTA 
+            	    //If SC9->(DbSeek(FWxFilial('SC9')+SC6->C6_NUM+SC6->C6_ITEM))
+            	    //    SC9->(a460Estorna(.T.))
+            	    //Endif    
+            	    _nQtdLib   := SC6->C6_QTDLIB
+            	    _nQtdLib   := SC6->( MaLibDoFat(SC6->(RecNo())  ;
+            	                            , _nQtdLib      ;
+            	                            , @_lCredito    ;    
+            	                            , @_lEstoque    ;
+            	                            , _lAvCred      ;
+            	                            , _lAvEst       ;
+            	                            , _lLiber       ;
+            	                            , _lTrans) )
+					If !_lCredito
+            	   	 	_cMens := "Item "+SC6->C6_ITEM+" referente ao Pedido "+SC6->C6_NUM+" nao localizado bloqueado limite de Credito Pedido para Empenho "
+						U_ZRETMsgJson("erropad",_cMens)
+            	    	//(_cAliasCH)->(DbSkip())
+            	    	_lGrava := .F.   
+					Endif 	
+					If !_lEstoque
+            	    	_cMens := "Item "+SC6->C6_ITEM+" referente ao Pedido "+SC6->C6_NUM+" nao localizado bloqueado nao existe estoque Pedido para Empenho "
+						U_ZRETMsgJson("erropad",_cMens)
+            	    	//(_cAliasCH)->(DbSkip())
+            	    	_lGrava := .F.   
+					Endif 	
+                	SDC->(DbSetOrder(1))
+                	SDC->(DbGoTop())
+                	//BF LOCALIZADA NA QUERY CHASSI DISPONIVES
+                	If !SDC->(DbSeek(xFilial("SDC")+SC6->C6_PRODUTO         ;
+                	                              +SC6->C6_LOCAL            ;
+                	                              +"SC6"                    ;
+                	                              +SC6->C6_NUM              ;
+                	                              +SC6->C6_ITEM             ;
+                	                              +SC9->C9_SEQUEN           ;
+                	                              +CriaVar("DC_LOTECTL")    ;
+                	                              +CriaVar("DC_NUMLOTE")    ;
+                	                              +_cLocaliz  ;
+                	                              +_cChassi ))
+                	    _cMens := "Item "+SC6->C6_ITEM+" referente ao Pedido "+SC6->C6_NUM+" nao localizado Saldo Chassi Pedido para Empenho "
+						U_ZRETMsgJson("erropad",_cMens)
+                	    //(_cAliasCH)->(DbSkip())
+                	    _lGrava := .F.   
+            		Endif
+            	Endif
+				If _lGrava 
+            	    //Tabela SCC nao é gerada
+            	    If Empty(Alltrim(SC9->C9_BLCRED)) .And. Empty(Alltrim(SC9->C9_BLEST )) .And. Empty(Alltrim(SC9->C9_BLWMS ))
+            	        cCC_STATUS  := "1"
+            	    ElseIf SC9->C9_BLCRED == "01" ; _cCC_STATUS  := "2"
+            	    ElseIf SC9->C9_BLCRED == "04" ; _cCC_STATUS  := "3"
+            	    ElseIf SC9->C9_BLCRED == "05" ; _cCC_STATUS  := "4"
+            	    ElseIf SC9->C9_BLCRED == "06" ; _cCC_STATUS  := "5"
+            	    ElseIf SC9->C9_BLCRED == "09" ; _cCC_STATUS  := "6"
+            	    ElseIf SC9->C9_BLEST  == "02" ; _cCC_STATUS  := "7"
+            	    ElseIf SC9->C9_BLEST  == "03" ; _cCC_STATUS  := "8"
+            	    ElseIf SC9->C9_BLWMS  == "01" ; _cCC_STATUS  := "9"
+            	    ElseIf SC9->C9_BLWMS  == "02" ; _cCC_STATUS  := "A"
+            	    ElseIf SC9->C9_BLWMS  == "03" ; _cCC_STATUS  := "B"
+            	    ElseIf SC9->C9_BLWMS  == "05" ; _cCC_STATUS  := "C"
+            	    ElseIf SC9->C9_BLWMS  == "06" ; _cCC_STATUS  := "D"
+            	    ElseIf SC9->C9_BLWMS  == "07" ; _cCC_STATUS  := "E"
+            	    EndIf
 
-                If _cCC_STATUS <> "1"
-                    _cMens := "Item "+SC6->C6_ITEM+" referente ao Pedido "+SC6->C6_NUM+" nao liberado na liberação Pedido para Empenho "
-					U_ZRETMsgJson("erropad",_cMens)
-                    (_cAliasCH)->(DbSkip())
-                    _lGrava := .F.   
-                Endif                                                
-            Endif
-            If _lGrava  
-                If !SC9->(RecLock("SC9",.F.))
-                    _cMens := "Item "+SC6->C6_ITEM+" referente ao Pedido "+SC6->C6_NUM+" nao foi possivel acessar tabela de liberação (SC9) Pedido para Empenho "
-					U_ZRETMsgJson("erropad",_cMens)
-                    (_cAliasCH)->(DbSkip())
-                    _lGrava := .F.    
-                Endif
-            Endif 
-            If _lGrava      
-                SC9->C9_XCODMAR := SC6->C6_XCODMAR 
-                SC9->C9_XMODVEI := SC6->C6_XMODVEI
-                SC9->C9_XSEGMOD := SC6->C6_XSEGMOD
-                SC9->C9_XFABMOD := SC6->C6_XFABMOD
-                SC9->C9_XCORINT := SC6->C6_XCORINT
-                SC9->C9_XCOREXT := SC6->C6_XCOREXT
-                SC9->C9_XGRPMOD := ""
-                If Empty(SC9->C9_SEQUEN)
-                    SC9->C9_SEQUEN  := SDC->DC_SEQ
-                EndIf
-                SC9->(MsUnLock())
-                //DBCommitAll()
-                //Aadd(_aPrevisao, SC6->(Recno()))
-                //Adel(_aEmpenho[_nPosCpo,4],1)             //apago o chassi utilizado
-                //aSize(_aEmpenho, Len(_aEmpenho[_nPosCpo,4])-1)      //Ajustando empenhos
-            Endif
+            	    If _cCC_STATUS <> "1"
+            	        _cMens := "Item "+SC6->C6_ITEM+" referente ao Pedido "+SC6->C6_NUM+" nao liberado na liberação Pedido para Empenho "
+						U_ZRETMsgJson("erropad",_cMens)
+            	        //(_cAliasCH)->(DbSkip())
+            	        _lGrava := .F.   
+            	    Endif                                                
+            	Endif
+            	If _lGrava  
+            	    If !SC9->(RecLock("SC9",.F.))
+            	        _cMens := "Item "+SC6->C6_ITEM+" referente ao Pedido "+SC6->C6_NUM+" nao foi possivel acessar tabela de liberação (SC9) Pedido para Empenho "
+						U_ZRETMsgJson("erropad",_cMens)
+            	        //(_cAliasCH)->(DbSkip())
+            	        _lGrava := .F.    
+            	    Endif
+            	Endif 
+            	If _lGrava      
+            	    SC9->C9_XCODMAR := SC6->C6_XCODMAR 
+            	    SC9->C9_XMODVEI := SC6->C6_XMODVEI
+            	    SC9->C9_XSEGMOD := SC6->C6_XSEGMOD
+            	    SC9->C9_XFABMOD := SC6->C6_XFABMOD
+            	    SC9->C9_XCORINT := SC6->C6_XCORINT
+            	    SC9->C9_XCOREXT := SC6->C6_XCOREXT
+            	    SC9->C9_XGRPMOD := ""
+            	    If Empty(SC9->C9_SEQUEN)
+            	        SC9->C9_SEQUEN  := SDC->DC_SEQ
+            	    EndIf
+            	    SC9->(MsUnLock())
+            	    //DBCommitAll()
+            	    //Aadd(_aPrevisao, SC6->(Recno()))
+            	    //Adel(_aEmpenho[_nPosCpo,4],1)             //apago o chassi utilizado
+            	    //aSize(_aEmpenho, Len(_aEmpenho[_nPosCpo,4])-1)      //Ajustando empenhos
+				Else
+					DisarmTransaction()
+				Endif
+        	End Transaction    
+			//conseguiu fazer empenho posso sair
 			If _lGrava
 				_nQtdeEmp ++  //indica quantidade empenhada
 				Exit   //Caso chegou aqui conseguiu fazer o empenho    
 			Endif
+			(_cAliasCH)->(DbSkip())
 		EndDo	
-        //End Transaction    
         _nLinhas ++      //	//Atualização realizada pela Totvs, acrescentada na lógica DAC 14/05/2024
         (_cAliasEmp)->(DbSkip())
     EndDo
@@ -707,26 +707,31 @@ Static Function ZFT30GRLog(_aRegSc6)
 Local _nPos 	As Numeric
 Local _cMens 	As Character
 
-Default _aRegSc6 := {}
+Default _aMsg 		:= {}
+Default _nRegSc6	:= 0
 
-If FieldPos("C6_XOBSPR") == 0 
-	Return Nil
-Endif 
+	If FieldPos("C6_XOBSPR") == 0 .Or.  Len(_aMsg) == 0 
+		Return Nil
+	Endif 
 
-For _nPos := 1 To Len(_aRegSc6)
-	//Caso esteja informado o numero do registro
-	If Len(_aRegSc6[_nPo]) > 1 .And. _aRegSc6[_nPos,2] > 0
-		SC6->(DbGoto(_aRegSc6[_nPos,2]))
+	If _nRegSc6 > 0
+		SC6->(DbGoto(_nRegSc6))
 	Endif  
-    If ! SC6->(RecLock("SC6",.F.))
+  
+	//Caso esteja informado o numero do registro
+  	If ! SC6->(RecLock("SC6",.F.))
         _cMens := "Item "+SC6->C6_ITEM+" referente ao Pedido "+SC6->C6_NUM+" nao foi possivel acessar tabela de item (SC6) Pedido para Empenho "
-		U_ZRETMsgJson("erropad", _cMens)
-        Break
-        _lGrava := .F.  
-    Endif
 
-Next 
-
+	Else 
+		_cMens := ""
+		For _nPos 	:= 1 To Len( _aMsg )
+			_cMens	+= _aMsg + CRLF
+		Next
+	Endif 
+	If !Empty(_cMens) 
+		SC6->C6_XOBSPR := SC6->C6_XOBSPR+ CRLF +_cMens
+	Endif
+	SC6->(MsUnlock())
 Return Nil
 
 /*/{Protheus.doc} U_ZFTF30EP
@@ -740,7 +745,7 @@ Realiza o Empenho
 @ Obs		
 @history    
 /*/
-Function U_ZFTF30EP( _oSay, _nOpcEmp, _cFilPrev, _cCodPrev, _nRegZZP, _nQtde, _lJob, _aRetMsg )
+Function U_ZFTF30EP( _oSay, _nOpcEmp, _cFilPrev, _cCodPrev, _nRegZZP, _nQtde, _lJob, _aMsgRet )
 Local _cAliasEmp	:= GetNextAlias()   AS Character
 Local _lRet 		:= .T.              AS Logical
 Local _cCampos		:= ""               AS Character
@@ -755,7 +760,7 @@ Default _cCodPrev   := ""
 Default _nRegZZP 	:= 0
 Default _nQtde		:= 0
 Default _lJob 		:= IsBlind() 
-Default _aRetMsg   := {}
+Default _aMsgRet   := {}
 
 Begin Sequence
 	//nao pode vir em branco
@@ -839,10 +844,10 @@ Begin Sequence
 		Break 
 	Endif  
 	If _nOpcEmp == 1
-		_aPrevisao := U_ZFTF30E1(_oSay, _cAliasEmp, /*_nLimChassi*/, _lJob, _aRetMsg )
+		_aPrevisao := U_ZFTF30E1(_oSay, _cAliasEmp, /*_nLimChassi*/, _lJob, _aMsgRet )
 		If Len(_aPrevisao) == 0 
 			_cMens := "nao foi possivel realizar empenho XZFT19EP, verificar com ADM Sistemas"
-			Aadd(_aRetMsg, _cMens)
+			Aadd(_aMsgRet, _cMens)
 			If _lJob
 	    		ApMsgStop(_cMens, "Previsao Faturamento")
 			Endif

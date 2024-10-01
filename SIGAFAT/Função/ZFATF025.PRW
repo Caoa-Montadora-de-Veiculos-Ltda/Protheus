@@ -259,12 +259,12 @@ Begin Sequence
     Self:_oBrowseZZN:SetAmbiente(.F.) //Habilita a utilização da funcionalidade Ambiente no Browse
     Self:_oBrowseZZN:SetFixedBrowse(.T.)
 	Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) = 'A'  "  ,"WHITE"     ,"Em Aberto")
-	Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) = 'L'  "  ,"GREEN"     ,"Liberado Fat")
+	Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) = 'L'  "  ,"GREEN"     ,"Liberado Faturamento")
+	Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) = 'P'  "  ,"YELOW"     ,"Liberado Parcial")
     Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) = 'F'  "  ,"BLUE" 	   ,"Faturado")
 	Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) = 'C'  "  ,"RED"       ,"Cancelado")
-	Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) = 'B'  "  ,"BLACK"     ,"Bloqueado")
-
 	Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) <> ' '  " ,"GRAY"      ,"Pendente")
+	Self:_oBrowseZZN:AddLegend("AllTrim(ZZN_STATUS) = 'B'  "  ,"BLACK"     ,"Bloqueado")
 
 	Self:_oBrowseZZN:AddButton("Incluir"		, { || Self:MenuPrev(3)	})
 	Self:_oBrowseZZN:AddButton("Alterar"		, { || Self:MenuPrev(4)	})
@@ -1110,6 +1110,10 @@ Begin Sequence
     	_cQuery += "    AND SC6.C6_PEDCLI 	<> ' ' "						+CrLf
     	_cQuery += "    AND SC6.C6_NOTA     =  ' ' "						+CrLf
     	_cQuery += "    AND SC6.C6_BLQ      =  ' ' "						+CrLf
+		//GAP228-Integração Faturamento Autoware 01/10/2024 = Somente permitir seleção de registros não importados pela Autoware
+		If SC6->(FieldPos("C6_XIDITEM")) > 0 
+    		_cQuery += "    AND SC6.C6_XIDITEM    =  ' ' "					+CrLf
+		Endif
 
 		_nStatus := TCSqlExec(_cQuery)
 		If (_nStatus < 0)
@@ -1227,12 +1231,9 @@ Begin Sequence
 			Endif	
 		Endif
 	End Transaction
-
 End Sequence 
-
 //Para liberar tabela pode estar presa no softlock
 ZZN->(MsUnlock())
-
 If !Empty(_cAliasPesq) .And. Select(_cAliasPesq) <> 0
 	(_cAliasPesq)->(DbCloseArea())
 	Ferase(_cAliasPesq+GetDBExtension())

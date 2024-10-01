@@ -110,11 +110,13 @@ Begin Sequence
     //A=ABERTO;F=FATURADO;C=CANCELADO
 	
 	_oBrw:AddLegend("AllTrim(ZZP_STATUS) = 'A'  "  ,"WHITE"     ,"Em Aberto")
-	_oBrw:AddLegend("AllTrim(ZZP_STATUS) = 'L'  "  ,"GREEN"     ,"Liberado Fat")
+	_oBrw:AddLegend("AllTrim(ZZP_STATUS) = 'L'  "  ,"GREEN"     ,"Liberado Faturamento")
+	_oBrw:AddLegend("AllTrim(ZZP_STATUS) = 'P'  "  ,"YELOW"     ,"Liberado Parcial")
     _oBrw:AddLegend("AllTrim(ZZP_STATUS) = 'F'  "  ,"BLUE" 	   	,"Faturado")
 	_oBrw:AddLegend("AllTrim(ZZP_STATUS) = 'C'  "  ,"RED"       ,"Cancelado")
 	_oBrw:AddLegend("AllTrim(ZZP_STATUS) <> ' '  " ,"GRAY"      ,"Pendente")
-	
+	_oBrw:AddLegend("AllTrim(ZZP_STATUS) <> 'B'  " ,"BLACK"     ,"Bloqueado")
+
 	_oBrw:SetPreEditCell({|| DbSelectArea(_cAliasZF026), .T.})
     _oBrw:SetEditCell( .T. , { || .T. } )
     _oBrw:lHeaderClick := .F.

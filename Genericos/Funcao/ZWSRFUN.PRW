@@ -89,7 +89,7 @@ Return _aMsgRet
 User Function ZRETMsgJson(_cRefMsg, _cMsgRet)
 Local _nRet := 999
 Local _nPos
-
+Local _cMsg
 Default _cMsgRet := ""
 
 Begin Sequence
@@ -104,10 +104,15 @@ Begin Sequence
 	If _nPos > 0 
 		_nRet := _aRetMsg[_nPos,1]
 	EndIf	
-	If Empty(_cMsgRet) .and. Len(_aRetMsg[_nPos]) >= 5 .and. ValType(_aRetMsg[_nPos,5]) == "C"
-		_cMsgRet := _aRetMsg[_nPos,5]+" !"
+	If Valtype(_cMsgRet)  == "J"
+		_cMsg := _cMsgRet:toJSON()
+	ElseIf Valtype(_cMsgRet)  == "C" 
+		_cMsg := _cMsgRet
+	Endif
+	If Empty(_cMsg) .and. Len(_aRetMsg[_nPos]) >= 5 .and. ValType(_aRetMsg[_nPos,5]) == "C"
+		_cMsg := _aRetMsg[_nPos,5]+" !"
 	Endif	
-	Aadd(_aMsgRet, {_nRet,_cMsgRet})
+	Aadd(_aMsgRet, {_nRet,_cMsg})
 End Sequence
 Return _nRet
 

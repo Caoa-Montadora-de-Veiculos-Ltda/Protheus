@@ -24,13 +24,13 @@ R  - resT OU W WebServer
 /*/
 
 WSRESTFUL ZWSR020 DESCRIPTION "Integração Faturamento Autoware !" FORMAT APPLICATION_JSON 
-	WSMETHOD POST ; 
+	WSMETHOD GET ; 
 	        DESCRIPTION "Consulta Pedido / Faturamento";
 	        WSSYNTAX "/ZWSR020"
 END WSRESTFUL
 
 
-WSMETHOD POST WSSERVICE ZWSR020
+WSMETHOD GET WSSERVICE ZWSR020
 Local _aRet				:= {}
 Local _oJsonRet 		:= Nil
 Local _oJson
@@ -50,7 +50,7 @@ Begin Sequence
 	//_cChave := encode64( allTrim( _cUser ) + ":" + allTrim( _cPass ) )    
 	_cUser 	:= AllTrim( superGetMv( "CAOA_AUT1A"	, , "USER_TOTVS"	) )	// Usuario para autenticacao no WS 
 	_cPass 	:= AllTrim( superGetMv( "CAOA_AUT1B"	, , "@IntcaoaSA1!2024!"	) )	// Senha para autenticao no WS 
-	If Empty(_cUser) .Or. Empty(_cPass)
+	If Empty(_cUser) .Or. Empty(_cPass) .Or. Valtype(_cAuthorization) <> "C"
 		_aRet := {302,"Nao Autorizado [Parametros]"}
 	Else
 		 _cChave := _cUser+":"+_cPass
@@ -75,14 +75,13 @@ Begin Sequence
 	EndIf
 	If _aRet[1] == 100
 		//SetRestFault(_aRet[1],_aRet[2])
-		//_cJSONRet := '{"Orçamento":"' + VS1->VS1_NUMORC + '"'+'}'
-		//::SetResponse( cJSONRet )
-
 		_oJsonRet := JsonObject():new()
-		_oJsonRet['Code'] 		:= _aRet[1]
-		_oJsonRet['Message']	:= _aRet[2]
-
-		::SetResponse( _oJsonRet:ToJson() )
+		_oJsonRet := _aRet[2]
+		//::SetResponse( cJSONRet )
+		//_oJsonRet := JsonObject():new()
+		//_oJsonRet['Code'] 	:= _aRet[1]
+		//_oJsonRet['Message']	:= _aRet[2]
+		::SetResponse( _oJsonRet:ToJson )
 	Else
 		//SetRestFault(_aRet[1],_aRet[2])
 		_oJsonRet := JsonObject():new()
@@ -90,7 +89,7 @@ Begin Sequence
 		_oJsonRet['Message']	:= _aRet[2]
 		::SetResponse( _oJsonRet:ToJson() )
 	Endif
-	/*
+	/* 
 	_oJsonRet := Nil
 	_oJsonRet := JsonObject():new()
    	_oJsonRet['Propriedade1'] := EncodeUTF8("Retorno 1", "cp1252") 

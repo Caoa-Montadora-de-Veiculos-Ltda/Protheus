@@ -20,7 +20,8 @@ Serviço de integração Consulta Faturamento Pedido
 /*/
 
 Function U_ZRESTPFC(_oJson, _cEmpFil, _cResp)
-Local _aMsg		:= {}
+Local _aMsg			As Array
+Local _oJsonRet		As Object
 
 Private _aRetMsg := ZRESTPFCMsg()   //Carregar tabela com erros
 Private _aMsgRet := {}				//carregar msg de errp
@@ -32,13 +33,12 @@ Begin Sequence
 	Conout("INICIANDO FUNCIONALIDADE ZRESTPFC em "+DtoC(Date())+" as "+Time())
 	_aMsgRet 	:= {}
 
-    If ZRESTPFCPR( @_oJson, _cEmpFil, _cResp )
-		U_ZRETMsgJson("ok", "Atualizacao realizada com Sucesso !")
+    If ZRESTPFCPR( @_oJson, _cEmpFil, _cResp, @_oJsonRet )
+		U_ZRETMsgJson("ok", _oJsonRet )
 		_aMsg := U_ZSetMsgJson()
 	Else
 		_aMsg := U_ZSetMsgJson()
 	Endif
-
 End Sequence
 
 IF Len(_aMsg) == 0 		//Prevensão forçar o envia da mensagem para o REST
@@ -58,7 +58,7 @@ Recebe 		Json CLIENTE PUT
 @type 		function
 @ Obs		Os paremetros de token, empresa e filial serão enviados no cabeçalho reader Json
 /*/
-Static Function ZRESTPFCPR( _oJson, _cEmpFil, _cResp )
+Static Function ZRESTPFCPR( _oJson, _cEmpFil, _cResp, _oJsonRet )
 Local _cEmpresa     As Character
 Local _cFilAtu      As Character
 Local _lRet			As Logical
@@ -120,7 +120,7 @@ Begin Sequence
 		Break
 	EndIf
 	//processa json
-	_lRet := ZRESTPFCGR(_oJson, _cPedcli)
+	_lRet := ZRESTPFCGR(_oJson, @_oJsonRet )
 
 End Sequence
 Return _lRet
@@ -134,81 +134,115 @@ Gravar dados do oJson Consulta
 @param 
 @type function
 /*/
-Static Function ZRESTPFCGR(_oJson, _cPedcli )
+Static Function ZRESTPFCGR(_oJson, _oJsonRet )
 Local _lRet 		As Logical
-Local _aDctos		As Array
+Local _aCab		As Array
 Local _aItemRet		As Array
 Local _cAliasPesq	As Character
 Local _cPedido 		As Character
+Local _cPedCli		As Character
 Local _cCnPj 		As Character
-Local _cPrevisao	As Character
+Local _cCnPjCpf		AS Character
+//Local _cPrevisao	As Character
+Local _cCodPrev		As Character	
+Local _cWhere 		As Character
+Local _cIdItem		As Character
+Local _cStatus    	As Character 
+Local _Ocorrencia 	As Character 
 
 Begin Sequence 
 	_cAliasPesq	:= GetNextAlias()
 	_lRet 		:= .F.
-	_aDctos		:= {}
+	_aCab		:= {}
 	_aItemRet	:= {}
+	_cCnPjCpf	:= AllTrim(_oJson:GetJsonText("cnpjcpf"))  
+	_cPedCli 	:= AllTrim(_oJson:GetJsonText("pedidovei"))
+	_cCodPrev	:= AllTrim(_oJson:GetJsonText("previsaonr"))
+	_cWhere		:= ""
+	If !Empty(_cCodPrev)
+		_cWhere := " AND SC6.C6_XCODPVR	= '"+_cCodPrev+"' " 
+	Endif 
+	_cWhere := "%"+_cWhere+"%"
+
 	BeginSql Alias _cAliasPesq
 		SELECT 	 SC6.C6_PEDCLI
-				, ZZP.ZZP_CODPRV
-				, ZZP.ZZP_CNPJCP
-				, SC6.C6_XIDITEM
+				, SC6.C6_ITEM
+				, SC6.C6_XCODPVR
 				, SC6.C6_PRODUTO 
 				, SC6.C6_NOTA
 				, SC6.C6_SERIE
 				, SC6.C6_DATFAT
-				, SUM(ZZP.ZZP_QTEPED) AS ZZP_QTEPED
-				, SUM(ZZP.ZZP_QTELIB) AS ZZP_QTELIB
-				, SUM(ZZP.ZZP_QTEFAT) AS ZZP_QTEFAT
+				, SA1.A1_CGC
+				, ZZP.ZZP_CODPRV
+				, SUM(SC6.C6_QTDVEN) AS QTDEPED
+				, SUM(SC6.C6_QTDLIB) AS QTDELIB
+				, CASE WHEN COALESCE(SC6.C6_QTDLIB,0) > 0   THEN  SUM(SC6.C6_QTDLIB)  ELSE 0 END AS QTDEFAT
 		FROM %Table:SC6% SC6
-		JOIN %Table:ZZP% ZZP
+		LEFT JOIN %Table:ZZP% ZZP
 			ON 	ZZP.%notDel%
 			AND ZZP.ZZP_FILIAL  = SC6.C6_XFILPVR
 			AND	ZZP.ZZP_CODPRV  = SC6.C6_XCODPVR
+		JOIN %Table:SA1% SA1
+			ON	SA1.%notDel%
+			AND SA1.A1_FILIAL 	= %XFilial:SA1%
+			AND SA1.A1_CGC		= %Exp:_cCnPjCpf%
        	WHERE SC6.C6_FILIAL  	= %XFilial:SC6%
 			AND SC6.C6_PEDCLI 	= %Exp:_cPedcli%
-		  	AND SC6.%notDel%		  
-		GROUP BY  SC6.C6_PEDCLI
-				, ZZP.ZZP_CODPRV
-				, ZZP.ZZP_CNPJCP
-				, SC6.C6_XIDITEM
+		  	AND SC6.%notDel%		
+			%Exp:_cWhere%
+		GROUP BY SC6.C6_PEDCLI
+				, SC6.C6_ITEM
+				, SC6.C6_XCODPVR
 				, SC6.C6_PRODUTO 
 				, SC6.C6_NOTA
 				, SC6.C6_SERIE
 				, SC6.C6_DATFAT
-		ORDER BY SC6.C6_XIDITEM
+				, SA1.A1_CGC
+				, ZZP.ZZP_CODPRV
+				, SC6.C6_QTDLIB				
+		ORDER BY SC6.C6_PEDCLI 
+				, SA1.A1_CGC
+				, ZZP.ZZP_CODPRV
+				, SC6.C6_ITEM
 	EndSql      
-	//CC2.CC2_CODMUN
-	//			AND CC2.CC2_MUN 	= %Exp:_cMunicipio%
+	//			, SC6.C6_XIDITEM
+
 	If (_cAliasPesq)->(Eof())  
 		U_ZRETMsgJson("pedcli","Pedido  "+_cPedcli+" nao localizado")
 		Break
 	Endif
 
 	While (_cAliasPesq)->(!Eof())
-		_aDctos := {} 
-		Aadd( _aDctos, {"pedidovei"		, (_cAliasPesq)->C6_PEDCLI})
-		Aadd( _aDctos, {"cnpjcpf"		, (_cAliasPesq)->ZZP_CNPJCP}) 
-		Aadd( _aDctos, {"previsaonr"	, (_cAliasPesq)->ZZP_CODPRV }) 
+		_aCab 		:= {} 
+		_aItemRet		:= {}
+		Aadd( _aCab, {"pedidovei"		, (_cAliasPesq)->C6_PEDCLI})
+		Aadd( _aCab, {"cnpjcpf"		, (_cAliasPesq)->A1_CGC}) 
+		Aadd( _aCab, {"previsaonr"	, (_cAliasPesq)->ZZP_CODPRV }) 
 		_cPedido 	:= (_cAliasPesq)->C6_PEDCLI
-		_cCnPj 		:= (_cAliasPesq)->ZZP_CNPJCP
-		_cPrevisao	:= (_cAliasPesq)->ZZP_CODPRV
-		While (_cAliasPesq)->(!Eof()) .AND. _cPedido == (_cAliasPesq)->C6_PEDCLI .AND. _cCnPj == (_cAliasPesq)->ZZP_CNPJCP ;
-									  .AND. _cPrevisao == (_cAliasPesq)->ZZP_CODPRV
-			Aadd( _aItemRet, {"iditem"				, _cIdItem})
-			Aadd( _aItemRet, {"status"				, _aMsgRet[Len(_aMsgRet),1]})
-			Aadd( _aItemRet, {"ocorrencia"			, _aMsgRet[Len(_aMsgRet),2]})
-			Aadd( _aItemRet, {"qtderecebida"		, _nQtdeItem })
-			Aadd( _aItemRet, {"qtdeocorrencia"		, 0 })
-			Aadd( _aItemRet, {"qtdefaturada"		, 0 })
-			Aadd( _aItemRet, {"notafiscalnr"		, ""})
-			Aadd( _aItemRet, {"notafiscalserie"		, ""})
-			Aadd( _aItemRet, {"notafiscalemissao"	, "" })
-			Aadd( _aItemRet, {"notafiscalxml"		, ""})
+		_cCnPj 		:= (_cAliasPesq)->A1_CGC
+		//_cPrevisao	:= (_cAliasPesq)->ZZP_CODPRV
+		While (_cAliasPesq)->(!Eof()) .AND. _cPedido == (_cAliasPesq)->C6_PEDCLI .AND. _cCnPj == (_cAliasPesq)->A1_CGC ;
+									  //.AND. _cPrevisao == (_cAliasPesq)->ZZP_CODPRV
+			_aLinha		:= {}									  
+			_cIdItem	:= If(FieldPos("C6_XIDITEM") > 0, (_cAliasPesq)->C6_XIDITEM, "")   
+			_cStatus    := If(FieldPos("C6_XIDITEM") > 0, (_cAliasPesq)->C6_XRESSTA, "")	
+			_Ocorrencia := ZRESTPFCLO(_cStatus)  //Localizar ocódigo de ocorrencia
+			Aadd( _aLinha, {"iditem"				, _cIdItem })
+			Aadd( _aLinha, {"status"				, _cStatus })
+			Aadd( _aLinha, {"ocorrencia"			, _Ocorrencia })
+			Aadd( _aLinha, {"qtderecebida"			, (_cAliasPesq)->QTDEPED })
+			Aadd( _aLinha, {"qtdeocorrencia"		, (_cAliasPesq)->QTDELIB })
+			Aadd( _aLinha, {"qtdefaturada"			, (_cAliasPesq)->QTDEFAT })
+			Aadd( _aLinha, {"notafiscalnr"			, (_cAliasPesq)->C6_NOTA })
+			Aadd( _aLinha, {"notafiscalserie"		, (_cAliasPesq)->C6_SERIE })
+			Aadd( _aLinha, {"notafiscalemissao"		, (_cAliasPesq)->C6_DATFAT })
+			Aadd( _aLinha, {"notafiscalxml"			, "" })
+			Aadd( _aItemRet, _aLinha)
 			(_cAliasPesq)->(DbSkip())
 		EndDo
-		_lRet := U_ZFT030CT( _aDctos, _aItemRet, /*_lJob*/)
 	EndDo 	
+	_oJsonRet := U_ZFT030CT( _aCab, _aItemRet, /*_lJob*/)
+	_lRet := .T.
 End Sequence
 
 If Select((_cAliasPesq)) <> 0
@@ -218,6 +252,22 @@ Endif
 Return _lRet 
 
 
+//localizar o código de ocorrencia
+Static Function ZRESTPFCLO(_cStatus)
+Local _cRet 	As Character
+Local _nPos		As Numeric
+Begin Sequence 
+	_cRet := ""
+	If Empty(_cStatus)
+		Break
+	Endif
+	For _nPos := 1 To Len(_aRetMsg)
+		If AllTrim(_aRetMsg[_nPos,1]) == AllTrim(_cStatus)
+			_cRet := _aRetMsg[_nPos,2]
+		Endif
+	Next
+End Sequence
+Return _cRet
 
 /*/{Protheus.doc} ValidOJson
 Valida os dados do oJson
