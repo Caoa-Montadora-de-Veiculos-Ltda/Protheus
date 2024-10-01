@@ -1,0 +1,458 @@
+#INCLUDE "TOTVS.CH"
+#Include "FWMVCDEF.CH"
+#INCLUDE "RESTFUL.CH"
+
+/*/{Protheus.doc} ZRESTESL
+Serviço de integração Consulta Saldo em Estoque 
+@author 	Victor Gisoldi Matos 
+@since 		18/09/2024
+@version 	1.0
+@param		nao utilizado
+@type 		User Function
+@client   	CAOA
+@return   	_aMsg - Array com retorno Json código e ocorrencia
+@project 	API Saldo em Estoque
+			https://tdn.totvs.com/display/tec/DecodeUTF8
+			https://jsonformatter.curiousconcept.com/  VERIFICAR SE JSON ESTA CORRETO
+			https://jsonlint.com/?code=   //VALIDAR JSON
+            https://jsoneditoronline.org/#left=local.sowavu  //estrutura do json
+/*/
+User Function ZRESTESL( _oJson , _cEmpFil , _cResp )
+
+Local _aMsg As Array
+
+Private _aRetMsg As Array
+Private _aMsgRet As Array
+
+Default _cEmpFil := ""
+Default _cResp   := ""
+
+Begin Sequence
+	Conout( "INICIADO FUNCIONALIDADE ZRESTESL em " + DtoC(Date()) + " as " + Time() )
+	_aMsg 	 := {}
+	_aRetMsg := ZRESTESLMsg()   //Carregar tabela com erros
+	_aMsgRet := {}				//carregar msg de errp
+
+	// Processa o Json
+	If ZRESTESLPR( @_oJson , _cEmpFil , _cResp )
+		_aMsg := _aMsgRet // Recebe erro do processamento
+	EndIf
+
+End Sequence
+
+IF Len( _aMsg ) == 0	//Prevensão forçar o envia da mensagem para o REST
+
+	_aMsg := U_ZSetMsgJson()
+
+EndIf
+
+Conout( "FINALIZADO FUNCIONALIDADE ZRESTESL em " + DtoC( Date() ) + " as " + Time() )
+
+Return _aMsg
+
+/*/{Protheus.doc} ZRESTESLPR
+		Recebe Json cliente GET 
+	@author 	Victor Gisoldi Matos
+	@since 		18/09/2024
+	@version 	1.0
+	@param 		oJson
+	@type 		function
+	@ Obs		Os paremetros de token, empresa e filial serão enviados no cabeçalho reader Json
+/*/
+Static Function ZRESTESLPR( _oJson , _cEmpFil , _cResp )
+
+Local _cEmpresa	As Character
+Local _cFilAtu	As Character
+Local _lRet		As Logical
+Local _nPos		As numeric
+
+Begin Sequence
+	_cEmpresa	:= ""
+	_cFilAtu	:= ""
+	_lRet		:= .F.
+	_nPos 		:= At( "," , _cEmpFil )
+
+	If _nPos <= 0 
+		U_ZRETMsgJson( "empresa" , "nao informada tag empresa" )
+        Break
+    EndIf
+	
+	_cEmpresa := SubsTr( _cEmpFil , 1 , _nPos - 1 )
+	_cFilAtu  := SubsTr( _cEmpFil , _nPos + 1 )
+
+	If Empty( _cEmpresa )
+		U_ZRETMsgJson( "empresa" , "nao informada tag empresa" )
+        Break
+	Endif
+	
+	If Empty( _cFilAtu )
+		U_ZRETMsgJson( "filial" , "nao informada a filial na tag empresa" )
+        Break
+	Endif
+	
+	//Verifica a existencia empresa, para não ficar retornando erro 5, valida se a tabela esta abertar
+	If Select("SM0") > 0
+		SM0->(DbSetOrder(1))  // M0_CODIGO + M0_CODFIL
+		If !SM0->(DbSeek(_cEmpresa+_cFilAtu))
+			U_ZRETMsgJson( "empresa" , "Dados da empresa inconsistentes" )
+        	Break
+		Endif
+	Endif
+    
+	//Tratar abertura da empresa conforme enviado no parametro
+	If cEmpAnt <> _cEmpresa .or. cFilAnt <> _cFilAtu
+    	RpcClearEnv() 
+    	RPCSetType(3) 
+    	If !RpcSetEnv( _cEmpresa , _cFilAtu , , , , GetEnvServer() , { } )
+			U_ZRETMsgJson( "ambiente" , "Nao foi possivel acessar ambiente" )
+        	Break
+		Endif
+	EndIf
+	
+	//Verificar se existe cadastro fornecedor , o Genérico não sendo 
+	SA2->(DbSetOrder(3))  //FILIAL + CGC
+	
+	// Valida os dados do oJson
+	If !SA2->(DbSeek(FWxFilial("SA2")+_cResp))  //.And. _cResp <> STRZero(0,8)  //Deixar passar com tudo zero para validaçoes
+		U_ZRETMsgJson( "responsavel" , "Nao Autorizado, Falta Cadastro" )
+        Break
+	Endif 	
+	
+	If !ValidOJson( @_oJson , )
+		Break
+	EndIf
+	
+	//Realiza a consulta
+	_lRet := ZRESTESLCO( _oJson , _cEmpresa , _cFilAtu , _cResp )
+
+End Sequence
+
+Return _lRet
+
+/*/{Protheus.doc} ZRESTESLCO
+Receber dados do oJson e Consultar Saldo
+@author Victor Gisoldi Matos
+@since 18/09/2024
+@version 1.0
+@param 
+@type function
+/*/
+Static Function ZRESTESLCO( _oJson , _cEmpresa , _cFilAtu , _cResp )
+
+Local _cAliasPesq	As Character
+Local _cModelo		As Character
+Local _cSegmento	As Character
+Local _cAnoFab		As Character
+Local _cAnoMod		As Character
+Local _cFabMod		As Character
+Local _nSaldo		As Numeric
+Local _lRet			As Logical
+
+Begin Sequence
+	_cAliasPesq	:= GetNextAlias()
+	_cModelo	:= AllTrim(_oJson:GetJsonText("cdmodvei"))  
+	_cSegmento	:= AllTrim(_oJson:GetJsonText("cdsegmod"))  
+	_cAnoFab	:= AllTrim(_oJson:GetJsonText("anofabricacao"))
+	_cAnoMod	:= AllTrim(_oJson:GetJsonText("anomodelo"))
+	_cFabMod	:= ''
+	_nSaldo		:= 0
+	_lRet		:= .T.
+
+	//Função para retorno de códigos, verificar se estas informações estão fornecidas corretamente
+	If !ZRESTValida( _oJson , _cModelo , _cSegmento , _cAnoFab, _cAnoMod )
+		_lRet := .F.
+		Break
+	Endif
+
+	If Select( (_cAliasPesq) ) > 0
+		(_cAliasPesq)->(DbCloseArea())
+	EndIf
+
+	//Concatena Ano de Fabricação + Ano Modelo
+	_cFabMod := _cAnoFab + _cAnoMod 
+			
+	/* Condições para consultar saldo:
+	VV1_MODVEI = _cModelo
+	VV1_SEGMOD = _cSegmento
+	VV1_FABMOD = _cFabMod
+	VV1_SITVEI = 0 (Em estoque)
+	VV1_IMOBI = 0 (Não imobilizado)
+	*/
+	cQuery := " SELECT COUNT(VV1.VV1_CHASSI) AS SALDO  "
+	cQuery += " FROM " + RetSQLName('VV1') + " VV1 "
+	cQuery += " LEFT JOIN " + RetSQLName('SBF') + " SBF "
+	cQuery += " ON SBF.D_E_L_E_T_ = '' AND "
+	cQuery += "    LTRIM(RTRIM(SBF.BF_NUMSERI)) = LTRIM(RTRIM(VV1.VV1_CHASSI))"
+	cQuery += " WHERE VV1.D_E_L_E_T_ = '' AND "
+	cQuery += "		  VV1.VV1_MODVEI = '" + _cModelo + "' AND "
+	cQuery += "       VV1.VV1_SEGMOD = '" + _cSegmento + "' AND "
+	cQuery += "       VV1.VV1_FABMOD = '" + _cFabMod + "' AND "
+	cQuery += "       VV1.VV1_SITVEI = '0' AND "
+	cQuery += "       VV1.VV1_IMOBI = '0' "
+
+	cQuery := ChangeQuery(cQuery)
+
+	// Executa a consulta.
+	DbUseArea( .T., "TOPCONN", TcGenQry(,,cQuery), _cAliasPesq, .T., .T. )
+
+	DbSelectArea((_cAliasPesq))
+
+	If (_cAliasPesq)->(!Eof())
+		_nSaldo := (_cAliasPesq)->SALDO
+		ZRETJson( "ok" , "cdmodvei"	  	 , _cModelo   )
+		ZRETJson( "ok" , "cdsegmod"	  	 , _cSegmento )
+		ZRETJson( "ok" , "anofabricacao" , _cAnoFab   )
+		ZRETJson( "ok" , "anomodelo"	 , _cAnoMod   )
+		ZRETJson( "ok" , "saldoestoque"  , _nSaldo	  )
+	EndIf
+
+	(_cAliasPesq)->(DbCloseArea())
+End Sequence 
+
+return _lRet
+
+//Valida os dados redebidos do Json
+Static Function ZRESTValida( _oJson , _cModelo , _cSegmento , _cAnoFab, _cAnoMod )
+
+Local _lRet As Logical
+
+Default _cModelo	:= ""
+Default _cSegmento	:= ""
+Default _cAnoFab	:= ""
+Default _cAnoMod	:= ""
+
+Begin Sequence
+	_lRet := .T.
+
+	//Valida o código do modelo
+	If Empty(_cModelo) .OR. len(_cModelo) > 30 .OR. !VldMod(_cModelo)
+		U_ZRETMsgJson("cdmodvei","Código do modelo vazio, ou inválido: " + _cModelo )
+		_lRet := .F.
+		Break
+ 	Endif
+
+	//Valida o segmento
+	If Empty(_cSegmento) .OR. len(_cSegmento) > 15 .OR. !VldSeg(_cSegmento)
+		U_ZRETMsgJson("cdsegmod","Código do Segmento vazio, ou inválido: " + _cSegmento )
+		_lRet := .F.
+		Break
+ 	Endif
+
+	//Valida o Ano de Fabricacao
+	If Empty(_cAnoFab) .OR. len(_cAnoFab) > 4 .OR. !IsNumeric(_cAnoFab)
+		U_ZRETMsgJson("anofabricacao","Ano de Fabricacao vazio, ou inválido: " + _cAnoFab )
+		_lRet := .F.
+		Break
+ 	Endif
+
+	//Valida o Ano do Modelo
+	If Empty(_cAnoMod) .OR. len(_cAnoMod) > 4 .OR. !IsNumeric(_cAnoMod)
+		U_ZRETMsgJson("anomodelo","Ano do Modelo vazio, ou inválido: " + _cAnoMod )
+		_lRet := .F.
+		Break
+ 	Endif
+
+End Sequence 
+
+Return _lRet
+
+/*/{Protheus.doc} ValidOJson
+Valida os Itens do oJson
+@author Victor Gisoldi Matos
+@since 18/09/2024
+@version 1.0
+@param nCode, numeric, descricao
+@param cMsg, characters, descricao
+@type function
+/*/
+Static Function ValidOJson( _oJson , _cTipo )
+
+Local _lRet		As Logical
+Local _aMens 	As Array
+
+//Tem a função de validar os itens obrigatórios neste caso o vabeçalho ZWSRFUN.PRW
+_aMens	:= U_ZVLDOBRJ( _oJson , _aRetMsg , /*_lItem*/ , /*_lTodos*/ )
+_lRet	:= .T.
+
+If Len(_aMens) > 0
+  	_aMsgRet 	:= _aMens
+	_lRet		:= .F.	
+Endif
+
+Return _lRet
+
+/*/{Protheus.doc} ZRESTESLMsg
+//Carrega Numero do Erro para retorno
+@author Victor Gisoldi Matos
+@since 18/09/2024
+@version 1.0
+@param _aMsg , array , descrição
+@type function
+
+Layout que será recebido da Autoware:
+{
+   "cdmodvei":"T17W5L4FP",
+   "cdsegmod":"C755TRYBLP",
+   "anofabricacao":"2024",
+   "anomodelo":"2025"
+}
+/*/
+Static Function ZRESTESLMsg()
+
+Local _aRet As Array
+
+Begin Sequence
+	_aRet := {}
+
+	//			{ Nr Ret , Tags Json	   , Item ,	Obrig ,	Descrição	
+	Aadd(_aRet, { 100    , "ok"			   , .F.  , .F.	  , "Processo realizado com sucesso"	 } )
+
+	Aadd(_aRet, { 300	 , "empresa"	   , .F.  , .F.   , "Empresa nao informada"				 } )
+	Aadd(_aRet, { 301	 , "filial"		   , .F.  , .F.   , "Filial nao informada"				 } )
+	Aadd(_aRet, { 302	 , "token"		   , .F.  , .F.   , "Token Invalido"					 } )
+	Aadd(_aRet, { 303	 , "ambiente"	   , .F.  , .F.   , "Nao foi possivel acessar ambiente"  } )
+	Aadd(_aRet, { 304	 , "responsavel"   , .F.  , .F.   , "Não Autorizado"					 } )
+
+	Aadd(_aRet, { 400	 , "cdmodvei"	   , .F.  , .T.   , "Modelo do veículo com problemas"	 } )
+	Aadd(_aRet, { 401	 , "cdsegmod"	   , .F.  , .T.   , "Segmento do veículo com problemas"  } )
+	Aadd(_aRet, { 402	 , "anofabricacao" , .F.  , .T.   , "Ano de Fabricacao com problemas"	 } )
+	Aadd(_aRet, { 403	 , "anomodelo" 	   , .F.  , .T.   , "Ano de Fabricacao com problemas"	 } )
+
+//	Aadd(_aRet, { 600	 , "erropad"       , .F.  , .T.   , "nao foi possivel atualizar Cliente" } )
+
+End Sequence
+
+Return _aRet
+
+/*/{Protheus.doc} ZRETJson
+//Retorna Numero do Erro 
+@author DAC
+@since 12/11/2021
+@version undefined
+@param _aMsg, array, descrição
+@type function
+/*/
+Static Function ZRETJson(_cRefMsg, _cMsgRet, _cVar)
+Local _nRet := 999
+Local _nPos
+
+Default _cMsgRet := ""
+
+Begin Sequence
+	If Type("_aRetMsg") <> "A"
+		Private _aRetMsg := {}
+	EndIf
+	If Type("_aMsgRet") <> "A"
+		Private _aMsgRet := {}
+	EndIf
+
+  	_nPos := Ascan(_aRetMsg,{|x| x[2] == _cRefMsg})
+	If _nPos > 0 
+		_nRet := _aRetMsg[_nPos,1]
+	EndIf	
+	If Empty(_cMsgRet) .and. Len(_aRetMsg[_nPos]) >= 5 .and. ValType(_aRetMsg[_nPos,5]) == "C"
+		_cMsgRet := _aRetMsg[_nPos,5]+" !"
+	Endif	
+	Aadd(_aMsgRet, {_nRet,_cMsgRet, _cVar})
+End Sequence
+Return _nRet
+
+/*/{Protheus.doc} VldMod
+	Valida de o codigo de modelo recebido no Json é valido
+	@type  Function
+	@author Victor Matos
+	@since 30/09/2024
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	@example
+	(examples)
+	@see (links_or_references)
+	/*/
+Static Function VldMod(_cModelo)
+Local _cAlias	As Character
+Local lRet		As Logical
+Local cMod		As Character
+Local cQuery	AS Character
+
+_cAlias	:= GetNextAlias()
+lRet 	:= .T.
+cMod 	:= ''
+cQuery 	:= ''
+
+If Select( (_cAlias) ) > 0
+	(_cAlias)->(DbCloseArea())
+EndIf
+
+cQuery := " SELECT VV1.VV1_MODVEI AS MODELO "
+cQuery += " FROM " + RetSQLName('VV1') + " VV1 "
+cQuery += " WHERE VV1.D_E_L_E_T_ = '' AND "
+cQuery += "		  VV1.VV1_MODVEI = '" + _cModelo + "' "
+cQuery += " GROUP BY VV1.VV1_MODVEI"
+
+cQuery := ChangeQuery(cQuery)
+
+// Executa a consulta.
+DbUseArea( .T., "TOPCONN", TcGenQry(,,cQuery), _cAlias, .T., .T. )
+
+DbSelectArea((_cAlias))
+
+cMod := (_cAlias)->MODELO
+
+If Empty( cMod )
+	lRet := .F.
+EndIf
+
+(_cAlias)->(DbCloseArea())
+
+Return lRet
+
+/*/{Protheus.doc} VldSeg
+	Valida de o segmento recebido no json é válido
+	@type  Function
+	@author Victor Gisoldi Matos
+	@since 30/09/2024
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	@example
+	(examples)
+	@see (links_or_references)
+	/*/
+Static Function VldSeg(_cSegmento)
+Local _cAlias	As Character
+Local lRet		As Logical
+Local cSeg		As Character
+Local cQuery	As Character
+
+_cAlias	:= GetNextAlias()
+lRet 	:= .T.
+cSeg 	:= ''
+cQuery	:= ''
+
+If Select( (_cAlias) ) > 0
+	(_cAlias)->(DbCloseArea())
+EndIf
+
+cQuery := " SELECT VV1.VV1_SEGMOD AS SEGMENTO "
+cQuery += " FROM " + RetSQLName('VV1') + " VV1 "
+cQuery += " WHERE VV1.D_E_L_E_T_ = '' AND "
+cQuery += "		  VV1.VV1_SEGMOD = '" + _cSegmento + "' "
+cQuery += " GROUP BY VV1.VV1_SEGMOD"
+
+cQuery := ChangeQuery(cQuery)
+
+// Executa a consulta.
+DbUseArea( .T., "TOPCONN", TcGenQry(,,cQuery), _cAlias, .T., .T. )
+
+DbSelectArea((_cAlias))
+
+cSeg := (_cAlias)->SEGMENTO
+
+If Empty( cSeg )
+	lRet := .F.
+EndIf
+
+(_cAlias)->(DbCloseArea())
+
+Return lRet
