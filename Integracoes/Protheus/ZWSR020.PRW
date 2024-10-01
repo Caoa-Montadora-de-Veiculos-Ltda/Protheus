@@ -23,7 +23,7 @@ R  - resT OU W WebServer
 010- Sequencial
 /*/
 
-WSRESTFUL ZWSR020 DESCRIPTION "Integração Faturamento Autoware !" FORMAT APPLICATION_JSON 
+WSRESTFUL ZWSR020 DESCRIPTION "Consulta Pedido/Faturamento Autoware" FORMAT APPLICATION_JSON 
 	WSMETHOD GET ; 
 	        DESCRIPTION "Consulta Pedido / Faturamento";
 	        WSSYNTAX "/ZWSR020"
