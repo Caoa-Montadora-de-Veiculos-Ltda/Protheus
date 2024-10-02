@@ -41,7 +41,7 @@ IF lIsBlind
 	
 EndIF
 
-//GAP228
+//GAP228 -Integração Faturamento Autoware  DAC- 02/10/2024
 //cQuery += " SELECT F2.*, F2.R_E_C_N_O_ RECNOF2, A1.A1_CGC, VRJ_PEDCOM, VRJ_TIPVEN, VRK_FILIAL, VRK_PEDIDO "
 cQuery += " SELECT F2.*, F2.R_E_C_N_O_ RECNOF2, A1.A1_CGC, SC6.C6_XTIPVEN "
 cQuery += " FROM "+ RetSQLname("SF2") + " F2 "
@@ -57,7 +57,7 @@ cQuery += "                 AND VV0.VV0_LOJA   = F2.F2_LOJA  "
 cQuery += "                 AND VV0.VV0_NUMNFI = F2.F2_DOC  "
 cQuery += "                 AND VV0.VV0_SERNFI = F2.F2_SERIE "
 cQuery += "					AND VV0.D_E_L_E_T_ = ' '  "
-/* GAP228
+/* GAP228 -Integração Faturamento Autoware  DAC- 02/10/2024
 cQuery += "      JOIN " + RetSQLname("VRK") + " VRK  
 cQuery += "					ON    VRK.VRK_FILIAL  = '" + xFilial('VRK') + "'  "
 cQuery += "                 AND ( VRK.VRK_NUMTRA  = VV0.VV0_NUMTRA OR SUBSTR(VRK.VRK_NUMTRA,2,9) = F2.F2_DOC) "
@@ -68,7 +68,7 @@ cQuery += "					ON  SC6.C6_FILIAL  	= '" + xFilial('SC6') + "'  "
 cQuery += "                 AND SC6.C6_NOTA	   	= F2.F2_DOC "
 cQuery += "                 AND SC6.C6_SERIE	= F2.F2_SERIE "
 cQuery += "                 AND SC6.D_E_L_E_T_  =' '  "
-/* GAP228
+/* GAP228 -Integração Faturamento Autoware  DAC- 02/10/2024
 cQuery += "      JOIN " + RetSQLname("VRJ") + " VRJ 
 cQuery += "					ON  VRJ.VRJ_FILIAL    = '" + xFilial('VRJ') + "'  "
 cQuery += "                 AND VRJ.VRJ_PEDIDO    = VRK.VRK_PEDIDO "
@@ -135,7 +135,9 @@ IF qryNF->(!EOF())
 			cSoap += putTag('tipo',           Alltrim(qryNF->C6_XTIPVEN))
 
 			//cSoap += putTag('tipo', 'vendaVeiculoVarejo')
+			//GAP228 -Integração Faturamento Autoware  DAC- 02/10/2024
 		    //cSoap += putTag('Pedido',VRJ->VRJ_PEDCOM)
+		    cSoap += putTag('Pedido',SC6->C6_PEDCLI)
 		    cSoap += "                </DadosNotaFiscal>                                                  "
 			cSoap += "            </ListaNotaFiscal>                                                      "
 			cSoap += "        </Enviar>                                                               "

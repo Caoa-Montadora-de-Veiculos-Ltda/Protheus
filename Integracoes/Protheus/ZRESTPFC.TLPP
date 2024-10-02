@@ -34,7 +34,7 @@ Begin Sequence
 	_aMsgRet 	:= {}
 
     If ZRESTPFCPR( @_oJson, _cEmpFil, _cResp, @_oJsonRet )
-		U_ZRETMsgJson("ok", _oJsonRet )
+		U_ZRETMsgJson("ok","" , _oJsonRet )
 		_aMsg := U_ZSetMsgJson()
 	Else
 		_aMsg := U_ZSetMsgJson()

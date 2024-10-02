@@ -33,7 +33,7 @@ oGrp01 := TGroup():New( 008,008,268,628,"",oDlg01,CLR_BLACK,CLR_WHITE,.T.,.F. )
 oBtn01 := TButton():New( 020,016,"Faturamento Atacado"   ,oGrp01,{|| FWMsgRun(, {|oSay| fLibPed( oSay )  }, "Faturamento"  , "Processando pedidos"     )} ,068,032,,,,.T.,,"",,,,.F. )
 oBtn03 := TButton():New( 020,094,"Cancelar Notas Fiscais",oGrp01,{|| FWMsgRun(, {|oSay| fCanNotas( oSay )}, "Cancelando NF", "Processando Cancelamento")} ,068,032,,,,.T.,,"",,,,.F. )
 oBtn04 := TButton():New( 020,171,"Devolver Notas Fiscais",oGrp01,{|| fDevNotas()}                                                                         ,068,032,,,,.T.,,"",,,,.F. )
-oBtn04 := TButton():New( 020,248,"Transmissão de Notas"  ,oGrp01,{|| SPEDNFe()}                                                                           ,068,032,,,,.T.,,"",,,,.F. )
+oBtn04 := TButton():New( 020,248,"TransmissÃ£o de Notas"  ,oGrp01,{|| SPEDNFe()}                                                                           ,068,032,,,,.T.,,"",,,,.F. )
 //oBtn04 := TButton():New( 020,325,"Incluir Pedido Venda"  ,oGrp01,{|| fVisuPed("SC5",aRotina,3,Nil,Nil,Nil)}                                               ,068,032,,,,.T.,,"",,,,.F. )
 oBtn04 := TButton():New( 020,325,"Pedidos Venda"         ,oGrp01,{|| MATA410()}                                                                           ,068,032,,,,.T.,,"",,,,.F. )
 //GAP167  Previsao de Faturamento
@@ -49,7 +49,7 @@ Return(Nil)
 Programa.:              fLibPed()
 Autor....:              
 Data.....:              
-Descricao / Objetivo:   Faz a Liberação do Pedidos para o Faturamento
+Descricao / Objetivo:   Faz a LiberaÃ§Ã£o do Pedidos para o Faturamento
 =======================================================================================
 */
 
@@ -79,22 +79,18 @@ Local nY            As Numeric
 Local nStatus       As Numeric
 Local aTamSx3       As Array
 Local aValidCmp     As Array
+
 Local _lAvalia      As Logical
 Local _cInsert      As Character
+//GAP167  Previsao de Faturamento
+Local _lPrevFat    := FWIsInCallStack("U_XZFT19FT") 
 //Local dDatIni       := Date()
 //Local dDatfin       := Date()
 //Local nChassi       := 0
-Local _cLinFora     As Character
-Local _aCpoFora     As Array
-Local _cSelect      As Character
-//GAP167  Previsao de Faturamento
-Local _lPrevFat    := FWIsInCallStack("U_XZFT19FT") 
-
 
 Default _cWhere     := ""
 Default _cJoin      := ""
 Default cOrderTab   := "SC6.C6_FILIAL,SC6.C6_PEDCLI,SC6.C6_ITEM,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO"
-
 
 Private cCabAlias   As Character
 Private cIteAlias   As Character
@@ -120,7 +116,7 @@ Private oTBrwsPrd   As Object
 Private oTBrwsTot   As Object
 Private aCabCampos  As Array
 Private aCamBkp     As Array
-Private bRefresh   := {||.t.} //Bloco de Codigo para previnir erro de Gatilho nas chamadas das rotina padrão do sistema 
+Private bRefresh   := {||.t.} //Bloco de Codigo para previnir erro de Gatilho nas chamadas das rotina padrÃ£o do sistema 
 Private cFiltroVX5 := "068"
 
 bRet        := .F.
@@ -135,16 +131,16 @@ aCamBkp     := {}
 
 //GAP167  Previsao de Faturamento
 // ABRIR PARAMETROS PARA PESQUISA
-// CASO A CHAMADA VENHA DE PREVISÃO NÃO CHAMAR PARAMETROS
+// CASO A CHAMADA VENHA DE PREVISÃƒO NÃƒO CHAMAR PARAMETROS
 If !_lPrevFat .And. !U_XZFT19PA(@aRet)
     Return(.F.)
 Endif 
- 
+
 /*********************************************************************************************************************************************/
-//Cabeçalho
+//CabeÃ§alho
 
 // GAP167  Previsao de Faturamento 
-// SELECIONA CAMPOS QUE SERÃO INCLUIDOS NO SELECT
+// SELECIONA CAMPOS QUE SERÃƒO INCLUIDOS NO SELECT
 aCabCampos  := U_XZFT19CP()
 
 aValidCmp   := {{ "C5_CONDPAG" , "{ || fVldCampo( cCabAlias , oSay , cCabTable , oCabTable)}" },;
@@ -157,17 +153,8 @@ aValidCmp   := {{ "C5_CONDPAG" , "{ || fVldCampo( cCabAlias , oSay , cCabTable ,
                 { "C6_XVLRPRD" , "{ || fVldCampo( cCabAlias , oSay , cCabTable , oCabTable)}" },; 
                 { "C6_XVLRMVT" , "{ || fVldCampo( cCabAlias , oSay , cCabTable , oCabTable)}" }} 
 
-_aCpoFora   := {"C6_FILIAL" , "CC_STATUS" , "C9_SEQUEN" , "C9_NFISCAL", "C9_SERIENF", "C6_PRUNIT",;
-                "C6_XGRPMOD", "C6_XDGRMOD", "VRK_CORINT", "VRK_COREXT", "C5_XTIPVEN", "C6_NUMSERI",;
-                "C5_XMENSER", "VRJ_PEDIDO", "VRJ_STATUS", "LUPD"      , "LINHA"     , "VRK_VALTAB",; 
-                "VRK_VALPRE", "VRK_VALMOV", "VRK_XBASST", "VRK_VALVDA"}
-
-_cLinFora := ""
-For nY := 1 To Len(_aCpoFora)
-    _cLinFora += If(nY > 1, "|"+_aCpoFora[nY],+_aCpoFora[nY])
-Next
-
 aCabStru    := {}
+
 For nY := 1 To Len(aCabCampos)
     aTamSx3 := TamSX3(aCabCampos[nY])
     Aadd(aCabStru, {aCabCampos[nY] ,aTamSx3[03] ,aTamSx3[01] ,aTamSx3[02] })
@@ -178,10 +165,11 @@ Aadd(aCabStru, {"LINHA" ,"N" ,5 ,0 })
 aCabCol := {}
 
 For nY := 02 To Len(aCabStru)
-    //Columas Cabeçalho
+
+    //Columas CabeÃ§alho
     //If !aCabStru[nY][1] $ "C6_FILIAL|CC_STATUS|C9_SEQUEN|C9_NFISCAL|C9_SERIENF|C6_PRUNIT|C6_XGRPMOD|C6_XDGRMOD|C6_XCORINT|C6_XCOREXT|C5_XTIPVEN|C6_NUMSERI|C5_XMENSER|VRJ_PEDIDO|VRJ_STATUS|LUPD|LINHA"
 //    If !aCabStru[nY][1] $ "C6_FILIAL|CC_STATUS|C9_SEQUEN|C9_NFISCAL|C9_SERIENF|C6_PRUNIT|C6_XGRPMOD|C6_XDGRMOD|VRK_CORINT|VRK_COREXT|C5_XTIPVEN|C6_NUMSERI|C5_XMENSER|VRJ_PEDIDO|VRJ_STATUS|LUPD|LINHA"
-    If !aCabStru[nY][1] $ _cLinFora
+    If !aCabStru[nY][1] $ "C6_FILIAL|CC_STATUS|C9_SEQUEN|C9_NFISCAL|C9_SERIENF|C6_PRUNIT|C6_XGRPMOD|C6_XDGRMOD|VRK_CORINT|VRK_COREXT|C5_XTIPVEN|C6_NUMSERI|C5_XMENSER|VRJ_PEDIDO|VRJ_STATUS|LUPD|LINHA|VRK_VALTAB|VRK_VALPRE|VRK_VALMOV|VRK_XBASST|VRK_VALVDA"
         cTipCpo    := GetSx3Cache(aCabStru[nY][1], "X3_TIPO" )
         If SubsTr(aCabStru[nY][1],3) <> "_" 
             cPictAlias := Left(aCabStru[nY][1],3)
@@ -200,11 +188,14 @@ For nY := 02 To Len(aCabStru)
         If "C6_NUM"   <> Substr(Alltrim(aCabStru[nY][1]),1,Len(Alltrim(aCabStru[nY][1]))) .And. ;
            "C6_LOCAL" <> Substr(Alltrim(aCabStru[nY][1]),1,Len(Alltrim(aCabStru[nY][1]))) .And. ;
             aCabStru[nY][1] $ "C5_CONDPAG|C5_NATUREZ|C5_XMENSER|C6_NUMSERI|C6_LOCALIZ|C6_TES|C6_XVLRPRD|C6_OPER|C6_XVLRMVT"
+
             If Substr(Alltrim(aCabStru[nY][1]),1,Len(Alltrim(aCabStru[nY][1]))) <> "C6_NUMSERI"
                 aCabCol[Len(aCabCol)]:SetEdit(.T.)
             Endif
+
             aCabCol[Len(aCabCol)]:SetReadVar(aCabStru[nY][1])
             aCabCol[Len(aCabCol)]:SetValid((&(aValidCmp[aScan(aValidCmp,{|x| Alltrim(x[1]) == aCabStru[nY][1] }),2])))
+
         EndIf
     EndIf
 Next nY
@@ -220,56 +211,33 @@ cCabAlias := oCabTable:GetAlias()
 
 cCabTable := oCabTable:GetRealName()
 //cOrderTab := "SC6.C6_FILIAL,SC6.C6_PEDCLI,SC6.C6_ITEM,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO"
-
-cQuery      := ""
-cQuery      += " INSERT INTO " + cCabTable + " "
-cQuery      += CrLf + " ("
-cQuery      += CrLf + " C6_OK "
-
-_cSelect    := ""
-If !_lPrevFat
-    _cSelect  += CrLf + " SELECT '  ' C6_OK    "
-Else 
-    _cSelect  += CrLf + " SELECT '"+cMarca+"' C6_OK   "
-Endif
+cQuery := ""
+cQuery += " INSERT INTO " + cCabTable + " "
+cQuery += CrLf + " ("
 
 For nY := 1 To Len(aCabCampos)
-    //If Upper(Alltrim(aCabCampos[nY]))  <> "C9_SEQUEN"  .And. Upper(Alltrim(aCabCampos[nY])) <> "C9_NFISCAL" .And. ;
-    //    Upper(Alltrim(aCabCampos[nY])) <> "C9_SERIENF" .And. Upper(Alltrim(aCabCampos[nY])) <> "C5_XMENSER" .And. ;
-    //    Upper(Alltrim(aCabCampos[nY])) <> "LUPD"       .And. Upper(Alltrim(aCabCampos[nY])) <> "CC_STATUS"
-
-    If !Upper(Alltrim(aCabCampos[nY]))  $ "C9_SEQUEN|C9_NFISCAL|C9_SERIENF|C5_XMENSER|LUPD!CC_STATUS|C6_OK"
-        //cQuery += aCabCampos[nY]+","
-        //garantir que só lera as tabelas definidas DAC 08/07/2024  
-        cQryAlias := ""
-        If Left(aCabCampos[nY],3) == "C6_" ; cQryAlias := "SC6." ; EndIf
-        If Left(aCabCampos[nY],3) == "C5_" ; cQryAlias := "SC5." ; EndIf
-        If Left(aCabCampos[nY],3) == "A1_" ; cQryAlias := "SA1." ; EndIf
-        If Left(aCabCampos[nY],3) == "B1_" ; cQryAlias := "SB1." ; EndIf
-        If Left(aCabCampos[nY],3) == "F4_" ; cQryAlias := "SF4." ; EndIf
-        If Left(aCabCampos[nY],3) == "VRJ" ; cQryAlias := "VRJ." ; EndIf
-        If Left(aCabCampos[nY],3) == "VRK" ; cQryAlias := "VRK." ; EndIf
-        If Left(aCabCampos[nY],3) == "VE1" ; cQryAlias := "VE1." ; EndIf  
-        If Left(aCabCampos[nY],3) == "VV2" ; cQryAlias := "VV2." ; EndIf  
-        If Left(aCabCampos[nY],3) == "VVX" ; cQryAlias := "VVX." ; EndIf  
-
-        If !Empty(cQryAlias)
-            cQuery += ", "+aCabCampos[nY]
-
-            _cSelect += CrLf + ", " + (cQryAlias+aCabCampos[nY])  
-        Endif
+    If Upper(Alltrim(aCabCampos[nY])) <> "C9_SEQUEN"  .And. Upper(Alltrim(aCabCampos[nY])) <> "C9_NFISCAL" .And.;
+       Upper(Alltrim(aCabCampos[nY])) <> "C9_SERIENF" .And. Upper(Alltrim(aCabCampos[nY])) <> "C5_XMENSER"
+    
+       cQuery += aCabCampos[nY]+","
     EndIf
 Next nY
-cQuery += CrLf + " ,LUPD ,LINHA ,D_E_L_E_T_, R_E_C_N_O_) "
+cQuery += CrLf + " LUPD,LINHA,D_E_L_E_T_,R_E_C_N_O_) "
 _cInsert    := cQuery   //Separo insert da query 
-cQuery      := _cSelect
-/*
+
+cQuery      := "" 
+If !_lPrevFat
+    cQuery += CrLf + " SELECT '  ' C6_OK    , "
+Else 
+    cQuery += CrLf + " SELECT '"+cMarca+"' C6_OK    , "
+Endif
+
 cQuery += CrLf + " ' '         C6_STATUS, "
 For nY := 1 To Len(aCabCampos)
     If  Upper(Alltrim(aCabCampos[nY])) <> "C6_OK"      .And. Upper(Alltrim(aCabCampos[nY])) <> "CC_STATUS"  .And.;
         Upper(Alltrim(aCabCampos[nY])) <> "C9_SEQUEN"  .And. Upper(Alltrim(aCabCampos[nY])) <> "C9_NFISCAL" .And.;
         Upper(Alltrim(aCabCampos[nY])) <> "C9_SERIENF" .And. Upper(Alltrim(aCabCampos[nY])) <> "C5_XMENSER" .And.;
-        Upper(Alltrim(aCabCampos[nY])) <> "VRJ_STATUS" .And. Upper(Alltrim(aCabCampos[nY])) <> "LUPD"
+        Upper(Alltrim(aCabCampos[nY])) <> "STATUSPED" .And. Upper(Alltrim(aCabCampos[nY])) <> "LUPD"
 
         If Left(aCabCampos[nY],3) == "C6_" ; cQryAlias := "SC6." ; EndIf
         If Left(aCabCampos[nY],3) == "C5_" ; cQryAlias := "SC5." ; EndIf
@@ -286,12 +254,17 @@ For nY := 1 To Len(aCabCampos)
     EndIf
 Next nY
 //cQuery += CrLf + "      VRJ.VRJ_PEDIDO, 
-cQuery += CrLf + " VRJ.VRJ_STATUS as VRJ_STATUS, " 
-*/ 
-cQuery += CrLf + " , 'F' as LUPD  "
-cQuery += CrLf + " , ROW_NUMBER() OVER (ORDER BY " + cOrderTab + " )  LINHA "
-cQuery += CrLf + " , ' ' as  D_E_L_E_T_   "
-cQuery += CrLf + " , ROW_NUMBER() OVER (ORDER BY " + cOrderTab + " )  R_E_C_N_O_ "
+//GAP228 -Integração Faturamento Autoware DAC 02/10/2024
+//    cQuery += CrLf + " VRJ.VRJ_STATUS as VRJ_STATUS, "   //A=Em Aberto;P=Pend.Aprovacao;O=Pre-Aprovado;L=Aprovado;R=Reprovado;F=Finalizado;C=Cancelado                                        
+If FieldPos("C6_XSTPEDI") > 0
+    cQuery += CrLf + " SC6.C6_XSTPEDI as STATUSPED, "   //A=Em Aberto;P=Pend.Aprovacao;O=Pre-Aprovado;L=Aprovado;R=Reprovado;F=Finalizado;C=Cancelado                                        
+Else 
+    cQuery += CrLf + " VRJ.VRJ_STATUS as STATUSPED, "   //A=Em Aberto;P=Pend.Aprovacao;O=Pre-Aprovado;L=Aprovado;R=Reprovado;F=Finalizado;C=Cancelado                                        
+Endif 
+cQuery += CrLf + " 'F' as LUPD , "
+cQuery += CrLf + " ROW_NUMBER() OVER (ORDER BY " + cOrderTab + " )  LINHA, "
+cQuery += CrLf + " ' ' as  D_E_L_E_T_  , "
+cQuery += CrLf + " ROW_NUMBER() OVER (ORDER BY " + cOrderTab + " )  R_E_C_N_O_ "
 
 //GAP167  Previsao de Faturamento
 If _lPrevFat  
@@ -309,17 +282,17 @@ Endif
 // CARREGA DADOS DA QUERY
 _cCargaQry := U_XZFT19QY(cQuery, cOrderTab, aRet, _cWhere, /*_cWhereAll*/, _cJoin, /*_cGroup*/)
 If Empty(_cCargaQry)
-    ApMsgStop("Problemas na montagem do Select", "Previsão Faturamento")
+    ApMsgStop("Problemas na montagem do Select", "PrevisÃ£o Faturamento")
     Return(.F.)
 Endif
 cQuery := _cInsert 
-cQuery += _cCargaQry
+cQuery += CrLf +_cCargaQry
 
 nStatus := TCSqlExec(cQuery)
  
 
 If (nStatus < 0)
-    MsgStop("TCSQLError() " + TCSQLError(), "Registros Cabeçalho")
+    MsgStop("TCSQLError() " + TCSQLError(), "Registros CabeÃ§alho")
     
     If Select(cCabAlias) <> 0 ; (cCabAlias)->(DbCloseArea()) ; EndIf
     oCabTable:Delete()
@@ -328,12 +301,12 @@ Endif
 
 (cCabAlias)->(DbGoTop())
 If (cCabAlias)->(Eof())
-    MsgStop(OemToAnsi("Não foram encontrados registros para endereçar!"),OemToAnsi("Atenção"))   
+    MsgStop(OemToAnsi("NÃ£o foram encontrados registros para endereÃ§ar!"),OemToAnsi("AtenÃ§Ã£o"))   
     Return(Nil)
 EndIf
 
 //GAP167  Previsao de Faturamento
-//Implementar calculo automatico da TES para garantir que esteja correto conforme solicitação Montiha - DAC 28/05/2024
+//Implementar calculo automatico da TES para garantir que esteja correto conforme solicitaÃ§Ã£o Montiha - DAC 28/05/2024
 //GAP167  Previsao de Faturamento
 If !_lPrevFat
     fAtuPeds(cCabAlias,oSay,cCabTable,oCabTable,"")
@@ -381,7 +354,7 @@ DEFINE DIALOG oNwFat001 TITLE "Faturamento Atacado" FROM aCords[ 1 ], aCords[ 2 
     aBrwPrd   := {}
     oTBrwsPrd := TSBrowse():New(01,01,275,050,oPnlWnd3,,16,,1)    
     oTBrwsPrd:AddColumn( TCColumn():New('Produto'  ,,,{|| },{|| }) )    
-    oTBrwsPrd:AddColumn( TCColumn():New('Descrição',,,{|| },{|| }) )    
+    oTBrwsPrd:AddColumn( TCColumn():New('DescriÃ§Ã£o',,,{|| },{|| }) )    
     oTBrwsPrd:AddColumn( TCColumn():New('Valor'    ,,,{|| },{|| }) )    
     oTBrwsPrd:SetArray(aBrwPrd) 
 
@@ -429,19 +402,19 @@ DEFINE DIALOG oNwFat001 TITLE "Faturamento Atacado" FROM aCords[ 1 ], aCords[ 2 
 
     //oNwFat001:Activate()
 ACTIVATE DIALOG oNwFat001 ON INIT EnchoiceBar(oNwFat001, { || FWMsgRun(, {|oSay| fGeraDocs(cCabAlias,cIteAlias,oSay,cIteTable) },;
-                                                                       "Faturamento", "Processando geração de notas"),lOk := .T. ,oNwFat001:End() }, ;
+                                                                       "Faturamento", "Processando geraÃ§Ã£o de notas"),lOk := .T. ,oNwFat001:End() }, ;
 { || lOk := .F.,oNwFat001:End() },,{{"BMPINCLUIR",{|| MsgRun('Visualizando Pedido','Consulta' ,{|oSay| fVisuPed(cCabAlias,aRotina,2,oSay,cCabTable,oCabTable) })},"Consulta" },;
-                         {"BMPINCLUIR",{|| MsgRun('Inclusão Pedido'    ,'Inclusão' ,{|oSay| fVisuPed(cCabAlias,aRotina,3,oSay,cCabTable,oCabTable) })},"Inclusão" },;
-                         {"BMPALTERAR",{|| MsgRun('Alteração Pedido'   ,'Alteração',{|oSay| fVisuPed(cCabAlias,aRotina,4,oSay,cCabTable,oCabTable) })},"Alteração"},;
-                         {"BMPEXCLUIR",{|| MsgRun('Exclusão Pedido'    ,'Exclusão' ,{|oSay| fVisuPed(cCabAlias,aRotina,5,oSay,cCabTable,oCabTable) })},"Exclusão" },;
+                         {"BMPINCLUIR",{|| MsgRun('InclusÃ£o Pedido'    ,'InclusÃ£o' ,{|oSay| fVisuPed(cCabAlias,aRotina,3,oSay,cCabTable,oCabTable) })},"InclusÃ£o" },;
+                         {"BMPALTERAR",{|| MsgRun('AlteraÃ§Ã£o Pedido'   ,'AlteraÃ§Ã£o',{|oSay| fVisuPed(cCabAlias,aRotina,4,oSay,cCabTable,oCabTable) })},"AlteraÃ§Ã£o"},;
+                         {"BMPEXCLUIR",{|| MsgRun('ExclusÃ£o Pedido'    ,'ExclusÃ£o' ,{|oSay| fVisuPed(cCabAlias,aRotina,5,oSay,cCabTable,oCabTable) })},"ExclusÃ£o" },;
                          {"BMPEXCLUIR",{|| MsgRun('Boleto'             ,'Boleto'   ,{|oSay| Boleto(cCabAlias)                                      })},"Boleto"   }},,,,,.F.) CENTERED
 FwMsgRun(,{ |_oSay| fAtuEmp(oSay,cCabAlias,cIteAlias,lOk) }, "Estornando Empenhos", "Aguarde...")  
 
 /*
 { || lOk := .F.,oNwFat001:End() },,{{"BMPINCLUIR",{|| MsgRun('Visualizando Pedido','Consulta' ,{|| fVisuPed(cCabAlias,aRotina,2,oSay,cCabTable,oCabTable) })},"Consulta" },;
-                         {"BMPINCLUIR",{|| MsgRun('Inclusão Pedido'    ,'Inclusão' ,{|oSay| fVisuPed(cCabAlias,aRotina,3,oSay,cCabTable,oCabTable) })},"Inclusão" },;
-                         {"BMPALTERAR",{|| MsgRun('Alteração Pedido'   ,'Alteração',{|oSay| fVisuPed(cCabAlias,aRotina,4,oSay,cCabTable,oCabTable) })},"Alteração"},;
-                         {"BMPEXCLUIR",{|| MsgRun('Exclusão Pedido'    ,'Exclusão' ,{|oSay| fVisuPed(cCabAlias,aRotina,5,oSay,cCabTable,oCabTable) })},"Exclusão" },;
+                         {"BMPINCLUIR",{|| MsgRun('InclusÃ£o Pedido'    ,'InclusÃ£o' ,{|oSay| fVisuPed(cCabAlias,aRotina,3,oSay,cCabTable,oCabTable) })},"InclusÃ£o" },;
+                         {"BMPALTERAR",{|| MsgRun('AlteraÃ§Ã£o Pedido'   ,'AlteraÃ§Ã£o',{|oSay| fVisuPed(cCabAlias,aRotina,4,oSay,cCabTable,oCabTable) })},"AlteraÃ§Ã£o"},;
+                         {"BMPEXCLUIR",{|| MsgRun('ExclusÃ£o Pedido'    ,'ExclusÃ£o' ,{|oSay| fVisuPed(cCabAlias,aRotina,5,oSay,cCabTable,oCabTable) })},"ExclusÃ£o" },;
                          {"BMPEXCLUIR",{|| MsgRun('Boleto'             ,'Boleto'   ,{|oSay| Boleto(cCabAlias)                                      })},"Boleto"   }},,,,,.F.) CENTERED
 //MsgRun('Estornando Empenhos','Processo' ,{|oSay| fAtuEmp(oSay,cCabAlias,cIteAlias,lOk) })
 */
@@ -489,12 +462,12 @@ Local _lCancela    := FWIsInCallStack("fCanNotas")
 
 Default lOk := .T.
 
-//Quando for chamado pela previsão não é retirado empenho 
+//Quando for chamado pela previsÃ£o nÃ£o Ã© retirado empenho 
 If _lPrevFat
     Return .t.
 Endif
 
-_aPrevisao  := {}  //DAC Selecionar os registros que irão ser canceladoss conforme funcionalida fCanNotas
+_aPrevisao  := {}  //DAC Selecionar os registros que irÃ£o ser canceladoss conforme funcionalida fCanNotas
 cCamPed     := "C5_NUM|C5_TIPO|C5_CLIENTE|C5_LOJACLI|C5_LOJAENT|C5_CONDPAG"
 nOPc        := 4
 (cCabAlias)->(DbGoTop())
@@ -542,8 +515,8 @@ While (cCabAlias)->(!Eof())
 
         SC6->(DbSetOrder(1))        
         SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
-        //Caso esteja cancelando e esteja em Previsão tem que verificar se a Previsão esta faturada 
-        //Previsão quando não faturada e ou cancelada não pode estornar
+        //Caso esteja cancelando e esteja em PrevisÃ£o tem que verificar se a PrevisÃ£o esta faturada 
+        //PrevisÃ£o quando nÃ£o faturada e ou cancelada nÃ£o pode estornar
         If _lCancela .And. (cCabAlias)->(FieldPos("ZZN_STATUS")) > 0  .And. !Empty(SC6->C6_XCODPVR) .And. !(cCabAlias)->ZZN_STATUS $ "F_C"
             (cCabAlias)->(DbSkip())
             Loop   
@@ -605,7 +578,7 @@ While (cCabAlias)->(!Eof())
             SC6->(DbSetOrder(1))        
             SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
 
-            //Adiciono dados relativos a Prevsão caso seja Cancelamento // VERIFICAR QUANDO ELA FATURADA POIS PODE ESTAR EM QUALQUER STATUS NA PREVISAO DAC ***
+            //Adiciono dados relativos a PrevsÃ£o caso seja Cancelamento // VERIFICAR QUANDO ELA FATURADA POIS PODE ESTAR EM QUALQUER STATUS NA PREVISAO DAC ***
             If _lCancela .And. !Empty(SC6->C6_XCODPVR) 
                 Aadd ( _aPrevisao, { SC6->C6_XFILPVR, ;
                                     SC6->C6_XCODPVR, ;
@@ -626,11 +599,9 @@ While (cCabAlias)->(!Eof())
             cQuery += "    ,C6_CHASSI  = '" + Criavar("C6_CHASSI" ) + "' "
             cQuery += "    ,C6_NUMSERI = '" + Criavar("C6_NUMSERI") + "' "
             cQuery += " WHERE  C6_FILIAL = '"+FwxFilial("SC6")+"' "
-            cQuery += "    AND C6_NUM      = '" + (cCabAlias)->C6_NUM + "' " 
-            //Não tinha o item retirando o chassi de todo o SC6  na Previsão pode zerar um item com qtde se retirar tudo zera itens que não poderiam  DAC 14/06/2024
-            cQuery += "    AND C6_ITEM     = '" + (cCabAlias)->C6_ITEM + "' "  
+            cQuery += "    AND C6_NUM      = '" + (cCabAlias)->C6_NUM + "' "
             cQuery += "    AND C6_NOTA     = '        ' "
-            cQuery += "    AND C6_SERIE    = '   ' "  //DAC***
+            cQuery += "    AND C6_SERIE    = '   ' "
             cQuery += "    AND D_E_L_E_T_  = ' ' "
             nStatus := TCSqlExec(cQuery)
             
@@ -638,7 +609,7 @@ While (cCabAlias)->(!Eof())
                 MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Empenho SC6")
             EndIf
             
-            If (cCabAlias)->VRJ_STATUS $ "A|F"
+            If (cCabAlias)->STATUSPED $ "A|F"
         
                 SDC->(DbSetOrder(3))
         
@@ -667,6 +638,11 @@ While (cCabAlias)->(!Eof())
                     If (nStatus < 0)
                         MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Empenho VRK")
                     EndIf
+                    //GAP228 -Integração Faturamento Autoware  DAC 02/10/2024
+                    If SC6->(RecLock("SC6",.F.))
+                        SC6->C6_CHASSI =  CriaVar("C6_CHASSI" ) 
+                        SC6->(MsUnlock())
+                    Endif 
                 EndIf
             EndIf
         EndIf
@@ -674,7 +650,7 @@ While (cCabAlias)->(!Eof())
     (cCabAlias)->(DbSkip())
 EndDo
 
-//Caso após o cancelamento carregos dados referente a previsão cancelar a previzão
+//Caso apÃ³s o cancelamento carregos dados referente a previsÃ£o cancelar a previzÃ£o
 If Len(_aPrevisao) > 0 
     XZFAT9CPRV(_aPrevisao)
 Endif
@@ -708,7 +684,7 @@ Return(.T.)
 Programa.:            fVldCampo  
 Autor....:              
 Data.....:              
-Descricao / Objetivo:  Faz a Validação dos campos e atualizandu-os
+Descricao / Objetivo:  Faz a ValidaÃ§Ã£o dos campos e atualizandu-os
 =======================================================================================
 */
 
@@ -799,7 +775,7 @@ ElseIf Upper(Alltrim(cCampo)) $ "C6_XVLRPRD|C6_TES|C6_XVLRMVT|C6_OPER"
             cRetTES := MaTesInt(2,cConteudo, (cCabAlias)->C5_CLIENTE, (cCabAlias)->C5_LOJACLI,"C", (cCabAlias)->C6_PRODUTO)
             
             If Empty(Alltrim(cRetTES))
-                Help("",1,"Não foi encontrado TES para o tipo de operação informado.",,"Pedido não será alterado.",1,0)
+                Help("",1,"NÃ£o foi encontrado TES para o tipo de operaÃ§Ã£o informado.",,"Pedido nÃ£o serÃ¡ alterado.",1,0)
                 lRetorno := .F.
             Else
                 (cCabAlias)->(RecLock(cCabAlias),.F.)
@@ -973,25 +949,23 @@ Return(lRetorno)
 Programa.:              fVisuPed
 Autor....:              
 Data.....:              
-Descricao / Objetivo: Monta tela para Visualização dos Pedidos de Vendas  
+Descricao / Objetivo: Monta tela para VisualizaÃ§Ã£o dos Pedidos de Vendas  
 =======================================================================================
 */
 
 Static Function fVisuPed(cCabAlias,aRotina,nOpc,oSay,cCabTable,oCabTable)
 
-Local lRetorno      As Logical
-Local nRecno        As numeric
-Local nY            As numeric
-Local aArea         As Array
-Local aRotina2      As Array
-Local aRotina3      As Array
-Local aCabPed       As Array
-Local aItePed       As Array
-Local aLinha        As Array
-Local cCampo        As Character
-Local cQuery        As Character
-Local _cSelect      As Character  
-Local cQryAlias     As Character   
+Local lRetorno    As Logical
+Local nRecno      As numeric
+Local nY          As numeric
+Local aArea       As Array
+Local aRotina2    As Array
+Local aRotina3    As Array
+Local aCabPed     As Array
+Local aItePed     As Array
+Local aLinha      As Array
+Local cCampo      As Character
+Local cQuery      As Character
 
 Private cCadastro   As Character
 Private Inclui      As Logical
@@ -1002,7 +976,7 @@ Private l410Auto    As Logical
 
 nRecno    := (cCabAlias)->(Recno())
 lRetorno  := .F.
-cCadastro := "Atualização de Pedidos de Venda"
+cCadastro := "AtualizaÃ§Ã£o de Pedidos de Venda"
 aRotina2  := {{"Incluir","A410Barra",0,3},;//"Incluir"
 			  {"Alterar","A410Barra",0,4}} //"Alterar"
 
@@ -1017,8 +991,8 @@ aRotina := {{OemToAnsi("Pesquisar"       ),"AxPesqui"		                         
 			{OemToAnsi("Cod.barra"       ),aRotina2 		                                                  ,0,3,0 ,NIL},;//"Cod.barra"
 			{OemToAnsi("Copia"           ),"a410PCopia('SC5',SC5->(RecNo()),4)"	                              ,0,6,0 ,NIL},;//"Copia"
 			{OemToAnsi("Dev. Compras"    ),"A410Devol('SC5',SC5->(RecNo()),4)" 	                              ,0,3,0 ,.F.},;//"Dev. Compras"
-			{OemToAnsi("Prep.Doc.Saída"  ),"Ma410PvNfs"	                                                      ,0,2,0 ,NIL},;//"Prep.Doc.Saída"
-			{OemToAnsi("Tracker Contábil"),"CTBC662"                                                          ,0,7,0 ,Nil},;//"Tracker Contábil"
+			{OemToAnsi("Prep.Doc.SaÃ­da"  ),"Ma410PvNfs"	                                                      ,0,2,0 ,NIL},;//"Prep.Doc.SaÃ­da"
+			{OemToAnsi("Tracker ContÃ¡bil"),"CTBC662"                                                          ,0,7,0 ,Nil},;//"Tracker ContÃ¡bil"
 			{OemToAnsi("Legenda"         ),"A410Legend"	                                                      ,0,1,0 ,.F.}} //"Legenda"
 
 aArea := GetArea()
@@ -1039,46 +1013,38 @@ If cCabAlias == "SC5" .Or. SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
             cQuery := ""
             cQuery += " INSERT INTO " + cCabTable + " "
             cQuery += CrLf + " ("
-            /*
+
             For nY := 1 To Len(aCabCampos)
                 If  Upper(Alltrim(aCabCampos[nY])) <> "C9_SEQUEN"  .And. Upper(Alltrim(aCabCampos[nY])) <> "C9_NFISCAL" .And.;
                     Upper(Alltrim(aCabCampos[nY])) <> "C9_SERIENF" .And. Upper(Alltrim(aCabCampos[nY])) <> "C5_XMENSER"
+                    
                     cQuery += aCabCampos[nY]+","
+                
                 EndIf
             Next nY
-            cQuery += CrLf + " D_E_L_E_T_  R_E_C_N_O_) "
+
+            cQuery += CrLf + " D_E_L_E_T_,R_E_C_N_O_) "
             cQuery += CrLf + " SELECT '  ' C6_OK    , "
             cQuery += CrLf + " ' '         C6_STATUS, "
-            */
             
-            cQuery      += CrLf + " D_E_L_E_T_  R_E_C_N_O_) "
-
-            _cSelect    += CrLf + " SELECT '  ' C6_OK    , "
-            _cSelect    += CrLf + " ' '         C6_STATUS, "
-
             For nY := 1 To Len(aCabCampos)
-                //If  Upper(Alltrim(aCabCampos[nY])) <> "C6_OK"      .And. Upper(Alltrim(aCabCampos[nY])) <> "CC_STATUS"  .And.;
-                //    Upper(Alltrim(aCabCampos[nY])) <> "C9_SEQUEN"  .And. Upper(Alltrim(aCabCampos[nY])) <> "C9_NFISCAL" .And.;
-                //    Upper(Alltrim(aCabCampos[nY])) <> "C9_SERIENF" .And. Upper(Alltrim(aCabCampos[nY])) <> "C5_XMENSER"
-                If  !Upper(Alltrim(aCabCampos[nY])) $ "C6_OK!C5_XMENSER"  //DAC 08/07/2024
-                    cQryAlias := ""
+            
+                If  Upper(Alltrim(aCabCampos[nY])) <> "C6_OK"      .And. Upper(Alltrim(aCabCampos[nY])) <> "CC_STATUS"  .And.;
+                    Upper(Alltrim(aCabCampos[nY])) <> "C9_SEQUEN"  .And. Upper(Alltrim(aCabCampos[nY])) <> "C9_NFISCAL" .And.;
+                    Upper(Alltrim(aCabCampos[nY])) <> "C9_SERIENF" .And. Upper(Alltrim(aCabCampos[nY])) <> "C5_XMENSER"
+            
                     If Left(aCabCampos[nY],3) == "C6_" ; cQryAlias := "SC6." ; EndIf
                     If Left(aCabCampos[nY],3) == "C5_" ; cQryAlias := "SC5." ; EndIf
                     If Left(aCabCampos[nY],3) == "A1_" ; cQryAlias := "SA1." ; EndIf
                     If Left(aCabCampos[nY],3) == "B1_" ; cQryAlias := "SB1." ; EndIf
                     If Left(aCabCampos[nY],3) == "F4_" ; cQryAlias := "SF4." ; EndIf
-                    //Validar se localizou as tabelas pre definidas DAC 08/07/2024
-                    If !Empty(cQryAlias)
-                        cQuery += aCabCampos[nY]+","
             
-                        _cSelect +=  CrLf + " " + (cQryAlias+aCabCampos[nY])+", "
-                    Endif
+                    cQuery +=  CrLf + " " + (cQryAlias+aCabCampos[nY])+", "
+            
                 EndIf
             
             Next
             
-            cQuery += _cSelect
-
             cQuery += CrLf + "        ' ' AS D_E_L_E_T_  , "
             cQuery += CrLf + "        ROW_NUMBER() OVER (ORDER BY SC6.C6_FILIAL,SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC6.C6_PRODUTO)  R_E_C_N_O_  "
             cQuery += CrLf + " FROM "+RetSqlName("SC6")+" SC6 "
@@ -1130,7 +1096,7 @@ If cCabAlias == "SC5" .Or. SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
     
     ElseIf nOpc == 5
     
-        If FWAlertYesNo("O pedido está liberado para faturamento. Deseja continuar?", "Exclusão de Pedido")
+        If FWAlertYesNo("O pedido estÃ¡ liberado para faturamento. Deseja continuar?", "ExclusÃ£o de Pedido")
             //Begin Transaction
                 aCabPed := {}
 
@@ -1201,7 +1167,7 @@ Return()
 Programa.:            fAtuPeds  
 Autor....:              
 Data.....:              
-Descricao / Objetivo: Faz a Atrualização dos Pedidos de Vendas  
+Descricao / Objetivo: Faz a AtrualizaÃ§Ã£o dos Pedidos de Vendas  
 =======================================================================================
 */
 
@@ -1232,8 +1198,7 @@ Local _lPrevisao    As Logical
 Local _cCC_STATUS   As Character
 Local nLinhas       As Numeric
 
-Default _aPrevisao  := {}   //  ter um retorno da função GAP167  Previsao de Faturamento
-DeFault cNumPed     := ""
+Default _aPrevisao  := {}   //  ter um retorno da funÃ§Ã£o GAP167  Previsao de Faturamento
 
 Private lMsHelpAuto As Logical
 Private lMsErroAuto As Logical
@@ -1272,19 +1237,19 @@ nY          := 1
 nOPc        := 4
 lRetorno    := .T.
 nLinhas     := 1
+
 _lPrevisao := FWIsInCallStack("U_XZFT19EP") 
 
-//Se não existir variavel e ou a mesma for de previsão zerar
+//Se nÃ£o existir variavel e ou a mesma for de previsÃ£o zerar
 If Type("nLimChassi") <> "N" .Or. _lPrevisao
     nLimChassi := 0
 Endif
 
-//Não esta retornando a quantidade de chassi quando é zerada, ajustado no While DAC 16/05/2024
-//Atualização realizada pela Totvs, acrescentada na lógica DAC 14/05/2024
+//NÃ£o esta retornando a quantidade de chassi quando Ã© zerada, ajustado no While DAC 16/05/2024
+//AtualizaÃ§Ã£o realizada pela Totvs, acrescentada na lÃ³gica DAC 14/05/2024
 //if nLimChassi == 0
 //    nLimChassi := (cCabALias)->(LastRec())
 //EndIf
-
 
 If !Empty(Alltrim(cNumPed))
     (cCabAlias)->(DbSetFilter( { || C6_NUM == cNumPed }, 'C6_NUM == "'+cNumPed+'"' ) )
@@ -1292,35 +1257,25 @@ EndIf
 
 (cCabAlias)->(DbGoTop())
 
-//Atualização realizada pela Totvs, acrescentada na lógica DAC 14/05/2024
+//AtualizaÃ§Ã£o realizada pela Totvs, acrescentada na lÃ³gica DAC 14/05/2024
 //While (cCabAlias)->(!Eof())
 //While (cCabAlias)->(!Eof()) .and. nLinhas <= nLimChassi
-//Alterado DAC não estava atualizando a contagem de registro com LastRec 
+//Alterado DAC nÃ£o estava atualizando a contagem de registro com LastRec 
 While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
-    
+
     oSay:SetText("Preparando pedido: " + (cCabAlias)->C6_NUM+" ...")
    	ProcessMessage()
 
     if (cCabAlias)->LUPD <> "T"
         cNumSerie := ""
-
         SC5->(DbSetOrder(1))        
+        SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
+    
         SC6->(DbSetOrder(1))        
+        SC6->(DbSeek(xFilial("SC6") + (cCabAlias)->C6_NUM + (cCabAlias)->C6_ITEM))
 
-        //Caso exista referencia posiciono pelo numero do registro
-        If (cCabAlias)->(FieldPos("NREGSC6"))	 > 0		
-            SC6->(DbGoto((_cAliasPrev)->NREGSC6))
-            SC5->(DbSeek(FwXFilial("SC5")+SC6->C6_NUM))
-        Else 
-            SC5->(DbSeek(FwXFilial("SC5")+(cCabAlias)->C6_NUM))
-            SC6->(DbSeek(FwxFilial("SC6") + (cCabAlias)->C6_NUM + (cCabAlias)->C6_ITEM))
-        Endif    
-        //Caso exista referencia posiciono pelo numero do registro
-        If (cCabAlias)->(FieldPos("NREGVRK"))	 > 0		
-			VRK->(DbGoto((_cAliasPrev)->NREGVRK))
-        Endif    
         //GAP167  Previsao de Faturamento
-        //no caso de previsão não locar temporario
+        //no caso de previsÃ£o nÃ£o locar temporario
         If !_lPrevisao
             If !Empty(Alltrim(cNumPed)) .and. (cCabAlias)->LUPD == "T"
                 //Begin Transaction
@@ -1399,40 +1354,38 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
                 (cCabAlias)->C9_SEQUEN  := SDC->DC_SEQ
                 (cCabAlias)->(MsUnLock())
             EndIf
+            cQuery := ""
+            cQuery += CrLf + " UPDATE "+RetSqlName("VRK")                                                                           
+            cQuery += CrLf + " SET VRK_CHASSI = '"+SC6->C6_NUMSERI+"' "
+            cQuery += CrLf + " WHERE VRK_FILIAL = '"+xFilial("VRK")+"' "
+            cQuery += CrLf + " AND VRK_PEDIDO||VRK_ITEPED = (SELECT VRK.VRK_PEDIDO||VRK.VRK_ITEPED "
+            cQuery += CrLf + "                               FROM "+RetSqlName("VRJ")+" VRJ "
+            cQuery += CrLf + "                               INNER JOIN  " + RetSqlName("VRK") + " VRK " 
+            cQuery += CrLf + "                                      ON  VRK.VRK_FILIAL = '"+xFilial("VRK")+"' "
+            cQuery += CrLf + "                                      AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
+            cQuery += CrLf + "                                      AND VRK.D_E_L_E_T_ = VRJ.D_E_L_E_T_ "
+            cQuery += CrLf + "                                      AND VRK.VRK_ITEPED  = '" + StrZero(Val(Alltrim(SC6->C6_ITEM)),3)  +"' "
 
-            //Caso exista referencia posiciono pelo numero do registro
-            If (cCabAlias)->(FieldPos("NREGVRK")) > 0		
-			    VRK->(DbGoto((_cAliasPrev)->NREGVRK))
-                VRK->(RecLock("VRK",.F.))
-                VRK->VRK_CHASSI := SC6->C6_NUMSERI
-                VRK->(MsUnlock())
-            Else
+            cQuery += CrLf + "                               WHERE VRJ.VRJ_FILIAL  = '" + xFilial("VRJ") + "' "
+            cQuery += CrLf + "                                 AND VRJ.VRJ_CODCLI  = '" + SC5->C5_CLIENTE + "' "
+            cQuery += CrLf + "                                 AND VRJ.VRJ_LOJA    = '" + SC5->C5_LOJACLI + "' "
+            cQuery += CrLf + "                                 AND VRJ.VRJ_PEDCOM  = '" + SC6->C6_PEDCLI  + "' "
+            cQuery += CrLf + "                                 AND VRJ.D_E_L_E_T_  = ' ') "
+            nStatus := TCSqlExec(cQuery)
 
-                cQuery := ""
-                cQuery += CrLf + " UPDATE "+RetSqlName("VRK")                                                                           
-                cQuery += CrLf + " SET VRK_CHASSI = '"+SC6->C6_NUMSERI+"' "
-                cQuery += CrLf + " WHERE VRK_FILIAL = '"+xFilial("VRK")+"' "
-                cQuery += CrLf + "      AND VRK_PEDIDO||VRK_ITEPED = (SELECT VRK.VRK_PEDIDO||VRK.VRK_ITEPED "
-                cQuery += CrLf + "                               FROM "+RetSqlName("VRJ")+" VRJ "
-                cQuery += CrLf + "                               INNER JOIN  " + RetSqlName("VRK") + " VRK " 
-                cQuery += CrLf + "                                      ON  VRK.VRK_FILIAL = '"+xFilial("VRK")+"' "
-                cQuery += CrLf + "                                      AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
-                cQuery += CrLf + "                                      AND VRK.D_E_L_E_T_ = VRJ.D_E_L_E_T_ "
-                cQuery += CrLf + "                                      AND VRK.VRK_ITEPED  = '" + StrZero(Val(Alltrim(SC6->C6_ITEM)),3)  +"' "
-                cQuery += CrLf + "                               WHERE VRJ.VRJ_FILIAL  = '" + xFilial("VRJ") + "' "
-                cQuery += CrLf + "                                 AND VRJ.VRJ_CODCLI  = '" + SC5->C5_CLIENTE + "' "
-                cQuery += CrLf + "                                 AND VRJ.VRJ_LOJA    = '" + SC5->C5_LOJACLI + "' "
-                cQuery += CrLf + "                                 AND VRJ.VRJ_PEDCOM  = '" + SC6->C6_PEDCLI  + "' "
-                cQuery += CrLf + "                                 AND VRJ.D_E_L_E_T_  = ' ') "
-                nStatus := TCSqlExec(cQuery)
-
-                If (nStatus < 0)
-                    MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Chasi VRK")
-                EndIf
-            Endif
+            If (nStatus < 0)
+                MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Chasi VRK")
+            EndIf
+            //GAP228 -Integração Faturamento Autoware  DAC 02/10/2024
+            If Empty(SC6->C6_CHASSI) .And. SC6->(RecLock("SC6",.F.))
+                SC6->C6_CHASSI =  SC6->C6_NUMSERI 
+                SC6->(MsUnlock())
+            Endif 
+            
             (cCabAlias)->(DbSkip())
             Loop
         EndIf
+
         //GAP167  Previsao de Faturamento  DAC 16/05/2024
         // CARREGA DADOS DA QUERY
        	cQuery  := U_XZFT19CH(  (cCabAlias)->C6_PRODUTO,; 
@@ -1445,7 +1398,7 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
         If Select(cTmpAlias) <> 0 ; (cTmpAlias)->(DbCloseArea()) ; EndIf
        
         DbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cTmpAlias, .F., .T. )
-    
+
         If (cTmpAlias)->(!Eof())
     
             /*/
@@ -1470,22 +1423,16 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
             ************************************************
             /*/
             SC5->(DbSetOrder(1))        
-            SC6->(DbSetOrder(1))        
-            //Valido como previsão pois não criara novos registros
-            If _lPrevisao .And. (cCabAlias)->(FieldPos("NREGSC6"))	 > 0		
-                SC6->(DbGoto((_cAliasPrev)->NREGSC6))
-                SC5->(DbSeek(FwXFilial("SC5")+SC6->C6_NUM))
-            Else 
-                SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
-                SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
-            Endif
+            SC5->(DbSeek(xFilial("SC5")+(cCabAlias)->C6_NUM))
             If Empty(SC5->C5_STATUS)
                 RecLock("SC5",.F.)
-                SC5->C5_STATUS := "XX"
+                    SC5->C5_STATUS := "XX"
                 SC5->(MsUnlock())
             EndIf
 
-            //Atualizar  a operação 
+            SC6->(DbSetOrder(1))        
+            SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
+            //Atualizar  a operaÃ§Ã£o 
             If RecLock("SC6",.F.)
                 SC6->C6_QTDLIB  := 1
                 SC6->C6_LOTECTL := CriaVar("C6_LOTECTL")
@@ -1493,7 +1440,7 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
                 SC6->C6_NUMSERI := Alltrim((cTmpAlias)->VV1_CHASSI)
                 SC6->C6_CHASSI  := Alltrim((cTmpAlias)->VV1_CHASSI)
                 SC6->C6_LOCALIZ := Alltrim((cTmpAlias)->BF_LOCALIZ)
-                //Atualizar dados  referente  a cabeçalho neste caso tenho que testar pois em alguns casos não virão campos para esta atualização sendo uma subrotina aproveitada
+                //Atualizar dados  referente  a cabeÃ§alho neste caso tenho que testar pois em alguns casos nÃ£o virÃ£o campos para esta atualizaÃ§Ã£o sendo uma subrotina aproveitada
                 If (cCabAlias)->(FieldPos("VRK_CODMAR")) > 0
                     SC6->C6_XCODMAR	:= (cCabAlias)->VRK_CODMAR  
                 Endif     
@@ -1580,7 +1527,7 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
                                               +(cTmpAlias)->BF_LOCALIZ;
                                               +(cTmpAlias)->VV1_CHASSI))
 */        
-                /*  // Não executo esta query pois ja esta trazendo no select dados da VRK vonforme informado são os dados que são validos devido a chassis antigos não pegar na VV1
+                /*  // NÃ£o executo esta query pois ja esta trazendo no select dados da VRK vonforme informado sÃ£o os dados que sÃ£o validos devido a chassis antigos nÃ£o pegar na VV1
                     // incluido dados da VRK no Select para ja trazer na abertura do Browser DAC 31/05/2024
                 cQuery := ""
                 cQuery += CrLf + " SELECT  VV1.VV1_FILIAL          AS FILIAL   , "
@@ -1639,8 +1586,8 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
 
                 lLibPed  := .T.
                 //GAP167  Previsao de Faturamento
-                //no caso de previsão não locar temporario
-                //Tabela SCC não é gerada
+                //no caso de previsÃ£o nÃ£o locar temporario
+                //Tabela SCC nÃ£o Ã© gerada
                 If Empty(Alltrim(SC9->C9_BLCRED)) .And. Empty(Alltrim(SC9->C9_BLEST )) .And. Empty(Alltrim(SC9->C9_BLWMS ))
                                                     _cCC_STATUS  := "1"
                     ElseIf SC9->C9_BLCRED == "01" ; _cCC_STATUS  := "2"
@@ -1660,7 +1607,7 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
 
                 If ! _lPrevisao
                     If RecLock(cCabAlias,.F.)
-                        //Tabela SCC não é gerada 
+                        //Tabela SCC nÃ£o Ã© gerada 
                         If (cCabAlias)->(FieldPos(">CC_STATUS")) > 0
                             (cCabAlias)->CC_STATUS  := _cCC_STATUS
                         Endif    
@@ -1684,7 +1631,7 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
                             (cCabAlias)->C6_XDESSEG := (cCabAlias)->VVX_DESSEG  
                         Endif    
                         (cCabAlias)->C6_XFABMOD := (cCabAlias)->VRK_FABMOD  
-                        //NÃO SERA MAIS NECESSÁRIO CARREGAR ESTES DADOS JA ESTÃO NA QUERY INICIAL XZFT19QY DAC 31/05/2024
+                        //NÃƒO SERA MAIS NECESSÃRIO CARREGAR ESTES DADOS JA ESTÃƒO NA QUERY INICIAL XZFT19QY DAC 31/05/2024
                         //(cCabAlias)->C6_XCODMAR	:= (cTrbAlias)->MARCA      
                         //(cCabAlias)->C6_XDESMAR := (cTrbAlias)->DESCMAR 
                         //(cCabAlias)->C6_XCORINT	:= (cTrbAlias)->CORINT     
@@ -1698,14 +1645,14 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
                         (cCabAlias)->C6_XDGRMOD := ""                      
                         (cCabAlias)->C9_NFISCAL := CriaVar("C9_NFISCAL")
                         (cCabAlias)->C9_SERIENF := CriaVar("C9_SERIENF")
-                        If (cCabAlias)->(FieldPos("CC_STATUS")) > 0
+                        If (cCabAlias)->(FieldPos("VVX_DESSEG")) > 0
                             (cCabAlias)->CC_STATUS  := _cCC_STATUS
                         Endif    
                         (cCabAlias)->(MsUnLock())
                     Endif    
                 Endif 
                 /* DAC***
-                //Será valido ano fabri da VRK devido inconsistências de liberação Fabrica DAC/Reinaldo 31/05/2024 
+                //SerÃ¡ valido ano fabri da VRK devido inconsistÃªncias de liberaÃ§Ã£o Fabrica DAC/Reinaldo 31/05/2024 
                 SC6->(RecLock("SC6",.F.))
                     SC6->C6_XCODMAR	:= (cTrbAlias)->MARCA  
                     SC6->C6_XDESMAR	:= (cTrbAlias)->DESCMAR
@@ -1733,46 +1680,36 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
                     EndIf
                 SC9->(MsUnLock())
 
-                If (cCabAlias)->(FieldPos("NREGVRK")) > 0		
-			        VRK->(DbGoto((_cAliasPrev)->NREGVRK))
-                    VRK->(RecLock("VRK",.F.))
-                    VRK->VRK_CHASSI := (cTmpAlias)->VV1_CHASSI
-                    VRK->(MsUnlock())
-                    SC6->(RecLock("SC6",.F.))
-                    SC6->C6_CHASSI := (cTmpAlias)->VV1_CHASSI
-                    SC6->(MsUnlock())
-                    //verificar se não será necessário alterar SC6    
-                Else 
-                    cQuery := "" 
-                    cQuery +=  CrLf +  " UPDATE " + RetSqlName("VRK")
-                    cQuery +=  CrLf +  " SET VRK_CHASSI = '"+(cTmpAlias)->VV1_CHASSI+"' "
-                    cQuery +=  CrLf +  " WHERE VRK_FILIAL = '"+xFilial("VRK")+"' "
-                    cQuery +=  CrLf +  " AND VRK_PEDIDO||VRK_ITEPED = (SELECT VRK.VRK_PEDIDO||VRK.VRK_ITEPED "
-                    cQuery +=  CrLf +  "                               FROM "+RetSqlName("VRJ")+" VRJ "
-                    cQuery +=  CrLf +  "                               INNER JOIN " + RetSqlName("VRK") + " VRK"
-                    cQuery +=  CrLf +  "                                    ON  VRK.VRK_FILIAL = '" + xFilial("VRK") + "' "
-                    cQuery +=  CrLf +  "                                    AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
-                    cQuery +=  CrLf +  "                                    AND VRK.D_E_L_E_T_ = VRJ.D_E_L_E_T_ "
-                    cQuery +=  CrLf +  "                               WHERE VRJ.VRJ_FILIAL  = '" + xFilial("VRJ")  + "' "
-                    cQuery +=  CrLf +  "                                 AND VRJ.VRJ_CODCLI  = '" + SC5->C5_CLIENTE + "' "
-                    cQuery +=  CrLf +  "                                 AND VRJ.VRJ_LOJA    = '" + SC5->C5_LOJACLI + "' "
-                    cQuery +=  CrLf +  "                                 AND VRJ.VRJ_PEDCOM  = '" + SC6->C6_PEDCLI  + "' "
-                    cQuery +=  CrLf +  "                                 AND VRK.VRK_ITEPED  = '" + StrZero(Val(Alltrim(SC6->C6_ITEM)),3) + "' "
-                    cQuery +=  CrLf +  "                                 AND VRJ.D_E_L_E_T_  = ' ') "
-                    nStatus := TCSqlExec(cQuery)
+                cQuery := "" 
+                cQuery +=  CrLf +  " UPDATE " + RetSqlName("VRK")
+                cQuery +=  CrLf +  " SET VRK_CHASSI = '"+(cTmpAlias)->VV1_CHASSI+"' "
+                cQuery +=  CrLf +  " WHERE VRK_FILIAL = '"+xFilial("VRK")+"' "
+                cQuery +=  CrLf +  " AND VRK_PEDIDO||VRK_ITEPED = (SELECT VRK.VRK_PEDIDO||VRK.VRK_ITEPED "
+                cQuery +=  CrLf +  "                               FROM "+RetSqlName("VRJ")+" VRJ "
+                cQuery +=  CrLf +  "                               INNER JOIN " + RetSqlName("VRK") + " VRK"
+                cQuery +=  CrLf +  "                                    ON  VRK.VRK_FILIAL = '" + xFilial("VRK") + "' "
+                cQuery +=  CrLf +  "                                    AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
+                cQuery +=  CrLf +  "                                    AND VRK.D_E_L_E_T_ = VRJ.D_E_L_E_T_ "
+                cQuery +=  CrLf +  "                               WHERE VRJ.VRJ_FILIAL  = '" + xFilial("VRJ")  + "' "
+                cQuery +=  CrLf +  "                                 AND VRJ.VRJ_CODCLI  = '" + SC5->C5_CLIENTE + "' "
+                cQuery +=  CrLf +  "                                 AND VRJ.VRJ_LOJA    = '" + SC5->C5_LOJACLI + "' "
+                cQuery +=  CrLf +  "                                 AND VRJ.VRJ_PEDCOM  = '" + SC6->C6_PEDCLI  + "' "
+                cQuery +=  CrLf +  "                                 AND VRK.VRK_ITEPED  = '" + StrZero(Val(Alltrim(SC6->C6_ITEM)),3) + "' "
+                cQuery +=  CrLf +  "                                 AND VRJ.D_E_L_E_T_  = ' ') "
+                nStatus := TCSqlExec(cQuery)
 
-                    If (nStatus < 0)
-                        MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Chassi VRK")
-                    Else 
-                        SC6->(DbGoto(n_RecnoSc6))
-                        SC6->(RecLock("SC6",.F.))
-                        SC6->C6_CHASSI := (cTmpAlias)->VV1_CHASSI
-                        SC6->(MsUnlock())
-                    EndIf
-                Endif
+                If (nStatus < 0)
+                    MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Chassi VRK")
+                EndIf
+
+                //GAP228 -Integração Faturamento Autoware  DAC 02/10/2024
+                If Empty(SC6->C6_CHASSI) .And. SC6->(RecLock("SC6",.F.))
+                    SC6->C6_CHASSI =  (cTmpAlias)->VV1_CHASSI 
+                    SC6->(MsUnlock())
+                Endif 
                 DBCommitAll()
                 Aadd(_aPrevisao,n_RecnoSc6)
-                nLinhas ++      //	//Atualização realizada pela Totvs, acrescentada na lógica DAC 14/05/2024
+                nLinhas ++      //	//AtualizaÃ§Ã£o realizada pela Totvs, acrescentada na lÃ³gica DAC 14/05/2024
             //Else
                 //DisarmTransaction()
             EndIf
@@ -1787,7 +1724,7 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
                         SC6->C6_NUMSERI := CriaVar("C6_NUMSERI")
                         SC6->C6_CHASSI  := CriaVar("C6_CHASSI" )
                         SC6->C6_LOCALIZ := CriaVar("C6_LOCALIZ")
-                        //Não retirar informações do pedido de veiculos DAC 03/06/2024
+                        //NÃ£o retirar informaÃ§Ãµes do pedido de veiculos DAC 03/06/2024
                         //SC6->C6_XCODMAR := CriaVar("C6_XCODMAR")
                         //SC6->C6_XDESMAR	:= CriaVar("C6_XDESMAR")
                         //SC6->C6_XGRPMOD := CriaVar("C6_XGRPMOD")
@@ -1816,7 +1753,7 @@ While (cCabAlias)->(!Eof()) .and. If(nLimChassi > 0, nLinhas <= nLimChassi,.T.)
 EndDo
 
 //GAP167  Previsao de Faturamento
-//Não atualizar Browse quando for Previsão
+//NÃ£o atualizar Browse quando for PrevisÃ£o
 If !_lPrevisao
     SC6->(DbSetOrder(1))
     (cCabAlias)->(DbGoTop())
@@ -1832,7 +1769,7 @@ If !_lPrevisao
                 SC6->C6_NUMSERI := CriaVar("C6_NUMSERI")
                 SC6->C6_CHASSI  := CriaVar("C6_CHASSI" ) 
                 SC6->C6_LOCALIZ := CriaVar("C6_LOCALIZ") 
-                //Não retirar informações do pedido de veiculos DAC 03/06/2024
+                //NÃ£o retirar informaÃ§Ãµes do pedido de veiculos DAC 03/06/2024
                 //SC6->C6_XCODMAR := CriaVar("C6_XCODMAR")
                 //SC6->C6_XDESMAR	:= CriaVar("C6_XDESMAR")
                 //SC6->C6_XGRPMOD := CriaVar("C6_XGRPMOD")
@@ -1873,7 +1810,7 @@ If Type("oBrwCab") == "O"
     oBrwCab:Refresh()
     /*
     oBrwCab:GoTo(nAt)
-    oBrwCab:LineRefresh() //só refaz a linha
+    oBrwCab:LineRefresh() //sÃ³ refaz a linha
     oBrwCab:GoTop(.T.)
     oBrwCab:UpdateBrowse() //reconstroi tudo	
     oBrwCab:Refresh()
@@ -1948,7 +1885,7 @@ EndIf
 
 lContinua := Sx5NumNota(@cSerie,SuperGetMV("MV_TPNRNFS"),,,,@cSerieId,dDataBase ) // O parametro cSerieId deve ser passado para funcao Sx5NumNota afim de tratar a existencia ou nao do mesmo numero na funcao VldSx5Num do MATXFUNA.PRX
 //GAP179 Ajuste no frete do documento de carga DAC 20/05/2024
-_cTransp := AllTrim(SuperGetMV( "MV_FAT19TR" , ,"" ))   //Parâmetro para indicação código transportadora e tipo de Frete
+_cTransp := AllTrim(SuperGetMV( "MV_FAT19TR" , ,"" ))   //ParÃ¢metro para indicaÃ§Ã£o cÃ³digo transportadora e tipo de Frete
 
 (cCabAlias)->(DbGotop())
 While (cCabAlias)->(!Eof()) .And. lContinua
@@ -1963,7 +1900,7 @@ While (cCabAlias)->(!Eof()) .And. lContinua
             
             If SC6->(DbSeek(xFilial("SC6")+(cCabAlias)->C6_NUM+(cCabAlias)->C6_ITEM))
                 SC9->(DbSetOrder(1))
-                //Necessário montar consistencia para localizar C9_SEQUEN o mesmo também é compartilhado com a tabela SDC 
+                //NecessÃ¡rio montar consistencia para localizar C9_SEQUEN o mesmo tambÃ©m Ã© compartilhado com a tabela SDC 
                 If _lPrevFat
                     SDC->(DbSetOrder(3))  //DC_FILIAL+DC_PRODUTO+DC_LOCAL+DC_LOTECTL+DC_NUMLOTE+DC_LOCALIZ+DC_NUMSERI+DC_ORIGEM                                                                             
                     _cSeq := '01'
@@ -2018,7 +1955,7 @@ While (cCabAlias)->(!Eof()) .And. lContinua
      	                _aTransp := StrTokArr(_cTransp,";")
                         If Len(_aTransp) > 0
                             _cTransp := _aTransp[1]
-                            _cTpFre := If(Len(_aTransp) > 1,_aTransp[2], "C")  //Caso não localize trazer tipo de Frete como CIF  
+                            _cTpFre := If(Len(_aTransp) > 1,_aTransp[2], "C")  //Caso nÃ£o localize trazer tipo de Frete como CIF  
                             If SC5->(RecLock("SC5",.F.))
                                 SC5->C5_TRANSP :=  _cTransp
                                 SC5->C5_TPFRETE:=  _cTpFre
@@ -2028,7 +1965,7 @@ While (cCabAlias)->(!Eof()) .And. lContinua
                     Endif 
 	                /*
                     *****************************
-	                *'Gera nota fiscal de saída.'*
+	                *'Gera nota fiscal de saÃ­da.'*
 	                *****************************
                     */
 	                cNotaSer  := MAPVLNFS(aPVlNFs,cSerie,.F.,.F.,.T.,.F.,.F.,1,0,.T.,.F.,,,)
@@ -2045,7 +1982,7 @@ While (cCabAlias)->(!Eof()) .And. lContinua
                                             .And. SD2->D2_CLIENTE == SF2->F2_CLIENTE .And. SD2->D2_LOJA  == SF2->F2_LOJA
 
                             // GAP167  Previsao de Faturamento 
-                            //Guardo informações para atualizar  Previsao DAC 09/05/2024
+                            //Guardo informaÃ§Ãµes para atualizar  Previsao DAC 09/05/2024
                             If _lPrevFat
                                 Aadd(_aPrev,{   SC6->C6_XFILPVR, ;  //01
                                                 SC6->C6_XCODPVR, ;  //02
@@ -2082,13 +2019,12 @@ While (cCabAlias)->(!Eof()) .And. lContinua
                                         cQuery += "    AND VRJ_PEDCOM = '" + (cCabAlias)->C6_PEDCLI + "'"
                                         cQuery += "    AND D_E_L_E_T_ = ' '"
                                         nStatus := TCSqlExec(cQuery)
-
                                         If (nStatus < 0)
                                             MsgStop("TCSQLError() " + TCSQLError(), "Erro atualizacao VRJ")                                    
                                         EndIf
                            
                                         cQuery := "  UPDATE " + RetSqlName("VRK") + " VRK "
-                                        cQuery += "     SET VRK.VRK_ITETRA = '01', "
+                                        cQuery += "     SET VRK.VRK_ITETRA = '01', "   //Item do Atendimento      
                                         cQuery += "         VRK.VRK_NUMTRA = 'F" + SD2->D2_DOC + "' "
                                         cQuery += " WHERE   VRK.VRK_CHASSI = '"  + SDB->DB_NUMSERI + "' "
                                         cQuery += "     AND VRK.VRK_ITETRA = ' ' "
@@ -2096,11 +2032,21 @@ While (cCabAlias)->(!Eof()) .And. lContinua
                                         cQuery += "                             FROM " + RetSqlName("VRJ") + " VRJ "
                                         cQuery += "                             WHERE  VRJ.VRJ_PEDCOM = '" + (cCabAlias)->C6_PEDCLI + "')"
                                         nStatus := TCSqlExec(cQuery)
-
                                         If (nStatus < 0)
                                             MsgStop("TCSQLError() " + TCSQLError(), "Erro atualizacao VRK")                                    
                                         EndIf
                                         //U_CMVAUT04((cCabAlias)->VRJ_PEDIDO)
+
+                                        //GAP228 -Integração Faturamento Autoware DAC 02/10/2024
+                                        cQuery := "  UPDATE " + RetSqlName("VRK") + " VRK "
+                                        cQuery += "     SET SC6.C6_XNUMTRA  = 'F" + SD2->D2_DOC + "' "
+                                        cQuery += " WHERE   SC6.C6_CHASSI   = '"  + SDB->DB_NUMSERI + "' "
+                                        cQuery += "     AND SC6.C6_ITETRA   = ' ' "
+                                        cQuery += "     AND SC6.C6_PEDIDO   = '" + (cCabAlias)->C6_PEDCLI + "' "
+                                        nStatus := TCSqlExec(cQuery)
+                                        If (nStatus < 0)
+                                            MsgStop("TCSQLError() " + TCSQLError(), "Erro atualizacao C6_XNUMTRA")                                    
+                                        EndIf
                                     EndIf
                                 EndIf
                             EndIf
@@ -2136,7 +2082,7 @@ Return(Nil)
 Programa.:             NotaDados 
 Autor....:              
 Data.....:              
-Descricao / Objetivo: Monta Tela de Confirmação da Notas Geradas
+Descricao / Objetivo: Monta Tela de ConfirmaÃ§Ã£o da Notas Geradas
 =======================================================================================
 */
 
@@ -2201,7 +2147,7 @@ lMarkAll    := .T.
 fwfreeobj(oListDocs)
 oListDocs := Nil
 
-@ aSizeAut[2],aSizeAut[1] LISTBOX oListDocs FIELDS HEADER "Serie","Numero","Data Emissão","Cliente","Loja","Nome"/*,"Valor Bruto","Valor Produtos"*/  SIZE aSizeAut[3],aSizeAut[4]-21.5 PIXEL OF oGerNota
+@ aSizeAut[2],aSizeAut[1] LISTBOX oListDocs FIELDS HEADER "Serie","Numero","Data EmissÃ£o","Cliente","Loja","Nome"/*,"Valor Bruto","Valor Produtos"*/  SIZE aSizeAut[3],aSizeAut[4]-21.5 PIXEL OF oGerNota
 
 oListDocs:SetArray( aDadosDoc )
 oListDocs:bLine := {||{aDadosDoc[oListDocs:nAt,1],;
@@ -2222,7 +2168,7 @@ Return
 Programa.:              fCanNotas
 Autor....:              
 Data.....:              
-Descricao / Objetivo:  Chama a Função de Exclusão de Documento de Saida e realiza o 
+Descricao / Objetivo:  Chama a FunÃ§Ã£o de ExclusÃ£o de Documento de Saida e realiza o 
                         Estrono dos Chassis
 =======================================================================================
 */
@@ -2241,7 +2187,7 @@ Return(Nil)
 Programa.:              fDevNotas
 Autor....:              
 Data.....:              
-Descricao / Objetivo: Geração das notas de Devolução  
+Descricao / Objetivo: GeraÃ§Ã£o das notas de DevoluÃ§Ã£o  
 =======================================================================================
 */
 
@@ -2258,12 +2204,12 @@ Return U_ZFATF020("SF1",1,3)
 Programa.:             FMark 
 Autor....:              
 Data.....:              
-Descricao / Objetivo: Executa a gravação do retorno da Consulta Específica.
+Descricao / Objetivo: Executa a gravaÃ§Ã£o do retorno da Consulta EspecÃ­fica.
 
 @Param...:	oBrowse     - Objeto da Browse
-			cReadVar	- Campo de retorno da Consulta Específica
-			cChave		- Campo(s) a serem gravados no retorno da Consulta Específica
-			lMult		- Indica se a tela permição selec de múltiplos registros
+			cReadVar	- Campo de retorno da Consulta EspecÃ­fica
+			cChave		- Campo(s) a serem gravados no retorno da Consulta EspecÃ­fica
+			lMult		- Indica se a tela permiÃ§Ã£o selec de mÃºltiplos registros
 
 =======================================================================================
 */
@@ -2278,7 +2224,7 @@ Local _lPrevFat := FWIsInCallStack("U_XZFT19FT")
 
 nRecno := (cAlias)->(Recno()) 
 //GAP167  Previsao de Faturamento
-//Somente deixar marcar e desmarcar caso não seja previsão
+//Somente deixar marcar e desmarcar caso nÃ£o seja previsÃ£o
 If !_lPrevFat
     If RecLock(cAlias, .F. )
         (cAlias)->C6_OK := Iif( (cAlias)->C6_OK == cMark, "  ", cMark )
@@ -2338,8 +2284,8 @@ Return
 Programa.:              FMarkAll
 Autor....:              
 Data.....:              
-Descricao / Objetivo:  Inverte a indicação de seleção de todos registros do Browse.
-@Param...:		       oBrowse	->	Objeto contendo campo de seleção
+Descricao / Objetivo:  Inverte a indicaÃ§Ã£o de seleÃ§Ã£o de todos registros do Browse.
+@Param...:		       oBrowse	->	Objeto contendo campo de seleÃ§Ã£o
 =======================================================================================
 */
 
@@ -2351,7 +2297,7 @@ Local nRecno	as numeric
 Local _lPrevFat := FWIsInCallStack("U_XZFT19FT") 
 
 //GAP167  Previsao de Faturamento
-//Somente deixar marcar e desmarcar caso não seja
+//Somente deixar marcar e desmarcar caso nÃ£o seja
 If !_lPrevFat
     Return Nil
 Endif
@@ -2420,7 +2366,7 @@ Return()
 Programa.:             fResFat 
 Autor....:              
 Data.....:              
-Descricao / Objetivo:  Função não utilizada 
+Descricao / Objetivo:  FunÃ§Ã£o nÃ£o utilizada 
 =======================================================================================
 */
 
@@ -2468,7 +2414,7 @@ Return
 Programa.:             Boleto 
 Autor....:              
 Data.....:              
-Descricao / Objetivo: Geração de Boletos  
+Descricao / Objetivo: GeraÃ§Ã£o de Boletos  
 =======================================================================================
 */
 
@@ -2491,7 +2437,7 @@ If SE1->(DbSeek(xFilial("SE1") + "PVM" + (cCabAlias)->C6_NUM))
 	EndIf
 
 Else
-	Alert("Não Existe Titulo para esse Pedido ")
+	Alert("NÃ£o Existe Titulo para esse Pedido ")
 EndIf
 
 RestArea(aAreaSE1)
@@ -2505,7 +2451,7 @@ Return
 Programa.:              ValidPerg
 Autor....:              
 Data.....:              
-Descricao / Objetivo:  Cria as Perguntas para geração de boletos 
+Descricao / Objetivo:  Cria as Perguntas para geraÃ§Ã£o de boletos 
 =======================================================================================
 */
 
@@ -2542,156 +2488,6 @@ Return()
 
 /*
 =======================================================================================
-Programa.:              AtuTbPrc
-Autor....:              
-Data.....:              
-Descricao / Objetivo: Função não utilizada  
-=======================================================================================
-*/
-
-Static Function AtuTbPrc()
-
-Private cPerg     := "ZVEIF004"
-
-// Cria as perguntas em SX1
-Criaperg()
-	
-// Monta tela de paramentos para usuario, se cancelar sair
-If !Pergunte(cPerg,.T.)
-   Return
-End    
-    
-MsAguarde({|| fBuscPed()}, "Aguarde...", "Selecionando os Pedidos em Abertos...")
-
-Return(.T.)
-
-/*
-=======================================================================================
-Programa.:              fBuscPed
-Autor....:              
-Data.....:              
-Descricao / Objetivo: Busca Pedido em aberto   
-=======================================================================================
-*/
-
-Static Function fBuscPed()
-
-Local cQuery     := ""
-Local cQry       := ""
-Local lRet       := .T.
-Local nTotal     := 0
-Local nAtual     := 0
-Local aDados     := {}
-Local cPedidos   := GetNextAlias()
-Local cQtPed     := GetNextAlias()
-Private cErro    := ""
-    
-cQry := CrLf + " SELECT * "
-cQry += CrLf + " FROM "+RetSQLName("VRJ") + " VRJ "
-cQry += CrLf + "    WHERE   VRJ.VRJ_FILIAL  = '" + xFilial("VRJ") + "' "
-cQry += CrLf + "        AND VRJ.VRJ_STATUS  = 'A' "
-cQry += CrLf + "        AND VRJ_DATDIG      >= '"  + DTOS(MV_PAR01) + "' AND VRJ_DATDIG <= '"  + DTOS(MV_PAR02) + "'"
-cQry += CrLf + "        AND VRJ.D_E_L_E_T_  = ' ' "
-
-cQry := ChangeQuery(cQry)
-
-If Select(cQtPed) > 0 ; (cQtPed)->(DbCloseArea()) ; EndIf
-DbUseArea(.T.,"TOPCONN",TCGENQRY(,,cQry),cQtPed,.T.,.T.)                  
-If Select(cQtPed) > 0 ; Count To nTotal           ; EndIf
-
-cQuery :=  CrLf + " SELECT  C6_FILIAL       FILIAL  ,"
-cQuery +=  CrLf + "         C6_PEDCLI       PEDCOM  ,"
-cQuery +=  CrLf + "         C5_CONDPAG      FORPAG  ,"
-cQuery +=  CrLf + "         C5_CLIENTE      CODCLI  ,"
-cQuery +=  CrLf + "         C5_LOJACLI      LOJA    ,"
-cQuery +=  CrLf + "         VRJ_DATDIG      DATDIG  ,"
-cQuery +=  CrLf + "         C5_NATUREZ      NATURE  ,"
-cQuery +=  CrLf + "         VRJ_STATUS      STATUS  ,"
-cQuery +=  CrLf + "         C6_NUM          PEDIDO  ,"
-cQuery +=  CrLf + "         C6_ITEM         ITEPED  ,"
-cQuery +=  CrLf + "         C6_XMODVEI      MODVEI  ,"
-cQuery +=  CrLf + "         SC6.R_E_C_N_O_  RECNO   ,"
-cQuery +=  CrLf + "         C6_OPER         OPER    ,"
-cQuery +=  CrLf + "         C6_XSEGMOD      SEGMOD  ,"
-cQuery +=  CrLf + "         C6_XFABMOD      FABMOD  ,"
-cQuery +=  CrLf + "         C6_XCOREXT      COREXT  ,"
-cQuery +=  CrLf + "         C6_XCORINT      CORINT  ,"
-cQuery +=  CrLf + "         C6_CHASSI       CHASSI  ,"
-cQuery +=  CrLf + "         C6_XCODMAR      CODMAR  ,"
-cQuery +=  CrLf + "         C6_XPRCTAB      VALTAB  ,"
-cQuery +=  CrLf + "         C6_TES          TES     ,"
-cQuery +=  CrLf + "         C6_XVLRVDA      VALVDA  ,"
-cQuery +=  CrLf + "         C6_XVLRPRD      VALPRE  ,"
-cQuery +=  CrLf + "         C6_PRCVEN       VALMOV  ,"
-cQuery +=  CrLf + "         C6_XBASST       XBASST  ,"
-cQuery +=  CrLf + "         UTL_RAW.CAST_TO_VARCHAR2(dbms_lob.substr(C5_XMENSER, 2000, 1)) OBSPED  "
-cQuery +=  CrLf + " FROM " + RetSQLName("SC6") + " SC6 "
-
-cQuery +=  CrLf + "     INNER JOIN " + RetSQLName("SC5") + " SC5 "
-cQuery +=  CrLf + "         ON  SC5.C5_FILIAL  = SC6.C6_FILIAL "
-cQuery +=  CrLf + "         AND SC5.C5_NUM     = SC6.C6_NUM    "
-cQuery +=  CrLf + "         AND SC5.D_E_L_E_T_ = ' ' "
-
-cQuery +=  CrLf + " WHERE  SC6.C6_FILIAL  = '" + xFilial("SC6") + "' "
-cQuery +=  CrLf + "     AND SC6.C6_QTDEMP  = 0             "
-cQuery +=  CrLf + "     AND SC6.C6_NOTA    = ' '           "
-cQuery +=  CrLf + "     AND SC6.C6_QTDENT < SC6.C6_QTDVEN  "
-cQuery +=  CrLf + "     AND SC6.C6_BLQ    IN(' ','N')      "
-cQuery +=  CrLf + "     AND SC6.C6_ENTREG BETWEEN '" + Dtos(MV_PAR01) + "' AND '" + Dtos(MV_PAR02) + "'"
-cQuery +=  CrLf + "     AND SC6.D_E_L_E_T_ = ' ' "
-cQuery +=  CrLf + " ORDER BY SC6.C6_NUM,SC6.C6_ITEM "
-
-cQuery := ChangeQuery(cQuery)
-
-DbUseArea(.T.,"TOPCONN",TCGENQRY(,,cQuery),cPedidos,.T.,.T.)
-If Select(cPedidos) > 0
-
-    ProcRegua(nTotal)
-    (cPedidos)->(DbGoTop())
-
-    While !(cPedidos)->(EOF())
-        aDados  := {}
-        cPed    := (cPedidos)->PEDIDO
-        nAtual  ++
-
-        While !(cPedidos)->(Eof()) .And. (cPedidos)->PEDIDO == cPed
-            MsProcTxt("Atualizando Pedidos: " + cValToChar(nAtual) + " de " + cValToChar(nTotal) + "  Pedido:" + cPed  )
-    
-            //Busca preço da tabela
-            nPrec     := (cPedidos)->VALTAB
-            _nXBasst  := (cPedidos)->XBASST
-            nPrec     := BuscaTab( (cPedidos)->FILIAL , (cPedidos)->CODMAR , (cPedidos)->MODVEI , (cPedidos)->SEGMOD , (cPedidos)->FABMOD ) 
-            _nXBasst  := BuscaSt( (cPedidos)->FILIAL  , (cPedidos)->CODMAR , (cPedidos)->MODVEI , (cPedidos)->SEGMOD , (cPedidos)->FABMOD ) 
-
-            Aadd(aDados,{  (cPedidos)->FILIAL , (cPedidos)->PEDIDO , (cPedidos)->ITEPED , nPrec, nPrec, _nXBasst, (cPedidos)->TES , (cPedidos)->OPER })
-
-            (cPedidos)->(DbSkip())
-        EndDo
-
-        If !AtualPed( aDados )
-            MsgInfo("Pedidos  " + cPed +  "  Não Atualizado!", "Atualiza Preço Tabela")
-            MsgInfo(cErro)
-            cErro := " "
-        EndIf
-
-        If !AtuXBAS( aDados )
-            MsgInfo("Pedidos  " + cPed +  "  Não Atualizado!", "Atualiza Preço Tabela")
-            MsgInfo(cErro)
-            cErro := " "
-        EndIf
-    EndDo
-
-    (cPedidos)->(DbCloseArea())
-    MsgInfo("Pedidos  Atualizados com Sucesso!", "Atualiza Preço Tabela") 
-Else
-    lRet := .F. 
-    MsgAlert("Não Existem Pedidos em Abertos para Atualizar!", "Atualiza Preço Tabela")
-EndIf
-
-Return lRet
-
-/*
-=======================================================================================
 Programa.:             AtualPed 
 Autor....:              
 Data.....:              
@@ -2711,7 +2507,7 @@ ProcRegua(Len(aCampos))
 DbSelectArea("VRK")
 VRK->(DbSetOrder(1))
     
-oModel:SetOperation( 4 )  //Alteração
+oModel:SetOperation( 4 )  //AlteraÃ§Ã£o
 
 For i:=1 to Len(aCampos)
 
@@ -2755,20 +2551,20 @@ For i:=1 to Len(aCampos)
     
             If !lRet
                 aErro := oModel:GetErrorMessage()
-                cErro +=  "Id do formulário de origem:" + ' [' + AllToChar( aErro[1]  ) + ']'+CRLF 
+                cErro +=  "Id do formulÃ¡rio de origem:" + ' [' + AllToChar( aErro[1]  ) + ']'+CRLF 
                 cErro +=  "Id do campo de origem:     " + ' [' + AllToChar( aErro[2]  ) + ']'+CRLF
-                cErro +=  "Id do formulário de erro:  " + ' [' + AllToChar( aErro[3]  ) + ']'+CRLF
+                cErro +=  "Id do formulÃ¡rio de erro:  " + ' [' + AllToChar( aErro[3]  ) + ']'+CRLF
                 cErro +=  "Id do campo de erro:       " + ' [' + AllToChar( aErro[4]  ) + ']'+CRLF
                 cErro +=  "Id do erro:                " + ' [' + AllToChar( aErro[5]  ) + ']'+CRLF
                 cErro +=  "Mensagem do erro:          " + ' [' + AllToChar( aErro[6]  ) + ']'+CRLF
-                cErro +=  "Mensagem da solução:       " + ' [' + AllToChar( aErro[7]  ) + ']'+CRLF
+                cErro +=  "Mensagem da soluÃ§Ã£o:       " + ' [' + AllToChar( aErro[7]  ) + ']'+CRLF
                 cErro +=  "Valor atribuido:           " + ' [' + AllToChar( aErro[8]  ) + ']'+CRLF
                 cErro +=  "Valor anterior:            " + ' [' + AllToChar( aErro[9]  ) + ']'+CRLF
                 cErro += "Filial: " + aCampos[i][1] + " PEDIDO: " + aCampos[i][2] + " ITEM " + aCampos[i][3]  + CRLF
             Endif
             oModel:DeActivate()
         Else
-            Conout( "não encontrados as linhas do Pedido: " + "Filial: " + aCampos[i][1] + " Pedido: " + aCampos[i][2] + " Item " + aCampos[i][3] )
+            Conout( "nÃ£o encontrados as linhas do Pedido: " + "Filial: " + aCampos[i][1] + " Pedido: " + aCampos[i][2] + " Item " + aCampos[i][3] )
             lRet := .F.
         EndIf
     EndIf
@@ -2781,7 +2577,7 @@ Return lRet
 Programa.:              AtuXBAS
 Autor....:              CAOA - Sandro Ferreira
 Data.....:              11/02/2022
-Descricao / Objetivo:   Atualiza os Pedidos Selecionados -  Automatica preço de Venda
+Descricao / Objetivo:   Atualiza os Pedidos Selecionados -  Automatica preÃ§o de Venda
 ===================================================================================== 
 */
 
@@ -2797,7 +2593,7 @@ ProcRegua(Len(aCampos))
 DbSelectArea("VRK")
 VRK->(DbSetOrder(1))
     
-oModel:SetOperation( 4 )  //Alteração
+oModel:SetOperation( 4 )  //AlteraÃ§Ã£o
 For i:=1 to Len(aCampos)
     dbSelectArea( 'VRJ' )
     VRJ->( dbSetOrder(1) )
@@ -2817,20 +2613,20 @@ For i:=1 to Len(aCampos)
             EndIf
             If !lRet
                 aErro := oModel:GetErrorMessage()
-                cErro +=  "Id do formulário de origem:" + ' [' + AllToChar( aErro[1]  ) + ']'+CRLF 
+                cErro +=  "Id do formulÃ¡rio de origem:" + ' [' + AllToChar( aErro[1]  ) + ']'+CRLF 
                 cErro +=  "Id do campo de origem:     " + ' [' + AllToChar( aErro[2]  ) + ']'+CRLF
-                cErro +=  "Id do formulário de erro:  " + ' [' + AllToChar( aErro[3]  ) + ']'+CRLF
+                cErro +=  "Id do formulÃ¡rio de erro:  " + ' [' + AllToChar( aErro[3]  ) + ']'+CRLF
                 cErro +=  "Id do campo de erro:       " + ' [' + AllToChar( aErro[4]  ) + ']'+CRLF
                 cErro +=  "Id do erro:                " + ' [' + AllToChar( aErro[5]  ) + ']'+CRLF
                 cErro +=  "Mensagem do erro:          " + ' [' + AllToChar( aErro[6]  ) + ']'+CRLF
-                cErro +=  "Mensagem da solução:       " + ' [' + AllToChar( aErro[7]  ) + ']'+CRLF
+                cErro +=  "Mensagem da soluÃ§Ã£o:       " + ' [' + AllToChar( aErro[7]  ) + ']'+CRLF
                 cErro +=  "Valor atribuido:           " + ' [' + AllToChar( aErro[8]  ) + ']'+CRLF
                 cErro +=  "Valor anterior:            " + ' [' + AllToChar( aErro[9]  ) + ']'+CRLF
                 cErro += "Filial: " + aCampos[i][1] + " PEDIDO: " + aCampos[i][2] + " ITEM " + aCampos[i][3]  + CRLF
             Endif
             oModel:DeActivate()
         Else
-            Conout( "não encontrados as linhas do Pedido: " + "Filial: " + aCampos[i][1] + " Pedido: " + aCampos[i][2] + " Item " + aCampos[i][3] )
+            Conout( "nÃ£o encontrados as linhas do Pedido: " + "Filial: " + aCampos[i][1] + " Pedido: " + aCampos[i][2] + " Item " + aCampos[i][3] )
             lRet := .F.
         EndIf
     EndIf
@@ -2840,10 +2636,10 @@ Return lRet
 
 /* 
 =====================================================================================
-Função...:              BuscaTab
+FunÃ§Ã£o...:              BuscaTab
 Autor....:              CAOA - Sandro Ferreira
 Data.....:              11/02/2022
-Descricao / Objetivo:   Busca os preços da tabela de preço de Venda
+Descricao / Objetivo:   Busca os preÃ§os da tabela de preÃ§o de Venda
 ===================================================================================== 
 */
 
@@ -2881,10 +2677,10 @@ Return _nPrecoab
 
 /* 
 =====================================================================================
-Função...:              BuscaSt
+FunÃ§Ã£o...:              BuscaSt
 Autor....:              CAOA - Sandro Ferreira
 Data.....:              11/02/2022
-Descricao / Objetivo:   Busca os preços da tabela de preço de Venda
+Descricao / Objetivo:   Busca os preÃ§os da tabela de preÃ§o de Venda
 ===================================================================================== 
 */
 
@@ -2926,7 +2722,7 @@ Return _nXBasst
 Programa.:             Criaperg 
 Autor....:              
 Data.....:              
-Descricao / Objetivo:   Cria grupo de perguntas, caso não exista.
+Descricao / Objetivo:   Cria grupo de perguntas, caso nÃ£o exista.
 =======================================================================================
 */
 
@@ -2938,8 +2734,8 @@ Static Function Criaperg()
 	Local nJ 		:= 0
 	Local aReg 		:= {}
 	
-	aAdd(aReg,{cPerg,"01","Da Data de Digitação      ","mv_ch1","D", 30,0,0,"G","","mv_par01","","","","","","","","","","","","","","","SW9_1"})
-	aAdd(aReg,{cPerg,"02","Até Data de Digitação     ","mv_ch2","D", 30,0,0,"G","(mv_par02>=mv_par01)","mv_par02","","","","","","","","","","","","","","","SW9_1"})
+	aAdd(aReg,{cPerg,"01","Da Data de DigitaÃ§Ã£o      ","mv_ch1","D", 30,0,0,"G","","mv_par01","","","","","","","","","","","","","","","SW9_1"})
+	aAdd(aReg,{cPerg,"02","AtÃ© Data de DigitaÃ§Ã£o     ","mv_ch2","D", 30,0,0,"G","(mv_par02>=mv_par01)","mv_par02","","","","","","","","","","","","","","","SW9_1"})
 
 	aAdd(aReg,{"X1_GRUPO","X1_ORDEM","X1_PERGUNT","X1_VARIAVL","X1_TIPO","X1_TAMANHO","X1_DECIMAL","X1_PRESEL","X1_GSC","X1_VALID","X1_VAR01","X1_DEF01","X1_CNT01","X1_VAR02","X1_DEF02","X1_CNT02","X1_VAR03","X1_DEF03","X1_CNT03","X1_VAR04","X1_DEF04","X1_CNT04","X1_VAR05","X1_DEF05","X1_CNT05","X1_F3","X1_PYME","X1_GRPSXG","X1_HELP","X1_PICTURE"})
 	
@@ -3008,7 +2804,7 @@ Descricao / Objetivo: Calculo Reverso
 
 Static Function CalcRev(nValorPre,cCabAlias)
 
-Local nVlrRet	:= nValorPre      //Valor Total vindo da tabela de preço
+Local nVlrRet	:= nValorPre      //Valor Total vindo da tabela de preÃ§o
 Local nAlqIPI	:= 0
 Local nAlqIcmSt	:= 0
 Local nAlqOpIcm	:= 0
@@ -3024,7 +2820,7 @@ Local nAux1		:= 0
 Local nAux2		:= 0
 Local nAux3		:= 0
 Local lSuframa	:= .F.
-Local nPercZFre	:= 0.01 // Tratar Parâmetro
+Local nPercZFre	:= 0.01 // Tratar ParÃ¢metro
 Local nVlrDesFr	:= 0
 Local nVlrUnit	:= 0
 Local aArea		:= {SA1->(GetArea()),GetArea()}	
@@ -3033,23 +2829,23 @@ Local nPerComs	:= 0
 Local nValComs	:= 0
 Local cTESTSD	:= SuperGetMV("CMV_TESTSD",.F.,"")
 Local aExcecao	:= {}
-Local cGrupo1	:= GetMv("MV_XVEI011",,"000003"	) // grupo que nao pode ter a variavel nAux3 calculada no calculo reverso. OBS: se precisar incluir mais grupos, criar outros parametros, não inserir o grupo neste mesmo parametro, para evitar cruzamento de logicas entre grupos X marcas, deixando o cruzamento exponencial e errado
-Local cMarca1	:= GetMv("MV_XVEI012",,"HYU"	) // marca que nao pode ter a variavel nAux3 calculada no calculo reverso. OBS: se precisar incluir mais marcas, criar outros parametros, não inserir a marca neste mesmo parametro, para evitar cruzamento de logicas entre grupos X marcas, deixando o cruzamento exponencial e errado
+Local cGrupo1	:= GetMv("MV_XVEI011",,"000003"	) // grupo que nao pode ter a variavel nAux3 calculada no calculo reverso. OBS: se precisar incluir mais grupos, criar outros parametros, nÃ£o inserir o grupo neste mesmo parametro, para evitar cruzamento de logicas entre grupos X marcas, deixando o cruzamento exponencial e errado
+Local cMarca1	:= GetMv("MV_XVEI012",,"HYU"	) // marca que nao pode ter a variavel nAux3 calculada no calculo reverso. OBS: se precisar incluir mais marcas, criar outros parametros, nÃ£o inserir a marca neste mesmo parametro, para evitar cruzamento de logicas entre grupos X marcas, deixando o cruzamento exponencial e errado
 Local cGrupo2	:= GetMv("MV_XVEI014",,"000003"	) // venda de caminhao HD80, base icms st deve estar zerada
 Local cMarca2	:= GetMv("MV_XVEI015",,"HYU"	) // venda de caminhao HD80, base icms st deve estar zerada
 Local lPassa	:= .T.
 //Local oModel	:= FWModelActive()
 Local nY		:= 1
 
-//Variáveis para cálculo do Zona Franca
-Local nVlrNormal	:= 0	//preço de venda normal
+//VariÃ¡veis para cÃ¡lculo do Zona Franca
+Local nVlrNormal	:= 0	//preÃ§o de venda normal
 Local nBSICMSST		:= 0	//Base do ICMS ST - conferir com a tabela
 Local nAlqIcms		:= 0	//Aliquota de ICMS OP
 Local nAlqIcmsST	:= 0	//Aliquota de ICMS ST
 Local nVlrIcms		:= 0	//Valor ICMS
 Local nAlqPCC		:= 0	//Aliquota de Pis+Cofins ST
-Local nRedPCC		:= 0	//ReduçãoPis / Cofins
-Local nRedIcms		:= 0	//Reduçãobase ICMS
+Local nRedPCC		:= 0	//ReduÃ§Ã£oPis / Cofins
+Local nRedIcms		:= 0	//ReduÃ§Ã£obase ICMS
 Local nAlqIpiZF		:= 0	//Aliquota de IPI Zona Franca
 Local nVlrDescFr	:= 0	//Desconto frete 1% ZF 	
 Local nVlrFator1	:= 0	//Calculo do Fator 1
@@ -3060,9 +2856,9 @@ Local nDIpiZF		:= 0 	//Desconto do IPI Zona Franca
 Local nDPccZF		:= 0	//Desconto do PIS / COFINS Zona Franca
 Local nVlrAbtTrb	:= 0	//Abatimentos tributos ZF
 Local nVlrPCCST		:= 0	//PIS/COFINS ST
-Local nPrecoZF		:= 0	//preço de venda Zona Franca
+Local nPrecoZF		:= 0	//preÃ§o de venda Zona Franca
 
-// venda para consumidor final dentro do mesmo estado, não tem ST
+// venda para consumidor final dentro do mesmo estado, nÃ£o tem ST
 If (cCabAlias)->C5_XTIPVEN $ "04"
 	SA1->(dbSetOrder(1))
 	If SA1->(dbSeek(xFilial("SA1")+(cCabAlias)->C5_CLIENTE+(cCabAlias)->C5_LOJACLI))
@@ -3086,7 +2882,7 @@ If (cCabAlias)->C5_XTIPVEN  $ "02/03/04/06"
 	Endif	
 EndIf
 
-//Venda PCD/Taxi não tem reverso.
+//Venda PCD/Taxi nÃ£o tem reverso.
 If (cCabAlias)->C5_XTIPVEN  $ "02/03/05"
 	aEval(aArea,{|x| RestArea(x)})
 	Return nVlrRet
@@ -3111,7 +2907,7 @@ MaFisIniLoad(nY								,;
 	 		0 })        					   //IT_RECORI
 MaFisTes((cCabAlias)->C6_TES,SF4->(RecNo()),nY)
 
-//Venda Direta convênio 51/00
+//Venda Direta convÃªnio 51/00
 If (cCabAlias)->C5_XTIPVEN  $ "04"
 	Default cCoadMr := (cCabAlias)->C6_XCODMAR
 	Default cModVei := (cCabAlias)->C6_XMODVEI
@@ -3133,9 +2929,9 @@ If (cCabAlias)->C5_XTIPVEN  $ "04"
 	
     nAlqIPI   := MaFisRet(nY,"IT_ALIQIPI")/100  			//Aliquota de IPI ja em Percentual  
 	nAlqOpIcm := MaFisRet(nY,"IT_ALIQICM")/100  			//Aliquota de ICMS OP em Percentual
-	nPerComs  := FatComis(MaFisRet(nY,"IT_PRODUTO"))/100	//Percentual de comissao conforme modelo do veículo
+	nPerComs  := FatComis(MaFisRet(nY,"IT_PRODUTO"))/100	//Percentual de comissao conforme modelo do veÃ­culo
     
-	If !(MaFisRet(nY,"IT_TES") $ cTESTSD)	//-- TES de faturamento p/ veículo test drive (não tem comissão)
+	If !(MaFisRet(nY,"IT_TES") $ cTESTSD)	//-- TES de faturamento p/ veÃ­culo test drive (nÃ£o tem comissÃ£o)
 		nValComs := ROUND(nVlrRet * nPerComs,2)
 	EndIf
 	
@@ -3154,8 +2950,8 @@ lSuframa := MaFisRet(N,"NF_SUFRAMA")
 
 If !lSuframa 
 	/******************************************************************
-	**Venda Atacado não Suframa Planilha de Referencia para       *****
-	**chegar no calculo Unitário- Calculadora Concessionaria.xls *****
+	**Venda Atacado nÃ£o Suframa Planilha de Referencia para       *****
+	**chegar no calculo UnitÃ¡rio- Calculadora Concessionaria.xls *****
 	*******************************************************************/
 
 	SB1->(DbSetOrder(1)) 
@@ -3192,18 +2988,18 @@ If !lSuframa
     nAlqIPI  := MaFisRet(nY,"IT_ALIQIPI")/100  		//Aliquota de IPI ja em Percentual  
 	nAlqIcmSt:= MaFisRet(nY,"IT_ALIQSOL")/100  		//Aliquota de ICMS ST ja em Percentual
 	nAlqOpIcm:= MaFisRet(nY,"IT_ALIQICM")/100  		//Aliquota de ICMS OP em Percentual 
-    nBaseSt  := MaFisRet(nY,"IT_BASESOL")      		// Base de ST Fixa, que está no produto. (Usado o Conceito de ICMS Pauta)
-    //nBaseSt  := (cCabAlias)->C6_XBASST      		// Base de ST Fixa, que está no produto. (Usado o Conceito de ICMS Pauta)
-	cTes     := MaFisRet(nY,"IT_TES"    )          		// Tes para buscar a Reduçãode Base de ICMS Pois não encontrei na MaFisRet
+    nBaseSt  := MaFisRet(nY,"IT_BASESOL")      		// Base de ST Fixa, que estÃ¡ no produto. (Usado o Conceito de ICMS Pauta)
+    //nBaseSt  := (cCabAlias)->C6_XBASST      		// Base de ST Fixa, que estÃ¡ no produto. (Usado o Conceito de ICMS Pauta)
+	cTes     := MaFisRet(nY,"IT_TES"    )          		// Tes para buscar a ReduÃ§Ã£ode Base de ICMS Pois nÃ£o encontrei na MaFisRet
 	nAliqStPi:= MaFisRet(nY,"IT_ALIQPS3")/100  		// Aliquota de Pis    ST em Percentual
 	nAliqStCo:= MaFisRet(nY,"IT_ALIQCF3")/100  		// Aliquota de Cofins ST em Percentual
-    nAlqBIcms:= MaFisRet(nY,"IT_PREDIC" )      		// Reduçãode Base de ICMS
+    nAlqBIcms:= MaFisRet(nY,"IT_PREDIC" )      		// ReduÃ§Ã£ode Base de ICMS
     
-	nVlIcmDev := nBaseSt*nAlqIcmSt					// Valor do ICMS devido (Necessário para o calculo Reverso)
-	nVlrDesFr := 0									// Valor de Desconto de Frete, somente ZF e fixo de 1% sobre preço total de Venda
-	nAux1     := nVlrRet-nVlrDesfr - nVlIcmDev		// Variavel Auxiliar para calculo do Valor Unitário            
-	nAux2     := 1+nAlqIPI							// Variavel Auxiliar para calculo do Valor Unitário
-	nAux3     := ((nAlqBIcms/100)*nAlqOpIcm)		// Variavel Auxiliar para calculo do Valor Unitário
+	nVlIcmDev := nBaseSt*nAlqIcmSt					// Valor do ICMS devido (NecessÃ¡rio para o calculo Reverso)
+	nVlrDesFr := 0									// Valor de Desconto de Frete, somente ZF e fixo de 1% sobre preÃ§o total de Venda
+	nAux1     := nVlrRet-nVlrDesfr - nVlIcmDev		// Variavel Auxiliar para calculo do Valor UnitÃ¡rio            
+	nAux2     := 1+nAlqIPI							// Variavel Auxiliar para calculo do Valor UnitÃ¡rio
+	nAux3     := ((nAlqBIcms/100)*nAlqOpIcm)		// Variavel Auxiliar para calculo do Valor UnitÃ¡rio
 	
 	// grupo e marca de produtos que nao devem ter esta variavel incrementada ao calculo
 	If FatNAux3(MaFisRet(nY,"IT_PRODUTO"),cGrupo1,cMarca1)
@@ -3224,7 +3020,7 @@ If !lSuframa
 Else
 	******************************************************************
 	** Programa de Calculo Reverso Baseado na Planilha de Calculo    *
-	** preços de Venda CAOA x Revenda  - Zona Franca  de Manaus      *
+	** preÃ§os de Venda CAOA x Revenda  - Zona Franca  de Manaus      *
 	******************************************************************
 
 	cTes := MaFisRet(nY,"IT_TES") 
@@ -3267,16 +3063,16 @@ Else
 	SF4->(DbSetOrder(1))
 	
     If SF4->(DbSeek( xFilial("SF4")+cTes))		
-		nRedBPist := SF4->F4_BASEPIS						// Reduçãoda Base de Pis
-		nRedBCoSt := SF4->F4_BASECOF						// Reduçãoda Base de Cofins 
+		nRedBPist := SF4->F4_BASEPIS						// ReduÃ§Ã£oda Base de Pis
+		nRedBCoSt := SF4->F4_BASECOF						// ReduÃ§Ã£oda Base de Cofins 
 		// verifica se tem excecao fiscal e pega de lah quando tiver
 		If Len(MaFisRet(nY,"IT_EXCECAO")) > 0
 			aExcecao := MaFisRet(nY,"IT_EXCECAO")
 			If !Empty(aExcecao[18])
-				nRedBPist := aExcecao[18]					// Reduçãoda Base de Pis
+				nRedBPist := aExcecao[18]					// ReduÃ§Ã£oda Base de Pis
 			Endif	
 			If !Empty(aExcecao[19])
-				nRedBCoSt := aExcecao[19]					// Reduçãoda Base de Cofins 
+				nRedBCoSt := aExcecao[19]					// ReduÃ§Ã£oda Base de Cofins 
 			Endif	
 		Endif	
 	Endif
@@ -3296,8 +3092,8 @@ Else
 		nAlqPCC	:= (aExcecao[12]+aExcecao[13])										//Aliquota de Pis+Cofins ST
 	EndIf
 	
-    nRedPCC		:= 0																//ReduçãoPis / Cofins
-	nRedIcms	:= MaFisRet(nY,"IT_PREDIC")											//Reduçãobase ICMS
+    nRedPCC		:= 0																//ReduÃ§Ã£oPis / Cofins
+	nRedIcms	:= MaFisRet(nY,"IT_PREDIC")											//ReduÃ§Ã£obase ICMS
 	nAlqIpi		:= MaFisRet(nY,"IT_ALIQIPI")											//Aliquota de IPI
 	nAlqIpiZF	:= 0																//Aliquota de IPI Zona Franca
 	nVlrDescFr	:= Round((nVlrNormal * nPercZFre),0)								//Desconto frete 1% ZF 
@@ -3306,7 +3102,7 @@ Else
 	nVlrFator2	:= (   (nRedIcms/100 )/100) /*((1-(nRedIcms/100))/100)*/			//Calculo do Fator 2
 	nvlrFator3  := (nVlrFator1 -nVlrFator2 * ((nAlqIcms /100)))/100					//Calculo do Fator 3 
 
-	nVlrUnit	:= ((((nVlrNormal - nVlrDescFr)-nVlrIcms) / nVlrFator3)/10000)		//Valor Unitárionormal
+	nVlrUnit	:= ((((nVlrNormal - nVlrDescFr)-nVlrIcms) / nVlrFator3)/10000)		//Valor UnitÃ¡rionormal
 	nDIcmsZF	:= 0																//Desconto do ICMS Normal Zona Franca
 	nDIpiZF		:= (nVlrUnit * nAlqIpiZF)											//Desconto do IPI Zona Franca
 
@@ -3317,9 +3113,9 @@ Else
 	nVlrAbtTrb	:= (nDIcmsZF + nDIpiZF + nDPccZF)									//Abatimentos tributos ZF
 
 	nVlrPCCST	:= 0																//PIS/COFINS ST
-	nPrecoZF	:= (nVlrNormal - nVlrDescFr - nVlrAbtTrb + nVlrPCCST)				//preço de venda Zona Franca
+	nPrecoZF	:= (nVlrNormal - nVlrDescFr - nVlrAbtTrb + nVlrPCCST)				//preÃ§o de venda Zona Franca
 	nVlrRet		:= Round((nPrecoZF- (nBSICMSST*(nAlqIcmsST/100))) / ;
-	                     (((100+nAlqIpi)-((nRedIcms/100)*nAlqIcms))/100),2)			//Valor Unitáriofinal Zona Franca
+	                     (((100+nAlqIpi)-((nRedIcms/100)*nAlqIcms))/100),2)			//Valor UnitÃ¡riofinal Zona Franca
 
     (cCabAlias)->(RecLock(cCabAlias),.F.)
         (cCabAlias)->C6_XVLRPRD := Round(nVlrRet,2)
@@ -3335,12 +3131,12 @@ aEval(aArea,{|x| RestArea(x)})
 
 Return Round(nVlrRet,2)
 
-/*
+/* 
 =======================================================================================
 Programa.:              FatComis
 Autor....:              
 Data.....:              
-Descricao / Objetivo: Calcula a Comissão para o Calculo Reverso  
+Descricao / Objetivo: Calcula a ComissÃ£o para o Calculo Reverso  
 =======================================================================================
 */
 
@@ -3351,7 +3147,11 @@ Local nRet := 0
 
 VV2->(dbSetOrder(7))
 If VV2->(dbSeek(xFilial("VV2")+cProd))
-	nRet := VV2->VV2_XCOMIS
+	nRet := VV2->&('VV2_XCOM'+StrZero(Val(FWFldGet("VRJ_TIPVEN")),1))
+
+	If nRet <= 0
+		nRet := VV2->VV2_XCOMIS
+	EndIf
 Endif
 
 aEval(aArea,{|x| RestArea(x)})
@@ -3363,7 +3163,7 @@ Return(nRet)
 Programa.:            FatNAux3  
 Autor....:              
 Data.....:              
-Descricao / Objetivo: Função Auxiliar para Calculo de Impostos conforme a Marca   
+Descricao / Objetivo: FunÃ§Ã£o Auxiliar para Calculo de Impostos conforme a Marca   
 =======================================================================================
 */
 
@@ -3388,7 +3188,7 @@ Return(lRet)
 Programa.:            Vei01IcmZF  
 Autor....:              
 Data.....:              
-Descricao / Objetivo: Não utilizada  
+Descricao / Objetivo: NÃ£o utilizada  
 =======================================================================================
 */
 
@@ -3425,7 +3225,7 @@ local cAlias as char
 //Guarda a workarea corrente
 cAlias := Alias()
 
-//Gera um alias aleatório somente para abrir a query
+//Gera um alias aleatÃ³rio somente para abrir a query
 cQuery := GetNextAlias()
 
 //Cria a query
@@ -3466,10 +3266,10 @@ dbSelectArea("VVP")
 VVP->(dbSetOrder(1))
 VVP->(dbSeek(xFilial("VVP")+VV2->VV2_CODMAR+VV2->VV2_MODVEI+VV2->VV2_SEGMOD+(cQuery)->VVP_DATPRC))
 
-//Fecha a query, boa prática, tudo que você abriu, você fecha... E também existem limites de workareas abertas no Protheus
+//Fecha a query, boa prÃ¡tica, tudo que vocÃª abriu, vocÃª fecha... E tambÃ©m existem limites de workareas abertas no Protheus
 (cQuery)->(DBCloseArea())
 
-//Retorna a workarea corrente, protegido, pois um dbselectarea com valor vazio gera exceção
+//Retorna a workarea corrente, protegido, pois um dbselectarea com valor vazio gera exceÃ§Ã£o
 if !Empty(cAlias)
     DBSelectArea(cAlias)
 endif
@@ -3520,7 +3320,7 @@ Return lRet
 Programa.:             Estor 
 Autor....:             Reinaldo Rabelo 
 Data.....:              
-Descricao / Objetivo:  Realiza o estorno do chassi após a exclusão da NF 
+Descricao / Objetivo:  Realiza o estorno do chassi apÃ³s a exclusÃ£o da NF 
 =======================================================================================
 */
 
@@ -3531,9 +3331,9 @@ Local lRet    := .F.
 
     //GAP167  Previsao de Faturamento
     Default _cWhere := ""
-    //Quando for chamado pela função ZFAT025 e não estiver preenchido o Where não permitir que apague registros com previsão
+    //Quando for chamado pela funÃ§Ã£o ZFAT025 e nÃ£o estiver preenchido o Where nÃ£o permitir que apague registros com previsÃ£o
     //If !FWIsInCallStack("ZFAT025") .And. Empty(_cWhere)
-    //    _cWhere := " AND SC6.C6_XCODPVR = ' ' "   //somente tratar registros que não sao previsão
+    //    _cWhere := " AND SC6.C6_XCODPVR = ' ' "   //somente tratar registros que nÃ£o sao previsÃ£o
     //Endif
 
     cQuery += CrLf + " SELECT  '  ' C6_OK    , "
@@ -3577,6 +3377,7 @@ Local lRet    := .F.
     cQuery += CrLf + "        SC6.C6_XVLRPRD,  "
     cQuery += CrLf + "        SC6.C6_XVLRMVT,  "
     cQuery += CrLf + "        SC6.C6_XBASST,  "
+    cQuery += CrLf + "        SC6.C6_XBASST,  "
     If SC6->(FieldPos("C6_XCODPVR")) > 0
         cQuery += CrLf + "        SC6.C6_XFILPVR,  " 
         cQuery += CrLf + "        SC6.C6_XCODPVR,  "
@@ -3584,6 +3385,11 @@ Local lRet    := .F.
         cQuery += CrLf + "        VRK.VRK_FABMOD,  "
         cQuery += CrLf + "        ZZN.ZZN_STATUS,  "
     Endif
+    //GAP228 -Integração Faturamento Autoware DAC 02/10/2024
+    If SC6->(FieldPos("C6_XSTPEDI")) > 0
+        cQuery += CrLf + "        SC6.C6_XSTPEDI AS STATUSPED,  "
+    Endif 
+ 
     cQuery += CrLf + "        SC5.C5_XTIPVEN,
     cQuery += CrLf +"         VRJ.VRJ_PEDIDO, "
     cQuery += CrLf +"         'F'  as lupd, "
@@ -3651,15 +3457,15 @@ Local lRet    := .F.
     DbUseArea(.T.,"TOPCONN",TCGENQRY(,,cQuery),cTabela,.T.,.T.)
 
     While (cTabela)->(!EOF())
-        //Caso esteja cancelando e esteja em Previsão tem que verificar se a Previsão esta faturada 
-        //Previsão quando não faturada e ou cancelada não pode estornar
+        //Caso esteja cancelando e esteja em PrevisÃ£o tem que verificar se a PrevisÃ£o esta faturada 
+        //PrevisÃ£o quando nÃ£o faturada e ou cancelada nÃ£o pode estornar
         If SC6->(FieldPos("C6_XCODPVR")) > 0 .And. !Empty((cTabela)->C6_XCODPVR).And. !(cTabela)->ZZN_STATUS $ "F_C"
             (cTabela)->(DbSkip())
             Loop   
         Endif 
 
         if Empty((cTabela)->VRK_CHASSI)
-            fLimpaChassi(cTabela) // Limpa campo de Chassi da Tabela SC6, pois a casos do chassi ser estornado e ficar não apagar o campo C6_CHASSI
+            fLimpaChassi(cTabela) // Limpa campo de Chassi da Tabela SC6, pois a casos do chassi ser estornado e ficar nÃ£o apagar o campo C6_CHASSI
             lRet := .T.
         EndIf
         (cTabela)->(DbSkip())
@@ -3712,7 +3518,7 @@ Descricao / Objetivo:  Limpa o campo de Chassi da SC6
 */
 Static Function AtuMOv(nValorPre)
 
-Local nVlrRet	:= nValorPre      //Valor Total vindo da tabela de preço
+Local nVlrRet	:= nValorPre      //Valor Total vindo da tabela de preÃ§o
 Local aArea		:= {SA1->(GetArea()),GetArea()}	
 Local aExcecao	:= {}
 Local cTESTSD	:= SuperGetMV("CMV_TESTSD",.F.,"")
@@ -3729,7 +3535,7 @@ Default nValTab := (cCabAlias)->C6_XPRCTAB
 Default nValPre := (cCabAlias)->C6_XVLRPRD
 Default nValMov := (cCabAlias)->C6_XVLRMVT
 
-// venda para consumidor final dentro do mesmo estado, não tem ST
+// venda para consumidor final dentro do mesmo estado, nÃ£o tem ST
 If (cCabAlias)->C5_XTIPVEN $ "04"
 	SA1->(dbSetOrder(1))
 	If SA1->(dbSeek(xFilial("SA1")+(cCabAlias)->C5_CLIENTE+(cCabAlias)->C5_LOJACLI))
@@ -3757,7 +3563,7 @@ If (cCabAlias)->C5_XTIPVEN  $ "02/03/04/06"
 	Endif	
 EndIf
 
-//Venda PCD/Taxi não tem reverso.
+//Venda PCD/Taxi nÃ£o tem reverso.
 If (cCabAlias)->C5_XTIPVEN  $ "02/03/05"
 	aEval(aArea,{|x| RestArea(x)})
 	Return nVlrRet
@@ -3798,9 +3604,9 @@ MaFisAdd(SB1->B1_COD,;
 
 	nAlqIPI   := MaFisRet(nY,"IT_ALIQIPI")/100  			//Aliquota de IPI ja em Percentual  
 	nAlqOpIcm := MaFisRet(nY,"IT_ALIQICM")/100  			//Aliquota de ICMS OP em Percentual
-	nPerComs  := FatComis(MaFisRet(nY,"IT_PRODUTO"))/100	//Percentual de comissao conforme modelo do veículo
+	nPerComs  := FatComis(MaFisRet(nY,"IT_PRODUTO"))/100	//Percentual de comissao conforme modelo do veÃ­culo
     
-	If !(MaFisRet(nY,"IT_TES") $ cTESTSD)	//-- TES de faturamento p/ veículo test drive (não tem comissão)
+	If !(MaFisRet(nY,"IT_TES") $ cTESTSD)	//-- TES de faturamento p/ veÃ­culo test drive (nÃ£o tem comissÃ£o)
 		nValComs := ROUND(nVlrRet * nPerComs,2)
 	EndIf
 	
@@ -3891,14 +3697,14 @@ DEFAULT x := 1
 	            MaFisRet(x,"IT_BASECSL"),;		                    //32 Base do CSLL
 	            MaFisRet(x,"IT_ALIQCSL"),;		                    //33 Aliquota CSLL
 	            MaFisRet(x,"IT_VALCSL")	})		                    //34 Valor do CSLL
-	aadd(aImp , {"PS2",;						                    //35 PIS/Pasep - Via Apuração
-	            MaFisRet(x,"IT_BASEPS2"),;		                    //36 Base do PS2 (PIS/Pasep - Via Apuração)
-	            MaFisRet(x,"IT_ALIQPS2"),;		                    //37 Aliquota PS2 (PIS/Pasep - Via Apuração)
-	            MaFisRet(x,"IT_VALPS2")	})		                    //38 Valor do PS2 (PIS/Pasep - Via Apuração)
-	aadd(aImp , {"CF2",;						                    //39 COFINS - Via Apuração
-	            MaFisRet(x,"IT_BASECF2"),;		                    //40 Base do CF2 (COFINS - Via Apuração)
-	            MaFisRet(x,"IT_ALIQCF2"),;		                    //41 Aliquota CF2 (COFINS - Via Apuração)
-	            MaFisRet(x,"IT_VALCF2")	})		                    //42 Valor do CF2 (COFINS - Via Apuração)
+	aadd(aImp , {"PS2",;						                    //35 PIS/Pasep - Via ApuraÃ§Ã£o
+	            MaFisRet(x,"IT_BASEPS2"),;		                    //36 Base do PS2 (PIS/Pasep - Via ApuraÃ§Ã£o)
+	            MaFisRet(x,"IT_ALIQPS2"),;		                    //37 Aliquota PS2 (PIS/Pasep - Via ApuraÃ§Ã£o)
+	            MaFisRet(x,"IT_VALPS2")	})		                    //38 Valor do PS2 (PIS/Pasep - Via ApuraÃ§Ã£o)
+	aadd(aImp , {"CF2",;						                    //39 COFINS - Via ApuraÃ§Ã£o
+	            MaFisRet(x,"IT_BASECF2"),;		                    //40 Base do CF2 (COFINS - Via ApuraÃ§Ã£o)
+	            MaFisRet(x,"IT_ALIQCF2"),;		                    //41 Aliquota CF2 (COFINS - Via ApuraÃ§Ã£o)
+	            MaFisRet(x,"IT_VALCF2")	})		                    //42 Valor do CF2 (COFINS - Via ApuraÃ§Ã£o)
 	aadd(aImp , {"ICC",;						                    //43 ICMS Complementar
 	            MaFisRet(x,"IT_ALIQCMP"),;		                    //44 Base do ICMS Complementar
 	            MaFisRet(x,"IT_ALIQCMP"),;		                    //45 Aliquota do ICMS Complementar
@@ -3994,7 +3800,7 @@ User Function zMsgLog(cMsg, cTitulo, nTipo, lEdit)
     Default nTipo   := 1 // 1=Ok; 2= Confirmar e Cancelar
     Default lEdit   := .F.
      
-    //Definindo os textos dos botões
+    //Definindo os textos dos botÃµes
     If(nTipo == 1)
         cTxtConf:='&Ok'
     Else
@@ -4002,7 +3808,7 @@ User Function zMsgLog(cMsg, cTitulo, nTipo, lEdit)
         cTxtCancel:='C&ancelar'
     EndIf
  
-    //Criando a janela centralizada com os botões
+    //Criando a janela centralizada com os botÃµes
     DEFINE MSDIALOG oDlgMens TITLE cTitulo FROM 000, 000  TO 600, 500 COLORS 0, 16777215 PIXEL
         //Get com o Log
         @ 002, 004 GET oMsg VAR cMsg OF oDlgMens MULTILINE SIZE 300, 200 FONT oFntTxt COLORS 0, 16777215 HSCROLL PIXEL
@@ -4010,17 +3816,17 @@ User Function zMsgLog(cMsg, cTitulo, nTipo, lEdit)
             oMsg:lReadOnly := .T.
         EndIf
          
-        //Se for Tipo 1, cria somente o botão OK
+        //Se for Tipo 1, cria somente o botÃ£o OK
         If (nTipo==1)
             @ 210, 144 BUTTON oBtnOk  PROMPT cTxtConf   SIZE 051, 019 ACTION (lRetMens:=.T., oDlgMens:End()) OF oDlgMens PIXEL
          
-        //Senão, cria os botões OK e Cancelar
+        //SenÃ£o, cria os botÃµes OK e Cancelar
         ElseIf(nTipo==2)
             @ 127, 144 BUTTON oBtnOk  PROMPT cTxtConf   SIZE 051, 009 ACTION (lRetMens:=.T., oDlgMens:End()) OF oDlgMens PIXEL
             @ 137, 144 BUTTON oBtnCnc PROMPT cTxtCancel SIZE 051, 009 ACTION (lRetMens:=.F., oDlgMens:End()) OF oDlgMens PIXEL
         EndIf
          
-        //Botão de Salvar em Txt
+        //BotÃ£o de Salvar em Txt
         @ 210, 004 BUTTON oBtnSlv PROMPT "&Salvar em .txt" SIZE 051, 019 ACTION (fSalvArq(cMsg, cTitulo)) OF oDlgMens PIXEL
     ACTIVATE MSDIALOG oDlgMens CENTERED
  
@@ -4031,7 +3837,7 @@ Return lRetMens
 Programa.:             fSalvArq
 Autor....:              
 Data.....:              
-Descricao / Objetivo:  Função para Gerar arquivo de Texto
+Descricao / Objetivo:  FunÃ§Ã£o para Gerar arquivo de Texto
 =======================================================================================
 */
 
@@ -4044,29 +3850,29 @@ Static Function fSalvArq(cMsg, cTitulo)
     //Pegando o caminho do arquivo
     cFileNom := cGetFile( "Arquivo TXT *.txt | *.txt", "Arquivo .txt...",,'',.T., GETF_LOCALHARD)
  
-    //Se o nome não estiver em branco    
+    //Se o nome nÃ£o estiver em branco    
     If !Empty(cFileNom)
-        //Teste de existência do diretório
+        //Teste de existÃªncia do diretÃ³rio
         If ! ExistDir(SubStr(cFileNom,1,RAt('\',cFileNom)))
-            Alert("Diretório não existe:" + CRLF + SubStr(cFileNom, 1, RAt('\',cFileNom)) + "!")
+            Alert("DiretÃ³rio nÃ£o existe:" + CRLF + SubStr(cFileNom, 1, RAt('\',cFileNom)) + "!")
             Return
         EndIf
          
         //Montando a mensagem
-        cTexto := "Função   - "+ FunName()       + CRLF
-        cTexto += "Usuário  - "+ cUserName       + CRLF
+        cTexto := "FunÃ§Ã£o   - "+ FunName()       + CRLF
+        cTexto += "UsuÃ¡rio  - "+ cUserName       + CRLF
         cTexto += "Data     - "+ dToC(dDataBase) + CRLF
         cTexto += "Hora     - "+ Time()          + CRLF
         cTexto += "Mensagem - "+ cTitulo + cQuebra  + cMsg + cQuebra
          
-        //Testando se o arquivo já existe
+        //Testando se o arquivo jÃ¡ existe
         If File(cFileNom)
-            lOk := MsgYesNo("Arquivo já existe, deseja substituir?", "Atenção")
+            lOk := MsgYesNo("Arquivo jÃ¡ existe, deseja substituir?", "AtenÃ§Ã£o")
         EndIf
          
         If lOk
             MemoWrite(cFileNom, cTexto)
-            MsgInfo("Arquivo Gerado com Sucesso:"+CRLF+cFileNom,"Atenção")
+            MsgInfo("Arquivo Gerado com Sucesso:"+CRLF+cFileNom,"AtenÃ§Ã£o")
         EndIf
     EndIf
 Return
@@ -4127,7 +3933,7 @@ Programa.:             fTabBackup()
 Autor....:              
 Data.....:              
 Descricao / Objetivo:  Faz Backup da Tebala para retornar os Valores originais ao
-                      cancelar a geração do Documento
+                      cancelar a geraÃ§Ã£o do Documento
 =======================================================================================
 */
 
@@ -4159,8 +3965,8 @@ Return
 //Separado parametro para que possa ser utilizado por outras funcionalidades
 User Function XZFT19PA(_aRet, _lCarrega)
 Local _aParamBox    := {}
-Local _dDatIni      := dDataBase - 120
-Local _dDatfin      := dDataBase
+Local _dDatIni      := Date() - 360
+Local _dDatfin      := Date()
 Local _nChassis     := 0
 Local _bRet         := {||.T.}
 //Local _bBloco     
@@ -4169,7 +3975,7 @@ Local _bRet         := {||.T.}
 Default _lCarrega   := .T.
 Default _aRet       := {}
 
-nLimChassi          := 0   //Adaptação alteração realizada pel Totvs DAC 14/05/2024
+nLimChassi          := 0   //AdaptaÃ§Ã£o alteraÃ§Ã£o realizada pel Totvs DAC 14/05/2024
 
     Aadd(_aParamBox, {1, "Cliente De"          ,Space(TamSx3("C5_CLIENTE")[01]) , "@!",,"SA1"    ,, 050	, .F.	})      //01
     Aadd(_aParamBox, {1, "Loja De"             ,Space(TamSx3("C5_LOJACLI")[01]) , "@!",,         ,, 020	, .F.	})      //02
@@ -4202,7 +4008,7 @@ nLimChassi          := 0   //Adaptação alteração realizada pel Totvs DAC 14/05/2
 
     //Carregar e abrir perguntas
     If _lCarrega
-        _bRet := ParamBox(_aParamBox, "Parametros para seleção dos dados"	, @_aRet, , , .T. /*lCentered*/, 0, 0, , , .T. /*lCanSave*/, .T. /*lUserSave*/)
+        _bRet := ParamBox(_aParamBox, "Parametros para seleÃ§Ã£o dos dados"	, @_aRet, , , .T. /*lCentered*/, 0, 0, , , .T. /*lCanSave*/, .T. /*lUserSave*/)
         If !_bRet
             ApMsgStop("Rotina cancelada!", "Atencao")
             Return(.F.)
@@ -4235,9 +4041,9 @@ Default _cJoin      := ""
 Default _cGroup     := ""
 
     //Tem que existir parametro
-    //If Len(_aRet) == 0 
-    //    Return _cQuery
-    //Endif
+    If Len(_aRet) == 0 
+        Return _cQuery
+    Endif
     
 	//_cQuery := CrLf +_cSelect 
 	//_cQuery := CrLf +" WITH PEDIDOS_FAT AS ( "
@@ -4260,8 +4066,8 @@ Default _cGroup     := ""
     _cQuery += CrLf + "     ON  VRK.VRK_FILIAL = '" + xFilial("VRK") + "' "
     _cQuery += CrLf + "     AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
     //Verificar forma de tentar controlar pois o item na SC6 pode estar diferente da VRK
-    _cQuery += CrLf + "     AND VRK.VRK_ITEPED = '0' || SC6.C6_ITEM "  //LPad(SC6.C6_ITEM,3,'0') "
-    //Estava saindo itens deletados conforme montilha é deletado no VRK e não no SC6 Criando condição para validar o cod produto
+    _cQuery += CrLf + "     AND VRK.VRK_ITEPED = LPad(SC6.C6_ITEM,3,'0') "
+    //Estava saindo itens deletados conforme montilha Ã© deletado no VRK e nÃ£o no SC6 Criando condiÃ§Ã£o para validar o cod produto
     _cQuery += CrLf + "     AND TRIM(VRK.VRK_MODVEI)||TRIM(VRK.VRK_SEGMOD) = TRIM(SC6.C6_PRODUTO) "
     _cQuery += CrLf + "     AND VRK.VRK_CHASSI = SC6.C6_CHASSI "
     _cQuery += CrLf + "     AND VRK.VRK_ITETRA = ' ' "
@@ -4307,42 +4113,40 @@ Default _cGroup     := ""
     If !Empty(_cJoin)
         _cQuery += _cJoin
     Endif
-    //cASO PASSE ESTE PARAMETRO DESPRESO AS CONDIÇÕES WHERE ABAIXO E ASSUMO DO PARAMETRO
+    //cASO PASSE ESTE PARAMETRO DESPRESO AS CONDIÃ‡Ã•ES WHERE ABAIXO E ASSUMO DO PARAMETRO
     If !Empty(_cWhereAll)
         _cQuery += _cWhereAll
     Else
         _cQuery += CrLf + " WHERE   SC6.D_E_L_E_T_   = ' ' "
         _cQuery += CrLf + " 	AND SC6.C6_FILIAL    = '" + xFilial("SC6") + "' "
-        If Len(_aRet) > 0
-            _cQuery += CrLf + "     AND SC6.C6_CLI       BETWEEN '" +      _aRet[01]  + "' AND '" +      _aRet[03]  + "' "
-            _cQuery += CrLf + "     AND SC6.C6_LOJA      BETWEEN '" +      _aRet[02]  + "' AND '" +      _aRet[04]  + "' "
-            _cQuery += CrLf + "     AND SC6.C6_PRODUTO   BETWEEN '" +      _aRet[05]  + "' AND '" +      _aRet[06]  + "' "
-            _cQuery += CrLf + "     AND SC6.C6_PEDCLI    BETWEEN '" +      _aRet[08]  + "' AND '" +      _aRet[09]  + "' "
-            If !Empty(_aRet[10]) .Or. !("ZZ" $ _aRet[11])      
-                _cQuery += CrLf + "     AND VRK.VRK_CODMAR   BETWEEN '" +      _aRet[10]  + "' AND '" +      _aRet[11]  + "' "
-            Endif
-            If !Empty(_aRet[12]) .Or. !("ZZ" $ _aRet[13])      
-                _cQuery += CrLf + "     AND VRK.VRK_GRUMOD   BETWEEN '" +      _aRet[12]  + "' AND '" +      _aRet[13]  + "' "
-            Endif
-            If !Empty(_aRet[14]) .Or. !("ZZ" $ _aRet[15])      
-                _cQuery += CrLf + "     AND VRK.VRK_MODVEI   BETWEEN '" +      _aRet[14]  + "' AND '" +      _aRet[15]  + "' "
-            Endif 
-            If !Empty(_aRet[16]) .Or. !("ZZ" $ _aRet[17])      
-                _cQuery += CrLf + "     AND VRK.VRK_FABMOD   BETWEEN '" +      _aRet[16]  + "' AND '" +      _aRet[17]  + "' "
-            Endif 
-            //somente fazer a distinção se estiver informado código especifico
-            If !Empty(_aRet[18]) .Or. !("ZZ" $ _aRet[19])      
-                _cQuery += CrLf + "     AND VRK.VRK_CORINT   BETWEEN '" +      _aRet[18]  + "' AND '" +      _aRet[19]  + "' "
-            Endif 
-            If !Empty(_aRet[20]) .Or. !("ZZ" $ _aRet[21])      
-                _cQuery += CrLf + "     AND VRK.VRK_COREXT   BETWEEN '" +      _aRet[20]  + "' AND '" +      _aRet[21]  + "' "
-            Endif
-            If !Empty(_aRet[22]) .Or. !("ZZ" $ _aRet[23])      
-                //_cQuery += CrLf + "     AND SC6.C6_XSEGMOD   BETWEEN '" +      _aRet[16]  + "' AND '" +      _aRet[17]  + "' "
-                _cQuery += CrLf + "     AND VRK.VRK_OPCION   BETWEEN '" +      _aRet[22]  + "' AND '" +      _aRet[23]  + "' "
-            Endif
-            _cQuery += CrLf + "     AND SC5.C5_EMISSAO   BETWEEN '" + DtoS(_aRet[24]) + "' AND '" + DtoS(_aRet[25]) + "' "
+        _cQuery += CrLf + "     AND SC6.C6_CLI       BETWEEN '" +      _aRet[01]  + "' AND '" +      _aRet[03]  + "' "
+        _cQuery += CrLf + "     AND SC6.C6_LOJA      BETWEEN '" +      _aRet[02]  + "' AND '" +      _aRet[04]  + "' "
+        _cQuery += CrLf + "     AND SC6.C6_PRODUTO   BETWEEN '" +      _aRet[05]  + "' AND '" +      _aRet[06]  + "' "
+        _cQuery += CrLf + "     AND SC6.C6_PEDCLI    BETWEEN '" +      _aRet[08]  + "' AND '" +      _aRet[09]  + "' "
+        If !Empty(_aRet[10]) .Or. !("ZZ" $ _aRet[11])      
+            _cQuery += CrLf + "     AND VRK.VRK_CODMAR   BETWEEN '" +      _aRet[10]  + "' AND '" +      _aRet[11]  + "' "
         Endif
+        If !Empty(_aRet[12]) .Or. !("ZZ" $ _aRet[13])      
+            _cQuery += CrLf + "     AND VRK.VRK_GRUMOD   BETWEEN '" +      _aRet[12]  + "' AND '" +      _aRet[13]  + "' "
+        Endif
+        If !Empty(_aRet[14]) .Or. !("ZZ" $ _aRet[15])      
+            _cQuery += CrLf + "     AND VRK.VRK_MODVEI   BETWEEN '" +      _aRet[14]  + "' AND '" +      _aRet[15]  + "' "
+        Endif 
+        If !Empty(_aRet[16]) .Or. !("ZZ" $ _aRet[17])      
+            _cQuery += CrLf + "     AND VRK.VRK_FABMOD   BETWEEN '" +      _aRet[16]  + "' AND '" +      _aRet[17]  + "' "
+        Endif 
+        //somente fazer a distinÃ§Ã£o se estiver informado cÃ³digo especifico
+        If !Empty(_aRet[18]) .Or. !("ZZ" $ _aRet[19])      
+            _cQuery += CrLf + "     AND VRK.VRK_CORINT   BETWEEN '" +      _aRet[18]  + "' AND '" +      _aRet[19]  + "' "
+        Endif 
+        If !Empty(_aRet[20]) .Or. !("ZZ" $ _aRet[21])      
+            _cQuery += CrLf + "     AND VRK.VRK_COREXT   BETWEEN '" +      _aRet[20]  + "' AND '" +      _aRet[21]  + "' "
+        Endif
+        If !Empty(_aRet[22]) .Or. !("ZZ" $ _aRet[23])      
+            //_cQuery += CrLf + "     AND SC6.C6_XSEGMOD   BETWEEN '" +      _aRet[16]  + "' AND '" +      _aRet[17]  + "' "
+            _cQuery += CrLf + "     AND VRK.VRK_OPCION   BETWEEN '" +      _aRet[22]  + "' AND '" +      _aRet[23]  + "' "
+        Endif
+        _cQuery += CrLf + "     AND SC5.C5_EMISSAO   BETWEEN '" + DtoS(_aRet[24]) + "' AND '" + DtoS(_aRet[25]) + "' "
         _cQuery += CrLf + "     AND SC6.C6_QTDVEN    > SC6.C6_QTDENT "
         _cQuery += CrLf + "     AND SC5.C5_TIPO      = 'N' "
         _cQuery += CrLf + "     AND SC6.C6_PEDCLI    <> ' ' "
@@ -4358,7 +4162,7 @@ Default _cGroup     := ""
     If !Empty(_cGroup)
 	    _cQuery += CrLf + "GROUP BY " + _cGroup
     Endif     
-    //Order By verifica decifição de ordem do select
+    //Order By verifica decifiÃ§Ã£o de ordem do select
     If !Empty(_cOrderTab)
 	    _cQuery += CrLf + "ORDER BY " + _cOrderTab 
     Endif    
@@ -4375,22 +4179,20 @@ Return _cQuery
 User Function XZFT19CP()
 Local _aCab
 _aCab  := { "C6_OK"     ,"CC_STATUS" ,"C6_FILIAL" ,"C6_NUM"    ,"C6_PEDCLI" ,"C5_EMISSAO","C5_CLIENTE","C5_LOJACLI",;
-            "A1_CGC"    ,"A1_NOME"   ,"C5_CONDPAG","C5_NATUREZ","C5_XMENSER","C6_ITEM"   ,"C6_PRODUTO","B1_DESC"   ,"C6_LOCAL"  ,;
+            "A1_NOME"   ,"C5_CONDPAG","C5_NATUREZ","C5_XMENSER","C6_ITEM"   ,"C6_PRODUTO","B1_DESC"   ,"C6_LOCAL"  ,;
             "C6_CHASSI" ,"C6_NUMSERI","C6_LOCALIZ","C6_XCODMAR","C6_XDESMAR","C6_XGRPMOD","C6_XDGRMOD","C6_XMODVEI",;
             "C6_XDESMOD","C6_XSEGMOD","C6_XDESSEG","C6_XFABMOD","C6_XCORINT","C6_XCOREXT","C6_QTDVEN" ,"C6_PRCVEN" ,;
             "C6_VALOR"  ,"C6_OPER"   ,"C6_TES"    ,"C6_XVLRVDA","C6_PRUNIT" ,"C6_XPRCTAB","C6_XVLRPRD","C6_XVLRMVT",;
-            "C6_XBASST" ,"C6_LOJA"   ,"C6_CLI"    ,"C9_SEQUEN" ,"C9_NFISCAL","C9_SERIENF","C5_XTIPVEN","VRJ_PEDIDO",;
-            "VRK_ITEPED","VRK_FABMOD","VRK_CHASSI","VRK_CORINT","VRK_COREXT","VRK_MODVEI","VRK_SEGMOD","VRK_CODMAR",;
-            "VRK_VALTAB","VRK_VALPRE","VRK_VALMOV","VRK_XBASST","VRK_VALVDA","VRJ_STATUS","VV2_DESMOD","VE1_DESMAR",;
-            "VVX_DESSEG"; 
+            "C6_XBASST" ,"C9_SEQUEN" ,"C9_NFISCAL","C9_SERIENF","C5_XTIPVEN","VRJ_PEDIDO","VRK_FABMOD","VRK_CHASSI",;
+            "VRK_CORINT","VRK_COREXT","VRK_MODVEI","VRK_SEGMOD","VV2_DESMOD","VE1_DESMAR","VVX_DESSEG","VRK_CODMAR",;
+            "VRK_VALTAB","VRK_VALPRE","VRK_VALMOV","VRK_XBASST","VRK_VALVDA","VRJ_STATUS" ; 
             }
-            
 Return _aCab
 
 
 
 //GAP167  Previsao de Faturamento
-//Localização Chassi
+//LocalizaÃ§Ã£o Chassi
 User Function XZFT19CH(_cProduto, _cLocal, _cNumSerie, cChassi, cFabMod, _aCampos)
 Local _cQuery 		:= ""
 Local _nPos 
@@ -4423,9 +4225,9 @@ Default _aCampos    := { 	"VV1.VV1_FILIAL",;
 	_cQuery += CrLf + "     , SUM(SBF.BF_QUANT) OVER (ORDER BY BF_PRODUTO) AS QTDETOT " 	
 
     //GAP167  Previsao de Faturamento
-    //Query será utilizada também para Previsao  DAC 16/05/2024
+    //Query serÃ¡ utilizada tambÃ©m para Previsao  DAC 16/05/2024
     
-    //Atualização realizada pela Totvs, acrescentada na lógica DAC 14/05/2024
+    //AtualizaÃ§Ã£o realizada pela Totvs, acrescentada na lÃ³gica DAC 14/05/2024
     _cQuery += CrLf + "     , (SELECT MAX(SDB.DB_NUMSEQ) "
     _cQuery += CrLf + "          FROM " + RetSqlName("SDB") + " SDB"
     _cQuery += CrLf + "          WHERE  SDB.DB_FILIAL       = '"+xFilial("SDB")+"'"
@@ -4494,7 +4296,7 @@ Return _aPrevisao
 
 
 //GAP167  Previsao de Faturamento
-//Chamada do Estorno podendo ser xamado de outras funções
+//Chamada do Estorno podendo ser xamado de outras funÃ§Ãµes
 User Function XZFT19ET(_cAlias)
 Local _oSay
 	//FwMsgRun(,{ |_oSay| Estor( _cAlias, _oSay ) }, "Estornando registros", "Aguarde...")  
@@ -4502,9 +4304,9 @@ Local _oSay
 Return Nil
 
 
- 
+
 //GAP167  Previsao de Faturamento
-//Chamada do Estorno podendo ser xamado de outras funções
+//Chamada do Estorno podendo ser xamado de outras funÃ§Ãµes
 User Function XZFT19FT(_cFilPrev, _cCodPrev, _oSay)
 Local _aRet         := {}
 Local _aParam       := {}
@@ -4516,13 +4318,13 @@ Local _nPos
 Default _cCodPrev   := ""
 Default _cFilPrev   := FwxFilial("ZZP")
 
-Private _aMsgPrev   := {}  //carregar informações do processo
+Private _aMsgPrev   := {}  //carregar informaÃ§Ãµes do processo
 
 Begin Sequence
 	_oSay:SetText("Aguarde Preparando parametros - Hora: "+Time())
 	ProcessMessage()
      If Empty(_cCodPrev)
-	    ApMsgStop("Não informada Previsao", "Previsao Faturamento")
+	    ApMsgStop("NÃ£o informada Previsao", "Previsao Faturamento")
         Break
     Endif
 
@@ -4548,7 +4350,7 @@ Begin Sequence
        Aadd(_aRet,_xVar)
     Next
 
-    //colocar validação do ZZP tem que estar com qtde liberada
+    //colocar validaÃ§Ã£o do ZZP tem que estar com qtde liberada
 	_cWhere := "     AND SC6.C6_XFILPVR =  '" + _cFilPrev + "' " + CrLf 
 	_cWhere += "     AND SC6.C6_XCODPVR =  '" + _cCodPrev + "' " + CrLf
 	_cWhere += "     AND SC6.C6_CHASSI  <> '" + Space(Len(SC6->C6_CHASSI)) + "' " 
@@ -4580,7 +4382,7 @@ Return Nil
 
 /*
 // GAP167  Previsao de Faturamento 
-//Atualizar dados do Faturamento em Previsão e tabelas caso necessário
+//Atualizar dados do Faturamento em PrevisÃ£o e tabelas caso necessÃ¡rio
 Aadd(_aPrev,{   SC6->C6_XFILPVR, ;  //01
                 SC6->C6_XCODPVR, ;  //02
                 SF2->F2_CLIENTE,;   //03
@@ -4600,7 +4402,7 @@ Local _cAliasPesq   := GetNextAlias()
 Local _lRet         := .T.
 Local _aMsg         := {} 
 Local _cMens        := ""
-Local _cStatus      := "F"  //Status a pesquisar no ZZP não poderá existir
+Local _cStatus      := "F"  //Status a pesquisar no ZZP nÃ£o poderÃ¡ existir
 Local _cStatusNew   := "F"  //Status a alterar no ZZN
 Local _nOper        := 1    //Faturamento
 Local _nPos 
@@ -4612,7 +4414,7 @@ Default _aPrev := {}
 
 Begin Sequence
     If Len(_aPrev) == 0 
-        ApMsgStop("Informado Previsao mas nao encontrado nenhum registro com referencia a previsao, verificar com ADM Sistemas ", "Previsão Faturamento")
+        ApMsgStop("Informado Previsao mas nao encontrado nenhum registro com referencia a previsao, verificar com ADM Sistemas ", "PrevisÃ£o Faturamento")
         _lRet :=  .F.    
         Break 
     Endif 
@@ -4628,7 +4430,7 @@ Begin Sequence
             AAdd(_aMsg, _cMens)
             Loop
         ElseIf Empty(SC6->C6_NOTA)
-            _cMens := "Produto "+AllTrim(SC6->C6_PRODUTO)+" referente ao Pedido "+SC6->C6_NUM+" nao foi faturado,  Previsão "+_aPrev[_nPos,01]+"-"+_aPrev[_nPos,02]+" Previsão será retirada deste Pedido" 
+            _cMens := "Produto "+AllTrim(SC6->C6_PRODUTO)+" referente ao Pedido "+SC6->C6_NUM+" nao foi faturado,  PrevisÃ£o "+_aPrev[_nPos,01]+"-"+_aPrev[_nPos,02]+" PrevisÃ£o serÃ¡ retirada deste Pedido" 
             If RecLock("SC6",.F.)
                 SC6->C6_XFILPVR := " "
                 SC6->C6_XCODPVR := " "
@@ -4653,12 +4455,12 @@ Begin Sequence
     _cQuery += "   	AND ZZP.ZZP_STATUS 	= 'L' "
 	_nStatus := TCSqlExec(_cQuery)
 	If (_nStatus < 0)
-    	MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao Previsão "+_cCodPrev)
+    	MsgStop("TCSQLError() " + TCSQLError(), "Atualizacao PrevisÃ£o "+_cCodPrev)
         _lRet := .F. 
         Break
 	EndIf
-    //Após o Faturamento atualizar tabela ZZN
-    U_XZFAT9ZZNC(_cStatus, _cStatusNew, _cFilPrev, _cCodPrev, _nOper, _aMsg, .T. /*_lMens*/)
+    //ApÃ³s o Faturamento atualizar tabela ZZN
+    XZFAT9ZZNC(_cStatus, _cStatusNew, _cFilPrev, _cCodPrev, _nOper, _aMsg, .T. /*_lMens*/)
 
 End Sequence 
 If Select((_cAliasPesq)) <> 0
@@ -4669,7 +4471,7 @@ Endif
 Return _lRet  
 
 /*
-//Efetuar a atualização da Previsão após o cancelamento da Nota  DAC 05/06/2024
+//Efetuar a atualizaÃ§Ã£o da PrevisÃ£o apÃ³s o cancelamento da Nota  DAC 05/06/2024
  _aPrevisao, { SC6->C6_XFILPVR, ;
               SC6->C6_XCODPVR, ;
               SC6->C6_CLI, ;
@@ -4695,12 +4497,12 @@ Local _cCodProd
 Local _cFabMod
 
 Begin Sequence 
-    //Organizo para cria uma chave e atualização para tabela ZPP
-	aSort( _aPrevisao , , , { |x,y| x[1]+x[2]+x[3]+x[4]+x[5]+x[6] > y[1]+y[2]+y[3]+y[4]+y[5]+y[6] } )  //para organiar previsão
+    //Organizo para cria uma chave e atualizaÃ§Ã£o para tabela ZPP
+	aSort( _aPrevisao , , , { |x,y| x[1]+x[2]+x[3]+x[4]+x[5]+x[6] > y[1]+y[2]+y[3]+y[4]+y[5]+y[6] } )  //para organiar previsÃ£o
     //Carrego pois vai ser validado no inico
     For _nPos := 1 To Len(_aPrevisao)   
         If _cChave <> _aPrevisao[_nPos,1]+_aPrevisao[_nPos,2]+_aPrevisao[_nPos,3]+_aPrevisao[_nPos,4]+_aPrevisao[_nPos,5]+_aPrevisao[_nPos,6]
-            If !Empty(_cChave)  //primeira vez que efetua a carga não executar a funcionalidade
+            If !Empty(_cChave)  //primeira vez que efetua a carga nÃ£o executar a funcionalidade
                 XZFAT9CPV2(_nQtde, _cFilPrev, _cCodPrev, _cCodCli, _cLoja, _cCodProd, _cFabMod, _aRegSC6) //atualizar zzpp
                 _nQtde      := 0
                 _aRegSC6    := {}
@@ -4730,7 +4532,7 @@ Local _lRet         := .T.
 Local _nOper        := 2    //Cancelamento
 Local _nCancela     := 0
 Local _aObs         := {}
-Local _cStatus      := "C"  //Status a pesquisar no ZZP não poderá existir CANCELAR
+Local _cStatus      := "C"  //Status a pesquisar no ZZP nÃ£o poderÃ¡ existir CANCELAR
 Local _cStatusNew   := "C"  //Status a alterar no ZZN
 Local _lDiverge     := .F.
 Local _cMens
@@ -4740,7 +4542,7 @@ Local _nCount
 Default _lMens      := .F.
 
 Begin Sequence 
-	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporÃ¡rio 
         SELECT  ZZP.R_E_C_N_O_ AS NREGZZP 
                 , COALESCE(SUM(ZZP.ZZP_QTELIB) OVER (ORDER BY ZZP.ZZP_CODPRV), 0) AS QTDE_LIB
 	    FROM %Table:ZZP% ZZP
@@ -4755,7 +4557,7 @@ Begin Sequence
  	EndSql
     (_cAliasPesq)->(DbGotop())
     If  (_cAliasPesq)->(Eof())
-        _cMens := "Não encontrada Tabela ZZP Previsao "+_cFilPrev+"-"+_cCodPrev+", verificar com ADM Sistemas "
+        _cMens := "NÃ£o encontrada Tabela ZZP Previsao "+_cFilPrev+"-"+_cCodPrev+", verificar com ADM Sistemas "
         Conout("*** ZFATF019 - XZFAT9CPV2 "+_cMens)
         If _lMens
             ApMsgStop(_cMens, "ZFATF019 - XZFAT9CPV2")
@@ -4766,13 +4568,13 @@ Begin Sequence
     
     If _nQtde <= (_cAliasPesq)->QTDE_LIB  //Limpeza total
         _nCancela := _nQtde
-    ElseIf _nQtde > (_cAliasPesq)->QTDE_LIB  //a quantidade calculada foi maior que a quantidade apurada pela função de cancelamento teoricamente não deveria acontecer
+    ElseIf _nQtde > (_cAliasPesq)->QTDE_LIB  //a quantidade calculada foi maior que a quantidade apurada pela funÃ§Ã£o de cancelamento teoricamente nÃ£o deveria acontecer
         _nCancela := (_cAliasPesq)->QTDE_LIB
         _lDiverge := .T.
     Endif
-    _cMens :=   "Cancelamento de Nota, estornando as previsões para Canceladas em "+DtoC(Date())+" as "+SubsTr(Time(),1,5)+" Usuario "+RetCodUsr()    
+    _cMens :=   "Cancelamento de Nota, estornando as previsÃµes para Canceladas em "+DtoC(Date())+" as "+SubsTr(Time(),1,5)+" Usuario "+RetCodUsr()    
     _cMens +=   "Na funcionalidade de Cancelamento de Notas foi cancelado itens da Previsso "+_cFilPrev+"-"+_cCodPrev+" "
-    _cMens +=   "Qtde do cancelamento notas "+AllTrim(Str(_nQtde))+", Qtde Previsão cancelada "+AllTrim(Str(_nCancela))+" "
+    _cMens +=   "Qtde do cancelamento notas "+AllTrim(Str(_nQtde))+", Qtde PrevisÃ£o cancelada "+AllTrim(Str(_nCancela))+" "
     _cMens +=   If(_lDiverge,"Com divergencia quantidade cancelada maior que a da previsao ","") 
     _cMens +=   "Chave de cancelamento "+_cFilPrev+"|"+ _cCodPrev+"|"+_cCodCli+"|"+_cLoja+"|"+_cCodProd+"|"+_cFabMod+"| "
     _nCount := _nCancela
@@ -4790,7 +4592,7 @@ Begin Sequence
             ZZP->(MsUnlock()) 
         Endif 
         _nCount -= ZZP->ZZP_QTELIB
-        //Cancelar até a qundidade de linhas
+        //Cancelar atÃ© a qundidade de linhas
         If _nCount <= 0
             Exit 
         Endif     
@@ -4815,15 +4617,15 @@ If Select((_cAliasPesq)) <> 0
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif 
 //Chamar funcionalidade para verificar se encerrara aPrevisao ZZN
-U_XZFAT9ZZNC(_cStatus, _cStatusNew, _cFilPrev, _cCodPrev, _nOper, _aObs, _lMens)
+XZFAT9ZZNC(_cStatus, _cStatusNew, _cFilPrev, _cCodPrev, _nOper, _aObs, _lMens)
 Return _lRet
 
 
-//Função para verificar os Status ZZP se estão finalizados e atualizar ZZN
-//Após o Faturamento atualizar tabela ZZN
-//Após o cancelamento de nota atualizar tabela ZZN
-//_nOper : 1=Faturamento, 2= Cancelamento de Nota, 3=Devolução de Nota
-User Function XZFAT9ZZNC( _cStatus, _cStatusNew, _cFilPrev,_cCodPrev, _nOper, _aObs, _lMens )
+//FunÃ§Ã£o para verificar os Status ZZP se estÃ£o finalizados e atualizar ZZN
+//ApÃ³s o Faturamento atualizar tabela ZZN
+//ApÃ³s o cancelamento de nota atualizar tabela ZZN
+//_nOper : 1=Faturamento, 2= Cancelamento de Nota, 3=DevoluÃ§Ã£o de Nota
+Static Function XZFAT9ZZNC( _cStatus, _cStatusNew, _cFilPrev,_cCodPrev, _nOper, _aObs, _lMens )
 Local _cAliasPesq   := GetNextAlias()
 Local _lRet         := .T.
 Local _lAtualiza    := .T.
@@ -4847,7 +4649,7 @@ Begin Sequence
         _lRet :=  .F.    
         Break
     Endif
-	BeginSql Alias _cAliasPesq //Define o nome do alias temporário 
+	BeginSql Alias _cAliasPesq //Define o nome do alias temporÃ¡rio 
         %NoParser%
         WITH PREVSQL AS (   SELECT COALESCE(COUNT(ZZP.ZZP_STATUS),0) AS NTOTZZP
 		                    FROM %Table:ZZP% ZZP
@@ -4866,7 +4668,7 @@ Begin Sequence
 	EndSql
     (_cAliasPesq)->(DbGotop())
     If  (_cAliasPesq)->(Eof())
-        _cMens := "Não encontrada Tabela ZZN Previsao "+_cFilPrev+"-"+_cCodPrev+", verificar com ADM Sistemas "
+        _cMens := "NÃ£o encontrada Tabela ZZN Previsao "+_cFilPrev+"-"+_cCodPrev+", verificar com ADM Sistemas "
         Conout("*** ZFATF019 - XZFAT9ZZNC "+_cMens)
         If _lMens
             ApMsgStop(_cMens, "ZFATF019 - XZFAT9ZZNC")
@@ -4900,9 +4702,9 @@ Begin Sequence
         _cOper += " realizado em "+DtoC(Date())+" as "+Substr(time(),1,5)+" Usuario "+RetCodUsr()   
         _cObs := _cOper +CrLf+ _cObs
     Endif 
-    //Caso não conseguiu finalizar
+    //Caso nÃ£o conseguiu finalizar
     If !_lAtualiza
-        _cOper := "Não foi finalizado Processo existem registros na tabela item Previsao (ZZP) em aberto"
+        _cOper := "NÃ£o foi finalizado Processo existem registros na tabela item Previsao (ZZP) em aberto"
         _cObs := _cOper +CrLf+ _cObs
     Endif
 
@@ -4918,6 +4720,8 @@ Begin Sequence
         ZZN->ZZN_STATUS      := _cStatusNew
     Endif    
     ZZN->(MsUnlock())
+
+   
 End Sequence
 If Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
@@ -4928,10 +4732,10 @@ Return _lRet
 
 
 
-//Cabeçalho
+//CabeÃ§alho
 /*
 //-------------------------------------------------------------------
-    Calcula do Cabeçalho do Documento
+    Calcula do CabeÃ§alho do Documento
     MaFisRet( ,<cParametro>)
 
  Os Parametros Abaixo deve estar entre ' ou " pois tem que ser passado
@@ -4940,8 +4744,8 @@ Return _lRet
 // Campos utilizados para retorno dos impostos calculado Cabecalho
 // -------------------------------------------------------------------
 NF_TIPONF               //Tipo : N , I , C , P
-NF_OPERNF               //E-Entrada | S – Saida
-NF_CLIFOR               //C-Cliente | F – Fornecedor
+NF_OPERNF               //E-Entrada | S Â– Saida
+NF_CLIFOR               //C-Cliente | F Â– Fornecedor
 NF_TPCLIFOR             //Tipo do destinatario R,F,S,X
 NF_LINSCR               //Indica se o destino possui inscricao estadual
 NF_GRPCLI               //Grupo de Tributacao
@@ -5016,7 +4820,7 @@ NF_VALIV6               //Valor do Imposto Variavel 6
 NF_VALIV7               //Valor do Imposto Variavel 7
 NF_VALIV8               //Valor do Imposto Variavel 8
 NF_VALIV9               //Valor do Imposto Variavel 96
-NF_TPCOMP               //Tipo de complemento – F Frete , D Despesa Imp.
+NF_TPCOMP               //Tipo de complemento Â– F Frete , D Despesa Imp.
 NF_INSIMP               //Flag de Controle : Indica se podera inserir Impostos ?no Rodape.
 NF_PESO                 //Peso Total das mercadorias da NF
 NF_ICMFRETE             //Valor do ICMS relativo ao frete
@@ -5040,7 +4844,7 @@ Calcula dos Itens
 MaFisRet(< n > , <cParametro>)
 n          --> Numerico, numero da Linha do Item 
 cParametro --> Caracter, Parametros Abaixo
-*Observação: para alguns parametros deve ter as variaveis aCols e Aheader
+*ObservaÃ§Ã£o: para alguns parametros deve ter as variaveis aCols e Aheader
              declarada como Private e preenchida simulando a Grid dos itens
 // -------------------------------------------------------------------
 // Campos utilizados para retorno dos impostos calculado
@@ -5064,16 +4868,16 @@ IT_DEDICM				//Valor do ICMS a ser deduzido
 IT_VLCSOL				//Valor do ICMS Solidario calculado sem o credito aplicado
 IT_PAUTIC				//Valor da Pauta do ICMS Proprio
 IT_PAUTST				//Valor da Pauta do ICMS-ST
-IT_PREDIC				//%Redução da Base do ICMS
-IT_PREDST				//%Redução da Base do ICMS-ST
+IT_PREDIC				//%ReduÃ§Ã£o da Base do ICMS
+IT_PREDST				//%ReduÃ§Ã£o da Base do ICMS-ST
 IT_MVACMP				//Margem do complementar
-IT_PREDCMP				//%Redução da Base do ICMS-CMP
+IT_PREDCMP				//%ReduÃ§Ã£o da Base do ICMS-CMP
 IT_ALIQIPI				//Aliquota de IPI
 IT_IPI					//Array contendo os valores de IPI
 IT_BASEIPI				//Valor da Base do IPI
 IT_VALIPI				//Valor do IPI
 IT_BIPIORI				//Valor da Base Original do IPI
-IT_PREDIPI				//%Redução da Base do IPI
+IT_PREDIPI				//%ReduÃ§Ã£o da Base do IPI
 IT_PAUTIPI				//Valor da Pauta do IPI
 IT_NFORI				//Numero da NF Original
 IT_SERORI				//Serie da NF Original
@@ -5100,7 +4904,7 @@ IT_CODISS				//Codigo do ISS
 IT_CALCISS				//Flag de controle para calculo do ISS
 IT_RATEIOISS			//Flag de controle para calculo do ISS
 IT_CFPS					//Codigo Fiscal de Prestacao de Servico
-IT_PREDISS				//Redução da base de calculo do ISS
+IT_PREDISS				//ReduÃ§Ã£o da base de calculo do ISS
 IT_VALISORI				//Valor do ISS do item sem aplicar o arredondamento
 IT_IR					//Array contendo os valores do Imposto de renda
 IT_BASEIRR				//Base do Imposto de Renda do item
@@ -5222,7 +5026,7 @@ IT_CODIF				//Codigo de autorizacao CODIF - Combustiveis
 IT_BASETST				//Base do ICMS de transporte Substituicao Tributaria
 IT_ALIQTST				//Aliquota do ICMS de transporte Substituicao Tributaria
 IT_VALTST				//Valor do ICMS de transporte Substituicao Tributaria
-IT_CRPRSIM				//Valor Crédito Presumido Simples Nacional - SC, nas aquisições de fornecedores que se enquadram no simples
+IT_CRPRSIM				//Valor CrÃ©dito Presumido Simples Nacional - SC, nas aquisiÃ§Ãµes de fornecedores que se enquadram no simples
 IT_VALANTI				//Valor Antecipacao ICMS                       
 IT_DESNTRB				//Despesas Acessorias nao tributadas - Portugal
 IT_TARA					//Tara - despesas com embalagem do transporte - Portugal
@@ -5237,13 +5041,13 @@ IT_UFORI				//UF Original da Nota de Entrada para o calculo do IVA Ajustado( Opc
 IT_ALQORI				//Aliquota Original da Nota de Entrada para o calculo do IVA Ajustado ( Opcional )
 IT_PROPOR				//Quantidade proporcional na venda para o calculo do IVA Ajustado( Opcional )
 IT_ALQPROR				//Aliquota proporcional na venda para o calculo do IVA Ajustado( Opcional )
-IT_ANFII				//Array contendo os valores do Imposto de Importação
-IT_ALIQII				//Aliquota do Imposto de Importação
-IT_VALII				//Valor do Imposto de Importação (Digitado direto na Nota Fiscal)
+IT_ANFII				//Array contendo os valores do Imposto de ImportaÃ§Ã£o
+IT_ALIQII				//Aliquota do Imposto de ImportaÃ§Ã£o
+IT_VALII				//Valor do Imposto de ImportaÃ§Ã£o (Digitado direto na Nota Fiscal)
 IT_PAUTPIS				//Valor da Pauta do PIS
 IT_PAUTCOF				//Valor da Pauta do Cofins
 IT_ALIQDIF				//Aliquota interna do estado para calculo do Diferencial de aliquota do Simples Nacional
-IT_CLASFIS				//Valor do Imposto de Importação (Digitado direto na Nota Fiscal)
+IT_CLASFIS				//Valor do Imposto de ImportaÃ§Ã£o (Digitado direto na Nota Fiscal)
 IT_VLRISC				//Valor do imposto ISC (Localizado Peru) por unidade  "PER"
 IT_CRPREPE				//Credito Presumido - Art. 6 Decreto  n28.247
 IT_CRPREMG				//Credito Presumido MG 

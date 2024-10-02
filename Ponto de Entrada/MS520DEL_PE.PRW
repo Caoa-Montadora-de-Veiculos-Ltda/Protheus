@@ -59,8 +59,15 @@ User Function MS520DEL()
 							MsgStop("TCSQLError() " + TCSQLError(), "Erro atualizacao VRJ")                                    
 						EndIf
 					EndIf
+	            	//GAP228 -Integração Faturamento Autoware DAC 02/10/2024
+					If SC6->(RecLock("SC6",.F.))
+						SC6->C6_XSTPEDI :=  'A'
+						SC6->(MsUnlock())
+					Endif  
+
 				EndIf
-            EndIf
+			
+			EndIf
         EndIf
 	ElseIf ( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 		If Findfunction("U_ZSAPF014")
