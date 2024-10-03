@@ -489,6 +489,32 @@ Begin Sequence
 			Loop
 		Endif	
 		*/
+
+	    If _cLocal = '02'
+			BeginSql Alias _cAliasTP //Define o nome do alias temporário 
+				SELECT 	VX5.VX5_CHAVE,
+						VX5.VX5_CODIGO,
+						VX5.VX5_DESCRI
+				FROM  %Table:VX5% VX5 
+				WHERE 	VX5.VX5_FILIAL 	=  %xFilial:VX5% 
+					AND VX5.VX5_CHAVE 	= 'Z06'
+					AND VX5.%notDel%
+				ORDER BY VX5.VX5_CHAVE, VX5.VX5_CODIGO	
+			EndSql
+
+    		_Arm02 := .F.
+			While (_cAliasTP)->(!Eof())
+                iF (_cAliasTP)->VX5_CODIGO = (_cAliasTRB)->VS1_XTPPED
+                   _Arm02 := .T.
+				Endif
+				(_cAliasTP)->(DbSkip())
+			EndDo	
+			If !_Arm02
+				(_cAliasTRB)->(DbSkip())
+				Loop
+			Endif
+        Endif
+
 		//organizar para geração do Picking após o acumuo dos orçamentos DAC 14/06/2022
 		_cTipoPed		:= (_cAliasTRB)->VS1_XTPPED
 		_cTipoModal		:= (_cAliasTRB)->VS1_XTPTRA
@@ -805,7 +831,7 @@ Local _nPos
 Local _cGrupo
 //Local _aCpoVazio	:= {"VS1_XAGLU","VS1_XDTAGL","VS1_XHSAGL","VS1_XUSUGL","VS1_OBSAGL"}
 //Local _nTam			:= TamSx3("B2_LOCAL")[1]
-Local _nSaldoSB2
+Local _nSaldoSB2	:= 0
 Local _nQtdeItem 
 Local _cCodProd
 Local _nQtdePrd  
@@ -813,6 +839,11 @@ Local _nQtdeParc
 Local _lZera
 Local _cObs
 Local _nSAldo := 0
+Local _aRet := {}
+Local _cTipoSub := Space(3)
+Private _aSubsit := {}
+Private _aSimilar:= {}
+
 Begin Sequence
 	_cConectWis := "%"+_cConectWis+"%"
 	_cCdEmpWIS 	:= "%"+_cCdEmpWIS+"%"
@@ -875,7 +906,8 @@ Begin Sequence
 		//_cArmazem	:= (_cAliasPesq)->VS3_LOCAL
 		_cCodProd 	:= AllTrim((_cAliasPesq)->VS3_CODITE)
 		_cGrupo		:= (_cAliasPesq)->VS3_GRUITE
-
+		
+		_aRet := {} 
 		//Conforme solicitação JC e Fabio caso não tenha TES Abortar o orçamento inteiro
 		If 	Empty((_cAliasPesq)->VS3_CODTES)
 			Aadd(_aMensAglu,"Produto "+ AllTrim(_cCodProd) +" com TES não informado no item do orçamento !")
@@ -1098,6 +1130,7 @@ Local _cGrupoSubst
 Local _nQtdePrd  
 Local _nPos
 Local _nCount
+Local _cItemAux := ""
 
 	//Local _lSaldoItSubs	:= GetNewPar("MV_CHKQSUB","N") == "S"  //indica se verifica saldo do SB2 para dar continuidade no processamento
 
@@ -1105,15 +1138,22 @@ Local _nCount
 		oZPEC08Peca:SetGrupo(_cGrupo)
 		oZPEC08Peca:SetCodigo(_cCodItem)
 		_aItemRelac := oZPEC08Peca:ItensSubstituidos()
-		aSort(_aItemRelac,,,{|x,y| x[4] > y[4]})
+		aSort(_aItemRelac,,,{|x,y| x[7] > y[7]})
 		If Len(_aItemRelac) == 0 .or. Empty(AllTrim(_aItemRelac[1,2]))
 			Aadd(_aMensAglu,"Não existe item Substitutos para o produto " +AllTrim(_cCodItem))	
 			Break	
 		Endif
+		_aSubsit := aClone(_aItemRelac)
 		For _nPos := 1 To Len(_aItemRelac)
 			_cGrupoSubst	:= _aItemRelac[_nPos,1]
 			_cCodSubst 		:= _aItemRelac[_nPos,2]//AllTrim(_aItemRelac[_nPos,2])
 			_nSaldoSB2 		:= _aItemRelac[_nPos,7]
+			
+			if alltrim(_cCodSubst) $ _cItemAux
+				Loop
+			Else
+				_cItemAux += alltrim(_cCodSubst) +"|"
+			endIf
 			
 			//GAP098 | Desmembrar itens bloqueados por inventário - Alteração funcionalidade de verificação saldo WIS e Protheus DAC 08/11/2023
 			//Calcular o Saldo
@@ -1150,7 +1190,7 @@ Local _nCount
 			If _nQtdeItem <= 0
 				Exit
 			EndIf		
-		Next
+		Next _nPos
 		If _nQtdeAnt <> _nQtdeItem  //no caso gravou movimentos
 			_lRet := .T.
 		EndIf
@@ -1197,10 +1237,16 @@ Static Function ZPECF08SIM( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _
 			Aadd(_aMensAglu,"Não existe item Similar para o produto " +AllTrim(_cCodItem))	
 			Break	
 		Endif
+		
 		For _nPos := 1 To Len(_aItemSim)
 			_cGrupoSubst	:= _aItemSim[_nPos,1]
 			_cCodSimilar	:= _aItemSim[_nPos,2]//AllTrim(_aItemSim[_nPos,2])
 			_nSaldoSB2 		:= _aItemSim[_nPos,4] //SB2->(SaldoSB2())
+			// Validação pois o Item Similar também pode estar cadastrado como Substituto e provocando movimentação de quantidade maior do que necessario.
+			if Ascan(_aSubsit,{|x| x[2] == _aItemSim[_nPos,2]}) <> 0
+				Aadd(_aMensAglu,"O item Similar " +AllTrim(_cCodSimilar)+ " já utilizado como Substituto")	
+				loop
+			endIf
 
 			//GAP098 | Desmembrar itens bloqueados por inventário - Alteração funcionalidade de verificação saldo WIS e Protheus DAC 08/11/2023
 			//Calcular o Saldo
@@ -1326,7 +1372,7 @@ Static Function ZPECF08KIT( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _
 				_cCodKit	:= VEH->VEH_CODKIT
 				_aKit  	:= {}
 				_aBak	:= {}
-				_aRet 	:= ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodKit, _cCodItem, _cLocal, _nRegVS3, _cMarca)
+				_aRet 	:= ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodKit, _cCodItem, _cLocal, _nRegVS3, _cMarca, _cGrupo)
 				If Len(_aRet) == 0 .or. Len(_aRet[1]) == 0  //sempre tem que ter um KIT
 					_lRet := .F.
 					Break	
@@ -1362,7 +1408,7 @@ Static Function ZPECF08KIT( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _
 Return _lRet
 
 //Avaliar itens do KIT
-Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodKit, _cCodItem, _cLocal, _nRegVS3, _cMarca)
+Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodKit, _cCodItem, _cLocal, _nRegVS3, _cMarca,_cGrupo)
 	Local _lRet			:= .T.
 	Local _cAliasPesq	:= GetNextAlias()
 	Local _aKit			:= {}
@@ -1412,7 +1458,7 @@ Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodK
 			EndIf
 			SB2->(DbSetOrder(1))  //B2_FILIAL+B2_COD+B2_LOCAL
 			If !SB2->(MsSeek(XFilial("SB2")+_cCodSubst+_cLocal))
-				Aadd(_aMensAglu,"KIT - Não existe saldo do item KIT " +AllTrim(_cCodSubst)+ " para o produto " +AllTrim(_cCodKit)+" armazém "+_cLocal)	
+				Aadd(_aMensAglu,"KIT - Não existe cadastro do item KIT " +AllTrim(_cCodSubst)+ " para o produto " +AllTrim(_cCodKit)+" armazém "+_cLocal + "(SB2)")	
 				//Caso seja mandatório e não tenha saldo nenhum abortar
 				If VE8->VE8_TIPO == "1" 	
 					_aKit := {}
@@ -1960,7 +2006,7 @@ Static Function ALTERAITParcial( _nRegVS3Sub, _cNumOrc, _cGrupo, _cCodItem, _cLo
 			VS3->VS3_GRUKIT	:= _cGrupo
 		EndIf	
 		If _cTpSub == "0"
-			_cObs := "ITEM PRODUTO " +AllTrim(_cCodItem)+ " AJUSTADO QANTIDADE PARA ORCAMENTO "+_cNumOrc
+			_cObs := "ITEM PRODUTO " +AllTrim(_cCodItem)+ " AJUSTADO QUANTIDADE PARA ORCAMENTO "+_cNumOrc
 			_cObs += " QTDE ANTERIOR "+AllTrim(STR(_nQtdeAtu))+ " ALTERADO PARA "+AllTrim(STR(_nQtdePrd))+" EM ITEM JA EXISTENTE"
 			_cObs += " OPERAÇÃO PARCIAL"
 		Else
