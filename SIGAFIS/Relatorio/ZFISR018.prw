@@ -40,7 +40,7 @@ User Function ZFISR018()
 //  aAdd(aPergs, {1, "Tipo Relat."    ,nTipoRel ,{"1=Excel XML", "2=Excel XLSX"}    ,80         ,".T."      ,.T.    })  //MV_PAR10
      
     //Se a pergunta for confirma, cria as definicoes do relatorio
-    If ParamBox(aPergs, "Informe os parâmetros para Nota Fiscal de entrada", , , , , , , , , .F., .F.)
+    If ParamBox(aPergs, "Informe os parâmetros para Nota Fiscal de entrada", , , , , , , , , .T., .T.)
     //  MV_PAR08 := Val(cValToChar(MV_PAR08))
         Processa({|| fGeraExcel()})
     EndIf
@@ -102,11 +102,12 @@ Static Function fGeraExcel()
     cQryDad += "        , SF1.F1_CHVNFE   AS CHAVE "                            + CRLF
     cQryDad += "        , SF1.F1_USERLGI  AS UINCLUI" 		                    + CRLF
     cQryDad += "        , SF1.F1_USERLGA  AS UALTERA" 		                    + CRLF
-    cQryDad += "        , SD1.D1_CF       AS CFOP "                             + CRLF
-    cQryDad += "        , SUM(FT_VALPIS)  AS VALOR_PIS "                        + CRLF
-    cQryDad += "        , SUM(FT_VALCOF)  AS VALOR_COF "                        + CRLF
-	cQryDad += "	    , SF3.F3_ESPECIE  AS ESPECIE "                          + CRLF 
-	cQryDad += "		, SF3.F3_CFO 	  AS CFOP "                             + CRLF 
+    cQryDad += "        , SF3.F3_VALIMP6 AS VALOR_PIS "                         + CRLF
+    cQryDad += "        , SF3.F3_VALIMP5 AS VALOR_COF "                         + CRLF
+//    cQryDad += "        , SUM(FT_VALPIS)  AS VALOR_PIS "                        + CRLF
+//    cQryDad += "        , SUM(FT_VALCOF)  AS VALOR_COF "                        + CRLF
+	cQryDad += "	    , SF1.F1_ESPECIE  AS ESPECIE "                          + CRLF 
+	cQryDad += "		, SF3.F3_CFO      AS CFOP "                             + CRLF 
 	cQryDad += "		, TO_DATE(SF3.F3_ENTRADA, 'YYYYMMDD')  AS DT_LANC "     + CRLF
     cQryDad += "        , SF1.F1_VALMERC  AS VALOR_ITENS "                      + CRLF
 	cQryDad += "		, SF3.F3_VALCONT  AS VALOR_CONTABIL "                   + CRLF 
@@ -124,54 +125,42 @@ Static Function fGeraExcel()
     cQryDad += "		, SF3.F3_DESPESA  AS OUTRAS_DESPESAS  "                 + CRLF 
     cQryDad += "		, SF3.F3_VALOBSE  AS DESCONTO  "                        + CRLF 
     cQryDad += "		, SF1.F1_BASIMP6  AS BASE_PIS  "                        + CRLF 
-    //cQryDad += "		, SF3.F3_VALIMP6  AS VALOR_PIS  "                       + CRLF    
     cQryDad += "		, SF1.F1_BASIMP5  AS BASE_COF  "                        + CRLF 
-    //cQryDad += "		, SF3.F3_VALIMP5  AS VALOR_COF  "                       + CRLF   
     cQryDad += "		, SF3.F3_BASEPS3  AS PIS_ST_ZFM  "                      + CRLF 
     cQryDad += "		, SF3.F3_VALPS3   AS VAL_PISSTZFM  "                    + CRLF     
     cQryDad += "		, SF3.F3_BASECF3  AS COF_ST_ZFM  "                      + CRLF 
     cQryDad += "		, SF3.F3_VALCF3   AS VAL_COFST_ZFM  "                   + CRLF 
     cQryDad += "		, SF3.F3_OBSERV   AS OBSERVACAO  "                      + CRLF
-    cQryDad += "		, SF3.F3_DTCANC "                                       + CRLF
+    cQryDad += "		, SF3.F3_DTCANC  "                                      + CRLF
     cQryDad += "FROM "       + RetSQLName( 'SF1' ) + " SF1 "                    + CRLF //-- CAB. NOTA FISCAL DE ENTRADA
     cQryDad += "LEFT JOIN "  + RetSQLName( 'SA2' ) + " SA2 "                    + CRLF //-- FORNECEDORES
     cQryDad += "    ON SA2.A2_FILIAL  = '" + FWxFilial('SA2') + "' "            + CRLF 
     cQryDad += "    AND SA2.A2_COD     = SF1.F1_FORNECE"                        + CRLF 
     cQryDad += "    AND SA2.A2_LOJA    = SF1.F1_LOJA "                          + CRLF 
- // cQryDad += "    AND SA2.D_E_L_E_T_ = ' ' "	                                + CRLF
-	cQryDad += "LEFT JOIN "  + RetSQLName( 'SD1' ) + " SD1 "                    + CRLF //-- ITENS DOCUMENTO DE ENTRADA
-    cQryDad += "    ON SD1.D1_FILIAL  = '" + FWxFilial('SD1') + "' "            + CRLF
-    cQryDad += "    AND SD1.D1_DOC     = SF1.F1_DOC"                            + CRLF
-    cQryDad += "    AND SD1.D1_SERIE   = SF1.F1_SERIE"                          + CRLF
-    cQryDad += "    AND SD1.D1_FORNECE = SF1.F1_FORNECE"                        + CRLF
-    cQryDad += "    AND SD1.D1_LOJA    = SF1.F1_LOJA"                           + CRLF
-    cQryDad += "    AND SD1.D1_EMISSAO = SF1.F1_EMISSAO"                        + CRLF
-    cQryDad += "LEFT JOIN "  + RetSQLName( 'SFT' ) + " SFT "                    + CRLF //-- ITENS LIVROS FISCAIS
-	cQryDad += "    ON SFT.FT_FILIAL  = '" + FWxFilial('SFT') + "' "            + CRLF 
-    cQryDad += "    AND SFT.FT_NFISCAL = SF1.F1_DOC"                            + CRLF
-    cQryDad += "    AND SFT.FT_SERIE   = SF1.F1_SERIE"                          + CRLF
-    cQryDad += "    AND SFT.FT_CLIEFOR = SF1.F1_FORNECE"                        + CRLF
-    cQryDad += "    AND SFT.FT_LOJA	  = SF1.F1_LOJA"                            + CRLF
-    cQryDad += "    AND SFT.FT_PRODUTO = SD1.D1_COD"                            + CRLF
+    cQryDad += "    AND SA2.D_E_L_E_T_ = ' ' "	                                + CRLF
+
+//    cQryDad += "LEFT JOIN "  + RetSQLName( 'SFT' ) + " SFT "                    + CRLF //-- ITENS LIVROS FISCAIS
+//	cQryDad += "    ON SFT.FT_FILIAL  = '" + FWxFilial('SFT') + "' "            + CRLF 
+//    cQryDad += "    AND SFT.FT_NFISCAL = SF1.F1_DOC"                            + CRLF
+//    cQryDad += "    AND SFT.FT_SERIE   = SF1.F1_SERIE"                          + CRLF
+//    cQryDad += "    AND SFT.FT_CLIEFOR = SF1.F1_FORNECE"                        + CRLF
+//    cQryDad += "    AND SFT.FT_LOJA	  = SF1.F1_LOJA"                            + CRLF
 //  cQryDad += "    AND SFT.D_E_L_E_T_ = ' ' "	                                + CRLF
 
     cQryDad += "LEFT JOIN "  + RetSQLName( 'SF3' ) + " SF3 "                    + CRLF //-- LIVROS FISCAIS CABEÇALHO
-    cQryDad += "    ON SF3.F3_FILIAL  = '" + FWxFilial('SF3') + "' "            + CRLF 
+    cQryDad += "    ON SF3.F3_FILIAL   = '" + FWxFilial('SF3') + "' "           + CRLF 
     cQryDad += "    AND SF3.F3_NFISCAL = SF1.F1_DOC"                            + CRLF
     cQryDad += "    AND SF3.F3_SERIE   = SF1.F1_SERIE "                         + CRLF
     cQryDad += "    AND SF3.F3_EMISSAO = SF1.F1_EMISSAO"                        + CRLF
-    cQryDad += "    AND SF3.F3_CFO     = SD1.D1_CF  "                           + CRLF
+//    cQryDad += "    AND SF3.F3_CFO     = SD1.D1_CF  "                           + CRLF
     cQryDad += "    AND SF3.D_E_L_E_T_ = ' ' "	                                + CRLF
-
-
-
 
     cQryDad += "WHERE  "	                                            + CRLF         
     cQryDad += "    SF1.F1_FILIAL 		= '" + FWxFilial('SF1') + "' "  + CRLF
 	
     If !Empty(DtoS(MV_PAR02)) //DATA EMISSAO ATE
 		cQryDad += " AND (SF1.F1_EMISSAO BETWEEN '" + DtoS(MV_PAR01) + "' AND '" + DtoS(MV_PAR02) + "')"    + CRLF //--DATA DE EMISSAO
-		cQryDad += " OR (SF3.F3_DTCANC BETWEEN '" + DtoS(MV_PAR01) + "' AND '" + DtoS(MV_PAR02) + "')"      + CRLF //--DATA DE EMISSAO
+//		cQryDad += " OR (SF3.F3_DTCANC  BETWEEN '" + DtoS(MV_PAR01) + "' AND '" + DtoS(MV_PAR02) + "')"      + CRLF //--DATA DE EMISSAO
 
 	EndIf
 
@@ -196,7 +185,6 @@ Static Function fGeraExcel()
     cQryDad += "    AND SF1.D_E_L_E_T_ 	= ' ' " + CRLF
     cQryDad += "GROUP BY "                      + CRLF 
     cQryDad += "    SF1.F1_FILIAL "             + CRLF    
-    cQryDad += "    , SD1.D1_CF "               + CRLF  
     cQryDad += "    , SA2.A2_CGC "              + CRLF     
 	cQryDad += "    , SA2.A2_INSCR "            + CRLF  	   
     cQryDad += "    , SA2.A2_COD "              + CRLF 
@@ -211,7 +199,9 @@ Static Function fGeraExcel()
     cQryDad += "    , SF1.F1_CHVNFE "           + CRLF        
     cQryDad += "    , SF1.F1_USERLGI "          + CRLF
     cQryDad += "    , SF1.F1_USERLGA "          + CRLF     
-    cQryDad += "    , SF3.F3_ESPECIE "          + CRLF 
+    cQryDad += "    , SF1.F1_ESPECIE "          + CRLF
+    cQryDad += "    , SF3.F3_VALIMP6 "          + CRLF
+    cQryDad += "    , SF3.F3_VALIMP5 "          + CRLF
 	cQryDad += " 	, SF3.F3_CFO "              + CRLF 
 	cQryDad += " 	, SF3.F3_ENTRADA "          + CRLF
     cQryDad += "    , SF1.F1_VALMERC "          + CRLF
@@ -230,9 +220,7 @@ Static Function fGeraExcel()
 	cQryDad += " 	, SF3.F3_DESPESA "          + CRLF 
 	cQryDad += " 	, SF3.F3_VALOBSE "          + CRLF 	 
 	cQryDad += " 	, SF1.F1_BASIMP6 "          + CRLF 
-	//cQryDad += " 	, SF3.F3_VALIMP6 "          + CRLF     	
 	cQryDad += " 	, SF1.F1_BASIMP5 "          + CRLF
-	//cQryDad += " 	, SF3.F3_VALIMP5 "          + CRLF 
 	cQryDad += " 	, SF3.F3_BASEPS3 "          + CRLF 	
 	cQryDad += " 	, SF3.F3_VALPS3  "          + CRLF 	 
 	cQryDad += " 	, SF3.F3_BASECF3 "          + CRLF 	
@@ -376,13 +364,14 @@ Static Function fGeraExcel()
                      (QRY_DAD)->PIS_ST_ZFM  ,;
                      (QRY_DAD)->VAL_PISSTZFM  ,;
                      (QRY_DAD)->COF_ST_ZFM  ,;
-                     (QRY_DAD)->VAL_COFST_ZFM  ,;					
+                     (QRY_DAD)->VAL_COFST_ZFM  ,;		
                      (QRY_DAD)->OBSERVACAO  ,;
                      cLogInc  ,;
                      cLogAlt   })
         ENDIF
         (QRY_DAD)->(DbSkip())
     EndDo
+
     //nf canceladas
      //Criando a aba da planilha
     oFWMsExcel:AddworkSheet(cWorkSh)
@@ -463,7 +452,7 @@ Static Function fGeraExcel()
                      (QRY_DAD)->TIPO ,;
                      (QRY_DAD)->FORMULARIO   ,;
                      (QRY_DAD)->ESPECIE  ,;
-                     (QRY_DAD)->CFOP  ,;
+                     (QRY_DAD)->CFOP,;
                      (QRY_DAD)->DT_ENTRADA  ,;
                      (QRY_DAD)->DT_LANC  ,;
                      (QRY_DAD)->VALOR_ITENS  ,;
@@ -489,7 +478,7 @@ Static Function fGeraExcel()
                      (QRY_DAD)->PIS_ST_ZFM  ,;
                      (QRY_DAD)->VAL_PISSTZFM  ,;
                      (QRY_DAD)->COF_ST_ZFM  ,;
-                     (QRY_DAD)->VAL_COFST_ZFM  ,;					
+                     (QRY_DAD)->VAL_COFST_ZFM  ,;	
                      (QRY_DAD)->OBSERVACAO  ,;
                      cLogInc  ,;
                      cLogAlt   })
@@ -498,9 +487,6 @@ Static Function fGeraExcel()
     EndDo
    
     (QRY_DAD)->(DbCloseArea())
-
-
-
 
     //Ativando o arquivo e gerando o xml
     oFWMsExcel:Activate()
