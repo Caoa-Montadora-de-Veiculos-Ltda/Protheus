@@ -183,7 +183,13 @@ Static Function fGeraExcel()
 	EndIf
 
     cQryDad += "    AND SF1.D_E_L_E_T_ 	= ' ' " + CRLF
-    cQryDad += "GROUP BY "                      + CRLF 
+    cQryDad += "Order BY "                      + CRLF
+    cQryDad += "    , SF1.F1_DOC "              + CRLF 
+    cQryDad += "    , SF1.F1_SERIE "            + CRLF
+
+
+
+/*    cQryDad += "GROUP BY "                      + CRLF 
     cQryDad += "    SF1.F1_FILIAL "             + CRLF    
     cQryDad += "    , SA2.A2_CGC "              + CRLF     
 	cQryDad += "    , SA2.A2_INSCR "            + CRLF  	   
@@ -226,7 +232,7 @@ Static Function fGeraExcel()
 	cQryDad += " 	, SF3.F3_BASECF3 "          + CRLF 	
 	cQryDad += " 	, SF3.F3_VALCF3  "          + CRLF    
 	cQryDad += " 	, SF3.F3_OBSERV  "          + CRLF 	
-	cQryDad += " 	, SF3.F3_DTCANC  "          + CRLF  
+	cQryDad += " 	, SF3.F3_DTCANC  "          + CRLF  */
 
     //Executando consulta e setando o total da regua
     //PlsQuery(cQryDad, "QRY_DAD")
