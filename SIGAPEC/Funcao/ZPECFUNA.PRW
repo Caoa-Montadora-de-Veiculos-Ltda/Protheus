@@ -967,6 +967,9 @@ User Function XOFUNVTB(_cCLi, _cLoja, _cCodItem, _lProcUF)
 	Local _cCampo
 	Local _cFunFor
 
+
+    IF (M->VS1_XTPPED <> '012' .AND. M->VS1_XTPPED <> '022') 
+	
 	//indica que deve procurar a UF para verificação valores customizados DAC 18/04/2022
 	Default _lProcUF := .T. 
 
@@ -1048,10 +1051,13 @@ User Function XOFUNVTB(_cCLi, _cLoja, _cCodItem, _lProcUF)
 		EndIf
 
 	End Sequence
+	ELSE
+	   _nValTab := SB1->B1_CUSTD
+	ENDIF 
 	If Select((_cAliasPesq)) <> 0
 		(_cAliasPesq)->(DbCloseArea())
 		Ferase(_cAliasPesq+GetDBExtension())
-	Endif 
+	Endif
 Return _nValTab
 
 /*/{Protheus.doc} XFASEORC
@@ -4842,7 +4848,7 @@ User Function XVERTABPreco( _cCLi, _cLoja, _cNumOrc )
 	Local _lRet			:= .F.  //indica não ocorreu alteração
 	Local _cData		:= DtOS(dDataBase)  //DtOS(Date()) //06/10/2022 conforme ZÃ© utilizar o database
 	Local _cCampo 		 
-
+    IF VS1->VS1_XTPPED <> '012' .AND. VS1->VS1_XTPPED <> '022' 
 	Begin Sequence
 		If SA1->A1_COD <> _cCLi .AND. SA1->A1_LOJA <> _cLoja 
 			SA1->(DbSetOrder(1))
@@ -4879,6 +4885,7 @@ User Function XVERTABPreco( _cCLi, _cLoja, _cNumOrc )
 			Break
 		EndIf
 	End Sequence
+    ENDIF
 	If Select((_cAliasPesq)) <> 0
 		(_cAliasPesq)->(DbCloseArea())
 		Ferase(_cAliasPesq+GetDBExtension())

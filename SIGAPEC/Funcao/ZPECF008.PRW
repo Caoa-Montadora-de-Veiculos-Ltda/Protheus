@@ -205,8 +205,8 @@ Responsável pelo processamento Aglutinando e Separando do orçamento passando pel
 @history    06/07/2022 DAC - Alterado select para onda incluído para não trazer com picking preenchido ZK_XPICKI
 /*/
 Static Function ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave , _cLocal, _aOndaRel, _oSay )
-Local _cAliasTRB    	:= GetNextAlias()      
-Local _cAliasTP         := GetNextAlias()  
+Local _cAliasTRB    	:= GetNextAlias()     
+Local _cAliasTP         := GetNextAlias()   
 Local _cCliFatDe 		:= _aRet[01]
 Local _cLojaCFDe		:= _aRet[02]
 Local _cCliFatAte 	    := _aRet[03]
@@ -495,7 +495,7 @@ Begin Sequence
 			If Select(_cAliasTP) <> 0
 				(_cAliasTP)->(DbCloseArea())
 			Endif  
-
+			
 			BeginSql Alias _cAliasTP //Define o nome do alias temporário 
 				SELECT 	VX5.VX5_CHAVE,
 						VX5.VX5_CODIGO,
@@ -514,7 +514,6 @@ Begin Sequence
 				Endif
 				(_cAliasTP)->(DbSkip())
 			EndDo	
-
 			If !_Arm02
 				(_cAliasTRB)->(DbSkip())
 				Loop
@@ -571,18 +570,23 @@ Begin Sequence
 			EndIf
 			//somente validar se não for transferência o tipo de pedido, esta transferência sera de Barueri para FDR DAC 08/02/2023
 			If Empty(_cTPedTransf) .Or. AllTrim(VS1->VS1_XTPPED) <> _cTPedTransf
-				//Verificar se existe divergência de Tabela
-				If U_XVERTABPreco (_cCliFat, _cLoja, VS1->VS1_NUMORC )
-					//Recalcular valores
-					If !VS1->(U_ORCCALFIS(VS1->VS1_NUMORC /*_cNumOrc*/,/*_lAtuaPreco*/))
-						VS1->(RecLock("VS1",.F.))
-						_cObs			:="Não foi possivel recalcular valores deste orçamento referente a Onda "+_cAglutina+" !
-						VS1->VS1_OBSAGL	:= Upper(_cObs) + CRLF  + AllTrim(VS1->VS1_OBSAGL)
-						VS1->(MsUnlock())
-						(_cAliasTRB)->(DbSkip())
-						Loop
+			    //Somente validar se não for pedido de garantia
+                If AllTrim(VS1->VS1_XTPPED) <> '012' .AND. AllTrim(VS1->VS1_XTPPED) <> '022'
+				
+					//Verificar se existe divergência de Tabela
+					If U_XVERTABPreco (_cCliFat, _cLoja, VS1->VS1_NUMORC ) 
+						//Recalcular valores
+						If !VS1->(U_ORCCALFIS(VS1->VS1_NUMORC /*_cNumOrc*/,/*_lAtuaPreco*/))
+							VS1->(RecLock("VS1",.F.))
+							_cObs			:="Não foi possivel recalcular valores deste orçamento referente a Onda "+_cAglutina+" !
+							VS1->VS1_OBSAGL	:= Upper(_cObs) + CRLF  + AllTrim(VS1->VS1_OBSAGL)
+							VS1->(MsUnlock())
+							(_cAliasTRB)->(DbSkip())
+							Loop
+						Endif
 					Endif
-				Endif
+
+				ENDIF
 
 				//Verificar Fases
 				If "2" $ _cFaseOrc  //somente se estiver na fase do orçamento conforme alinhado com Zé 30/11/2021
@@ -846,7 +850,7 @@ Local _lZera
 Local _cObs
 Local _nSAldo := 0
 Local _aRet := {}
-//Local _cTipoSub := Space(3)
+Local _cTipoSub := Space(3)
 Private _aSubsit := {}
 Private _aSimilar:= {}
 
@@ -1139,7 +1143,7 @@ Local _nCount
 Local _cItemAux := ""
 
 	//Local _lSaldoItSubs	:= GetNewPar("MV_CHKQSUB","N") == "S"  //indica se verifica saldo do SB2 para dar continuidade no processamento
- 
+
 	Begin Sequence
 		oZPEC08Peca:SetGrupo(_cGrupo)
 		oZPEC08Peca:SetCodigo(_cCodItem)
