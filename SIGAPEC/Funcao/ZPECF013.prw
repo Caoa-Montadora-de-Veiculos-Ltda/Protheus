@@ -1080,7 +1080,7 @@ Local _aCpoVazio	:= {"VS1_XAGLU",;
 */
 Begin Sequence
 	//Montar BackOrder 
-	/* RETIRADO CONFORME PASSADO POR JC SERÁ RETIRADO A LINHA INTEIRA DO ITEM ESTE CASO ERA COMO PARCIAL DAC 03/04/2022
+	/* RETIRADO CONFORME PASSADO POR JC SERÝ RETIRADO A LINHA INTEIRA DO ITEM ESTE CASO ERA COMO PARCIAL DAC 03/04/2022
 
 	If _nQtdeItem == 0
 		_lZera := .T.  //Apagara o VS3
@@ -1347,7 +1347,7 @@ Local _nTentativas
 Local _cMens
 Local _cLike		:= "PEDIDO: "+cZK_XPICKI
 Local _cDtEpi		:= " "
-
+Local nDesconto     := 0 
 
 //Private TRBNF   //:= GetNextAlias()
 Private aHeaderP  		:= {}
@@ -1411,6 +1411,14 @@ Begin Sequence
 		_lControla := .F.  //para não retirar controle ainda não acessou o mesmo
 		Break
 	endIF
+
+
+	If SA1->A1_DESC > 0 .AND. ( VS1->VS1_XTPPED = '012' .OR. VS1->VS1_XTPPED = '022')  
+	   nDesconto := SA1->A1_DESC
+	   RecLock("SA1",.F.)
+       SA1->A1_DESC := 0
+   	   SA1->(MsUnlock())
+	EndIf
 	
 	aAdd(_aIntCab, 	{"NUMERO"        , "C" , 60 , "@!"               }) // Número  ORÇAMENTO
 	aAdd(_aIntCab, 	{"TIPO"          , "C" , 60 , "@!"               }) // Tipo          "
@@ -1871,6 +1879,13 @@ Begin Sequence
 			SF2->F2_XPESOC := nPesos
 			SF2->(MsUnlock())
 		EndIf
+
+		If nDesconto > 0 .AND. ( VS1->VS1_XTPPED = '012' .OR. VS1->VS1_XTPPED = '022')  
+ 		   RecLock("SA1",.F.)
+		   SA1->A1_DESC := 	nDesconto
+		   SA1->(MsUnlock())
+           nDesconto := 0
+	    EndIf
 
 		//--Efetua a gravação dos pesos bruto e cubado na tabela GW8 - GFE
 		U_ZGFEF001(	_cDoc, _cSerie, _cCliente, _cLoja )
