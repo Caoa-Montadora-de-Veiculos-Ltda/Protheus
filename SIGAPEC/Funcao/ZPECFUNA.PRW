@@ -2534,12 +2534,16 @@ Static Function XCALCORCImposto(_nRegVS1, _lAtuaPreco)
 					_lAtuaPreco		:= .T.  //por mudar a TES deve atualizar preço
 				EndIf
 				//Atualizar valor unitario do produto
-				If _lAtuaPreco
+				If _lAtuaPreco .AND. VS1->VS1_XTPPED <> '012' .AND. VS1->VS1_XTPPED <> '022'
 					_nValorUnit	:= U_XOFUNVTB(VS1->VS1_CLIFAT, VS1->VS1_LOJA, VS3->VS3_CODITE)
 					If _nValorUnit <= 0
 						Aadd(_aMensAglu,"não encontrado tabela de preço para o item " +VS3->VS3_CODITE+ " para efetuar clonagem do item orçamento, mantido valor original ")
 						_nValorUnit := VS3->VS3_VALPEC
 					EndIf
+				ELSE	
+				   IF _lAtuaPreco .AND. (VS1->VS1_XTPPED = '012' .OR. VS1->VS1_XTPPED = '022')
+				      _nValorUnit := VS3->VS3_VALPEC
+				   ENDIF
 				Endif
 				//somente atualizar valores caso estejam diferentes // Retirado de lAtuaPreco para corrigir erros no Faturamento no VS3_VALTOT 
 				If (_nValorUnit > 0 .and. _nValorUnit <> VS3->VS3_VALPEC) .or. VS3->VS3_VALTOT <> ((VS3->VS3_VALPEC*VS3->VS3_QTDITE) - VS3->VS3_VALDES) //.and. VS3->(RecLock("VS3",.F.))
@@ -4854,43 +4858,47 @@ User Function XVERTABPreco( _cCLi, _cLoja, _cNumOrc )
 	Local _lRet			:= .F.  //indica não ocorreu alteração
 	Local _cData		:= DtOS(dDataBase)  //DtOS(Date()) //06/10/2022 conforme ZÃ© utilizar o database
 	Local _cCampo 		 
-
-	Begin Sequence
-		If SA1->A1_COD <> _cCLi .AND. SA1->A1_LOJA <> _cLoja 
-			SA1->(DbSetOrder(1))
-			If !SA1->(DbSeek(XFilial("SA1")+_cCLi+_cLoja))
-				_lRet := .T.  //caso não localize SA1 retorno tru para forçar calculo em tabela
+    IF VS1->VS1_XTPPED <> '012' .AND.  VS1->VS1_XTPPED <> '022'  //Pedido de garantia e o preco de custo
+		Begin Sequence
+			If SA1->A1_COD <> _cCLi .AND. SA1->A1_LOJA <> _cLoja 
+				SA1->(DbSetOrder(1))
+				If !SA1->(DbSeek(XFilial("SA1")+_cCLi+_cLoja))
+					_lRet := .T.  //caso não localize SA1 retorno tru para forçar calculo em tabela
+					Break
+				EndIf	
+			Endif
+			_cCampo := "DA1.DA1_X"+AllTrim(SA1->A1_EST)
+			_cCampo := "%"+_cCampo+"%"
+			BeginSql Alias _cAliasPesq //Define o nome do alias temporario 
+				SELECT 	DA1.R_E_C_N_O_ AS NREGDA1
+					, VS3.VS3_CODITE 
+					, VS3.VS3_VALPEC 
+					, %Exp:_cCampo% 
+				FROM  %Table:DA1% DA1
+				JOIN %Table:VS3% VS3
+					ON	VS3.VS3_FILIAL  = %xFilial:VS3%
+					AND VS3.VS3_NUMORC  = %Exp:_cNumOrc%
+					AND VS3.%notDel%
+				JOIN %Table:DA0% DA0 
+					ON	DA0.DA0_FILIAL  = %xFilial:DA0%
+					AND DA0.DA0_ATIVO	= %Exp:_cAtivo%
+					AND %Exp:_cData% BETWEEN DA0.DA0_DATDE AND DA0.DA0_DATATE
+					AND DA0.%notDel%
+				WHERE 	DA1.DA1_FILIAL  = %xFilial:DA1% 
+					AND DA1.DA1_CODTAB  = DA0.DA0_CODTAB
+					AND DA1.DA1_CODPRO 	= VS3.VS3_CODITE
+					AND %Exp:_cCampo%  <> VS3.VS3_VALPEC 
+					AND DA1.%notDel%
+			EndSQL	
+			If (_cAliasPesq)->(!Eof()) .and. (_cAliasPesq)->NREGDA1 > 0
+				_lRet := .T.
 				Break
-			EndIf	
-		Endif
-		_cCampo := "DA1.DA1_X"+AllTrim(SA1->A1_EST)
-		_cCampo := "%"+_cCampo+"%"
-		BeginSql Alias _cAliasPesq //Define o nome do alias temporario 
-			SELECT 	DA1.R_E_C_N_O_ AS NREGDA1
-				, VS3.VS3_CODITE 
-				, VS3.VS3_VALPEC 
-				, %Exp:_cCampo% 
-			FROM  %Table:DA1% DA1
-			JOIN %Table:VS3% VS3
-				ON	VS3.VS3_FILIAL  = %xFilial:VS3%
-				AND VS3.VS3_NUMORC  = %Exp:_cNumOrc%
-				AND VS3.%notDel%
-			JOIN %Table:DA0% DA0 
-				ON	DA0.DA0_FILIAL  = %xFilial:DA0%
-				AND DA0.DA0_ATIVO	= %Exp:_cAtivo%
-				AND %Exp:_cData% BETWEEN DA0.DA0_DATDE AND DA0.DA0_DATATE
-				AND DA0.%notDel%
-			WHERE 	DA1.DA1_FILIAL  = %xFilial:DA1% 
-				AND DA1.DA1_CODTAB  = DA0.DA0_CODTAB
-				AND DA1.DA1_CODPRO 	= VS3.VS3_CODITE
-				AND %Exp:_cCampo%  <> VS3.VS3_VALPEC 
-				AND DA1.%notDel%
-		EndSQL	
-		If (_cAliasPesq)->(!Eof()) .and. (_cAliasPesq)->NREGDA1 > 0
-			_lRet := .T.
-			Break
-		EndIf
-	End Sequence
+			EndIf
+		End Sequence
+    ELSE
+	    //Depois pode tirar o else e o lret=.t.
+	  	_lRet := .T.
+	ENDIF
 	If Select((_cAliasPesq)) <> 0
 		(_cAliasPesq)->(DbCloseArea())
 		Ferase(_cAliasPesq+GetDBExtension())

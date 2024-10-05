@@ -184,16 +184,19 @@ Static Function ZWSR007PRC(_cAglutina, _cPicking, _lDataEnv, _oSay, _lJob)
 		//DAC verificar na revitalização se ira mudar a formula de calculo pois somente chamando em startjob ocasiona erro
 		//Antes de enviar recalcula os impostos DAC 21/07/2022, estava na gravação das obs do VS1 alterado para o inicio
 		//quando não for chamada pelo JOB, forço uma chamada
-		If _lJob
+
+		
+		//Sandro depois tirar os comentarios abaixo
+//		If _lJob
 			If !VS1->(U_ORCCALFIS(VS1->VS1_NUMORC /*_cNumOrc*/,/*_lAtuaPreco*/))
 				//Gravo informação no registro
 				Aadd(_aMsgRet, {303,"Problemas no envio RG LOG recalculo valores com registros relacionados aos itens para envio Separação Picking "+_cPicking}) 
 				_lRet	:= .F.
 				Break
 			Endif	
-		Else
-			StartJob("U_XFUNIPOSTO",GetEnvServer(),.F.,VS1->VS1_NUMORC, cEmpAnt, cFilAnt, /*_nReprocessado*/, /*_oSay*/)
-		Endif
+//		Else
+//			StartJob("U_XFUNIPOSTO",GetEnvServer(),.F.,VS1->VS1_NUMORC, cEmpAnt, cFilAnt, /*_nReprocessado*/, /*_oSay*/)
+//		Endif
 
 		_cEmpWis := ""
 		_cDepWis := ""
