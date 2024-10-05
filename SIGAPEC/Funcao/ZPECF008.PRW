@@ -206,6 +206,7 @@ Responsável pelo processamento Aglutinando e Separando do orçamento passando pel
 /*/
 Static Function ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave , _cLocal, _aOndaRel, _oSay )
 Local _cAliasTRB    	:= GetNextAlias()      
+Local _cAliasTP         := GetNextAlias() 
 Local _cCliFatDe 		:= _aRet[01]
 Local _cLojaCFDe		:= _aRet[02]
 Local _cCliFatAte 	    := _aRet[03]
@@ -489,6 +490,36 @@ Begin Sequence
 			Loop
 		Endif	
 		*/
+
+	    If _cLocal = '02'
+			If Select(_cAliasTP) <> 0
+				(_cAliasTP)->(DbCloseArea())
+			Endif  
+			
+			BeginSql Alias _cAliasTP //Define o nome do alias temporário 
+				SELECT 	VX5.VX5_CHAVE,
+						VX5.VX5_CODIGO,
+						VX5.VX5_DESCRI
+				FROM  %Table:VX5% VX5 
+				WHERE 	VX5.VX5_FILIAL 	=  %xFilial:VX5% 
+					AND VX5.VX5_CHAVE 	= 'Z06'
+					AND VX5.%notDel%
+				ORDER BY VX5.VX5_CHAVE, VX5.VX5_CODIGO	
+			EndSql
+
+    		_Arm02 := .F.
+			While (_cAliasTP)->(!Eof())
+                iF (_cAliasTP)->VX5_CODIGO = (_cAliasTRB)->VS1_XTPPED
+                   _Arm02 := .T.
+				Endif
+				(_cAliasTP)->(DbSkip())
+			EndDo	
+			If !_Arm02
+				(_cAliasTRB)->(DbSkip())
+				Loop
+			Endif
+        Endif
+
 		//organizar para geração do Picking após o acumuo dos orçamentos DAC 14/06/2022
 		_cTipoPed		:= (_cAliasTRB)->VS1_XTPPED
 		_cTipoModal		:= (_cAliasTRB)->VS1_XTPTRA
