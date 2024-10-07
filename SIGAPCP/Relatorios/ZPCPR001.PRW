@@ -1193,7 +1193,7 @@ Local cItem       := Space(23)  // Campo para o termo de busca
 Local oFont       := TFont():New( "Arial", , 20, , .F., , , , , .F., .F. )
 Local oFont2      := TFont():New( "Arial", , 18, , .F., , , , , .F., .F. )
 Local aDadosFiltrado := {}  // Array para armazenar os dados filtrados
-Local nOption     := 1       // Padrão: 1 (Código)
+Local cOption     := ""       // Padrão: 1 (Código)
 Private lMarker   := .T.
 Private aDados    := {}
 
@@ -1217,10 +1217,11 @@ DEFINE MsDIALOG oDlg TITLE 'Produtos' From 0, 4 To 500, 1090 Pixel
     
     // Lista suspensa para escolher o campo a ser filtrado
     @ 15, 294 SAY "Filtro por:" SIZE 50, 19 FONT oFont Pixel
-    @ 13, 333 COMBOBOX nOption ITEMS {"Código", "Descrição", "Grupo"} SIZE 050, 19 PIXEL
+    @ 13, 333 COMBOBOX cOption ITEMS {"Codigo", "Descricao", "Grupo"} SIZE 050, 19 PIXEL
     
-    @ 11, 397 BUTTON "Filtrar" ACTION FiltroProduto(oBrowse, cItem, aDados, @aDadosFiltrado, nOption) SIZE 065, 19 FONT oFont2 Pixel
+    @ 11, 397 BUTTON "Filtrar" ACTION FiltroProduto(oBrowse, cItem, aDados, @aDadosFiltrado, cOption) SIZE 065, 19 FONT oFont2 Pixel
     @ 11, 467 BUTTON "Confirma" ACTION oDlg:End() SIZE 065, 19 FONT oFont2 Pixel
+	@ 03, 002 BUTTON "Limpar Filtro" ACTION FiltroProduto(oBrowse, cItem, aDados, @aDadosFiltrado, "Limpa") SIZE 061, 15 FONT oFont2 Pixel
 
     oBrowse := fwBrowse():New()
     oBrowse:setOwner( oPnMaster )
@@ -1246,35 +1247,40 @@ Return .t.
 
 
 // Função que realiza o filtro dos produtos e atualiza o Browse
-Static Function FiltroProduto(oBrowse, cItem, aDados, aDadosFiltrado, nOption)
+Static Function FiltroProduto(oBrowse, cItem, aDados, aDadosFiltrado, cOption)
 
     Local nPos := 0
     aDadosFiltrado := {}  // Limpa o array filtrado
 
-    // Itera sobre o array original e aplica o filtro na coluna escolhida
-    For nPos := 1 To Len(aDados)
+	If cOption <> "Limpa"
+		// Itera sobre o array original e aplica o filtro na coluna escolhida
+		For nPos := 1 To Len(aDados)
 
-        Do Case
-            Case nOption == 1  // Filtrar por Código
-                If Upper(AllTrim(cItem)) $ Upper(AllTrim(aDados[nPos,02]))
-                    aAdd(aDadosFiltrado, aDados[nPos])
-                EndIf
+			Do Case
+				Case cOption == "Codigo"  // Filtrar por Código
+					If Upper(AllTrim(cItem)) $ Upper(AllTrim(aDados[nPos,02]))
+						aAdd(aDadosFiltrado, aDados[nPos])
+					EndIf
 
-            Case nOption == 2  // Filtrar por Descrição
-                If Upper(AllTrim(cItem)) $ Upper(AllTrim(aDados[nPos,03]))
-                    aAdd(aDadosFiltrado, aDados[nPos])
-                EndIf
+				Case cOption == "Descricao"  // Filtrar por Descrição
+					If Upper(AllTrim(cItem)) $ Upper(AllTrim(aDados[nPos,03]))
+						aAdd(aDadosFiltrado, aDados[nPos])
+					EndIf
 
-            Case nOption == 3  // Filtrar por Grupo
-                If Upper(AllTrim(cItem)) $ Upper(AllTrim(aDados[nPos,04]))
-                    aAdd(aDadosFiltrado, aDados[nPos])
-                EndIf
-        EndCase
-        
-    Next
+				Case cOption == "Grupo"  // Filtrar por Grupo
+					If Upper(AllTrim(cItem)) $ Upper(AllTrim(aDados[nPos,04]))
+						aAdd(aDadosFiltrado, aDados[nPos])
+					EndIf
+			EndCase
+			
+		Next
+	Else
+		aDadosFiltrado := aclone(aDados) // Limpa Filtro
+	EndIf
 
-    // Se não houver resultados, mostra uma mensagem
+    // Se não houver resultados do filtro, mostra uma mensagem
     If Len(aDadosFiltrado) == 0
+		aDadosFiltrado := aclone(aDados)
         MsgStop("Nenhum produto encontrado com o filtro especificado!", "Erro")
     EndIf
 
