@@ -1348,6 +1348,7 @@ Local _cMens
 Local _cLike		:= "PEDIDO: "+cZK_XPICKI
 Local _cDtEpi		:= " "
 Local nDesconto     := 0 
+Local _Tipo         := " "
 
 //Private TRBNF   //:= GetNextAlias()
 Private aHeaderP  		:= {}
@@ -1412,8 +1413,10 @@ Begin Sequence
 		Break
 	endIF
 
+	//Verifica o tipo de pedido
+	_Tipo := U_zTpPed( VS1->VS1_XTPPED )
 
-	If SA1->A1_DESC > 0 .AND. ( VS1->VS1_XTPPED = '012' .OR. VS1->VS1_XTPPED = '022')  
+	If SA1->A1_DESC > 0 .AND.  VS1->VS1_XTPPED = _Tipo
 	   nDesconto := SA1->A1_DESC
 	   RecLock("SA1",.F.)
        SA1->A1_DESC := 0
@@ -1880,8 +1883,7 @@ Begin Sequence
 			SF2->(MsUnlock())
 		EndIf
 
-		If nDesconto > 0 .AND. ( VS1->VS1_XTPPED = '012' .OR. VS1->VS1_XTPPED = '022')  
- 		   RecLock("SA1",.F.)
+		If nDesconto > 0 .AND.  VS1->VS1_XTPPED = _Tipo
 		   SA1->A1_DESC := 	nDesconto
 		   SA1->(MsUnlock())
            nDesconto := 0
@@ -1891,7 +1893,7 @@ Begin Sequence
 		U_ZGFEF001(	_cDoc, _cSerie, _cCliente, _cLoja )
 		//--Efetua a gravação do campo GW1_XTPTRA - GFE
 		U_ZGFEF003()
-	Endif
+	Endif 
 
 End Sequence
 

@@ -967,13 +967,13 @@ User Function XOFUNVTB(_cCLi, _cLoja, _cCodItem, _lProcUF)
 	Local _cCampo
 	Local _cFunFor
 	Local _Tipo         := " "
-
 	//indica que deve procurar a UF para verificação valores customizados DAC 18/04/2022
 	Default _lProcUF := .T. 
-	//_Tipo := U_zTpPed( M->VS1_XTPPED )	
-    //IF M->VS1_XTPPED <> _Tipo
+    
+	//Verifica o tipo de pedido
+	_Tipo := U_zTpPed( M->VS1_XTPPED )
 
-    IF M->VS1_XTPPED <> '012' .AND.  M->VS1_XTPPED <> '022'
+     IF M->VS1_XTPPED <> _Tipo
 		Begin Sequence
 			//Acresentado validação de MemÃ³ria JC informou que algumas funcionalidades chamam variavel DAC 06/10/2022 
 			If Type("M->VS3_FORMUL") == "C" .And.  FWIsInCallStack("OFIXA011") .And. !(FWIsInCallStack("U_ZPECF008"))
@@ -2439,6 +2439,7 @@ Static Function XCALCORCImposto(_nRegVS1, _lAtuaPreco)
 	Local _nPos
 	Local _cCodTes
 	Local _cTipoOper
+	Local _Tipo         := " "
 
 	Default lLibPV 		:= .f.
 	Default _lAtuaPreco	:= .T.
@@ -2539,14 +2540,15 @@ Static Function XCALCORCImposto(_nRegVS1, _lAtuaPreco)
 					_lAtuaPreco		:= .T.  //por mudar a TES deve atualizar preço
 				EndIf
 				//Atualizar valor unitario do produto
-				If _lAtuaPreco .AND. VS1->VS1_XTPPED <> '012' .AND. VS1->VS1_XTPPED <> '022'
+                _Tipo := U_zTpPed( VS1->VS1_XTPPED )
+			    If _lAtuaPreco .AND. VS1->VS1_XTPPED <> _Tipo 
 					_nValorUnit	:= U_XOFUNVTB(VS1->VS1_CLIFAT, VS1->VS1_LOJA, VS3->VS3_CODITE)
 					If _nValorUnit <= 0
 						Aadd(_aMensAglu,"não encontrado tabela de preço para o item " +VS3->VS3_CODITE+ " para efetuar clonagem do item orçamento, mantido valor original ")
 						_nValorUnit := VS3->VS3_VALPEC
 					EndIf
 				ELSE	
-				   IF _lAtuaPreco .AND. (VS1->VS1_XTPPED = '012' .OR. VS1->VS1_XTPPED = '022')
+		           IF _lAtuaPreco .AND. VS1->VS1_XTPPED = _Tipo
 					  SB2->(DbSetOrder(1))
 					  if SB2->(dBseek(xFilial("SB2") + PadR(VS3->VS3_CODITE, tamsx3('B2_COD') [1]) + VS3->VS3_LOCAL))
 					     _nValorUnit := SB2->B2_CM1
@@ -4882,8 +4884,12 @@ User Function XVERTABPreco( _cCLi, _cLoja, _cNumOrc )
 	Local _lRet			:= .F.  //indica não ocorreu alteração
 	Local _cData		:= DtOS(dDataBase)  //DtOS(Date()) //06/10/2022 conforme ZÃ© utilizar o database
 	Local _cCampo 
+    Local _Tipo         := " "
 
-    IF VS1->VS1_XTPPED <> '012' .AND.  VS1->VS1_XTPPED <> '022'  //Pedido de garantia e o preco de custo
+	//Verifica o tipo de pedido 
+	_Tipo := U_zTpPed( VS1->VS1_XTPPED )
+    
+	IF VS1->VS1_XTPPED <>  _Tipo //Pedido de garantia e o preco de custo
 		Begin Sequence
 			If SA1->A1_COD <> _cCLi .AND. SA1->A1_LOJA <> _cLoja 
 				SA1->(DbSetOrder(1))
