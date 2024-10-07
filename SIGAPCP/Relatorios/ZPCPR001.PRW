@@ -970,219 +970,6 @@ Return Nil
 	(examples)
 	@see https://tdn.totvs.com/display/public/framework/FWMarkBrowse
 /*/
-//		User Function ListPrd()
-//		
-//		Local oDlg		:= Nil
-//		Local oPnMaster	:= Nil
-//		Local oBrowse	:= Nil
-//		Local oGet		:= Nil
-//		Local cItem		:= Space(23) // Campo para o código do produto a ser buscado
-//		
-//		Local oFont 	:= TFont():New( "Arial" , , 20 , , .F. , , , , , .F. , .F. )
-//		Local oFont2 	:= TFont():New( "Arial" , , 18 , , .F. , , , , , .F. , .F. )
-//		
-//		Private lMarker	:= .T.
-//		Private aDados 	:= {}
-//		
-//		aSelect := {} // limpa array de seleção, caso já tenha preenchimento anterior
-//		cRet 	:= '' // limpa o preenchimento do mv_par01, caso tenha sido preenchido anteriormente
-//		
-//		//Alimenta o array do Browse
-//		BUSDATA()
-//		
-//		// Define o Browse
-//		DEFINE MsDIALOG oDlg TITLE 'Produtos' From 0, 4 To 500, 1090 Pixel
-//		
-//		    oPnMaster := tPanel():New(0,0,,oDlg,,,,,,0,0)
-//		    oPnMaster:Align := CONTROL_ALIGN_ALLCLIENT
-//		
-//			// Campo de busca de produto
-//		    @ 15, 170 SAY "Buscar Produto:" SIZE 100, 19 FONT oFont Pixel
-//		    @ 10, 230 GET oGet VAR cItem SIZE 160, 19 FONT oFont2 Pixel
-//		    @ 11, 395 BUTTON "Buscar" ACTION BuscaProduto(oBrowse, cItem, aDados) SIZE 070, 19 FONT oFont2 Pixel
-//		    @ 11, 470 BUTTON "Confirma" ACTION oDlg:End() SIZE 070, 19 FONT oFont2 Pixel
-//		
-//		    oBrowse := fwBrowse():New()
-//		    oBrowse:setOwner( oPnMaster )
-//		
-//		    oBrowse:setDataArray()
-//		    oBrowse:setArray( aDados )
-//		    oBrowse:disableConfig()
-//		
-//		    //Create Mark Column
-//		    oBrowse:AddMarkColumns({|| IIf(aDados[oBrowse:nAt,01], "LBOK", "LBNO")},; //Code-Block image
-//		        {|| SelectOne(oBrowse, aDados)})//,; //Code-Block Double Click
-//		        //{|| SelectAll(oBrowse, 01, aDados) } ) //Code-Block Header Click
-//		
-//		    oBrowse:addColumn({"Codigo"    , {||aDados[oBrowse:nAt,02]} , "C" , "@!" , 1 ,  20 , , .T. , , .F. , , "aDados[oBrowse:nAt,02]" , , .F. , .T. , , "ETDESPES1" } )
-//		    oBrowse:addColumn({"Descrição" , {||aDados[oBrowse:nAt,03]} , "C" , "@!" , 1 , 100 , , .T. , , .F. , , "aDados[oBrowse:nAt,03]" , , .F. , .T. , , "ETDESPES2" } )
-//		    oBrowse:addColumn({"Grupo"	   , {||aDados[oBrowse:nAt,04]} , "C" , "@!" , 1 ,  20 , , .T. , , .F. , , "aDados[oBrowse:nAt,04]" , , .F. , .T. , , "ETDESPES3" } )
-//		
-//			oBrowse:Activate(.T.)
-//		
-//		Activate MsDialog oDlg
-//		
-//		return .t.
-//		
-//		/*/ Função para buscar o produto e posicionar no browse
-//			@type  Function
-//			@author Victor Gisoldi Matos
-//			@since 12/09/2024
-//			@version version
-//			@param param_name, param_type, param_descr
-//			@return return_var, return_type, return_description
-//			@example
-//			(examples)
-//			@see
-//		/*/
-//		Static Function BuscaProduto(oBrowse, cItem, aDados)
-//		
-//			Local nPos := 0
-//		
-//			// Procura pelo produto no array (comparando com o código)
-//			For nPos := 1 To Len(aDados)
-//		
-//				If Upper(AllTrim(cItem)) $ aDados[nPos, 02]
-//		
-//					oBrowse:nAt := nPos // Posiciona o browse no registro encontrado
-//					oBrowse:Refresh()   // Atualiza o browse para mostrar o registro selecionado
-//					Return
-//		
-//				EndIf
-//				
-//			Next
-//		
-//		    MsgStop("Produto não encontrado!", "Erro")
-//		
-//		Return
-//		
-		/*/ Função de retorno dos itens selecionados na consulta padrão
-			@type  Function
-			@author Victor Gisoldi Matos
-			@since 12/09/2024
-			@version version
-			@param param_name, param_type, param_descr
-			@return return_var, return_type, return_description
-			@example
-			(examples)
-			@see
-		/*/
-		User Function ListPrdA()
-		
-		Return cRet
-		
-		/*/{Protheus.doc} SelectOne
-			Função para seleção de um item da lista
-			@type  Function
-			@author Victor Gisoldi Matos
-			@since 12/09/2024
-			@version version
-			@param param_name, param_type, param_descr
-			@return return_var, return_type, return_description
-			@example
-			(examples)
-			@see
-		/*/
-		Static Function SelectOne(oBrowse, aArquivo)
-		
-		Local nPos
-		Local aDel := {}
-		
-		aArquivo[oBrowse:nAt,1] := !aArquivo[oBrowse:nAt,1]
-		
-			If aArquivo[oBrowse:nAt,1] == .T.
-		
-				aAdd( aSelect, aArquivo[oBrowse:nAt,2]) // adiciona o selecionado no array aSelect
-		
-			Else
-		
-				aDel := Aclone( aSelect ) // clona o Array aSelect no Array aDel
-				nPos := aScan(aDel, {|x| x = aArquivo[oBrowse:nAt,2] } ) // Busca no aDel o item a ser excluido
-				
-				If nPos > 0
-		
-					aDel( aDel , nPos )			// exclui o item selecionado do array aDel
-					aSize(aDel , len(aDel) - 1)	// redimenciona o array aDel, para ficar do tamanho -1 item
-					aSelect := Aclone( aDel )	// cola o array aDel (ajustado) para o aSelect novamente
-		
-				EndIf
-		
-			EndIf
-		
-		cRet := "" // Limpa o retorno da Consulta Padrao
-		cRet := ArrTokStr(aSelect, ";") // Atualiza o retorno da Consulta Padrao
-		oBrowse:Refresh()
-		
-		Return .T.
-		
-		/*/{Protheus.doc} SelectAll
-			Função para seleção completa da lista de produtos
-			@type  Function
-			@author Victor Gisoldi Matos
-			@since 12/09/2024
-			@version version
-			@param param_name, param_type, param_descr
-			@return return_var, return_type, return_description
-			@example
-			(examples)
-			@see
-		/*/
-		Static Function SelectAll(oBrowse, nCol, aArquivo)
-		
-		Local _ni := 1
-		
-		For _ni := 1 to len(aArquivo)
-		
-		    aArquivo[_ni,1] := lMarker
-		
-		Next
-		
-		//oBrowse:Refresh()
-		lMarker:=!lMarker
-		
-		Return .T.
-		
-		/*/{Protheus.doc} BUSDATA
-			Busca a lista de itens da tabela SB1 para exibir no browse
-			@type  Function
-			@author Victor Gisoldi Matos
-			@since 12/09/2024
-			@version version
-			@param param_name, param_type, param_descr
-			@return return_var, return_type, return_description
-			@example
-			(examples)
-			@see
-		/*/
-		//Alimenta a tabela temporaria
-		Static Function BUSDATA()
-		
-		Local cQuery	:= ""
-		Local cAlias	:= GetNextAlias()
-		
-		aDados	:= {}
-		
-		cQuery+="SELECT B1_COD, B1_DESC, B1_GRUPO FROM " + RetSqlName("SB1")
-		cQuery+=" WHERE D_E_L_E_T_=''"
-		cQuery+=" ORDER BY B1_COD "
-		cQuery:=ChangeQuery(cQuery)
-		
-		dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ) , cAlias, .T., .F. )
-		
-		(cAlias)->(DbGoTop())
-		
-			While (cAlias)->(!EOF())
-		
-				aadd(aDados,{.f.,alltrim((cAlias)->B1_COD),alltrim((cAlias)->B1_DESC),alltrim((cAlias)->B1_GRUPO) } )
-				(cAlias)->(dbSkip())
-		
-			EndDo
-		
-		(cAlias)->(dbCloseArea())
-		DbSelectArea('SB1')
-		
-		Return .t.
-		
 User Function ListPrd()
 
 Local oDlg        := Nil
@@ -1245,46 +1032,171 @@ Activate MsDialog oDlg
 
 Return .t.
 
-
-// Função que realiza o filtro dos produtos e atualiza o Browse
+/*/ Função que realiza o filtro dos produtos e atualiza o Browse
+	@type  Function
+	@author Victor Gisoldi Matos
+	@since 12/09/2024
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	@example
+	(examples)
+	@see
+/*/
 Static Function FiltroProduto(oBrowse, cItem, aDados, aDadosFiltrado, cOption)
 
-    Local nPos := 0
-    aDadosFiltrado := {}  // Limpa o array filtrado
+Local nPos := 0
+aDadosFiltrado := {}  // Limpa o array filtrado
 
-	If cOption <> "Limpa"
-		// Itera sobre o array original e aplica o filtro na coluna escolhida
-		For nPos := 1 To Len(aDados)
+If cOption <> "Limpa"
+	// Itera sobre o array original e aplica o filtro na coluna escolhida
+	For nPos := 1 To Len(aDados)
 
-			Do Case
-				Case cOption == "Codigo"  // Filtrar por Código
-					If Upper(AllTrim(cItem)) $ Upper(AllTrim(aDados[nPos,02]))
-						aAdd(aDadosFiltrado, aDados[nPos])
-					EndIf
+		Do Case
+			Case cOption == "Codigo"  // Filtrar por Código
+				If Upper(AllTrim(cItem)) $ Upper(AllTrim(aDados[nPos,02]))
+					aAdd(aDadosFiltrado, aDados[nPos])
+				EndIf
 
-				Case cOption == "Descricao"  // Filtrar por Descrição
-					If Upper(AllTrim(cItem)) $ Upper(AllTrim(aDados[nPos,03]))
-						aAdd(aDadosFiltrado, aDados[nPos])
-					EndIf
+			Case cOption == "Descricao"  // Filtrar por Descrição
+				If Upper(AllTrim(cItem)) $ Upper(AllTrim(aDados[nPos,03]))
+					aAdd(aDadosFiltrado, aDados[nPos])
+				EndIf
 
-				Case cOption == "Grupo"  // Filtrar por Grupo
-					If Upper(AllTrim(cItem)) $ Upper(AllTrim(aDados[nPos,04]))
-						aAdd(aDadosFiltrado, aDados[nPos])
-					EndIf
+			Case cOption == "Grupo"  // Filtrar por Grupo
+				If Upper(AllTrim(cItem)) $ Upper(AllTrim(aDados[nPos,04]))
+					aAdd(aDadosFiltrado, aDados[nPos])
+				EndIf
 			EndCase
 			
-		Next
-	Else
-		aDadosFiltrado := aclone(aDados) // Limpa Filtro
-	EndIf
+	Next
+Else
+	aDadosFiltrado := aclone(aDados) // Limpa Filtro
+EndIf
 
-    // Se não houver resultados do filtro, mostra uma mensagem
-    If Len(aDadosFiltrado) == 0
-		aDadosFiltrado := aclone(aDados)
-        MsgStop("Nenhum produto encontrado com o filtro especificado!", "Erro")
-    EndIf
+// Se não houver resultados do filtro, mostra uma mensagem
+If Len(aDadosFiltrado) == 0
+	aDadosFiltrado := aclone(aDados)
+    MsgStop("Nenhum produto encontrado com o filtro especificado!", "Erro")
+EndIf
 
-    oBrowse:setArray(aDadosFiltrado)  // Atualiza o Browse com o array filtrado
-    oBrowse:Refresh()  // Atualiza o Browse
+oBrowse:setArray(aDadosFiltrado)  // Atualiza o Browse com o array filtrado
+oBrowse:Refresh()  // Atualiza o Browse
 
 Return
+
+/*/ Função de retorno dos itens selecionados na consulta padrão
+	@type  Function
+	@author Victor Gisoldi Matos
+	@since 12/09/2024
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	@example
+	(examples)
+	@see
+/*/
+User Function ListPrdA()
+		
+Return cRet
+		
+/*/{Protheus.doc} SelectOne
+	Função para seleção de um item da lista
+	@type  Function
+	@author Victor Gisoldi Matos
+	@since 12/09/2024
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	@example
+	(examples)
+	@see
+/*/
+Static Function SelectOne(oBrowse, aArquivo)
+		
+Local nPos
+Local aDel := {}
+		
+aArquivo[oBrowse:nAt,1] := !aArquivo[oBrowse:nAt,1]
+		
+If aArquivo[oBrowse:nAt,1] == .T.
+	aAdd( aSelect, aArquivo[oBrowse:nAt,2]) // adiciona o selecionado no array aSelect	
+Else
+	aDel := Aclone( aSelect ) // clona o Array aSelect no Array aDel
+	nPos := aScan(aDel, {|x| x = aArquivo[oBrowse:nAt,2] } ) // Busca no aDel o item a ser excluido
+	If nPos > 0
+		aDel( aDel , nPos )			// exclui o item selecionado do array aDel
+		aSize(aDel , len(aDel) - 1)	// redimenciona o array aDel, para ficar do tamanho -1 item
+		aSelect := Aclone( aDel )	// cola o array aDel (ajustado) para o aSelect novamente
+	EndIf
+EndIf
+		
+cRet := "" // Limpa o retorno da Consulta Padrao
+cRet := ArrTokStr(aSelect, ";") // Atualiza o retorno da Consulta Padrao
+oBrowse:Refresh()
+		
+Return .T.
+		
+/*/{Protheus.doc} SelectAll
+	Função para seleção completa da lista de produtos
+	@type  Function
+	@author Victor Gisoldi Matos
+	@since 12/09/2024
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	@example
+	(examples)
+	@see
+/*/
+Static Function SelectAll(oBrowse, nCol, aArquivo)
+		
+Local _ni := 1
+		
+For _ni := 1 to len(aArquivo)
+    aArquivo[_ni,1] := lMarker
+Next
+		
+//oBrowse:Refresh()
+lMarker:=!lMarker
+		
+Return .T.
+		
+/*/{Protheus.doc} BUSDATA
+	Busca a lista de itens da tabela SB1 para exibir no browse
+	@type  Function
+	@author Victor Gisoldi Matos
+	@since 12/09/2024
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	@example
+	(examples)
+	@see
+/*/
+//Alimenta a tabela temporaria
+Static Function BUSDATA()
+		
+Local cQuery	:= ""
+Local cAlias	:= GetNextAlias()
+		
+aDados	:= {}
+		
+cQuery+="SELECT B1_COD, B1_DESC, B1_GRUPO FROM " + RetSqlName("SB1")
+cQuery+=" WHERE D_E_L_E_T_=''"
+cQuery+=" ORDER BY B1_COD "
+cQuery:=ChangeQuery(cQuery)
+		
+dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ) , cAlias, .T., .F. )
+		
+(cAlias)->(DbGoTop())
+		
+While (cAlias)->(!EOF())
+	aadd(aDados,{.f.,alltrim((cAlias)->B1_COD),alltrim((cAlias)->B1_DESC),alltrim((cAlias)->B1_GRUPO) } )
+	(cAlias)->(dbSkip())
+EndDo
+		
+(cAlias)->(dbCloseArea())
+DbSelectArea('SB1')
+		
+Return .t.
