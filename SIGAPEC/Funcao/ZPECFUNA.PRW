@@ -966,9 +966,13 @@ User Function XOFUNVTB(_cCLi, _cLoja, _cCodItem, _lProcUF)
 	Local _cFormula		:= ""
 	Local _cCampo
 	Local _cFunFor
+	Local _Tipo         := " "
 
 	//indica que deve procurar a UF para verificação valores customizados DAC 18/04/2022
 	Default _lProcUF := .T. 
+	//_Tipo := U_zTpPed( M->VS1_XTPPED )	
+    //IF M->VS1_XTPPED <> _Tipo
+
     IF M->VS1_XTPPED <> '012' .AND.  M->VS1_XTPPED <> '022'
 		Begin Sequence
 			//Acresentado validação de MemÃ³ria JC informou que algumas funcionalidades chamam variavel DAC 06/10/2022 
@@ -1048,7 +1052,8 @@ User Function XOFUNVTB(_cCLi, _cLoja, _cCodItem, _lProcUF)
 			EndIf
 		End Sequence
 	ELSE
-	    _nValTab 	:= SB1->B1_CUSTD	
+	    //_nValTab 	:= SB1->B1_CUSTD	
+		_nValTab := SB2->B2_CM1
 	ENDIF
 	If Select((_cAliasPesq)) <> 0
 		(_cAliasPesq)->(DbCloseArea())
@@ -2542,7 +2547,10 @@ Static Function XCALCORCImposto(_nRegVS1, _lAtuaPreco)
 					EndIf
 				ELSE	
 				   IF _lAtuaPreco .AND. (VS1->VS1_XTPPED = '012' .OR. VS1->VS1_XTPPED = '022')
-				      _nValorUnit := VS3->VS3_VALPEC
+					  SB2->(DbSetOrder(1))
+					  if SB2->(dBseek(xFilial("SB2") + PadR(VS3->VS3_CODITE, tamsx3('B2_COD') [1]) + VS3->VS3_LOCAL))
+					     _nValorUnit := SB2->B2_CM1
+					  Endif 
 				   ENDIF
 				Endif
 				//somente atualizar valores caso estejam diferentes // Retirado de lAtuaPreco para corrigir erros no Faturamento no VS3_VALTOT 
@@ -4163,6 +4171,22 @@ Return(_cRet)
 
 
 
+User Function zTpPed(_cTp)
+
+    Local _cRet 			:= " "
+	Local _cTipoPedGar		:= AllTrim(SuperGetMV( "CMV_PEC51"  ,,"012;022"))	//Pedidos de Garantia
+
+	If _cTp $ _cTipoPedGar
+		_cRet := _cTp
+	EndIf
+
+Return(_cRet)
+
+
+
+
+
+
 /*/{Protheus.doc} XRESCAOAPEC
 @param  	
 @author 	CAOA - CAOA - A.Carlos
@@ -4857,7 +4881,8 @@ User Function XVERTABPreco( _cCLi, _cLoja, _cNumOrc )
 	Local _cAtivo		:= '1'
 	Local _lRet			:= .F.  //indica não ocorreu alteração
 	Local _cData		:= DtOS(dDataBase)  //DtOS(Date()) //06/10/2022 conforme ZÃ© utilizar o database
-	Local _cCampo 		 
+	Local _cCampo 
+
     IF VS1->VS1_XTPPED <> '012' .AND.  VS1->VS1_XTPPED <> '022'  //Pedido de garantia e o preco de custo
 		Begin Sequence
 			If SA1->A1_COD <> _cCLi .AND. SA1->A1_LOJA <> _cLoja 

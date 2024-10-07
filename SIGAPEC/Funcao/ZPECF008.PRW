@@ -571,7 +571,6 @@ Begin Sequence
 			//somente validar se não for transferência o tipo de pedido, esta transferência sera de Barueri para FDR DAC 08/02/2023
 			If Empty(_cTPedTransf) .Or. AllTrim(VS1->VS1_XTPPED) <> _cTPedTransf
 				//Verificar se existe divergência de Tabela
-				//If VS1->VS1_XTPPED <> '012' .AND.  VS1->VS1_XTPPED <> '022
 					If U_XVERTABPreco (_cCliFat, _cLoja, VS1->VS1_NUMORC )
 						//Recalcular valores
 						If !VS1->(U_ORCCALFIS(VS1->VS1_NUMORC /*_cNumOrc*/,/*_lAtuaPreco*/))
