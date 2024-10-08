@@ -847,7 +847,7 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 			VS3->(DbGoto(_aRegVS3Del[_nPos]))
 			VS3->(RecLock("VS3",.F.))
 			_cObs 	:= "REFERENTE AO PROCESSO AGLUTINAÃ‡ÃƒO NR. "+_cAglutina + CRLF
-			_cObs	+= "REGISTRO EXCLUÃ?DO NO PROCESSO DE CLONAGEM DO ITEM "+AllTrim(VS3->VS3_CODITE)+" EM "+DtoC(Date())+" "+Time()	
+			_cObs	+= "REGISTRO EXCLUIDO NO PROCESSO DE CLONAGEM DO ITEM "+AllTrim(VS3->VS3_CODITE)+" EM "+DtoC(Date())+" "+Time()	
 			VS3->VS3_OBSAGL	:= Upper(_cObs) +CRLF+ VS3->VS3_OBSAGL
 			//não zerar causara erros somente apagar
 			VS3->(DbDelete())
@@ -971,10 +971,11 @@ User Function XOFUNVTB(_cCLi, _cLoja, _cCodItem, _lProcUF)
 	Default _lProcUF := .T. 
     
 	//Verifica o tipo de pedido
-	_Tipo := U_zTpPed( M->VS1_XTPPED )
+	Begin Sequence
+		
+		_Tipo := U_zTpPed( M->VS1_XTPPED )
 
-     IF M->VS1_XTPPED <> _Tipo
-		Begin Sequence
+    	IF M->VS1_XTPPED <> _Tipo
 			//Acresentado validação de MemÃ³ria JC informou que algumas funcionalidades chamam variavel DAC 06/10/2022 
 			If Type("M->VS3_FORMUL") == "C" .And.  FWIsInCallStack("OFIXA011") .And. !(FWIsInCallStack("U_ZPECF008"))
 				_cFormula  	:= M->VS3_FORMUL 
@@ -1050,15 +1051,18 @@ User Function XOFUNVTB(_cCLi, _cLoja, _cCodItem, _lProcUF)
 					_nValTab 	:= DA1->DA1_PRCVEN	
 				EndIf	
 			EndIf
-		End Sequence
-	ELSE
-	    //_nValTab 	:= SB1->B1_CUSTD	
-		_nValTab := SB2->B2_CM1
-	ENDIF
+
+		ELSE
+			_nValTab 	:= SB1->B1_CUSTD	
+		ENDIF
+	
+	End Sequence
+	
 	If Select((_cAliasPesq)) <> 0
 		(_cAliasPesq)->(DbCloseArea())
 		Ferase(_cAliasPesq+GetDBExtension())
 	Endif 
+
 Return _nValTab
 
 /*/{Protheus.doc} XFASEORC
@@ -4170,23 +4174,30 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 
 Return(_cRet)
 
-
-
-
+/*/{Protheus.doc} zTpPed
+Valida verifica se Tipo do Pedido faz parte do grupo de Grantia
+@param  	_cTp  -- Tipo de venda informado no pedido do SigaPec
+@author 	CAOA - CAOA - Sandro
+@version  	P12.1.23
+@since  	07/10/2024
+@return  	_cRet -- Retorno o Grupo se contiver no parametro CMV_PEC51 senão retornará vazio
+@project
+@history    
+			
+@ob
+/*/
 User Function zTpPed(_cTp)
 
     Local _cRet 			:= " "
 	Local _cTipoPedGar		:= AllTrim(SuperGetMV( "CMV_PEC51"  ,,"012;022"))	//Pedidos de Garantia
+   
+    Default _cTp := " "
 
 	If _cTp $ _cTipoPedGar
 		_cRet := _cTp
 	EndIf
 
 Return(_cRet)
-
-
-
-
 
 
 /*/{Protheus.doc} XRESCAOAPEC
@@ -4883,14 +4894,15 @@ User Function XVERTABPreco( _cCLi, _cLoja, _cNumOrc )
 	Local _cAtivo		:= '1'
 	Local _lRet			:= .F.  //indica não ocorreu alteração
 	Local _cData		:= DtOS(dDataBase)  //DtOS(Date()) //06/10/2022 conforme ZÃ© utilizar o database
-	Local _cCampo 
+	Local _cCampo 		 
     Local _Tipo         := " "
 
 	//Verifica o tipo de pedido 
-	_Tipo := U_zTpPed( VS1->VS1_XTPPED )
+	Begin Sequence
+
+		_Tipo := U_zTpPed( VS1->VS1_XTPPED )
     
-	IF VS1->VS1_XTPPED <>  _Tipo //Pedido de garantia e o preco de custo
-		Begin Sequence
+		IF VS1->VS1_XTPPED <>  _Tipo //Pedido de garantia e o preco de custo
 			If SA1->A1_COD <> _cCLi .AND. SA1->A1_LOJA <> _cLoja 
 				SA1->(DbSetOrder(1))
 				If !SA1->(DbSeek(XFilial("SA1")+_cCLi+_cLoja))
@@ -4925,11 +4937,11 @@ User Function XVERTABPreco( _cCLi, _cLoja, _cNumOrc )
 				_lRet := .T.
 				Break
 			EndIf
-		End Sequence
-    ELSE
-	    //Depois pode tirar o else e o lret=.t.
-	  	_lRet := .T.
-	ENDIF
+		ELSE
+			//Depois pode tirar o else e o lret=.t.
+			_lRet := .T.
+		ENDIF
+	End Sequence
 	If Select((_cAliasPesq)) <> 0
 		(_cAliasPesq)->(DbCloseArea())
 		Ferase(_cAliasPesq+GetDBExtension())
@@ -5264,11 +5276,12 @@ Begin sequence  //Ajuste Select não estava dentro do Begin GAP002  DAC 09/08/202
 			AND VS1.VS1_TIPORC 		= '1' 
 			AND VS1.VS1_STATUS  	IN %Exp:_cStatus% //Por erro na chamada pelo ZWSR009
 			AND VS1.VS1_NUMNFI		= ' '
-			AND VS3.VS3_XREGFI		= 'T'
 		  	AND VS1.%notDel%	
 	EndSql
 //		SELECT DISTINCT	VS1_CLIFAT,VS1_LOJA,VS1_NCLIFT,VS1_NUMORC,VS1_TIPORC,VS1_DATORC, VS1_XMARCA
 //			AND VS1.VS1_XPICKI  	= %Exp:cZK_XPICKI%
+// 			AND VS3.VS3_XREGFI		= 'T' Retirado por Cintia Araujo em 04/10/24 - Recalculos fiscais antes de efetivar o faturamento
+
 
 	If (_cAliasPesq)->(Eof())
 		//Avaliando saida DAC 09/08/2023 GAP002
@@ -5280,42 +5293,59 @@ Begin sequence  //Ajuste Select não estava dentro do Begin GAP002  DAC 09/08/202
 		Break //Por erro na chamada pelo ZWSR009
 	EndIf	
 
+	// Inicio *************** Cintia Araujo em 04/10/24 - 
+	//                        Recalculos fiscais antes de efetivar o faturamento quando o VS3->VS3_XREGFI for diferente de TES considera a Operacao e 
 	While !(_cAliasPesq)->(Eof())
-		_cNumOrc 	:= (_cAliasPesq)->VS1_NUMORC
+		_cMens    := ""
+		_cNumOrc  := (_cAliasPesq)->VS1_NUMORC
+
 		VS1->(DbGoto((_cAliasPesq)->NREGVS1))
-		_cMens := ""
+
 		While (_cAliasPesq)->(!Eof()) .and. (_cAliasPesq)->VS1_NUMORC == _cNumOrc
 			VS3->(DbGoto((_cAliasPesq)->NREGVS3))
-			cTES := " "
+
+			cTES      := " "
 			_cOperVS3 := Alltrim(VS3->VS3_OPER)
 			_cTESVS3  := Alltrim(VS3->VS3_CODTES)
 			_cCodIte  := Alltrim(VS3->VS3_CODITE)
 			_cXREGFI  := Alltrim(VS3->VS3_XREGFI)
+			
+			If _cXREGFI = "T"
+				cTES := VS3->VS3_CODTES
+			Else
 			cTES := Alltrim(MaTesInt(2, _cOperVS3, VS1->VS1_CLIFAT, VS1->VS1_LOJA,"C", _cCodIte))
+			EndIf
+
 			_cMens := "TES Inteligente: NumOrc: "+_cNumOrc+ "/ Cliente: "+VS1->VS1_CLIFAT+VS1->VS1_LOJA+"/ Produto " +_cCodIte+"/ Oper: "+_cOperVS3+"/ Regra: "+_cXREGFI+" / TES_ORC: " +_cTESVS3+ " / Tes Intelig: " +cTES +CRLF
-			If (!(_cXREGFI = "T") .and. !(_cTESVS3 = cTES) .and. !Empty(cTES))
+
+			If !Empty(cTES) //(!(_cXREGFI = "T") .and. !(_cTESVS3 = cTES) .and. !Empty(cTES))
+				_cMens += "O produto " +_cCodIte+ " teve a TES " +_cTESVS3+ " alterada para " +cTES+ " conforme Operaï¿½ï¿½o " +_cOperVS3+ " no momento do faturamento em " +DtoC(date()) + " ï¿½s " + Time() + CRLF
+
 				VS1->(RecLock("VS1",.F.))
-				VS3->(RecLock("VS3",.F.))
-				_cMens += "O produto " +_cCodIte+ " teve a TES " +_cTESVS3+ " alterada para " +cTES+ " conforme Operação " +_cOperVS3+ " no momento do faturamento em " +DtoC(date()) + " ÃƒÂ s " + Time() + CRLF
 				VS1->VS1_OBSAGL	:= Upper(_cMens) + CRLF + AllTrim(VS1->VS1_OBSAGL)
+				VS1->(MsUnlock())
+
+				VS3->(RecLock("VS3",.F.))
 				VS3->VS3_CODTES := cTES
 				VS3->VS3_SITTRI := U_XFUNSITT(cTES, VS3->VS3_CODITE, VS3->VS3_GRUITE)
 				VS3->(MsUnlock())
-				VS1->(MsUnlock())
+
 			Elseif Empty(cTES)
-				_cMens += "Erro no retorno da TES Inteligente -> Tes: "+cTES+" Oper: " +_cOperVS3+ " Cliente: "+VS1->VS1_CLIFAT+" Loja: "+VS1->VS1_LOJA+" Cod: "+_cCodIte+DtoC(date()) + " ÃƒÂ s " + Time() + CRLF
+				_cMens += "Erro no retorno da TES Inteligente -> Tes: "+cTES+" Oper: " +_cOperVS3+ " Cliente: "+VS1->VS1_CLIFAT+" Loja: "+VS1->VS1_LOJA+" Cod: "+_cCodIte+DtoC(date()) + " ï¿½s " + Time() + CRLF
 				_lRet := .F.
 			EndIf	
 	       	(_cAliasPesq)->(DbSkip())
 		EndDo
 		If !_lRet 
 			If !_lJob
-				MsgInfo(_cMens,"Atenção") 
+				MsgInfo(_cMens,"Atenï¿½ï¿½o") 
 			Endif 
 			Conout(_cMens) 
 		Endif 
-		U_ORCCALFIS(VS1->VS1_NUMORC,.F./*atualiza o preço*/)
+		U_ORCCALFIS(VS1->VS1_NUMORC,.F./*atualiza o preï¿½o*/)
 	EndDo
+	// Fim    *************** Cintia Araujo em 04/10/24 - Recalculos fiscais antes de efetivar o faturamento
+	
 	
 	/*
 			_cCliente 	:= (_cAliasPesq)->VS1_CLIFAT
