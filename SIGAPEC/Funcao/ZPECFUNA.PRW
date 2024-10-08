@@ -847,7 +847,7 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 			VS3->(DbGoto(_aRegVS3Del[_nPos]))
 			VS3->(RecLock("VS3",.F.))
 			_cObs 	:= "REFERENTE AO PROCESSO AGLUTINAÃ‡ÃƒO NR. "+_cAglutina + CRLF
-			_cObs	+= "REGISTRO EXCLUÃDO NO PROCESSO DE CLONAGEM DO ITEM "+AllTrim(VS3->VS3_CODITE)+" EM "+DtoC(Date())+" "+Time()	
+			_cObs	+= "REGISTRO EXCLUIDO NO PROCESSO DE CLONAGEM DO ITEM "+AllTrim(VS3->VS3_CODITE)+" EM "+DtoC(Date())+" "+Time()	
 			VS3->VS3_OBSAGL	:= Upper(_cObs) +CRLF+ VS3->VS3_OBSAGL
 			//não zerar causara erros somente apagar
 			VS3->(DbDelete())
@@ -966,92 +966,103 @@ User Function XOFUNVTB(_cCLi, _cLoja, _cCodItem, _lProcUF)
 	Local _cFormula		:= ""
 	Local _cCampo
 	Local _cFunFor
-
+	Local _Tipo         := " "
 	//indica que deve procurar a UF para verificação valores customizados DAC 18/04/2022
 	Default _lProcUF := .T. 
-
+    
+	//Verifica o tipo de pedido
 	Begin Sequence
-		//Acresentado validação de MemÃ³ria JC informou que algumas funcionalidades chamam variavel DAC 06/10/2022 
-		If Type("M->VS3_FORMUL") == "C" .And.  FWIsInCallStack("OFIXA011") .And. !(FWIsInCallStack("U_ZPECF008"))
-			_cFormula  	:= M->VS3_FORMUL 
-		else
-			_cFormula 	:= VS3->VS3_FORMUL 
-		EndIF
-		//Valido CÃ³igo de Produto se veio preenchido DAC 06/10/2022
-		If Empty(_cCodProd)
-			If Type("M->VS3_CODITE") == "C" .And.  FWIsInCallStack("OFIXA011") .And. !(FWIsInCallStack("U_ZPECF008"))
-				_cCodProd := M->VS3_CODITE
-			Else
-				_cCodProd := VS3->VS3_CODITE
-			Endif	
-		EndIf
-		//verificação do FORMULA	
-		If _cFormula <> '000001'
-			DbSelectArea("VS3")
-			//VS3->(DbSetOrder(1))  //VS3_FILIAL+VS3_NUMORC
-			//VS3->(dbSeek(xFilial("VS3")+VS1->VS1_NUMORC))
-			DbSelectArea("VEG")
-			VEG->(DbSetOrder(1))  //VEG_FILIAL+VEG_CODIGO
-			If !VEG->(dbSeek(xFilial("VEG")+_cFormula))
-				Break
-			EndIf	
-			
-			DbSelectArea("SB1")
-			SB1->(DbSetOrder(1))  //B1_FILIAL+B1_COD
-			//SB1->(dbSeek(xFilial("SB1")+VS3->VS3_CODITE))  //Alterado pode vie por variaveis de memÃ³ria DAC 06/10/2022    
-			SB1->(dbSeek(xFilial("SB1")+_cCodProd))     
-			If Substr(VEG->VEG_FORMUL,1,5) = "SB1->"
-			_nValTab  :=  &(VEG->VEG_FORMUL)    
-			ElseIf Substr(VEG->VEG_FORMUL,1,5) = "EXECB"  
-				_cFunFor := AllTrim(VEG->VEG_FORMUL)
-			_nValTab  := &_cFunFor
-			Else
-				_cFunFor := AllTrim(VEG->VEG_FORMUL)
-			_nValTab  := &_cFunFor
-			Endif
-			//Controlar para que a função não retorne nada diferente de valor DAC 28/05/2022
-			If ValType(_nValTab) <> "N"
-				_nValTab := 0 
-				Break
-			Endif
-			Break
-		EndIf
-		//Caso a formula seja igual a 000001
-		BeginSql Alias _cAliasPesq //Define o nome do alias temporario 
-			SELECT 	DA1.R_E_C_N_O_ AS NREGDA1,
-					SA1.A1_EST
-			FROM  %Table:DA1% DA1
-			JOIN  %Table:SA1% SA1 
-				ON	SA1.A1_FILIAL  	= %xFilial:SA1%
-				AND SA1.A1_COD  	= %Exp:_cCLi%
-				AND SA1.A1_LOJA 	= %Exp:_cLoja%
-				AND SA1.%notDel%
-			JOIN %Table:DA0% DA0 
-				ON	DA0.DA0_FILIAL  = %xFilial:DA0%
-				AND DA0.DA0_ATIVO	= %Exp:_cAtivo%
-				AND %Exp:_cData% BETWEEN DA0.DA0_DATDE AND DA0.DA0_DATATE
-				AND DA0.%notDel%
-			WHERE 	DA1.DA1_FILIAL  = %xFilial:DA1% 
-				AND DA1.DA1_CODTAB  = DA0.DA0_CODTAB
-				AND DA1.DA1_CODPRO 	= %Exp:_cCodProd%
-				AND DA1.%notDel%
-		EndSQL	
+		
+		_Tipo := U_zTpPed( M->VS1_XTPPED )
 
-		If (_cAliasPesq)->(!Eof()) .and. (_cAliasPesq)->NREGDA1 > 0
-			DA1->(DbGoto((_cAliasPesq)->NREGDA1))
-			If _lProcUF
-				_cCampo 	:= "DA1_X"+(_cAliasPesq)->A1_EST
-				_nValTab 	:= DA1->(FieldGet(FieldPos(_cCampo)))
-			Else
-				_nValTab 	:= DA1->DA1_PRCVEN	
-			EndIf	
-		EndIf
+    	IF M->VS1_XTPPED <> _Tipo
+			//Acresentado validação de MemÃ³ria JC informou que algumas funcionalidades chamam variavel DAC 06/10/2022 
+			If Type("M->VS3_FORMUL") == "C" .And.  FWIsInCallStack("OFIXA011") .And. !(FWIsInCallStack("U_ZPECF008"))
+				_cFormula  	:= M->VS3_FORMUL 
+			else
+				_cFormula 	:= VS3->VS3_FORMUL 
+			EndIF
+			//Valido CÃ³igo de Produto se veio preenchido DAC 06/10/2022
+			If Empty(_cCodProd)
+				If Type("M->VS3_CODITE") == "C" .And.  FWIsInCallStack("OFIXA011") .And. !(FWIsInCallStack("U_ZPECF008"))
+					_cCodProd := M->VS3_CODITE
+				Else
+					_cCodProd := VS3->VS3_CODITE
+				Endif	
+			EndIf
+			//verificação do FORMULA	
+			If _cFormula <> '000001'
+				DbSelectArea("VS3")
+				//VS3->(DbSetOrder(1))  //VS3_FILIAL+VS3_NUMORC
+				//VS3->(dbSeek(xFilial("VS3")+VS1->VS1_NUMORC))
+				DbSelectArea("VEG")
+				VEG->(DbSetOrder(1))  //VEG_FILIAL+VEG_CODIGO
+				If !VEG->(dbSeek(xFilial("VEG")+_cFormula))
+					Break
+				EndIf	
+				
+				DbSelectArea("SB1")
+				SB1->(DbSetOrder(1))  //B1_FILIAL+B1_COD
+				//SB1->(dbSeek(xFilial("SB1")+VS3->VS3_CODITE))  //Alterado pode vie por variaveis de memÃ³ria DAC 06/10/2022    
+				SB1->(dbSeek(xFilial("SB1")+_cCodProd))     
+				If Substr(VEG->VEG_FORMUL,1,5) = "SB1->"
+				_nValTab  :=  &(VEG->VEG_FORMUL)    
+				ElseIf Substr(VEG->VEG_FORMUL,1,5) = "EXECB"  
+					_cFunFor := AllTrim(VEG->VEG_FORMUL)
+				_nValTab  := &_cFunFor
+				Else
+					_cFunFor := AllTrim(VEG->VEG_FORMUL)
+				_nValTab  := &_cFunFor
+				Endif
+				//Controlar para que a função não retorne nada diferente de valor DAC 28/05/2022
+				If ValType(_nValTab) <> "N"
+					_nValTab := 0 
+					Break
+				Endif
+				Break
+			EndIf
+			//Caso a formula seja igual a 000001
+			BeginSql Alias _cAliasPesq //Define o nome do alias temporario 
+				SELECT 	DA1.R_E_C_N_O_ AS NREGDA1,
+						SA1.A1_EST
+				FROM  %Table:DA1% DA1
+				JOIN  %Table:SA1% SA1 
+					ON	SA1.A1_FILIAL  	= %xFilial:SA1%
+					AND SA1.A1_COD  	= %Exp:_cCLi%
+					AND SA1.A1_LOJA 	= %Exp:_cLoja%
+					AND SA1.%notDel%
+				JOIN %Table:DA0% DA0 
+					ON	DA0.DA0_FILIAL  = %xFilial:DA0%
+					AND DA0.DA0_ATIVO	= %Exp:_cAtivo%
+					AND %Exp:_cData% BETWEEN DA0.DA0_DATDE AND DA0.DA0_DATATE
+					AND DA0.%notDel%
+				WHERE 	DA1.DA1_FILIAL  = %xFilial:DA1% 
+					AND DA1.DA1_CODTAB  = DA0.DA0_CODTAB
+					AND DA1.DA1_CODPRO 	= %Exp:_cCodProd%
+					AND DA1.%notDel%
+			EndSQL	
 
+			If (_cAliasPesq)->(!Eof()) .and. (_cAliasPesq)->NREGDA1 > 0
+				DA1->(DbGoto((_cAliasPesq)->NREGDA1))
+				If _lProcUF
+					_cCampo 	:= "DA1_X"+(_cAliasPesq)->A1_EST
+					_nValTab 	:= DA1->(FieldGet(FieldPos(_cCampo)))
+				Else
+					_nValTab 	:= DA1->DA1_PRCVEN	
+				EndIf	
+			EndIf
+
+		ELSE
+			_nValTab 	:= SB1->B1_CUSTD	
+		ENDIF
+	
 	End Sequence
+	
 	If Select((_cAliasPesq)) <> 0
 		(_cAliasPesq)->(DbCloseArea())
 		Ferase(_cAliasPesq+GetDBExtension())
 	Endif 
+
 Return _nValTab
 
 /*/{Protheus.doc} XFASEORC
@@ -2432,6 +2443,7 @@ Static Function XCALCORCImposto(_nRegVS1, _lAtuaPreco)
 	Local _nPos
 	Local _cCodTes
 	Local _cTipoOper
+	Local _Tipo         := " "
 
 	Default lLibPV 		:= .f.
 	Default _lAtuaPreco	:= .T.
@@ -2532,12 +2544,20 @@ Static Function XCALCORCImposto(_nRegVS1, _lAtuaPreco)
 					_lAtuaPreco		:= .T.  //por mudar a TES deve atualizar preço
 				EndIf
 				//Atualizar valor unitario do produto
-				If _lAtuaPreco
+                _Tipo := U_zTpPed( VS1->VS1_XTPPED )
+			    If _lAtuaPreco .AND. VS1->VS1_XTPPED <> _Tipo 
 					_nValorUnit	:= U_XOFUNVTB(VS1->VS1_CLIFAT, VS1->VS1_LOJA, VS3->VS3_CODITE)
 					If _nValorUnit <= 0
 						Aadd(_aMensAglu,"não encontrado tabela de preço para o item " +VS3->VS3_CODITE+ " para efetuar clonagem do item orçamento, mantido valor original ")
 						_nValorUnit := VS3->VS3_VALPEC
 					EndIf
+				ELSE	
+		           IF _lAtuaPreco .AND. VS1->VS1_XTPPED = _Tipo
+					  SB2->(DbSetOrder(1))
+					  if SB2->(dBseek(xFilial("SB2") + PadR(VS3->VS3_CODITE, tamsx3('B2_COD') [1]) + VS3->VS3_LOCAL))
+					     _nValorUnit := SB2->B2_CM1
+					  Endif 
+				   ENDIF
 				Endif
 				//somente atualizar valores caso estejam diferentes // Retirado de lAtuaPreco para corrigir erros no Faturamento no VS3_VALTOT 
 				If (_nValorUnit > 0 .and. _nValorUnit <> VS3->VS3_VALPEC) .or. VS3->VS3_VALTOT <> ((VS3->VS3_VALPEC*VS3->VS3_QTDITE) - VS3->VS3_VALDES) //.and. VS3->(RecLock("VS3",.F.))
@@ -4154,7 +4174,28 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 
 Return(_cRet)
 
+/*/{Protheus.doc} zTpPed
+Valida verifica se Tipo do Pedido faz parte do grupo de Grantia
+@param  	_cTp  -- Tipo de venda informado no pedido do SigaPec
+@author 	CAOA - CAOA - Sandro
+@version  	P12.1.23
+@since  	07/10/2024
+@return  	_cRet -- Retorno o Grupo se contiver no parametro CMV_PEC51 senão retornará vazio
+@project
+@history    
+			
+@ob
+/*/
+User Function zTpPed(_cTp)
 
+    Local _cRet 			:= " "
+	Local _cTipoPedGar		:= AllTrim(SuperGetMV( "CMV_PEC51"  ,,"012;022"))	//Pedidos de Garantia
+
+	If _cTp $ _cTipoPedGar
+		_cRet := _cTp
+	EndIf
+
+Return(_cRet)
 
 
 /*/{Protheus.doc} XRESCAOAPEC
@@ -4852,42 +4893,52 @@ User Function XVERTABPreco( _cCLi, _cLoja, _cNumOrc )
 	Local _lRet			:= .F.  //indica não ocorreu alteração
 	Local _cData		:= DtOS(dDataBase)  //DtOS(Date()) //06/10/2022 conforme ZÃ© utilizar o database
 	Local _cCampo 		 
+    Local _Tipo         := " "
 
+	//Verifica o tipo de pedido 
 	Begin Sequence
-		If SA1->A1_COD <> _cCLi .AND. SA1->A1_LOJA <> _cLoja 
-			SA1->(DbSetOrder(1))
-			If !SA1->(DbSeek(XFilial("SA1")+_cCLi+_cLoja))
-				_lRet := .T.  //caso não localize SA1 retorno tru para forçar calculo em tabela
+
+		_Tipo := U_zTpPed( VS1->VS1_XTPPED )
+    
+		IF VS1->VS1_XTPPED <>  _Tipo //Pedido de garantia e o preco de custo
+			If SA1->A1_COD <> _cCLi .AND. SA1->A1_LOJA <> _cLoja 
+				SA1->(DbSetOrder(1))
+				If !SA1->(DbSeek(XFilial("SA1")+_cCLi+_cLoja))
+					_lRet := .T.  //caso não localize SA1 retorno tru para forçar calculo em tabela
+					Break
+				EndIf	
+			Endif
+			_cCampo := "DA1.DA1_X"+AllTrim(SA1->A1_EST)
+			_cCampo := "%"+_cCampo+"%"
+			BeginSql Alias _cAliasPesq //Define o nome do alias temporario 
+				SELECT 	DA1.R_E_C_N_O_ AS NREGDA1
+					, VS3.VS3_CODITE 
+					, VS3.VS3_VALPEC 
+					, %Exp:_cCampo% 
+				FROM  %Table:DA1% DA1
+				JOIN %Table:VS3% VS3
+					ON	VS3.VS3_FILIAL  = %xFilial:VS3%
+					AND VS3.VS3_NUMORC  = %Exp:_cNumOrc%
+					AND VS3.%notDel%
+				JOIN %Table:DA0% DA0 
+					ON	DA0.DA0_FILIAL  = %xFilial:DA0%
+					AND DA0.DA0_ATIVO	= %Exp:_cAtivo%
+					AND %Exp:_cData% BETWEEN DA0.DA0_DATDE AND DA0.DA0_DATATE
+					AND DA0.%notDel%
+				WHERE 	DA1.DA1_FILIAL  = %xFilial:DA1% 
+					AND DA1.DA1_CODTAB  = DA0.DA0_CODTAB
+					AND DA1.DA1_CODPRO 	= VS3.VS3_CODITE
+					AND %Exp:_cCampo%  <> VS3.VS3_VALPEC 
+					AND DA1.%notDel%
+			EndSQL	
+			If (_cAliasPesq)->(!Eof()) .and. (_cAliasPesq)->NREGDA1 > 0
+				_lRet := .T.
 				Break
-			EndIf	
-		Endif
-		_cCampo := "DA1.DA1_X"+AllTrim(SA1->A1_EST)
-		_cCampo := "%"+_cCampo+"%"
-		BeginSql Alias _cAliasPesq //Define o nome do alias temporario 
-			SELECT 	DA1.R_E_C_N_O_ AS NREGDA1
-				, VS3.VS3_CODITE 
-				, VS3.VS3_VALPEC 
-				, %Exp:_cCampo% 
-			FROM  %Table:DA1% DA1
-			JOIN %Table:VS3% VS3
-				ON	VS3.VS3_FILIAL  = %xFilial:VS3%
-				AND VS3.VS3_NUMORC  = %Exp:_cNumOrc%
-				AND VS3.%notDel%
-			JOIN %Table:DA0% DA0 
-				ON	DA0.DA0_FILIAL  = %xFilial:DA0%
-				AND DA0.DA0_ATIVO	= %Exp:_cAtivo%
-				AND %Exp:_cData% BETWEEN DA0.DA0_DATDE AND DA0.DA0_DATATE
-				AND DA0.%notDel%
-			WHERE 	DA1.DA1_FILIAL  = %xFilial:DA1% 
-				AND DA1.DA1_CODTAB  = DA0.DA0_CODTAB
-				AND DA1.DA1_CODPRO 	= VS3.VS3_CODITE
-				AND %Exp:_cCampo%  <> VS3.VS3_VALPEC 
-				AND DA1.%notDel%
-		EndSQL	
-		If (_cAliasPesq)->(!Eof()) .and. (_cAliasPesq)->NREGDA1 > 0
+			EndIf
+		ELSE
+			//Depois pode tirar o else e o lret=.t.
 			_lRet := .T.
-			Break
-		EndIf
+		ENDIF
 	End Sequence
 	If Select((_cAliasPesq)) <> 0
 		(_cAliasPesq)->(DbCloseArea())
@@ -5223,11 +5274,12 @@ Begin sequence  //Ajuste Select não estava dentro do Begin GAP002  DAC 09/08/202
 			AND VS1.VS1_TIPORC 		= '1' 
 			AND VS1.VS1_STATUS  	IN %Exp:_cStatus% //Por erro na chamada pelo ZWSR009
 			AND VS1.VS1_NUMNFI		= ' '
-			AND VS3.VS3_XREGFI		= 'T'
 		  	AND VS1.%notDel%	
 	EndSql
 //		SELECT DISTINCT	VS1_CLIFAT,VS1_LOJA,VS1_NCLIFT,VS1_NUMORC,VS1_TIPORC,VS1_DATORC, VS1_XMARCA
 //			AND VS1.VS1_XPICKI  	= %Exp:cZK_XPICKI%
+// 			AND VS3.VS3_XREGFI		= 'T' Retirado por Cintia Araujo em 04/10/24 - Recalculos fiscais antes de efetivar o faturamento
+
 
 	If (_cAliasPesq)->(Eof())
 		//Avaliando saida DAC 09/08/2023 GAP002
@@ -5239,42 +5291,59 @@ Begin sequence  //Ajuste Select não estava dentro do Begin GAP002  DAC 09/08/202
 		Break //Por erro na chamada pelo ZWSR009
 	EndIf	
 
+	// Inicio *************** Cintia Araujo em 04/10/24 - 
+	//                        Recalculos fiscais antes de efetivar o faturamento quando o VS3->VS3_XREGFI for diferente de TES considera a Operacao e 
 	While !(_cAliasPesq)->(Eof())
-		_cNumOrc 	:= (_cAliasPesq)->VS1_NUMORC
+		_cMens    := ""
+		_cNumOrc  := (_cAliasPesq)->VS1_NUMORC
+
 		VS1->(DbGoto((_cAliasPesq)->NREGVS1))
-		_cMens := ""
+
 		While (_cAliasPesq)->(!Eof()) .and. (_cAliasPesq)->VS1_NUMORC == _cNumOrc
 			VS3->(DbGoto((_cAliasPesq)->NREGVS3))
-			cTES := " "
+
+			cTES      := " "
 			_cOperVS3 := Alltrim(VS3->VS3_OPER)
 			_cTESVS3  := Alltrim(VS3->VS3_CODTES)
 			_cCodIte  := Alltrim(VS3->VS3_CODITE)
 			_cXREGFI  := Alltrim(VS3->VS3_XREGFI)
+			
+			If _cXREGFI = "T"
+				cTES := VS3->VS3_CODTES
+			Else
 			cTES := Alltrim(MaTesInt(2, _cOperVS3, VS1->VS1_CLIFAT, VS1->VS1_LOJA,"C", _cCodIte))
+			EndIf
+
 			_cMens := "TES Inteligente: NumOrc: "+_cNumOrc+ "/ Cliente: "+VS1->VS1_CLIFAT+VS1->VS1_LOJA+"/ Produto " +_cCodIte+"/ Oper: "+_cOperVS3+"/ Regra: "+_cXREGFI+" / TES_ORC: " +_cTESVS3+ " / Tes Intelig: " +cTES +CRLF
-			If (!(_cXREGFI = "T") .and. !(_cTESVS3 = cTES) .and. !Empty(cTES))
+
+			If !Empty(cTES) //(!(_cXREGFI = "T") .and. !(_cTESVS3 = cTES) .and. !Empty(cTES))
+				_cMens += "O produto " +_cCodIte+ " teve a TES " +_cTESVS3+ " alterada para " +cTES+ " conforme Operaï¿½ï¿½o " +_cOperVS3+ " no momento do faturamento em " +DtoC(date()) + " ï¿½s " + Time() + CRLF
+
 				VS1->(RecLock("VS1",.F.))
-				VS3->(RecLock("VS3",.F.))
-				_cMens += "O produto " +_cCodIte+ " teve a TES " +_cTESVS3+ " alterada para " +cTES+ " conforme Operação " +_cOperVS3+ " no momento do faturamento em " +DtoC(date()) + " ÃƒÂ s " + Time() + CRLF
 				VS1->VS1_OBSAGL	:= Upper(_cMens) + CRLF + AllTrim(VS1->VS1_OBSAGL)
+				VS1->(MsUnlock())
+
+				VS3->(RecLock("VS3",.F.))
 				VS3->VS3_CODTES := cTES
 				VS3->VS3_SITTRI := U_XFUNSITT(cTES, VS3->VS3_CODITE, VS3->VS3_GRUITE)
 				VS3->(MsUnlock())
-				VS1->(MsUnlock())
+
 			Elseif Empty(cTES)
-				_cMens += "Erro no retorno da TES Inteligente -> Tes: "+cTES+" Oper: " +_cOperVS3+ " Cliente: "+VS1->VS1_CLIFAT+" Loja: "+VS1->VS1_LOJA+" Cod: "+_cCodIte+DtoC(date()) + " ÃƒÂ s " + Time() + CRLF
+				_cMens += "Erro no retorno da TES Inteligente -> Tes: "+cTES+" Oper: " +_cOperVS3+ " Cliente: "+VS1->VS1_CLIFAT+" Loja: "+VS1->VS1_LOJA+" Cod: "+_cCodIte+DtoC(date()) + " ï¿½s " + Time() + CRLF
 				_lRet := .F.
 			EndIf	
 	       	(_cAliasPesq)->(DbSkip())
 		EndDo
 		If !_lRet 
 			If !_lJob
-				MsgInfo(_cMens,"Atenção") 
+				MsgInfo(_cMens,"Atenï¿½ï¿½o") 
 			Endif 
 			Conout(_cMens) 
 		Endif 
-		U_ORCCALFIS(VS1->VS1_NUMORC,.F./*atualiza o preço*/)
+		U_ORCCALFIS(VS1->VS1_NUMORC,.F./*atualiza o preï¿½o*/)
 	EndDo
+	// Fim    *************** Cintia Araujo em 04/10/24 - Recalculos fiscais antes de efetivar o faturamento
+	
 	
 	/*
 			_cCliente 	:= (_cAliasPesq)->VS1_CLIFAT

@@ -206,6 +206,7 @@ Responsável pelo processamento Aglutinando e Separando do orçamento passando pel
 /*/
 Static Function ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave , _cLocal, _aOndaRel, _oSay )
 Local _cAliasTRB    	:= GetNextAlias()      
+Local _cAliasTP         := GetNextAlias() 
 Local _cCliFatDe 		:= _aRet[01]
 Local _cLojaCFDe		:= _aRet[02]
 Local _cCliFatAte 	    := _aRet[03]
@@ -491,6 +492,10 @@ Begin Sequence
 		*/
 
 	    If _cLocal = '02'
+			If Select(_cAliasTP) <> 0
+				(_cAliasTP)->(DbCloseArea())
+			Endif  
+			
 			BeginSql Alias _cAliasTP //Define o nome do alias temporário 
 				SELECT 	VX5.VX5_CHAVE,
 						VX5.VX5_CODIGO,
@@ -566,6 +571,7 @@ Begin Sequence
 			//somente validar se não for transferência o tipo de pedido, esta transferência sera de Barueri para FDR DAC 08/02/2023
 			If Empty(_cTPedTransf) .Or. AllTrim(VS1->VS1_XTPPED) <> _cTPedTransf
 				//Verificar se existe divergência de Tabela
+				//If VS1->VS1_XTPPED <> '012' .AND.  VS1->VS1_XTPPED <> '022
 				If U_XVERTABPreco (_cCliFat, _cLoja, VS1->VS1_NUMORC )
 					//Recalcular valores
 					If !VS1->(U_ORCCALFIS(VS1->VS1_NUMORC /*_cNumOrc*/,/*_lAtuaPreco*/))
@@ -577,7 +583,7 @@ Begin Sequence
 						Loop
 					Endif
 				Endif
-
+                //ENDIF
 				//Verificar Fases
 				If "2" $ _cFaseOrc  //somente se estiver na fase do orçamento conforme alinhado com Zé 30/11/2021
 					U_XFASEORC("2")  //Verifica se passa pela Fase MARGEM DE LUCRO
