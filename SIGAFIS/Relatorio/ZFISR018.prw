@@ -84,7 +84,8 @@ Static Function fGeraExcel()
 	EndIf
      
     //Montando consulta de dados
-
+//    cQryDad += "        , SUM(FT_VALPIS)  AS VALOR_PIS "                        + CRLF
+//    cQryDad += "        , SUM(FT_VALCOF)  AS VALOR_COF "                        + CRLF
     cQryDad := " "                                                              + CRLF
     cQryDad += " SELECT "                                                       + CRLF
     cQryDad += "        SF1.F1_FILIAL     AS FILIAL "                           + CRLF
@@ -100,12 +101,10 @@ Static Function fGeraExcel()
     cQryDad += "        , SF1.F1_FORMUL   AS FORMULARIO "                       + CRLF 
     cQryDad += "        , TO_DATE(SF1.F1_DTDIGIT, 'YYYYMMDD')  AS DT_ENTRADA "  + CRLF 
     cQryDad += "        , SF1.F1_CHVNFE   AS CHAVE "                            + CRLF
-    cQryDad += "        , SF1.F1_USERLGI  AS UINCLUI" 		                    + CRLF
-    cQryDad += "        , SF1.F1_USERLGA  AS UALTERA" 		                    + CRLF
+    cQryDad += "        , SF1.F1_USERLGI  AS UINCLUI " 		                    + CRLF
+    cQryDad += "        , SF1.F1_USERLGA  AS UALTERA " 		                    + CRLF
     cQryDad += "        , SF3.F3_VALIMP6 AS VALOR_PIS "                         + CRLF
     cQryDad += "        , SF3.F3_VALIMP5 AS VALOR_COF "                         + CRLF
-//    cQryDad += "        , SUM(FT_VALPIS)  AS VALOR_PIS "                        + CRLF
-//    cQryDad += "        , SUM(FT_VALCOF)  AS VALOR_COF "                        + CRLF
 	cQryDad += "	    , SF1.F1_ESPECIE  AS ESPECIE "                          + CRLF 
 	cQryDad += "		, SF3.F3_CFO      AS CFOP "                             + CRLF 
 	cQryDad += "		, TO_DATE(SF3.F3_ENTRADA, 'YYYYMMDD')  AS DT_LANC "     + CRLF
@@ -114,10 +113,10 @@ Static Function fGeraExcel()
 	cQryDad += "		, SF3.F3_BASEICM  AS BASE_ICMS "                        + CRLF
 	cQryDad += "		, SF3.F3_VALICM   AS VAL_ICMS "                         + CRLF 
 	cQryDad += "		, SF3.F3_ISENICM  AS ICMS_ISENTO "                      + CRLF 
-	cQryDad += "		, SF3.F3_OUTRICM  AS ICMS_OUTROS  "                     + CRLF
+	cQryDad += "		, SF3.F3_OUTRICM  AS ICMS_OUTROS "                      + CRLF
     cQryDad += "        , SF3.F3_ICMSDIF  AS ICMS_DIFAL "                       + CRLF
     cQryDad += "		, SF3.F3_BASERET  AS BASE_SUBST  "                      + CRLF 
-    cQryDad += "		, SF3.F3_ICMSRET  AS VALOR_SUBST   "                    + CRLF 
+    cQryDad += "		, SF3.F3_ICMSRET  AS VALOR_SUBST "                      + CRLF 
     cQryDad += "		, SF3.F3_BASEIPI  AS BASE_IPI  "                        + CRLF 
     cQryDad += "		, SF3.F3_VALIPI   AS VAL_IPI  "                         + CRLF 
     cQryDad += "		, SF3.F3_ISENIPI  AS IPI_ISENTO  "                      + CRLF 
@@ -160,7 +159,7 @@ Static Function fGeraExcel()
 	
     If !Empty(DtoS(MV_PAR02)) //DATA EMISSAO ATE
 		cQryDad += " AND (SF1.F1_EMISSAO BETWEEN '" + DtoS(MV_PAR01) + "' AND '" + DtoS(MV_PAR02) + "')"    + CRLF //--DATA DE EMISSAO
-//		cQryDad += " OR (SF3.F3_DTCANC  BETWEEN '" + DtoS(MV_PAR01) + "' AND '" + DtoS(MV_PAR02) + "')"      + CRLF //--DATA DE EMISSAO
+		cQryDad += " OR (SF3.F3_DTCANC  BETWEEN '" + DtoS(MV_PAR01) + "' AND '" + DtoS(MV_PAR02) + "')"      + CRLF //--DATA DE EMISSAO
 
 	EndIf
 
@@ -184,8 +183,8 @@ Static Function fGeraExcel()
 
     cQryDad += "    AND SF1.D_E_L_E_T_ 	= ' ' " + CRLF
     cQryDad += "Order BY "                      + CRLF
-    cQryDad += "    , SF1.F1_DOC "              + CRLF 
-    cQryDad += "    , SF1.F1_SERIE "            + CRLF
+    cQryDad += "     SF1.F1_DOC "               + CRLF 
+    cQryDad += "   , SF1.F1_SERIE "             + CRLF
 
 
 
@@ -383,7 +382,7 @@ Static Function fGeraExcel()
     oFWMsExcel:AddworkSheet(cWorkSh)
      
     //Criando a Tabela e as colunas
-   oFWMsExcel:AddTable(cWorkSh, cTitul)
+    oFWMsExcel:AddTable(cWorkSh, cTitul)
 	oFWMsExcel:AddColumn(cWorkSh, cTitul, "CNPJ", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSh, cTitul, "INS_EST", 1, 1, .F.)
 	oFWMsExcel:AddColumn(cWorkSh, cTitul, "CODIGO", 1, 1, .F.)
