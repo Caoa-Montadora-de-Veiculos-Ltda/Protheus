@@ -4190,6 +4190,8 @@ User Function zTpPed(_cTp)
 
     Local _cRet 			:= " "
 	Local _cTipoPedGar		:= AllTrim(SuperGetMV( "CMV_PEC51"  ,,"012;022"))	//Pedidos de Garantia
+	
+	Default _cTp := " "
 
 	If _cTp $ _cTipoPedGar
 		_cRet := _cTp
