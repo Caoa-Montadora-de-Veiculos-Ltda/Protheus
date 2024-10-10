@@ -96,7 +96,7 @@ Begin Sequence
 	Endif
 
 	_lRet 	:= .F.
-	Aadd( _aCab, {"pedidovei"		, _cPedCli})
+	Aadd( _aCab, {"pedidovei"	, _cPedCli})
 	Aadd( _aCab, {"cnpjcpf"		, _cCgc}) 
 	Aadd( _aCab, {"previsaonr"	, "" }) 
 
@@ -199,7 +199,7 @@ Begin Sequence
 		//Caso tenha erro será abortado neste momento devo atualizar os retornos dos itens
 		U_ZRETMsgJson("erropad",_cError)
 		_nStatus	:= _aMsgRet[Len(_aMsgRet),1]
-		For _nPos := 1 To Len(_aMsgRet)
+		For _nPos := 1 To Len(_aItemRet)
 			_aItemRet[_nPos,2] 	:=  _nStatus	//status
 			_aItemRet[_nPos,3]  :=  _cError		//ocorrencia
 			_aItemRet[_nPos,5] 	:=  _nQtdeItem	//qtdeocorrencia
@@ -211,9 +211,9 @@ Begin Sequence
 	//Selecionar Chassis
 	//Neste Caso nao ira abortar processo somente avisara que possui itens que nao tem chassi ou ocorrerão erros na seleção do chassi
 	_nQtdeEmp := 0  //Qtde empenhada
-	U_ZTF30EMP(SC5->C5_FILIAL, SC5->C5_NUM, /*_cItem*/, /*_nLimChassi*/, @_nQtdeEmp, _lJob,  /*_oSay*/ )
+	U_ZTF30EMP(SC5->C5_FILIAL, SC5->C5_NUM, /*_cItem*/, /*_cCodProd*/, /*_cFabMod*/, /*_nLimChassi*/, @_nQtdeEmp, _lJob,  /*_oSay*/ )
 End Sequence
-//Caso ocorra rros antes do execauto
+//Caso ocorra erros antes do execauto
 If Len(_aItemRet) == 0
 	Aadd( _aItemRet, {"iditem"			, StrZero(9,10)})
 	Aadd( _aItemRet, {"status"			, _aMsgRet[Len(_aMsgRet),1]})
@@ -393,7 +393,8 @@ Realiza o Empenho  de acordo com a seleção recebida
 @ Obs		
 @history    
 /*/
-Function U_ZTF30EMP(_cFilPed, _cPedido, _cItem, _nLimChassi, _nQtdeEmp, _lJob, _oSay )
+Function U_ZTF30EMP(_cFilPed, _cPedido, _cItem, _cCodProd, _cFabMod, _nLimChassi, _nQtdeEmp, _lJob, _oSay )
+/*
 Local _lLiber                       As Logical
 Local _lParcial                     As Logical
 Local _lTrans                       As Logical
@@ -403,12 +404,14 @@ Local _lAvCred                      As Logical
 Local _lAvEst                       As Logical
 Local _lItLib                       As Logical
 Local _lLibPed                      As Logical
-
+Local _lRet 						As Logical 
+*/
 Local _cAliasEmp                    As Character
 Local _cAliasCH                     As Character
 Local _cMens                        As Character
 Local _cCC_STATUS                   As Character    
-Local _cWhere                       As Character    
+Local _cWhere                       As Character   
+Local _cStatuSC6 					As Character
 
 Local _nQtdeChassi                  As Numeric
 Local _nQtdLib                      As Numeric
@@ -429,22 +432,41 @@ Default _cItem      := ""
 Default _nLimChassi := 0          
 Default _nQtdeEmp	:= 0  
 Default _lJob       := IsBlind()    
+Default	_cCodProd	:= ""
+Default _cFabMod	:= ""
 //DeFault _oSay  		As Object
+
+Private  _lLiber     := .T.
+Private  _lParcial   := .T.
+Private  _lTrans     := .F.
+Private  _lCredito   := .T.
+Private  _lEstoque   := .T.
+Private  _lAvCred    := .T.
+Private  _lAvEst     := .T.
+Private  _lItLib     := .T.
+Private  _lLibPed    := .F.
 
 Begin Sequence
 	_lRet		:= .F.
     _cAliasEmp  := GetNextAlias() 
     _cWhere     := ""
+	_cStatuSC6	:= "101" 
+
     If Empty(_cPedido)
        _cMens := "Falta informação do parametro Pedido para Empenho"
 		U_ZRETMsgJson("erropad",_cMens)
 		Break 
 	Endif  
-
 	_cWhere :=	"	        AND SC6.C6_FILIAL 	= '"+_cFilPed+"' "
     _cWhere +=  "           AND SC6.C6_NUM      = '"+_cPedido+"' "
+	If !Empty(_cCodProd)
+        _cWhere := "        AND SC6.C6_PRODUTO     = '"+_cCodProd+"' "  
+    Endif    
     If !Empty(_cItem)
         _cWhere := "        AND SC6.C6_ITEM     = '"+_cItem+"' "
+    Endif    
+    If !Empty(_cFabMod)
+        _cWhere := "        AND SC6.C6_XFABMOD     = '"+_cFabMod+"' " 
     Endif    
     _cWhere +=  "           AND SC6.C6_CHASSI  = ' '" 
 
@@ -475,12 +497,10 @@ Begin Sequence
     While (_cAliasEmp)->(!Eof()) .and. If(_nLimChassi > 0, _nLinhas <= _nLimChassi,.T.)
         SC6->(DbGoto((_cAliasEmp)->NREGSC6))    
         SC5->(DbGoto((_cAliasEmp)->NREGSC5))    
-
 		//If Ascan(_aSC5, (_cAliasEmp)->NREGSC5)	== 0
 		//	Aadd(_aSC5,(_cAliasEmp)->NREGSC5)
 		//Endif
         SB1->(DbSetOrder(1))
-
 		//verificar Saldo
 		SB2->(DbSetOrder(1))
 		SB2->(DbSeek(FWxFilial("SB2")+SC6->C6_PRODUTO+SC6->C6_LOCAL))
@@ -510,7 +530,6 @@ Begin Sequence
 	    If (_cAliasCH)->(Eof())
             _cMens := "Item "+SC6->C6_ITEM+" referente ao Pedido "+SC6->C6_NUM+" nao localizado Chassi disponivel para Empenho"
 			U_ZRETMsgJson("erropad",_cMens)
-
             (_cAliasEmp)->(DbSkip())
             Loop  
 		Endif 
@@ -581,6 +600,9 @@ Begin Sequence
             	    SC6->C6_NUMSERI := _cNumSeq		//(_cAliasCH)->DB_NUMSEQ
             	    SC6->C6_CHASSI  := _cChassi		//(_cAliasCH)->VV1_CHASSI
             	    SC6->C6_LOCALIZ := _cLocaliz	//(_cAliasCH)->BF_LOCALIZ
+					If SC6->(FieldPos("C6_XRESSTA")) > 0
+						SC6->C6_XRESSTA := _cStatuSC6
+					Endif							
 					/*
 					    SC6->C6_XPRCTAB := (cCabAlias)->VRK_VALTAB	    //Valor de Tabela  
 					    SC6->C6_XVLRPRD := (cCabAlias)->VRK_VALPRE  	//Valor Pretendido   
@@ -604,6 +626,7 @@ Begin Sequence
             	                            , _lAvEst       ;
             	                            , _lLiber       ;
             	                            , _lTrans) )
+					/*
 					If !_lCredito
             	   	 	_cMens := "Item "+SC6->C6_ITEM+" referente ao Pedido "+SC6->C6_NUM+" nao localizado bloqueado limite de Credito Pedido para Empenho "
 						U_ZRETMsgJson("erropad",_cMens)
@@ -615,7 +638,8 @@ Begin Sequence
 						U_ZRETMsgJson("erropad",_cMens)
             	    	//(_cAliasCH)->(DbSkip())
             	    	_lGrava := .F.   
-					Endif 	
+					Endif
+					*/ 	
                 	SDC->(DbSetOrder(1))
                 	SDC->(DbGoTop())
                 	//BF LOCALIZADA NA QUERY CHASSI DISPONIVES
@@ -692,6 +716,7 @@ Begin Sequence
 			//conseguiu fazer empenho posso sair
 			If _lGrava
 				_nQtdeEmp ++  //indica quantidade empenhada
+				_lRet := .T.
 				Exit   //Caso chegou aqui conseguiu fazer o empenho    
 			Endif
 			(_cAliasCH)->(DbSkip())
@@ -700,7 +725,7 @@ Begin Sequence
         (_cAliasEmp)->(DbSkip())
     EndDo
 End Sequence 
-Return Nil
+Return _lRet
 
 
 Static Function ZFT30GRLog(_aRegSc6)

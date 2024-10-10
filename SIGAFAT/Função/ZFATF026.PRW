@@ -450,6 +450,8 @@ Begin Sequence
 			_nQtdeChassi := ZFATF026AV(ZZP->ZZP_CODPRD, ZZP->ZZP_FABMOD, ZZP->ZZP_CODPRV, _nQtdeLZZP, _nQtdeLib, @_nQtdEmpenho) 
 			If _nQtdeChassi >= _nQtdeCalc 	
 				_lRet := ZFATF26EMP( 1, ZZP->ZZP_FILIAL, ZZP->ZZP_CODPRV, ZZP->ZZP_CODCLI, ZZP->ZZP_LOJCLI, ZZP->ZZP_CODPRD, ZZP->ZZP_FABMOD, _nQtdeCalc, /*_lMens*/ )
+				//_lRet  := U_ZTF30EMP(SC5->C5_FILIAL, SC5->C5_NUM, /*_cItem*/, /*_cCodProd*/, /*_cFabMod*/, /*_nLimChassi*/, @_nQtdeEmp, _lJob,  /*_oSay*/ )
+
 				If _lRet
 					_nQtde	:= _nQtdeCalc + _nQtdeLZZP
 				Endif 	
@@ -787,13 +789,13 @@ Begin Sequence
 		_cJoin 	:= "%"+_cJoin+"%"
 	*/
 
-	_cJoin 	+=  CRLF +" JOIN " + RetSqlName("VRJ") + " VRJ "
+	_cJoin 	+=  CRLF +" LEFT JOIN " + RetSqlName("VRJ") + " VRJ "
 	_cJoin 	+=  CRLF +"		ON  VRJ.VRJ_FILIAL = '" + xFilial("VRJ") + "' "
 	_cJoin 	+=  CRLF +" 	AND VRJ.VRJ_PEDCOM = SC6.C6_PEDCLI "
 	_cJoin 	+= 	CRLF +"		AND VRJ.VRJ_STATUS in ('A','F') "
 	_cJoin 	+= 	CRLF +"		AND VRJ.D_E_L_E_T_ = ' ' "
 
-    _cJoin 	+= CRLF + " JOIN " + RetSqlName("VRK") + " VRK "
+    _cJoin 	+= CRLF + " LEFT JOIN " + RetSqlName("VRK") + " VRK "
     _cJoin 	+= CRLF + "     ON  VRK.VRK_FILIAL = '" + FWxFilial("VRK") + "' "
     _cJoin 	+= CRLF + "     AND VRK.VRK_PEDIDO = VRJ.VRJ_PEDIDO "
     _cJoin 	+= CRLF + "     AND VRK.VRK_ITEPED = LPad(SC6.C6_ITEM,3,'0') "

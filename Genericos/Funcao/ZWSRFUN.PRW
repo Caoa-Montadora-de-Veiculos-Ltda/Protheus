@@ -86,11 +86,12 @@ Return _aMsgRet
 @param _aMsg, array, descrição
 @type function
 /*/
-User Function ZRETMsgJson(_cRefMsg, _cMsgRet)
+User Function ZRETMsgJson(_cRefMsg, _cMsgRet, _oJsonRet)
 Local _nRet := 999
 Local _nPos
 
-Default _cMsgRet := ""
+Default _cMsgRet 	:= ""
+Default _oJsonRet	:= JsonObject():new()
 
 Begin Sequence
 	If Type("_aRetMsg") <> "A"
@@ -107,7 +108,7 @@ Begin Sequence
 	If Empty(_cMsgRet) .and. Len(_aRetMsg[_nPos]) >= 5 .and. ValType(_aRetMsg[_nPos,5]) == "C"
 		_cMsgRet := _aRetMsg[_nPos,5]+" !"
 	Endif	
-	Aadd(_aMsgRet, {_nRet, _cMsgRet})
+	Aadd(_aMsgRet, {_nRet, _cMsgRet, _oJsonRet})
 End Sequence
 Return _nRet
 
@@ -120,8 +121,9 @@ Seta mensagem retorno de msg do rest
 @type function
 /*/
 User function ZSetMsgJson() 
-Local _nMsg  := 999
-Local _cMsg  := ""
+Local _nMsg  	:= 999
+Local _cMsg  	:= ""
+Local _oJsonRet := JsonObject():new()
 Local _nPos
 
 Begin Sequence
@@ -142,9 +144,12 @@ Begin Sequence
 	Else
 		_nMsg  := _aMsgRet[1,1]
 		_cMsg  := _aMsgRet[1,2]
+		If Len(_aMsgRet[1]) > 2 .And. Type("_aMsgRet[1,3]") == "J"
+			_oJsonRet  := _aMsgRet[1,3]
+		Endif 
 	Endif
 End Sequence
-Return {_nMsg,EncodeUtf8(_cMsg)}
+Return {_nMsg,EncodeUtf8(_cMsg), _oJsonRet}
 //Return {"Code":_nMsg,"detailedMessage": "","message":EncodeUtf8(_cMsg)}
 
 

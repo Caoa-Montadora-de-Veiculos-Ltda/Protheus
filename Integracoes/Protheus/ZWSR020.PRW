@@ -75,15 +75,16 @@ Begin Sequence
 	EndIf
 	If _aRet[1] == 100
 		//SetRestFault(_aRet[1],_aRet[2])
-		//_oJsonRet := JsonObject():new()
+		_oJsonRet := JsonObject():new()
 		_oJsonRet := _aRet[3]
-		//::SetResponse( cJSONRet )
+		::SetResponse( _oJsonRet )
+		//_oJsonRet := _aRet[3]
 		/*
 		_oJsonRet := JsonObject():new()
 		_oJsonRet['Code'] 		:= _aRet[1]
 		_oJsonRet['Message']	:= _aRet[2]
-		::SetResponse( _oJsonRet:ToJson )
 		*/
+		//::SetResponse( _oJsonRet:ToJson )
 	Else
 		//SetRestFault(_aRet[1],_aRet[2])
 		_oJsonRet := JsonObject():new()

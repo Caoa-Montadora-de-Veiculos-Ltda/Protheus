@@ -60,7 +60,7 @@ User Function MS520DEL()
 						EndIf
 					EndIf
 	            	//GAP228 -Integração Faturamento Autoware DAC 02/10/2024
-					If SC6->(RecLock("SC6",.F.))
+					If SC6->(FieldPos,"C6_XSTPEDI") > 0 .And.  SC6->(RecLock("SC6",.F.))
 						SC6->C6_XSTPEDI :=  'A'
 						SC6->(MsUnlock())
 					Endif  

@@ -59,16 +59,12 @@ Recebe 		Json CLIENTE PUT
 @ Obs		Os paremetros de token, empresa e filial serão enviados no cabeçalho reader Json
 /*/
 Static Function ZRESTPFCPR( _oJson, _cEmpFil, _cResp, _oJsonRet )
-Local _cEmpresa     As Character
-Local _cFilAtu      As Character
-Local _lRet			As Logical
+Local _cEmpresa     := ""	As Character
+Local _cFilAtu      := ""	As Character
+Local _lRet			:= .F.	As Logical
+Local _nPos					As Numeric
 //Local _cRespLib		:= AllTrim( superGetMv( "CAOA_RES03"	, , "00000000"		) )	
-
-Local _nPos
 Begin Sequence
-	_cEmpresa 	:= ""
-	_cFilAtu 	:= ""
-	_lRet		:= .F.
 	_nPos := At(",", _cEmpFil)
 	If _nPos <= 0 
 		U_ZRETMsgJson("empresa","nao informada tag empresa")
@@ -121,7 +117,6 @@ Begin Sequence
 	EndIf
 	//processa json
 	_lRet := ZRESTPFCGR(_oJson, @_oJsonRet )
-
 End Sequence
 Return _lRet
 
@@ -135,30 +130,42 @@ Gravar dados do oJson Consulta
 @type function
 /*/
 Static Function ZRESTPFCGR(_oJson, _oJsonRet )
-Local _lRet 		As Logical
-Local _aCab		As Array
-Local _aItemRet		As Array
-Local _cAliasPesq	As Character
-Local _cPedido 		As Character
-Local _cPedCli		As Character
-Local _cCnPj 		As Character
-Local _cCnPjCpf		AS Character
-//Local _cPrevisao	As Character
-Local _cCodPrev		As Character	
-Local _cWhere 		As Character
-Local _cIdItem		As Character
-Local _cStatus    	As Character 
-Local _Ocorrencia 	As Character 
+Local _lRet 		:= .F.				As Logical
+Local _aCab			:= {}				As Array
+Local _aItemRet		:= {}				As Array
+Local _cAliasPesq	:= GetNextAlias()	As Character
+Local _cPedido 		:= ""				As Character
+Local _cPedCli		:= ""				As Character
+Local _cCnPj 		:= ""				As Character
+Local _cCnPjCpf		:= ""				AS Character
+//Local _cPrevisao	:= ""				As Character
+Local _cCodPrev		:= ""				As Character	
+Local _cCampo 		:= ""				As Character
+Local _cWhere 		:= ""				As Character
+Local _cIdItem		:= ""				As Character
+Local _cStatus    	:= ""				As Character 
+Local _Ocorrencia 	:= ""				As Character 
+Local _nQtdePed		:= 0 				As Numeric 
+Local _nQtdeLib 	:= 0 				As Numeric
+Local _nQtdeFat		:= 0 				As Numeric 
 
 Begin Sequence 
-	_cAliasPesq	:= GetNextAlias()
-	_lRet 		:= .F.
-	_aCab		:= {}
-	_aItemRet	:= {}
 	_cCnPjCpf	:= AllTrim(_oJson:GetJsonText("cnpjcpf"))  
 	_cPedCli 	:= AllTrim(_oJson:GetJsonText("pedidovei"))
 	_cCodPrev	:= AllTrim(_oJson:GetJsonText("previsaonr"))
-	_cWhere		:= ""
+
+	If SC6->(FieldPos("C6_XIDITEM")) > 0
+		_cCampo += ", C6_XIDITEM "
+	Endif
+	If SC6->(FieldPos("C6_XRESSTA")) > 0
+		_cCampo += ", C6_XRESSTA "
+	Endif
+	If SC6->(FieldPos("C6_XCODPVR")) > 0
+		_cCampo += ", C6_XCODPVR "
+	Endif
+	_cCampo := "%"+_cCampo+"%"
+
+
 	If !Empty(_cCodPrev)
 		_cWhere := " AND SC6.C6_XCODPVR	= '"+_cCodPrev+"' " 
 	Endif 
@@ -173,15 +180,12 @@ Begin Sequence
 				, SC6.C6_SERIE
 				, SC6.C6_DATFAT
 				, SA1.A1_CGC
-				, ZZP.ZZP_CODPRV
-				, SUM(SC6.C6_QTDVEN) AS QTDEPED
-				, SUM(SC6.C6_QTDLIB) AS QTDELIB
-				, CASE WHEN COALESCE(SC6.C6_QTDLIB,0) > 0   THEN  SUM(SC6.C6_QTDLIB)  ELSE 0 END AS QTDEFAT
+				, SC6.C6_XIDITEM
+				, SC6.C6_QTDVEN AS QTDEPED
+				, SC6.C6_QTDLIB AS QTDELIB
+				, SC6.C6_QTDLIB AS QTDEFAT
+				%Exp:_cCampo%
 		FROM %Table:SC6% SC6
-		LEFT JOIN %Table:ZZP% ZZP
-			ON 	ZZP.%notDel%
-			AND ZZP.ZZP_FILIAL  = SC6.C6_XFILPVR
-			AND	ZZP.ZZP_CODPRV  = SC6.C6_XCODPVR
 		JOIN %Table:SA1% SA1
 			ON	SA1.%notDel%
 			AND SA1.A1_FILIAL 	= %XFilial:SA1%
@@ -190,23 +194,10 @@ Begin Sequence
 			AND SC6.C6_PEDCLI 	= %Exp:_cPedcli%
 		  	AND SC6.%notDel%		
 			%Exp:_cWhere%
-		GROUP BY SC6.C6_PEDCLI
-				, SC6.C6_ITEM
-				, SC6.C6_XCODPVR
-				, SC6.C6_PRODUTO 
-				, SC6.C6_NOTA
-				, SC6.C6_SERIE
-				, SC6.C6_DATFAT
-				, SA1.A1_CGC
-				, ZZP.ZZP_CODPRV
-				, SC6.C6_QTDLIB				
 		ORDER BY SC6.C6_PEDCLI 
 				, SA1.A1_CGC
-				, ZZP.ZZP_CODPRV
 				, SC6.C6_ITEM
 	EndSql      
-	//			, SC6.C6_XIDITEM
-
 	If (_cAliasPesq)->(Eof())  
 		U_ZRETMsgJson("pedcli","Pedido  "+_cPedcli+" nao localizado")
 		Break
@@ -214,25 +205,29 @@ Begin Sequence
 
 	While (_cAliasPesq)->(!Eof())
 		_aCab 		:= {} 
-		_aItemRet		:= {}
-		Aadd( _aCab, {"pedidovei"		, (_cAliasPesq)->C6_PEDCLI})
+		_aItemRet	:= {}
+		Aadd( _aCab, {"pedidovei"	, (_cAliasPesq)->C6_PEDCLI})
 		Aadd( _aCab, {"cnpjcpf"		, (_cAliasPesq)->A1_CGC}) 
-		Aadd( _aCab, {"previsaonr"	, (_cAliasPesq)->ZZP_CODPRV }) 
+		Aadd( _aCab, {"previsaonr"	, If((_cAliasPesq)->C6_XCODPVR == "PREVISAO","",(_cAliasPesq)->C6_XCODPVR) }) 
 		_cPedido 	:= (_cAliasPesq)->C6_PEDCLI
 		_cCnPj 		:= (_cAliasPesq)->A1_CGC
 		//_cPrevisao	:= (_cAliasPesq)->ZZP_CODPRV
-		While (_cAliasPesq)->(!Eof()) .AND. _cPedido == (_cAliasPesq)->C6_PEDCLI .AND. _cCnPj == (_cAliasPesq)->A1_CGC ;
+		While (_cAliasPesq)->(!Eof()) .AND. _cPedido == (_cAliasPesq)->C6_PEDCLI .AND. _cCnPj == (_cAliasPesq)->A1_CGC //;
 									  //.AND. _cPrevisao == (_cAliasPesq)->ZZP_CODPRV
 			_aLinha		:= {}									  
-			_cIdItem	:= If(FieldPos("C6_XIDITEM") > 0, (_cAliasPesq)->C6_XIDITEM, "")   
-			_cStatus    := If(FieldPos("C6_XIDITEM") > 0, (_cAliasPesq)->C6_XRESSTA, "")	
+			_cIdItem	:= If(SC6->(FieldPos("C6_XIDITEM")) > 0, (_cAliasPesq)->C6_XIDITEM, "")   
+			_cStatus    := If(SC6->(FieldPos("C6_XRESSTA")) > 0, (_cAliasPesq)->C6_XRESSTA, "")	
 			_Ocorrencia := ZRESTPFCLO(_cStatus)  //Localizar ocódigo de ocorrencia
+			_nQtdePed 	:= (_cAliasPesq)->QTDEPED   //é realizado um a um 
+			_nQtdeLib 	:= (_cAliasPesq)->QTDELIB   //é realizado um a um 
+			_nQtdeFat 	:= If(!Empty((_cAliasPesq)->C6_NOTA) ,1,0)
+
 			Aadd( _aLinha, {"iditem"				, _cIdItem })
 			Aadd( _aLinha, {"status"				, _cStatus })
 			Aadd( _aLinha, {"ocorrencia"			, _Ocorrencia })
-			Aadd( _aLinha, {"qtderecebida"			, (_cAliasPesq)->QTDEPED })
-			Aadd( _aLinha, {"qtdeocorrencia"		, (_cAliasPesq)->QTDELIB })
-			Aadd( _aLinha, {"qtdefaturada"			, (_cAliasPesq)->QTDEFAT })
+			Aadd( _aLinha, {"qtderecebida"			, _nQtdePed })  //(_cAliasPesq)->QTDEPED
+			Aadd( _aLinha, {"qtdeocorrencia"		, _nQtdeLib		})   //(_cAliasPesq)->QTDELIB 
+			Aadd( _aLinha, {"qtdefaturada"			, _nQtdeFat 	})   //(_cAliasPesq)->QTDEFAT 
 			Aadd( _aLinha, {"notafiscalnr"			, (_cAliasPesq)->C6_NOTA })
 			Aadd( _aLinha, {"notafiscalserie"		, (_cAliasPesq)->C6_SERIE })
 			Aadd( _aLinha, {"notafiscalemissao"		, (_cAliasPesq)->C6_DATFAT })
@@ -250,20 +245,40 @@ If Select((_cAliasPesq)) <> 0
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif 
 Return _lRet 
+	/*
+			, ZZP.ZZP_CODPRV
+			, CASE WHEN COALESCE(SC6.C6_QTDLIB,0) > 0   THEN  SC6.C6_QTDLIB  ELSE 0 END AS QTDEFAT
+
+		LEFT JOIN %Table:ZZP% ZZP
+			ON 	ZZP.%notDel%
+			AND ZZP.ZZP_FILIAL  = SC6.C6_XFILPVR
+			AND	ZZP.ZZP_CODPRV  = SC6.C6_XCODPVR
+
+		GROUP BY SC6.C6_PEDCLI
+				, SC6.C6_ITEM
+				, SC6.C6_XCODPVR
+				, SC6.C6_PRODUTO 
+				, SC6.C6_NOTA
+				, SC6.C6_SERIE
+				, SC6.C6_DATFAT
+				, SA1.A1_CGC
+				, ZZP.ZZP_CODPRV
+				, SC6.C6_QTDLIB				
+	*/
+
 
 
 //localizar o código de ocorrencia
 Static Function ZRESTPFCLO(_cStatus)
-Local _cRet 	As Character
-Local _nPos		As Numeric
+Local _cRet  := ""	As Character
+Local _nPos			As Numeric
 Begin Sequence 
-	_cRet := ""
 	If Empty(_cStatus)
 		Break
 	Endif
 	For _nPos := 1 To Len(_aRetMsg)
-		If AllTrim(_aRetMsg[_nPos,1]) == AllTrim(_cStatus)
-			_cRet := _aRetMsg[_nPos,2]
+		If _aRetMsg[_nPos,1] == Val(_cStatus)
+			_cRet := _aRetMsg[_nPos,5]
 		Endif
 	Next
 End Sequence
@@ -279,8 +294,8 @@ Valida os dados do oJson
 @type function
 /*/
 Static Function ValidOJson(_oJson, _cTipo)
-Local _lRet		:= .T.
-Local _aMens 	:= {}
+Local _lRet		:= .T.	As Logical
+Local _aMens 	:= {}	As Array
  	//Tem a função de validar os itens obrigatórios neste caso o vabeçalho ZWSRFUN.PRW
 	_aMens := U_ZVLDOBRJ(_oJson, _aRetMsg, /*_lItem*/, /*_lTodos*/)
 	If Len(_aMens) > 0
@@ -300,10 +315,15 @@ Return _lRet
 @type function
 /*/
 Static Function ZRESTPFCMsg()
-Local _aRet := {}
+Local _aRet := {}	As Array
 Begin Sequence
 	//			Nr Ret	Tags Json			Item	Obrig	Descrição	
-	Aadd(_aRet, {100,	"ok"				, .F.	, .F., 	"Processo realizado com sucesso"})
+	Aadd(_aRet, {100,	"ok"				, .F.	, .F., 	"Item rcebido com sucesso"})
+	Aadd(_aRet, {101,	"ok2"				, .F.	, .F., 	"Item gravado com sucesso"})
+
+	Aadd(_aRet, {120,	"liberado"			, .F.	, .F., 	"Item liberado para fatuamento"})
+
+	Aadd(_aRet, {150,	"faturado"			, .F.	, .F., 	"Fatuamento do item realizado com sucesso"})
 
 	Aadd(_aRet, {300,	"empresa"			, .F.	, .F., 	"Empresa nao informada"})
 	Aadd(_aRet, {301,	"filial"			, .F.	, .F., 	"Filial nao informada"})
@@ -320,9 +340,30 @@ Begin Sequence
 	Aadd(_aRet, {406,	"estado"			, .F.	, .F., 	"Estado do Cliente com problemas"})
 	Aadd(_aRet, {407,	"pais"				, .F.	, .T., 	"Pais do Cliente com problemas"})
 	Aadd(_aRet, {408,	"email"				, .F.	, .F., 	"E-mail do Cliente com problemas"})
-	Aadd(_aRet, {409,	"tipocli"			, .F.	, .T., 	"Tipo do Cliente com problemas"})
+	//Aadd(_aRet, {409,	"tipocli"			, .F.	, .T., 	"Tipo do Cliente com problemas"})
 
-	Aadd(_aRet, {600,	"erropad"			, .F.	, .T., 	"nao foi possivel atualizar Cliente"})
+	Aadd(_aRet, {450,	"nritem"			, .T.	, .T., 	"Problemas com numeração sequencial do item"})
+	Aadd(_aRet, {451,	"cdmarca"			, .T.	, .T., 	"Problemas com a Marca Veiculo"})
+	Aadd(_aRet, {452,	"cdgrupomod"		, .T.	, .T., 	"Problemas com Grupo Modelo Veículo "})
+	Aadd(_aRet, {453,	"cdmodvei"			, .T.	, .T., 	"Problemas com Modelo Veículo"})
+	Aadd(_aRet, {454,	"cdsegmod"			, .T.	, .T., 	"Problemas com Segmento Modelo do Veículo"})
+	Aadd(_aRet, {455,	"anomodelo"			, .T.	, .T., 	"Problemas com Ano Modelo do Veículo"})
+	Aadd(_aRet, {456,	"anofabricacao"		, .T.	, .T., 	"Problemas com o Ano de Fabricação do Veículo"})
+	Aadd(_aRet, {457,	"cdcorexterna"		, .T.	, .T., 	"Problemas com ao Cor Externa Veiculo"})
+	Aadd(_aRet, {458,	"cdcorinterna"		, .T.	, .T., 	"Problemas com ao Cor Interna Veiculo"})
+	Aadd(_aRet, {459,	"cdopcional"		, .T.	, .F., 	"Problemas com Opcional Veículo"})
+	Aadd(_aRet, {460,	"produto"			, .T.	, .F., 	"Problemas com Produto"})
+	Aadd(_aRet, {461,	"qtdeitem"			, .T.	, .T., 	"Problemas com quantidade de item"})
+	Aadd(_aRet, {462,	"valorunitario"		, .T.	, .F., 	"Problemas com valor unitario"})
+	Aadd(_aRet, {463,	"cdoperacao"		, .T.	, .F., 	"Problemas com codigo operacao no item"})
+	Aadd(_aRet, {464,	"iditem"			, .T.	, .T., 	"ID item"})
+	Aadd(_aRet, {465,	"lccredito"			, .T.	, .F., 	"Limite de Credito não liberado"})
+	Aadd(_aRet, {466,	"chassi"			, .T.	, .F., 	"Nao existem Chassis disponivel para veiculo"})
+	Aadd(_aRet, {467,	"faturamento"		, .T.	, .F., 	"Problemas com o faturamento"})
+
+	Aadd(_aRet, {500,	"conexao"			, .F.	, .T., 	"Problemas relativo a conexão"})
+
+	Aadd(_aRet, {600,	"erropad"			, .F.	, .T., 	"Nao foi possivel atualizar Cliente"})
 End Sequence
 Return _aRet
 
