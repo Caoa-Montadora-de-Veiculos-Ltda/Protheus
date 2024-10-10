@@ -2684,7 +2684,11 @@ If cTipo == "1"
 						//************ Especifico Caoa ******************
 						//Ajuste realizado para atender a venda dos HR para a HMB
 						If AllTrim(SC6->C6_TES) == '802' .And. AllTrim(SC6->C6_CLI) == '000008' .And. AllTrim(SC6->C6_LOJA) == '05'
-							aadd(aPedCom,{"5500012312","000020"})
+							If !Empty(SC6->C6_NUMPCOM) .And. !Empty(SC6->C6_ITEMPC) 
+								aadd(aPedCom,{SC6->C6_NUMPCOM,SC6->C6_ITEMPC})
+							Else
+								aadd(aPedCom,{"5500012312","000020"})
+							EndIf
 							//*******************************************
 
 						// Tags xPed e nItemPed (controle de B2B) para nota de saída
@@ -8603,8 +8607,11 @@ If  !lIssQn
 				cString += '<valor>'+ConvType(nValDeson,15,4)+'</valor>'				
 			Else
 			    //************ Especifico Caoa ******************
-				cString += '<valor>'+ConvType(aICMSST[07],15,2)+'</valor>'
-	//			cString += '<valor>'+ConvType(0,15,2)+'</valor>'
+				If Len(aICMSST) >= 7
+					cString += '<valor>'+ConvType(aICMSST[07],15,2)+'</valor>'
+				Else
+					cString += '<valor>'+ConvType(0,15,2)+'</valor>'
+				EndIf
 			EndIf	
 	
 			cString += '<qtrib>'+ConvType(0,16,4)+'</qtrib>'

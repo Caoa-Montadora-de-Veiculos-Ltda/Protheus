@@ -206,6 +206,7 @@ Responsável pelo processamento Aglutinando e Separando do orçamento passando pel
 /*/
 Static Function ZPECF08PRC( _aRet, _aVar, _aCampos, _aChave , _cLocal, _aOndaRel, _oSay )
 Local _cAliasTRB    	:= GetNextAlias()      
+Local _cAliasTP         := GetNextAlias() 
 Local _cCliFatDe 		:= _aRet[01]
 Local _cLojaCFDe		:= _aRet[02]
 Local _cCliFatAte 	    := _aRet[03]
@@ -489,6 +490,36 @@ Begin Sequence
 			Loop
 		Endif	
 		*/
+
+	    If _cLocal = '02'
+			If Select(_cAliasTP) <> 0
+				(_cAliasTP)->(DbCloseArea())
+			Endif  
+			
+			BeginSql Alias _cAliasTP //Define o nome do alias temporário 
+				SELECT 	VX5.VX5_CHAVE,
+						VX5.VX5_CODIGO,
+						VX5.VX5_DESCRI
+				FROM  %Table:VX5% VX5 
+				WHERE 	VX5.VX5_FILIAL 	=  %xFilial:VX5% 
+					AND VX5.VX5_CHAVE 	= 'Z06'
+					AND VX5.%notDel%
+				ORDER BY VX5.VX5_CHAVE, VX5.VX5_CODIGO	
+			EndSql
+
+    		_Arm02 := .F.
+			While (_cAliasTP)->(!Eof())
+                iF (_cAliasTP)->VX5_CODIGO = (_cAliasTRB)->VS1_XTPPED
+                   _Arm02 := .T.
+				Endif
+				(_cAliasTP)->(DbSkip())
+			EndDo	
+			If !_Arm02
+				(_cAliasTRB)->(DbSkip())
+				Loop
+			Endif
+        Endif
+
 		//organizar para geração do Picking após o acumuo dos orçamentos DAC 14/06/2022
 		_cTipoPed		:= (_cAliasTRB)->VS1_XTPPED
 		_cTipoModal		:= (_cAliasTRB)->VS1_XTPTRA
@@ -540,6 +571,7 @@ Begin Sequence
 			//somente validar se não for transferência o tipo de pedido, esta transferência sera de Barueri para FDR DAC 08/02/2023
 			If Empty(_cTPedTransf) .Or. AllTrim(VS1->VS1_XTPPED) <> _cTPedTransf
 				//Verificar se existe divergência de Tabela
+				//If VS1->VS1_XTPPED <> '012' .AND.  VS1->VS1_XTPPED <> '022
 				If U_XVERTABPreco (_cCliFat, _cLoja, VS1->VS1_NUMORC )
 					//Recalcular valores
 					If !VS1->(U_ORCCALFIS(VS1->VS1_NUMORC /*_cNumOrc*/,/*_lAtuaPreco*/))
@@ -551,7 +583,7 @@ Begin Sequence
 						Loop
 					Endif
 				Endif
-
+                //ENDIF
 				//Verificar Fases
 				If "2" $ _cFaseOrc  //somente se estiver na fase do orçamento conforme alinhado com Zé 30/11/2021
 					U_XFASEORC("2")  //Verifica se passa pela Fase MARGEM DE LUCRO
@@ -805,7 +837,7 @@ Local _nPos
 Local _cGrupo
 //Local _aCpoVazio	:= {"VS1_XAGLU","VS1_XDTAGL","VS1_XHSAGL","VS1_XUSUGL","VS1_OBSAGL"}
 //Local _nTam			:= TamSx3("B2_LOCAL")[1]
-Local _nSaldoSB2
+Local _nSaldoSB2	:= 0
 Local _nQtdeItem 
 Local _cCodProd
 Local _nQtdePrd  
@@ -813,6 +845,11 @@ Local _nQtdeParc
 Local _lZera
 Local _cObs
 Local _nSAldo := 0
+Local _aRet := {}
+Local _cTipoSub := Space(3)
+Private _aSubsit := {}
+Private _aSimilar:= {}
+
 Begin Sequence
 	_cConectWis := "%"+_cConectWis+"%"
 	_cCdEmpWIS 	:= "%"+_cCdEmpWIS+"%"
@@ -875,7 +912,8 @@ Begin Sequence
 		//_cArmazem	:= (_cAliasPesq)->VS3_LOCAL
 		_cCodProd 	:= AllTrim((_cAliasPesq)->VS3_CODITE)
 		_cGrupo		:= (_cAliasPesq)->VS3_GRUITE
-		_lSepara	:= .T.  
+		
+		_aRet := {} 
 		//Conforme solicitação JC e Fabio caso não tenha TES Abortar o orçamento inteiro
 		If 	Empty((_cAliasPesq)->VS3_CODTES)
 			Aadd(_aMensAglu,"Produto "+ AllTrim(_cCodProd) +" com TES não informado no item do orçamento !")
@@ -1111,6 +1149,7 @@ Local _cItemAux := ""
 			Aadd(_aMensAglu,"Não existe item Substitutos para o produto " +AllTrim(_cCodItem))	
 			Break	
 		Endif
+		_aSubsit := aClone(_aItemRelac)
 		For _nPos := 1 To Len(_aItemRelac)
 			_cGrupoSubst	:= _aItemRelac[_nPos,1]
 			_cCodSubst 		:= _aItemRelac[_nPos,2]//AllTrim(_aItemRelac[_nPos,2])
@@ -1204,10 +1243,16 @@ Static Function ZPECF08SIM( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _
 			Aadd(_aMensAglu,"Não existe item Similar para o produto " +AllTrim(_cCodItem))	
 			Break	
 		Endif
+		
 		For _nPos := 1 To Len(_aItemSim)
 			_cGrupoSubst	:= _aItemSim[_nPos,1]
 			_cCodSimilar	:= _aItemSim[_nPos,2]//AllTrim(_aItemSim[_nPos,2])
 			_nSaldoSB2 		:= _aItemSim[_nPos,4] //SB2->(SaldoSB2())
+			// Validação pois o Item Similar também pode estar cadastrado como Substituto e provocando movimentação de quantidade maior do que necessario.
+			if Ascan(_aSubsit,{|x| x[2] == _aItemSim[_nPos,2]}) <> 0
+				Aadd(_aMensAglu,"O item Similar " +AllTrim(_cCodSimilar)+ " já utilizado como Substituto")	
+				loop
+			endIf
 
 			//GAP098 | Desmembrar itens bloqueados por inventário - Alteração funcionalidade de verificação saldo WIS e Protheus DAC 08/11/2023
 			//Calcular o Saldo
@@ -1333,7 +1378,7 @@ Static Function ZPECF08KIT( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _
 				_cCodKit	:= VEH->VEH_CODKIT
 				_aKit  	:= {}
 				_aBak	:= {}
-				_aRet 	:= ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodKit, _cCodItem, _cLocal, _nRegVS3, _cMarca)
+				_aRet 	:= ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodKit, _cCodItem, _cLocal, _nRegVS3, _cMarca, _cGrupo)
 				If Len(_aRet) == 0 .or. Len(_aRet[1]) == 0  //sempre tem que ter um KIT
 					_lRet := .F.
 					Break	
@@ -1369,7 +1414,7 @@ Static Function ZPECF08KIT( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _nQtdeItem, _
 Return _lRet
 
 //Avaliar itens do KIT
-Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodKit, _cCodItem, _cLocal, _nRegVS3, _cMarca)
+Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodKit, _cCodItem, _cLocal, _nRegVS3, _cMarca,_cGrupo)
 	Local _lRet			:= .T.
 	Local _cAliasPesq	:= GetNextAlias()
 	Local _aKit			:= {}
@@ -1419,7 +1464,7 @@ Static Function	ZPECF8KITAvalia(_cTipo, _cNumOrc, _nQtdeItem, _cGrupoKit, _cCodK
 			EndIf
 			SB2->(DbSetOrder(1))  //B2_FILIAL+B2_COD+B2_LOCAL
 			If !SB2->(MsSeek(XFilial("SB2")+_cCodSubst+_cLocal))
-				Aadd(_aMensAglu,"KIT - Não existe saldo do item KIT " +AllTrim(_cCodSubst)+ " para o produto " +AllTrim(_cCodKit)+" armazém "+_cLocal)	
+				Aadd(_aMensAglu,"KIT - Não existe cadastro do item KIT " +AllTrim(_cCodSubst)+ " para o produto " +AllTrim(_cCodKit)+" armazém "+_cLocal + "(SB2)")	
 				//Caso seja mandatório e não tenha saldo nenhum abortar
 				If VE8->VE8_TIPO == "1" 	
 					_aKit := {}
@@ -1818,7 +1863,6 @@ Static Function ZPECF08PARC( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, 
 			If ! _lRet
 				Break
 			Else
-				_nItenNovo := VS3->VS3_QTDITE
 				_lInclui := .F.
 			EndIf
 		Else
@@ -1833,11 +1877,6 @@ Static Function ZPECF08PARC( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, 
 						
 		//Após processar ajusto os valores dos campos
 		VS3->(DbGoto(_nRegVS3))  //volta para o item principal
-		
-		If RecLock("VS3",.F.)
-			VS3->VS3_QTDATE	 += _nItenNovo
-			VS3->(MsUnlock())
-		EndIf	
 		//indica que ainda não é para encerrar o processo de kit somente no ultimo registro do kit que encerra pois o mesmo é relativo a quentidade total DAC 09/02/2022
 		If _cTpSub == "3" .and. !_lEncKit  
 			If RecLock("VS3",.F.)
@@ -1866,8 +1905,7 @@ Static Function ZPECF08PARC( _cNumOrc, _cGrupo, _cCodItem, _cLocal, _cCodSubst, 
 			Aadd(_aMensAglu,"Não foi possivel alterar registro na tabela VS3 (ZPECF08PARC) !")
 			Break
 		EndIf	
-		If (_nQtdReal <= 0 .and. (_nItenNovo == VS3->VS3_QTDINI .or. _nItenNovo == 0)) .or. VS3->VS3_QTDATE >= VS3->VS3_QTDINI 
-
+		If _nQtdReal <= 0 .and. (_nItenNovo == VS3->VS3_QTDINI .or._nItenNovo == 0)
 			VS3->(DbDelete())
 			VS3->(MsUnlock())
 			Break
@@ -1974,7 +2012,7 @@ Static Function ALTERAITParcial( _nRegVS3Sub, _cNumOrc, _cGrupo, _cCodItem, _cLo
 			VS3->VS3_GRUKIT	:= _cGrupo
 		EndIf	
 		If _cTpSub == "0"
-			_cObs := "ITEM PRODUTO " +AllTrim(_cCodItem)+ " AJUSTADO QANTIDADE PARA ORCAMENTO "+_cNumOrc
+			_cObs := "ITEM PRODUTO " +AllTrim(_cCodItem)+ " AJUSTADO QUANTIDADE PARA ORCAMENTO "+_cNumOrc
 			_cObs += " QTDE ANTERIOR "+AllTrim(STR(_nQtdeAtu))+ " ALTERADO PARA "+AllTrim(STR(_nQtdePrd))+" EM ITEM JA EXISTENTE"
 			_cObs += " OPERAÇÃO PARCIAL"
 		Else
