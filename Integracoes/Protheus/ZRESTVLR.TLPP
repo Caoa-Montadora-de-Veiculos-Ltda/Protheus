@@ -3,21 +3,21 @@
 #INCLUDE "RESTFUL.CH"
 
 /*/{Protheus.doc} ZRESTESL
-Serviço de integração Consulta Saldo em Estoque 
+Serviço de integração Consulta Valor do Modelo
 @author 	Victor Gisoldi Matos 
-@since 		18/09/2024
+@since 		01/10/2024
 @version 	1.0
 @param		nao utilizado
 @type 		User Function
 @client   	CAOA
 @return   	_aMsg - Array com retorno Json código e ocorrencia
-@project 	API Saldo em Estoque
+@project 	API Consulta Valor do Modelo
 			https://tdn.totvs.com/display/tec/DecodeUTF8
 			https://jsonformatter.curiousconcept.com/  VERIFICAR SE JSON ESTA CORRETO
 			https://jsonlint.com/?code=   //VALIDAR JSON
             https://jsoneditoronline.org/#left=local.sowavu  //estrutura do json
 /*/
-User Function ZRESTESL( _oJson , _cEmpFil , _cResp )
+User Function ZRESTVLR( _oJson , _cEmpFil , _cResp )
 
 Local _aMsg As Array
 
@@ -28,16 +28,15 @@ Default _cEmpFil := ""
 Default _cResp   := ""
 
 Begin Sequence
-	Conout( "INICIADO FUNCIONALIDADE ZRESTESL em " + DtoC(Date()) + " as " + Time() )
+	Conout( "INICIADO FUNCIONALIDADE ZRESTVLR em " + DtoC(Date()) + " as " + Time() )
 	_aMsg 	 := {}
-	_aRetMsg := ZRESTESLMsg()   //Carregar tabela com erros
+	_aRetMsg := ZRESTVLRMsg()   //Carregar tabela com erros
 	_aMsgRet := {}				//carregar msg de errp
 
 	// Processa o Json
-	If ZRESTESLPR( @_oJson , _cEmpFil , _cResp )
+	If ZRESTVLRPR( @_oJson , _cEmpFil , _cResp )
 		_aMsg := _aMsgRet // Recebe erro do processamento
 	EndIf
-
 End Sequence
 
 IF Len( _aMsg ) == 0	//Prevensão forçar o envia da mensagem para o REST
@@ -50,8 +49,8 @@ Conout( "FINALIZADO FUNCIONALIDADE ZRESTESL em " + DtoC( Date() ) + " as " + Tim
 
 Return _aMsg
 
-/*/{Protheus.doc} ZRESTESLPR
-		Recebe Json cliente GET 
+/*/{Protheus.doc} ZRESTVLRPR
+	Recebe Json cliente GET 
 	@author 	Victor Gisoldi Matos
 	@since 		18/09/2024
 	@version 	1.0
@@ -59,7 +58,7 @@ Return _aMsg
 	@type 		function
 	@ Obs		Os paremetros de token, empresa e filial serão enviados no cabeçalho reader Json
 /*/
-Static Function ZRESTESLPR( _oJson , _cEmpFil , _cResp )
+Static Function ZRESTVLRPR( _oJson , _cEmpFil , _cResp )
 
 Local _cEmpresa	As Character
 Local _cFilAtu	As Character
@@ -123,21 +122,20 @@ Begin Sequence
 	EndIf
 	
 	//Realiza a consulta
-	_lRet := ZRESTESLCO( _oJson , _cEmpresa , _cFilAtu , _cResp )
-
+	_lRet := ZRESTVLRCO( _oJson , _cEmpresa , _cFilAtu , _cResp )
 End Sequence
 
 Return _lRet
 
-/*/{Protheus.doc} ZRESTESLCO
-Receber dados do oJson e Consultar Saldo
-@author Victor Gisoldi Matos
-@since 18/09/2024
-@version 1.0
-@param 
-@type function
+/*/{Protheus.doc} ZRESTVLRCO
+	Receber dados do oJson e Consultar Saldo
+	@author Victor Gisoldi Matos
+	@since 18/09/2024
+	@version 1.0
+	@param 
+	@type function
 /*/
-Static Function ZRESTESLCO( _oJson , _cEmpresa , _cFilAtu , _cResp )
+Static Function ZRESTVLRCO( _oJson , _cEmpresa , _cFilAtu , _cResp )
 
 Local _cAliasPesq	As Character
 Local _cModelo		As Character
@@ -145,7 +143,8 @@ Local _cSegmento	As Character
 Local _cAnoFab		As Character
 Local _cAnoMod		As Character
 Local _cFabMod		As Character
-Local _nSaldo		As Numeric
+Local _nValTab		As Numeric
+Local _nValIcm		As Numeric
 Local _lRet			As Logical
 
 Begin Sequence
@@ -155,7 +154,8 @@ Begin Sequence
 	_cAnoFab	:= AllTrim(_oJson:GetJsonText("anofabricacao"))
 	_cAnoMod	:= AllTrim(_oJson:GetJsonText("anomodelo"))
 	_cFabMod	:= ''
-	_nSaldo		:= 0
+	_nValTab	:= 0
+	_nValIcm	:= 0
 	_lRet		:= .T.
 
 	//Função para retorno de códigos, verificar se estas informações estão fornecidas corretamente
@@ -171,24 +171,29 @@ Begin Sequence
 	//Concatena Ano de Fabricação + Ano Modelo
 	_cFabMod := _cAnoFab + _cAnoMod 
 			
-	/* Condições para consultar saldo:
-	VV1_MODVEI = _cModelo
-	VV1_SEGMOD = _cSegmento
-	VV1_FABMOD = _cFabMod
-	VV1_SITVEI = 0 (Em estoque)
-	VV1_IMOBI = 0 (Não imobilizado)
+	/*	Condições para consultar saldo:
+		VVP_MODVEI = _cModelo
+		VVP_SEGMOD = _cSegmento
+		VVP_FABMOD = _cFabMod
 	*/
-	cQuery := " SELECT COUNT(VV1.VV1_CHASSI) AS SALDO  "
-	cQuery += " FROM " + RetSQLName('VV1') + " VV1 "
-	cQuery += " LEFT JOIN " + RetSQLName('SBF') + " SBF "
-	cQuery += " ON SBF.D_E_L_E_T_ = '' AND "
-	cQuery += "    LTRIM(RTRIM(SBF.BF_NUMSERI)) = LTRIM(RTRIM(VV1.VV1_CHASSI))"
-	cQuery += " WHERE VV1.D_E_L_E_T_ = '' AND "
-	cQuery += "		  VV1.VV1_MODVEI = '" + _cModelo + "' AND "
-	cQuery += "       VV1.VV1_SEGMOD = '" + _cSegmento + "' AND "
-	cQuery += "       VV1.VV1_FABMOD = '" + _cFabMod + "' AND "
-	cQuery += "       VV1.VV1_SITVEI = '0' AND "
-	cQuery += "       VV1.VV1_IMOBI = '0' "
+
+	cQuery := "SELECT VVP.R_E_C_N_O_ NREGVVP, "
+	cQuery += "		  VVP.VVP_VALTAB AS VALTAB, "
+	cQuery += "		  VVP.VVP_BASEST AS BASEST"
+	cQuery += "FROM " + RetSQLName('VVP') + " VVP "
+	cQuery += "WHERE VVP.D_E_L_E_T_ = '' AND "
+	cQuery += "      VVP.VVP_FILIAL = '" + FwXFilial("VVP") + "' AND "
+	cQuery += "		 VVP.VVP_MODVEI = '" + _cModelo + "' AND "
+	cQuery += "		 VVP.VVP_SEGMOD = '" + _cSegmento + "' AND "
+	cQuery += "		 VVP.VVP_FABMOD = '" + _cFabMod + "' AND "
+	cQuery += "		 VVP.VVP_DATPRC = ( SELECT MAX(VVPB.VVP_DATPRC) "
+	cQuery += "							FROM " + RetSQLName('VVP') + " VVPB "
+	cQuery += "							WHERE VVPB.D_E_L_E_T_ = '' AND "
+	cQuery += " 							  VVPB.VVP_FILIAL = VVP.VVP_FILIAL AND "
+	cQuery += "								  VVPB.VVP_CODMAR = VVP.VVP_CODMAR AND "
+	cQuery += "								  VVPB.VVP_MODVEI = VVP.VVP_MODVEI AND "
+	cQuery += "								  VVPB.VVP_SEGMOD = VVP.VVP_SEGMOD AND "
+	cQuery += "								  VVPB.VVP_FABMOD = VVP.VVP_FABMOD )"
 
 	cQuery := ChangeQuery(cQuery)
 
@@ -198,12 +203,15 @@ Begin Sequence
 	DbSelectArea((_cAliasPesq))
 
 	If (_cAliasPesq)->(!Eof())
-		_nSaldo := (_cAliasPesq)->SALDO
+		//VVP->((_cAliasPesq)->NREGVVP)
+		_nValTab := (_cAliasPesq)->VALTAB
+		_nValIcm := (_cAliasPesq)->BASEST
 		ZRETJson( "ok" , "cdmodvei"	  	 , _cModelo   )
 		ZRETJson( "ok" , "cdsegmod"	  	 , _cSegmento )
 		ZRETJson( "ok" , "anofabricacao" , _cAnoFab   )
 		ZRETJson( "ok" , "anomodelo"	 , _cAnoMod   )
-		ZRETJson( "ok" , "saldoestoque"  , _nSaldo	  )
+		ZRETJson( "ok" , "valortabela"	 , _nValTab	  )
+		ZRETJson( "ok" , "baseicms"	 	 , _nValIcm	  )
 	EndIf
 
 	(_cAliasPesq)->(DbCloseArea())
@@ -211,7 +219,14 @@ End Sequence
 
 return _lRet
 
-//Valida os dados redebidos do Json
+/*/{Protheus.doc} ZRESTValida
+	Valida os dados redebidos do Json
+	@author Victor Gisoldi Matos
+	@since 18/09/2024
+	@version 1.0
+	@param 
+	@type function
+/*/
 Static Function ZRESTValida( _oJson , _cModelo , _cSegmento , _cAnoFab, _cAnoMod )
 
 Local _lRet As Logical
@@ -251,7 +266,6 @@ Begin Sequence
 		_lRet := .F.
 		Break
  	Endif
-
 End Sequence 
 
 Return _lRet
@@ -281,7 +295,7 @@ Endif
 
 Return _lRet
 
-/*/{Protheus.doc} ZRESTESLMsg
+/*/{Protheus.doc} ZRESTVLRMsg
 //Carrega Numero do Erro para retorno
 @author Victor Gisoldi Matos
 @since 18/09/2024
@@ -297,7 +311,7 @@ Layout que será recebido da Autoware:
    "anomodelo":"2025"
 }
 /*/
-Static Function ZRESTESLMsg()
+Static Function ZRESTVLRMsg()
 
 Local _aRet As Array
 
@@ -319,20 +333,20 @@ Begin Sequence
 	Aadd(_aRet, { 403	 , "anomodelo" 	   , .F.  , .T.   , "Ano de Fabricacao com problemas"	 } )
 
 //	Aadd(_aRet, { 600	 , "erropad"       , .F.  , .T.   , "nao foi possivel atualizar Cliente" } )
-
 End Sequence
 
 Return _aRet
 
 /*/{Protheus.doc} ZRETJson
 //Retorna Numero do Erro 
-@author DAC
-@since 12/11/2021
+@author Victor Gisoldi Matos
+@since 01/10/2024
 @version undefined
 @param _aMsg, array, descrição
 @type function
 /*/
 Static Function ZRETJson(_cRefMsg, _cMsgRet, _cVar)
+
 Local _nRet := 999
 Local _nPos
 
@@ -355,6 +369,7 @@ Begin Sequence
 	Endif	
 	Aadd(_aMsgRet, {_nRet,_cMsgRet, _cVar})
 End Sequence
+
 Return _nRet
 
 /*/{Protheus.doc} VldMod
@@ -370,6 +385,7 @@ Return _nRet
 	@see (links_or_references)
 	/*/
 Static Function VldMod(_cModelo)
+
 Local _cAlias	As Character
 Local lRet		As Logical
 Local cMod		As Character
@@ -420,6 +436,7 @@ Return lRet
 	@see (links_or_references)
 	/*/
 Static Function VldSeg(_cSegmento)
+
 Local _cAlias	As Character
 Local lRet		As Logical
 Local cSeg		As Character
