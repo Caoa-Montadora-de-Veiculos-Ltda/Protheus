@@ -42,7 +42,7 @@ STATIC lPCPREVATU	:= FindFunction('PCPREVATU')  .AND.  SuperGetMv("MV_REVFIL",.F
 #DEFINE STR0038 FWI18NLang("MATR225","STR0038",38)
 
 /*/{Protheus.doc} ZPCPR001
-	Essa rotina tem como objetivo imprimir em relatÛrio a Estrutura Simplificada dos produtos selecionados.
+	Essa rotina tem como objetivo imprimir em relat√≥rio a Estrutura Simplificada dos produtos selecionados.
 	@type  Function
 	@author Victor Gisoldi Matos
 	@since 12/09/2024
@@ -59,9 +59,9 @@ Local oReport
 
 If TRepInUse()
 
-	//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-	//≥Interface de impressao                                                  ≥
-	//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+	//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+	//¬≥Interface de impressao                                                  ¬≥
+	//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 	oReport:= ReportDef()
 	oReport:PrintDialog()
 
@@ -74,20 +74,20 @@ EndIf
 Return
 
 /*/
-‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±⁄ƒƒƒƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒƒƒƒø±±
-±±≥Programa  ≥ReportDef ≥ Autor ≥ Marcos V. Ferreira    ≥ Data ≥16.05.2006≥±±
-±±√ƒƒƒƒƒƒƒƒƒƒ≈ƒƒƒƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒƒƒƒ¥±±
-±±≥DescriáÖo ≥A funcao estatica ReportDef devera ser criada para todos os ≥±±
-±±≥          ≥relatorios que poderao ser agendados pelo usuario.          ≥±±
-±±√ƒƒƒƒƒƒƒƒƒƒ≈ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¥±±
-±±≥Parametros≥Nenhum                                                      ≥±±
-±±√ƒƒƒƒƒƒƒƒƒƒ≈ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¥±±
-±±≥ Uso      ≥ MATR225			                                          ≥±±
-±±¿ƒƒƒƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
+√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú
+¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±
+¬±¬±√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø¬±¬±
+¬±¬±¬≥Programa  ¬≥ReportDef ¬≥ Autor ¬≥ Marcos V. Ferreira    ¬≥ Data ¬≥16.05.2006¬≥¬±¬±
+¬±¬±√É√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬¥¬±¬±
+¬±¬±¬≥Descri‚Ä°‚Ä¶o ¬≥A funcao estatica ReportDef devera ser criada para todos os ¬≥¬±¬±
+¬±¬±¬≥          ¬≥relatorios que poderao ser agendados pelo usuario.          ¬≥¬±¬±
+¬±¬±√É√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬¥¬±¬±
+¬±¬±¬≥Parametros¬≥Nenhum                                                      ¬≥¬±¬±
+¬±¬±√É√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬¥¬±¬±
+¬±¬±¬≥ Uso      ¬≥ MATR225			                                          ¬≥¬±¬±
+¬±¬±√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô¬±¬±
+¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±
+√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü
 /*/
 Static Function ReportDef()
 Local oReport
@@ -96,58 +96,58 @@ Local oSection2
 
 Static aSelect := {}
 Static cRet := '' 
-//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-//≥Criacao do componente de impressao                                      ≥
-//≥                                                                        ≥
-//≥TReport():New                                                           ≥
-//≥ExpC1 : Nome do relatorio                                               ≥
-//≥ExpC2 : Titulo                                                          ≥
-//≥ExpC3 : Pergunte                                                        ≥
-//≥ExpB4 : Bloco de codigo que sera executado na confirmacao da impressao  ≥
-//≥ExpC5 : Descricao                                                       ≥
-//≥                                                                        ≥
-//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+//¬≥Criacao do componente de impressao                                      ¬≥
+//¬≥                                                                        ¬≥
+//¬≥TReport():New                                                           ¬≥
+//¬≥ExpC1 : Nome do relatorio                                               ¬≥
+//¬≥ExpC2 : Titulo                                                          ¬≥
+//¬≥ExpC3 : Pergunte                                                        ¬≥
+//¬≥ExpB4 : Bloco de codigo que sera executado na confirmacao da impressao  ¬≥
+//¬≥ExpC5 : Descricao                                                       ¬≥
+//¬≥                                                                        ¬≥
+//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 oReport:= TReport():New("ZPCPR001",OemToAnsi(STR0001),"ZPCPR001", {|oReport| ReportPrint(oReport)},OemToAnsi(STR0002)+" "+OemToAnsi(STR0003)+" "+OemToAnsi(STR0004))  //"Este programa emite a relacao de estrutura de um determinado produto"##"selecionado pelo usuario. Esta relacao nao demonstra custos. Caso o"##"produto use opcionais, sera listada a estrutura com os opcionais padrao."
 oReport:SetLandscape()
 
-//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-//≥ Verifica as perguntas selecionadas - ZPCPR001                ≥
-//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
-//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-//≥ Variaveis utilizadas para parametros              
-//≥ MV_PAR01 = Produtos selecionados
-//≥ MV_PAR02 = Tipo de              
-//≥ MV_PAR03 = Tipo ate             
-//≥ MV_PAR04 = Grupo de             
-//≥ MV_PAR05 = Grupo ate            
-//≥ MV_PAR06 = Salta Pagina: Sim/Nao
-//≥ MV_PAR07 = Qual Rev da Estrut   
-//≥ MV_PAR08 = Imprime Ate Nivel ?  
-//≥ MV_PAR09 = Data de referÍncia?                                
-//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+//¬≥ Verifica as perguntas selecionadas - ZPCPR001                ¬≥
+//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
+//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+//¬≥ Variaveis utilizadas para parametros              
+//¬≥ MV_PAR01 = Produtos selecionados
+//¬≥ MV_PAR02 = Tipo de              
+//¬≥ MV_PAR03 = Tipo ate             
+//¬≥ MV_PAR04 = Grupo de             
+//¬≥ MV_PAR05 = Grupo ate            
+//¬≥ MV_PAR06 = Salta Pagina: Sim/Nao
+//¬≥ MV_PAR07 = Qual Rev da Estrut   
+//¬≥ MV_PAR08 = Imprime Ate Nivel ?  
+//¬≥ MV_PAR09 = Data de refer√™ncia?                                
+//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 Pergunte(oReport:uParam,.F.)
 
 //Verifica se o MV_PAR09 existe no pergunte ZPCPR001 -> Protecao de fonte.
 AjstPergt()
 
-//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-//≥Criacao da secao utilizada pelo relatorio                               ≥
-//≥                                                                        ≥
-//≥TRSection():New                                                         ≥
-//≥ExpO1 : Objeto TReport que a secao pertence                             ≥
-//≥ExpC2 : Descricao da seÁao                                              ≥
-//≥ExpA3 : Array com as tabelas utilizadas pela secao. A primeira tabela   ≥
-//≥        sera considerada como principal para a secao.                   ≥
-//≥ExpA4 : Array com as Ordens do relatorio                                ≥
-//≥ExpL5 : Carrega campos do SX3 como celulas                              ≥
-//≥        Default : False                                                 ≥
-//≥ExpL6 : Carrega ordens do Sindex                                        ≥
-//≥        Default : False                                                 ≥
-//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+//¬≥Criacao da secao utilizada pelo relatorio                               ¬≥
+//¬≥                                                                        ¬≥
+//¬≥TRSection():New                                                         ¬≥
+//¬≥ExpO1 : Objeto TReport que a secao pertence                             ¬≥
+//¬≥ExpC2 : Descricao da se√ßao                                              ¬≥
+//¬≥ExpA3 : Array com as tabelas utilizadas pela secao. A primeira tabela   ¬≥
+//¬≥        sera considerada como principal para a secao.                   ¬≥
+//¬≥ExpA4 : Array com as Ordens do relatorio                                ¬≥
+//¬≥ExpL5 : Carrega campos do SX3 como celulas                              ¬≥
+//¬≥        Default : False                                                 ¬≥
+//¬≥ExpL6 : Carrega ordens do Sindex                                        ¬≥
+//¬≥        Default : False                                                 ¬≥
+//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 
-//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-//≥ Sessao 1                                                     ≥
-//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+//¬≥ Sessao 1                                                     ¬≥
+//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 oSection1 := TRSection():New(oReport,STR0036,{"SG1","SB1"}) //"Detalhes do produto Pai"
 oSection1:SetLineStyle()
 
@@ -168,13 +168,13 @@ TRCell():New(oSection1,'B1_QB'		,'SB1',/*Titulo*/,/*Picture*/,nB1_qb,/*lPixel*/,
 TRCell():New(oSection1,'B1_OPC'		,'SB1',/*Titulo*/,/*Picture*/,nB1_opc,/*lPixel*/, {|| RetFldProd(SB1->B1_COD,"B1_OPC")})
 
 oSection1:SetNoFilter("SB1")
-//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-//≥ Sessao 2                                                     ≥
-//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+//¬≥ Sessao 2                                                     ¬≥
+//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 oSection2 := TRSection():New(oSection1,STR0037,{'SG1','SB1'}) // "Estruturas"
 
 TRCell():New(oSection2,'NIVEL'		,'   ',STR0019	,/*Picture*/					,10			,/*lPixel*/,/*{|| code-block de impressao }*/)
-TRCell():New(oSection2,'G1_COMP'	,'SG1',STR0020	,/*Picture*/					,nB1_cod,/*lPixel*/,/*{|| code-block de impressao }*/) //B1_COD deve ter o mesmo tamanho que G1_COMP, por isso usei a vari·vel que j· tinha a informaÁ„o na memÛria, sem realizar a busca novamente na tabela 
+TRCell():New(oSection2,'G1_COMP'	,'SG1',STR0020	,/*Picture*/					,nB1_cod,/*lPixel*/,/*{|| code-block de impressao }*/) //B1_COD deve ter o mesmo tamanho que G1_COMP, por isso usei a vari√°vel que j√° tinha a informa√ß√£o na mem√≥ria, sem realizar a busca novamente na tabela 
 TRCell():New(oSection2,'G1_TRT'		,'SG1',STR0021	,/*Picture*/					,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
 TRCell():New(oSection2,'B1_TIPO'	,'SB1',STR0022	,/*Picture*/					,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
 TRCell():New(oSection2,'B1_GRUPO'	,'SB1',STR0023	,/*Picture*/					,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
@@ -202,22 +202,22 @@ oSection2:SetNoFilter("SB1")
 Return(oReport)
 
 /*/
-‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±⁄ƒƒƒƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒƒƒƒø±±
-±±≥Programa  ≥ReportPrint ≥ Autor ≥Marcos V. Ferreira   ≥ Data ≥16.05.2006≥±±
-±±√ƒƒƒƒƒƒƒƒƒƒ≈ƒƒƒƒƒƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒƒƒƒ¥±±
-±±≥DescriáÖo ≥A funcao estatica ReportPrint devera ser criada para todos  ≥±±
-±±≥          ≥os relatorios que poderao ser agendados pelo usuario.       ≥±±
-±±√ƒƒƒƒƒƒƒƒƒƒ≈ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¥±±
-±±≥Retorno   ≥Nenhum                                                      ≥±±
-±±√ƒƒƒƒƒƒƒƒƒƒ≈ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¥±±
-±±≥Parametros≥ExpO1: Objeto Report do Relatorio                           ≥±±
-±±√ƒƒƒƒƒƒƒƒƒƒ≈ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¥±±
-±±≥ Uso      ≥ MATR225			                                          ≥±±
-±±¿ƒƒƒƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
+√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú
+¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±
+¬±¬±√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø¬±¬±
+¬±¬±¬≥Programa  ¬≥ReportPrint ¬≥ Autor ¬≥Marcos V. Ferreira   ¬≥ Data ¬≥16.05.2006¬≥¬±¬±
+¬±¬±√É√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬¥¬±¬±
+¬±¬±¬≥Descri‚Ä°‚Ä¶o ¬≥A funcao estatica ReportPrint devera ser criada para todos  ¬≥¬±¬±
+¬±¬±¬≥          ¬≥os relatorios que poderao ser agendados pelo usuario.       ¬≥¬±¬±
+¬±¬±√É√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬¥¬±¬±
+¬±¬±¬≥Retorno   ¬≥Nenhum                                                      ¬≥¬±¬±
+¬±¬±√É√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬¥¬±¬±
+¬±¬±¬≥Parametros¬≥ExpO1: Objeto Report do Relatorio                           ¬≥¬±¬±
+¬±¬±√É√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬¥¬±¬±
+¬±¬±¬≥ Uso      ¬≥ MATR225			                                          ¬≥¬±¬±
+¬±¬±√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô¬±¬±
+¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±
+√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü
 /*/
 Static Function ReportPrint(oReport)
 
@@ -233,10 +233,10 @@ Local cDigit	:= ''
 Private aMopc 		:= {}
 Private lNegEstr	:=GETMV("MV_NEGESTR")
 
-// Trata o conte˙do do MV_PAR01
+// Trata o conte√∫do do MV_PAR01
 if Empty(aSelect) // Verifica se foi selecionado algum produto do Browse para impressao
 
-	If !Empty(mv_par01) // Verifica se foi digitado algum produto para impress„o
+	If !Empty(mv_par01) // Verifica se foi digitado algum produto para impress√£o
 
 		cDigit := Upper(AllTrim(mv_par01))
 		aSelect := StrTokArr( cDigit, ";" )
@@ -248,16 +248,16 @@ if Empty(aSelect) // Verifica se foi selecionado algum produto do Browse para im
 
 	EndIf
 
-ElseIf Empty(mv_par01) // Caso a pessoa tenha selecionado e apagado a seleÁ„o no mv_par01
+ElseIf Empty(mv_par01) // Caso a pessoa tenha selecionado e apagado a sele√ß√£o no mv_par01
 
 	FWAlertWarning("Nenhum produto selecionado.", "Alerta!")
 	return
 
 EndIf
 
-//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-//≥	Processando a Sessao 1                                       ≥
-//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+//¬≥	Processando a Sessao 1                                       ¬≥
+//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 dbSelectArea('SG1')
 dbSetOrder(1)
 MsSeek(xFilial('SG1')+ aSelect[1] ,.T.) // MsSeek(xFilial('SG1')+ mv_par01 ,.T.)
@@ -305,12 +305,12 @@ While !oReport:Cancel() .And. !Eof() .And. SG1->G1_FILIAL+alltrim(SG1->G1_COD) =
 		oReport:SkipLine()     
 		oSection1:Finish()
 
-		//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-		//≥	Impressao da Sessao 2                                        ≥
-		//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+		//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+		//¬≥	Impressao da Sessao 2                                        ¬≥
+		//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 		oSection2:Init()
 		
-		//Se o produto pai tem especificado quais s„o os opcionais deve obdecer essa ordem. 
+		//Se o produto pai tem especificado quais s√£o os opcionais deve obdecer essa ordem. 
 		If !Empty(SB1->B1_OPC)
 			aMopc := Str2Array(SB1->B1_MOPC,.F.)
 		Else 
@@ -318,7 +318,8 @@ While !oReport:Cancel() .And. !Eof() .And. SG1->G1_FILIAL+alltrim(SG1->G1_COD) =
 		EndIf
 
 		//-- Explode Estrutura
-		MR225ExplG(oReport,oSection2,cProduto,IIf(RetFldProd(SB1->B1_COD,"B1_QB")==0,1,RetFldProd(SB1->B1_COD,"B1_QB")),nNivel,RetFldProd(SB1->B1_COD,"B1_OPC"),IIf(RetFldProd(SB1->B1_COD,"B1_QB")==0,1,RetFldProd(SB1->B1_COD,"B1_QB"))	,IIf(Empty( mv_par07/*mv_par08*/ ),IIF(lPCPREVATU , PCPREVATU(SB1->B1_COD), SB1->B1_REVATU ), mv_par07/*mv_par08*/ ))
+
+		ZPCPR001G(oReport,oSection2,cProduto,IIf(RetFldProd(SB1->B1_COD,"B1_QB")==0,1,RetFldProd(SB1->B1_COD,"B1_QB")),nNivel,RetFldProd(SB1->B1_COD,"B1_OPC"),IIf(RetFldProd(SB1->B1_COD,"B1_QB")==0,1,RetFldProd(SB1->B1_COD,"B1_QB"))	,IIf(Empty( mv_par07/*mv_par08*/ ),IIF(lPCPREVATU , PCPREVATU(SB1->B1_COD), SB1->B1_REVATU ), mv_par07/*mv_par08*/ ))
 
 		oSection2:Finish()
 		
@@ -345,29 +346,29 @@ dbSetOrder(1)
 Return
 
 /*
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±⁄ƒƒƒƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒƒƒƒø±±
-±±≥ FunáÖo   ≥MR225ExplG≥ Autor ≥ Marcos V. Ferreira    ≥ Data ≥ 17/05/06 ≥±±
-±±√ƒƒƒƒƒƒƒƒƒƒ≈ƒƒƒƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒƒƒƒ¥±±
-±±≥ DescriáÖo≥ Faz a explosao de uma estrutura                            ≥±±
-±±√ƒƒƒƒƒƒƒƒƒƒ≈ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¥±±
-±±≥ Sintaxe  ≥ MR225Expl(ExpO1,ExpO2,ExpC3,ExpN4,ExpN5,ExpC6,ExpN7,ExpC8) ≥±±
-±±√ƒƒƒƒƒƒƒƒƒƒ≈ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¥±±
-±±≥Parametros≥ ExpO1 = Objeto do Relatorio                                ≥±±
-±±≥          ≥ ExpO2 = Sessao a ser impressa                              ≥±±
-±±≥          ≥ ExpC3 = Codigo do produto a ser explodido                  ≥±±
-±±≥          ≥ ExpN4 = Quantidade do pai a ser explodida                  ≥±±
-±±≥          ≥ ExpN5 = Nivel a ser impresso                               ≥±±
-±±≥          ≥ ExpC6 = Opcionais do produto                               ≥±±
-±±≥          ≥ ExpN7 = Quantidade do Produto Nivel Anterior               ≥±±
-±±≥          ≥ ExpC8 = Numero da Revisao                                  ≥±±
-±±√ƒƒƒƒƒƒƒƒƒƒ≈ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¥±±
-±±≥ Uso      ≥ Generico                                                   ≥±±
-±±¿ƒƒƒƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±
+¬±¬±√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø¬±¬±
+¬±¬±¬≥ Fun‚Ä°‚Ä¶o   ¬≥ZPCPR001G¬≥ Autor ¬≥ Marcos V. Ferreira    ¬≥ Data ¬≥ 17/05/06 ¬≥¬±¬±
+¬±¬±√É√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬¥¬±¬±
+¬±¬±¬≥ Descri‚Ä°‚Ä¶o¬≥ Faz a explosao de uma estrutura                            ¬≥¬±¬±
+¬±¬±√É√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬¥¬±¬±
+¬±¬±¬≥ Sintaxe  ¬≥ MR225Expl(ExpO1,ExpO2,ExpC3,ExpN4,ExpN5,ExpC6,ExpN7,ExpC8) ¬≥¬±¬±
+¬±¬±√É√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬¥¬±¬±
+¬±¬±¬≥Parametros¬≥ ExpO1 = Objeto do Relatorio                                ¬≥¬±¬±
+¬±¬±¬≥          ¬≥ ExpO2 = Sessao a ser impressa                              ¬≥¬±¬±
+¬±¬±¬≥          ¬≥ ExpC3 = Codigo do produto a ser explodido                  ¬≥¬±¬±
+¬±¬±¬≥          ¬≥ ExpN4 = Quantidade do pai a ser explodida                  ¬≥¬±¬±
+¬±¬±¬≥          ¬≥ ExpN5 = Nivel a ser impresso                               ¬≥¬±¬±
+¬±¬±¬≥          ¬≥ ExpC6 = Opcionais do produto                               ¬≥¬±¬±
+¬±¬±¬≥          ¬≥ ExpN7 = Quantidade do Produto Nivel Anterior               ¬≥¬±¬±
+¬±¬±¬≥          ¬≥ ExpC8 = Numero da Revisao                                  ¬≥¬±¬±
+¬±¬±√É√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬¥¬±¬±
+¬±¬±¬≥ Uso      ¬≥ Generico                                                   ¬≥¬±¬±
+¬±¬±√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô¬±¬±
+¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±
 */
-Static Function MR225ExplG(oReport,oSection2,cProduto,nQuantPai,nNivel,cOpcionais,nQtdBase,cRevisao)
 
+Static Function ZPCPR001G(oReport,oSection2,cProduto,nQuantPai,nNivel,cOpcionais,nQtdBase,cRevisao)
 Local aTamG1Grp   := TamSX3("G1_GROPC")
 Local cAteNiv     := If( mv_par08/*mv_par09*/ =Space(3),"999", mv_par08/*mv_par09*/ )
 Local cRevEst	  := ''
@@ -387,14 +388,14 @@ While !oReport:Cancel() .And. !Eof() .And. G1_FILIAL+G1_COD == xFilial('SG1')+cP
 
 //Se o produto pai tem definido qual o opcional.
 	For nOpc:= 1 to len(aMopc)
-		// Verifica se o grupo de opcionais est· definido na estrutura.
+		// Verifica se o grupo de opcionais est√° definido na estrutura.
 		If SG1->G1_GROPC == Left(aMopc[nOpc][2],aTamG1Grp[1])
 			cOpcionais := aMopc[nOpc][2]
 			Exit
 		EndIf 
 	Next 
 	
-	//Se n„o existir nenhum grupo/opcional default, dever· listar todos os opcionais
+	//Se n√£o existir nenhum grupo/opcional default, dever√° listar todos os opcionais
 	If Empty(cOpcionais) .Or. cOpcionais == Nil
 		lVlOpc := .F.
 	EndIf
@@ -408,22 +409,22 @@ While !oReport:Cancel() .And. !Eof() .And. G1_FILIAL+G1_COD == xFilial('SG1')+cP
 			dbSetOrder(1)
 			MsSeek(xFilial('SB1')+SG1->G1_COMP)
 			
-			//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-			//≥ Impressao da Sessao 2			                ≥
-			//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+			//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+			//¬≥ Impressao da Sessao 2			                ¬≥
+			//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 			nPrintNivel:=IIf(nNivel>17,17,nNivel-2)
 			oSection2:Cell('NIVEL'		):SetValue(Space(nPrintNivel)+StrZero(nNivel,3))
 			oSection2:Cell('QUANTITEM'	):SetValue(nQuantItem)
 			oSection2:PrintLine()
 		
-			//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-			//≥ Verifica se existe sub-estrutura                ≥
-			//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+			//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+			//¬≥ Verifica se existe sub-estrutura                ¬≥
+			//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 			dbSelectArea('SG1')
 			MsSeek(xFilial('SG1')+G1_COMP)
 			cRevEst := IIF(lPCPREVATU , PCPREVATU(SB1->B1_COD), SB1->B1_REVATU )
 			If Found()
-				MR225ExplG(oReport,oSection2,G1_COD,nQuantItem,nNivel+1,SB1->B1_OPC,IIf(RetFldProd(SB1->B1_COD,"B1_QB")==0,1,RetFldProd(SB1->B1_COD,"B1_QB")),If(!Empty(cRevEst),cRevEst, mv_par07/*mv_par08*/ ))
+				ZPCPR001G(oReport,oSection2,G1_COD,nQuantItem,nNivel+1,SB1->B1_OPC,IIf(RetFldProd(SB1->B1_COD,"B1_QB")==0,1,RetFldProd(SB1->B1_COD,"B1_QB")),If(!Empty(cRevEst),cRevEst, mv_par07/*mv_par08*/ ))
 			EndIf
 
 			dbGoto(nReg)
@@ -433,65 +434,67 @@ While !oReport:Cancel() .And. !Eof() .And. G1_FILIAL+G1_COD == xFilial('SG1')+cP
 	dbSkip()
 EndDo
 
+Return
+
 /*
-‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±⁄ƒƒƒƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒƒƒƒø±±
-±±≥FunáÖo    ≥ MATR225R3≥ Autor ≥ Marcos V. Ferreira    ≥ Data ≥ 08/09/92 ≥±±
-±±√ƒƒƒƒƒƒƒƒƒƒ≈ƒƒƒƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒƒƒƒ¥±±
-±±≥DescriáÖo ≥ Relacao simplificada das estruturas - Release 3            ≥±±
-±±√ƒƒƒƒƒƒƒƒƒƒ≈ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¥±±
-±±≥ Uso      ≥ Generico                                                   ≥±±
-±±√ƒƒƒƒƒƒƒƒƒƒ≈ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¥±±
-±±≥ Uso      ≥ MATR225			                                          ≥±±
-±±¿ƒƒƒƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
+√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú
+¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±
+¬±¬±√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø¬±¬±
+¬±¬±¬≥Fun‚Ä°‚Ä¶o    ¬≥ MATR225R3¬≥ Autor ¬≥ Marcos V. Ferreira    ¬≥ Data ¬≥ 08/09/92 ¬≥¬±¬±
+¬±¬±√É√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬¥¬±¬±
+¬±¬±¬≥Descri‚Ä°‚Ä¶o ¬≥ Relacao simplificada das estruturas - Release 3            ¬≥¬±¬±
+¬±¬±√É√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬¥¬±¬±
+¬±¬±¬≥ Uso      ¬≥ Generico                                                   ¬≥¬±¬±
+¬±¬±√É√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬¥¬±¬±
+¬±¬±¬≥ Uso      ¬≥ MATR225			                                          ¬≥¬±¬±
+¬±¬±√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô¬±¬±
+¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±
+√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü
 */
 Static Function MATR225R3
 
-//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-//≥ Variaveis obrigatorias dos programas de relatorio            ≥
-//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+//¬≥ Variaveis obrigatorias dos programas de relatorio            ¬≥
+//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 LOCAL Tamanho  := "G"
 LOCAL titulo   := STR0001	//"Relacao Simplificada das Estruturas"
-LOCAL cDesc1   := STR0002	//"Este programa emite a relaáÑo de estrutura de um determinado produto"
-LOCAL cDesc2   := STR0003	//"selecionado pelo usu†rio. Esta relaáÑo nÑo demonstra custos. Caso o"
-LOCAL cDesc3   := STR0004	//"produto use opcionais, ser† listada a estrutura com os opcionais padrÑo."
+LOCAL cDesc1   := STR0002	//"Este programa emite a rela‚Ä°‚Äûo de estrutura de um determinado produto"
+LOCAL cDesc2   := STR0003	//"selecionado pelo usu¬†rio. Esta rela‚Ä°‚Äûo n‚Äûo demonstra custos. Caso o"
+LOCAL cDesc3   := STR0004	//"produto use opcionais, ser¬† listada a estrutura com os opcionais padr‚Äûo."
 LOCAL cString  := "SG1"
 LOCAL wnrel	   := "MATR225"
 
-//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-//≥ Variaveis tipo Private padrao de todos os relatorios         ≥
-//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+//¬≥ Variaveis tipo Private padrao de todos os relatorios         ¬≥
+//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 PRIVATE lNegEstr:=GETMV("MV_NEGESTR")
 PRIVATE aReturn := {OemToAnsi(STR0005), 1,OemToAnsi(STR0006), 2, 2, 1, "",1 }		//"Zebrado"###"Administracao"
 PRIVATE nLastKey:= 0 ,cPerg := "ZPCPR001"//"MTR225"
 
-//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-//≥ Verifica as perguntas selecionadas                           ≥
-//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
-//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-//≥ Variaveis utilizadas para parametros ≥
-//≥ mv_par01   // Produto de             ≥
-//≥ mv_par02   // Produto ate            ≥
-//≥ mv_par03   // Tipo de                ≥
-//≥ mv_par04   // Tipo ate               ≥
-//≥ mv_par05   // Grupo de               ≥
-//≥ mv_par06   // Grupo ate              ≥
-//≥ mv_par07   // Salta Pagina: Sim/Nao  ≥
-//≥ mv_par08   // Qual Rev da Estrut     ≥
-//≥ mv_par09   // Imprime Ate Nivel ?    ≥
-//≥ mv_par10   // Data de referencia?    ?
-//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+//¬≥ Verifica as perguntas selecionadas                           ¬≥
+//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
+//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+//¬≥ Variaveis utilizadas para parametros ¬≥
+//¬≥ mv_par01   // Produto de             ¬≥
+//¬≥ mv_par02   // Produto ate            ¬≥
+//¬≥ mv_par03   // Tipo de                ¬≥
+//¬≥ mv_par04   // Tipo ate               ¬≥
+//¬≥ mv_par05   // Grupo de               ¬≥
+//¬≥ mv_par06   // Grupo ate              ¬≥
+//¬≥ mv_par07   // Salta Pagina: Sim/Nao  ¬≥
+//¬≥ mv_par08   // Qual Rev da Estrut     ¬≥
+//¬≥ mv_par09   // Imprime Ate Nivel ?    ¬≥
+//¬≥ mv_par10   // Data de referencia?    ?
+//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 Pergunte(cPerg,.F.)
 
-//Verifica se o MV_PAR09 existe no pergunte ZPCPR001 -> ProteÁ„o de fonte.
+//Verifica se o MV_PAR09 existe no pergunte ZPCPR001 -> Prote√ß√£o de fonte.
 AjstPergt()
 
-//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-//≥ Envia controle para a funcao SETPRINT                        ≥
-//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+//¬≥ Envia controle para a funcao SETPRINT                        ¬≥
+//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 wnrel:=SetPrint(cString,wnrel,cPerg,@titulo,cDesc1,cDesc2,cDesc3,.F.,"",,Tamanho)
 
 If nLastKey = 27
@@ -506,25 +509,24 @@ If nLastKey = 27
 	Return
 EndIf
 
-RptStatus({|lEnd| C225Imp(@lEnd,wnRel,titulo,Tamanho)},titulo)
+RptStatus({|lEnd| ZPCPR001P(@lEnd,wnRel,titulo,Tamanho)},titulo)
 
 Return NIL
 
 /*
-‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±⁄ƒƒƒƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒƒƒƒø±±
-±±≥FunáÖo    ≥ C225IMP  ≥ Autor ≥ Rodrigo de A. Sartorio≥ Data ≥ 11.12.95 ≥±±
-±±√ƒƒƒƒƒƒƒƒƒƒ≈ƒƒƒƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒƒƒƒ¥±±
-±±≥DescriáÖo ≥ Chamada do Relatorio                                       ≥±±
-±±√ƒƒƒƒƒƒƒƒƒƒ≈ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¥±±
-±±≥ Uso      ≥ MATR225			                                          ≥±±
-±±¿ƒƒƒƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ
+√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú√ú
+¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±
+¬±¬±√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø¬±¬±
+¬±¬±¬≥Fun‚Ä°‚Ä¶o    ¬≥ ZPCPR001P  ¬≥ Autor ¬≥ Rodrigo de A. Sartorio¬≥ Data ¬≥ 11.12.95 ¬≥¬±¬±
+¬±¬±√É√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬¥¬±¬±
+¬±¬±¬≥Descri‚Ä°‚Ä¶o ¬≥ Chamada do Relatorio                                       ¬≥¬±¬±
+¬±¬±√É√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬¥¬±¬±
+¬±¬±¬≥ Uso      ¬≥ MATR225			                                          ¬≥¬±¬±
+¬±¬±√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô¬±¬±
+¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±
+√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü√ü
 */
-Static Function C225Imp(lEnd,WnRel,titulo,Tamanho)
-
+Static Function ZPCPR001P(lEnd,WnRel,titulo,Tamanho)
 LOCAL cRodaTxt  := STR0007	//"ESTRUTURA(S)"
 LOCAL nCntImpr  := 0
 LOCAL nTipo     := 0
@@ -544,19 +546,19 @@ Local aCampo
 Local lDatRef  := !Empty( mv_par09/*mv_par10*/)
 Local cRevEst  := ""
 Local y := 1
-//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-//≥ Contadores de linha e pagina                                 ≥
-//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+//¬≥ Contadores de linha e pagina                                 ¬≥
+//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 PRIVATE li := 80 ,m_pag := 1
 
-//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-//≥ Inicializa os codigos de caracter Comprimido/Normal da impressora ≥
-//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+//¬≥ Inicializa os codigos de caracter Comprimido/Normal da impressora ¬≥
+//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 nTipo  := IIf(aReturn[4]==1,15,18)
 
-//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-//≥ Monta os Cabecalhos                                          ≥
-//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+//¬≥ Monta os Cabecalhos                                          ¬≥
+//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 
 cabec1   := STR0008	//"NIVEL                CODIGO          TRT TP GRUP DESCRICAO                          OBSERVACAO                                        QUANTIDADE UM PERDA     QUANTIDADE QTD. BASE  TIPO DE     INICIO      FIM    GRP. ITEM"
 cabec2   := STR0009	//"                                                                                                                                      NECESSARIA      %                  ESTRUTURA QUANTIDADE  VALIDADE   VALIDADE OPCI  OPCI"
@@ -564,9 +566,9 @@ cabec2   := STR0009	//"                                                         
 //                      0         1         2         3         4         5         6         7         8         9        10        11        12        13        14        15        16        17        18        19        20        21        22
 //                      01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890
 
-//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-//≥ Pega a Picture da quantidade (maximo de 14 posicoes)         ≥
-//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+//¬≥ Pega a Picture da quantidade (maximo de 14 posicoes)         ¬≥
+//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 aCampo := tamSX3('G1_QUANT')
 
 IF aCampo[1] >= 14
@@ -658,9 +660,9 @@ While !Eof() .And. G1_FILIAL+G1_COD = xFilial("SG1")+ aSelect[y]//mv_par02
 		If li > 58
 			Cabec(titulo,cabec1,cabec2,wnrel,Tamanho,nTipo)
 		EndIf
-		//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-		//≥ Adiciona 1 ao contador de registros impressos         ≥
-		//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+		//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+		//¬≥ Adiciona 1 ao contador de registros impressos         ¬≥
+		//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 		nCntImpr++
 		dbSelectArea("SB1") 	
 		
@@ -699,9 +701,9 @@ While !Eof() .And. G1_FILIAL+G1_COD = xFilial("SG1")+ aSelect[y]//mv_par02
 		
 		@ li,105 + nCol PSAY SB1->B1_UM
 		@ li,129 + nCol PSAY If(RetFldProd(SB1->B1_COD,"B1_QB")==0,1,RetFldProd(SB1->B1_COD,"B1_QB")) Picture PesqPict("SB1","B1_QB",11)
-		//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-		//≥ Imprime grupo de opcionais.                           ≥
-		//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+		//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+		//¬≥ Imprime grupo de opcionais.                           ¬≥
+		//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 		If !Empty(RetFldProd(SB1->B1_COD,"B1_OPC"))
 			@ li,137 + nCol PSAY STR0038 //Opc.
 			@ li,142 + nCol PSAY RetFldProd(SB1->B1_COD,"B1_OPC") Picture PesqPict("SB1","B1_OPC",80)
@@ -730,9 +732,11 @@ If li != 80
 	Roda(nCntImpr,cRodaTxt,Tamanho)
 EndIf
 
-//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-//≥ Devolve a condicao original do arquivo principal             ≥
-//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+Return
+
+//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+//¬≥ Devolve a condicao original do arquivo principal             ¬≥
+//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 dbSelectArea("SG1")
 Set Filter To
 dbSetOrder(1)
@@ -745,26 +749,26 @@ EndIf
 MS_FLUSH()
 
 /*
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±⁄ƒƒƒƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¬ƒƒƒƒƒƒ¬ƒƒƒƒƒƒƒƒƒƒø±±
-±±≥ FunáÖo   ≥MR225Expl ≥ Autor ≥ Eveli Morasco         ≥ Data ≥ 08/09/92 ≥±±
-±±√ƒƒƒƒƒƒƒƒƒƒ≈ƒƒƒƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒƒƒƒ¥±±
-±±≥ DescriáÖo≥ Faz a explosao de uma estrutura                            ≥±±
-±±√ƒƒƒƒƒƒƒƒƒƒ≈ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¥±±
-±±≥ Sintaxe  ≥ MR225Expl(ExpC1,ExpN1,ExpN2,ExpC2,ExpC3,ExpC4,ExpN3)       ≥±±
-±±√ƒƒƒƒƒƒƒƒƒƒ≈ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¥±±
-±±≥Parametros≥ ExpC1 = Codigo do produto a ser explodido                  ≥±±
-±±≥          ≥ ExpN1 = Quantidade do pai a ser explodida                  ≥±±
-±±≥          ≥ ExpN2 = Nivel a ser impresso                               ≥±±
-±±≥          ≥ ExpC2 = Picture da quantidade                              ≥±±
-±±≥          ≥ ExpC3 = Picture da perda                                   ≥±±
-±±≥          ≥ ExpC4 = Opcionais do produto                               ≥±±
-±±≥          ≥ ExpN3 = Quantidade do Produto Nivel Anterior               ≥±±
-±±≥          ≥ As outras 6 variaveis sao utilizadas pela funcao Cabec     ≥±±
-±±√ƒƒƒƒƒƒƒƒƒƒ≈ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¥±±
-±±≥ Uso      ≥ Generico                                                   ≥±±
-±±¿ƒƒƒƒƒƒƒƒƒƒ¡ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±
+¬±¬±√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ç√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø¬±¬±
+¬±¬±¬≥ Fun‚Ä°‚Ä¶o   ¬≥MR225Expl ¬≥ Autor ¬≥ Eveli Morasco         ¬≥ Data ¬≥ 08/09/92 ¬≥¬±¬±
+¬±¬±√É√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬¥¬±¬±
+¬±¬±¬≥ Descri‚Ä°‚Ä¶o¬≥ Faz a explosao de uma estrutura                            ¬≥¬±¬±
+¬±¬±√É√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬¥¬±¬±
+¬±¬±¬≥ Sintaxe  ¬≥ MR225Expl(ExpC1,ExpN1,ExpN2,ExpC2,ExpC3,ExpC4,ExpN3)       ¬≥¬±¬±
+¬±¬±√É√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬¥¬±¬±
+¬±¬±¬≥Parametros¬≥ ExpC1 = Codigo do produto a ser explodido                  ¬≥¬±¬±
+¬±¬±¬≥          ¬≥ ExpN1 = Quantidade do pai a ser explodida                  ¬≥¬±¬±
+¬±¬±¬≥          ¬≥ ExpN2 = Nivel a ser impresso                               ¬≥¬±¬±
+¬±¬±¬≥          ¬≥ ExpC2 = Picture da quantidade                              ¬≥¬±¬±
+¬±¬±¬≥          ¬≥ ExpC3 = Picture da perda                                   ¬≥¬±¬±
+¬±¬±¬≥          ¬≥ ExpC4 = Opcionais do produto                               ¬≥¬±¬±
+¬±¬±¬≥          ¬≥ ExpN3 = Quantidade do Produto Nivel Anterior               ¬≥¬±¬±
+¬±¬±¬≥          ¬≥ As outras 6 variaveis sao utilizadas pela funcao Cabec     ¬≥¬±¬±
+¬±¬±√É√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬¥¬±¬±
+¬±¬±¬≥ Uso      ¬≥ Generico                                                   ¬≥¬±¬±
+¬±¬±√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Å√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô¬±¬±
+¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±¬±
 */
 Static Function MR225Expl(cProduto,nQuantPai,nNivel,cPictQuant,cPictPerda,cOpcionais,nQtdBase,Titulo,cabec1,cabec2,wnrel,Tamanho,nTipo,cRevisao)
 LOCAL nReg,nQuantItem,nCntItens := 0
@@ -785,7 +789,7 @@ dbSelectArea("SG1")
 While !Eof() .And. G1_FILIAL+G1_COD == xFilial("SG1")+cProduto
 	nReg       := Recno()
 	
-	//Se n„o existir nenhum grupo/opcional default, dever· listar todos os opcionais
+	//Se n√£o existir nenhum grupo/opcional default, dever√° listar todos os opcionais
 	If Empty(cOpcionais) .Or. cOpcionais == Nil
 		lVlOpc := .F.
 	EndIf
@@ -834,9 +838,9 @@ While !Eof() .And. G1_FILIAL+G1_COD == xFilial("SG1")+cProduto
 				
 				@ li,105 + nCol PSAY SB1->B1_UM
 				@ li,129 + nCol PSAY If(RetFldProd(SB1->B1_COD,"B1_QB")==0,1,RetFldProd(SB1->B1_COD,"B1_QB")) Picture PesqPict("SB1","B1_QB",11)
-				//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-				//≥ Imprime grupo de opcionais.                           ≥
-				//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+				//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+				//¬≥ Imprime grupo de opcionais.                           ¬≥
+				//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 				If !Empty(RetFldProd(SB1->B1_COD,"B1_OPC"))
 					@ li,137 + nCol PSAY STR0038 //"Opc. "
 					@ li,142 + nCol PSAY RetFldProd(SB1->B1_COD,"B1_OPC") Picture PesqPict("SB1","B1_OPC",80)
@@ -846,7 +850,7 @@ While !Eof() .And. G1_FILIAL+G1_COD == xFilial("SG1")+cProduto
 				dbSelectArea("SG1")
 			EndIf
 		
-			//-- Divide a ObservaáÑo em Sub-Arrays com 45 posiáîes
+			//-- Divide a Observa‚Ä°‚Äûo em Sub-Arrays com 45 posi‚Ä°‚Äùes
 			aObserv := {}
 			For nX := 1 to MlCount(AllTrim(G1_OBSERV),45)
 				aAdd(aObserv, MemoLine(AllTrim(G1_OBSERV),45,nX))
@@ -897,12 +901,12 @@ While !Eof() .And. G1_FILIAL+G1_COD == xFilial("SG1")+cProduto
 			@ li,147 + nCol PSay G1_PERDA   Picture cPictPerda
 			@ li,152 + nCol PSay G1_QUANT   Picture cPictQuant
 			@ li,168 + nCol PSay If(RetFldProd(SB1->B1_COD,"B1_QB")==0,1,RetFldProd(SB1->B1_COD,"B1_QB")) Picture PesqPict("SB1","B1_QB",11)
-			@ li,180 + nCol PSay If(G1_FIXVAR $' ˙V',STR0011,STR0012)		//"VARIAVEL"###"FIXA"
+			@ li,180 + nCol PSay If(G1_FIXVAR $' √∫V',STR0011,STR0012)		//"VARIAVEL"###"FIXA"
 			@ li,190 + nCol PSay G1_INI	Picture PesqPict("SG1","G1_INI",10)
 			@ li,201 + nCol PSay G1_FIM	Picture PesqPict("SG1","G1_FIM",10)
 			@ li,212 + nCol PSay G1_GROPC	Picture PesqPict("SG1","G1_GROPC",3)
 			@ li,216 + nCol PSay G1_OPC	Picture PesqPict("SG1","G1_OPC",4)
-			//-- Caso existam, Imprime as outras linhas da ObservaáÑo
+			//-- Caso existam, Imprime as outras linhas da Observa‚Ä°‚Äûo
 			If Len(aObserv) > 1
 				For nX := 2 to Len(aObserv)
 					Li ++
@@ -912,9 +916,9 @@ While !Eof() .And. G1_FILIAL+G1_COD == xFilial("SG1")+cProduto
 		
 			Li++
 		
-			//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-			//≥ Verifica se existe sub-estrutura                ≥
-			//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+			//√ö√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ¬ø
+			//¬≥ Verifica se existe sub-estrutura                ¬≥
+			//√Ä√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√Ñ√ô
 			dbSelectArea("SG1")
 			dbSeek(xFilial("SG1")+G1_COMP)
 			cRevEst := IIF(lPCPREVATU , PCPREVATU(SB1->B1_COD), SB1->B1_REVATU )
@@ -959,7 +963,7 @@ Static Function AjstPergt()
 Return Nil
 
 /*/{Protheus.doc} ListPrd
-	Consulta padr„o para retornar uma lista de produtos com CheckBox
+	Consulta padr√£o para retornar uma lista de produtos com CheckBox
 	@type  Function
 	@author Victor Gisoldi Matos
 	@since 12/09/2024
@@ -980,17 +984,17 @@ Local cItem       := Space(23)  // Campo para o termo de busca
 Local oFont       := TFont():New( "Arial", , 20, , .F., , , , , .F., .F. )
 Local oFont2      := TFont():New( "Arial", , 18, , .F., , , , , .F., .F. )
 Local aDadosFiltrado := {}  // Array para armazenar os dados filtrados
-Local cOption     := ""       // Padr„o: 1 (CÛdigo)
+Local cOption     := ""       // Padr√£o: 1 (C√≥digo)
 Private lMarker   := .T.
 Private aDados    := {}
 
 
-aSelect := {}  // limpa array de seleÁ„o, caso j· tenha preenchimento anterior
+aSelect := {}  // limpa array de sele√ß√£o, caso j√° tenha preenchimento anterior
 cRet    := ''  // limpa o preenchimento do mv_par01, caso tenha sido preenchido anteriormente
 
 // Alimenta o array do Browse
 BUSDATA()
-aDadosFiltrado := aclone(aDados)  // Inicialmente o array filtrado È o mesmo que o original
+aDadosFiltrado := aclone(aDados)  // Inicialmente o array filtrado √© o mesmo que o original
 
 // Define o Browse
 DEFINE MsDIALOG oDlg TITLE 'Produtos' From 0, 4 To 500, 1090 Pixel
@@ -1023,7 +1027,7 @@ DEFINE MsDIALOG oDlg TITLE 'Produtos' From 0, 4 To 500, 1090 Pixel
 
     // Adiciona colunas ao Browse
     oBrowse:addColumn({"Codigo"    , {||aDadosFiltrado[oBrowse:nAt,02]} , "C" , "@!" , 1 ,  20 , , .T. , , .F. , , "aDadosFiltrado[oBrowse:nAt,02]" , , .F. , .T. , , "ETDESPES1" } )
-    oBrowse:addColumn({"DescriÁ„o" , {||aDadosFiltrado[oBrowse:nAt,03]} , "C" , "@!" , 1 , 100 , , .T. , , .F. , , "aDadosFiltrado[oBrowse:nAt,03]" , , .F. , .T. , , "ETDESPES2" } )
+    oBrowse:addColumn({"Descri√ß√£o" , {||aDadosFiltrado[oBrowse:nAt,03]} , "C" , "@!" , 1 , 100 , , .T. , , .F. , , "aDadosFiltrado[oBrowse:nAt,03]" , , .F. , .T. , , "ETDESPES2" } )
     oBrowse:addColumn({"Grupo"     , {||aDadosFiltrado[oBrowse:nAt,04]} , "C" , "@!" , 1 ,  20 , , .T. , , .F. , , "aDadosFiltrado[oBrowse:nAt,04]" , , .F. , .T. , , "ETDESPES3" } )
 
     oBrowse:Activate(.T.)
@@ -1032,7 +1036,7 @@ Activate MsDialog oDlg
 
 Return .t.
 
-/*/ FunÁ„o que realiza o filtro dos produtos e atualiza o Browse
+/*/ Fun√ß√£o que realiza o filtro dos produtos e atualiza o Browse
 	@type  Function
 	@author Victor Gisoldi Matos
 	@since 12/09/2024
@@ -1053,12 +1057,12 @@ If cOption <> "Limpa"
 	For nPos := 1 To Len(aDados)
 
 		Do Case
-			Case cOption == "Codigo"  // Filtrar por CÛdigo
+			Case cOption == "Codigo"  // Filtrar por C√≥digo
 				If Upper(AllTrim(cItem)) $ Upper(AllTrim(aDados[nPos,02]))
 					aAdd(aDadosFiltrado, aDados[nPos])
 				EndIf
 
-			Case cOption == "Descricao"  // Filtrar por DescriÁ„o
+			Case cOption == "Descricao"  // Filtrar por Descri√ß√£o
 				If Upper(AllTrim(cItem)) $ Upper(AllTrim(aDados[nPos,03]))
 					aAdd(aDadosFiltrado, aDados[nPos])
 				EndIf
@@ -1074,7 +1078,7 @@ Else
 	aDadosFiltrado := aclone(aDados) // Limpa Filtro
 EndIf
 
-// Se n„o houver resultados do filtro, mostra uma mensagem
+// Se n√£o houver resultados do filtro, mostra uma mensagem
 If Len(aDadosFiltrado) == 0
 	aDadosFiltrado := aclone(aDados)
     MsgStop("Nenhum produto encontrado com o filtro especificado!", "Erro")
@@ -1085,7 +1089,7 @@ oBrowse:Refresh()  // Atualiza o Browse
 
 Return
 
-/*/ FunÁ„o de retorno dos itens selecionados na consulta padr„o
+/*/ Fun√ß√£o de retorno dos itens selecionados na consulta padr√£o
 	@type  Function
 	@author Victor Gisoldi Matos
 	@since 12/09/2024
@@ -1101,7 +1105,7 @@ User Function ListPrdA()
 Return cRet
 		
 /*/{Protheus.doc} SelectOne
-	FunÁ„o para seleÁ„o de um item da lista
+	Fun√ß√£o para sele√ß√£o de um item da lista
 	@type  Function
 	@author Victor Gisoldi Matos
 	@since 12/09/2024
@@ -1138,7 +1142,7 @@ oBrowse:Refresh()
 Return .T.
 		
 /*/{Protheus.doc} SelectAll
-	FunÁ„o para seleÁ„o completa da lista de produtos
+	Fun√ß√£o para sele√ß√£o completa da lista de produtos
 	@type  Function
 	@author Victor Gisoldi Matos
 	@since 12/09/2024
