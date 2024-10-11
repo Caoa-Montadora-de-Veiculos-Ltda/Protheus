@@ -75,6 +75,7 @@ Static Function zProcPreco( cProdutDe, cProdutAte, cCodTab)
     //-- Altera De/Ate para sempre respeitar ordem alfabetica
     Local cProdDe   := IIF( cProdutDe > cProdutAte, cProdutAte, cProdutDe)
     Local cProdAte  := IIF( cProdutAte > cProdutDe, cProdutAte, cProdutDe)
+    Local cTab      := cCodTab
 
     BeginSql Alias cAliasDA0
         SELECT B1_COD, B1_IPI, B1_GRTRIB, B1_ORIGEM, B1_POSIPI, DA1_PRCVEN, B1_PICM, DA1.R_E_C_N_O_ as DA1REC
@@ -99,12 +100,16 @@ Static Function zProcPreco( cProdutDe, cProdutAte, cCodTab)
     If (cAliasDA0)->( !Eof() )
 
         While (cAliasDA0)->( !Eof() )
+        
 
             IncProc("Atualizado preco por UF. Produto: " + (cAliasDA0)->B1_COD )
-
-            AtuPrcVend( (cAliasDA0)->B1_COD, (cAliasDA0)->B1_IPI, (cAliasDA0)->B1_GRTRIB, (cAliasDA0)->B1_ORIGEM,;
-                        (cAliasDA0)->DA1_PRCVEN, (cAliasDA0)->DA1REC, (cAliasDA0)->B1_POSIPI, (cAliasDA0)->B1_PICM )
-
+            IF cTab = '007'
+               AtuPrcVend( (cAliasDA0)->B1_COD, 0 , (cAliasDA0)->B1_GRTRIB, (cAliasDA0)->B1_ORIGEM,;
+                           (cAliasDA0)->DA1_PRCVEN, (cAliasDA0)->DA1REC, (cAliasDA0)->B1_POSIPI, (cAliasDA0)->B1_PICM )
+            Else
+               AtuPrcVend( (cAliasDA0)->B1_COD, (cAliasDA0)->B1_IPI, (cAliasDA0)->B1_GRTRIB, (cAliasDA0)->B1_ORIGEM,;
+                           (cAliasDA0)->DA1_PRCVEN, (cAliasDA0)->DA1REC, (cAliasDA0)->B1_POSIPI, (cAliasDA0)->B1_PICM )
+            Endif
             (cAliasDA0)->( DbSkip() )
 
         EndDo
