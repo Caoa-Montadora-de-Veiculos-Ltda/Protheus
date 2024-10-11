@@ -50,11 +50,14 @@ Begin Sequence
 	//_cChave := encode64( allTrim( _cUser ) + ":" + allTrim( _cPass ) )    
 	_cUser 	:= AllTrim( superGetMv( "CAOA_AUT1A"	, , "USER_TOTVS"	) )	// Usuario para autenticacao no WS 
 	_cPass 	:= AllTrim( superGetMv( "CAOA_AUT1B"	, , "@IntcaoaSA1!2024!"	) )	// Senha para autenticao no WS 
-	If Empty(_cUser) .Or. Empty(_cPass) .Or. Valtype(_cAuthorization) <> "C"
+
+	If Valtype(_cUser) <> "C"  .Or.  ValType(_cPass) <> "C"  .Or. Valtype(_cAuthorization) <> "C"
+		_aRet := {302,"Nao Autorizado [Parametros]"}
+	ElseIf Empty(_cUser) .Or. Empty(_cPass) 
 		_aRet := {302,"Nao Autorizado [Parametros]"}
 	Else
-		 _cChave := _cUser+":"+_cPass
-		If _cChave == Decode64(_cAuthorization)
+		_cChave := _cUser+":"+_cPass
+		If  _cChave == Decode64(_cAuthorization)
 			_oJson := JsonObject():new()
    	 		_oJson:fromJson(DecodeUTF8(Self:GetContent(,.T.)))  //Correto
 			//    _cJson       := Self:GetContent(,.T.)

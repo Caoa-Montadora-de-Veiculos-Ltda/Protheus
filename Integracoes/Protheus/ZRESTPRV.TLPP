@@ -579,7 +579,7 @@ Begin Sequence
     //caso valide tudo passar para verdadeiso
 	_lRet := .T.
 End Sequence 
-If Select((_cAliasPesq)) <> 0
+If !Empty(_cAliasPesq) .And. Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif 
@@ -611,7 +611,7 @@ Local _nValTab := 0
 		VVP->((_cAliasTab)->NREGVVP)
 		_nValTab := VVP->VVP_VALTAB
 	Endif 
-If Select((_cAliasTab)) <> 0
+If !Empty(_cAliasTab) .And. Select((_cAliasTab)) <> 0
 	(_cAliasTab)->(DbCloseArea())
 	Ferase(_cAliasTab+GetDBExtension())
 Endif 
@@ -695,7 +695,7 @@ Begin Sequence
 	Endif
 	_lRet := .T.
 End Sequence
-If Select((_cAliasPesq)) <> 0
+If !Empty(_cAliasPesq) .And. Select((_cAliasPesq)) <> 0
 	(_cAliasPesq)->(DbCloseArea())
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif 

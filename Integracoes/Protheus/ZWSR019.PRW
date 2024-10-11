@@ -40,7 +40,6 @@ Local _cEmpFil
 Local _cResp	
 Local _cUser 	
 Local _cPass 	
-Local _nPos
 
 Begin Sequence
 
@@ -56,32 +55,24 @@ Begin Sequence
 	_cUser 	:= AllTrim( superGetMv( "CAOA_RES01"	, , "USER_TOTVS"	) )	// Usuario para autenticacao no WS 
 	_cPass 	:= AllTrim( superGetMv( "CAOA_RES02"	, , "@IntcaoaSA1!2024!"	) )	// Senha para autenticao no WS 
 	
-	If Empty(_cUser) .Or. Empty(_cPass)
-	
+	If Valtype(_cUser) <> "C"  .Or.  ValType(_cPass) <> "C"  .Or. Valtype(_cAuthorization) <> "C"
 		_aRet := {302,"Nao Autorizado [Parametros]"}
-	
+	ElseIf Empty(_cUser) .Or. Empty(_cPass) 
+		_aRet := {302,"Nao Autorizado [Parametros]"}
 	Else
-	
 		_cChave := _cUser+":"+_cPass
-	
-		If _cChave == Decode64(_cAuthorization)
-	
+		If  _cChave == Decode64(_cAuthorization)
 			_oJson := JsonObject():new()
    	 		_oJson:fromJson(DecodeUTF8(Self:GetContent(,.T.)))  //Correto
 			//    _cJson       := Self:GetContent(,.T.)
 			_aRet := U_ZRESTESL(@_oJson, _cEmpFil, _cResp) // _aRet := U_ZRESTSA1(@_oJson, _cEmpFil, _cResp)
-	
 			//Erro no programa
   		Else 
-
 			_aRet := {302,"Nao Autorizado"}
-
 		Endif
-
 	Endif
 	
 	If ValType(_aRet) <> "A" .Or. Len(_aRet) == 0 
-
 		//SetRestFault(999,"Problemas em relação ao retorno Rest, verificar com administrador !")
 		_oJsonRet := JsonObject():new()
 		_oJsonRet['Code'] 		:= 999
@@ -91,25 +82,18 @@ Begin Sequence
 
 	EndIf
 
-	If Len(_aRet) > 2//_aRet[1][1] == 100
-		_oJsonRet := JsonObject():new()
-		For _nPos := 1 to len(_aRet)
-			_oJsonRet[_aRet[_nPos,2]]	:= _aRet[_nPos,3] // cria o retorno com as chaves e os resultados
-		Next
+	If _aRet[1] == 100
 		//SetRestFault(_aRet[1],_aRet[2])
-		//_cJSONRet := '{"Orçamento":"' + VS1->VS1_NUMORC + '"'+'}'
-		//::SetResponse( cJSONRet )
-
-		// _oJsonRet['Code'] 		  := _aRet[1]
-		// _oJsonRet['Message']		  := _aRet[2]
-		// _oJsonRet['cdmodvei'] 	  := _aRet[3] // cdmodvei
-		// _oJsonRet['cdsegmod'] 	  := _aRet[4] // cdsegmod
-		// _oJsonRet['anofabricacao'] := _aRet[5] // anofabricacao
-		// _oJsonRet['anomodelo'] 	  := _aRet[6] // anomodelo
-		// _oJsonRet['saldoestoque']  := _aRet[7] // saldoestoque
-
-		::SetResponse( _oJsonRet:ToJson() )
-
+		If Len(_aRet) < 3
+			_oJsonRet := JsonObject():new()
+			_oJsonRet['Code'] 		:= 999
+			_oJsonRet['Message']	:= "Problemas com retorno, montagem de campos retorno"
+			::SetResponse( _oJsonRet:ToJson() )
+			Break
+		Endif 
+		_oJsonRet := JsonObject():new()
+		_oJsonRet := _aRet[3]
+		::SetResponse( _oJsonRet )
 	Else
 
 		//SetRestFault(_aRet[1],_aRet[2])
@@ -119,15 +103,6 @@ Begin Sequence
 		::SetResponse( _oJsonRet:ToJson() )
 
 	Endif
-
-	/*
-	_oJsonRet := Nil
-	_oJsonRet := JsonObject():new()
-   	_oJsonRet['Propriedade1'] := EncodeUTF8("Retorno 1", "cp1252") 
-   	_oJsonRet['Propriedade2'] := 10 
-   	_oJsonRet['Propriedade3'] := .T.
-	::SetResponse(_oJsonRet:toJSON())
-	*/
 
 End Sequence
 FreeObj(_oJson)

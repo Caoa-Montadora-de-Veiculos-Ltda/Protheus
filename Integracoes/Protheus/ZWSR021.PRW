@@ -51,19 +51,23 @@ Begin Sequence
 	_cUser 			:= AllTrim( superGetMv( "CAOA_RES01"	, , "USER_TOTVS"	) )		// Usuario para autenticacao no WS 
 	_cPass 			:= AllTrim( superGetMv( "CAOA_RES02"	, , "@IntcaoaSA1!2024!"	) )	// Senha para autenticao no WS 
 	
-	If Empty(_cUser) .Or. Empty(_cPass)
+	If Valtype(_cUser) <> "C"  .Or.  ValType(_cPass) <> "C"  .Or. Valtype(_cAuthorization) <> "C"
+		_aRet := {302,"Nao Autorizado [Parametros]"}
+	ElseIf Empty(_cUser) .Or. Empty(_cPass) 
 		_aRet := {302,"Nao Autorizado [Parametros]"}
 	Else
 		_cChave := _cUser+":"+_cPass
-		If _cChave == Decode64(_cAuthorization)
+		If  _cChave == Decode64(_cAuthorization)
 			_oJson := JsonObject():new()
-   	 		_oJson:fromJson(DecodeUTF8(Self:GetContent(,.T.)))
+   	 		_oJson:fromJson(DecodeUTF8(Self:GetContent(,.T.)))  //Correto
+			//    _cJson       := Self:GetContent(,.T.)
 			_aRet := U_ZRESTVLR(@_oJson, _cEmpFil, _cResp)
+			//Erro no programa
   		Else 
 			_aRet := {302,"Nao Autorizado"}
 		Endif
 	Endif
-	
+
 	If ValType(_aRet) <> "A" .Or. Len(_aRet) == 0 
 		_oJsonRet := JsonObject():new()
 		_oJsonRet['Code'] 		:= 999
