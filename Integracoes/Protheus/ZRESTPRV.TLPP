@@ -343,7 +343,7 @@ Begin Sequence
 	_lRet := .T.
     //Executa a inclusão do pedido e gravação da Previsão
 	If _lRet 
-		StartJob("U_ZFT030GP",GetEnvServer(),.T., _cPedCli, _cCgc, _aCabSC5, _aItens, _nOper,  cEmpAnt, cFilAnt)
+		StartJob("U_ZFT030GP",GetEnvServer(),.F., _cPedCli, _cCgc, _aCabSC5, _aItens, _nOper,  cEmpAnt, cFilAnt)
 	Endif
 End Sequence
 //Mensagens extraidas no processo, após gravar no log

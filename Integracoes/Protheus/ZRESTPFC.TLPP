@@ -318,7 +318,7 @@ Static Function ZRESTPFCMsg()
 Local _aRet := {}	As Array
 Begin Sequence
 	//			Nr Ret	Tags Json			Item	Obrig	Descrição	
-	Aadd(_aRet, {100,	"ok"				, .F.	, .F., 	"Item rcebido com sucesso"})
+	Aadd(_aRet, {100,	"ok"				, .F.	, .F., 	"Item rcebido sendo processado"})
 	Aadd(_aRet, {101,	"ok2"				, .F.	, .F., 	"Item gravado com sucesso"})
 
 	Aadd(_aRet, {120,	"liberado"			, .F.	, .F., 	"Item liberado para fatuamento"})

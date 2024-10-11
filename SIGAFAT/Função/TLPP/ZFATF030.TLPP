@@ -224,7 +224,8 @@ If Len(_aItemRet) == 0
 Endif
 //Carregar informações dos documentos a serem enviados
 _oJsonRet := U_ZFT030CT( _aCab, _aItemRet, _lJob)
-ZWSRENVPOS( _oJsonRet, _lJob)
+//DAC*** somente liberar quando Autoware passar a API
+//ZWSRENVPOS( _oJsonRet, _lJob)
 Return Nil	
 
 

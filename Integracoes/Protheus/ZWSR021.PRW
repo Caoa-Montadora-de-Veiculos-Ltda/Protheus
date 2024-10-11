@@ -40,7 +40,6 @@ Local _cEmpFil
 Local _cResp	
 Local _cUser 	
 Local _cPass 	
-Local _nPos
 
 Begin Sequence
     Conout("ZWSR021 - Integração Autoware - Consulta Valor do Modelo - Inicio "+DtoC(date())+" "+Time())
@@ -76,12 +75,18 @@ Begin Sequence
 		Break
 	EndIf
 
-	If Len(_aRet) > 2
+	If _aRet[1] == 100
+		//SetRestFault(_aRet[1],_aRet[2])
+		If Len(_aRet) < 3
+			_oJsonRet := JsonObject():new()
+			_oJsonRet['Code'] 		:= 999
+			_oJsonRet['Message']	:= "Problemas com retorno, montagem de campos retorno"
+			::SetResponse( _oJsonRet:ToJson() )
+			Break
+		Endif 
 		_oJsonRet := JsonObject():new()
-		For _nPos := 1 to len(_aRet)
-			_oJsonRet[_aRet[_nPos,2]]	:= _aRet[_nPos,3] // cria o retorno com as chaves e os resultados
-		Next
-		::SetResponse( _oJsonRet:ToJson() )
+		_oJsonRet := _aRet[3]
+		::SetResponse( _oJsonRet )
 	Else
 		_oJsonRet := JsonObject():new()
 		_oJsonRet['Code'] 		:= _aRet[1]

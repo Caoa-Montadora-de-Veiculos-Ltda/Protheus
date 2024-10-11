@@ -29,7 +29,6 @@ Default _cResp   := ""
 
 Begin Sequence
 	Conout( "INICIADO FUNCIONALIDADE ZRESTESL em " + DtoC(Date()) + " as " + Time() )
-	_aMsg 	 := {}
 	_aRetMsg := ZRESTESLMsg()   //Carregar tabela com erros
 	_aMsgRet := {}				//carregar msg de errp
 
@@ -167,6 +166,7 @@ Begin Sequence
 			ON SBF.%notDel% 
 			AND LTRIM(RTRIM(SBF.BF_NUMSERI)) = LTRIM(RTRIM(VV1.VV1_CHASSI))
 		WHERE 	VV1.%notDel%
+			AND VV1.VV1_FILIAL 		= %xFilial:VV1%
 			AND	VV1.VV1_MODVEI 		= %Exp:_cModelo%
 			AND VV1.VV1_SEGMOD 		= %Exp:_cSegmento% 
 			AND VV1.VV1_FABMOD 		= %Exp:_cFabMod% 
@@ -228,62 +228,6 @@ Begin Sequence
 	_lRet := .T.
 End Sequence 
 Return _lRet
-
-/*/{Protheus.doc} ValidOJson
-Valida os Itens do oJson
-@author Victor Gisoldi Matos
-@since 18/09/2024
-@version 1.0
-@param nCode, numeric, descricao
-@param cMsg, characters, descricao
-@type function
-/*/
-Static Function ValidOJson( _oJson , _cTipo )
-
-Local _lRet		As Logical
-Local _aMens 	As Array
-
-//Tem a função de validar os itens obrigatórios neste caso o vabeçalho ZWSRFUN.PRW
-_aMens	:= U_ZVLDOBRJ( _oJson , _aRetMsg , /*_lItem*/ , /*_lTodos*/ )
-_lRet	:= .T.
-
-If Len(_aMens) > 0
-  	_aMsgRet 	:= _aMens
-	_lRet		:= .F.	
-Endif
-
-Return _lRet
-
-/*/{Protheus.doc} ZRETJson
-//Retorna Numero do Erro 
-@author DAC
-@since 12/11/2021
-@version undefined
-@param _aMsg, array, descrição
-@type function
-/*/
-Static Function ZRETJson(_cRefMsg, _cMsgRet, _cVar)
-Local _nRet := 999
-Local _nPos
-Default _cMsgRet := ""
-Begin Sequence
-	If Type("_aRetMsg") <> "A"
-		Private _aRetMsg := {}
-	EndIf
-	If Type("_aMsgRet") <> "A"
-		Private _aMsgRet := {}
-	EndIf
-  	_nPos := Ascan(_aRetMsg,{|x| x[2] == _cRefMsg})
-	If _nPos > 0 
-		_nRet := _aRetMsg[_nPos,1]
-	EndIf	
-	If Empty(_cMsgRet) .and. Len(_aRetMsg[_nPos]) >= 5 .and. ValType(_aRetMsg[_nPos,5]) == "C"
-		_cMsgRet := _aRetMsg[_nPos,5]+" !"
-	Endif	
-	Aadd(_aMsgRet, {_nRet,_cMsgRet, _cVar})
-End Sequence
-Return _nRet
-
 
 /*/{Protheus.doc} VldMod
 Valida de o codigo de modelo recebido no Json é valido
@@ -364,6 +308,62 @@ Endif
 Return _lRet
 
 
+/*/{Protheus.doc} ValidOJson
+Valida os Itens do oJson
+@author Victor Gisoldi Matos
+@since 18/09/2024
+@version 1.0
+@param nCode, numeric, descricao
+@param cMsg, characters, descricao
+@type function
+/*/
+Static Function ValidOJson( _oJson , _cTipo )
+
+Local _lRet		As Logical
+Local _aMens 	As Array
+
+//Tem a função de validar os itens obrigatórios neste caso o vabeçalho ZWSRFUN.PRW
+_aMens	:= U_ZVLDOBRJ( _oJson , _aRetMsg , /*_lItem*/ , /*_lTodos*/ )
+_lRet	:= .T.
+
+If Len(_aMens) > 0
+  	_aMsgRet 	:= _aMens
+	_lRet		:= .F.	
+Endif
+
+Return _lRet
+
+/*/{Protheus.doc} ZRETJson
+//Retorna Numero do Erro 
+@author DAC
+@since 12/11/2021
+@version undefined
+@param _aMsg, array, descrição
+@type function
+/*/
+Static Function ZRETJson(_cRefMsg, _cMsgRet, _cVar)
+Local _nRet := 999
+Local _nPos
+Default _cMsgRet := ""
+Begin Sequence
+	If Type("_aRetMsg") <> "A"
+		Private _aRetMsg := {}
+	EndIf
+	If Type("_aMsgRet") <> "A"
+		Private _aMsgRet := {}
+	EndIf
+  	_nPos := Ascan(_aRetMsg,{|x| x[2] == _cRefMsg})
+	If _nPos > 0 
+		_nRet := _aRetMsg[_nPos,1]
+	EndIf	
+	If Empty(_cMsgRet) .and. Len(_aRetMsg[_nPos]) >= 5 .and. ValType(_aRetMsg[_nPos,5]) == "C"
+		_cMsgRet := _aRetMsg[_nPos,5]+" !"
+	Endif	
+	Aadd(_aMsgRet, {_nRet,_cMsgRet, _cVar})
+End Sequence
+Return _nRet
+
+
 Static Function ZRESTESLMsg()
 
 Local _aRet As Array
@@ -386,9 +386,9 @@ Begin Sequence
 	Aadd(_aRet, { 403	 , "anomodelo" 	   	, .F.  , .T.   , "Ano de Fabricacao com problemas"	} )
 	Aadd(_aRet, { 404	 , "veiculo" 	   	, .F.  , .T.   , "Veiculo nao localizado"	 		} )
 
-	Aadd(_aRet, {500	,"conexao"			, .F.	, .T., 	"Problemas relativo a conexão"		})
+	Aadd(_aRet, { 500	,"conexao"			, .F.	, .T., 	"Problemas relativo a conexão"		})
 
-	Aadd(_aRet, {600	,"erropad"			, .F.	, .T., 	"Nao foi possivel atualizar Cliente"})
+	Aadd(_aRet, { 600	,"erropad"			, .F.	, .T., 	"Nao foi possivel atualizar Cliente"})
 
 End Sequence
 
