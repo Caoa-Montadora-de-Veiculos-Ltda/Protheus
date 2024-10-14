@@ -4390,7 +4390,7 @@ Descricao / Objetivo:   Ordem de Produção
 */
 
 Static Function fSAFX108()
-
+/*
 	cQ := CRLF + " SELECT DISTINCT C2_FILIAL,C2_NUM,C2_ITEM,C2_SEQUEN,C2_PRODUTO ,D3_CUSTO1,C2_EMISSAO,C2_DATPRI,C2_DATPRF,C2_QUANT,C2_QUJE, D3_QUANT,D3_CUSTOT FROM ( "
 	cQ += CRLF + "	SELECT  "
 	cQ += CRLF + "		(SELECT nvl(SUM(SD3C.D3_CUSTO1),0)*100 D3_CUSTO1  "
@@ -4437,7 +4437,7 @@ Static Function fSAFX108()
 	cQ += CRLF + "			AND SD3.D3_TIPO     IN  ('PA' ,'PI')
 
 	cQ += CRLF + ")	ORDER BY C2_FILIAL,C2_NUM,C2_ITEM,C2_SEQUEN "
-
+*/
 	If lDebug
 		MemoWrite(cLocDest+cTab+".txt",cQ)
 	EndIf
