@@ -91,6 +91,13 @@ If AllTrim( FunName() ) $ "ACDV110|WMSV090|WMSV095"
             cProduto := AllTrim( Substr( AllTrim( cCodBar ),11,13 ) )
             nQtdEmb := Val( Substr( AllTrim( cCodBar ),24,06 ) )
 
+        //ETIQUETA QrCode HYUNDAI COM 42 CARACTERES E ETIQUETAS COMEÇANDO COM XF - XK - XT - BS
+        Case ( Len( AllTrim( cCodBar ) ) == 42 ) .And. Substr( AllTrim( cCodBar ),1,2 ) $ "XF|XK|XT|BS"  
+            
+            // PRODUTO RECEBE DA POSIÇÃO 11 A 24
+            cProduto := AllTrim( Substr( AllTrim( cCodBar ),11,14 ) )
+            nQtdEmb := Val( Substr( AllTrim( cCodBar ),25,08 ) )
+
         //ETIQUETA NACIONAIS, CONTEM ESPAÇO NA SUA COMPOSIÇÃO, SENDO PRODUTO ANTES DO ESPAÇO E QTD APÓS ESPAÇO
         Case At( " ", AllTrim( cCodBar ) ) > 0
             
