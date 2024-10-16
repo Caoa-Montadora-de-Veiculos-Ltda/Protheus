@@ -4438,6 +4438,46 @@ Static Function fSAFX108()
 
 	cQ += CRLF + ")	ORDER BY C2_FILIAL,C2_NUM,C2_ITEM,C2_SEQUEN "
 */
+
+	cQ += CRLF + "	SELECT * 
+	cQ += CRLF + "	  FROM ( SELECT SC2.C2_FILIAL, SC2.C2_NUM, SC2.C2_ITEM, SC2.C2_SEQUEN, SC2.C2_EMISSAO, SC2.C2_PRODUTO, SC2.C2_QUANT, SC2.C2_QUJE, 
+	cQ += CRLF + "	                SD3.D3_FILIAL, SD3.D3_COD, SD3.D3_TIPO, SD3.D3_UM, SD3.D3_CF, SD3.D3_OP,
+	cQ += CRLF + "	                SUM(SD3.D3_QUANT ) D3_QUANT,         
+	cQ += CRLF + "	                SUM(SD3.D3_CUSTO1) D3_CUSTO1, 
+	cQ += CRLF + "	                (SELECT nvl(SUM(SD3T.D3_CUSTO1),0) * 100 AS  D3_CUSTO1   
+	cQ += CRLF + "	                   FROM SD3010 SD3T   
+	cQ += CRLF + "	                  WHERE SD3T.D_E_L_E_T_ = ' '   
+	cQ += CRLF + "	                    AND SD3T.D3_FILIAL  = SD3.D3_FILIAL " 
+	cQ += CRLF + "	                    AND SD3T.D3_OP      = SD3.D3_OP "    
+	cQ += CRLF + "	                    AND SD3T.D3_OP      <> ' '  
+	cQ += CRLF + "	                    AND SD3T.D3_CF     NOT IN  ('PR0','PR1' )  
+	cQ += CRLF + "	                    AND SD3T.D3_ESTORNO <> 'S' ) as D3_CUSTOT 
+	cQ += CRLF + "	           FROM SD3010 SD3 
+	cQ += CRLF + "	           LEFT JOIN SC2010 SC2
+	cQ += CRLF + "	             ON SC2.C2_FILIAL   = SD3.D3_FILIAL      
+	cQ += CRLF + "	            AND SC2.C2_NUM||SC2.C2_ITEM||SC2.C2_SEQUEN = SD3.D3_OP                            
+	cQ += CRLF + "	            AND SC2.D_E_L_E_T_  = ' '          
+	cQ += CRLF + "	          WHERE SD3.D3_FILIAL   BETWEEN '" + cFilDe + "' AND '" + cFilAte + "' "
+	cQ += CRLF + "	            AND SD3.D3_EMISSAO  BETWEEN '" + dTos( dDataIni ) + "' AND '" + dTos( dDataFim ) + "' "
+	cQ += CRLF + "	            AND SD3.D3_ESTORNO  <> 'S'                           
+	cQ += CRLF + "	            AND ((SD3.D3_CF     IN ('PR0','PR1' )      AND SD3.D3_TIPO IN  ('PA')) 
+	cQ += CRLF + "	             OR  (SD3.D3_CF     IN ('PR0','PR1','RE1') AND SD3.D3_TIPO IN  ('PI')) )
+	cQ += CRLF + "	            AND SD3.D_E_L_E_T_  = ' '           
+//	cQ += CRLF + "	            AND SD3.D3_OP       LIKE '36481701%' "  // TIRAR Utilizado para Debug                    
+	cQ += CRLF + "	          GROUP BY SC2.C2_FILIAL, SC2.C2_NUM, SC2.C2_ITEM, SC2.C2_SEQUEN, SC2.C2_EMISSAO, SC2.C2_PRODUTO, SC2.C2_QUANT, SC2.C2_QUJE,
+	cQ += CRLF + "	                   SD3.D3_FILIAL, SD3.D3_COD, SD3.D3_TIPO, SD3.D3_UM, SD3.D3_CF, SD3.D3_OP
+	cQ += CRLF + "	       ) TRB  
+	cQ += CRLF + "	 OUTER APPLY ( SELECT MIN(SD3A.D3_EMISSAO) C2_DATPRI, MAX(SD3A.D3_EMISSAO) C2_DATPRF
+	cQ += CRLF + "	                FROM SD3010 SD3A
+	cQ += CRLF + "	               WHERE SD3A.D3_FILIAL   = TRB.D3_FILIAL
+	cQ += CRLF + "	                 AND SD3A.D3_OP       = TRB.D3_OP                  
+	cQ += CRLF + "	                 AND SD3A.D3_COD      = TRB.D3_COD   
+	cQ += CRLF + "	                 AND SD3A.D3_EMISSAO <= '" + dTos( dDataFim ) + "' "
+	cQ += CRLF + "	                 AND SD3A.D3_ESTORNO <> 'S'
+	cQ += CRLF + "	                 AND SD3A.D_E_L_E_T_  = ' '               
+	cQ += CRLF + "	             ) SC2A
+	cQ += CRLF + "	  ORDER BY C2_FILIAL, C2_NUM, C2_ITEM, C2_SEQUEN
+  
 	If lDebug
 		MemoWrite(cLocDest+cTab+".txt",cQ)
 	EndIf
@@ -4530,7 +4570,7 @@ Descricao / Objetivo:   Item da Ordem de Produção
 
 Static Function fSAFX109()
 	
-
+/*
 	cQ := CRLF + " SELECT SD3.R_E_C_N_O_ SD3_RECNO, SC2.R_E_C_N_O_ SC2_RECNO, "
 	cQ += CRLF + "        SD3.D3_FILIAL, "
 	cQ += CRLF + "        SC2.C2_EMISSAO, "
@@ -4571,6 +4611,34 @@ Static Function fSAFX109()
 	cQ += CRLF + "						AND SD3A.D3_EMISSAO <= '" + dTos(dDataFim) + "' ) "
 
 	cQ += CRLF + "  ORDER BY SC2.C2_FILIAL,SC2.C2_EMISSAO,SC2.C2_NUM ,SD3.D3_COD "
+	*/
+
+	cQ :=        " 	SELECT SD3.R_E_C_N_O_ SD3_RECNO, SC2.R_E_C_N_O_ SC2_RECNO, SD3.D3_FILIAL, SC2.C2_EMISSAO, SC2.C2_NUM, SC2.C2_ITEM, SC2.C2_SEQUEN, SD3.D3_OP, SD3.D3_COD, 
+	cQ += CRLF + "        SD3.D3_EMISSAO, SD3.D3_QUANT, SD3.D3_CUSTO1, CAST(SD3.D3_CUSTO1/SD3.D3_QUANT AS DECIMAL( 8,2)) AS CUSTO_UNI, SC2.C2_PRODUTO 
+	cQ += CRLF + "   FROM " + RetSqlName("SD3") + " SD3 "
+
+	cQ += CRLF + "   LEFT JOIN " + RetSqlName("SC2") + " SC2 "
+	cQ += CRLF + "     ON SC2.C2_FILIAL   = SD3.D3_FILIAL      
+	cQ += CRLF + "    AND SC2.C2_NUM||SC2.C2_ITEM||SC2.C2_SEQUEN = SD3.D3_OP                            
+	cQ += CRLF + "    AND SC2.D_E_L_E_T_  = ' '   
+
+	cQ += CRLF + "  WHERE SD3.D3_FILIAL   BETWEEN '" + cFilDe + "' AND '" + cFilAte + "' "
+	cQ += CRLF + "    AND SD3.D3_EMISSAO  BETWEEN '" + dTos( dDataIni ) + "' AND '" + dTos( dDataFim ) + "' "
+	cQ += CRLF + "    AND SD3.D3_ESTORNO  <> 'S'                           
+	cQ += CRLF + "    AND (SD3.D3_CF       NOT IN ('PR0','PR1' )
+	cQ += CRLF + "     OR (SD3.D3_CF       NOT IN ('RE1' ) AND SD3.D3_TIPO IN  ('PI')) )	
+	cQ += CRLF + "    AND SD3.D_E_L_E_T_  = ' '           
+	cQ += CRLF + "    AND SUBSTR(SD3.D3_OP,1,6) = ( SELECT DISTINCT SUBSTR(SD3A.D3_OP,1,6)
+	cQ += CRLF + "                                    FROM " + RetSqlName("SD3") + " SD3A "
+	cQ += CRLF + "	                                 WHERE SD3A.D3_FILIAL   BETWEEN '" + cFilDe + "' AND '" + cFilAte + "' "
+	cQ += CRLF + "	                                   AND SD3A.D3_EMISSAO  BETWEEN '" + dTos( dDataIni ) + "' AND '" + dTos( dDataFim ) + "' "
+	cQ += CRLF + "	                                   AND SD3A.D3_ESTORNO  <> 'S'                           
+	cQ += CRLF + "	                                   AND ((SD3A.D3_CF     IN ('PR0','PR1' )      AND SD3A.D3_TIPO IN  ('PA')) 
+	cQ += CRLF + "	                                    OR  (SD3A.D3_CF     IN ('PR0','PR1','RE1') AND SD3A.D3_TIPO IN  ('PI')) )
+//	cQ += CRLF + "	                                   AND SD3A.D3_OP       LIKE '36481701%' "  // TIRAR Utilizado para Debug                    
+	cQ += CRLF + "                                     AND SD3A.D_E_L_E_T_  = ' ' )
+
+	cQ += CRLF + "  ORDER BY SC2.C2_FILIAL, SC2.C2_EMISSAO, SC2.C2_NUM, SD3.D3_COD
 	
 	If lDebug
 		MemoWrite(cLocDest+cTab+".txt",cQ)
