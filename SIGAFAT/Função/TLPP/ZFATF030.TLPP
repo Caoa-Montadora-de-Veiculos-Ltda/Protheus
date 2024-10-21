@@ -1347,3 +1347,154 @@ Return(nQtdLib)
 
 
 
+
+/*
+//==========================================================
+//funcionalidade para gravar rmk
+       Aadd(aLinha,{"VRK_ITEPED"   ,cItem                                                      ,Nil})
+        Aadd(aLinha,{"VRK_CODMAR"   ,cWSMarca                                                   ,Nil})
+        Aadd(aLinha,{"VRK_GRUMOD"   ,cWSLinha                                                   ,Nil})
+        Aadd(aLinha,{"VRK_MODVEI"   ,cWSModelo                                                  ,Nil})
+        Aadd(aLinha,{"VRK_SEGMOD"   ,cWSModCom                                                  ,Nil})
+        Aadd(aLinha,{"VRK_FABMOD"   ,cWSAnoF+cWSAnoM                                            ,Nil})
+        Aadd(aLinha,{"VRK_COREXT"   ,cWSCorExt                                                  ,Nil})
+        Aadd(aLinha,{"VRK_CORINT"   ,cWSCorInt                                                  ,Nil})  
+        Aadd(aLinha,{"B1COD"        ,Alltrim(cWSModelo)+Alltrim(cWSModCom)                      ,Nil})
+
+        IF !Empty(cOper1)
+            cTesFinal := MaTesInt(2,cOper1,cCodCli,cLjCli,"C",_cProduto,"C6_TES") 
+            Conout("[ CMVAUT01 ] - Processando Pedido: " + AllTrim(cWSPedido) +" - Primeira TES Inteligente - Operacao 01 -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) +" - " + DTOC(dDATABASE) + " - " + TIME() )
+            IF !Empty(cTesFinal)
+                AAdd(aLinha,{"VRK_OPER" ,cOper1 ,Nil})
+                bTem       := .T.
+            EndIf
+        EndIf
+        
+        IF !Empty(cOper2) .And.  !bTem
+              cTesFinal := MaTesInt(2,cOper2,cCodCli,cLjCli,"C",_cProduto,"C6_TES")
+              Conout("[ CMVAUT01 ] - Processando Pedido: " + AllTrim(cWSPedido) +" - Segunda TES Inteligente - Operacao 02 -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) +" - " + DTOC(dDATABASE) + " - " + TIME() )
+              IF !Empty(cTesFinal)
+                 AAdd(aLinha,{"VRK_OPER"    ,cOper2 ,Nil})
+                 bTem       := .T.
+              EndIf
+        EndIf
+
+        AAdd(aLinha,{"VRK_CODTES"   ,If(!Empty(Alltrim(cTesFinal)),cTesFinal,cTes)  ,Nil})
+        Aadd(aLinha,{"VRK_XID"      ,nWSID                                          ,Nil})
+        cItem := SOMA1(cItem) 
+        Aadd(aItens, aLinha)
+        
+    Next nI
+//Next nX
+
+// Montando a Data de Emisso
+dEmis := Ctod(cWSDtPed)       
+
+Aadd(aCabec,{"VRJ_FILIAL"   ,cWsFILIAL  ,Nil})
+Aadd(aCabec,{"VRJ_PEDCOM"   ,cWSPedido  ,Nil})
+Aadd(aCabec,{"VRJ_TIPVEN"   ,cWSTipoPed ,Nil})
+Aadd(aCabec,{"VRJ_FORPAG"   ,cWsPag     ,Nil})
+Aadd(aCabec,{"VRJ_CODCLI"   ,cCodCli    ,Nil})
+Aadd(aCabec,{"VRJ_LOJA"     ,cLjCli     ,Nil})
+Aadd(aCabec,{"VRJ_DATDIG"   ,dEmis      ,Nil})    
+Aadd(aCabec,{"VRJ_NATURE"   ,cWSNat     ,Nil})
+//Aadd(aCabec,{"VRJ_OBSPED" ,cWSObserv  ,Nil})
+
+Conout("[ CMVAUT01 ] - Pedido: " + AllTrim(cWSPedido) + " - Iniciando gravacao do pedido - INICIO -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) + " - " + DTOC(dDATABASE) + " - " + TIME() )
+
+//If !zGravaPed(aCabec, aItens )
+ */
+
+
+
+/*
+=====================================================================================
+Programa.:              zGravaPed
+Autor....:              CAOA - Projeto Implementação Montadora
+Data.....:              
+Descricao / Objetivo:   Grava o pedido
+Doc. Origem:            
+Solicitante:            
+Uso......:              
+Obs......:
+=====================================================================================
+*/
+/*
+Static Function ZzGravaWRK(  aCpoVRJ, aCpoVRK )
+
+Local _aRotAnt			:= aRotina
+Local lRet              := .T.
+Local aCabPed           := {}
+Local aItePed           := {}
+Local cQuery            := ""
+Local cTmpAlias         := GetNextAlias()
+Local aArea             := GetArea()
+Local aLinha            := {}
+Local cProduto          := ""
+Local cCorInt           := ""
+Local cCorExt           := ""
+Local cNumPed           := ""
+Local cStartPath        := GetSrvProfString("Startpath","\")
+Local cLog              := ""
+Local cPedAuto          := ""
+
+Private _oModel      
+Private oModelVRK
+Private aRotina         := {}
+Private aHeader         := {}
+Private aCols           := {}
+Private N               := 1
+Private BREFRESH        := { || .T. }
+Private ASAIDACONSOLE   := {}
+Private lMsHelpAuto     := .T.
+Private lMsErroAuto     := .F.
+
+_oModel  	:= FWLoadModel('VEIA060')
+aRotina 	:= FWLoadMenuDef('VEIA060')
+
+Begin Transaction 
+	FWMVCRotAuto(_oModel				,; //Model
+				"VRJ"					,; //Alias
+				MODEL_OPERATION_INSERT	,; //Operacao
+				{{'MODEL_VRJ', aCpoVRJ},;
+				 {"MODEL_VRK", aCpoVRK}})
+	If lMsErroAuto .And. Upper(Alltrim(VRJ->VRJ_PEDCOM)) != Upper(Alltrim(aCpoVRJ[2][2]))
+		aErro   := oModel:GetErrorMessage()
+		cErro +=  "Id do formulario de origem:" + ' [' + AllToChar( aErro[1]  ) + ']'+CRLF 
+		cErro +=  "Id do campo de origem:     " + ' [' + AllToChar( aErro[2]  ) + ']'+CRLF
+		cErro +=  "Id do formulario de erro:  " + ' [' + AllToChar( aErro[3]  ) + ']'+CRLF
+		cErro +=  "Id do campo de erro:       " + ' [' + AllToChar( aErro[4]  ) + ']'+CRLF
+		cErro +=  "Id do erro:                " + ' [' + AllToChar( aErro[5]  ) + ']'+CRLF
+		cErro +=  "Mensagem do erro:          " + ' [' + AllToChar( aErro[6]  ) + ']'+CRLF
+		cErro +=  "Mensagem da solucao:       " + ' [' + AllToChar( aErro[7]  ) + ']'+CRLF
+		cErro +=  "Valor atribuido:           " + ' [' + AllToChar( aErro[8]  ) + ']'+CRLF
+		cErro +=  "Valor anterior:            " + ' [' + AllToChar( aErro[9]  ) + ']'+CRLF
+		lRet := .F.
+        //DisarmTransaction()
+	EndIf
+	oModel:DeActivate()
+    If lMsErroAuto .And. Upper(Alltrim(VRJ->VRJ_PEDCOM)) != Upper(Alltrim(aCpoVRJ[2][2]))
+        aErro   := oModel:GetErrorMessage()
+        cErro +=  "Id do formulario de origem:" + ' [' + AllToChar( aErro[1]  ) + ']'+CRLF 
+        cErro +=  "Id do campo de origem:     " + ' [' + AllToChar( aErro[2]  ) + ']'+CRLF
+        cErro +=  "Id do formulario de erro:  " + ' [' + AllToChar( aErro[3]  ) + ']'+CRLF
+        cErro +=  "Id do campo de erro:       " + ' [' + AllToChar( aErro[4]  ) + ']'+CRLF
+        cErro +=  "Id do erro:                " + ' [' + AllToChar( aErro[5]  ) + ']'+CRLF
+        cErro +=  "Mensagem do erro:          " + ' [' + AllToChar( aErro[6]  ) + ']'+CRLF
+        cErro +=  "Mensagem da solucao:       " + ' [' + AllToChar( aErro[7]  ) + ']'+CRLF
+        cErro +=  "Valor atribuido:           " + ' [' + AllToChar( aErro[8]  ) + ']'+CRLF
+        cErro +=  "Valor anterior:            " + ' [' + AllToChar( aErro[9]  ) + ']'+CRLF
+        lRet := .F.
+        cTipErro := "0"
+        DisarmTransaction()
+	Endif
+    oModel:DeActivate()
+
+End Transaction
+
+Conout("[ CMVAUT01 ] FIM - Transaction -  Empresa: " + Alltrim(FWCodEmp()) + " - Filial : " + AllTrim(FWFilial()) + " - " + DTOC(dDATABASE) + " - " + TIME() )
+
+RestArea(aArea)
+
+Return lRet
+*/
