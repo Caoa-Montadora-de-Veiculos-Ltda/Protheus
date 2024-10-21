@@ -10,13 +10,14 @@
 #INCLUDE "AvPrint.ch"
 #INCLUDE "FWBROWSE.CH"
 #INCLUDE "FWFILTER.CH"
+#Include "FWMVCDef.ch"
 
 #define CRLF chr(13) + chr(10)
 
 /*/{Protheus.doc} ZPECF013
 @param  	
 @author 	CAOA - A.Carlos
-@version  	P12.1.23
+@version  	V.03 
 @since  	28/12/2021
 @return  	NIL
 @obs         
@@ -35,10 +36,12 @@ Default _cPicking	 := ""
 		If !_lRet
 			Return Nil
 		EndIf
-		
+
+		//Início - OneGate001 - nova empresa 90 | HMB
 		IF !( ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) .Or. ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) ) //Empresa 02-Franco da Rocha | 90- HMB
 		    RETURN Nil
 		ENDIF
+		//Fim - OneGate001 - nova empresa 90 | HMB
 
 	Endif
 	FWMsgRun( ,{|| TelaUnit(_cFilPicking, _cPicking, _lConsultaExt) } ,"Carregando dados..." ,"Por favor aguarde...")
@@ -56,7 +59,8 @@ Return
 /*/
 Static Function TelaUnit(_cFilPicking, _cPicking, _lConsultaExt)
 	Local aCoors 		:= FWGetDialogSize( oMainWnd )
-	Local oPanelUp, oFWLayer, oPanelLeft, oRelacVS3 //,oPanelRight , oBrowseLeft, oBrowseRight, oRelacZA5
+	Local oPanelUp, oFWLayer, oPanelLeft, oRelacVS3 
+	//,oPanelRight , oBrowseLeft, oBrowseRight, oRelacZA5
 	//Local _cUsuario		:= AllTrim(SuperGetMV( "CMV_WSR015"  ,,"RG LOG" )) 
     LOCAL nIDBlq := GETMV("CMV_PEC017")
 	
@@ -67,20 +71,11 @@ Static Function TelaUnit(_cFilPicking, _cPicking, _lConsultaExt)
 	Private _aMensAglu	:= {}
 	Private lEditar	    := .T.
 	Private cPerg       := "ZPEC013"
-    Private _oDlg, oBrowseUp
+    Private _oDlg, oBrowseUp,oBrowseLeft
 	Private aFilBrw     := {}
-	/*If (cTmpInv)->OBSCON = ' ' .And. nOpc == 3    //PEDIDO SEPARADO
-		MsgAlert("Este registro esta finalizado, selecione um registro pendente para geração de Picking!")
-		Return
-	EndIf 	
-
-	If lJobAtivo .And. nOpc == 3
-		MsgAlert("Este botão esta desabilitado porque o processamento via Job esta ativo, " + CRLF +;
-				 "solicite ao administrador do sistema a parada do Job para habilitar o processamento" )
-		Return
-	EndIf*/
-
+	//Private oSerialize := fwserialize:new()
 	DbSelectArea("SZK")
+	DbSelectArea("VS3")
 
 	Define MsDialog oDlg Title 'Picking e Itens ' From aCoors[1], aCoors[2] To aCoors[3], aCoors[4] Pixel
 
@@ -120,21 +115,25 @@ Static Function TelaUnit(_cFilPicking, _cPicking, _lConsultaExt)
 	If SZK->(FieldPos("ZK_STATUS")) > 0 
  		oBrowseUp:AddLegend("SZK->ZK_STATUS=='C'"          												,"RED"    ,"Cancelado")
 		oBrowseUp:AddLegend("SZK->ZK_STATUS=='B'"         												,"WHITE"  ,"Bloqueado")
+		//GAP002 DAC 28/07/2023
+		oBrowseUp:AddLegend("SZK->ZK_STATUS=='D'"         												,"ORANGE" ,"Divergência WIS")
 	EndIf
+
 	oBrowseUp:AddLegend("Empty(SZK->ZK_XPICKI)"   	                        							,"GREEN"  ,"Sem Picking")
 	oBrowseUp:AddLegend("!Empty(SZK->ZK_NF) .OR. SZK->ZK_STATUS =='F'"   		                     	,"BLACK"  ,"Faturado")
-	oBrowseUp:AddLegend("Empty(SZK->ZK_NF) .AND. !SZK->ZK_STATUS $ 'B_C_F' .AND. !Empty(SZK->ZK_STREG)"	,"YELLOW" ,"A Faturar") 	
-	oBrowseUp:AddLegend("Empty(SZK->ZK_NF) .AND. !SZK->ZK_STATUS $ 'B_C_F' .AND.  Empty(SZK->ZK_STREG)" 	,"BLUE"   ,"Em Separacao") 	
-	
+
+	//GAP002 DAC 28/07/2023
+	//oBrowseUp:AddLegend("Empty(SZK->ZK_NF) .AND. !SZK->ZK_STATUS $ 'B_C_F' .AND. !Empty(SZK->ZK_STREG)"	,"YELLOW" ,"A Faturar") 	
+	//oBrowseUp:AddLegend("Empty(SZK->ZK_NF) .AND. !SZK->ZK_STATUS $ 'B_C_F' .AND.  Empty(SZK->ZK_STREG)" 	,"BLUE"   ,"Em Separacao") 	
+	oBrowseUp:AddLegend("Empty(SZK->ZK_NF) .AND. !SZK->ZK_STATUS $ 'B_C_F_D' .AND. !Empty(SZK->ZK_STREG)"	,"YELLOW" ,"A Faturar") 	
+	oBrowseUp:AddLegend("Empty(SZK->ZK_NF) .AND. !SZK->ZK_STATUS $ 'B_C_F_D' .AND.  Empty(SZK->ZK_STREG)" 	,"BLUE"   ,"Em Separacao") 	
 	//oBrowseUp:AddLegend("SZK->ZK_OBSCON = 'PEDIDO SEPARADO' .AND. Empty(SZK->ZK_NF) ","YELLOW" ,"A Faturar") 	
 	//DAC USUARIO DO RECEBIMENTO RG LOG
 	//oBrowseUp:AddLegend("Empty(SZK->ZK_NF) .AND. ALLTRIM(SZK->ZK_USURECP) = '"+_cUsuario+"' ","YELLOW" ,"A Faturar") 	
 
     If !_lConsultaExt  //PEC044 DAC 28/06/2023 somnte para consulta
 		oBrowseUp:AddButton("Faturar"		      , {||EmitDoc(SZK->ZK_XPICKI)})
-		//oBrowseUp:AddButton("Pergunte"	          , {||Pergunte(cPerg,.T.)    })
-		//oBrowseUp:AddButton("Cancelar"	          , {||Pergunte(cPerg,.T.)    })
-
+	
 		IF !(cUserMov $ nIDBlq)
 	   	 	oBrowseUp:AddButton("Danfe"               , {||ZPECF13K()})
 			oBrowseUp:AddButton("Manut.Cabecalho"     , {||ZPECF13A(SZK->ZK_XPICKI)})
@@ -145,6 +144,8 @@ Static Function TelaUnit(_cFilPicking, _cPicking, _lConsultaExt)
 		Endif
 	Endif
 
+	oBrowseUp:AddButton("Fechar"			, { || oDlg:End() })
+	
 	//Caso tenha sido fornecido o numero do picking filtar PEC044 DAC 30/05/2023
 	//Adiciona um filtro ao browse
 	If _lConsultaExt .and. !Empty(_cPicking)
@@ -152,8 +153,6 @@ Static Function TelaUnit(_cFilPicking, _cPicking, _lConsultaExt)
 	Endif
 
 	//oBrowseUp:AddButton("Conferir Orca/tos"   , {||ZPECF13E(SZK->ZK_XPICKI)})  //Divergência
-	
-	oBrowseUp:AddButton("Fechar"			, { || oDlg:End() })
 	//oBrowseUp:SetAmbiente(.T.)
 	//oBrowseUp:SetTemporary()
 	//oBrowseUp:SetSeek(.T.,aSeek) //Habilita a utilização da pesquisa de registros no Browse
@@ -201,6 +200,9 @@ Static Function TelaUnit(_cFilPicking, _cPicking, _lConsultaExt)
 														{"VS3_XPICKI","ZK_XPICKI"};
 														}	)
 	oRelacVS3:Activate()
+
+	oBrowseUp:Refresh()
+	oBrowseLeft:Refresh()
 
 	/*oRelacZA5:= FWBrwRelation():New()
 	oRelacZA5:AddRelation( oBrowseLeft, oBrowseRight, 	{;
@@ -1078,7 +1080,7 @@ Local _aCpoVazio	:= {"VS1_XAGLU",;
 */
 Begin Sequence
 	//Montar BackOrder 
-	/* RETIRADO CONFORME PASSADO POR JC SERÁ RETIRADO A LINHA INTEIRA DO ITEM ESTE CASO ERA COMO PARCIAL DAC 03/04/2022
+	/* RETIRADO CONFORME PASSADO POR JC SERÝ RETIRADO A LINHA INTEIRA DO ITEM ESTE CASO ERA COMO PARCIAL DAC 03/04/2022
 
 	If _nQtdeItem == 0
 		_lZera := .T.  //Apagara o VS3
@@ -1334,6 +1336,7 @@ Local _cAliasNF		:= GetNextAlias()
 
 Local _cStatus		:= "F"
 Local _nRegSZK		:= SZK->(Recno())
+Local _nRegvs3		:= VS3->(Recno())
 Local _cUsuario		:= AllTrim(SuperGetMV( "CMV_WSR015"  ,,"RG LOG" )) 
 Local _cChave   	:= "ZPEC013FAT"
 Local _lControla	:= SuperGetMV( "CMV_PEC023"  ,,.T. )   //Parâmetro para indicar se controlara o bloqueio de faturamento por outro usuario
@@ -1342,9 +1345,10 @@ Local _aRegVS1
 Local _nPos
 Local _nTentativas
 Local _cMens
-Local _cLike		:= "PEDIDO: "+cZK_XPICKI+"%"
+Local _cLike		:= "PEDIDO: "+cZK_XPICKI
 Local _cDtEpi		:= " "
-
+Local nDesconto     := 0 
+Local _Tipo         := " "
 
 //Private TRBNF   //:= GetNextAlias()
 Private aHeaderP  		:= {}
@@ -1384,6 +1388,12 @@ Begin Sequence
 		_lControla := .F.  //para não retirar controle ainda não acessou o mesmo
 		Break
 	Endif	
+	//GAP002 DAC 28/03/2023
+	If SZK->ZK_STATUS == "D"
+   		MSGINFO( "Picking com Divergência WIS !!! ", "[ZPECF013_MANUTENCAO] - Atenção" )
+		_lControla := .F.  //para não retirar controle ainda não acessou o mesmo
+		Break
+	Endif	
 
 	If !Empty(SZK->ZK_NF)
    		MSGINFO( "Já possui nota fiscal, não pode ser alterado !!! ", "[ZPECF013_MANUTENCAO] - Atenção" )
@@ -1401,8 +1411,18 @@ Begin Sequence
    		MSGINFO( "Ainda não foi realizada a Separação pela Logistica, não podendo ser faturado !!! ", "[ZPECF013_MANUTENCAO] - Atenção" )
 		_lControla := .F.  //para não retirar controle ainda não acessou o mesmo
 		Break
-	Endif
+	endIF
+	
+	//Verifica o tipo de pedido
+	_Tipo := U_zTpPed( VS1->VS1_XTPPED )
 
+	If SA1->A1_DESC > 0 .AND.  VS1->VS1_XTPPED = _Tipo
+	   nDesconto := SA1->A1_DESC
+	   RecLock("SA1",.F.)
+       SA1->A1_DESC := 0
+   	   SA1->(MsUnlock())
+	EndIf
+	
 	aAdd(_aIntCab, 	{"NUMERO"        , "C" , 60 , "@!"               }) // Número  ORÇAMENTO
 	aAdd(_aIntCab, 	{"TIPO"          , "C" , 60 , "@!"               }) // Tipo          "
 	aAdd(_aIntCab, 	{"DATA ABERTURA" , "D" , 50 , "@D"               }) // Data Abertura
@@ -1410,79 +1430,81 @@ Begin Sequence
 	aAdd(_aTotais,	{"TOTAL GERAL",0,0})       // TOTAL GERAL
 	aAdd(_aTotais,	{"TOTAL SELECIONADO",0,0}) // TOTAL SELECIONADO
 
+
 	/* Alterado para não ocorrer erros quando mais de um usuário DAC 01/06/2022
-	
-	If (Select("TRBNF") <> 0 )
-		dbSelectArea("TRBNF")
-		dbCloseArea()
-	Endif
+		
+		If (Select("TRBNF") <> 0 )
+			dbSelectArea("TRBNF")
+			dbCloseArea()
+		Endif
 
-	//Mostrar marca DAC 01/06/2022
-	_cQuery := " SELECT VS1_CLIFAT,VS1_LOJA,VS1_NCLIFT,VS1_NUMORC,VS1_TIPORC,VS1_DATORC"
-	_cQuery += " FROM "+RetSQLName("VS1")+" VS1 "
-	_cQuery += "    WHERE VS1.VS1_FILIAL='"+xFilial("VS1")+"' "
-	_cQuery += "          AND VS1.VS1_XPICKI = '" + cZK_XPICKI + "'"
-	_cQuery += "          AND VS1.VS1_TIPORC = '1'  "
-	//_cQuery += "          AND VS1.VS1_STATUS = 'F'  "
-	_cQuery += "          AND VS1.D_E_L_E_T_ <> '*' "
-	//_cQuery += "          AND VS1.VS1_CLIFAT = '" + MV_PAR01 + "'"
-	//_cQuery += "          AND VS1.VS1_LOJA   = '" + MV_PAR02 + "'"
-	_cQuery += "          AND VS1.VS1_STATUS = '" + _cStatus + "'"  //eXite status para faturamento DAC 17/02/2022  
-	_cQuery += "          AND VS1.VS1_NUMNFI = ' '  "
+		//Mostrar marca DAC 01/06/2022
+		_cQuery := " SELECT VS1_CLIFAT,VS1_LOJA,VS1_NCLIFT,VS1_NUMORC,VS1_TIPORC,VS1_DATORC"
+		_cQuery += " FROM "+RetSQLName("VS1")+" VS1 "
+		_cQuery += "    WHERE VS1.VS1_FILIAL='"+xFilial("VS1")+"' "
+		_cQuery += "          AND VS1.VS1_XPICKI = '" + cZK_XPICKI + "'"
+		_cQuery += "          AND VS1.VS1_TIPORC = '1'  "
+		//_cQuery += "          AND VS1.VS1_STATUS = 'F'  "
+		_cQuery += "          AND VS1.D_E_L_E_T_ <> '*' "
+		//_cQuery += "          AND VS1.VS1_CLIFAT = '" + MV_PAR01 + "'"
+		//_cQuery += "          AND VS1.VS1_LOJA   = '" + MV_PAR02 + "'"
+		_cQuery += "          AND VS1.VS1_STATUS = '" + _cStatus + "'"  //eXite status para faturamento DAC 17/02/2022  
+		_cQuery += "          AND VS1.VS1_NUMNFI = ' '  "
 
-	_cQuery := ChangeQuery(_cQuery)
-	dbUseArea(.T.,"TOPCONN",TcGenQry(,,_cQuery),"TRBNF",.T.,.T.)
-	//DAC 19/12/2022 se não encontrou nada
-	If TRBNF->(Eof())
-		MsgInfo("Não localizado orçamentos com Picking "+cZK_XPICKI+" com status para faturar !","Atenção") 
-		return Nil
-	EndIf
+		_cQuery := ChangeQuery(_cQuery)
+		dbUseArea(.T.,"TOPCONN",TcGenQry(,,_cQuery),"TRBNF",.T.,.T.)
+		//DAC 19/12/2022 se não encontrou nada
+		If TRBNF->(Eof())
+			MsgInfo("Não localizado orçamentos com Picking "+cZK_XPICKI+" com status para faturar !","Atenção") 
+			return Nil
+		EndIf
 
-	aAdd(_aPesos,{"PESO LIQUIDO",0,0})                     
-	aAdd(_aPesos,{"PESO BRUTO  ",0,0})                     
-	aAdd(_aPesos,{"PESO CUBADO ",0,0})
+		aAdd(_aPesos,{"PESO LIQUIDO",0,0})                     
+		aAdd(_aPesos,{"PESO BRUTO  ",0,0})                     
+		aAdd(_aPesos,{"PESO CUBADO ",0,0})
 
-	DBSelectArea("TRBNF")
-	DBGoTop()
+		DBSelectArea("TRBNF")
+		DBGoTop()
 
-	while !(TRBNF->(eof()))
-    	nValpec := 0
-    	//cSequen := Val(VS3->VS3_SEQUEN)      //STRZERO(SZK->(SZK_SEQREG),3)
-		//cSeqSZK := STR(cSequen)+".00"
-		VS3->(dbSetOrder(1))
-		If VS3->(dbSeek(xFilial("VS3")+TRBNF->(VS1_NUMORC)))   //+cSequen
-       	 	Do While (VS3->(!EOF()) .AND. VS3->VS3_NUMORC = TRBNF->(VS1_NUMORC)) 
-	        	nValpec += VS3->VS3_VALPEC
-            	//SKZ->(dbSetOrder(1))     //Filial+Sequencia registro
-	        	//SKZ->(dbGotop())
-	        	//If SKZ->(dbSeek(xFilial("SKZ")+VS3->VS3_XPICKI+cSeqSZK))   
-				//nPesol := SKZ->SKZ_PLIQUI
-				//nPesob := SKZ->SKZ_PBRUTO
-				//nPesos := SKZ->SKZ_PESOC
-				//SKZ->(dbSkip())
-	        	//ENDIF
-	        	VS3->(dbSkip())
-			ENDDO
-		ENDIF
+		while !(TRBNF->(eof()))
+			nValpec := 0
+			//cSequen := Val(VS3->VS3_SEQUEN)      //STRZERO(SZK->(SZK_SEQREG),3)
+			//cSeqSZK := STR(cSequen)+".00"
+			VS3->(dbSetOrder(1))
+			If VS3->(dbSeek(xFilial("VS3")+TRBNF->(VS1_NUMORC)))   //+cSequen
+				Do While (VS3->(!EOF()) .AND. VS3->VS3_NUMORC = TRBNF->(VS1_NUMORC)) 
+					nValpec += VS3->VS3_VALPEC
+					//SKZ->(dbSetOrder(1))     //Filial+Sequencia registro
+					//SKZ->(dbGotop())
+					//If SKZ->(dbSeek(xFilial("SKZ")+VS3->VS3_XPICKI+cSeqSZK))   
+					//nPesol := SKZ->SKZ_PLIQUI
+					//nPesob := SKZ->SKZ_PBRUTO
+					//nPesos := SKZ->SKZ_PESOC
+					//SKZ->(dbSkip())
+					//ENDIF
+					VS3->(dbSkip())
+				ENDDO
+			ENDIF
 
-		aAdd(	_aIntIte,{;
-	         	TRBNF->(VS1_NUMORC),;
-	         	TRBNF->(VS1_TIPORC),;
-	            stod(TRBNF->(VS1_DATORC)),;
-	            STR(nValpec) })      //TRBNF->(VS1_VTOTNF)
- 		_aTotais[1,2] ++
-		_aTotais[1,3] = STR(nValpec)
-    	_aPesos[1,3] += nPesol
-		_aPesos[2,3] +=	nPesob
-		_aPesos[3,3] +=	nPesos
+			aAdd(	_aIntIte,{;
+					TRBNF->(VS1_NUMORC),;
+					TRBNF->(VS1_TIPORC),;
+					stod(TRBNF->(VS1_DATORC)),;
+					STR(nValpec) })      //TRBNF->(VS1_VTOTNF)
+			_aTotais[1,2] ++
+			_aTotais[1,3] = STR(nValpec)
+			_aPesos[1,3] += nPesol
+			_aPesos[2,3] +=	nPesob
+			_aPesos[3,3] +=	nPesos
 
-		//implementado marca para controlar faturamento caso esteja faturando esta marca não permitir que outro usuário fature DAC 01/06/2022
-		If !Empty(TRBNF->VS1_XMARCA)
-			_cMarca := TRBNF->VS1_XMARCA
-		EndIF	
-   		TRBNF->(dbSkip())
-	END
+			//implementado marca para controlar faturamento caso esteja faturando esta marca não permitir que outro usuário fature DAC 01/06/2022
+			If !Empty(TRBNF->VS1_XMARCA)
+				_cMarca := TRBNF->VS1_XMARCA
+			EndIF	
+			TRBNF->(dbSkip())
+		END
 	*/
+
 	BeginSql Alias _cAliasPesq
 		SELECT 	VS1_CLIFAT,VS1_LOJA,VS1_NCLIFT,VS1_NUMORC,VS1_TIPORC,VS1_DATORC, VS1_XMARCA
   		FROM %table:VS1% VS1
@@ -1493,11 +1515,13 @@ Begin Sequence
 			AND VS1.VS1_NUMNFI		= ' '
 		  	AND VS1.%notDel%		  
 	EndSql      
+
 	If (_cAliasPesq)->(Eof()) 
 		MsgInfo("Não localizado orçamentos com Picking "+cZK_XPICKI+" com status para faturar !","Atenção") 
 		_lControla := .F.  //para não retirar controle ainda não acessou o mesmo
 		Break
 	EndIf	
+
 	aAdd(_aPesos,{"PESO LIQUIDO",0,0})                     
 	aAdd(_aPesos,{"PESO BRUTO  ",0,0})                     
 	aAdd(_aPesos,{"PESO CUBADO ",0,0})
@@ -1505,6 +1529,7 @@ Begin Sequence
 	While (_cAliasPesq)->(!Eof())
     	nValpec 	:= 0
 		VS3->(dbSetOrder(1))
+
 		If VS3->(dbSeek(xFilial("VS3")+(_cAliasPesq)->VS1_NUMORC))   //+cSequen
        	 	Do While (VS3->(!EOF()) .AND. VS3->VS3_NUMORC == (_cAliasPesq)->VS1_NUMORC)
 	        	nValpec += VS3->VS3_VALPEC
@@ -1514,29 +1539,31 @@ Begin Sequence
 		EndIf
 
 		aAdd(	_aIntIte,{;
-	         	(_cAliasPesq)->VS1_NUMORC,;
-	         	(_cAliasPesq)->VS1_TIPORC,;
-	            StoD((_cAliasPesq)->VS1_DATORC),;
-	            STR(nValpec) })      
+				         	(_cAliasPesq)->VS1_NUMORC,;
+				         	(_cAliasPesq)->VS1_TIPORC,;
+				            StoD((_cAliasPesq)->VS1_DATORC),;
+				            STR(nValpec) ;
+						})      
 
- 		_aTotais[1,2] 	++
-		_aTotais[1,3] 	:= STR(nValpec)
-    	_aPesos[1,3] 	+= nPesol
-		_aPesos[2,3] 	+=	nPesob
-		_aPesos[3,3] 	+=	nPesos
+ 		_aTotais[1,2] ++
+		_aTotais[1,3] := STR(nValpec)
+    	_aPesos[1,3]  += nPesol
+		_aPesos[2,3]  += nPesob
+		_aPesos[3,3]  += nPesos
 
 		//implementado marca para controlar faturamento caso esteja faturando esta marca não permitir que outro usuário fature DAC 01/06/2022
 		If !Empty((_cAliasPesq)->VS1_XMARCA)
 			_cMarca := (_cAliasPesq)->VS1_XMARCA
 		EndIF	
    		(_cAliasPesq)->(dbSkip())
+
 	EnDDo
 
 	//implementado marca para controlar faturamento caso esteja faturando esta marca não permitir que outro usuário fature DAC 01/06/2022
 	//Garantir que o processamento seja unico
 	If _lControla
 
-		If !LockByName(_cChave+_cMarca,.T.,.T.)  
+		If !LockByName(_cChave + _cMarca + cFilAnt,.T.,.F.)  
 
 			_lControla := .F.
 			
@@ -1544,7 +1571,7 @@ Begin Sequence
 				
 				MsAguarde({|| Sleep(3000) }, "Faturamento.", "Aguarde... Seu faturamento em breve será concluido.")	
 				
-				If LockByName(_cChave+_cMarca,.T.,.T.)
+				If LockByName(_cChave+_cMarca + cFilAnt,.T.,.F.)
 					_lControla := .T.
 					Exit
 				EndIf
@@ -1558,7 +1585,15 @@ Begin Sequence
 		EndIf
 
 	EndIf	
-		
+	SZK->(DbGoto(_nRegSZK))
+	
+	//Para evitar que fature o mesmo pedido duas vezes, valido novamente se existe Documento de saida após a liberação do semaforo 
+	
+	If !Empty(SZK->ZK_NF) 
+   		MSGINFO( "Picking ja Faturado por outro Usuario, NF:" + SZK->ZK_NF + " !!! ", "[ZPECF013_MANUTENCAO] - Atenção" )
+		Break
+	Endif
+
 	For nCntFor := 1 to Len(_aIntIte)
 		aAdd(aOrcs,_aIntIte[nCntFor,1])
 	Next
@@ -1573,7 +1608,7 @@ Begin Sequence
 	
 	//Atualiza TES Inteligente
 	if !(U_ZPECREGFI(cZK_XPICKI)) //cZK_XPICKI _cPedido
-		if !MsgYesNo("Erro na atualização da TES INTELIGENTE no Picking: "+cZK_XPICKI+" Deseja Faturar assim mesmo?")
+		if !MsgYesNo("Erro na atualização da TES INTELIGENTE no Picking: " + cZK_XPICKI + " Deseja Faturar assim mesmo?")
 			lRet = .F.
 			Break
 		EndIf
@@ -1581,7 +1616,9 @@ Begin Sequence
 
 	//Bloqueio de Faturamento duplicado
 	_cDtEpi := VS1->VS1_XDTEPI
+	
 	BeginSql Alias _cAliasNF
+	
 		SELECT DISTINCT	F2_FILIAL, F2_DOC, F2_SERIE, F2_CLIENTE, F2_LOJA, D2_PEDIDO 
   		FROM %table:SD2% SD2
 		INNER JOIN %table:SF2% SF2
@@ -1593,10 +1630,13 @@ Begin Sequence
 			AND SD2.D2_FILIAL  	= %XFilial:SD2%
 		  	AND SD2.D2_DOC = SF2.F2_DOC
 			AND SD2.D2_SERIE = SF2.F2_SERIE	  
+	
 	EndSql
 
 	If !Empty((_cAliasNF)->F2_DOC)
+	
 		MsgInfo("Já existe NF "+(_cAliasNF)->F2_DOC+" Serie: "+(_cAliasNF)->F2_SERIE+" emitida para o Picking "+cZK_XPICKI+" !","Atenção") 
+	
 		_cDoc     	:= (_cAliasNF)->F2_DOC
         _cSerie   	:= (_cAliasNF)->F2_SERIE
 		_cCliente 	:= (_cAliasNF)->F2_CLIENTE
@@ -1608,11 +1648,12 @@ Begin Sequence
 
 		//For Next da desreserva 
 		For nCntFor := 1 to Len(aOrcs)
-		//retirar reserva 
+			//retirar reserva 
 			If _lReserva
 				aResDel		:= {}
 				_aVS3Reg	:= {}
 				VS3->(DbsetOrder(1))
+	
 				If VS3->(MsSeek(XFilial("VS3")+aOrcs[nCntFor]))
 					While VS3->(!Eof()) .and.  VS3->VS3_FILIAL == XFilial("VS3") .and. VS3->VS3_NUMORC == aOrcs[nCntFor]
 						If !Empty(VS3->VS3_DOCSDB) //VS3->VS3_RESERV == "1"
@@ -1624,6 +1665,7 @@ Begin Sequence
 				Endif	
 				//retirar a reserva
 				If Len(aResDel) > 0
+	
 					Private _aReservaCAOA := {aOrcs[nCntFor],.F.,_aVS3Reg}	// Variavel utilizada no PE OX001RES
 					_cDocto := OX001RESITE(aOrcs[nCntFor], .F., aResDel)
 					//Alterado para utilizar reserva CAOA - DAC 16/08/2022
@@ -1655,12 +1697,15 @@ Begin Sequence
 	Else
 		OFIXX004("VS1",3,aOrcs) 
 	Endif
+	
 	//indica que processaraa fatura caso de um cancelamento na tela inicial não tem como saber a informação de processado sera colocada no PE OX004APV
 	//DAC 20/02/2022
+	
 	If !_lPrcZPECF013
 		MsgInfo("Processo Cancelado !","Atenção") 
 		Break
 	EndIf
+	
 	lAchou := .f.
 	//DAC 16/02/2022
 	//Verifico se por algum problema não alterou os orçamentos enviados estava 
@@ -1669,11 +1714,15 @@ Begin Sequence
 	If Len(aOrcs) <> Len(_aVarVS3)
 		aOrcs := Aclone(_aVarVS3)
 	Endif	
+	
 	_aRegVS1 := {}
+	
 	For nCntFor := 1 to Len(aOrcs)
+	
 		dbSelectArea("VS1")
 		VS1->(dbSetOrder(1))
 		VS1->(dbSeek(xFilial("VS1")+aOrcs[nCntFor]))
+	
 		If VS1->VS1_STATUS == "X" .and. Empty(_cDoc)  // Orcamento Faturado, como as informações se repetem somente pego uma vez    
 			//Gravacao do Doc de Saida       
    	     	_cDoc     	:= VS1->VS1_NUMNFI
@@ -1684,7 +1733,9 @@ Begin Sequence
 			_cPedido	:= VS1->VS1_NUMPED
 		EndIf
 		Aadd(_aRegVS1,VS1->(Recno()))
+	
 	Next  //interrompendo aqui pois como esta com problema de não processar multiplos orçamentos não ira ver todos somente achara em um orçamento DAC 17/02/2022
+	
 	//Caso o nr do documento esteja em branco não conseguiu faturar por algum erro
 	If Empty(_cDoc)
 		MsgInfo("Não existe numero de documento gerado para o(s) Orçamento(s) !","Atenção") 
@@ -1692,6 +1743,7 @@ Begin Sequence
 	EndIf
 
 	For _nPos := 1 To Len(_aRegVS1)
+	
 		VS1->(DbGoto(_aRegVS1[_nPos])) //_nPos	
 		_cNumOrc	:= VS1->VS1_NUMORC
 		_cMens		:= ""
@@ -1710,15 +1762,18 @@ Begin Sequence
 		VS1->VS1_NUMPED := _cPedido
 		VS1->VS1_NUMNFI := _cDoc
 		VS1->VS1_SERNFI := _cSerie
+	
 		if VS1->(FieldPos("VS1_STARES")) > 0 
 			VS1->VS1_STARES := "3"
 		Endif
+	
 		_cMens := "Orçamento Faturado com fatura nr. " +_cDoc+ " Serie " +_cSerie+ " em " +DtoC(date()) + " as " + Time() + CRLF
 		VS1->VS1_OBSAGL		:= Upper(_cMens) + CRLF + AllTrim(VS1->VS1_OBSAGL)
 		//VS1->VS1_STARES 	:= U_XRCAOVS3(_cNumOrc)  //Retorna o Status
 		VS1->(MsUnLock()) 
 
 		if !lAchou
+	
 			If Select(cAliasVEC) <> 0
 				(cAliasVEC)->(DbCloseArea())
 			Endif  
@@ -1729,6 +1784,7 @@ Begin Sequence
 			cQuery += "VEC.VEC_FILIAL='"+ xFilial("VEC")+ "' AND VEC.VEC_NUMNFI = '"+_cDoc+"' AND VEC.VEC_SERNFI = '"+VS1->VS1_SERNFI+"' AND "
 			cQuery += "VEC.D_E_L_E_T_=' '"
 			dbUseArea( .T., "TOPCONN", TcGenQry(,,cQuery), cAliasVEC, .T., .T. )
+	
 			Do While ( cAliasVEC )->( !Eof() )
 				VEC->(DBGoto(( cAliasVEC )->(VECRECNO)))
 				VEC->(RecLock("VEC",.T.))
@@ -1737,6 +1793,7 @@ Begin Sequence
 				lAchou := .t.
 				( cAliasVEC )->(dbSkip())
 			Enddo
+	
 		Endif
 
 		If Select(cAliasVS3) <> 0
@@ -1749,8 +1806,11 @@ Begin Sequence
 		cQuery += "WHERE "
 		cQuery += "VS3.VS3_FILIAL='"+ xFilial("VS3")+ "' AND VS3.VS3_NUMORC = '"+_cNumOrc+"' AND "
 		cQuery += "VS3.D_E_L_E_T_=' '"
+	
 		dbUseArea( .T., "TOPCONN", TcGenQry(,,cQuery), cAliasVS3, .T., .T. )
+	
 		Do While ( cAliasVS3 )->( !Eof() )
+	
 			cQuery := "SELECT VEC.R_E_C_N_O_ VECRECNO "
 			cQuery += "FROM "
 			cQuery += RetSqlName( "VEC" ) + " VEC "
@@ -1767,6 +1827,7 @@ Begin Sequence
 				VEC->VEC_NUMORC := VS1->VS1_NUMORC
 				VEC->(MsUnLock())
 			Endif
+	
 			//implementado para gravar informações sobre reservas DAC 23/08/2022
 			VS3->(DbGoto(( cAliasVS3 )->NREGVS3))
 			VS3->(RecLock("VS3",.F.))
@@ -1776,80 +1837,52 @@ Begin Sequence
 			//VS3->VS3_DOCSDB
 			VS3->(MsUnlock())
 			( cAliasVS3 )->(dbSkip())
+	
 		Enddo
 
 		dbSelectArea("VS1")
 		OX001CEV("F",VS1->VS1_NUMORC,VS1->VS1_TIPORC) // Gerar CEV na Finalizacao do Orcamento ( Pos-Venda )
 		UnlockByName( 'OFIXX001_' + VS1->VS1_NUMORC , .T., .F. ) // Destravar os ORCAMENTOS
 	Next
+	
 	nPesol 	:= 0
 	nPesob  := 0
 	nPesos 	:= 0
 	_cQuerup :=" "
 	//Implementado status DAC 05/07/2022
+	
 	If SZK->(FieldPos("ZK_STATUS")) > 0   //N=Nao Envidado;E=Enviado;F=Faturado;C=Cancelado
 		_cQuerup := " UPDATE " + RetSqlName("SZK") + " SZK " + " SET SZK.ZK_NF='" + _cDoc + "' , SZK.ZK_SERIE='" + _cSerie +"' , SZK.ZK_STATUS='F' "
 	Else
 		_cQuerup := " UPDATE " + RetSqlName("SZK") + " SZK " + " SET SZK.ZK_NF='" + _cDoc + "' , SZK.ZK_SERIE='" + _cSerie +"'"
 	EndIf
+	
 	_cQuerup += " WHERE ZK_XPICKI = '"+cZK_XPICKI+"' AND ZK_FILIAL='" + xfilial("SZK") + "'"
 	TcSqlExec(_cQuerup)
+	
 	//Fecho pois esta aberto
 	(_cAliasPesq)->(DbCloseArea())
 	BeginSql Alias _cAliasPesq
+	
 		SELECT SUM(ZK_PLIQUI) PLIQUI, SUM(ZK_PBRUTO) PBRUTO, SUM(ZK_XPESOC) XPESOC 
        		FROM %table:SZK% SZK
        		WHERE 	SZK.ZK_FILIAL  	= %XFilial:SZK%
 				AND SZK.ZK_XPICKI  	= %Exp:cZK_XPICKI%
 			  	AND SZK.%notDel%		  
 	EndSql      
+	
 	If (_cAliasPesq)->(!Eof()) 	
 		nPesol += (_cAliasPesq)->PLIQUI 
 		nPesob += (_cAliasPesq)->PBRUTO
 		nPesos += (_cAliasPesq)->XPESOC
 	EndIf
 
-/*
-	_cQuerp := " SELECT ZK_PLIQUI,ZK_PBRUTO,ZK_XPESOC "
-	_cQuerp += " FROM "+RetSQLName("SZK")+" SZK "
-	_cQuerp += "    WHERE SZK.ZK_FILIAL='"+xFilial("SZK")+"' "
-	_cQuerp += "          AND SZK.ZK_XPICKI = '" + cZK_XPICKI + "'"
-
-	_cQuerp := ChangeQuery(_cQuerp)
-	dbUseArea(.T.,"TOPCONN",TcGenQry(,,_cQuerp),"TRBNFP",.T.,.T.)
-
-	DBSelectArea("TRBNFP")
-	DBGoTop()
-
-	while !(TRBNFP->(eof()))
-
-		nPesol += TRBNFP->ZK_PLIQUI 
-		nPesob += TRBNFP->ZK_PBRUTO
-		nPesos += TRBNFP->ZK_XPESOC
-
-	   	TRBNFP->(dbSkip())
-
-	enddo
-*/
-
-/*SZK->(dbsetorder(1)) //Filial+xpicki+Str(ZK_SEQREG,10,2)
-SZK->(dbGotop())
-SZK->(dbSeek(xFilial("SZK")+cZK_XPICKI))
-While SZK->(!Eof() .AND. SZK->ZK_XPICKI = cZK_XPICKI)
-    SZK->(RecLock("SZK",.F.))
-   	SZK->ZK_NF    	:= _cDoc
-    SZK->ZK_SERIE 	:= _cSerie
-	SZK->(MsUnLock())    
-	nPesol 			+= SZK->ZK_PLIQUI 
-	nPesob 			+= SZK->ZK_PBRUTO
-	nPesos 			+= SZK->ZK_XPESOC
-	SZK->(DbSkip())
-EndDo*/
 
 	//--Ativa mais de uma area de trabalho
-	If !Empty(_cDoc)  //pode não ter farurado
-		SF2->( DbSetOrder(1) ) // F2_FILIAL + F2_DOC + F2_SERIE + F2_CLIENTE + F2_LOJA  
-		SD2->( DbSetOrder(3) ) // D2_FILIAL + D2_DOC + D2_SERIE + D2_CLIENTE + D2_LOJA + D2_COD + D2_ITEM
+	If !Empty(_cDoc)  									//pode não ter farurado
+		SF2->( DbSetOrder(1) ) 							// F2_FILIAL + F2_DOC + F2_SERIE + F2_CLIENTE + F2_LOJA  
+		SD2->( DbSetOrder(3) ) 							// D2_FILIAL + D2_DOC + D2_SERIE + D2_CLIENTE + D2_LOJA + D2_COD + D2_ITEM
+		
 		If SF2->( DbSeek( xFilial("SF2") + _cDoc + _cSerie + _cCliente + _cLoja ) )
 			RecLock("SF2",.F.)
         	SF2->F2_PLIQUI := nPesol
@@ -1858,32 +1891,47 @@ EndDo*/
 			SF2->(MsUnlock())
 		EndIf
 
+		If nDesconto > 0 .AND.  VS1->VS1_XTPPED = _Tipo
+ 		   RecLock("SA1",.F.)
+		   SA1->A1_DESC := 	nDesconto
+		   SA1->(MsUnlock())
+           nDesconto := 0
+	    EndIf
+
 		//--Efetua a gravação dos pesos bruto e cubado na tabela GW8 - GFE
 		U_ZGFEF001(	_cDoc, _cSerie, _cCliente, _cLoja )
 		//--Efetua a gravação do campo GW1_XTPTRA - GFE
 		U_ZGFEF003()
 	Endif
+
 End Sequence
+
 If _lControla 
-	UnLockByName(_cChave+_cMarca,.T.,.T.)
+	UnLockByName(_cChave + _cMarca + cFilAnt,.T.,.F.)
 Endif	
+
 If Select(_cAliasPesq) <> 0
 	(_cAliasPesq)->(DbCloseArea())
 	Ferase(_cAliasPesq+GetDBExtension())
 Endif  
+
 If Select(cAliasVEC) <> 0
 	(cAliasVEC)->(DbCloseArea())
 	Ferase(cAliasVEC+GetDBExtension())
 Endif  
+
 If Select(cAliasVS3) <> 0
 	(cAliasVS3)->(DbCloseArea())
 	Ferase(cAliasVS3+GetDBExtension())
 Endif  
 
-SZK->(DbGoto(_nRegSZK))
+//SZK->(DbGoto(_nRegSZK))
+SZK->(dbGotop())
+VS3->(DbGotop())
+oBrowseLeft:SetFilterDefault(" VS3_FILIAL== '" + xFilial("VS3") + "' .And. VS3_XPICKI== '" + SZK->ZK_XPICKI + "'" )//"+ZPECF13FIT(xFilial("VS3"), SZK->ZK_XPICKI) )//"
+oBrowseLeft:cOriginalFilter := " "
 oBrowseUp:Refresh()
 oBrowseLeft:Refresh()
-//oDlg:Refresh()
 
 Return()
 
@@ -1993,7 +2041,11 @@ Begin Sequence
    		MSGINFO( "Picking Cancelado, não será possível fazer manutenção !!! ", "[ZPECF013_ZPECF13FAS] - Atenção" )
 		Break
 	EndIf				
-
+	//GAP002 DAC 28/03/2023
+	If SZK->ZK_STATUS == "D"
+   		MSGINFO( "Picking com Divergência WIS, não será possível fazer manutenção !!! ", "[ZPECF013_ZPECF13FAS] - Atenção" )
+		Break
+	Endif
 	If Empty(_cNumOrc)
    		MSGINFO( "Problemas com parametros de numero orçamento  !!! ", "[ZPECF013_ZPECF13FAS] - Atenção" )
 		Break
@@ -2065,7 +2117,7 @@ Return Nil
 @version  	P12.1.23
 @since  	06/07/2022
 @return  	NIL
-@obs		ZK_STATUS => A=Aberto;E=Enviado;F=Faturado;B=Bloqueado;C=Cancelado
+@obs		ZK_STATUS => A=Aberto;E=Enviado;F=Faturado;B=Bloqueado;C=Cancelado;D-Divergencia WIS
 @project
 @history   	    
 /*/
@@ -2099,6 +2151,13 @@ Begin Sequence
 		Break
 	EndIf
 
+	//GAP002 DAC 28/03/2023
+	If SZK->ZK_STATUS == "D"
+   		MSGINFO( "Picking esta com Divergência Wis  !!! ", "[ZPECF013I] - Atenção" )
+		_lRet := .f.
+		Break
+	Endif
+
     If !MsgYesNo("Este Picking será bloqueado , confirma o bloqueio do Picking ? ")
 		Break
 	EndIf
@@ -2106,7 +2165,7 @@ Begin Sequence
 	_cQuery := 	" UPDATE " + RetSqlName("SZK") + " SZK " + ;
 				" SET 	SZK.ZK_STATUS = '"+_cStatus+"' "
 	_cQuery +=  " WHERE SZK.ZK_FILIAL = '" +XFilial("SZK")+ "' AND  SZK.ZK_XPICKI = '"+_cPicking + "'"
-	_cQuery +=  "   AND SZK.ZK_NF = ' ' AND SZK.ZK_STATUS NOT IN ('F','C','B') " 	
+	_cQuery +=  "   AND SZK.ZK_NF = ' ' AND SZK.ZK_STATUS NOT IN ('F','C','B','D') " 	
   	_nStatus := TcSqlExec(_cQuery)
   	if (_nStatus < 0)
     	MSGINFO("Erro ao gravar Status na tabela SZK "+ TCSQLError() , "[ZPECF013I] - Atenção" )
@@ -2130,7 +2189,7 @@ Return Nil
 @version  	P12.1.23
 @since  	06/07/2022
 @return  	NIL
-@obs		ZK_STATUS => A=Aberto;E=Enviado;F=Faturado;B=Bloqueado;C=Cancelado
+@obs		ZK_STATUS => A=Aberto;E=Enviado;F=Faturado;B=Bloqueado;C=Cancelado;D=Divergência Wis
 @project
 @history   	    
 /*/
@@ -2194,7 +2253,7 @@ Return Nil
 @version  	P12.1.23
 @since  	07/07/2022
 @return  	NIL
-@obs		ZK_STATUS => A=Aberto;E=Enviado;F=Faturado;B=Bloqueado;C=Cancelado
+@obs		ZK_STATUS => A=Aberto;E=Enviado;F=Faturado;B=Bloqueado;C=Cancelado;D=Divergência WIS
 @project
 @history   	    
 /*/
@@ -2282,3 +2341,28 @@ User Function zCmbDesc(cChave, cCampo, cConteudo)
 Return cDescri
 
 
+Static Function fValSZK(_cUsuario)
+Local lRet := .T.
+	Do case
+		Case SZK->ZK_STATUS == "C"
+	   		MSGINFO( "Picking Cancelado !!! ", "[ZPECF013_MANUTENCAO] - Atenção" )
+			lRet := .F.  //para não retirar controle ainda não acessou o mesmo
+		Case SZK->ZK_STATUS == "F"
+	   		MSGINFO( "Já possui indicação de nota fiscal, não pode ser alterado !!! ", "[ZPECF013_MANUTENCAO] - Atenção" )
+			lRet := .F.  //para não retirar controle ainda não acessou o mesmo
+		Case SZK->ZK_STATUS == "B"
+	   		MSGINFO( "Picking Bloqueado !!! ", "[ZPECF013_MANUTENCAO] - Atenção" )
+			lRet := .F.  //para não retirar controle ainda não acessou o mesmo
+		Case !Empty(SZK->ZK_NF)
+	   		MSGINFO( "Já possui nota fiscal, não pode ser alterado !!! ", "[ZPECF013_MANUTENCAO] - Atenção" )
+			lRet := .F.
+		Case !Empty(SZK->ZK_NF) 
+	   		MSGINFO( "Picking ja possui Nota Fical !!! ", "[ZPECF013_MANUTENCAO] - Atenção" )
+			lRet := .F.  //para não retirar controle ainda não acessou o mesmo
+		Case Empty(SZK->ZK_STREG) .or. AllTrim(SZK->ZK_USURECP) <> _cUsuario
+	   		MSGINFO( "Ainda não foi realizada a Separação pela Logistica, não podendo ser faturado !!! ", "[ZPECF013_MANUTENCAO] - Atenção" )
+		Otherwise
+			lRet := .T.
+	EndCase
+
+Return lRet

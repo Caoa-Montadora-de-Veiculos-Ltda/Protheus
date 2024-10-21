@@ -75,6 +75,7 @@ Static Function zProcPreco( cProdutDe, cProdutAte, cCodTab)
     //-- Altera De/Ate para sempre respeitar ordem alfabetica
     Local cProdDe   := IIF( cProdutDe > cProdutAte, cProdutAte, cProdutDe)
     Local cProdAte  := IIF( cProdutAte > cProdutDe, cProdutAte, cProdutDe)
+    Local cTab      := cCodTab
 
     BeginSql Alias cAliasDA0
         SELECT B1_COD, B1_IPI, B1_GRTRIB, B1_ORIGEM, B1_POSIPI, DA1_PRCVEN, B1_PICM, DA1.R_E_C_N_O_ as DA1REC
@@ -99,12 +100,16 @@ Static Function zProcPreco( cProdutDe, cProdutAte, cCodTab)
     If (cAliasDA0)->( !Eof() )
 
         While (cAliasDA0)->( !Eof() )
-
+        
+            //Passar a tabela como parametro e tratar para zona franca para não pegar o pís e cofins
             IncProc("Atualizado preco por UF. Produto: " + (cAliasDA0)->B1_COD )
-
-            AtuPrcVend( (cAliasDA0)->B1_COD, (cAliasDA0)->B1_IPI, (cAliasDA0)->B1_GRTRIB, (cAliasDA0)->B1_ORIGEM,;
-                        (cAliasDA0)->DA1_PRCVEN, (cAliasDA0)->DA1REC, (cAliasDA0)->B1_POSIPI, (cAliasDA0)->B1_PICM )
-
+            IF cTab = '007'
+               AtuPrcVend( (cAliasDA0)->B1_COD, 0 , (cAliasDA0)->B1_GRTRIB, (cAliasDA0)->B1_ORIGEM,;
+                           (cAliasDA0)->DA1_PRCVEN, (cAliasDA0)->DA1REC, (cAliasDA0)->B1_POSIPI, (cAliasDA0)->B1_PICM , cTab)
+            Else
+               AtuPrcVend( (cAliasDA0)->B1_COD, (cAliasDA0)->B1_IPI, (cAliasDA0)->B1_GRTRIB, (cAliasDA0)->B1_ORIGEM,;
+                           (cAliasDA0)->DA1_PRCVEN, (cAliasDA0)->DA1REC, (cAliasDA0)->B1_POSIPI, (cAliasDA0)->B1_PICM , cTab)
+            Endif
             (cAliasDA0)->( DbSkip() )
 
         EndDo
@@ -134,7 +139,7 @@ Data.....: 04/04/2022
 Descricao / Objetivo: Realiza a atualização dos preços por UF
 ===========================================================================================
 */
-Static Function AtuPrcVend( cCodProd, nIPI, cGrpTrib, cOrigem, nPrcBase, nRecDA1, cCodNCM, nIcms)
+Static Function AtuPrcVend( cCodProd, nIPI, cGrpTrib, cOrigem, nPrcBase, nRecDA1, cCodNCM, nIcms, cTabela)
     Local cAliasSF7     := GetNextAlias()
     Local cEstProtoc    := AllTrim( Posicione('SYD' ,1 ,xFilial('SYD') + cCodNCM ,'YD_XUFPROT' ) )
     Local nPrcIcms      := ( nPrcBase - ( ( nIcms * nPrcBase) / 100 ) )
@@ -237,11 +242,18 @@ Static Function AtuPrcVend( cCodProd, nIPI, cGrpTrib, cOrigem, nPrcBase, nRecDA1
                         nAliqInt      := (cAliasSF7)->F7_ALIQINT
                         nAliqExt      := (cAliasSF7)->F7_ALIQEXT
                     EndIf
-
+                    //tratar aqui
                     If AllTrim( (cAliasSF7)->F7_EST ) $ cEstZF
-                        nIpi     := 0
-                        nAliqPis := If(Alltrim((cAliasSF7)->F7_GRTRIB) == "100" , nTxPis , (cAliasSF7)->F7_ALIQPIS)
-                        nAliqCof := If(Alltrim((cAliasSF7)->F7_GRTRIB) == "100" , nTxCof , (cAliasSF7)->F7_ALIQCOF)
+                        //colocar um if se tabela se tabela for diferente de 007 fazer, se for igual a 007 zera pis e cofins 
+                        If cTabela = "007"
+                           nIpi     := 0
+                           nAliqPis := 0
+                           nAliqCof := 0
+                        Else
+                           nIpi     := 0
+                           nAliqPis := If(Alltrim((cAliasSF7)->F7_GRTRIB) == "100" , nTxPis , (cAliasSF7)->F7_ALIQPIS)
+                           nAliqCof := If(Alltrim((cAliasSF7)->F7_GRTRIB) == "100" , nTxCof , (cAliasSF7)->F7_ALIQCOF)
+                        Endif
                     Else
                         nIpi     := nOriIPI
                         nAliqPis := 0

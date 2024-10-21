@@ -24,7 +24,8 @@ Local cIntFin   := ""
 MV_PAR60 += TIME() + " " + cParam + " " + Char(13) + Char(10)
 
 If cParam == "AROTINA"
-     aAdd( aRotina, { '>>> CAOA - Integração ASIA', "U_ZEICF022()"   ,0 ,3 } )
+    aAdd( aRotina, { '>>> CAOA - Integração ASIA', "U_ZEICF022()"   ,0 ,3 } )
+	aAdd( aRotina, { '>>> CAOA - Integração ASIA-FOLLOWUP', "U_ZEICF025()"   ,0 ,3 } )
 
 ElseIf cParam == "DI500LOTES_ALT_CPOSENC"
 	//If FindFunction("U_CMVEIC02")
@@ -180,6 +181,11 @@ ElseIf cParam == "TELA_TOTAIS_DESP"
 	EndDo
 
 	TRB->(DbGoTop())
+
+ElseIf cParam == "INV_CARREGA_SW8
+	Work_SW8->W8_XCASE:= SW8->W8_XCASE
+	Work_SW8->W8_XLOTE:= SW8->W8_XLOTE
+	Work_SW8->W8_XCONT:= SW8->W8_XCONT
 EndIf
 
 Return lRet

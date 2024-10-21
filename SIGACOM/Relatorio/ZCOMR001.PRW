@@ -2,7 +2,7 @@
 #INCLUDE "REPORT.CH"
 #INCLUDE "RPTDEF.CH"
 #INCLUDE "FWPrintSetup.ch"
-
+ 
 #DEFINE IMP_SPOOL 2
 
 #DEFINE VBOX      080
@@ -47,12 +47,12 @@
 #DEFINE FRETE     003  // Valor total do Frete
 #DEFINE VALDESP   004  // Valor total da despesa
 #DEFINE TOTF1     005  // Total de Despesas Folder 1
-#DEFINE TOTPED    006  // Total do Pedido
+#DEFINE TOTPED    006  // Total do Pedido 
 #DEFINE SEGURO    007  // Valor total do seguro
 #DEFINE TOTF3     008  // Total utilizado no Folder 3
 #DEFINE IMPOSTOS  009  // Array contendo Os Valores de Impostos Exibidos no ListBox
-#DEFINE NTRIB     010 // Valor das despesas nao tributadas - Portugal
-#DEFINE TARA      011 // Valor da Tara - Portugal
+#DEFINE NTRIB     010  // Valor das despesas nao tributadas - Portugal
+#DEFINE TARA      011  // Valor da Tara - Portugal
 
 #DEFINE MB_YESNO         004
 #DEFINE MB_ICONQUESTION  032
@@ -65,14 +65,14 @@ Programa.:              ZCOMR001
 Autor....:              Denis Amaral Galvani
 Data.....:              20/05/19
 Descricao / Objetivo:   Relatorio - Pedido de Compra
-Doc. Origem:            GAP_COM007 - Customizar impress„o do PC conforme layout da
+Doc. Origem:            GAP_COM007 - Customizar impress√£o do PC conforme layout da
 						ISO enviado. O layout considerado deve ser o do SAP.
 Solicitante:            CAOA
 Uso......:              Pedido de Compra > Browse > Outras Acoes > Impr.PC.CAOA
 Obs......:              Modelo especifico. Padrao CAOA. Modelo atual SAP
 =====================================================================================
 */
-USER FUNCTION ZCOMR001(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, aEmails )
+USER FUNCTION ZCOMR001(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, aEmails ,nRecJob,_aMatriz,cFun,lJob)
 	LOCAL aArea     := GetArea()
 	LOCAL lEnd		:= .T.
 	LOCAL cFilePrt  := SubStr(ProcName(),3)
@@ -88,7 +88,6 @@ USER FUNCTION ZCOMR001(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 	LOCAL aDest        := {}
 	Local i            := 0
 
-	DEFAULT lServer    := .F.
 	PRIVATE PixelX
 	PRIVATE PixelY
 
@@ -97,17 +96,23 @@ USER FUNCTION ZCOMR001(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 	PRIVATE lAuto      := (nReg!=NIL)
 	PRIVATE aColsMail  := {} //-- aCols RETORNA COM DADOS DO GRID DO PEDIDO
 
-	PRIVATE cPictCabec := "LGRL" + FWGrpCompany() + ".BMP"
+	PRIVATE cPictCabec := ""
 	
 	PRIVATE cAliasSC1  := GetNextAlias()
 	PRIVATE cAliasSC7  := GetNextAlias()
 	PRIVATE cAliasSZV  := GetNextAlias()
 
 	//Private cPathInServer   := IIF( ValType(aEmails) <> "U", GetTempPath(), "" )
-	PRIVATE cPathInServer   := SuperGetMV( "CMV_COM002" ,,"\spool\")  //Local de armazenamento do arquivo pdf - \Cons_Compras\ 
+	PRIVATE cPathInServer   := "" //SuperGetMV( "CMV_COM002" ,,"\spool\")  //Local de armazenamento do arquivo pdf - \Cons_Compras\ 
+	PRIVATE lRascunho	:= .F.
+	PRIVATE lIsBlind 	:= IsBlind() .OR. Type("__LocalDriver") == "U"
 
 	DEFAULT cAlias     	:= "SC7"
 	DEFAULT aEmails		:= {}
+	DEFAULT nRecJob     := 0
+	DEFAULT lServer    	:= .F.
+	DEFAULT cFun 		:= alltrim(Funname())
+	DEFAULT lJob 		:= .F.
 
 	/** =================================================================== **/
 	/** ==================== MARCA D'AGUA DE IMPRESSAO ==================== **/
@@ -119,10 +124,24 @@ USER FUNCTION ZCOMR001(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 	/** =================================================================== **/
 	DEFAULT cPictMarca := "/templates/compras/marca-dagua-rascunho.bmp"
 	DEFAULT lMarcaImpr := File(cPictMarca) // ARQUIVO MARCA D'AGUA EXISTE PARA IMPRESSAO
-	PRIVATE lRascunho  := (lMarcaImpr .AND. "RASCUNHO" $ Upper(cPictMarca))
+	DEFAULT _aMatriz	:= {"01","2010022001"}
+	lRascunho  := (lMarcaImpr .AND. "RASCUNHO" $ Upper(cPictMarca))
+	aDest  := aClone(aEmails)
+	If lIsBlind
+		
+		RpcSetType(3)
+		RpcSetEnv(_aMatriz[1],_aMatriz[2])
+		dbSelectArea('SC7')
+		SC7->(dbSetOrder(1))
+		SC7->(DBGoTo(nRecJob))
+		//RpcClearEnv()
 	
+	EndIf
+
+	cPathInServer := SuperGetMV( "CMV_COM002" ,,"\spool\")
+	cPictCabec := "LGRL" + FWGrpCompany() + ".BMP"
 	If !ExistDir(cPathInServer)
-	   MakeDir(cPathInServer)
+		MakeDir(cPathInServer)
 	EndIf
 
 	/** =================================================================================================================================== **/
@@ -141,8 +160,7 @@ USER FUNCTION ZCOMR001(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 		lSendMail  := .F.
 	EndIf
 
-
-	If Alltrim(Funname()) = "MATA121"
+	If cFun == "MATA121"
 		lAuto  := .T.
 		cAlias := "SC7"
 		nReg   := SC7->(RECNO())
@@ -175,7 +193,7 @@ USER FUNCTION ZCOMR001(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 
 		oReport  := FWMSPrinter():New(cFilePrt, IMP_PDF, lAdjustToLegacy, cPathInServer, lDisableSetup, ,,, .T. ,,, lViewPDF)
 
-		oReport:SetResolution(78) //-- FwMsPrinter : SetResolution - Atualmente a vers„o da Totvsprinter somente trabalha com o valor fixo de 72. #TODO VERIFICAR
+		oReport:SetResolution(78) //-- FwMsPrinter : SetResolution - Atualmente a vers√£o da Totvsprinter somente trabalha com o valor fixo de 72. #TODO VERIFICAR
 		oReport:SetLandscape()
 		oReport:SetPaperSize(DMPAPER_A4)
 		oReport:SetMargin(60,60,60,60)
@@ -212,7 +230,7 @@ USER FUNCTION ZCOMR001(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 		
 		If !Empty(cPathInServer)
 
-       	    If Alltrim(Funname()) <> "MATA094" .AND. !FWIsInCallStack("POST")
+       	    If cFun <> "MATA094" .AND. !FWIsInCallStack("POST")
 
 			   lRet := DlgSendMail(aElements, @aColsMail)
 
@@ -269,7 +287,7 @@ USER FUNCTION ZCOMR001(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 
 				lCpyErr := CpyT2S( oReport:cPathPDF+cFilePrt + ".pdf", "\spool\" )
 				If !lCpyErr
-					MESSAGEBOX( "Erro ao copiar arquivo (Client -> Server).", "Falha na cÛpia do arquivo", MB_OK )
+					MESSAGEBOX( "Erro ao copiar arquivo (Client -> Server).", "Falha na c√≥pia do arquivo", MB_OK )
 				Else
 					RptSendMail(aElements, aDest, ("\spool\" + cFilePrt + ".pdf") )
 
@@ -297,6 +315,7 @@ USER FUNCTION ZCOMR001(	cAlias, nReg, nOpcx, oReport, oSetup, lIsLoja, lServer, 
 	EndIf
 
 	RestArea(aArea)
+
 RETURN()
 
 
@@ -475,10 +494,6 @@ STATIC FUNCTION Imprimir(oReport,aElements,lEnd)
 	LOCAL nAlignHorz
 	LOCAL nAlignVert
 	LOCAL cPixel     := "-2" // DEFAULT -2
-	
-	// LOCAL oFontWMark
-	// LOCAL nMarkRow
-	// LOCAL nMarkCol
 
 	LOCAL nPagePrint := 001
 	LOCAL nNumPages  := 001
@@ -626,7 +641,7 @@ Manutencao efetuada:    Criacao
 =====================================================================================
 */
 STATIC FUNCTION ImpDet(oReport,aElements,lEnd)
-	PRIVATE oFont07    := TFontEx():New(oReport,"Arial",07,07,.F.,.T.,.F.) //Fonte criada, definiÁ„o de altura e tipo de fonte.
+	PRIVATE oFont07    := TFontEx():New(oReport,"Arial",07,07,.F.,.T.,.F.) //Fonte criada, defini√ß√£o de altura e tipo de fonte.
 	PRIVATE oFont09    := TFontEx():New(oReport,"Arial",08,08,.F.,.T.,.F.)
 	PRIVATE oFont10    := TFontEx():New(oReport,"Arial",10,10,.F.,.T.,.F.)
 	PRIVATE oFont10N   := TFontEx():New(oReport,"Arial",10,10,.T.,.T.,.F.)
@@ -706,15 +721,8 @@ Manutencao efetuada:    Criacao
 =====================================================================================
 */
 STATIC FUNCTION ReportCab(oReport,aElements,lEnd,nPosV,nFolha,nFolhas,nLine,nBaseCol,nBaseTxt)
-
-	// LOCAL nHPage      := 0
-	// LOCAL nVPage      := 0
-
-	// LOCAL cGrpCompany := cEmpAnt
-
 	LOCAL cPictCabec
 	LOCAL lNewPage    := .F.
-	// LOCAL i
 	LOCAL nItRef
 	LOCAL nSpace      := 002 //_nSpaceLine
 	LOCAL nMargin     := 004
@@ -760,18 +768,16 @@ STATIC FUNCTION ReportCab(oReport,aElements,lEnd,nPosV,nFolha,nFolhas,nLine,nBas
 	LOCAL cXFCA
 	Local nX := 1
 	Local aMAux := {}
+
 	PRIVATE oColumns   := {}
 	PRIVATE nTamVCabIt := 123 //-- ALTURA DOS CABECALHO / TITULOS DE COLUNAS DOS ITENS
 
 	DEFAULT aElements  := {}
-	
 
 	cPictCabec := "LGRL" + FWGrpCompany() + ".BMP"
 	nRow       := nLine
 
-
 	PrtHeader(@oReport,@aElements)   //-- INICIA NOVA PAGINA E IMPRIME CABECALHO
-
 
 	/** =================================================================================================================================== **/
 	/** ======================================================= DADOS DO FORNECEDOR ======================================================= **/
@@ -817,7 +823,7 @@ STATIC FUNCTION ReportCab(oReport,aElements,lEnd,nPosV,nFolha,nFolhas,nLine,nBas
 	/** = LINHA 001 ======================================================================================================================= **/
 	/** = BOX - SUPPLIER ================================================================================================================== **/
 	/** ======================================================= DETALHE - RAZAO SOCIAL ==================================================== **/
-	cText    := "Raz„o Social:" + Space(1)
+	cText    := "Raz√£o Social:" + Space(1)
 	cText    := cText + AllTrim( Posicione("SA2", 01, xFilial("SA2")+(cAliasSC7)->(C7_FORNECE+C7_LOJA), "A2_NOME") ) // 01 - A2_FILIAL+A2_COD+A2_LOJA
 	nRow     := aUltComp[ATT_POSV][02] + nSpace   /* 47.2 + 2.0 = 49.2 */                             // REFERENCE DetailBoxSupplier
 	nCol     := aUltComp[ATT_POSH][02] + nMargin                                                      // REFERENCE DetailBoxSupplier
@@ -851,7 +857,7 @@ STATIC FUNCTION ReportCab(oReport,aElements,lEnd,nPosV,nFolha,nFolhas,nLine,nBas
 	/** = BOX - SUPPLIER ================================================================================================================== **/
 	/** ======================================================= CODIGO DO FORNECEDOR ====================================================== **/
 	cPicture := "@R " + Replicate("9", TamSX3("A2_COD")[1]) + "-" + Replicate("9", TamSX3("A2_LOJA")[1])
-	cText    := "CÛdigo do Fornecedor:" + Space(1)
+	cText    := "C√≥digo do Fornecedor:" + Space(1)
 	cText    := cText + Transform( (cAliasSC7)->(C7_FORNECE + C7_LOJA), cPicture) // MAX CODIGO 17 CARACTERES
 	nRow     := aUltComp[ATT_POSV][02]                                                                 // REFERENCE DetailCellSupplierIE
 	nCol     := aUltComp[ATT_POSH][02] + aUltComp[ATT_TAMH][02] + nMargin                              // REFERENCE DetailCellSupplierIE
@@ -931,7 +937,7 @@ STATIC FUNCTION ReportCab(oReport,aElements,lEnd,nPosV,nFolha,nFolhas,nLine,nBas
 	/** ======================================================= ENDERECO DO FORNECEDOR ==================================================== **/
 	cAux     := Posicione("SA2", 01, xFilial("SA2")+(cAliasSC7)->(C7_FORNECE+C7_LOJA), "A2_END")
 	cAux     := AllTrim(cAux) + Space(1) + Posicione("SA2", 01, xFilial("SA2")+(cAliasSC7)->(C7_FORNECE+C7_LOJA), "A2_COMPLEM")
-	cText    := "EndereÁo:" + Space(1)
+	cText    := "Endere√ßo:" + Space(1)
 	cText    := cText + AllTrim( cAux )
 	nItRef   := AScan(aElements, {|aItem| aItem[ATT_NAME][02] == "DetailCellSupplierPhone"})
 	nRow     := aElements[nItRef][ATT_POSV][02] + aElements[nItRef][ATT_FONT][02]:nHeight + nSpace     // REFERENCE DetailCellSupplierPhone
@@ -1067,7 +1073,7 @@ STATIC FUNCTION ReportCab(oReport,aElements,lEnd,nPosV,nFolha,nFolhas,nLine,nBas
 	/** = LINHA 001 ======================================================================================================================= **/
 	/** = BOX - BILLING =================================================================================================================== **/
 	/** ======================================================= DETALHE - RAZAO SOCIAL ==================================================== **/
-	cText    := "Raz„o Social:" + Space(1)
+	cText    := "Raz√£o Social:" + Space(1)
 	cText    := cText + AllTrim( cM0NomeCom )
 	nRow     := aUltComp[ATT_POSV][02] + nSpace                                                        // REFERENCE DetailBoxBilling
 	nCol     := aUltComp[ATT_POSH][02] + nMargin                                                       // REFERENCE DetailBoxBilling
@@ -1136,7 +1142,7 @@ STATIC FUNCTION ReportCab(oReport,aElements,lEnd,nPosV,nFolha,nFolhas,nLine,nBas
 	cAux     := cAux +   " - "  + AllTrim(cM0EstCob)
 	cAux     := cAux + Space(2) + "CEP:"
 	cAux     := cAux + Space(1) + Transform(cM0CepCob,cPicture)
-	cText    := "EndereÁo:" + Space(1)
+	cText    := "Endere√ßo:" + Space(1)
 	cText    := cText + AllTrim( cAux )
 	nItRef   := AScan(aElements, {|aItem| aItem[ATT_NAME][02] == "DetailCellBillingName"})
 	nRow     := aElements[nItRef][ATT_POSV][02] + aElements[nItRef][ATT_FONT][02]:nHeight + nSpace    // REFERENCE DetailCellBillingName
@@ -1154,7 +1160,7 @@ STATIC FUNCTION ReportCab(oReport,aElements,lEnd,nPosV,nFolha,nFolhas,nLine,nBas
 		{"F", "FOB"}                    , ;
 		{"T", "Por Conta Terceiros"}    , ;
 		{"R", "Por Conta Remetente"}    , ;
-		{"D", "Por Conta Destinat·rio"} , ;
+		{"D", "Por Conta Destinat√°rio"} , ;
 		{"S", "Sem Frete"}                ;
 		}
 	cXFCA := (cAliasSC7)->C7_XFCA
@@ -1306,7 +1312,7 @@ STATIC FUNCTION ReportCab(oReport,aElements,lEnd,nPosV,nFolha,nFolhas,nLine,nBas
 		cAux  := cM4EndEnt
 	EndIf
 
-	cText    := "EndereÁo:" + Space(1)
+	cText    := "Endere√ßo:" + Space(1)
 	cText    := cText + AllTrim( cAux )
 	nRow     := aUltComp[ATT_POSV][02] + nSpace                                                        // REFERENCE DetailBoxDelivery
 	nCol     := aUltComp[ATT_POSH][02] + nMargin                                                       // REFERENCE DetailBoxDelivery
@@ -1430,7 +1436,7 @@ STATIC FUNCTION ReportCab(oReport,aElements,lEnd,nPosV,nFolha,nFolhas,nLine,nBas
 
 	/** = BOX - PAYMENT =================================================================================================================== **/
 	/** ==================================================== DADOS DE COBRANCA - TITULO =================================================== **/
-	cText    := "Dados de CobranÁa"
+	cText    := "Dados de Cobran√ßa"
 	nRow     := aUltComp[ATT_POSV][02]
 	nCol     := aUltComp[ATT_POSH][02]
 	oFont    := oFont12N:oFont
@@ -1467,7 +1473,7 @@ STATIC FUNCTION ReportCab(oReport,aElements,lEnd,nPosV,nFolha,nFolhas,nLine,nBas
 	/** = LINHA 001 ======================================================================================================================= **/
 	/** = BOX - PAYMENT =================================================================================================================== **/
 	/** ======================================================== ENDERECO DE COBRANCA ===================================================== **/
-	cText    := "EndereÁo:" + Space(1)
+	cText    := "Endere√ßo:" + Space(1)
 	cText    := cText + AllTrim( cAux )
 	nRow     := aUltComp[ATT_POSV][02] + nSpace                                                        // REFERENCE DetailBoxPayment
 	nCol     := aUltComp[ATT_POSH][02] + nMargin                                                       // REFERENCE DetailBoxPayment
@@ -1757,12 +1763,12 @@ STATIC FUNCTION SecItems(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage,
 	If Len(oColumns) < 1
 		//-- oColumns { nRow, nCol, nHeight, nWidth, nCell, nAlignHorz }
 		Aadd(oColumns, {000, (nCellLeft += 000), 006, (nCellCount += 006), 006, ALIGNCENT }) // Item
-		Aadd(oColumns, {000, (nCellLeft += 006), 006, (nCellCount += 040), 040, ALIGNLEFT }) // Material/ServiÁo
+		Aadd(oColumns, {000, (nCellLeft += 006), 006, (nCellCount += 040), 040, ALIGNLEFT }) // Material/Servi√ßo
 		Aadd(oColumns, {000, (nCellLeft += 040), 006, (nCellCount += 007), 007, ALIGNCENT }) // NCM / ISS
 		Aadd(oColumns, {000, (nCellLeft += 007), 006, (nCellCount += 010), 010, ALIGRIGHT }) // Quant.
 		Aadd(oColumns, {000, (nCellLeft += 010), 006, (nCellCount += 005), 005, ALIGNCENT }) // UM
-		Aadd(oColumns, {000, (nCellLeft += 005), 006, (nCellCount += 012), 012, ALIGRIGHT }) // PreÁo Unit. PIS/COFINS
-		Aadd(oColumns, {000, (nCellLeft += 012), 006, (nCellCount += 011), 011, ALIGRIGHT }) // PreÁo Unit. c/ ICMS
+		Aadd(oColumns, {000, (nCellLeft += 005), 006, (nCellCount += 012), 012, ALIGRIGHT }) // Pre√ßo Unit. PIS/COFINS
+		Aadd(oColumns, {000, (nCellLeft += 012), 006, (nCellCount += 011), 011, ALIGRIGHT }) // Pre√ßo Unit. c/ ICMS
 		Aadd(oColumns, {000, (nCellLeft += 011), 006, (nCellCount += 010), 010, ALIGRIGHT }) // Base ICMS
 		Aadd(oColumns, {000, (nCellLeft += 010), 006, (nCellCount += 007), 007, ALIGRIGHT }) // % ICMS
 		Aadd(oColumns, {000, (nCellLeft += 007), 006, (nCellCount += 011), 011, ALIGRIGHT }) // Valor ICMS
@@ -1770,7 +1776,7 @@ STATIC FUNCTION SecItems(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage,
 		Aadd(oColumns, {000, (nCellLeft += 006), 006, (nCellCount += 011), 011, ALIGRIGHT }) // Valor IPI
 		Aadd(oColumns, {000, (nCellLeft += 011), 006, (nCellCount += 011), 011, ALIGRIGHT }) // Base ICMSST
 		Aadd(oColumns, {000, (nCellLeft += 011), 006, (nCellCount += 010), 010, ALIGRIGHT }) // Valor ICMSST
-		Aadd(oColumns, {000, (nCellLeft += 010), 006, (              013), 013, ALIGRIGHT }) // PreÁo Total c/ ICMS
+		Aadd(oColumns, {000, (nCellLeft += 010), 006, (              013), 013, ALIGRIGHT }) // Pre√ßo Total c/ ICMS
 	EndIf
 
 	/** =================================================================================================================================== **/
@@ -1817,7 +1823,7 @@ STATIC FUNCTION SecItems(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage,
 		/** =================================================================================================================================== **/
 		/** ========================================================= ITEM - VALORES ========================================================== **/
 		/** = FRETE =========================================================================================================================== **/
-		Aadd(aIt_FRETE , (cAliasSC7)->(C7_FRETE ) )
+		Aadd(aIt_FRETE , IIf((cAliasSC7)->(C7_FRETE ) > 0, (cAliasSC7)->(C7_FRETE ),(cAliasSC7)->(C7_VALFRE)) )
 		/** = DESCONTO ======================================================================================================================== **/
 		Aadd(aIt_DESC  , (cAliasSC7)->(C7_VLDESC) )
 		/** = VALOR IPI ======================================================================================================================= **/
@@ -2159,12 +2165,12 @@ STATIC FUNCTION SecItemTit(oReport,lEnd,aElements,oColumns,nLine,lNewPage,nPageC
 	// If Len(oColumns) < 1
 	// 	//-- oColumns { nRow, nCol, nHeight, nWidth, nCell, nAlignHorz }
 	// 	Aadd(oColumns, {000, (nCellLeft += 000), 006, (nCellCount += 006), 006, ALIGNCENT }) // Item
-	// 	Aadd(oColumns, {000, (nCellLeft += 006), 006, (nCellCount += 040), 040, ALIGNLEFT }) // Material/ServiÁo
+	// 	Aadd(oColumns, {000, (nCellLeft += 006), 006, (nCellCount += 040), 040, ALIGNLEFT }) // Material/Servi√ßo
 	// 	Aadd(oColumns, {000, (nCellLeft += 040), 006, (nCellCount += 007), 007, ALIGNCENT }) // NCM / ISS
 	// 	Aadd(oColumns, {000, (nCellLeft += 007), 006, (nCellCount += 010), 010, ALIGRIGHT }) // Quant.
 	// 	Aadd(oColumns, {000, (nCellLeft += 010), 006, (nCellCount += 005), 005, ALIGNCENT }) // UM
-	// 	Aadd(oColumns, {000, (nCellLeft += 005), 006, (nCellCount += 012), 012, ALIGRIGHT }) // PreÁo Unit. PIS/COFINS
-	// 	Aadd(oColumns, {000, (nCellLeft += 012), 006, (nCellCount += 011), 011, ALIGRIGHT }) // PreÁo Unit. c/ ICMS
+	// 	Aadd(oColumns, {000, (nCellLeft += 005), 006, (nCellCount += 012), 012, ALIGRIGHT }) // Pre√ßo Unit. PIS/COFINS
+	// 	Aadd(oColumns, {000, (nCellLeft += 012), 006, (nCellCount += 011), 011, ALIGRIGHT }) // Pre√ßo Unit. c/ ICMS
 	// 	Aadd(oColumns, {000, (nCellLeft += 011), 006, (nCellCount += 010), 010, ALIGRIGHT }) // Base ICMS
 	// 	Aadd(oColumns, {000, (nCellLeft += 010), 006, (nCellCount += 007), 007, ALIGRIGHT }) // % ICMS
 	// 	Aadd(oColumns, {000, (nCellLeft += 007), 006, (nCellCount += 011), 011, ALIGRIGHT }) // Valor ICMS
@@ -2172,12 +2178,12 @@ STATIC FUNCTION SecItemTit(oReport,lEnd,aElements,oColumns,nLine,lNewPage,nPageC
 	// 	Aadd(oColumns, {000, (nCellLeft += 006), 006, (nCellCount += 011), 011, ALIGRIGHT }) // Valor IPI
 	// 	Aadd(oColumns, {000, (nCellLeft += 011), 006, (nCellCount += 011), 011, ALIGRIGHT }) // Base ICMSST
 	// 	Aadd(oColumns, {000, (nCellLeft += 011), 006, (nCellCount += 010), 010, ALIGRIGHT }) // Valor ICMSST
-	// 	Aadd(oColumns, {000, (nCellLeft += 010), 006, (              013), 013, ALIGRIGHT }) // PreÁo Total c/ ICMS
+	// 	Aadd(oColumns, {000, (nCellLeft += 010), 006, (              013), 013, ALIGRIGHT }) // Pre√ßo Total c/ ICMS
 	// EndIf
 
 	aItCabL1    := {                                                                                                   ;
-		"Item"	, "Material/ServiÁo", "NCM / "	, "Quant."	 , "UM"		, "PreÁo Unit. ", "PreÁo Unit. ", "Base ICMS", ;
-		"% ICMS", "Valor ICMS"		, "% IPI"	, "Valor IPI", "Base "	, "Valor "		, "PreÁo Total "               ;
+		"Item"	, "Material/Servi√ßo", "NCM / "	, "Quant."	 , "UM"		, "Pre√ßo Unit. ", "Pre√ßo Unit. ", "Base ICMS", ;
+		"% ICMS", "Valor ICMS"		, "% IPI"	, "Valor IPI", "Base "	, "Valor "		, "Pre√ßo Total "               ;
 		}
 	aItCabL2    := {                                                                                                   ;
 		""		, ""				, "ISS"		, ""		 , ""		, "PIS/COFINS"	, "c/ ICMS"		, ""		 , ;
@@ -2358,18 +2364,19 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
 					EndIf
 				Next nY
 				MaFisEndLoad(nX,02)                                //-- ENCERRA A CARGA DO ITEM
-			Next nX
 
+				/** =============================================== */
+				/** === MATA120.PRX Executa o Refresh do Folder === */
+				/** === ExpA1 = Array com os valores do Rodape  === */
+				/** =============================================== */
+				A120Refresh(@aValores) 
+			Next nX
 		EndIf
 
-		/** =============================================== */
-		/** === MATA120.PRX Executa o Refresh do Folder === */
-		/** === ExpA1 = Array com os valores do Rodape  === */
-		/** =============================================== */
-		A120Refresh(@aValores)
+		MaFisEnd() 
 
-		MaFisEnd()
 	EndIf
+ 
 
     If nPageCount == 000
         nPageCount := ATail(aElements)[ATT_PAGE][02]
@@ -2743,7 +2750,7 @@ STATIC FUNCTION SecTotals(oReport,lEnd,aElements,oColumns,aTotals,nLine,lNewPage
     //** --- VALOR - TOTAL FRETE ----------------------------------------------------------------------------------------------------------- **/
 	//-- ALINHAMENTO A DIREITA
 	nAlignH   := ALIGRIGHT
-	nTotFrete := SC7->C7_FRETE   //aValores[FRETE]
+	nTotFrete := IIf(SC7->(C7_FRETE ) > 0, SC7->(C7_FRETE ),SC7->(C7_VALFRE)) //SC7->C7_FRETE   //aValores[FRETE]
 	cText     := Transform(nTotFrete, "@E 99,999,999.99")
 	// oReport:SayAlign(nRow, nCol, cText, oFont, nTextWidth, nHeight, nClrText, nAlignH, nAlignV)
     cAux      := "TotalsValueSumFrete"
@@ -2944,7 +2951,7 @@ STATIC FUNCTION SecObsPC(oReport,lEnd,aElements,nLine,lNewPage,nPageCount)
 
     /** = BOX - OBSERVACOES PEDIDO ======================================================================================================== **/
 	/** ============================================================= TITULO ============================================================== **/
-    cText    := "ObservaÁıes Gerais"
+    cText    := "Observa√ß√µes Gerais"
     nRow     := aUltComp[ATT_POSV][02] + nSpaceLine
     nCol     := aUltComp[ATT_POSH][02]
     oFont    := oFont12N:oFont
@@ -3027,10 +3034,8 @@ STATIC FUNCTION PrtHeader(oReport, aElements)
 	LOCAL oFont
 	LOCAL nWidth
 	LOCAL nHeight
-	// LOCAL nClrText
 	LOCAL nAlignH
 	LOCAL nAlignV
-	// LOCAL nAngle
 
 	LOCAL aUltComp
 
@@ -3064,14 +3069,14 @@ STATIC FUNCTION PrtHeader(oReport, aElements)
 	cText    := cPictCabec                                          // 075 x 028
 	nRow     := nRow + nMargin
 	nCol     := nCol + nMargin
-	nHeight  := aUltComp[ATT_TAMV][02] - (nMargin * 2)               // 021 => 028%
+	nHeight  := aUltComp[ATT_TAMV][02] - (nMargin * 2)              // 021 => 028%
 	nWidth   := (nHeight * 100) / 28                                // 075 => 100%
 	aUltComp := AAddComponent(xReportPage,@aElements,"ReportImage",TYPE_IMG,cText,nRow,nCol,,nWidth,nHeight)
 
 	/** = BOX - HEADER ==================================================================================================================== **/
 	/** ============================================================= TITULO ============================================================== **/
 	nItRef   := AScan(aElements, {|aItem| aItem[ATT_NAME][02] == "ReportHeaderBox"})
-	cText    := "PEDIDO DE COMPRA N∫:" + Space(1)
+	cText    := "PEDIDO DE COMPRA N¬∫:" + Space(1)
 	cText    := cText + (cAliasSC7)->(C7_NUM)
 	nRow     := aElements[nItRef][ATT_POSV][02] + nMargin
 	nCol     := aElements[nItRef][ATT_POSH][02]
@@ -3085,7 +3090,7 @@ STATIC FUNCTION PrtHeader(oReport, aElements)
 	/** = BOX - HEADER ==================================================================================================================== **/
 	/** ============================================================ PAGINACAO ============================================================ **/
 	nItRef   := AScan(aElements, {|aItem| aItem[ATT_NAME][02] == "ReportHeaderBox"})
-	cText    := {|nPage,nPages| "P·gina:" + Space(1) + PadL(nPage ,2,"0") + Space(1) + "/" + ;
+	cText    := {|nPage,nPages| "P√°gina:" + Space(1) + PadL(nPage ,2,"0") + Space(1) + "/" + ;
 	                                        Space(1) + PadL(nPages,2,"0")}
 	nRow     := aElements[nItRef][ATT_POSV][02] + nMargin
 	nCol     := aElements[nItRef][ATT_POSH][02]
@@ -3097,7 +3102,7 @@ STATIC FUNCTION PrtHeader(oReport, aElements)
 	/** = BOX - HEADER ==================================================================================================================== **/
 	/** =========================================================== DATA EMISSAO ========================================================== **/
 	nItRef   := AScan(aElements, {|aItem| aItem[ATT_NAME][02] == "HeaderPagenation"})
-	cText    := "Data Emiss„o:" + Space(1)
+	cText    := "Data Emiss√£o:" + Space(1)
 	cText    := cText + DtoC((cAliasSC7)->(C7_EMISSAO))
 	cText    := Replace( cText , "/", ".")
 	nRow     := aElements[nItRef][ATT_POSV][02] + aElements[nItRef][ATT_FONT][02]:nHeight + nMargin //oFont12:oFont:nHeight
@@ -3140,11 +3145,11 @@ Parametros:             ExpX1: Objeto grafico de impressao / Numero da pagina
 						ExpC3: Nome identificador do elemento grafico no relatorio
 						ExpC4: Tipo do elemento grafico (BOX, SAY, LINE, ...)
 						ExpC5: Texto contido no elemento (SAY, SAYALIGN)
-						ExpN6: PosiÁ„o vertical / linha do elemento na pagina
-						ExpN7: PosiÁ„o horizontal / coluna do elemento na pagina
+						ExpN6: Posi√ß√£o vertical / linha do elemento na pagina
+						ExpN7: Posi√ß√£o horizontal / coluna do elemento na pagina
 						ExpO8: Objeto TFont formatacao do texto
-						ExpN9: PosiÁ„o vertical final / largura do elemento
-						ExpN10: PosiÁ„o horizontal final / altura do elemento
+						ExpN9: Posi√ß√£o vertical final / largura do elemento
+						ExpN10: Posi√ß√£o horizontal final / altura do elemento
 						ExpN11: Alinhamento horizontal do texto (esq., dir., centr.)
 						ExpN12: Alinhamento vertical do texto (topo, meio, baixo)
 						ExpC13: Cor do elemento grafico (CLR_BLACK, CLR_HRED)
@@ -3325,7 +3330,7 @@ STATIC FUNCTION PrtTermsPC(oReport,lEnd,aElements,nPageCount)
 
 	nRow     := nLine
 	nCol     := oBoxTerms[ATT_POSH][02] // INIBOXH
-	cText    := "Termos e CondiÁıes de Compras"
+	cText    := "Termos e Condi√ß√µes de Compras"
 	nHeight  := nRow + oFont:nHeight * 1.2
 	nWidth   := oBoxTerms[ATT_TAMH][02] // MAXBOXH +60
 	nTextWidth := nWidth - nCol - nMargin
@@ -3502,7 +3507,7 @@ STATIC FUNCTION RptSendMail(aElements,aDest,cArqPedido)
 	LOCAL lMsgErro 	 := .T.
 	LOCAL lMsgOK 	 := .T.
 	LOCAL cMsgTitle  := "CAOA"
-	LOCAL cMsgSending := "Enviando e-mail de notificaÁ„o. Aguarde!!!"
+	LOCAL cMsgSending := "Enviando e-mail de notifica√ß√£o. Aguarde!!!"
 	LOCAL nItRef
 	LOCAL nAux
 	LOCAL cNumPC     := ""
@@ -3525,8 +3530,8 @@ STATIC FUNCTION RptSendMail(aElements,aDest,cArqPedido)
 	// ** VERIFICAR EXISTENCIA DO TEMPLATE DE EMAIL ****************** ** //
 	// ** ************************************************************ ** //
 	If !FindFunction("H_ZCOMR001") .AND. !oFile:Open()
-		MsgStop("OperaÁ„o cancelada!" + CRLF + CRLF + "Nenhuma mensagem enviada." + CRLF + ;
-			"Template de e-mail indisponÌvel.", "[ZCOMR001] - Pedido de Compras")
+		MsgStop("Opera√ß√£o cancelada!" + CRLF + CRLF + "Nenhuma mensagem enviada." + CRLF + ;
+			"Template de e-mail indispon√≠vel.", "[ZCOMR001] - Pedido de Compras")
 		RETURN()
 	EndIf
 
@@ -3554,7 +3559,7 @@ STATIC FUNCTION RptSendMail(aElements,aDest,cArqPedido)
 	// ** ************************************************************ ** //
 	Aadd(aAnexos, "/templates/compras/" + cPictImg)
 	Aadd(aAnexos, "/templates/compras/" + "Comunicado a Fornecedores e Bancos.pdf")
-	Aadd(aAnexos, "/templates/compras/" + "InstruÁ„o de pagamento - compras indiretas.pdf")
+	Aadd(aAnexos, "/templates/compras/" + "Instru√ß√£o de pagamento - compras indiretas.pdf")
 
 	// ** ************************************************************ ** //
 	// ** DADOS DO PEDIDO ******************************************** ** //
@@ -3633,23 +3638,24 @@ Autor....:              Denis Amaral Galvani
 Data.....:              20/05/19
 Manutencao efetuada:    Criacao
 -------------------------------------------------------------------------------------
-Descricao:              Tela de seleÁ„o, ediÁ„o de email para envio PC anexado
+Descricao:              Tela de sele√ß√£o, edi√ß√£o de email para envio PC anexado
 =====================================================================================
 */
 STATIC FUNCTION DlgSendMail(aElements,aColsMail)
-	LOCAL cTitulo       := "Enviar e-mail - Listagem de destinat·rios"
+	LOCAL cTitulo       := "Enviar e-mail - Listagem de destinat√°rios"
 	LOCAL cAux
 	LOCAL lRet
-	LOCAL aACampos  	:= {"CONTATO","EMAIL"} 	// Vari·vel contendo o campo edit·vel no Grid
-	LOCAL aBotoes		:= {}         			// Vari·vel onde ser· incluido o bot„o para a legenda
+	LOCAL aACampos  	:= {"CONTATO","EMAIL"} 	// Vari√°vel contendo o campo edit√°vel no Grid
+	LOCAL aBotoes		:= {}         			// Vari√°vel onde ser√° incluido o bot√£o para a legenda
 	PRIVATE oLista                    			// Declarando o objeto do Browser
-	PRIVATE aCabecalho  := {}         			// Vari·vel que montar· o aHeader do Grid
-	DEFAULT aColsMail 	:= {}         			// Vari·vel que receber· os dados
-
+	PRIVATE aCabecalho  := {}         			// Vari√°vel que montar√° o aHeader do Grid
+	PRIVATE lIsBlind	:= IsBlind() .OR. Type("__LocalDriver") == "U"
 	PRIVATE cFornMail := ""						// DEFAULT
 	PRIVATE cCmprMail := ""						// DEFAULT
 	PRIVATE cUserMail := AllTrim(UsrRetMail(RetCodUsr()))
 	
+	DEFAULT aColsMail 	:= {}         			// Vari√°vel que receber√° os dados
+
 	//-- ENDERECO EMAIL DO FORNECEDOR - IMPRESSO NO RELATORIO
 	nItRef  := AScan(aElements, {|aElem| aElem[ATT_NAME][02] == "DetailCellSupplierMail"})
 	If nItRef > 0
@@ -3667,32 +3673,38 @@ STATIC FUNCTION DlgSendMail(aElements,aColsMail)
 			cCmprMail := cAux
 		EndIf
 	EndIf
-
-	DEFINE MSDIALOG oDlg TITLE cTitulo FROM 000, 000  TO 300, 700  PIXEL
-		//-- CRIAR ESTRUTURA aHeader
+	
+	if  lIsBlind
 		CriaCabec()
-
-		//-- BROWSER PARA INCLUSAO, REMOCAO E ATUALIZACAO
-		oLista := MsNewGetDados():New( 053, 078, 415, 775, GD_INSERT+GD_DELETE+GD_UPDATE, "AllwaysTrue", "AllwaysTrue", "AllwaysTrue", aACampos,1, 999, "AllwaysTrue", "", "AllwaysTrue", oDlg, aCabecalho, aColsMail)
-
-		//-- CARGA DOS ITENS DO GRID, ENDERECOS EMAIL PRINCIPAIS
 		Carregar(@aColsMail)
+		lRet := .t.
+	else
+		DEFINE MSDIALOG oDlg TITLE cTitulo FROM 000, 000  TO 300, 700  PIXEL
+			//-- CRIAR ESTRUTURA aHeader
+			CriaCabec()
 
-		//-- ALINHAMENTO PARA OCUPACAO DE ESPACO DISPONIVEL
-		oLista:oBrowse:Align := CONTROL_ALIGN_ALLCLIENT
+			//-- BROWSER PARA INCLUSAO, REMOCAO E ATUALIZACAO
+			oLista := MsNewGetDados():New( 053, 078, 415, 775, GD_INSERT+GD_DELETE+GD_UPDATE, "AllwaysTrue", "AllwaysTrue", "AllwaysTrue", aACampos,1, 999, "AllwaysTrue", "", "AllwaysTrue", oDlg, aCabecalho, aColsMail)
 
-		//-- DEFINIR FOCO NO BROWSER NA ABERTURA
-		oLista:oBrowse:SetFocus()
+			//-- CARGA DOS ITENS DO GRID, ENDERECOS EMAIL PRINCIPAIS
+			Carregar(@aColsMail)
 
-		//-- BOTAO ACOES RELACIONADAS
-		// Aadd(aBotoes,{"NG_ICO_LEGENDA", {||Legenda()},"Legenda","Legenda"})
+			//-- ALINHAMENTO PARA OCUPACAO DE ESPACO DISPONIVEL
+			oLista:oBrowse:Align := CONTROL_ALIGN_ALLCLIENT
 
-		EnchoiceBar(oDlg, {|| lRet:=.T.,oDlg:End() }, {|| lRet:=.F.,oDlg:End() },,aBotoes)
+			//-- DEFINIR FOCO NO BROWSER NA ABERTURA
+			oLista:oBrowse:SetFocus()
 
-	ACTIVATE MSDIALOG oDlg CENTERED
+			//-- BOTAO ACOES RELACIONADAS
+			// Aadd(aBotoes,{"NG_ICO_LEGENDA", {||Legenda()},"Legenda","Legenda"})
 
-	//-- ATUALIZAR VALORES DO GRID
-	aColsMail := oLista:aCols
+			EnchoiceBar(oDlg, {|| lRet:=.T.,oDlg:End() }, {|| lRet:=.F.,oDlg:End() },,aBotoes)
+
+		ACTIVATE MSDIALOG oDlg CENTERED
+
+		//-- ATUALIZAR VALORES DO GRID
+		aColsMail := oLista:aCols
+	endif
 
 RETURN(lRet)
 
@@ -3737,7 +3749,7 @@ STATIC FUNCTION CriaCabec()
                   "C",;						// X3_TIPO
                   "",;						// X3_F3
                   "V",;						// X3_CONTEXT
-				  "F=Fornecedor;C=Comprador;R=Requisitante;U=Usu·rio;X=CÛpia",;			//X3_CBOX
+				  "F=Fornecedor;C=Comprador;R=Requisitante;U=Usu√°rio;X=C√≥pia",;			//X3_CBOX
                   "",;						// X3_RELACAO
 				  ""})						// X3_WHEN
 				  
@@ -3768,7 +3780,7 @@ Autor....:              Denis Amaral Galvani
 Data.....:              20/05/19
 Manutencao efetuada:    Criacao
 -------------------------------------------------------------------------------------
-Descricao:              Constroi grid de destinat·rios (MsNewGetDados), aCols
+Descricao:              Constroi grid de destinat√°rios (MsNewGetDados), aCols
 =====================================================================================
 */
 STATIC FUNCTION Carregar(aColsMail)
@@ -3778,7 +3790,9 @@ STATIC FUNCTION Carregar(aColsMail)
 	Local i          := 0
 
 	DEFAULT lEnvPrd    := ("_PRD" $ Upper(GetEnvServer())) //-- ENVIAR PARA EMAIL EXTERNO, COMO PRODUCAO
- 
+
+	cUserMail     := Posicione("SY1", 03, xFilial("SY1")+(cAliasSC7)->(C7_USER), "Y1_EMAIL") // 03 - Y1_FILIAL+Y1_USER
+
     Aadd(aContatos,{"F",cFornMail})
     Aadd(aContatos,{"C",cCmprMail})
     Aadd(aContatos,{"R",(cAliasSZV)->ZV_REQMAIL})
@@ -3794,12 +3808,13 @@ STATIC FUNCTION Carregar(aColsMail)
 		Aadd(aColsMail,{StrZero(i,3),aContatos[i,1],PadR(cMail,aCabecalho[3,4]),(Empty(cMail).OR.!lSend)})
 		lSend := .T.
     Next
- 
-    //-- SETAR aCols DE DADOS NO OBJETO
-    oLista:SetArray(aColsMail,.T.)
- 
-    //-- ATUALIZAR INFORMACOES PARA EXIBICAO
-    oLista:Refresh()
+	if !lIsBlind
+		//-- SETAR aCols DE DADOS NO OBJETO
+		oLista:SetArray(aColsMail,.T.)
+		//-- ATUALIZAR INFORMACOES PARA EXIBICAO
+		oLista:Refresh()
+	endif
+
 RETURN()
 
 
@@ -3815,24 +3830,24 @@ Autor....:              Denis Amaral Galvani
 Data.....:              20/05/19
 Manutencao efetuada:    Criacao
 -------------------------------------------------------------------------------------
-Descricao:              Tela de seleÁ„o, ediÁ„o de email para envio PC anexado
+Descricao:              Tela de sele√ß√£o, edi√ß√£o de email para envio PC anexado
 =====================================================================================
 */
 STATIC FUNCTION DlgSendMa(aElements,aColsMail)
-	LOCAL cTitulo       := "Enviar e-mail - Listagem de destinat·rios"
+	LOCAL cTitulo       := "Enviar e-mail - Listagem de destinat√°rios"
 	LOCAL cAux
 	LOCAL lRet
-	Local oDlg
-	LOCAL aACampos  	:= {"CONTATO","EMAIL"} 	// Vari·vel contendo o campo edit·vel no Grid
-	LOCAL aBotoes		:= {}         			// Vari·vel onde ser· incluido o bot„o para a legenda
+	LOCAL aACampos  	:= {"CONTATO","EMAIL"} 	// Vari√°vel contendo o campo edit√°vel no Grid
+	LOCAL aBotoes		:= {}         			// Vari√°vel onde ser√° incluido o bot√£o para a legenda
 	PRIVATE oLista                    			// Declarando o objeto do Browser
-	PRIVATE aCabecalho  := {}         			// Vari·vel que montar· o aHeader do Grid
-	DEFAULT aColsMail 	:= {}         			// Vari·vel que receber· os dados
+	PRIVATE aCabecalho  := {}         			// Vari√°vel que montar√° o aHeader do Grid
+	DEFAULT aColsMail 	:= {}         			// Vari√°vel que receber√° os dados
 
 	PRIVATE cFornMail := ""						// DEFAULT
 	PRIVATE cCmprMail := ""						// DEFAULT
-	//PRIVATE cUserMail := AllTrim(UsrRetMail(RetCodUsr()))
 	PRIVATE cUserMail := alltrim(SC1->C1_XREQMAI)
+	//PRIVATE cUserMail := AllTrim(UsrRetMail(RetCodUsr()))
+
 	//-- ENDERECO EMAIL DO FORNECEDOR - IMPRESSO NO RELATORIO
 	nItRef  := AScan(aElements, {|aElem| aElem[ATT_NAME][02] == "DetailCellSupplierMail"})
 	If nItRef > 0
@@ -3881,7 +3896,6 @@ RETURN(lRet)
 
 
 
-
 /*
 =====================================================================================
 Programa.:              Carregar
@@ -3892,7 +3906,7 @@ Autor....:              Denis Amaral Galvani
 Data.....:              20/05/19
 Manutencao efetuada:    Criacao
 -------------------------------------------------------------------------------------
-Descricao:              Constroi grid de destinat·rios (MsNewGetDados), aCols
+Descricao:              Constroi grid de destinat√°rios (MsNewGetDados), aCols
 =====================================================================================
 */
 STATIC FUNCTION Carrega(aColsMail)

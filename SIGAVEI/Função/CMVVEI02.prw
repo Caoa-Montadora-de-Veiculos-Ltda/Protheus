@@ -166,7 +166,7 @@ Elseif FWIsInCallStack("Ma410Impos")	//-- Visualização de pedido (FAT)
 		Endif	
 	Endif	
 Endif
-
+ 
 aEval(aArea,{|x| RestArea(x)})
 
 Return({nBaseNovoImp,nAliqImp,nValNovoImp})
@@ -179,7 +179,11 @@ Local nRet := 0
 
 VV2->(dbSetOrder(7))
 If VV2->(dbSeek(xFilial("VV2")+cProd))
-	nRet := VV2->VV2_XCOMIS
+	nRet := VV2->&('VV2_XCOM'+StrZero(Val(VRJ->VRJ_TIPVEN),1))
+
+	If nRet <= 0
+		nRet := VV2->VV2_XCOMIS
+	EndIf
 Endif
 
 aEval(aArea,{|x| RestArea(x)})

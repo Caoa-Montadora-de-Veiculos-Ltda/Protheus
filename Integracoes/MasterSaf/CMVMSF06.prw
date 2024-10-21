@@ -345,7 +345,7 @@ static _VLR_UNIT
 */
 
 User Function CMVMSF06()
-
+ 
 	Local nOpc := 0
 	Local aRet := {}
 	Local aParamBox := {}
@@ -431,7 +431,7 @@ User Function CMVMSF06()
 		aAdd(aParamBox,{1 ,"Cliente/Fornecedor Final:"   ,Repl("Z",TamSX3("A1_COD")[1]),""    ,"",""   ,"", 80,.F.}) // Tipo caractere
 		aAdd(aParamBox,{1 ,"Nota Fiscal Inicial:"        ,Space(TamSX3("F1_DOC")[1])   ,""    ,"",""   ,"", 80,.F.}) // Tipo caractere
 		aAdd(aParamBox,{1 ,"Nota Fiscal Final:"          ,Repl("Z",TamSX3("F1_DOC")[1]),""    ,"",""   ,"", 80,.F.}) // Tipo caractere
-		aAdd(aParamBox,{1 ,"Local do Arquivo:"           ,"C:\TEMP\"+Space(50)         ,"@S50","","",""   ,100,.T.}) // Tipo caractere
+		aAdd(aParamBox,{1 ,"Local do Arquivo:"           ,"C:\Temp"+Space(50)         ,"@S50","","",""   ,100,.T.}) // Tipo caractere
 		
 		aAdd(aParamBox,{2 ,"Gera com cabeçalho:"         ,1,{"Não","Sim"},40,"",.F.})
 		aAdd(aParamBox,{2 ,"Selecionar Notas Fiscais:"   ,1,{"Não","Sim"},40,"",.F.})
@@ -1966,7 +1966,7 @@ Descricao / Objetivo:   Rotina de criacao do arquivo de log de erros
 Static Function MS06Han()
 
 	Local lRet := .T.
-	Local cDir := "c:\temp"
+	Local cDir := cLocDest //"c:\temp"
 
 	// monta o nome do arquivo
 	cFile := "Erros_Exportacao_Mastersaf"
@@ -2938,7 +2938,7 @@ Descricao / Objetivo:   Itens Notas Fiscais Mercadorias e Produtos
 */
 
 Static Function fSAFX08()
-	Local cLP := '610-002'
+	Local cLP := SuperGetMV("CMV_LPSFAT", .F., "610-002")
 	Local cConta := ""
 	Local cChave := ""
 
@@ -3072,14 +3072,27 @@ Static Function fSAFX08()
 					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_UM")
 					nPosCmpCab:=PosCabArray(aItens,"COD_NBM")						
 					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_POSIPI")
+
+					//******* INC0113339 25/06/24 Cintia Araujo
 					nPosCmpCab:=PosCabArray(aItens,"VLR_UNIT")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_PRCUNIT")
+					If SFT->FT_DESCZFR > 0
+						aItens[Len(aItens)][nPosCmpCab][2] := (SFT->FT_PRCUNIT+(SFT->FT_DESCZFR/SD2->D2_QUANT))*(10**TamSZR(cTab)[2])
+					Else
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_PRCUNIT")
+					EndIf
 					nPosCmpCab:=PosCabArray(aItens,"VLR_ITEM")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_TOTAL")
+					If SFT->FT_DESCZFR > 0
+						aItens[Len(aItens)][nPosCmpCab][2] := (SFT->FT_TOTAL+SFT->FT_DESCZFR)*(10**TamSZR(cTab)[2])
+					Else
+						aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_TOTAL")
+					EndIf
+					//******* INC0113339 25/06/24 Cintia Araujo
+
+
 					nPosCmpCab:=PosCabArray(aItens,"VLR_DESCONTO")
 					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_DESCONT")
 					nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_A")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_ORIGEM")
+					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CLASFIS")  //"SB1->B1_ORIGEM")   INC0112420 17/06/24 Cintia Araujo
 					nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_B")
 					aItens[Len(aItens)][nPosCmpCab][2] := IIf((Empty(SFT->FT_CLASFIS) .or. !Len(Alltrim(SFT->FT_CLASFIS)) == 3),"@",Subs(SFT->FT_CLASFIS,2,2))
 					nPosCmpCab:=PosCabArray(aItens,"VLR_FRETE")
@@ -4218,7 +4231,7 @@ Static Function fSAFX52()
 					aItens[Len(aItens)][nPosCmpCab][2] := "D"
 					//INC0020855 - SAFX52
 					nPosCmpCab:=PosCabArray(aItens,"COD_SITUACAO_A")
-					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SB1->B1_ORIGEM")
+					aItens[Len(aItens)][nPosCmpCab][2] := Eval(bCmpZerado,"SFT->FT_CLASFIS")  //"SB1->B1_ORIGEM")  INC0112420 17/06/24 Cintia Araujo
 					//INC0020855 - SAFX52
 					nPosCmpCab:=PosCabArray(aItens,"IND_MOT_INV")
 					aItens[Len(aItens)][nPosCmpCab][2] := "01"
@@ -4394,10 +4407,9 @@ Static Function fSAFX108()
 	cQ += CRLF + "			WHERE   SD3Q.D_E_L_E_T_ = ' '   "
 	cQ += CRLF + "				AND SD3Q.D3_FILIAL  = SC2.C2_FILIAL   "
 	cQ += CRLF + "				AND SD3Q.D3_OP      = SC2.C2_NUM||SC2.C2_ITEM||SC2.C2_SEQUEN  "
-    cQ += CRLF + "          	AND SD3Q.D3_EMISSAO <= '" + dTos( dDataFim ) + "' "
+    cQ += CRLF + "          	AND SD3Q.D3_EMISSAO BETWEEN '" + dTos( dDataIni ) + "' AND '" + dTos( dDataFim ) + "'"
 	cQ += CRLF + "				AND SD3Q.D3_OP      <> ' '  "
-
-	cQ += CRLF + "				AND SD3Q.D3_COD = SC2.C2_PRODUTO "
+	cQ += CRLF + "				AND SD3Q.D3_COD     = SC2.C2_PRODUTO "
     cQ += CRLF + "            	AND SD3Q.D3_ESTORNO <> 'S' ) as D3_QUANT "
 
 	cQ += CRLF + " 		,(SELECT nvl(SUM(SD3T.D3_CUSTO1),0) * 100 AS  D3_CUSTO1   "
@@ -4405,31 +4417,26 @@ Static Function fSAFX108()
 	cQ += CRLF + "			WHERE   SD3T.D_E_L_E_T_ = ' '   "
 	cQ += CRLF + "				AND SD3T.D3_FILIAL  = SC2.C2_FILIAL   "
 	cQ += CRLF + "				AND SD3T.D3_OP      = SC2.C2_NUM||SC2.C2_ITEM||SC2.C2_SEQUEN  "
-    cQ += CRLF + "            	AND SD3T.D3_EMISSAO <= '" + dTos( dDataFim ) + "'"
+    cQ += CRLF + "            	AND SD3T.D3_EMISSAO BETWEEN '" + dTos( dDataIni ) + "' AND '" + dTos( dDataFim ) + "'"
 	cQ += CRLF + "				AND SD3T.D3_OP      <> ' '  "
 	cQ += CRLF + "				AND SD3T.D3_CF     NOT IN  ('PR0','PR1' )  "
 	cQ += CRLF + "            	AND SD3T.D3_ESTORNO <> 'S' ) as D3_CUSTOT "
-
 	cQ += CRLF + "		,SC2.*  "
 
-	cQ += CRLF + "	FROM " + RetSqlName( "SC2" ) + " SC2"
+	cQ += CRLF + "	FROM " + RetSqlName("SD3") + " SD3, " + RetSqlName( "SC2" ) + " SC2"
 
-	cQ += CRLF + "  	INNER JOIN " + RetSqlName("SD3") + " SD3  "
-	cQ += CRLF + "  		ON  SD3.D_E_L_E_T_  = ' '  "
-	cQ += CRLF + "  		AND SD3.D3_FILIAL   = SC2.C2_FILIAL  "
-	cQ += CRLF + "  		AND TRIM(SD3.D3_OP) = TRIM(SC2.C2_NUM) || TRIM(SC2.C2_ITEM) || TRIM(SC2.C2_SEQUEN) "
-	cQ += CRLF + "         	AND SD3.D3_ESTORNO  <> 'S' "
-	cQ += CRLF + "         	AND SD3.D3_OP       <> ' '  "
-	cQ += CRLF + "  		AND SD3.D3_CF       IN  ('PR0','PR1' ) "
-	cQ += CRLF + "         	AND SD3.D3_TIPO     IN  ('PA' ,'PI')  "
-
-	cQ += CRLF + "		WHERE   SC2.D_E_L_E_T_ = ' '  "
-	cQ += CRLF + "			AND SC2.C2_FILIAL BETWEEN '" + cFilDe + "' AND '" + cFilAte + "' "
-	cQ += CRLF + "			AND SC2.C2_DATPRI >= '" + dTos( dDataIni ) + "' "
-	cQ += CRLF + "			AND SC2.C2_DATPRF <= '" + dTos( dDataFim ) + "' "
+	cQ += CRLF + "		WHERE   SC2.D_E_L_E_T_ = ' '  AND SD3.D_E_L_E_T_  = ' ' "
+	cQ += CRLF + "			AND SD3.D3_FILIAL BETWEEN '" + cFilDe + "' AND '" + cFilAte + "' "
+	cQ += CRLF + "			AND SC2.C2_FILIAL   = SD3.D3_FILIAL "
+	cQ += CRLF + "			AND SC2.C2_NUM||SC2.C2_ITEM||SC2.C2_SEQUEN = SD3.D3_OP "
+	cQ += CRLF + "			AND SD3.D3_ESTORNO  <> 'S' "
+	cQ += CRLF + "			AND SUBSTR(SD3.D3_OP,1,1) <> ' ' "
+	cQ += CRLF + "			AND SD3.D3_EMISSAO >= '" + dTos( dDataIni ) + "' "
+	cQ += CRLF + "			AND SD3.D3_EMISSAO <= '" + dTos( dDataFim ) + "' "
+	cQ += CRLF + "			AND SD3.D3_CF       IN  ('PR0','PR1' )
+	cQ += CRLF + "			AND SD3.D3_TIPO     IN  ('PA' ,'PI')
 
 	cQ += CRLF + ")	ORDER BY C2_FILIAL,C2_NUM,C2_ITEM,C2_SEQUEN "
-
 
 	If lDebug
 		MemoWrite(cLocDest+cTab+".txt",cQ)
@@ -4442,14 +4449,16 @@ Static Function fSAFX108()
 
 	If !Empty(aCab)
 		While (cAliasTrb)->(!Eof())
-			
+			 
 			lContinua := .T.
-				
+			
+			cFilSB1 := xFilial("SB1") // Padr(Subs( (cAliasTrb)->C2_FILIAL,1,6),TamSX3("B1_FILIAL")[1])
+			
 			// posiciona tabelas auxiliares
 			SB1->(dbSetOrder(1))
-			If SB1->(!dbSeek(Padr(Subs( (cAliasTrb)->C2_FILIAL,1,6),TamSX3("B1_FILIAL")[1]) + (cAliasTrb)->C2_PRODUTO))
+			If SB1->(!dbSeek(cFilSB1 + (cAliasTrb)->C2_PRODUTO))
 				lContinua := .F.
-				cErro := cTab+": Não encontrado tabela: SB1, filial/produto: " + Padr(Subs( (cAliasTrb)->C2_FILIAL,1,6),TamSX3("B1_FILIAL")[1])+"/" 
+				cErro := cTab+": Não encontrado tabela: SB1, filial/produto: " + cFilSB1+"/" 
 				cErro += (cAliasTrb)->C2_PRODUTO + ", OP: "+ (cAliasTrb)->C2_NUM + Alltrim( (cAliasTrb)->C2_ITEM) + Alltrim( (cAliasTrb)->C2_SEQUEN ) + "."
 				
 				MS06GrvLog(cErro)
@@ -4521,49 +4530,45 @@ Descricao / Objetivo:   Item da Ordem de Produção
 
 Static Function fSAFX109()
 	
-	cQ := CRLF + " SELECT SD3.R_E_C_N_O_ SD3_RECNO, SC2.R_E_C_N_O_ SC2_RECNO, "
-	cQ += CRLF + "     	SD3.D3_FILIAL, "
-	cQ += CRLF + "     	SC2.C2_EMISSAO, "
-	cQ += CRLF + "     	SC2.C2_NUM, "
-	cQ += CRLF + "     	SC2.C2_ITEM, "
-	cQ += CRLF + "     	SC2.C2_SEQUEN, "
-	cQ += CRLF + "     	SD3.D3_OP, "
-	cQ += CRLF + "     	SD3.D3_COD, "
-	cQ += CRLF + "     	SD3.D3_EMISSAO, "
-	cQ += CRLF + "     	SD3.D3_QUANT, "
-	cQ += CRLF + "     	SD3.D3_CUSTO1, "
-	cQ += CRLF + "		CAST(SD3.D3_CUSTO1/SD3.D3_QUANT AS DECIMAL( 8,2)) AS CUSTO_UNI,
-	cQ += CRLF + " 		SC2.C2_PRODUTO " 
-	
-	cQ += CRLF + "  FROM " + RetSqlName("SC2") + " SC2  "
 
-	cQ += CRLF + "  	INNER JOIN " + RetSqlName("SD3") + " SD3  "
-	cQ += CRLF + "  		ON  SD3.D_E_L_E_T_ = ' '  "
-	cQ += CRLF + "  		AND SD3.D3_FILIAL  = SC2.C2_FILIAL  "
-	cQ += CRLF + "  		AND TRIM(SD3.D3_OP) = TRIM(SC2.C2_NUM) || TRIM(SC2.C2_ITEM) || TRIM(SC2.C2_SEQUEN) "
-	cQ += CRLF + "         	AND SD3.D3_ESTORNO <> 'S' "
-	cQ += CRLF + "         	AND SD3.D3_OP      <> ' '  "
-	cQ += CRLF + "  		AND SD3.D3_CF NOT IN  ('PR0','PR1' ) "
+	cQ := CRLF + " SELECT SD3.R_E_C_N_O_ SD3_RECNO, SC2.R_E_C_N_O_ SC2_RECNO, "
+	cQ += CRLF + "        SD3.D3_FILIAL, "
+	cQ += CRLF + "        SC2.C2_EMISSAO, "
+	cQ += CRLF + "        SC2.C2_NUM, "
+	cQ += CRLF + "        SC2.C2_ITEM, "
+	cQ += CRLF + "        SC2.C2_SEQUEN, "
+	cQ += CRLF + "        SD3.D3_OP, "
+	cQ += CRLF + "        SD3.D3_COD, "
+	cQ += CRLF + "        SD3.D3_EMISSAO, "
+	cQ += CRLF + "        SD3.D3_QUANT, "
+	cQ += CRLF + "        SD3.D3_CUSTO1, "
+	cQ += CRLF + "        CAST(SD3.D3_CUSTO1/SD3.D3_QUANT AS DECIMAL( 8,2)) AS CUSTO_UNI,
+	cQ += CRLF + "        SC2.C2_PRODUTO " 
 	
-	cQ += CRLF + "  	WHERE SC2.D_E_L_E_T_ = ' '  "
-	cQ += CRLF + "  		AND SC2.C2_FILIAL  BETWEEN '" + cFilDe    + "' AND '" + cFilAte  + "' "
-	cQ += CRLF + "  		AND SC2.C2_DATPRI  >= '" + dTos(dDataIni) + "' "
-	cQ += CRLF + " 			AND SC2.C2_DATPRF  <= '" + dTos(dDataFim) + "' "
+	cQ += CRLF + "  FROM " + RetSqlName("SD3") + " SD3, " + RetSqlName("SC2") + " SC2  "
+	
+	cQ += CRLF + "  	WHERE SC2.D_E_L_E_T_ = ' ' AND SD3.D_E_L_E_T_  = ' ' "
+	cQ += CRLF + "  		AND SD3.D3_FILIAL BETWEEN '" + cFilDe    + "' AND '" + cFilAte  + "' "
+	cQ += CRLF + "			AND SC2.C2_FILIAL   = SD3.D3_FILIAL 
+	cQ += CRLF + "			AND SC2.C2_NUM||SC2.C2_ITEM||SC2.C2_SEQUEN = SD3.D3_OP 
+	cQ += CRLF + "			AND SD3.D3_ESTORNO  <> 'S' 
+	cQ += CRLF + "			AND SUBSTR(SD3.D3_OP,1,1) <> ' ' 
+	cQ += CRLF + "  		AND SD3.D3_EMISSAO >= '" + dTos(dDataIni) + "' "
+	cQ += CRLF + " 			AND SD3.D3_EMISSAO <= '" + dTos(dDataFim) + "' "
+	cQ += CRLF + "			AND SD3.D3_CF NOT IN  ('PR0','PR1' ) 
 	cQ += CRLF + "			AND SC2.C2_NUM||SC2.C2_ITEM||SC2.C2_SEQUEN IN( SELECT  "
 	cQ += CRLF + "					DISTINCT CONCAT(CONCAT(C2_NUM,C2_ITEM),C2_SEQUEN) AS OP "
-	cQ += CRLF + "				FROM " + RetSqlName("SC2") + " SC2A "
-	cQ += CRLF + "			  	INNER JOIN " + RetSqlName("SD3") + " SD3A  
-	cQ += CRLF + "			  		ON  SD3A.D_E_L_E_T_  = ' '  "
-	cQ += CRLF + "			  		AND SD3A.D3_FILIAL   = SC2.C2_FILIAL  "
-	cQ += CRLF + "			  		AND TRIM(SD3A.D3_OP) = TRIM(SC2A.C2_NUM) || TRIM(SC2A.C2_ITEM) || TRIM(SC2A.C2_SEQUEN) "
-	cQ += CRLF + "			       	AND SD3A.D3_ESTORNO  <> 'S' "
-	cQ += CRLF + "			       	AND SD3A.D3_OP       <> ' ' "
-	cQ += CRLF + "			    	AND SD3A.D3_CF       IN  ('PR0','PR1' ) "
-	cQ += CRLF + "			       	AND SD3A.D3_TIPO     = 'PA' "
-	cQ += CRLF + "				WHERE   SC2A.D_E_L_E_T_ = ' ' "
-	cQ += CRLF + "						AND SC2A.C2_FILIAL = SC2.C2_FILIAL  
-	cQ += CRLF + "						AND SC2A.C2_DATPRI >= '" + dTos(dDataIni) + "' " 
-	cQ += CRLF + "						AND SC2A.C2_DATPRF <= '" + dTos(dDataFim) + "' ) "
+	cQ += CRLF + "				FROM " + RetSqlName("SD3") + " SD3A, " + RetSqlName("SC2") + " SC2A "
+	cQ += CRLF + "				WHERE   SD3A.D_E_L_E_T_  = ' ' AND SC2A.D_E_L_E_T_ = ' ' "
+	cQ += CRLF + "						AND SC2A.C2_FILIAL = SC2.C2_FILIAL
+	cQ += CRLF + "						AND SD3A.D3_FILIAL = SC2.C2_FILIAL
+	cQ += CRLF + "						AND SC2A.C2_NUM||SC2A.C2_ITEM||SC2A.C2_SEQUEN = SD3A.D3_OP
+	cQ += CRLF + "						AND SD3A.D3_ESTORNO  <> 'S'
+	cQ += CRLF + "						AND SUBSTR(SD3A.D3_OP,1,1) <> ' '
+	cQ += CRLF + "						AND SD3A.D3_CF       IN  ('PR0','PR1')
+	cQ += CRLF + "						AND SD3A.D3_TIPO     IN  ('PA' ,'PI' )
+	cQ += CRLF + "						AND SD3A.D3_EMISSAO >= '" + dTos(dDataIni) + "' "
+	cQ += CRLF + "						AND SD3A.D3_EMISSAO <= '" + dTos(dDataFim) + "' ) "
 
 	cQ += CRLF + "  ORDER BY SC2.C2_FILIAL,SC2.C2_EMISSAO,SC2.C2_NUM ,SD3.D3_COD "
 	
@@ -4579,13 +4584,15 @@ Static Function fSAFX109()
 	If !Empty(aCab)
 		While (cAliasTrb)->(!Eof())
 		
-			lContinua := .T.
+			lContinua := .T. 
+
+			cFilSB1 := xFilial("SB1") // Padr(Subs( (cAliasTrb)->C2_FILIAL,1,6),TamSX3("B1_FILIAL")[1])
 			
 			SB1->(dbSetOrder(1))
-			If SB1->(!dbSeek(Padr(Subs((cAliasTrb)->D3_FILIAL,1,6),TamSX3("B1_FILIAL")[1])+(cAliasTrb)->D3_COD))
+			If SB1->(!dbSeek(cFilSB1+(cAliasTrb)->D3_COD))
 				lContinua := .F.
 				cErro := cTab + ": Não encontrado tabela: SB1, filial/produto: "
-				cErro += Padr( Subs( (cAliasTrb)->D3_FILIAL , 1 , 6 ), TamSX3("B1_FILIAL")[1]) + "/" + (cAliasTrb)->D3_COD+", OP: " + (cAliasTrb)->D3_OP + "." 
+				cErro += cFilSB1 + "/" + (cAliasTrb)->D3_COD+", OP: " + (cAliasTrb)->D3_OP + "." 
 				MS06GrvLog(cErro)
 			Endif	
 
@@ -5117,7 +5124,7 @@ Static Function fSAFX114()
 					{SFT->FT_SERIE+SFT->FT_NFISCAL+SFT->FT_CLIEFOR+SFT->FT_LOJA,;
 					CDG->CDG_PROCES,;
 					CDG->CDG_ITPROC})
-
+ 
 					MontaItens(aCab,@aItens,SF3->F3_FILIAL)
 								
 					// comeca gravar campos do layout

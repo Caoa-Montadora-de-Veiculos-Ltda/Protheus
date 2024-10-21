@@ -807,6 +807,15 @@ User Function ZF11GENSAP(cxFil,cTab,cIndice,cChave,nOperPro,nOperSAP,cXMLSZ7,cSt
             SZ7->Z7_RECORI := SE2->(Recno())
             SZ7->Z7_CLIFOR := SE2->E2_FORNECE
             SZ7->Z7_LOJA := SE2->E2_LOJA
+        Elseif cTab == "CT2" .and. Alltrim(SZ7->Z7_ORIGEM) == "MATA997"
+            SZ7->Z7_DOCORI := SF2->F2_DOC
+            SZ7->Z7_SERORI := SF2->F2_SERIE
+            If (Len(aDadosOri) > 3 .and. Empty(aDadosOri[4])) .or. Empty(aDadosOri)
+                SZ7->Z7_RECORI := SF2->(Recno())
+            Endif
+            SZ7->Z7_TIPONF := SF2->F2_TIPO
+            SZ7->Z7_CLIFOR := SF2->F2_CLIENTE
+            SZ7->Z7_LOJA := SF2->F2_LOJA
         // contabilizacao de movimentos de estoque, excluindo nota de entrada e saida
 //        Elseif cTab == "CT2" .and. "MATA" $ Alltrim(SZ7->Z7_ORIGEM) .and. SD3->(!Eof()) .and. SD3->(!Bof()) ;
 //        .and. !"MATA103/GFEA065/MATA140/MATA460/MATA460A/MATA460B/MATA116" $ Alltrim(SZ7->Z7_ORIGEM)
@@ -839,8 +848,15 @@ User Function ZF11GENSAP(cxFil,cTab,cIndice,cChave,nOperPro,nOperSAP,cXMLSZ7,cSt
         // tratamento para quando vier status "N" no quinto elemento do array adadosori,
         // neste caso indica que o registro de exclusao nao deve ser processado, pois o registro de inclusao ainda nao foi
         // enviado, e tambem o registro de inclusao nao deve ser processado
-        If nOperSAP == 2 .and. Len(aDadosOri) > 1 .and. aDadosOri[5] == "N" .and. !Empty(aDadosOri[6])
+        If nOperSAP == 1 .and. Len(aDadosOri) > 1 .and. aDadosOri[5] == "N" .and. !Empty(aDadosOri[6])
             lNaoProcEnvio := .T.
+            SZ7->Z7_XSTATUS := "N"
+            nRecStatusExc := SZ7->(Recno())
+        Endif
+
+        // Adicionado por Cintia Araujo em 05/07/24 - INC0112050 - gerar Z7_XSTATUS = 'N' quando Z7_SERORI = 'EIC' para nao integrar SAP
+        If SZ7->Z7_SERORI = 'EIC' 
+            lNaoProcEnvio := .F.
             SZ7->Z7_XSTATUS := "N"
             nRecStatusExc := SZ7->(Recno())
         Endif
