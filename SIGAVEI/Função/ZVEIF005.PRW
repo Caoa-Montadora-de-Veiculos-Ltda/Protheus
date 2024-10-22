@@ -157,8 +157,8 @@ DEFINE MSDIALOG oMov140 FROM aSizeHalf[7],0 TO aSizeHalf[6],aSizeHalf[5] TITLE (
 	@ aPos[1,1] + 004, aPos[1,2] + 350 SAY cBloqVei SIZE 100,08 OF oMov140 PIXEL COLOR CLR_RED
 	@ aPos[1,1] + 004, aPos[1,4] - 097 SAY "<< " + cChaInt + " >>" SIZE 50,08 OF oMov140 PIXEL COLOR CLR_RED
 	@ aPos[1,1] + 003, aPos[1,4] - 050 BUTTON oGrpSair PROMPT "SAIR" OF oMov140 SIZE 50,10 PIXEL ACTION oMov140:End() //SAIR
-	// Fim Veiculo
 
+	// Fim Veiculo
 	// --------------------- //
 	// Movimentacoes Fiscais // 
 	// --------------------- //
@@ -174,9 +174,9 @@ DEFINE MSDIALOG oMov140 FROM aSizeHalf[7],0 TO aSizeHalf[6],aSizeHalf[5] TITLE (
 		SIZE 200,08 PIXEL WHEN !Empty(cPesqV) // Exibir NFs de frete em linhas separadas
 
 	@ aPos[2,1] + 008, aPos[2,2] + 165 SAY "Ordem" SIZE 50,08 OF oMov140 PIXEL
+
 	@ aPos[2,1] + 007, aPos[2,2] + 185 RADIO oRadio VAR nRadio PROMPT "Cronologica", "Cronologica Inversa" 3D OF oMov140 PIXEL SIZE 075,10 // Cronologica / Cronologica Inversa
 	oRadio:bChange := {|| FS_ORDEM(nRadio) }
-
 	// Listbox Movimentacoes Fiscais
 	oLbMov140 := TWBrowse():New( aPos[2,1]+035, aPos[2,2]+001, aPos[2,4]-4, aPos[2,3]-(aPos[2,1]+36),,,,oMov140 ,,,,,,,,,,,,.F.,,.T.,,.F.,,, )
 	oLbMov140:AddColumn( TCColumn():New( "Data"                          , { || Transform(aMov[oLbMov140:nAt,1], "@D")                } ,,,,"LEFT",  025 ,.F.,.F.,,,,.F.,) )
@@ -191,6 +191,7 @@ DEFINE MSDIALOG oMov140 FROM aSizeHalf[7],0 TO aSizeHalf[6],aSizeHalf[5] TITLE (
 	oLbMov140:AddColumn( TCColumn():New( "Custo+Frete"                   , { || Transform(aMov[oLbMov140:nAt,12], "@E 99,999,999.99") } ,,,,"RIGHT", 042 ,.F.,.F.,,,,.F.,) )
 	oLbMov140:AddColumn( TCColumn():New( "Fornecedor/Clisnte"            , { || aMov[oLbMov140:nAt,9]                                 } ,,,,"LEFT",  120 ,.F.,.F.,,,,.F.,) )
 	oLbMov140:AddColumn( TCColumn():New( "Transacao/Atendimento"         , { || aMov[oLbMov140:nAt,10]                                } ,,,,"LEFT",  040 ,.F.,.F.,,,,.F.,) )
+
 	If VVF->(FieldPos("VVF_NUMOP")) <> 0
 		oLbMov140:AddColumn( TCColumn():New( AllTrim(RetTitle("VVF_NUMOP")) , { || aMov[oLbMov140:nAt,15]                              } ,,,,"LEFT",  042 ,.F.,.F.,,,,.F.,) )
 	EndIf
@@ -198,10 +199,8 @@ DEFINE MSDIALOG oMov140 FROM aSizeHalf[7],0 TO aSizeHalf[6],aSizeHalf[5] TITLE (
 	oLbMov140:SetArray(aMov)
 	// Fim Listbox Movimentacoes Fiscais
 	// Fim Movimentacoes Fiscais
-
 	// Movimentacoes Internas
 	@ aPos[3,1] - 003, aPos[3,2] TO aPos[3,3], (aPos[3,4] * 0.3) + 002 LABEL (" " + "Movimentacoes Internas" + " ") OF oMov140 PIXEL // Movimentacoes Internas
-
 	// Listbox Movimentacoes Internas
 	@ aPos[3,1] + 004, aPos[3,2] + 001 LISTBOX oLbInt140 FIELDS HEADER "Data", "Filial", "Arm", "Localizacao" COLSIZES 25, 27, 15, 60; //Data # Filial # Arm. # Localizacao
 		SIZE ((aPos[3,4] - aPos[3,2]) * 0.3) - 2, aPos[3,3] - aPos[3,1] - 5 OF oMov140 PIXEL
@@ -213,7 +212,6 @@ DEFINE MSDIALOG oMov140 FROM aSizeHalf[7],0 TO aSizeHalf[6],aSizeHalf[5] TITLE (
 							aInt[oLbInt140:nAt,4] }}
 	// Fim Listbox Movimentacoes Internas
 	// Fim Movimentacoes Internas
-
 	// Atendimentos Não Finalizados
 	@ aPos[3,1] - 003, aPos[3,2] + (aPos[3,4] * 0.3) TO aPos[3,3], aPos[3,4] + 001 LABEL (" " + "Atendimentos Nao Finalizados" + " ") OF oMov140 PIXEL // Atendimentos Nao Finalizados
 
@@ -447,21 +445,21 @@ Else
 			cChassi := ( cQAlSC6 )->( C6_CHASSI )
 			cChaInt := ( cQAlSC6 )->( VV1_CHAINT )
 			cPlaVei := ( cQAlSC6 )->( VV1_PLAVEI )
-
 			// Informacoes Chassi - Descricao VEICULO (Padrão)
 			aVei[1,3] := ( cQAlSC6 )->( C6_XCODMAR )
 			aVei[2,3] := Alltrim(( cQAlSC6 )->( C6_XDESMOD ))
 			aVei[3,3] := Alltrim(( cQAlSC6 )->( C6_XCOREXT ))
 			aVei[4,3] := Transform(( cQAlSC6 )->( C6_XFABMOD ), "@R 9999/9999")
 			aVei[5,3] := IIF(!Empty(cPlaVei), Transform(cPlaVei, X3Picture("VV1_PLAVEI")), "")
-
-			// Ponto de Entrada para retorno de Informacoes customizadas do Veiculo
+    
+    // Ponto de Entrada para retorno de Informacoes customizadas do Veiculo
 			////If lPEVC140VEI
 				////nTamPadrao := 5 // Tamanho padrão do vetor "aVei" (Informacoes Chassi - Descricao VEICULO)
 
 				/*aVeiAux := ExecBlock("VC140VEI", .f., .f., { 1, cChassi, cChaInt })*/
 
 				// Colunas customizadas pelo Ponto de Entrada referente ao Veiculo
+
 				////For nCont := 1 to Len(aVeiAux)
 				////	aVei[nTamPadrao + nCont, 3] := aVeiAux[nCont,1] // Incluir apenas os dados
 				////Next
@@ -557,6 +555,7 @@ Else
 				cQuery += "   AND SB2.B2_QATU > 0 " // Somente Registros com Estoque
 				cQuery += "   AND SB2.D_E_L_E_T_  = ' '"
 				dbUseArea( .T., "TOPCONN", TcGenQry( ,, cQuery ), cQAlSB2 , .F., .T. )
+
 				If !( cQAlSB2 )->( Eof() ) .AND.  Empty(cSitVei)
 					cFilAtu := "Em estoque na filial " + ( cQAlSB2 )->( B2_FILIAL )  // Em estoque na filial
    				nTam := aScan(aFil,{|x| x[1] == cFilAnt })
@@ -901,6 +900,7 @@ Else
 					If cSTATUS == "A" .and. lVendid
 						cSTATUS := "X"
 					EndIf
+          
 					If ( cQAlVV0A )->( VV0_TIPDOC ) == '2' // Mov.Interna SD3
 						cSTATUS := "F" // F - Para entrar no vetor de Movimentacoes
 					EndIf
@@ -1208,7 +1208,6 @@ If nTip > 0
 	oLbInt140:SetFocus()
 	oLbInt140:Refresh()
 	// Listbox Movimentacoes Internas
-
 	// Listbox Atendimentos Não Finalizados
 	oLbAte140:nAt := 1
 	oLbAte140:SetArray(aAte)
@@ -1347,7 +1346,6 @@ Else// cTip == 'V' // Visualiza Tela com NF's Canceladas
 	aPos := MsObjSize( aInfo, aObjects )
 
 	DEFINE MSDIALOG oNFCan140 FROM aSizeHalf[7],0 TO aSizeHalf[6],aSizeHalf[5] TITLE ("NF Canceladas") OF oMainWnd PIXEL STYLE DS_MODALFRAME STATUS //NF Canceladas
-
 		// Informacoes Chassi
 		@ aPos[1,1] - 003, aPos[1,2] TO aPos[1,3] + 003, aPos[1,4] - 055 LABEL (" " + "Informacoes Chassi" + " ") OF oNFCan140 PIXEL // Informacoes Chassi
 
@@ -1357,7 +1355,6 @@ Else// cTip == 'V' // Visualiza Tela com NF's Canceladas
 
 		@ aPos[1,1] + 015, aPos[1,4] - 050 BUTTON oNFCSair PROMPT "SAIR" OF oNFCan140 SIZE 50,10 PIXEL ACTION oNFCan140:End() //SAIR
 		// Fim Informacoes Chassi
-
 		// Entrada - NF/Serie
 		@ aPos[2,1], aPos[2,2] TO aPos[2,3] + 003, aPos[2,4] + 001 LABEL (" " + "Entrada" + " - " + "NF/Serie" + " ") OF oNFCan140 PIXEL // Entrada - NF/Serie
 
