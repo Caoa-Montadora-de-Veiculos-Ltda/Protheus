@@ -7,6 +7,7 @@
 
 #define CRLF chr(13) + chr(10)  
 
+
 /*/{Protheus.doc} ZPECF035
 Localção WIS
 @author     DAC - Denilso 
@@ -150,13 +151,13 @@ Begin Sequence
     EndIf
     _cQuery += "        ,ESTWIS.ARMAZEM	AS ARMAZEM "+ CRLF 
     _cQuery += "        ,CASE ESTWIS.ARMAZEM WHEN 'BAR' THEN 'BARUERI' ELSE 'FRANCO DA ROCHA' END    AS DESCRICAO_ARMAZEM "+ CRLF 
-    _cQuery += "        ,ESTWIS.CD_ENDERECO	AS ENDERECO "+ CRLF 
+    _cQuery += "        ,' '	AS ENDERECO "+ CRLF 
     _cQuery += "        ,(NVL(ESTWIS.QT_ESTOQUE,0) - ( NVL(ESTWIS.QT_RESERVA_SAIDA,0) + NVL(ESTWIS.QT_TRANSITO_SAIDA,0) ) ) AS QTDE_DISPONIVEL "+ CRLF 
     _cQuery += "        ,NVL(ESTWIS.QT_ESTOQUE,0) 			AS QTDE_ESTOQUE "+ CRLF 
     _cQuery += "        ,NVL(ESTWIS.QT_RESERVA_SAIDA,0) 	AS QTDE_RESERVA "+ CRLF 
     _cQuery += "        ,NVL(ESTWIS.QT_TRANSITO_SAIDA,0)	AS QTDE_TRANSITO "+ CRLF 
     _cQuery += "        ,' '                AS  D_E_L_E_T_ "+ CRLF
-    _cQuery += "        ,ROW_NUMBER() OVER (ORDER BY ESTWIS.CD_EMPRESA, ESTWIS.ARMAZEM, ESTWIS.CD_ENDERECO)     AS  R_E_C_N_O_ "+ CRLF    
+    _cQuery += "        ,ROW_NUMBER() OVER (ORDER BY ESTWIS.CD_EMPRESA, ESTWIS.ARMAZEM)     AS  R_E_C_N_O_ "+ CRLF    
 	_cQuery += " FROM " + _cConectWis + " ESTWIS "+ CRLF
 	_cQuery += " WHERE RTRIM(LTRIM(ESTWIS.CD_PRODUTO)) BETWEEN '"+AllTrim(_cCodProdDe)+"'  AND '"+AllTrim(_cCodProdAte)+"' "+ CRLF
     If ( AllTrim(FwCodEmp()) == "2020" .And. AllTrim(FwFilial()) == "2001" ) //Empresa 02-Franco da Rocha
@@ -164,7 +165,7 @@ Begin Sequence
     ElseIf ( AllTrim(FwCodEmp()) == "9010" .And. AllTrim(FwFilial()) == "HAD1" ) //90- HMB
             _cQuery += " AND ESTWIS.CD_EMPRESA = 1008 "
     EndIf
-	_cQuery += " ORDER BY ESTWIS.CD_EMPRESA, ESTWIS.ARMAZEM, ESTWIS.CD_ENDERECO "+ CRLF
+	_cQuery += " ORDER BY ESTWIS.CD_EMPRESA, ESTWIS.ARMAZEM "+ CRLF
 
     
 	nStatus := TCSqlExec(_cQuery)
