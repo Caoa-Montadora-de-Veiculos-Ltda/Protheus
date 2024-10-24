@@ -7,6 +7,7 @@
 
 #define CRLF chr(13) + chr(10)  
 
+
 /*/{Protheus.doc} ZPECF035
 Localção WIS
 @author     DAC - Denilso 
