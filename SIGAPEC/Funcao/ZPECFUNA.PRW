@@ -1,5 +1,5 @@
 /*/{Protheus.doc} ZPECFUNA
-Responsavel pelas funçoes customizadas com utilizades em outros programas
+Responsavel pelas funï¿½oes customizadas com utilizades em outros programas
 @author DAC - Denilso
 @since 20/11/2021
 @version V.03
@@ -7,6 +7,7 @@ Responsavel pelas funçoes customizadas com utilizades em outros programas
 @type user function
 @history    
 /*/
+
 #INCLUDE "FWMBROWSE.CH"
 #INCLUDE "FWMVCDEF.CH"
 #include "Totvs.ch"
@@ -18,18 +19,18 @@ Responsavel pelas funçoes customizadas com utilizades em outros programas
 Static oZPEC08Peca  := DMS_Peca():New()
 
 /*/{Protheus.doc} XOFUNLIB
-Liberar orçamento verifica se esta disponÃ­vel para separação e grava separação
+Liberar orï¿½amento verifica se esta disponÃ­vel para separaï¿½ï¿½o e grava separaï¿½ï¿½o
 @author 	DAC-Denilso
 @since 		01/11/2021
 @version 	undefined
-@param 		_cNumOrc 	- Numero orçamento 
+@param 		_cNumOrc 	- Numero orï¿½amento 
 @project    MIT044-GAP_PECCD07-08-09 Aglutinar  V3
 @type 		user function
 @obs 
 @menu       Nao Informado
 @return		_lRet 		- Verdadeiro ou falso
-@history    28/07/2023 GAP002  Integração da separação - Informar produto e quantidade da cubagem
-			incluÃ­do _lAtualiza para atualização do VS1 em alguns casos não sera necessario
+@history    28/07/2023 GAP002  Integraï¿½ï¿½o da separaï¿½ï¿½o - Informar produto e quantidade da cubagem
+			incluÃ­do _lAtualiza para atualizaï¿½ï¿½o do VS1 em alguns casos nï¿½o sera necessario
 /*/
 User Function XOFUNLIB( _cNumOrc, _aSeqVS3, _aVS3Reg, _lAtualiza )
 	Local _lRet 		:= .T.
@@ -38,14 +39,14 @@ User Function XOFUNLIB( _cNumOrc, _aSeqVS3, _aVS3Reg, _lAtualiza )
 
 	Default _lAtualiza	:= .T.
 
-	//Caso não esteja habilitada crio para que possa retornar mesgs
+	//Caso nï¿½o esteja habilitada crio para que possa retornar mesgs
 	If Type("_aMensAglu") == "U"
 		Private _aMensAglu := {}
 	EndIf
 	Begin Sequence
-		//não fazer separação quando esta sem limite de crÃ©dito 
+		//nï¿½o fazer separaï¿½ï¿½o quando esta sem limite de crÃ©dito 
 		If Valtype(_cNumOrc) <> "C" .Or. Empty(_cNumOrc)
-			Aadd(_aMensAglu,"não foi informado o numero do orçamento !")
+			Aadd(_aMensAglu,"nï¿½o foi informado o numero do orï¿½amento !")
 			_lRet := .F.
 			Break
 		EndIf
@@ -56,25 +57,25 @@ User Function XOFUNLIB( _cNumOrc, _aSeqVS3, _aVS3Reg, _lAtualiza )
 		//Alterado para utilizar reserva CAOA - DAC 16/08/2022
 		//_cDocto := U_XRESCAOAPEC(_cNumOrc, .T., _aSeqVS3)
 		If _lAtualiza .And. (Empty(_cDocto) .or. _cDocto == "NA")
-			Aadd(_aMensAglu,"não foi possivel fazer reserva os status serão retornados, verificar com ADM SISTEMAS !")
+			Aadd(_aMensAglu,"nï¿½o foi possivel fazer reserva os status serï¿½o retornados, verificar com ADM SISTEMAS !")
 			RecLock('VS1',.F.)
 				VS1->VS1_XBO := 'E'
 			VS1->(MsUnlock())
 			_lRet := .F.
 			Break
 		EndIf 
-		/* Retirado a geração de carregamento sera realizada quando do recebimento da funcionalidade DAC 11/07/2022
+		/* Retirado a geraï¿½ï¿½o de carregamento sera realizada quando do recebimento da funcionalidade DAC 11/07/2022
 		_cNroConf 	:= OX0020071_ExisteConferencia( _cNumOrc  ) 
-		//utilizado desta forma pois no padrão não esta atualizando o campo que identifica a reserva no VS1 e VS3 neste momento rodando a onda não foi realizado o picking ajustado DAC - 19/05/2022
+		//utilizado desta forma pois no padrï¿½o nï¿½o esta atualizando o campo que identifica a reserva no VS1 e VS3 neste momento rodando a onda nï¿½o foi realizado o picking ajustado DAC - 19/05/2022
 		//ja existe o numero de conferencia
 		If !Empty(_cNroConf) .and. !Empty(VS1->VS1_XPICKI) 
-			Aadd(_aMensAglu,"Ocamento ja possui numeração de conferencia "+_cNroConf+" !")
+			Aadd(_aMensAglu,"Ocamento ja possui numeraï¿½ï¿½o de conferencia "+_cNroConf+" !")
 			_lRet := .F.
 			Break
 		EndIf
 		_cNroConf := OX0020041_GravaRegistroConferencia( _cNumOrc )
 		If Empty(_cNroConf)
-			Aadd(_aMensAglu,"não foi possivel gravar conferencia, ocorreu erro !")
+			Aadd(_aMensAglu,"nï¿½o foi possivel gravar conferencia, ocorreu erro !")
 			_lRet := .F.
 			Break
 		EndIf
@@ -84,23 +85,23 @@ User Function XOFUNLIB( _cNumOrc, _aSeqVS3, _aVS3Reg, _lAtualiza )
 			FM_GerLog("F",VS1->VS1_NUMORC,,VS1->VS1_FILIAL,VS1->VS1_STATUS)
 		EndIf
 		*/
-		Aadd(_aMensAglu,"orçamento em separação e liberado docto. reserva "+_cDocto+" !")
+		Aadd(_aMensAglu,"orï¿½amento em separaï¿½ï¿½o e liberado docto. reserva "+_cDocto+" !")
 
 	End Sequence
 Return _lRet		
 
 
 /*/{Protheus.doc} XOFUNCLO
-Clonar um orçamento
+Clonar um orï¿½amento
 @author 	DAC-Denilso
 @since 		01/11/2021
 @version 	undefined
-@param 		_cNumOrc 	- Numero orçamento 
+@param 		_cNumOrc 	- Numero orï¿½amento 
 			_cGrupo		- Grupo de Produto
 			_cCodProd 	- CÃ³digo do produto
 			_nQtdeItem  - Qtde que deseja clonar do produto
 			_lZera      - Zerar item original que foi clonado
-			_aVazioCpo  - Campos que deverão estar vazio ex {"VS1_XAGLUT","VS1_XUSUAGL","VS1_XDTAGLU"}
+			_aVazioCpo  - Campos que deverï¿½o estar vazio ex {"VS1_XAGLUT","VS1_XUSUAGL","VS1_XDTAGLU"}
 			_aBackOrder  - Matriz com numero de registro do VS3 para gerar BackOrder
 @project    MIT044-GAP_PECCD07-08-09 Aglutinar  V3
 @type 		user function
@@ -110,7 +111,7 @@ Clonar um orçamento
 @history    
 
 /*/
-//Clonar um orçamento
+//Clonar um orï¿½amento
 User Function XOFUNCLO( _cNumOrc, _cGrupo, _cCodProd, _nQtdeItem, _lZera, _aCpoVazio, _aBackOrder, _cNumOrcNovo )
 	Local _lRet 		:= .T.
 	Local _nRegVS1		:= VS1->(Recno())
@@ -127,9 +128,9 @@ User Function XOFUNCLO( _cNumOrc, _cGrupo, _cCodProd, _nQtdeItem, _lZera, _aCpoV
 	Default _cCodProd	:= ""
 	Default _nQtdeItem 	:= 0
 	Default _nSaldoSB2 	:= 0
-	Default _lZera		:= .F.  //indica se apÃ³s a clonagem zera os itens do orçamento original
+	Default _lZera		:= .F.  //indica se apÃ³s a clonagem zera os itens do orï¿½amento original
 	Default _aBackOrder := {}
-	//Campos que deverão estar vazios ou zerados apÃ³s a cÃ³pia
+	//Campos que deverï¿½o estar vazios ou zerados apÃ³s a cÃ³pia
 	Default _aCpoVazio	:= {"VS1_OBSAGL",;
 							"VS1_XPICKI",;
 							"VS1_XUSUPI",;
@@ -150,7 +151,7 @@ User Function XOFUNCLO( _cNumOrc, _cGrupo, _cCodProd, _nQtdeItem, _lZera, _aCpoV
 	//						"VS3_XITSUB",;
 
 	Begin Sequence
-		//ja tem que estar posicionado no orçamento
+		//ja tem que estar posicionado no orï¿½amento
 		If AllTrim(_cNumOrc) <> AllTrim(VS1->VS1_NUMORC)
 			VS1->(DbSetOrder(1)) 
 			If !VS1->(MsSeek(XFilial("VS1")+_cNumOrc))
@@ -159,8 +160,8 @@ User Function XOFUNCLO( _cNumOrc, _cGrupo, _cCodProd, _nQtdeItem, _lZera, _aCpoV
 				Break
 			EndIf
 		EndIf	
-		//Implementado controle de numeração para não deixar duplicar DAC 15/07/2022
-		//caso volte a mesma numeração esta correto caso seja diferente Ã© que a sequencia Ã© maior
+		//Implementado controle de numeraï¿½ï¿½o para nï¿½o deixar duplicar DAC 15/07/2022
+		//caso volte a mesma numeraï¿½ï¿½o esta correto caso seja diferente Ã© que a sequencia Ã© maior
 		_cOrcNovo 		:= VS1->(GetSXENum("VS1","VS1_NUMORC"))
 		_cOrcConf		:= U_XVERNUMeracao("VS1", "VS1_NUMORC", _cOrcNovo )
 		If AllTrim(_cOrcNovo) <> AllTrim(_cOrcConf)
@@ -169,12 +170,12 @@ User Function XOFUNCLO( _cNumOrc, _cGrupo, _cCodProd, _nQtdeItem, _lZera, _aCpoV
 			Aadd(_aObs, "- ASSUMIDO NUMERACAO PARA O ORÃ‡AMENTO "+_cOrcConf+" AJUSTAR NUMERACAO AUTOMATICA !")
 			_cOrcNovo := _cOrcConf
 		Endif
-		_cNumOrcNovo	:= _cOrcNovo  //para retornar o numero novo do orçamento
+		_cNumOrcNovo	:= _cOrcNovo  //para retornar o numero novo do orï¿½amento
 		//para controlar o conteudo da variavel
 		If Type("_cAglutina") == "U"
-			If FWIsInCallStack("U_ZPECF008") //Validar origem pois esta função pode ser utilizada para clonar com outras chamadas DAC 25/04/2022
+			If FWIsInCallStack("U_ZPECF008") //Validar origem pois esta funï¿½ï¿½o pode ser utilizada para clonar com outras chamadas DAC 25/04/2022
 				_lRet := .F.
-				Aadd(_aObs, "Numero da Onda não informado verificar com ADM Sistema !")
+				Aadd(_aObs, "Numero da Onda nï¿½o informado verificar com ADM Sistema !")
 				Break
 			Else
 				Private _cAglutina := ""
@@ -190,7 +191,7 @@ User Function XOFUNCLO( _cNumOrc, _cGrupo, _cCodProd, _nQtdeItem, _lZera, _aCpoV
 				EndIf
 				_nRegVS1	:= VS1->(Recno())
 			Endif	
-			//caso tenha um orçamento e o numero de aglutinação estiver vazio carregar do orçamento
+			//caso tenha um orï¿½amento e o numero de aglutinaï¿½ï¿½o estiver vazio carregar do orï¿½amento
 			If Empty(_cAglutina) .and. !Empty(VS1->VS1_XAGLU)
 				_cAglutina := VS1->VS1_XAGLU
 			EndIf	
@@ -231,24 +232,24 @@ Return _lRet
 
 
 /*/{Protheus.doc} XAVLBACKOrder
-Preparar itens do orçamento que esta em BackOrder
+Preparar itens do orï¿½amento que esta em BackOrder
 @author 	DAC-Denilso
 @since 		27/07/2022
 @version 	undefined
 @param 		_aBackOrder  - Matriz com numero de registro do VS3 para gerar BackOrder
-			_cNumOrc 	- Numero orçamento 
+			_cNumOrc 	- Numero orï¿½amento 
 			_cAglutina	- Onda
-			_cOrcNovo 	- Numero novo orçamento 
-			_aObs		= Observaçoes no processo de separação
+			_cOrcNovo 	- Numero novo orï¿½amento 
+			_aObs		= Observaï¿½oes no processo de separaï¿½ï¿½o
 @project    PEC007
 @type 		user function
 @obs 		Revitalizado processo para gerar backorder de KIT e outros
 @menu       Nao Informado
-@return		_aOrc 		- itens do orçamento preparados para clonagem
+@return		_aOrc 		- itens do orï¿½amento preparados para clonagem
 @history    
 /*/
 
-/* visão abakcorder
+/* visï¿½o abakcorder
 Aadd(_aBackOrder,{(_cAliasPesq)->NREGVS3, 
 					_cCodProd, 
 					(_cAliasPesq)->QTDE_TOTAL, 
@@ -268,9 +269,9 @@ Static Function XAVLBACKOrder(_aBackOrder, _cNumOrc,  _cAglutina, _cOrcNovo, _aO
 	Begin Sequence
 		For _nPos := 1 To Len(_aBackOrder) 
 			_aItem := {}
-			VS3->(DbGoto(_aBackOrder[_nPos,1]))  //a primeira posição tem que ser o numero do registro do VS3
+			VS3->(DbGoto(_aBackOrder[_nPos,1]))  //a primeira posiï¿½ï¿½o tem que ser o numero do registro do VS3
 			If VS3->(Recno()) <> _aBackOrder[_nPos,1]
-				AAdd(_aObs, "Problemas na localização registro para clonagem ref Backorder, comunicar ADM Sistemas")
+				AAdd(_aObs, "Problemas na localizaï¿½ï¿½o registro para clonagem ref Backorder, comunicar ADM Sistemas")
 				_lRet := .F.
 				Break
 			Endif
@@ -280,8 +281,8 @@ Static Function XAVLBACKOrder(_aBackOrder, _cNumOrc,  _cAglutina, _cOrcNovo, _aO
 				Aadd( _aObsVS3, Upper(AllTrim(_aBackOrder[_nPos,4])))
 			Endif	 
 			//Aadd( _aObsVS3, "ORÃ‡AMENTO DE ORIGEM "+ AllTrim(VS3->VS3_NUMORC)+" CLONADO ")
-			//incluindo validação para indicar XBO quando backorder DAC 27/04/2022
-			//Quando informação de backorder for maior que 4 indica que não deve ser informado como XBO = "S"
+			//incluindo validaï¿½ï¿½o para indicar XBO quando backorder DAC 27/04/2022
+			//Quando informaï¿½ï¿½o de backorder for maior que 4 indica que nï¿½o deve ser informado como XBO = "S"
 			If Len(_aBackOrder[_nPos]) > 4 .and. Valtype(_aBackOrder[_nPos,5]) == "L"  .and. !_aBackOrder[_nPos,5]
 				_lXBO := .F.
 			Else
@@ -324,16 +325,16 @@ Funcionalidade responsavel por pegar itens para clonagem
 @author 	DAC-Denilso
 @since 		27/07/2022
 @version 	undefined
-@param 		_cNumOrc 	- Numero orçamento 
-			_cGrupo		- Grupo item orçamento
-			_cCodProd 	- CÃ³digo Produto item orçamento 
-			_lXBO		= Indica Se Ã© BO ou não
+@param 		_cNumOrc 	- Numero orï¿½amento 
+			_cGrupo		- Grupo item orï¿½amento
+			_cCodProd 	- CÃ³digo Produto item orï¿½amento 
+			_lXBO		= Indica Se Ã© BO ou nï¿½o
 			_lApagaIT	- Indica se apaga item apÃ³s a clonagem
 @project    PEC007
 @type 		user function
 @obs 		Revitalizado processo para gerar backorder de KIT e outros
 @menu       Nao Informado
-@return		_aOrc 		- itens do orçamento preparados para clonagem
+@return		_aOrc 		- itens do orï¿½amento preparados para clonagem
 @history    
 /*/
 
@@ -384,14 +385,14 @@ Return _aOrc
 
 
 /*/{Protheus.doc} XCLONEOR
-Funcionalidade responsavel clonar (copiar) dados preparados do VS1 e VS3 de acordo com as informaçoes em _aOrc
+Funcionalidade responsavel clonar (copiar) dados preparados do VS1 e VS3 de acordo com as informaï¿½oes em _aOrc
 @author 	DAC-Denilso
 @since 		27/07/2022
 @version 	undefined
-@param 		_cNumOrc 	- Numero orçamento 
-			_cGrupo		- Grupo item orçamento
-			_cCodProd 	- CÃ³digo Produto item orçamento 
-			_lXBO		= Indica Se Ã© BO ou não
+@param 		_cNumOrc 	- Numero orï¿½amento 
+			_cGrupo		- Grupo item orï¿½amento
+			_cCodProd 	- CÃ³digo Produto item orï¿½amento 
+			_lXBO		= Indica Se Ã© BO ou nï¿½o
 			_lApagaIT	- Indica se apaga item apÃ³s a clonagem
 @project    PEC007
 @type 		user function
@@ -477,7 +478,7 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 		Endif
 		For _nCount := 1 To Len(_aOrc)
 			_aObsVS3 := Aclone({})
-			//Guardo estas informaçoes somente uma vez
+			//Guardo estas informaï¿½oes somente uma vez
 			If _nCount == 1
 				_cCliente 	:= If((_nPosCPo := Ascan(_aOrc[_nCount],{|x| AllTrim(x[1]) == "VS1_CLIFAT"})) 	> 0, _aOrc[_nCount,_nPosCPo,2], _cCliente	)
 				_cLoja 		:= If((_nPosCPo := Ascan(_aOrc[_nCount],{|x| AllTrim(x[1]) == "VS1_LOJA"})) 	> 0, _aOrc[_nCount,_nPosCPo,2], _cLoja		)
@@ -502,46 +503,46 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 			//se informado reposicionar registros
 			If _nRegVS1 > 0
 				VS1->(DbGoto(_nRegVS1))
-			ElseIf VS1->(Eof())  //Valida se etiver no final de arquivo não tratara abortar, tem que estar posicionado no orçamento original pelo menos
-				Aadd(_aObs, "não informado o orçamento para clonagem  entrar em contato ADM Sistemas !")
+			ElseIf VS1->(Eof())  //Valida se etiver no final de arquivo nï¿½o tratara abortar, tem que estar posicionado no orï¿½amento original pelo menos
+				Aadd(_aObs, "nï¿½o informado o orï¿½amento para clonagem  entrar em contato ADM Sistemas !")
 				_lRet := .F.
 				Break
 			Endif
-			//Verifica se Esta posicionado no orçamento original
+			//Verifica se Esta posicionado no orï¿½amento original
 			If !Empty(_cNumOrc) .and. VS1->VS1_NUMORC <> _cNumOrc
 				VS1->(DbSetOrder(1))
 				If !VS1->(DbSeek(XFILIAL("VS1")+_cNumOrc))
-					Aadd(_aObs, "não Localizado o orçamento "+_cNumOrc+" para clonagem  entrar em contato ADM Sistemas !")
+					Aadd(_aObs, "nï¿½o Localizado o orï¿½amento "+_cNumOrc+" para clonagem  entrar em contato ADM Sistemas !")
 					_lRet := .F.
 					Break
 				Endif
 				_nRegVS1 := VS1->(Recno())
 			ElseIf Empty(_cNumOrc) 		
-				Aadd(_aObs, "não informado o orçamento "+_cNumOrc+" para clonagem  entrar em contato ADM Sistemas !")
+				Aadd(_aObs, "nï¿½o informado o orï¿½amento "+_cNumOrc+" para clonagem  entrar em contato ADM Sistemas !")
 				_lRet := .F.
 				Break
 			Endif
 			If _nRegVS1 == 0
-				Aadd(_aObs, "não localizado registro do orçamento "+_cNumOrc+" para clonagem  entrar em contato ADM Sistemas !")
+				Aadd(_aObs, "nï¿½o localizado registro do orï¿½amento "+_cNumOrc+" para clonagem  entrar em contato ADM Sistemas !")
 				_lRet := .F.
 				Break
 			Endif	
 			If _nRegVS3 > 0
 				VS3->(DbGoto(_nRegVS3))
 			Endif
-			//se estiver diferente tento reposicionar, não teste codigo e grupo pois são obrigatÃ³rios não sendo necessario validar
+			//se estiver diferente tento reposicionar, nï¿½o teste codigo e grupo pois sï¿½o obrigatÃ³rios nï¿½o sendo necessario validar
 			If _nRegVS3 <> VS3->(Recno()) .and.  AllTrim(VS3->VS3_CODITE) <> AllTrim(_cCodItem) .and.;
 				AllTrim(VS3->VS3_GRUITE) <> AllTrim(_cGrupoItem)
 				VS3->(DbSetOrder(2)) //VS3_FILIAL+VS3_NUMORC+VS3_GRUITE+VS3_CODITE+VS3_SEQUEN
 				If !VS3->(DbSeek(XFilial("VS3")+_cNumOrc+_cGrupoItem+_cCodItem))                                                                                                          
-					Aadd(_aObs, "Não Localizado item "+_cGrupoItem+"-"+AllTrim(_cCodItem)+" do orçamento "+_cNumOrc+" para clonagem  entrar em contato ADM Sistemas !")
+					Aadd(_aObs, "Nï¿½o Localizado item "+_cGrupoItem+"-"+AllTrim(_cCodItem)+" do orï¿½amento "+_cNumOrc+" para clonagem  entrar em contato ADM Sistemas !")
 					_lRet := .F.
 					Break
 				Endif	
 				_nRegVS3 := VS3->(Recno())
 			Endif
 			If _nRegVS3 == 0
-				Aadd(_aObs, "Não Localizado registro do item "+_cGrupoItem+"-"+AllTrim(_cCodItem)+" do orçamento "+_cNumOrc+" para clonagem  entrar em contato ADM Sistemas !")
+				Aadd(_aObs, "Nï¿½o Localizado registro do item "+_cGrupoItem+"-"+AllTrim(_cCodItem)+" do orï¿½amento "+_cNumOrc+" para clonagem  entrar em contato ADM Sistemas !")
 				_lRet := .F.
 				Break
 			Endif	
@@ -554,9 +555,9 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 			_nQtdeProd	:= _nQtdeItem
 			//CONFORME ALINHADO COM ZÃ‰ SERA UTILIZADO PARA VALOR UNITARIO O DA TABELA DA1
 			_nValorUnit	:= U_XOFUNVTB( _cCliente, _cLoja, _cCodItem /*VS3->VS3_CODITE*/)
-			//Caso não encontre tabela aborto processo
+			//Caso nï¿½o encontre tabela aborto processo
 			If _nValorUnit <= 0
-				Aadd(_aObsVS3,"Não encontrado tabela de preço para o item " +AllTrim(_cCodItem)+ " para efetuar clonagem do item orçamento, valor ficara zerado "+CRLF)
+				Aadd(_aObsVS3,"Nï¿½o encontrado tabela de preï¿½o para o item " +AllTrim(_cCodItem)+ " para efetuar clonagem do item orï¿½amento, valor ficara zerado "+CRLF)
 				_nValorUnit := 0 //VS3->VS3_VALPEC
 			EndIf
 			If _nValorUnit > 0 .and. _nQtdeProd > 0
@@ -564,28 +565,28 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 			Else
 				_nTotal		:= 0
 			Endif	
-			//para garantir que seja passado somente de um orçamento (ainda não esta para multiplos orçamentos)
+			//para garantir que seja passado somente de um orï¿½amento (ainda nï¿½o esta para multiplos orï¿½amentos)
 			//Nicolas 19/02/2024 - GAP098.
-			//Conforme alinhado com Juarez - Itens para gerar BO, de orç diferentes, entram na validação e não geram BO.
+			//Conforme alinhado com Juarez - Itens para gerar BO, de orï¿½ diferentes, entram na validaï¿½ï¿½o e nï¿½o geram BO.
 			//If VS3->VS3_NUMORC <> _cNumOrc 
 			If VS1->VS1_NUMORC <> _cNumOrc
-				Aadd(_aObs, "Orçamento para o item "+AllTrim(_cCodItem)+" esta com numeração diferente, orçamento inicial "+_cNumOrc+" orçamento item "+VS3->VS3_NUMORC+" !")
+				Aadd(_aObs, "Orï¿½amento para o item "+AllTrim(_cCodItem)+" esta com numeraï¿½ï¿½o diferente, orï¿½amento inicial "+_cNumOrc+" orï¿½amento item "+VS3->VS3_NUMORC+" !")
 				_lRet := .F.
 				Break
 			EndIf
 			If _lApagaIT 
 				Aadd(_aRegVS3Del,VS3->(Recno()))
 			Endif
-			//caso não esteja informado o novo orçamento
+			//caso nï¿½o esteja informado o novo orï¿½amento
 			If Empty(_cOrcNovo)	
 				_cOrcNovo 		:= VS1->(GetSXENum("VS1","VS1_NUMORC"))
 			Endif
-			//observaçÃµes que podem ter sido mandadas para os itens
+			//observaï¿½Ãµes que podem ter sido mandadas para os itens
 			_cNumSeq 	:= Soma1(_cNumSeq)
 			_aItem 		:= {}
 			For _nPos := 1 To Len(_aEstruVS3)
 				_cCampo :=  AllTrim(_aEstruVS3[_nPos,1])
-				//caso não localizou o campo foi enciado campo novo	
+				//caso nï¿½o localizou o campo foi enciado campo novo	
 				If _cCampo $ "VS3_NUMORC"
 					_xValor := _cOrcNovo
 				ElseIf _cCampo $ "VS3_LOCAL"
@@ -599,7 +600,7 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 					//Conforme alinhado com ZÃ© quando BO o armazÃ©m tem que ser 01
 					//No processo da onda no armazÃ©m 11 esta gerando BO com local 11 
 					//Nicolas 10/01/2024 
-					//Conforme alinhado com Juarez o armazÃ©m do BO deve ser conforme o orçamento original.
+					//Conforme alinhado com Juarez o armazÃ©m do BO deve ser conforme o orï¿½amento original.
 					//If _lXBO .And. AllTrim(_xValor) <> "01"
 					//	_xValor := "01"
 					//Endif
@@ -635,7 +636,7 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 					_cCodTes 	:= MaTesInt(2,_cOper, _cCliente, _cLoja,"C",_cCodItem,/*"VS3_CODTES"*/)
 					If Empty(_cCodTes) .and. !Empty(VS3->VS3_CODTES)
 						_cCodTes := VS3->VS3_CODTES
-						Aadd(_aObsVS3,"Não encontrado TES para o item " +AllTrim(_cCodItem)+ " para efetuar clonagem do item orçamento, assumido a TES de Origem "+CRLF)
+						Aadd(_aObsVS3,"Nï¿½o encontrado TES para o item " +AllTrim(_cCodItem)+ " para efetuar clonagem do item orï¿½amento, assumido a TES de Origem "+CRLF)
 					Endif
 					_xValor := _cCodTes
 					//EndIf	
@@ -686,7 +687,7 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 					If Empty(_xValor)
 						_xValor := VS3->VS3_CODITE
 					EndIf
-				//Caso tenha sido mandado registro que não esteja contemplado acima	
+				//Caso tenha sido mandado registro que nï¿½o esteja contemplado acima	
 				ElseIf (_nPosCPo := Ascan(_aOrc[_nCount],{|x| AllTrim(x[1]) == _cCampo})) 	> 0	
 					_xValor := _aOrc[_nCount,_nPosCPo,2]
 				ElseIf Len(_aCpoVazio) > 0 .And. Ascan(_aCpoVazio, AllTrim(_aEstruVS3[_nPos,1])) > 0 //Caso seja vazio 
@@ -697,13 +698,13 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 					ElseIf _aEstruVS3[_nPos,2] == "C"  
 						_xValor := ""
 					EndIf
-				Else	//a importancia de estar posicionado no registro original VS3 Ã© que se não tratado na função ira gravar o que esta no registro original
+				Else	//a importancia de estar posicionado no registro original VS3 Ã© que se nï¿½o tratado na funï¿½ï¿½o ira gravar o que esta no registro original
 					_xValor	:= VS3->(FieldGet(FieldPos(_aEstruVS3[_nPos,1])))
 				EndIf	
 				Aadd(_aItem, _xValor )
 			Next _nPos
 			Aadd( _aVS3,_aItem)  
-			//Gravar no Produto principal o numero do desmembramento conforme solicitação ZR
+			//Gravar no Produto principal o numero do desmembramento conforme solicitaï¿½ï¿½o ZR
 			If Empty(VS3->VS3_XDESMB)	
 				VS3->(RecLock("VS3",.F.))
 				VS3->VS3_XDESMB := _cNumOrc
@@ -711,7 +712,7 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 			Endif	
 		Next _nCount
 		If Len(_aVS3) == 0
-			Aadd(_aObs, "Não carregado campos relativo aos itens para o orçamento "+_cNumOrc+" para efetuar clonagem,  entrar em contato ADM Sistemas !")
+			Aadd(_aObs, "Nï¿½o carregado campos relativo aos itens para o orï¿½amento "+_cNumOrc+" para efetuar clonagem,  entrar em contato ADM Sistemas !")
 			_lRet := .F.
 			Break
 		Endif
@@ -721,7 +722,7 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 		For _nPos := 1 To Len(_aObs)
 			_cObs += Upper( _aObs[_nPos] ) //+ CRLF
 		Next
-		//Volto _nCount para 1 ter as informaçÃµes principais
+		//Volto _nCount para 1 ter as informaï¿½Ãµes principais
 		_nCount  := 1
 		For _nPos := 1 To Len(_aEstruVS1)
 			_cCampo :=  AllTrim(_aEstruVS1[_nPos,1])
@@ -731,7 +732,7 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 				_xValor := _cObs
 			ElseIf _cCampo $ "VS1_STATUS" 
 				_xValor := _cStatus
-			//Caso tenha sido enviado para a geração do backorder atualizar o campo XBO	com indicação de Sim (S)
+			//Caso tenha sido enviado para a geraï¿½ï¿½o do backorder atualizar o campo XBO	com indicaï¿½ï¿½o de Sim (S)
 			ElseIf _cCampo $ "VS1_XBO" .and.  _lXBO //Len(_aBackOrder) > 0
 				_xValor := "S" 
 			ElseIf _cCampo $ "VS1_XBO" .and.  !_lXBO //Len(_aBackOrder) == 0
@@ -781,7 +782,7 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 			Aadd(_aVS1, _xValor)
 		Next	
 		If Len(_aVS1) == 0
-			Aadd(_aObs, "Não carregado para o orçamento "+_cNumOrc+" para efetuar clonagem,  entrar em contato ADM Sistemas !")
+			Aadd(_aObs, "Nï¿½o carregado para o orï¿½amento "+_cNumOrc+" para efetuar clonagem,  entrar em contato ADM Sistemas !")
 			_lRet := .F.
 			Break
 		Endif
@@ -817,7 +818,7 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 
 	If _nRegVS1 > 0
 		VS1->(DbGoto(_nRegVS1))  //retorno o VS1 posicionado na pesquisa anterior
-	ElseIf _nRegVS1Pos > 0  //caso não localize reposiciona no VS1 ao entrar na funcionalidade
+	ElseIf _nRegVS1Pos > 0  //caso nï¿½o localize reposiciona no VS1 ao entrar na funcionalidade
 		VS1->(DbGoto(_nRegVS1Pos))  //retorno o VS1 posicionado na pesquisa anterior
 	Else
 		_cObs 	:= "*** PROBLEMAS PARA CLONAGEM DE ORÃ‡AMENTO "+_cNumOrc+If(!Empty(_cAglutina)," REFERENTE AO PROCESSO AGLUTINAÃ‡ÃƒO NR. "+_cAglutina,"") + CRLF
@@ -825,13 +826,13 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 			_cObs += Upper(_aObs[_nPos])+ CRLF
 		Next
 		If _lMsg 
-			MSGINFO( _cObs, "[ZEPECFPP8 - XAVLITVS3Clonar] - Atenção" )
+			MSGINFO( _cObs, "[ZEPECFPP8 - XAVLITVS3Clonar] - Atenï¿½ï¿½o" )
 		Endif
 		ConOut(_cObs+" [XAVLITVS3Clonar]" )
 		Return .F.
 	Endif
 
-	//Caso seja uma backorder gravar no original as informaçÃµes de bak
+	//Caso seja uma backorder gravar no original as informaï¿½Ãµes de bak
 	If _lBackOrder
 		Aadd(_aObs, "BACKORDER ORC. " + _cOrcNovo +" FILIAL "+If(_lXBO .and. !Empty(_cFilTransf),_cFilTransf,_cFilAtual))  //VS1->VS1_NUMORC
 	Endif
@@ -849,12 +850,12 @@ User Function XCLONEOR( _aOrc, _aCpoVazio, _lXBO, _lApagaIT, _aObs)
 			_cObs 	:= "REFERENTE AO PROCESSO AGLUTINAÃ‡ÃƒO NR. "+_cAglutina + CRLF
 			_cObs	+= "REGISTRO EXCLUIDO NO PROCESSO DE CLONAGEM DO ITEM "+AllTrim(VS3->VS3_CODITE)+" EM "+DtoC(Date())+" "+Time()	
 			VS3->VS3_OBSAGL	:= Upper(_cObs) +CRLF+ VS3->VS3_OBSAGL
-			//não zerar causara erros somente apagar
+			//nï¿½o zerar causara erros somente apagar
 			VS3->(DbDelete())
 			VS3->(MsUnlock())
 		Next _nPos
 	EndIf
-	//no final ajustar orçamento original
+	//no final ajustar orï¿½amento original
 	If _lRet
 		StartJob("U_XFUNIPOSTO",GetEnvServer(),lWait,VS1->VS1_NUMORC, cEmpAnt, cFilAnt, .T. /*_lJob*/)
 		//U_XFUNIPOSTO(VS1->VS1_NUMORC, cEmpAnt, cFilAnt, .T. /*_lJob*/)
@@ -863,17 +864,17 @@ Return _lRet
 
 //retornar o campo obrigatÃ³rio
 /*/{Protheus.doc} XCLONEOR
-Funcionalidade responsavel retornar o campo obrigatÃ³rio ao qual estão em Array verifica se são ou não obrigatÃ³rios
+Funcionalidade responsavel retornar o campo obrigatÃ³rio ao qual estï¿½o em Array verifica se sï¿½o ou nï¿½o obrigatÃ³rios
 @author 	DAC-Denilso
 @since 		27/07/2022
 @version 	undefined
-@param 		_aOrc 			- Array contendo informaçÃµes do orçamento para clonar 
-			_aObrigatorio	- Array com informaçÃµes de campos obrigatÃ³rios para validar com _aORC
+@param 		_aOrc 			- Array contendo informaï¿½Ãµes do orï¿½amento para clonar 
+			_aObrigatorio	- Array com informaï¿½Ãµes de campos obrigatÃ³rios para validar com _aORC
 @project    PEC007
 @type 		user function
 @obs 		Revitalizado processo para gerar backorder de KIT e outros
 @menu       Nao Informado
-@return		_aObsRet 		- Array com campos que não foram preenchidos caso obrigatÃ³rio, não tendo volta vazio
+@return		_aObsRet 		- Array com campos que nï¿½o foram preenchidos caso obrigatÃ³rio, nï¿½o tendo volta vazio
 @history    
 /*/
 Static Function XCLONAOBRigatorio(_aOrc, _aObrigatorio )
@@ -900,19 +901,19 @@ Static Function XCLONAOBRigatorio(_aOrc, _aObrigatorio )
 				_cCampo 	:= AllTrim(_aOrc[_nPos,_nCount,1])
 				_xConteudo	:= _aOrc[_nPos,_nCount,2]
 				_nPosCpo 	:= Ascan(_aObrigatorio,{|x| x[1] == _cCampo})
-				If _nPosCpo == 0  //não validar caso não esteja preenchido como obrigatÃ³rio
+				If _nPosCpo == 0  //nï¿½o validar caso nï¿½o esteja preenchido como obrigatÃ³rio
 					Loop
 				Endif
 				If ValType(_xConteudo) == "N"
 					_lRet := _xConteudo > 0
 				ElseIf ValType(_xConteudo) == "A"
 					_lRet := Len(_xConteudo) > 0
-				ElseIf ValType(_xConteudo) == "L"  //lÃ³gico não validar
+				ElseIf ValType(_xConteudo) == "L"  //lÃ³gico nï¿½o validar
 					_lRet := .T.
 				Else 
 					_lRet := !Empty(_xConteudo)
 				Endif		
-				//caso não loclizou nenhuma inconsistencia sair
+				//caso nï¿½o loclizou nenhuma inconsistencia sair
 				If _lRet
 					Loop
 				EndIf
@@ -967,8 +968,8 @@ User Function XOFUNVTB(_cCLi, _cLoja, _cCodItem, _lProcUF)
 	Local _cCampo
 	Local _cFunFor
 	Local _Tipo         := " "
-	//indica que deve procurar a UF para verificação valores customizados DAC 18/04/2022
-	Default _lProcUF := .T. 
+	//indica que deve procurar a UF para verificaï¿½ï¿½o valores customizados DAC 18/04/2022
+	Default _lProcUF := .T.   
     
 	//Verifica o tipo de pedido
 	Begin Sequence
@@ -976,7 +977,7 @@ User Function XOFUNVTB(_cCLi, _cLoja, _cCodItem, _lProcUF)
 		_Tipo := U_zTpPed( M->VS1_XTPPED )
 
     	IF M->VS1_XTPPED <> _Tipo
-			//Acresentado validação de MemÃ³ria JC informou que algumas funcionalidades chamam variavel DAC 06/10/2022 
+			//Acresentado validaï¿½ï¿½o de MemÃ³ria JC informou que algumas funcionalidades chamam variavel DAC 06/10/2022 
 			If Type("M->VS3_FORMUL") == "C" .And.  FWIsInCallStack("OFIXA011") .And. !(FWIsInCallStack("U_ZPECF008"))
 				_cFormula  	:= M->VS3_FORMUL 
 			else
@@ -990,7 +991,7 @@ User Function XOFUNVTB(_cCLi, _cLoja, _cCodItem, _lProcUF)
 					_cCodProd := VS3->VS3_CODITE
 				Endif	
 			EndIf
-			//verificação do FORMULA	
+			//verificaï¿½ï¿½o do FORMULA	
 			If _cFormula <> '000001'
 				DbSelectArea("VS3")
 				//VS3->(DbSetOrder(1))  //VS3_FILIAL+VS3_NUMORC
@@ -1014,7 +1015,7 @@ User Function XOFUNVTB(_cCLi, _cLoja, _cCodItem, _lProcUF)
 					_cFunFor := AllTrim(VEG->VEG_FORMUL)
 				_nValTab  := &_cFunFor
 				Endif
-				//Controlar para que a função não retorne nada diferente de valor DAC 28/05/2022
+				//Controlar para que a funï¿½ï¿½o nï¿½o retorne nada diferente de valor DAC 28/05/2022
 				If ValType(_nValTab) <> "N"
 					_nValTab := 0 
 					Break
@@ -1076,13 +1077,13 @@ Responsavel por verificar a Fase que esta sendo enviada analisando a mesma
 @project    MIT044-GAP_PECCD07-08-09 Aglutinar  V3
 @type 		user function
 @menu       Nao Informado
-@return		_cMsg - Msg da validação
+@return		_cMsg - Msg da validaï¿½ï¿½o
 @history    
 @type 		user function
-@ Obs		Devera ser enviada uma fase para ser validada caso não tenha alteração sera mantida a mesma fase, 
-			caso seja uma liberação de fase ex. esta validando a fase do orçamento que esta em 3 verificou que 
-			foi liberado voltara para a fase 0 para dar prosseguimento ao processo, caso não esteja liberado mantera a fase 3.
-			TambÃ©m passara para a fase 3 ou 2 apÃ³s a validação e assim por diante 
+@ Obs		Devera ser enviada uma fase para ser validada caso nï¿½o tenha alteraï¿½ï¿½o sera mantida a mesma fase, 
+			caso seja uma liberaï¿½ï¿½o de fase ex. esta validando a fase do orï¿½amento que esta em 3 verificou que 
+			foi liberado voltara para a fase 0 para dar prosseguimento ao processo, caso nï¿½o esteja liberado mantera a fase 3.
+			TambÃ©m passara para a fase 3 ou 2 apÃ³s a validaï¿½ï¿½o e assim por diante 
 			Tem que estar posicionado no VS1
 /*/
 User Function XFASEORC(_cFase, _cGrupo, _cCodPro, _nLimAvalia)
@@ -1091,7 +1092,7 @@ User Function XFASEORC(_cFase, _cGrupo, _cCodPro, _nLimAvalia)
 	Local _aMsg			:= {}
 	Local _cFaseRet		:= VS1->VS1_STATUS
 	Local _nRegVS1		:= VS1->(Recno())
-	Local _cFaseSepara 	:= Alltrim(GetNewPar("MV_MIL0095","4"))  //Fase conferencia da Separação
+	Local _cFaseSepara 	:= Alltrim(GetNewPar("MV_MIL0095","4"))  //Fase conferencia da Separaï¿½ï¿½o
 	Local _nPos
 
 	Default _cGrupo 	:= ""
@@ -1099,33 +1100,33 @@ User Function XFASEORC(_cFase, _cGrupo, _cCodPro, _nLimAvalia)
 	Default _nLimAvalia	:= 0
 
 	Begin Sequence
-		//esta variavel Ã© utilizada em algumas funçÃµes caso seja função que nao preve a mesma criara para não dar erro
+		//esta variavel Ã© utilizada em algumas funï¿½Ãµes caso seja funï¿½ï¿½o que nao preve a mesma criara para nï¿½o dar erro
 		//If Type("_aMensAglu") <> "A"   
 		//	Private _aMensAglu := {}
 		//EndIf
 		_cNumOrc 	:= VS1->VS1_NUMORC
 		If VS1->VS1_STATUS == "X" // ORCAMENTO FECHADO
-			_cMsg	:= "orçamento Fechado !"
+			_cMsg	:= "orï¿½amento Fechado !"
 			Break
 		EndIf	
 		If VS1->VS1_STATUS == "C" // ORCAMENTO CANCELADO
-			_cMsg	:= "orçamento cancelado !"
+			_cMsg	:= "orï¿½amento cancelado !"
 			Break
 		EndIf
 		If VS1->VS1_STATUS == "A" // ORCAMENTO AGLUTINADO
-			_cMsg	:= "orçamento agrupado no orçamento "+VS1_XUSUGL+" !"
+			_cMsg	:= "orï¿½amento agrupado no orï¿½amento "+VS1_XUSUGL+" !"
 			Break
 		Endif
 		If VS1->VS1_TIPORC == "3"	//1=Orcamento Pecas;2=Orcamento Oficina;3=Transferencia
-			_cMsg 	:= "orçamento de Transferencia, não sera processado !"
+			_cMsg 	:= "orï¿½amento de Transferencia, nï¿½o sera processado !"
 			Break
 		EndIf
 		If VS1->VS1_STATUS == _cFaseSepara // ORCAMENTO SEPARAÃ‡ÃƒO
-			_cMsg	:= "orçamento ja esta em separação !"
+			_cMsg	:= "orï¿½amento ja esta em separaï¿½ï¿½o !"
 			Break
 		Endif
 		If  VS1->VS1_STATUS == "F" // LIBERADO PARA FATURAMENTO
-			_cMsg	:= "orçamento ja esta liberado para faturamento !"
+			_cMsg	:= "orï¿½amento ja esta liberado para faturamento !"
 			Break
 		Endif	
 		If _cFase == "2" // MARGEM DE LUCRO
@@ -1134,7 +1135,7 @@ User Function XFASEORC(_cFase, _cGrupo, _cCodPro, _nLimAvalia)
 		Endif
 		VS1->(DbGoto(_nRegVS1))  //reposicionar VS1 DAC 20/06/2022	
 		If _cFase == "3" // LIMITE DE CREDITO
-			//Encontrar tipo de operação
+			//Encontrar tipo de operaï¿½ï¿½o
 			_cTpOperPed := XLOCTPOPPE("VS3", VS1->VS1_NUMORC)  	
 			_cFaseRet := U_XFASLIMCRE( "VS1", VS1->VS1_CLIFAT, VS1->VS1_NUMORC, VS1->VS1_VTOTNF, _cTpOperPed, VS1->VS1_FORPAG, VS1->VS1_STATUS, @_nLimAvalia, @_aMsg)
 			If Len(_aMsg) > 0
@@ -1147,7 +1148,7 @@ User Function XFASEORC(_cFase, _cGrupo, _cCodPro, _nLimAvalia)
 			Break
 		EndIf
 		VS1->(DbGoto(_nRegVS1))  //reposicionar VS1 DAC 20/06/2022	
-		If _cFase == "4" // Separação conferencia
+		If _cFase == "4" // Separaï¿½ï¿½o conferencia
 			_cFaseRet := XFASSEPARA(@_cMsg)
 			Break
 		EndIf
@@ -1158,7 +1159,7 @@ User Function XFASEORC(_cFase, _cGrupo, _cCodPro, _nLimAvalia)
 			VS1->(MsUnLock())
 		EndIf
 	EndIf
-	//incluo para retorno as msgs de retorno serão array
+	//incluo para retorno as msgs de retorno serï¿½o array
 	If !Empty(_cMsg) .and. Type("_aMensAglu") == "A"
 		Aadd(_aMensAglu,_cMsg)
 	EndIf	
@@ -1179,7 +1180,7 @@ Responsavel por validar a Margem de Lucro FASE 2
 @menu       Nao Informado
 @return		_cFaseRet - Fase atualizada
 @history    
-@ Obs		Devera ser enviada fase  e validara e verificara se o mesmo esta ou não na fase 2 retornando a fase correta
+@ Obs		Devera ser enviada fase  e validara e verificara se o mesmo esta ou nï¿½o na fase 2 retornando a fase correta
 /*/
 Static Function XFASMARGEM(_cMsg)
 Local _cAliasPesq	:= GetNextAlias()   
@@ -1198,19 +1199,19 @@ Local _lRet
 Private nPercMin   := 0
 
 Begin Sequence
-	//possibilidade de um parametro para verificar se deve bloquear todos os orçamentos quando um sÃ³ não atende a margem
+	//possibilidade de um parametro para verificar se deve bloquear todos os orï¿½amentos quando um sÃ³ nï¿½o atende a margem
 	//possibilidade de desmenbrar
 	If !Empty(VS1->VS1_NUMLIB)
-		//Cabeçalho da Liberação Venda  
-		//caso esteja preenchido data autorização poss liberar para "A"
+		//Cabeï¿½alho da Liberaï¿½ï¿½o Venda  
+		//caso esteja preenchido data autorizaï¿½ï¿½o poss liberar para "A"
 		If FM_SQL("SELECT COUNT(VS6.R_E_C_N_O_) RECVS6 FROM "+RetSQLName("VS6")+" VS6 WHERE VS6.VS6_FILIAL='"+xFilial("VS6")+"' AND VS6.VS6_DATAUT = '        '  AND VS6.D_E_L_E_T_ = ' ' AND VS6.VS6_NUMORC='"+VS1->VS1_NUMORC+"'") > 0
-			_cMsg 		:= "orçamento possui indicaçao Liberação de Venda " +VS1->VS1_NUMLIB+ " não autorizada, MARGEM DE LUCRO !"
+			_cMsg 		:= "orï¿½amento possui indicaï¿½ao Liberaï¿½ï¿½o de Venda " +VS1->VS1_NUMLIB+ " nï¿½o autorizada, MARGEM DE LUCRO !"
 			_cFaseRet 	:= "2"
 			lRet 		:= .F.
 			Break
-		Else	//pode liberar para faturamento existe liberação de vendas		
-			_cMsg 			:= "orçamento com Liberação de Venda "+VS1->VS1_NUMLIB+" autorizada !"
-			If _cFaseRet	==	"2" //somente alterar a fase caso seja fase 2 caso contrario não
+		Else	//pode liberar para faturamento existe liberaï¿½ï¿½o de vendas		
+			_cMsg 			:= "orï¿½amento com Liberaï¿½ï¿½o de Venda "+VS1->VS1_NUMLIB+" autorizada !"
+			If _cFaseRet	==	"2" //somente alterar a fase caso seja fase 2 caso contrario nï¿½o
 				lRet 		:= .T.
 				_cFaseRet 	:= "0"  //volto a margem 
 				Break
@@ -1245,9 +1246,9 @@ Begin Sequence
 			AND VS3.%notDel%
 		ORDER BY VS3.VS3_SEQUEN	   
 	EndSQL	
-	//caso não encontre os registros não mudara a fase
+	//caso nï¿½o encontre os registros nï¿½o mudara a fase
 	If (_cAliasPesq)->(Eof())
-		_cMsg := "não encontrado itens referente a Margem de Lucro!"
+		_cMsg := "nï¿½o encontrado itens referente a Margem de Lucro!"
 		Break
 	EndIf
 	_cMsg := "" 
@@ -1260,7 +1261,7 @@ Begin Sequence
 							0,;							//05-_aRetDes[3] margem
 							0 }) 						//06-_nValPerm
 		If AllTrim((_cAliasPesq)->F4_OPEMOV) <> "05"
-			_cMsg	+= "TES "+(_cAliasPesq)->VS3_CODTES+" possui movimento de Operação Tipo de Faturamento diferente 5 na TES, não passara pela fase Margem de Lucro !"
+			_cMsg	+= "TES "+(_cAliasPesq)->VS3_CODTES+" possui movimento de Operaï¿½ï¿½o Tipo de Faturamento diferente 5 na TES, nï¿½o passara pela fase Margem de Lucro !"
 			_cMsg	+= CRLF
 			(_cAliasPesq)->(DbSkip())
 			Loop
@@ -1323,13 +1324,13 @@ Begin Sequence
 	//Caso ocorreu problemas com margem e ou desconto devvera grava VS6 e VS7
 	If _lProbMargem .or. _lProbDesc
 		XFASMARV67(_aVS3Margem, _lProbMargem, _lProbDesc)
-		_cMsg 		+= "orçamento com Bloqueio Margem de Lucro/ Desconto ! "
+		_cMsg 		+= "orï¿½amento com Bloqueio Margem de Lucro/ Desconto ! "
 		_cMsg		+= CRLF
-		_cMsg		+= "Gravado dados para Liberação !"
+		_cMsg		+= "Gravado dados para Liberaï¿½ï¿½o !"
 		_cFaseRet	:= "2"
-	Else //caso não verificar se esta com status 2 pois se tiver alguma divergencia não havera mais
-		_cMsg 		:= "orçamento liberado sem Bloqueio Margem de Lucro !"
-		If _cFaseRet	==	"2" //somente alterar a fase caso seja fase 2 caso contrario não
+	Else //caso nï¿½o verificar se esta com status 2 pois se tiver alguma divergencia nï¿½o havera mais
+		_cMsg 		:= "orï¿½amento liberado sem Bloqueio Margem de Lucro !"
+		If _cFaseRet	==	"2" //somente alterar a fase caso seja fase 2 caso contrario nï¿½o
 			_cFaseRet 	:= "0"  //volto a margem 
 		EndIf
 	EndIf
@@ -1385,7 +1386,7 @@ Static Function XFASMARV67(_aVS3Margem, _lProbMargem, _lProbDesc)
 			VS3->(DBGoto(_aVS3Margem[_nPos,1]))
 			_lTemML 	:=  _aVS3Margem[_nPos,2]
 			_lTemDesc	:=	_aVS3Margem[_nPos,3]
-			//Caso não seja para enviar todos e não tenho divergencias com Margem  nem descontos pular 
+			//Caso nï¿½o seja para enviar todos e nï¿½o tenho divergencias com Margem  nem descontos pular 
 			If !_lVS7SemProb .and. !_lTemML .and. !_lTemDesc
 				Loop
 			EndIf
@@ -1405,7 +1406,7 @@ Static Function XFASMARV67(_aVS3Margem, _lProbMargem, _lProbDesc)
 			VS7->VS7_MARLUC := VS3->VS3_MARLUC
 			VS7->VS7_QTDITE := VS3->VS3_QTDITE
 			If VS7->(FieldPos("VS7_DIVERG")) > 0
-				VS7->VS7_DIVERG := If( !_lTemML .and. !_lTemDesc,"0","1") // Se o elemento do Array estiver com .F. Ã© porque não houve Divergencia de Desconto ou Margem
+				VS7->VS7_DIVERG := If( !_lTemML .and. !_lTemDesc,"0","1") // Se o elemento do Array estiver com .F. Ã© porque nï¿½o houve Divergencia de Desconto ou Margem
 			Endif
 			VS7->(MsUnlock())
 		Next
@@ -1416,7 +1417,7 @@ Static Function XFASMARV67(_aVS3Margem, _lProbMargem, _lProbDesc)
 Return Nil	
 
 
-//Localizar o tipo de operação do pedido
+//Localizar o tipo de operaï¿½ï¿½o do pedido
 Static Function XLOCTPOPPE(_cAlias, _cNumPed) 
 Local _cRet	:= ""
 Local _nReg := (_cAlias)->(RECNO())
@@ -1452,11 +1453,11 @@ Responsavel por validar a Limite de CrÃ©dito FASE 3
 @type 		user function
 @menu       Nao Informado
 @return		_cFaseRet - Fase atualizada
-@ Obs		Devera ser enviada fase  e validara e verificara se o mesmo esta ou não na fase 2 retornando a fase correta
+@ Obs		Devera ser enviada fase  e validara e verificara se o mesmo esta ou nï¿½o na fase 2 retornando a fase correta
 @history    DAC 02/03/2023
-			GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (Revitalização Limite de CrÃ©dito)
-            Revitalição processo limite de crÃ©dito, ajuste na informação de LOJA anteriormente estava fixo
-			Alteração incluindo tipo de pgto diferenciado que não ira verificar limite de crÃ©dito solicitação Aline, DAC - 13/03/2023
+			GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (Revitalizaï¿½ï¿½o Limite de CrÃ©dito)
+            Revitaliï¿½ï¿½o processo limite de crÃ©dito, ajuste na informaï¿½ï¿½o de LOJA anteriormente estava fixo
+			Alteraï¿½ï¿½o incluindo tipo de pgto diferenciado que nï¿½o ira verificar limite de crÃ©dito solicitaï¿½ï¿½o Aline, DAC - 13/03/2023
 /*/
 
 User Function XFASLIMCRE(_cTabPed, _cCliente, _cPedido, _nValTotPed, _cTpOperPed, _cCondPgtoPed, _cStatusPed, _nLimAvalia, _aMsg)
@@ -1464,8 +1465,8 @@ User Function XFASLIMCRE(_cTabPed, _cCliente, _cPedido, _nValTotPed, _cTpOperPed
 	Local _aArea	   	:= GetArea()
 	Local _cFaseRet		:= ""
 	Local _cTpPgtoVista	:= AllTrim(GetMv("MV_CPNCLC")) //Cond. de pagto. p/ venda a vista sem limite Credit
-	Local _cTpPgtoEsp	:= AllTrim(SuperGetMV( "CMV_PEC039"  ,,"" ))  //Condição de Pagamento a qual liberara sem avaliação do Limite de CrÃ©dito
-	Local _cTpOper      := AllTrim(SuperGetMV( "CAOA_TPLIM" ,,""))  //Tipos de Operação para analise do crÃ©dito - CAOA   54;91;90;67;82;93
+	Local _cTpPgtoEsp	:= AllTrim(SuperGetMV( "CMV_PEC039"  ,,"" ))  //Condiï¿½ï¿½o de Pagamento a qual liberara sem avaliaï¿½ï¿½o do Limite de CrÃ©dito
+	Local _cTpOper      := AllTrim(SuperGetMV( "CAOA_TPLIM" ,,""))  //Tipos de Operaï¿½ï¿½o para analise do crÃ©dito - CAOA   54;91;90;67;82;93
 	Local _cLoja		:= ""  
 	Local _lAvaliaPecas := .T.
 
@@ -1487,37 +1488,37 @@ User Function XFASLIMCRE(_cTabPed, _cCliente, _cPedido, _nValTotPed, _cTpOperPed
 		_lAvaliaPecas 	:= If(AllTrim(_cTabPed) == "VS1", .T., .F.)
 		_nLimAvalia	  	:= 0
 		_cFaseRet		:= _cStatusPed 
-		//Neste caso se for informado o tipo de operaçÃµes a serem validadas e não estiver no parametro libera o crÃ©dito DAC 05/04/2023
+		//Neste caso se for informado o tipo de operaï¿½Ãµes a serem validadas e nï¿½o estiver no parametro libera o crÃ©dito DAC 05/04/2023
 		If !Empty(_cTpOper) .And. !_cTpOperPed $ _cTpOper
-			AAdd(_aMsg, "Liberado, condição de pagamento não informada Parametro CAOA_TPLIM !")		
+			AAdd(_aMsg, "Liberado, condiï¿½ï¿½o de pagamento nï¿½o informada Parametro CAOA_TPLIM !")		
 			_cFaseRet 	:= "0"
 			Break
 		EndIf                                                                                                                                                                                                                                    
 		//003;011;025       
 		If !Empty(_cTpPgtoVista)  //!Empty(GetNewPar("MV_CPNCLC","")) 
 			If !AllTrim(_cCondPgtoPed) $ _cTpPgtoVista  .And. _lAvaliaPecas //GetMv("MV_CPNCLC") 
-				//Caso não tenha informado condição pgto
+				//Caso nï¿½o tenha informado condiï¿½ï¿½o pgto
 				If Empty(_cCondPgtoPed)
 					//Local onde sera validado o limite de credito      
 					If !"B" $ GetMv("MV_CHKCRE")  //ORÃ‡AMENTO BALCÃƒO
 						_cFaseRet := "0"
-						AAdd(_aMsg, "Liberado, não informado condição de pagamento conforme indicação MV_CHKCRE !")		
+						AAdd(_aMsg, "Liberado, nï¿½o informado condiï¿½ï¿½o de pagamento conforme indicaï¿½ï¿½o MV_CHKCRE !")		
 					Else
-						AAdd(_aMsg, "não informado condição de pagamento conforme indicação MV_CHKCRE !")		
+						AAdd(_aMsg, "nï¿½o informado condiï¿½ï¿½o de pagamento conforme indicaï¿½ï¿½o MV_CHKCRE !")		
 						_cFaseRet := "3"
 					Endif
 					Break
 				Endif
 			ElseIf Empty(_cTpPgtoVista)  
-				AAdd(_aMsg, "não informado condição de pagamento !")		
+				AAdd(_aMsg, "nï¿½o informado condiï¿½ï¿½o de pagamento !")		
 				_cFaseRet 	:= ""
 				Break
-			Else	//Caso esteja informado no parametro não passar pela rotina de bloqueio
+			Else	//Caso esteja informado no parametro nï¿½o passar pela rotina de bloqueio
 				_cFaseRet := "0"
 				Break	
 			Endif
 		Endif
-		//Condição de Pagamento Especial liberar credito automaticamente DAC 20/03/2023
+		//Condiï¿½ï¿½o de Pagamento Especial liberar credito automaticamente DAC 20/03/2023
 		If !Empty(_cTpPgtoEsp) .and. AllTrim(_cTpPgtoVista) $ AllTrim(_cTpPgtoEsp) 
 			_cFaseRet := "0"
 			Break
@@ -1525,7 +1526,7 @@ User Function XFASLIMCRE(_cTabPed, _cCliente, _cPedido, _nValTotPed, _cTpOperPed
 		//Verificar se o Cliente possui cadastrado a loja deve ser pesquisada conforme tipo de crÃ©dito 
 		_cLoja := U_XLJLCREDito(_cCliente)
 		If Empty(_cLoja)
-			AAdd(_aMsg, "não localizado cliente contendo Limite de CrÃ©dito com cÃ³digo "+_cCliente+" !")		
+			AAdd(_aMsg, "nï¿½o localizado cliente contendo Limite de CrÃ©dito com cÃ³digo "+_cCliente+" !")		
 			_cFaseRet 	:= ""
 			Break
 		Endif
@@ -1537,16 +1538,16 @@ User Function XFASLIMCRE(_cTabPed, _cCliente, _cPedido, _nValTotPed, _cTpOperPed
 			AAdd(_aMsg, "Loja com Descredenciamento de CrÃ©dito. Cliente "+_cCliente+" loja "+_cLoja)		
 			_cFaseRet 	:= ""
 		EndIf
-		//Avaliação de CrÃ©dito
+		//Avaliaï¿½ï¿½o de CrÃ©dito
 		If SA1->A1_XTPCRED $ "1|2" // 1=FloorPlan 2=Caoa
 			_cFaseRet := XFLCREDITO( _lAvaliaPecas, _cCliente, _cLoja, _cPedido, _nValTotPed, _cCondPgtoPed, @_cFaseRet, @_nLimAvalia, @_aMsg )  //Avalia Credito FloorPlan e Caoa
 			Break 
 		Else
-			AAdd(_aMsg, "não definido tipo de limite de crÃ©dito para o cliente com cÃ³digo "+_cCliente+" com a loja "+_cLoja	)
+			AAdd(_aMsg, "nï¿½o definido tipo de limite de crÃ©dito para o cliente com cÃ³digo "+_cCliente+" com a loja "+_cLoja	)
 			_cFaseRet 	:= ""
 			Break
 		EndIf
-		AAdd(_aMsg, "orçamento sem restrição de crÃ©dito !")
+		AAdd(_aMsg, "orï¿½amento sem restriï¿½ï¿½o de crÃ©dito !")
 	End Sequence	
 	RestArea(_aAreaSA1)
 	RestArea(_aArea)
@@ -1559,29 +1560,29 @@ Responsavel por verificar limite de crÃ©dito Floor Plan
 @author 	DAC-Denilso
 @since 		28/03/2022
 @version 	undefined
-@param 		_cFaseRet	- Fase orçamento
-			_cMsg		- Mensagens que serão gravadas no orçamento
+@param 		_cFaseRet	- Fase orï¿½amento
+			_cMsg		- Mensagens que serï¿½o gravadas no orï¿½amento
 @type 		user function
 @project    MIT044-GAP_PECCD07-08-09 Aglutinar  V3
 @menu       Nao Informado
 @return		_cFaseRet 
 @ Obs		
-@history    24/05/2022 DAC	- Alterado para verificar pela loja principal (01) conforme solicitação Antonio o 
+@history    24/05/2022 DAC	- Alterado para verificar pela loja principal (01) conforme solicitaï¿½ï¿½o Antonio o 
 							  limite referente a Forplan sera verificado na loja principal	
     		DAC 02/03/2023
-			GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (Revitalização Limite de CrÃ©dito)
-            Revitalição processo limite de crÃ©dito, ajuste na informação de LOJA anteriormente estava fixo
+			GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (Revitalizaï¿½ï¿½o Limite de CrÃ©dito)
+            Revitaliï¿½ï¿½o processo limite de crÃ©dito, ajuste na informaï¿½ï¿½o de LOJA anteriormente estava fixo
 
 /*/
 Static Function XFLCREDITO(_lAvaliaPecas, _cCliente, _cLoja, _cPedido, _nValTotPed, _cCondPgtoPed, _cFaseRet, _nLimAvalia, _aMsg)
 	Local _nLcUsado  	:= 0
 	Local _aRetLc		:= {}
-	Local _nFatorRed    := SuperGetMV( "CMV_PEC035" ,, 0 )					//Fator de redução para calculo do Limite de CrÃ©dito	
-	Local _cForplan		:= AllTrim( SuperGetMV( 'CMV_PEC018' ,, "" ) ) 	//condição de pagamento Forplan = 005
-	Local _cTpPgtoEsp	:= AllTrim( SuperGetMV( "CMV_PEC039" ,, "" ) ) 	//Condição de Pagamento a qual liberara sem avaliação do Limite de CrÃ©dito
+	Local _nFatorRed    := SuperGetMV( "CMV_PEC035" ,, 0 )					//Fator de reduï¿½ï¿½o para calculo do Limite de CrÃ©dito	
+	Local _cForplan		:= AllTrim( SuperGetMV( 'CMV_PEC018' ,, "" ) ) 	//condiï¿½ï¿½o de pagamento Forplan = 005
+	Local _cTpPgtoEsp	:= AllTrim( SuperGetMV( "CMV_PEC039" ,, "" ) ) 	//Condiï¿½ï¿½o de Pagamento a qual liberara sem avaliaï¿½ï¿½o do Limite de CrÃ©dito
 
 	Begin Sequence
-		//não deixar ultrapassar 100 %
+		//nï¿½o deixar ultrapassar 100 %
 		If _nFatorRed > 100
 			_nFatorRed := 100
 		Endif
@@ -1591,7 +1592,7 @@ Static Function XFLCREDITO(_lAvaliaPecas, _cCliente, _cLoja, _cPedido, _nValTotP
 		If EmpTy(_cLoja) .Or. SA1->A1_COD <> _cCliente .Or. SA1->A1_LOJA <> _cLoja
 			_cLoja := U_XLJLCREDito(_cCliente)
 			If Empty(_cLoja)
-				Aadd(_aMsg, "não localizado cliente contendo Limite de CrÃ©dito com cÃ³digo "+_cCliente+" com a loja "+_cLoja )		
+				Aadd(_aMsg, "nï¿½o localizado cliente contendo Limite de CrÃ©dito com cÃ³digo "+_cCliente+" com a loja "+_cLoja )		
 				_cFaseRet := ""
 				Break
 			Endif
@@ -1602,44 +1603,44 @@ Static Function XFLCREDITO(_lAvaliaPecas, _cCliente, _cLoja, _cPedido, _nValTotP
 				_cFaseRet 	:= ""
 				Break
 		ElseIf SA1->A1_XTPCRED == "1" //floorplan
-			//Se não estiver preenchido não validar
+			//Se nï¿½o estiver preenchido nï¿½o validar
 			If Empty(_cForplan)
 				_cFaseRet 	:= ""
-				Aadd(_aMsg, "não informado condiçÃµes de pgto no parametro ForPlan !")
+				Aadd(_aMsg, "nï¿½o informado condiï¿½Ãµes de pgto no parametro ForPlan !")
 				Break
 			Endif
-			//quando indicado forplan no parametro tem que ter a mesma condição pgto e não estar na condição de pgto especial
+			//quando indicado forplan no parametro tem que ter a mesma condiï¿½ï¿½o pgto e nï¿½o estar na condiï¿½ï¿½o de pgto especial
 			If !AllTrim(_cCondPgtoPed) $ _cForplan  
 				If !Empty(_cTpPgtoEsp) .And. AllTrim(_cCondPgtoPed) $ _cTpPgtoEsp
-					_cFaseRet 	:= "0"  //neste caso posso sair sem validar pois a condição especial não deve avaliar crÃ©dito
+					_cFaseRet 	:= "0"  //neste caso posso sair sem validar pois a condiï¿½ï¿½o especial nï¿½o deve avaliar crÃ©dito
 				Else
 					_cFaseRet 	:= ""
-					Aadd(_aMsg, "Condição de pgto "+_cCondPgtoPed+" ForPlan não esta informada no parametro CMV_PEC018 !")
+					Aadd(_aMsg, "Condiï¿½ï¿½o de pgto "+_cCondPgtoPed+" ForPlan nï¿½o esta informada no parametro CMV_PEC018 !")
 				Endif	
 				Break
 			EndIf
 		EndIf
 		Aadd(_aMsg,"Avaliando Limite de Credito para o cliente "+_cCliente+" loja "+_cLoja+" - Matriz")
-		_nLimAvalia := 0   //Zero a avaliação de crÃ©dito onde constara o limite a ser utilizado
+		_nLimAvalia := 0   //Zero a avaliaï¿½ï¿½o de crÃ©dito onde constara o limite a ser utilizado
 		_aRetLc := U_ZFATF014(_cCliente, SA1->A1_XTPCRED, _cLoja)
 		//GAP096  Nic CAOA 21/11/2023
 		//1=Credito Disponivel;2=Falta de Saldo;3=Titulos Em Atraso;4=Credito Vencido;5=Bloqueado                                         
 		If ValType(_aRetLc) <> "A" .Or. Len(_aRetLc) == 0 
-			Aadd(_aMsg, "não foi possÃ­vel verificar limite de crÃ©dito disponÃ­vel")
+			Aadd(_aMsg, "nï¿½o foi possÃ­vel verificar limite de crÃ©dito disponÃ­vel")
 			_cFaseRet 	:= "3" 
 			Break
 		ElseIf _aRetLc[01] == "2"
 			//enviar o limite para ser avaliado DAC 14/11/2022
-			//			 					NCC			  ( Titulos em Aberto + Pedidos em Bo + (Em Reserva + Em faturamento + Em Separação))
+			//			 					NCC			  ( Titulos em Aberto + Pedidos em Bo + (Em Reserva + Em faturamento + Em Separaï¿½ï¿½o))
 			_nLimAvalia := (SA1->A1_XLC +  _aRetLc[06]) - ( _aRetLc[03] + _aRetLc[04]  + _aRetLc[05] )  ////retirar NCC (06) caso exista pois Ã© crÃ©dito cliente DAC 05/04/2023
 			//Quando for B.o. somo novamente ao saldo que tenho a utilizar  o valor pois ja somou no acumulado de B.o. e o mesmo Ã© crÃ©dito ainda para utilizar
-			//Conforme revitalização sempre somar o que esta pendente sera sempre B.O. DAC 02/03/2023
+			//Conforme revitalizaï¿½ï¿½o sempre somar o que esta pendente sera sempre B.O. DAC 02/03/2023
 			If ( _cFaseRet == "0" .OR. _cFaseRet == "3" ) //VS1->VS1_XBO == 'S' //BO e Em analise consomem limite de crÃ©dito 12/2022
 				//_nLimAvalia += _nValTotPed
 				//neste caso deduzo o limite para que possa avaliar, pois na somatÃ³rio dos BO's o mesmo foi somado DAC 21/03/2023
 				_nLimAvalia +=  ( _nValTotPed * (If(_nFatorRed > 0,_nFatorRed/100,1)) )
 			EndIf
-			Aadd(_aMsg, "Cliente não possui limite de crÃ©dito disponÃ­vel Status [2]")
+			Aadd(_aMsg, "Cliente nï¿½o possui limite de crÃ©dito disponÃ­vel Status [2]")
 			_cFaseRet 	:= "3" 
 			Break
 		ElseIf _aRetLc[01] == "3"
@@ -1655,38 +1656,38 @@ Static Function XFLCREDITO(_lAvaliaPecas, _cCliente, _cLoja, _cPedido, _nValTotP
 			_cFaseRet 	:= ""
 			Break
 		EndIf
-		//_nValDup := ( Titulos em Aberto + Pedidos em Bo + (Em Reserva + Em faturamento + Em Separação))
-		//Alterado conforme alinhamento com ZÃ© e Reinaldo feito revitalização para validar somente quando for na Onda DAC 21/03/2023
-		//_nLcUsado := ( _aRetLc[03] + _aRetLc[04]  + _aRetLc[05] ) + (VS1->VS1_VTOTNF * (_nRedBO/100)) //************************************************ verificar avaliação
+		//_nValDup := ( Titulos em Aberto + Pedidos em Bo + (Em Reserva + Em faturamento + Em Separaï¿½ï¿½o))
+		//Alterado conforme alinhamento com ZÃ© e Reinaldo feito revitalizaï¿½ï¿½o para validar somente quando for na Onda DAC 21/03/2023
+		//_nLcUsado := ( _aRetLc[03] + _aRetLc[04]  + _aRetLc[05] ) + (VS1->VS1_VTOTNF * (_nRedBO/100)) //************************************************ verificar avaliaï¿½ï¿½o
 		_nLcUsado := ( _aRetLc[03] + _aRetLc[04]  + _aRetLc[05] ) - _aRetLc[06]  //retirar NCC caso exista pois Ã© crÃ©dito cliente DAC 05/04/2023 
 		//DAC 06/12/2022
 		_nLimAvalia := SA1->A1_XLC - _nLcUsado 
 		//Quando for B.o. deduzu o valor pois ja somou no acumulado de B.o.
-		// não utilizar no momento/* não deduzir ja esta na somatÃ³ria dos BOs com fator de redução validar com o orçamento em questão DAC 21/03/2023
+		// nï¿½o utilizar no momento/* nï¿½o deduzir ja esta na somatÃ³ria dos BOs com fator de reduï¿½ï¿½o validar com o orï¿½amento em questï¿½o DAC 21/03/2023
 
 		If ( _cFaseRet == "0" .OR. _cFaseRet == "3" ) //.And. VS1->VS1_XBO == 'S'
 			_nLcUsado 	:= _nLcUsado - ( _nValTotPed * (If(_nFatorRed > 0 ,_nFatorRed/100, 1)) ) 
-			//somo o valor novamente pois estara na somatÃ³ria dos BO's e necessitarei utilizar o valor do mesmo para compor a diferença DAC 15/12
+			//somo o valor novamente pois estara na somatÃ³ria dos BO's e necessitarei utilizar o valor do mesmo para compor a diferenï¿½a DAC 15/12
 			_nLimAvalia +=  ( _nValTotPed * (If(_nFatorRed > 0 , _nFatorRed/100, 1)) ) 
 		EndIf
 
-		//Esta opção Ã© somente para avaliação peças DAC 05/04/2023
+		//Esta opï¿½ï¿½o Ã© somente para avaliaï¿½ï¿½o peï¿½as DAC 05/04/2023
 		If _lAvaliaPecas .and. (_nLcUsado > SA1->A1_XLC )  //.Or. SA1->A1_XDTLC < DATE())
-			//Faço a gravação com a loja originada do VS1 para garantir integridade das bases DAC 24/05/2022	
-			If !XFLPESQVSW(_cPedido, _cCliente, _cLoja, Iif(SA1->A1_XTPCRED=="1",.T.,.F.),  @_aMsg)  //caso passe  não tem bloqueios
-				//_cFaseRet := XFLCREVSWG( VS1->VS1_NUMORC, VS1->VS1_CLIFAT, VS1->VS1_LOJA, "BLOQUEIO FORPLAN", @_aMsg )  //inclui registro de liberação Forplan, verifica se ja possui liberação para mudança de status	
+			//Faï¿½o a gravaï¿½ï¿½o com a loja originada do VS1 para garantir integridade das bases DAC 24/05/2022	
+			If !XFLPESQVSW(_cPedido, _cCliente, _cLoja, Iif(SA1->A1_XTPCRED=="1",.T.,.F.),  @_aMsg)  //caso passe  nï¿½o tem bloqueios
+				//_cFaseRet := XFLCREVSWG( VS1->VS1_NUMORC, VS1->VS1_CLIFAT, VS1->VS1_LOJA, "BLOQUEIO FORPLAN", @_aMsg )  //inclui registro de liberaï¿½ï¿½o Forplan, verifica se ja possui liberaï¿½ï¿½o para mudanï¿½a de status	
 				_cFaseRet 	:= "3"
 				Break
 			EndIf	
 		//EndIf
 		//DAC 20/03/2023
-		//neste caso tenho que somar o titulo para que tenha o valor do limite de crÃ©dito correto se passou pela linha acima existe valores ainda no limite que podem ou não ser utilizados
+		//neste caso tenho que somar o titulo para que tenha o valor do limite de crÃ©dito correto se passou pela linha acima existe valores ainda no limite que podem ou nï¿½o ser utilizados
 		//tenho que somar todo o processo pois tem que retornar como bloqueado fase 3 para verificar se pode utilizar parcial
 		ElseIf (_nLcUsado + _nValTotPed) > SA1->A1_XLC   
 			_cFaseRet 	:= "3"
 			Break
 		EndIf
-		//caso passe pela validação do limite de crÃ©dito a fase Ã© a inicial
+		//caso passe pela validaï¿½ï¿½o do limite de crÃ©dito a fase Ã© a inicial
 		_cFaseRet := "0"
 	End Sequence
 Return _cFaseRet
@@ -1699,7 +1700,7 @@ localizar loja do cliente que esteja cadastrada com limite de crÃ©dito
 @return     _cLoja
 @author     DAC Denilso
 @version    12.1.17 / Superior
-@project	GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (Revitalização Limite de CrÃ©dito)
+@project	GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (Revitalizaï¿½ï¿½o Limite de CrÃ©dito)
 @since      02/03/2023
 /*/
 User Function XLJLCREDito(_cCliente)
@@ -1731,11 +1732,11 @@ Return _cLoja
 
 
 /*/{Protheus.doc} XFLPESQVSW
-Responsavel por verificar limite de crÃ©dito na liberação
+Responsavel por verificar limite de crÃ©dito na liberaï¿½ï¿½o
 @author 	DAC-Denilso
 @since 		15/02/2022
 @version 	undefined
-@param 		_cNumOrc	- numero orçamento
+@param 		_cNumOrc	- numero orï¿½amento
 			_cCliFat	- Cliente Faturamento
 			_cLoja		- Loja cliente faturamento
 @type 		user function
@@ -1744,7 +1745,7 @@ Responsavel por verificar limite de crÃ©dito na liberação
 @menu       Nao Informado
 @return		_cFaseRet - Fase atualizada
 @ Obs		
-@history    DAC 24/05/2022 - IncluÃ­do parametros de entrada na função
+@history    DAC 24/05/2022 - IncluÃ­do parametros de entrada na funï¿½ï¿½o
 /*/
 Static Function XFLPESQVSW(_cNumOrc, _cCliFat, _cLojaFat, _lForplan, _aMsg)
 	Local _lRet 		:= .T.
@@ -1781,30 +1782,30 @@ Static Function XFLPESQVSW(_cNumOrc, _cCliFat, _cLojaFat, _lForplan, _aMsg)
 			//			AND TRIM(VSW.VSW_ORIGEM) = "U_ZPECF008"  VSW_VALCRE = ou < VS1_VTOTNF (ver arredondamento)
 
 		If (_cAliasPesq)->(Eof())  .or. (_cAliasPesq)->NREGVSW  == 0
-			Aadd(_aMsg, "não localizao registro de liberação Credito para orçamento "+_cNumOrc+" !")
+			Aadd(_aMsg, "nï¿½o localizao registro de liberaï¿½ï¿½o Credito para orï¿½amento "+_cNumOrc+" !")
 			_lRet := .F.
 			Break
 		EndIf	
 		VSW->(DbGoto( (_cAliasPesq)->NREGVSW ))
-		//validar se os valores são os mesmos 10-12 = -2 12-10 =2
+		//validar se os valores sï¿½o os mesmos 10-12 = -2 12-10 =2
 		If VSW->VSW_VALCRE == VS1->VS1_VTOTNF
 			Aadd(_aMsg, "Liberado credito especial "  +AllTrim(Transform(VSW->VSW_VALCRE, PesqPict( 'VSW' , 'VSW_VALCRE')))+;
-						" para o orçamento com valor "+AllTrim(Transform(VS1->VS1_VTOTNF, PesqPict( 'VS1' , 'VS1_VTOTNF')))+" !")
+						" para o orï¿½amento com valor "+AllTrim(Transform(VS1->VS1_VTOTNF, PesqPict( 'VS1' , 'VS1_VTOTNF')))+" !")
 			Break
 		//Caso o valor da nota seja menor pode liberar conforme JC DAC 27/05/2022	
 		ElseIf 	VSW->VSW_VALCRE > VS1->VS1_VTOTNF
 			Aadd(_aMsg, "Liberado credito especial "  +AllTrim(Transform(VSW->VSW_VALCRE, PesqPict( 'VSW' , 'VSW_VALCRE')))+;
-						" para o orçamento com valor "+AllTrim(Transform(VS1->VS1_VTOTNF, PesqPict( 'VS1' , 'VS1_VTOTNF')))+" !")
+						" para o orï¿½amento com valor "+AllTrim(Transform(VS1->VS1_VTOTNF, PesqPict( 'VS1' , 'VS1_VTOTNF')))+" !")
 			Break
 		Else	
 			_nValidaLimite :=  VS1->VS1_VTOTNF - VSW->VSW_VALCRE
 			If _nValidaLimite <=  _nLimite 
 				Aadd(_aMsg, "Liberado credito especial "  +AllTrim(Transform(VSW->VSW_VALCRE, PesqPict( 'VSW' , 'VSW_VALCRE')))+;
-							" para o orçamento com valor "+AllTrim(Transform(VS1->VS1_VTOTNF, PesqPict( 'VS1' , 'VS1_VTOTNF')))+" obedecendo o limite de "+AllTrim(STR(_nLimite))+" !")
+							" para o orï¿½amento com valor "+AllTrim(Transform(VS1->VS1_VTOTNF, PesqPict( 'VS1' , 'VS1_VTOTNF')))+" obedecendo o limite de "+AllTrim(STR(_nLimite))+" !")
 				Break
 			Endif
-			Aadd(_aMsg, "não Liberado credito especial " + AllTrim(Transform(VSW->VSW_VALCRE, PesqPict( 'VSW' , 'VSW_VALCRE')))+;
-						" para o orçamento com valor "	 + AllTrim(Transform(VS1->VS1_VTOTNF, PesqPict( 'VS1' , 'VS1_VTOTNF')))+" valores divergentes !")
+			Aadd(_aMsg, "nï¿½o Liberado credito especial " + AllTrim(Transform(VSW->VSW_VALCRE, PesqPict( 'VSW' , 'VSW_VALCRE')))+;
+						" para o orï¿½amento com valor "	 + AllTrim(Transform(VS1->VS1_VTOTNF, PesqPict( 'VS1' , 'VS1_VTOTNF')))+" valores divergentes !")
 			_lRet := .F.
 			Break
 		EndIf
@@ -1834,7 +1835,7 @@ Static Function XFASSEPARA(_cMsg)
 	Local _cFaseRet	:= VS1->VS1_STATUS
 
 	Begin Sequence
-		If _cFaseRet == "0"  //somente passa a fase para separação se estiver na fase 0
+		If _cFaseRet == "0"  //somente passa a fase para separaï¿½ï¿½o se estiver na fase 0
 			_cFaseRet := "4"
 			Break
 			/*
@@ -1867,19 +1868,19 @@ Responsavel por Aplicar desconto e ou acrescimo conforme o tipo parametrizado
 /*
 
 //DAC inclementar dados para desconto e acrescimo
-Se Tipo pedido == "seguradora" (parametro para tipo com desconto) então desconto total = 5% (parametro desconto por tipo pedido)
-Se Tipo pedido == "Emergencial" (parametro para tipo com acrÃ©scimo) então acrÃ©scimo total = 5% (parametro acrescimo por tipo pedido)
-[14:41, 22/11/2021] Ze Totvs sigapec: ntão essas nem passaria por validação, são prÃ©vios
+Se Tipo pedido == "seguradora" (parametro para tipo com desconto) entï¿½o desconto total = 5% (parametro desconto por tipo pedido)
+Se Tipo pedido == "Emergencial" (parametro para tipo com acrÃ©scimo) entï¿½o acrÃ©scimo total = 5% (parametro acrescimo por tipo pedido)
+[14:41, 22/11/2021] Ze Totvs sigapec: ntï¿½o essas nem passaria por validaï¿½ï¿½o, sï¿½o prÃ©vios
 [14:43, 22/11/2021] Ze Totvs sigapec: um exemplo: 
 por acordo, qdo Ã© seguradora, todos os pedidos ja possuem esse desconto.
-Pedido emergencial, por causa de falta de programação da concessionaria, sera cobrado um valor extra
-[15:09, 22/11/2021] Ze Totvs sigapec: não, aplicaria os 5% sobre a tabela de preços
-[15:10, 22/11/2021] Ze Totvs sigapec: então ignoraria o desconto
+Pedido emergencial, por causa de falta de programaï¿½ï¿½o da concessionaria, sera cobrado um valor extra
+[15:09, 22/11/2021] Ze Totvs sigapec: nï¿½o, aplicaria os 5% sobre a tabela de preï¿½os
+[15:10, 22/11/2021] Ze Totvs sigapec: entï¿½o ignoraria o desconto
 [15:10, 22/11/2021] Ze Totvs sigapec: aplicaria 5%
 */
 User Function XOZPECDA()  
-	Local _cTipoPedSeg  := SuperGetMV( "CMV_PEC010"  ,,"005" )   //Parametro para indicação de utilização do programa tendo como Default Verdadeiro, não Ã© necessario a criação do mesmo
-	Local _cTipoPedEme  := SuperGetMV( "CMV_PEC011"  ,,"003" )   //Parametro para indicação de utilização do programa tendo como Default Verdadeiro, não Ã© necessario a criação do mesmo
+	Local _cTipoPedSeg  := SuperGetMV( "CMV_PEC010"  ,,"005" )   //Parametro para indicaï¿½ï¿½o de utilizaï¿½ï¿½o do programa tendo como Default Verdadeiro, nï¿½o Ã© necessario a criaï¿½ï¿½o do mesmo
+	Local _cTipoPedEme  := SuperGetMV( "CMV_PEC011"  ,,"003" )   //Parametro para indicaï¿½ï¿½o de utilizaï¿½ï¿½o do programa tendo como Default Verdadeiro, nï¿½o Ã© necessario a criaï¿½ï¿½o do mesmo
 	Local _lRet			:= .T.
 
 	Begin Sequence
@@ -1907,7 +1908,7 @@ Responsavel por Aplicar desconto quando o tipo de pedido for Seguradora
 @history    
 /*/
 Static Function XOSEGUDESC()
-	Local _nPerc 		:= SuperGetMV( "CMV_PEC012"  ,,5 )   //Parametro para indicação de utilização do programa tendo como Default Verdadeiro, não Ã© necessario a criação do mesmo
+	Local _nPerc 		:= SuperGetMV( "CMV_PEC012"  ,,5 )   //Parametro para indicaï¿½ï¿½o de utilizaï¿½ï¿½o do programa tendo como Default Verdadeiro, nï¿½o Ã© necessario a criaï¿½ï¿½o do mesmo
 	Local _cAliasPesq	:= GetNextAlias()   
 	Local _lRet			:= .T.
 	Local _nValorUnit	:= 0
@@ -1921,7 +1922,7 @@ Static Function XOSEGUDESC()
 				AND VS3.%notDel%
 		EndSQL	
 		If (_cAliasPesq)->(Eof())
-			Aadd(_aMensAglu,"não encontrado itens para efetuar desconto Seguradora, não foi aplicado desconto !")
+			Aadd(_aMensAglu,"nï¿½o encontrado itens para efetuar desconto Seguradora, nï¿½o foi aplicado desconto !")
 			_lRet := .F.
 			Break
 		EndIf
@@ -1931,7 +1932,7 @@ Static Function XOSEGUDESC()
 			_nValorUnit	:= U_XOFUNVTB(VS1->VS1_CLIFAT, VS1->VS1_LOJA, VS3->VS3_CODITE)
 			_nTotal		:= VS3->VS3_QTDITE * _nValorUnit
 			If _nValorUnit <= 0
-				Aadd(_aMensAglu,"não encontrado tabela de preço para o item " +VS3->VS3_CODITE+ " para efetuar desconto Seguradora, não foi aplicado desconto !")
+				Aadd(_aMensAglu,"nï¿½o encontrado tabela de preï¿½o para o item " +VS3->VS3_CODITE+ " para efetuar desconto Seguradora, nï¿½o foi aplicado desconto !")
 				_lRet := .F.
 				Break
 			EndIf
@@ -1967,7 +1968,7 @@ Responsavel por Aplicar acrescimo quando o tipo de pedido for Emergencial
 /*/
 
 Static Function XOEMERGACR()
-	Local _nPerc 		:= SuperGetMV( "CMV_PEC013"  ,,5 )   //Parametro para indicação de utilização do programa tendo como Default Verdadeiro, não Ã© necessario a criação do mesmo
+	Local _nPerc 		:= SuperGetMV( "CMV_PEC013"  ,,5 )   //Parametro para indicaï¿½ï¿½o de utilizaï¿½ï¿½o do programa tendo como Default Verdadeiro, nï¿½o Ã© necessario a criaï¿½ï¿½o do mesmo
 	Local _cAliasPesq	:= GetNextAlias()   
 	Local _lRet			:= .T.
 	Local _nValorUnit	:= 0
@@ -1981,7 +1982,7 @@ Static Function XOEMERGACR()
 				AND VS3.%notDel%
 		EndSQL	
 		If (_cAliasPesq)->(Eof())
-			Aadd(_aMensAglu,"não encontrado itens para efetuar acrÃ©scimo Emergencial, não foi aplicado acrÃ©scimo !")
+			Aadd(_aMensAglu,"nï¿½o encontrado itens para efetuar acrÃ©scimo Emergencial, nï¿½o foi aplicado acrÃ©scimo !")
 			_lRet := .F.
 			Break
 		EndIf
@@ -1990,7 +1991,7 @@ Static Function XOEMERGACR()
 			//Sera aplicadoo direto
 			_nValorUnit	:= U_XOFUNVTB(VS1->VS1_CLIFAT, VS1->VS1_LOJA, VS3->VS3_CODITE)
 			If _nValorUnit <= 0
-				Aadd(_aMensAglu,"não encontrado tabela de preço para o item " +VS3->VS3_CODITE+ " para efetuar acrÃ©scimo Emergencial, não foi aplicado acrÃ©scimo !")
+				Aadd(_aMensAglu,"nï¿½o encontrado tabela de preï¿½o para o item " +VS3->VS3_CODITE+ " para efetuar acrÃ©scimo Emergencial, nï¿½o foi aplicado acrÃ©scimo !")
 				_lRet := .F.
 				Break
 			EndIf
@@ -2018,18 +2019,18 @@ Static Function XOEMERGACR()
 Return _lRet
 
 /*/{Protheus.doc} XGERPIK2
-Responsavel por Gerar numeração de picking antes de enviar para RGLOG
+Responsavel por Gerar numeraï¿½ï¿½o de picking antes de enviar para RGLOG
 @author 	DAC-Denilso
 @since 		14/06/2022
 @version 	undefined
 @param 		 
 @project    MIT044-GAP_PECCD07-08-09 Aglutinar  V3
 @type 		user function
-@obs 		não atualizar data de envio do picking a mesma sera o controle do envio
+@obs 		nï¿½o atualizar data de envio do picking a mesma sera o controle do envio
 			Substitui a funcionalidade XGERAPIK
 @menu       Nao Informado
 @return		_lRet 		- Verdadeiro ou falso
-@history	14/06/2022 DAC 	- Alterado para receber os registros do VS1 e gravar apÃ³s processamento do ZPECF008 não ira esperar acumular     
+@history	14/06/2022 DAC 	- Alterado para receber os registros do VS1 e gravar apÃ³s processamento do ZPECF008 nï¿½o ira esperar acumular     
 /*/
 User Function XGERPIK2(_aVS1 )
 	Local _lRet			:= .T.
@@ -2051,7 +2052,7 @@ User Function XGERPIK2(_aVS1 )
 			Break
 		Endif
 		//Prepara o numero do picking
-		//_cPicking 		:= GETSX8NUM("SZK","ZK_XPICKI")  //alinhado com JC no momento não controlar para o SZK deixar como estava
+		//_cPicking 		:= GETSX8NUM("SZK","ZK_XPICKI")  //alinhado com JC no momento nï¿½o controlar para o SZK deixar como estava
 		_cPicking 	:= GETSX8NUM("VS1","VS1_XPICKI")
 		VS1->(ConfirmSx8())
 		_cPickNovo	:= U_XVERNUMeracao("SZK", "ZK_XPICKI", _cPicking )
@@ -2085,7 +2086,7 @@ User Function XGERPIK2(_aVS1 )
 					VS3->(MsUnlock())
 					VS3->(dbSkip())
 				EndDo
-				//Conforme solicitação Evandro guardo marca para gravar em SZK DAC-01/06/2022
+				//Conforme solicitaï¿½ï¿½o Evandro guardo marca para gravar em SZK DAC-01/06/2022
 				If !Empty(VS1->VS1_XMARCA)
 					_cMarca := VS1->VS1_XMARCA
 				EndIf
@@ -2102,7 +2103,7 @@ User Function XGERPIK2(_aVS1 )
 			EndIf
 		End Transaction	
 	End Sequence
-	//Gravo as informaçÃµes do VS1
+	//Gravo as informaï¿½Ãµes do VS1
 	_cObs := If( _lRet, "GERADO NUMERO PICKING ", "NÃƒO FOI GERADO PICKING ")+_cPicking 
 	For _nPos := 1 To Len(_aMsg)
 		_cObs	+= _aMsg[_nPos] + CRLF  
@@ -2112,7 +2113,7 @@ User Function XGERPIK2(_aVS1 )
 		VS1->(RecLock("VS1",.F.))
 		VS1->VS1_XPICKI := _cPicking
 		VS1->VS1_OBSAGL	:=  _cObs + CRLF  + AllTrim(VS1->VS1_OBSAGL) 
-		//não gravar as data para ser gravada somente quando enviado na RGLOG
+		//nï¿½o gravar as data para ser gravada somente quando enviado na RGLOG
 		If Empty(VS1->VS1_XMARCA)
 			VS1->VS1_XMARCA := _cMarca
 		EndIf
@@ -2131,7 +2132,7 @@ Return _cPicking
 
 //
 /*/{Protheus.doc} ZPEC11GSZK
-Responsavel por Gravar tabela para geração de pesos notas fiscais
+Responsavel por Gravar tabela para geraï¿½ï¿½o de pesos notas fiscais
 @author 	DAC-Denilso
 @since 		11/02/2022
 @version 	undefined
@@ -2141,7 +2142,7 @@ Responsavel por Gravar tabela para geração de pesos notas fiscais
 @obs 
 @menu       Nao Informado
 @return		_lRet 		- Verdadeiro ou falso
-@history    DAC - 01/06/2022 - Gravar SZK->ZK_XMARCA na inclusão do picking  
+@history    DAC - 01/06/2022 - Gravar SZK->ZK_XMARCA na inclusï¿½o do picking  
 /*/
 User Function ZPEC11GSZK(_oJson, _lGravaIni, _cPicking, _cObsMenNF, _cMarca, _lIncon)
 	Local _lRet			:= .F.
@@ -2197,7 +2198,7 @@ User Function ZPEC11GSZK(_oJson, _lGravaIni, _cPicking, _cObsMenNF, _cMarca, _lI
 				SZK->ZK_FILIAL	:= XFilial("SZK") 
 				SZK->ZK_XPICKI 	:= 	_cPicking	//AllTrim(_oJson["nu_pedidoorigem"][1]:GetJsonText("nu_pedido")) //"00000510"
 				SZK->ZK_SEQREG 	:=	_nSeqReg	//Val(_oJson["nu_pedidoorigem"][1]:GetJsonText("vol_sequencia"))
-				//não gravar na criação do picking somente quando recebo o picking DAC 11/07/2022
+				//nï¿½o gravar na criaï¿½ï¿½o do picking somente quando recebo o picking DAC 11/07/2022
 				//SZK->ZK_DTRECPI	:= 	Date()
 				//SZK->ZK_HSRECPI	:= 	SubStr( Time(), 1, TamSX3("ZK_HSRECPI")[1] )
 				//SZK->ZK_USURECP	:= 	RetCodUsr()
@@ -2213,7 +2214,7 @@ User Function ZPEC11GSZK(_oJson, _lGravaIni, _cPicking, _cObsMenNF, _cMarca, _lI
 				//GRAVAR ZK_MENNOT COM NUMERO DO PICKING
 				SZK->ZK_MENNOT	:= SubStr(Upper(AllTrim(_cObsMenNF)), 1, TamSX3("ZK_MENNOT")[1])
 				SZK->ZK_UF      := _cUF   
-				//Confome solicitação Evandro gravar marca DAC - 01/06/2022         
+				//Confome solicitaï¿½ï¿½o Evandro gravar marca DAC - 01/06/2022         
 				If !Empty(_cMarca)
 					If SZK->(FieldPos("ZK_XMARCA")) > 0
 						SZK->ZK_XMARCA := _cMarca
@@ -2223,7 +2224,7 @@ User Function ZPEC11GSZK(_oJson, _lGravaIni, _cPicking, _cObsMenNF, _cMarca, _lI
 				If SZK->(FieldPos("ZK_STATUS")) > 0   //N=Nao Envidado;E=Enviado;F=Faturado;C=Cancelado
 					SZK->ZK_STATUS := "A"
 				EndIf				
-				//Indicação do armazÃ©m que esta direcionado o SZK
+				//Indicaï¿½ï¿½o do armazÃ©m que esta direcionado o SZK
 				If SZK->(FieldPos("ZK_LOCAL")) > 0
 					SZK->ZK_LOCAL		:= _cLocal
 				EndIf	
@@ -2313,7 +2314,7 @@ User Function ZPEC11GSZK(_oJson, _lGravaIni, _cPicking, _cObsMenNF, _cMarca, _lI
 				If SZK->(FieldPos("ZK_STATUS")) > 0   //N=Nao Envidado;E=Enviado;F=Faturado;C=Cancelado
 					SZK->ZK_STATUS := "E"
 				EndIf				
-				//Indicação do armazÃ©m que esta direcionado o SZK
+				//Indicaï¿½ï¿½o do armazÃ©m que esta direcionado o SZK
 				If SZK->(FieldPos("ZK_LOCAL")) > 0
 					SZK->ZK_LOCAL		:= _cLocal
 				EndIf	
@@ -2358,14 +2359,14 @@ Return _cMarca
 
 
 /*/{Protheus.doc} ORCCALFIS
-Responsavel por Calcular imposto orçamento
+Responsavel por Calcular imposto orï¿½amento
 @author 	DAC-Denilso
 @since 		11/03/2022
 @version 	undefined
 @param 		 
 @project    MIT044-GAP_PECCD07-08-09 Aglutinar  V3
 @type 		user function
-@obs		função para calculo fiscal orçamentos, importação AW, clonagem, orçamento parcial customizados 
+@obs		funï¿½ï¿½o para calculo fiscal orï¿½amentos, importaï¿½ï¿½o AW, clonagem, orï¿½amento parcial customizados 
 @menu       Nao Informado
 @return		_lRet 		- Verdadeiro ou falso
 @history    
@@ -2379,7 +2380,7 @@ User Function ORCCALFIS(_cNumOrc,_lAtuaPreco)
 	Local _aArea 	:= GetArea()
 
 	Default _cNumOrc	:= ""
-	Default _lAtuaPreco	:= .T.  //atualiza preço unitario do produto
+	Default _lAtuaPreco	:= .T.  //atualiza preï¿½o unitario do produto
 
 	Private cVS1Status  := "0"
 	Private cStatus		:= "0"
@@ -2391,11 +2392,11 @@ User Function ORCCALFIS(_cNumOrc,_lAtuaPreco)
 
 		ConOut("ORCCALFIS - ZPECFUNA "+DtOS(Date())+" "+Time())
 		DBSELECTAREA("VS1")
-		//Caso seja enviado o orçamento posicionar
+		//Caso seja enviado o orï¿½amento posicionar
 		If !Empty(_cNumOrc)
 			If AllTrim(_cNumOrc) <> AllTrim(VS1->VS1_NUMORC)
 				If !VS1->(MsSeek(XFilial("VS1")+_cNumOrc))
-					Aadd(_aMensAglu,"não localizada orçamento  " +_cNumOrc+ " ORCCALFIS.")
+					Aadd(_aMensAglu,"nï¿½o localizada orï¿½amento  " +_cNumOrc+ " ORCCALFIS.")
 					_lRet := .F.
 					Break
 				EndIf
@@ -2412,18 +2413,18 @@ User Function ORCCALFIS(_cNumOrc,_lAtuaPreco)
 Return _lRet	
 
 /*/{Protheus.doc} XCALCORCImposto
-Responsavel por Calcular imposto orçamento
+Responsavel por Calcular imposto orï¿½amento
 @author 	DAC-Denilso
 @since 		08/04/2022
 @version 	undefined
 @param 		 
 @project    MIT044-GAP_PECCD07-08-09 Aglutinar  V3
 @type 		user function
-@obs		Função para calculo fiscal orçamentos, importação AW, clonagem, orçamento parcial customizados 
-			Esta funcionalidade foi criada para chamar funcionalidades do Padrão, porÃ©m as mesmas possuem 
+@obs		Funï¿½ï¿½o para calculo fiscal orï¿½amentos, importaï¿½ï¿½o AW, clonagem, orï¿½amento parcial customizados 
+			Esta funcionalidade foi criada para chamar funcionalidades do Padrï¿½o, porÃ©m as mesmas possuem 
 			variaveis e objetos que devem ser criados podendo se perder no deorrer do cÃ³digo, alÃ©m disto possui referencias 
-			a fontes do padrão não permitindo algumas calidaçÃµes. O tratamento do imposto acabou sendo simplificado e não
-			foi retirado algumas informaçÃµes para o caso da necessidade de chamar novamente oalguma função do Padrão
+			a fontes do padrï¿½o nï¿½o permitindo algumas calidaï¿½Ãµes. O tratamento do imposto acabou sendo simplificado e nï¿½o
+			foi retirado algumas informaï¿½Ãµes para o caso da necessidade de chamar novamente oalguma funï¿½ï¿½o do Padrï¿½o
 @menu       Nao Informado
 @return		_lRet 		- Verdadeiro ou falso
 @history    
@@ -2505,7 +2506,7 @@ Static Function XCALCORCImposto(_nRegVS1, _lAtuaPreco)
 			SX3->(DbSkip())
 		EndDo
 
-		// Cria aCols : Na inclusão cria-se uma linha em branco com os inicializadores padrão...
+		// Cria aCols : Na inclusï¿½o cria-se uma linha em branco com os inicializadores padrï¿½o...
 		If Len(aColsP) == 0
 			_nTam := Len(aHeaderP)
 			_aItens := {}
@@ -2518,7 +2519,7 @@ Static Function XCALCORCImposto(_nRegVS1, _lAtuaPreco)
 					AND VS3.%notDel%
 			EndSQL	
 			If (_cAliasPesq)->(Eof())
-				Aadd(_aMensAglu,"não encontrado itens do orçamento "+VS1->VS1_NUMORC+" para efetuar recalculo de impostos  !")
+				Aadd(_aMensAglu,"nï¿½o encontrado itens do orï¿½amento "+VS1->VS1_NUMORC+" para efetuar recalculo de impostos  !")
 				_lRet := .F.
 				Break
 			EndIf
@@ -2526,29 +2527,29 @@ Static Function XCALCORCImposto(_nRegVS1, _lAtuaPreco)
 			While (_cAliasPesq)->(!Eof())
 				VS3->(DbGoto((_cAliasPesq)->NREGVS3))
 				VS3->(RecLock("VS3",.f.))
-				//Conforme JC caso a TES não esteja preenchida ajustar a TES, pois o fiscal pode necessitar de informar TES diferenciada DAC 21/07/2022
+				//Conforme JC caso a TES nï¿½o esteja preenchida ajustar a TES, pois o fiscal pode necessitar de informar TES diferenciada DAC 21/07/2022
 				_cTipoOper := VS3->VS3_OPER 
 				If Empty(_cTipoOper)
 					_cTipoOper := U_zTpOper( VS1->VS1_CLIFAT, VS1->VS1_LOJA, VS1->VS1_XTPPED )
 					VS3->VS3_OPER	:= _cTipoOper
 				Endif
 				//Alterado conforme J.C. tem que processar TES devido a PE's a serem executados DAC 11/08/2022
-				//Devido ao caso de corte no meufatura, onde pode alterar a TES não Ã© viavel alterar aqui pois pode ser uma TES de transferencia por exemplo alinhado com J.C. DAC 12/08/2022
+				//Devido ao caso de corte no meufatura, onde pode alterar a TES nï¿½o Ã© viavel alterar aqui pois pode ser uma TES de transferencia por exemplo alinhado com J.C. DAC 12/08/2022
 				If Empty(VS3->VS3_CODTES)	
 					_cCodTes := MaTesInt(2, _cTipoOper, VS1->VS1_CLIFAT, VS1->VS1_LOJA, "C", VS3->VS3_CODITE, /*"VS3_CODTES"*/)
-					Aadd(_aMensAglu,"não localizada TES para o item " +VS3->VS3_CODITE+ " para efetuar clonagem do item orçamento, mantido valor original ")
+					Aadd(_aMensAglu,"nï¿½o localizada TES para o item " +VS3->VS3_CODITE+ " para efetuar clonagem do item orï¿½amento, mantido valor original ")
 					//_lRet := .F.
 					//Break
 					VS3->VS3_CODTES := _cCodTes
 					VS3->VS3_SITTRI := U_XFUNSITT(_cCodTes, VS3->VS3_CODITE, VS3->VS3_GRUITE)				
-					_lAtuaPreco		:= .T.  //por mudar a TES deve atualizar preço
+					_lAtuaPreco		:= .T.  //por mudar a TES deve atualizar preï¿½o
 				EndIf
 				//Atualizar valor unitario do produto
                 _Tipo := U_zTpPed( VS1->VS1_XTPPED )
 			    If _lAtuaPreco .AND. VS1->VS1_XTPPED <> _Tipo 
 					_nValorUnit	:= U_XOFUNVTB(VS1->VS1_CLIFAT, VS1->VS1_LOJA, VS3->VS3_CODITE)
 					If _nValorUnit <= 0
-						Aadd(_aMensAglu,"não encontrado tabela de preço para o item " +VS3->VS3_CODITE+ " para efetuar clonagem do item orçamento, mantido valor original ")
+						Aadd(_aMensAglu,"nï¿½o encontrado tabela de preï¿½o para o item " +VS3->VS3_CODITE+ " para efetuar clonagem do item orï¿½amento, mantido valor original ")
 						_nValorUnit := VS3->VS3_VALPEC
 					EndIf
 				ELSE	
@@ -2597,7 +2598,7 @@ Static Function XCALCORCImposto(_nRegVS1, _lAtuaPreco)
 		/*
 		aAdd(aHeader,{"Artigo","C6_COD","@!",TamSx3("B1_COD")[1],TamSx3("B1_COD")[2],"","","C","TRB",""}) // Artigo
 		aAdd(aHeader,{"Quantidade","C6_QUANT","@!",TamSx3("D2_QUANT")[1],TamSx3("D2_QUANT")[2],"","","N","TRB",""}) // Quantidade
-		aAdd(aHeader,{"Preço Unit","C6_PRCVEN","@!",TamSx3("D2_PRCVEN")[1],TamSx3("D2_PRCVEN")[2],"","","N","TRB",""}) // Preço Unit
+		aAdd(aHeader,{"Preï¿½o Unit","C6_PRCVEN","@!",TamSx3("D2_PRCVEN")[1],TamSx3("D2_PRCVEN")[2],"","","N","TRB",""}) // Preï¿½o Unit
 		aAdd(aHeader,{"Valor Merc","C6_VALMERC","@!",TamSx3("D2_PRCVEN")[1],TamSx3("D2_PRCVEN")[2],"","","N","TRB",""}) // Valor Merc
 		aAdd(aHeader,{"Desconto","C6_DESCON","@!",TamSx3("D2_DESCON")[1],TamSx3("D2_DESCON")[2],"","","N","TRB",""}) // Desconto
 		aAdd(aHeader,{"TES","C6_CODTES","@!",TamSx3("D2_TES")[1],TamSx3("D2_TES")[2],"","","C","TRB",""}) // TES
@@ -2606,11 +2607,11 @@ Static Function XCALCORCImposto(_nRegVS1, _lAtuaPreco)
 		*/
 		aCols := {}
 
-		// inicializa os objetos de compatibilização
+		// inicializa os objetos de compatibilizaï¿½ï¿½o
 		// Salva o aCols atual do fiscal
 		aHeaderF 	:= aClone(aHeader)
 		aColsF   	:= aClone(aCols)
-		// Replica as informaçÃµes da acols de pecas e chama a função
+		// Replica as informaï¿½Ãµes da acols de pecas e chama a funï¿½ï¿½o
 		aHeader 	:= aClone(aHeaderP)
 		aCols 		:= Aclone(aColsP)  
 		//EnchAuto("VS1",aAutoCab)
@@ -2620,7 +2621,7 @@ Static Function XCALCORCImposto(_nRegVS1, _lAtuaPreco)
 		ALTERA 	  := ( nOpc == 4 )
 		EXCLUI 	  := ( nOpc == 5 )
 		FECHA  	  := ( nOpc == 6 )
-		_lRet := XOX001RecFis("NF_TPCLIFOR", M->VS1_TIPCLI, "OX001LVS34", _nRegVS1, _aVS3Reg) // Recalcula o Fiscal assim que entra no orçamento
+		_lRet := XOX001RecFis("NF_TPCLIFOR", M->VS1_TIPCLI, "OX001LVS34", _nRegVS1, _aVS3Reg) // Recalcula o Fiscal assim que entra no orï¿½amento
 	End Sequence
 	If Select(_cAliasPesq) <> 0
 		(_cAliasPesq)->(DbCloseArea())
@@ -2635,7 +2636,7 @@ Return _lRet
 Static Function XOX001RecFis(cReferencia, xValor, cChamadoPor, _nRegVS1, _aVS3Reg)
 	Local _lRet			:= .T.
 	Local ny
-	Local nItem         := 0 // variavel criada para não dar erro no loop quando o parametro MV_MIl0011 == "1"
+	Local nItem         := 0 // variavel criada para nï¿½o dar erro no loop quando o parametro MV_MIl0011 == "1"
 	Local aArea         := GetArea()
 	//Local lAltValorPeca := GetNewPar("MV_MIL0117","S") <> "N" 
 	Local _aCmpFis		:= {}
@@ -2767,7 +2768,7 @@ Static Function XOX001RecFis(cReferencia, xValor, cChamadoPor, _nRegVS1, _aVS3Re
 				//OX001PREPEC()
 			//Endif
 		Next
-		//Atualizar Cabeçalho
+		//Atualizar Cabeï¿½alho
 		_aCmpFis	:= {}
 		SX3->(DbSetOrder(1))
 		SX3->(DbGoTop())
@@ -2796,8 +2797,8 @@ Static Function XOX001RecFis(cReferencia, xValor, cChamadoPor, _nRegVS1, _aVS3Re
 		EndIf
 		VS1->VS1_VALDES := MaFisRet(,"NF_DESCONTO")
 		VS1->VS1_DESCON := MaFisRet(,"NF_DESCONTO")
-		//VS1->VS1_VALFRE	:= MaFisRet(,'NF_FRETE')	//não esta ativado se usado dara erro 500 no retorno
-		//VS1_VALSEG		:= MaFisRet(,'NF_SEGURO')	//não esta ativado se usado dara erro 500 no retorno
+		//VS1->VS1_VALFRE	:= MaFisRet(,'NF_FRETE')	//nï¿½o esta ativado se usado dara erro 500 no retorno
+		//VS1_VALSEG		:= MaFisRet(,'NF_SEGURO')	//nï¿½o esta ativado se usado dara erro 500 no retorno
 		VS1->VS1_ICMCAL := MaFisRet(,'NF_VALICM')
 		VS1->VS1_VALIPI := MaFisRet(,"NF_VALIPI")
 		VS1->VS1_VALISS := MaFisRet(,"NF_VALISS")
@@ -2837,20 +2838,20 @@ User Function XRETSTVS1(_cNumOrc, _lTela)
 
 	Begin Sequence
 		If Empty(_cNumOrc)
-			Aadd(_aMsg, "não Informado o numero do orçamento, contate o ADM Sistemas !")
+			Aadd(_aMsg, "nï¿½o Informado o numero do orï¿½amento, contate o ADM Sistemas !")
 			Break
 		EndIf
-		//reposicionar orçamento
+		//reposicionar orï¿½amento
 		If VS1->VS1_NUMORC <> _cNumOrc
 			VS1->(DbSetOrder(1))
 			If !VS1->(DbSeek(XFilial("VS1")+_cNumOrc))
-				Aadd(_aMsg, "Numero do orçamento "+_cNumOrc+" não encontrado !")
+				Aadd(_aMsg, "Numero do orï¿½amento "+_cNumOrc+" nï¿½o encontrado !")
 				Break
 			Endif
 		EndIf
 		_nPos := AT(_cFaseConf, _cFaseOrc)
 		If _nPos == 0 
-			Aadd(_aMsg, "Parametros de fase orçamento "+_cFaseOrc+" e fase carregamento "+_cFaseConf+" não indicam a fase de carregamento !")
+			Aadd(_aMsg, "Parametros de fase orï¿½amento "+_cFaseOrc+" e fase carregamento "+_cFaseConf+" nï¿½o indicam a fase de carregamento !")
 			Break
 		Endif
 		//identifico os status que posso apagar
@@ -2858,21 +2859,21 @@ User Function XRETSTVS1(_cNumOrc, _lTela)
 		//Valido se esta no status
 		_nPos := AT(VS1->VS1_STATUS,_cFase)
 		If _nPos == 0
-			Aadd(_aMsg, "Parametros de fase orçamento "+_cFaseOrc+" e status do orçamento "+VS1->VS1_STATUS+" não permite retornar a fase !")
+			Aadd(_aMsg, "Parametros de fase orï¿½amento "+_cFaseOrc+" e status do orï¿½amento "+VS1->VS1_STATUS+" nï¿½o permite retornar a fase !")
 			Break
 		Endif
-		//Verificar se possui picking e se o mesmo esta com outros orçamento
+		//Verificar se possui picking e se o mesmo esta com outros orï¿½amento
 		If !Empty(VS1->VS1_XPICKI) .and. !Empty(VS1->VS1_XDTEPI)
-			Aadd(_aMsg, "orçamento possui picking "+VS1->VS1_XPICKI+" ja enviado para carregamento, não sera retornado status !")
+			Aadd(_aMsg, "orï¿½amento possui picking "+VS1->VS1_XPICKI+" ja enviado para carregamento, nï¿½o sera retornado status !")
 			Break
 		Endif
-		//verificar se existe mais de um orçamento
+		//verificar se existe mais de um orï¿½amento
 		If !Empty(VS1->VS1_XPICKI)
 			_cPicking	:= VS1->VS1_XPICKI 
 			_aRegVS1 	:= XVERSZKVS1(VS1->VS1_XPICKI) 
-			//Caso seja processo vindo de interação 		
-			If _lTela .and. Len(_aRegVS1) > 1 //caso a quantidade do orçamento seja maior que um perguntar se ira voltar todos os registros
-				If !MsgYesNo( "Existem "+StrZero(Len(_aRegVS1),3)+" orçamentos com esta numeração de picking "+AllTrim(_cPicking)+" deseja voltar status de todos orçamentos ? " )
+			//Caso seja processo vindo de interaï¿½ï¿½o 		
+			If _lTela .and. Len(_aRegVS1) > 1 //caso a quantidade do orï¿½amento seja maior que um perguntar se ira voltar todos os registros
+				If !MsgYesNo( "Existem "+StrZero(Len(_aRegVS1),3)+" orï¿½amentos com esta numeraï¿½ï¿½o de picking "+AllTrim(_cPicking)+" deseja voltar status de todos orï¿½amentos ? " )
 					Break
 				EndIf	
 			Endif
@@ -2902,14 +2903,14 @@ User Function XRETSTVS1(_cNumOrc, _lTela)
 			If _lRet .and. !Empty(_cPicking)
 				SZK->(DbSetOrder(1)) //ZK_FILIAL+ZK_XPICKI+ZK_SEQREG                                                                                                                                   
 				If !SZK->(DbSeek(XFilial("SZK")+_cPicking))
-					Aadd( _aMsg, "não localizado picking "+_cPicking+" !" )
+					Aadd( _aMsg, "nï¿½o localizado picking "+_cPicking+" !" )
 					_lRet 	:= .F.
 					DisarmTransaction()
 				EndIF
 				//apagar SZK
 				While _lRet .and. SZK->(!Eof()) .and. SZK->ZK_FILIAL ==  XFilial("SZK") .and. SZK->ZK_XPICKI == _cPicking
 					If !SZK->(RecLock("SZK",.f.))
-						Aadd( _aMsg, "não foi possivel bloquear tabela de picking !" )
+						Aadd( _aMsg, "nï¿½o foi possivel bloquear tabela de picking !" )
 						_lRet 	:= .F.
 						DisarmTransaction()
 						Exit
@@ -2927,7 +2928,7 @@ User Function XRETSTVS1(_cNumOrc, _lTela)
 			_cMens += Upper(_aMsg[_nPos]) + CRLF
 		Next
 		If _lTela
-			MSGINFO( _cMens, "[XRETSTVS1] - Atenção" )
+			MSGINFO( _cMens, "[XRETSTVS1] - Atenï¿½ï¿½o" )
 		Else
 			Conout(_cMens)
 		EndIf
@@ -2935,7 +2936,7 @@ User Function XRETSTVS1(_cNumOrc, _lTela)
 Return _lRet
 
 
-//verificar qtde de orçamentos com picking
+//verificar qtde de orï¿½amentos com picking
 Static Function XVERSZKVS1(_cPicking) 
 	Local _cAliasPesq	:= GetNextAlias()   
 	Local AVS1Reg 		:= {}
@@ -2964,7 +2965,7 @@ Return AVS1Reg
 
 
 
-//Funcionalidade responsavel por apagar o numero do picking e as suas relaçÃµes com orçamento
+//Funcionalidade responsavel por apagar o numero do picking e as suas relaï¿½Ãµes com orï¿½amento
 //DAC 27/04/2022
 User Function XAPAGAPicking(_cPicking, _cFase, _lMsg)
 	Local _lRet 		:= .T.
@@ -2989,13 +2990,13 @@ User Function XAPAGAPicking(_cPicking, _cFase, _lMsg)
 	Begin Sequence
 		//controle para que sempre seja enviado o picking
 		If Empty(_cPicking)
-			Aadd(_aMsg, "Numero do picking não informado ! ")
+			Aadd(_aMsg, "Numero do picking nï¿½o informado ! ")
 			_lRet 	:= .F.
 			Break
 		Endif
 
-		//Caso apareça mensagem perguntar se deseja apagar picking
-		If _lMsg .and. !MsgYesNo( "Deseja retirar numeração do picking "+AllTrim(_cPicking)+"  ? " )
+		//Caso apareï¿½a mensagem perguntar se deseja apagar picking
+		If _lMsg .and. !MsgYesNo( "Deseja retirar numeraï¿½ï¿½o do picking "+AllTrim(_cPicking)+"  ? " )
 			_lRet 	:= .F.
 			Break
 		Endif	
@@ -3014,25 +3015,25 @@ User Function XAPAGAPicking(_cPicking, _cFase, _lMsg)
 			ORDER BY SZK.ZK_XPICKI, VS1.VS1_NUMORC, VS1.VS1_CLIFAT, VS1.VS1_LOJA	
 		EndSql
 		If (_cAliasPesq)->(Eof())  
-			Aadd(_aMsg, "não encontrado registro com numero de picking "+ _cPicking +" ! ")
+			Aadd(_aMsg, "nï¿½o encontrado registro com numero de picking "+ _cPicking +" ! ")
 			_lRet	:= .F.
 			Break
 		EndIf	
-		//pegar indicação do SZK (picking) e verificar se possui Fatura
+		//pegar indicaï¿½ï¿½o do SZK (picking) e verificar se possui Fatura
 		SZK->(DbGoto((_cAliasPesq)->NREGSZK))
 
 		If SZK->ZK_STATUS == "B" //Bloqueado
-			Aadd(_aMsg, "Picking esta bloqueado, não pode ser cancelado  !" )
+			Aadd(_aMsg, "Picking esta bloqueado, nï¿½o pode ser cancelado  !" )
 			_lRet := .f.
 			Break
 		EndIf
 		If SZK->ZK_STATUS == "C" //Cancelado
-			Aadd(_aMsg,"Picking esta Cancelado, não pode ser cancelado  !" )
+			Aadd(_aMsg,"Picking esta Cancelado, nï¿½o pode ser cancelado  !" )
 			_lRet := .f.
 			Break
 		EndIf
 		If SZK->ZK_STATUS == "F" .or. !Empty(SZK->ZK_NF) //Faturado
-			Aadd(_aMsg, "Picking "+SZK->ZK_XPICKI+" ja possui nota fiscal "+SZK->ZK_NF+", não pode ser cancelado  ! ")
+			Aadd(_aMsg, "Picking "+SZK->ZK_XPICKI+" ja possui nota fiscal "+SZK->ZK_NF+", nï¿½o pode ser cancelado  ! ")
 			_lRet := .f.
 			Break
 		EndIf
@@ -3053,7 +3054,7 @@ User Function XAPAGAPicking(_cPicking, _cFase, _lMsg)
 					If (_cAliasPesq)->NREGSZK > 0 .and. Ascan(_aRegSZK,(_cAliasPesq)->NREGSZK) == 0
 						Aadd(_aRegSZK, (_cAliasPesq)->NREGSZK)
 					EndIf	
-					//Garantir que não venham VS1 duplicados, pois existem pickinsg com sequencias diferentes 
+					//Garantir que nï¿½o venham VS1 duplicados, pois existem pickinsg com sequencias diferentes 
 					If (_cAliasPesq)->NREGVS1 > 0 .and. Ascan(_aRegVS1,(_cAliasPesq)->NREGVS1) == 0
 						Aadd(_aRegVS1, (_cAliasPesq)->NREGVS1)
 					EndIf	
@@ -3077,7 +3078,7 @@ User Function XAPAGAPicking(_cPicking, _cFase, _lMsg)
 						DisarmTransaction()
 						Exit
 					EndIf
-				Next   //skip esta na função  	XAPAZKPVS1Picking
+				Next   //skip esta na funï¿½ï¿½o  	XAPAZKPVS1Picking
 				//sai do while
 				If !_lRet
 					Exit
@@ -3086,7 +3087,7 @@ User Function XAPAGAPicking(_cPicking, _cFase, _lMsg)
 				For _nPos := 1 To Len(_aRegSZK)
 					SZK->(DbGoto(_aRegSZK[_nPos]))
 					If !SZK->(RecLock("SZK",.F.))
-						Aadd( _aMsg, "não foi possivel bloquear tabela de picking !" )
+						Aadd( _aMsg, "nï¿½o foi possivel bloquear tabela de picking !" )
 						_lRet 	:= .F.
 					Else
 						If _lRet
@@ -3104,16 +3105,16 @@ User Function XAPAGAPicking(_cPicking, _cFase, _lMsg)
 
 	End Sequence
 	//Mostra mensagem
-	_cMsg	:= If(_lRet,"Retirada do picking realizada com sucesso !","Retirada do picking não foi realizada !")
+	_cMsg	:= If(_lRet,"Retirada do picking realizada com sucesso !","Retirada do picking nï¿½o foi realizada !")
 	_cMsg 	+= CRLF
-	//acrescento informaçÃµes de erro
+	//acrescento informaï¿½Ãµes de erro
 	If Len(_aMsg)
 		For _nPos := 1 To Len(_aMsg)
 			_cMsg += _aMsg[_nPos] + CRLF
 		Next
 	Endif
 	If _lMsg 
-		MSGINFO( _cMsg, "[XAPAGAPicking] - Atenção" )
+		MSGINFO( _cMsg, "[XAPAGAPicking] - Atenï¿½ï¿½o" )
 	Else
 		ConOut(_cMsg+" [XAPAGAPicking]" )
 	Endif
@@ -3140,7 +3141,7 @@ Static Function XTRANSFRES(_cNumOrc, _cFase, _lTransf, _lReserva, _aMsg)
 
 	Begin Sequence
 		If VS1->VS1_STATUS $ "X_C"  //VS1->VS1_STATUS $ "X_C"ja esta faturado
-			Aadd(_aMsg, "orçamento " +_cNumOrc+ " com status "+VS1->VS1_STATUS+", que nao permite este cancelamento !" )
+			Aadd(_aMsg, "orï¿½amento " +_cNumOrc+ " com status "+VS1->VS1_STATUS+", que nao permite este cancelamento !" )
 			Break
 		Endif
 		Private aHeaderP    := {} // Variavel ultilizada na OX001RESITE
@@ -3148,15 +3149,15 @@ Static Function XTRANSFRES(_cNumOrc, _cFase, _lTransf, _lReserva, _aMsg)
 		_cStatusAnt 		:= VS1->VS1_STATUS
 
 		DbSelectArea("VS1")
-		//Fazer transferencia Padrão
+		//Fazer transferencia Padrï¿½o
 		If _lTransf
-			//Reverte Fase do orçamento
+			//Reverte Fase do orï¿½amento
 			If !VS1->(OXI001REVF(_cNumOrc, _cFase ))
-				Aadd(_aMsg, "não foi possivel reverter Status do orçamento !")
+				Aadd(_aMsg, "nï¿½o foi possivel reverter Status do orï¿½amento !")
 				_lRet := .F.
 				Break
 			Else
-				Aadd(_aMsg,"Realizado Transferencia para reversão do orçamento !")
+				Aadd(_aMsg,"Realizado Transferencia para reversï¿½o do orï¿½amento !")
 			EndIf
 		EndIf	
 		//retirar reserva
@@ -3180,17 +3181,17 @@ Static Function XTRANSFRES(_cNumOrc, _cFase, _lTransf, _lReserva, _aMsg)
 				//Alterado para utilizar reserva CAOA - DAC 16/08/2022
 				//_cDocto := U_XRESCAOAPEC(_cNumOrc, .F., aResDel)
 				If Empty(_cDocto) .or. _cDocto == "NA"
-					Aadd(_aMsg,"não foi localizado reservas para retirar !")
+					Aadd(_aMsg,"nï¿½o foi localizado reservas para retirar !")
 					_lRet := .F. 
 					Break
 				Else
 					Aadd(_aMsg,"Reserva retirada com o numero do docto "+_cDocto+" !")
 				EndIf
 			Else
-				Aadd(_aMsg,"não existe reservas para retirar de acordo com VS3_DOCSDB !")
+				Aadd(_aMsg,"nï¿½o existe reservas para retirar de acordo com VS3_DOCSDB !")
 			EndIf
 		Endif
-		//	Aadd(_aMsg,"não executado transferencia e ou reservas para retirar, no processo XTRANSFRES !")
+		//	Aadd(_aMsg,"nï¿½o executado transferencia e ou reservas para retirar, no processo XTRANSFRES !")
 		//	Break
 		//Endif
 	End Sequence
@@ -3212,7 +3213,7 @@ Static Function XAPAGAVS1Picking(_nRegVS1, _cPicking, _cNumOrc, _cFase, _aMsg)
 		VS1->(RecLock("VS1",.f.))
 		//Apagar VM5/VM6
 		U_XAPAVM5VM6Carregamento(_cNumOrc, @_aMsg)
-		_cObs := "Processo de retirada/exclusão Picking "+_cPicking+" em "+DtoC(Date())+" "+Time()  + CRLF
+		_cObs := "Processo de retirada/exclusï¿½o Picking "+_cPicking+" em "+DtoC(Date())+" "+Time()  + CRLF
 		For _nPos := 1 To Len(_aMsg)
 			_cObs += _aMsg[_nPos]
 			_cObs += " "
@@ -3237,7 +3238,7 @@ Static Function XAPAGAVS1Picking(_nRegVS1, _cPicking, _cNumOrc, _cFase, _aMsg)
 	End Sequence
 Return _lRet
 
-//Retirar o numero do documento de reserva constante no VS3 (isto acontece quando retorno a fase inicial e esta servindo de ref pois não esta indicando nos status que esta reservado)
+//Retirar o numero do documento de reserva constante no VS3 (isto acontece quando retorno a fase inicial e esta servindo de ref pois nï¿½o esta indicando nos status que esta reservado)
 //DAC - 26/05/2022
 Static Function RETRESERVAVS3(_cNumOrc)
 	Begin Sequence
@@ -3273,9 +3274,9 @@ Return Nil
 	Ã‰ necessario que:
 	O parametro MV_LOCALIZ = S
 	O produto com codigo PA001 tenha controle de endereco ativo
-	O armazem padrao definido no produto deve ter 2 endereços: ENDER01 (61) e ENDER02 (65)
+	O armazem padrao definido no produto deve ter 2 endereï¿½os: ENDER01 (61) e ENDER02 (65)
 	Saldo inicial igual ou superior a 1
-	E este saldo deve ser endereçado ao ENDER01
+	E este saldo deve ser endereï¿½ado ao ENDER01
 /*/
 User Function XMOVA261(_cNumOrc, _cCodProd, _cArmorig, _cArmdes, _nQtde, _nRegvs3,_cFunc)
 	Local _aAuto  		:= {}
@@ -3303,43 +3304,43 @@ User Function XMOVA261(_cNumOrc, _cCodProd, _cArmorig, _cArmdes, _nQtde, _nRegvs
 	Begin Sequence
 		//Cabecalho a Incluir
 		If Empty(_cCodProd)
-			_cErro := "Codigo do produto esta em branco, não sera realizada a transferencia comunicar ADM Sistemas !!! " 
+			_cErro := "Codigo do produto esta em branco, nï¿½o sera realizada a transferencia comunicar ADM Sistemas !!! " 
 			AAdd(_aMsgErro,_cErro)
-			MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
+			MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenï¿½ï¿½o" )
 			_lRet := .F.
 			Break
 		Endif	
 		If Empty(_cNumOrc)
-			_cErro := "não informado o numero orçamento, não sera realizada a transferencia comunicar ADM Sistemas!!! " 
+			_cErro := "nï¿½o informado o numero orï¿½amento, nï¿½o sera realizada a transferencia comunicar ADM Sistemas!!! " 
 			AAdd(_aMsgErro,_cErro)
-			MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
+			MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenï¿½ï¿½o" )
 			_lRet := .F.
 			Break
 		Endif	
 		If Empty(_cArmorig)
-			_cErro := "não informado o armazÃ©m origem, não sera realizada a transferencia comunicar ADM Sistemas!!! " 
+			_cErro := "nï¿½o informado o armazÃ©m origem, nï¿½o sera realizada a transferencia comunicar ADM Sistemas!!! " 
 			AAdd(_aMsgErro,_cErro)
-			MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
+			MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenï¿½ï¿½o" )
 			_lRet := .F.
 			Break
 		Endif	
 		If Empty(_cArmdes)
-			_cErro := "não informado o armazÃ©m origem, não sera realizada a transferencia comunicar ADM Sistemas!!! " 
+			_cErro := "nï¿½o informado o armazÃ©m origem, nï¿½o sera realizada a transferencia comunicar ADM Sistemas!!! " 
 			AAdd(_aMsgErro,_cErro)
-			MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
+			MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenï¿½ï¿½o" )
 			_lRet := .F.
 			Break
 		Endif	
 		If _nQtde <= 0
-			_cErro := "não informado a quantidade , não sera realizada a transferencia comunicar ADM Sistemas!!! " 
+			_cErro := "nï¿½o informado a quantidade , nï¿½o sera realizada a transferencia comunicar ADM Sistemas!!! " 
 			AAdd(_aMsgErro,_cErro)
-			MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
+			MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenï¿½ï¿½o" )
 			_lRet := .F.
 			Break
 		Endif	
 
-		//_cDocumento := GetSxeNum("SD3","D3_DOC") //não pode ser do SX
-		//Implementado pois em alguns casos não esta conseguindo localizar numeração subindo com PEC042 DAC-07/06/2023
+		//_cDocumento := GetSxeNum("SD3","D3_DOC") //nï¿½o pode ser do SX
+		//Implementado pois em alguns casos nï¿½o esta conseguindo localizar numeraï¿½ï¿½o subindo com PEC042 DAC-07/06/2023
 		_cDocumento := ""
 		For _nPos := 1 To 10
 			_cDocumento := Criavar("D3_DOC")
@@ -3349,9 +3350,9 @@ User Function XMOVA261(_cNumOrc, _cCodProd, _cArmorig, _cArmdes, _nQtde, _nRegvs
 			Endif 
 		Next 	
 		If Empty(_cDocumento)
-			_cErro := "não foi possivel montar numeração SD3, para gerar movimentação." 
+			_cErro := "nï¿½o foi possivel montar numeraï¿½ï¿½o SD3, para gerar movimentaï¿½ï¿½o." 
 			AAdd(_aMsgErro, _cErro)
-			MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
+			MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenï¿½ï¿½o" )
 			_lRet := .F.
 			Break
 		Endif
@@ -3361,9 +3362,9 @@ User Function XMOVA261(_cNumOrc, _cCodProd, _cArmorig, _cArmdes, _nQtde, _nRegvs
 		//Itens a Incluir
 		SB1->(DbSetOrder(1))
 		If !SB1->(DbSeek(xFilial("SB1")+PadR(_cCodProd, tamsx3('D3_COD') [1])))
-			_cErro := "não localizado codigo do produto "+_cCodProd+" !!! " 
+			_cErro := "nï¿½o localizado codigo do produto "+_cCodProd+" !!! " 
 			AAdd(_aMsgErro,_cErro)
-			MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
+			MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenï¿½ï¿½o" )
 			_lRet := .F.
 			Break
 		Endif
@@ -3375,17 +3376,17 @@ User Function XMOVA261(_cNumOrc, _cCodProd, _cArmorig, _cArmdes, _nQtde, _nRegvs
 			_nSaldo := SaldoSB2()
 			
 			if _nSaldo <= 0
-				_cErro := "Produto " + _cCodProd+ "  não Possue saldo no Armazem " + _cArmorig+ "  !!! " 
+				_cErro := "Produto " + _cCodProd+ "  nï¿½o Possue saldo no Armazem " + _cArmorig+ "  !!! " 
 				AAdd(_aMsgErro,_cErro)
-				MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
+				MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenï¿½ï¿½o" )
 				_lRet := .F.
 				Break
 			endif
 		
 		Else
-			_cErro := "Produto " + _cCodProd+ "  não encontrado no Armazem " + _cArmorig+ "  !!! " 
+			_cErro := "Produto " + _cCodProd+ "  nï¿½o encontrado no Armazem " + _cArmorig+ "  !!! " 
 			AAdd(_aMsgErro,_cErro)
-			MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
+			MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenï¿½ï¿½o" )
 			_lRet := .F.
 			Break
 		EndIf
@@ -3396,7 +3397,7 @@ User Function XMOVA261(_cNumOrc, _cCodProd, _cArmorig, _cArmdes, _nQtde, _nRegvs
 		aadd(_aLinha,{"D3_DESCRI" 	, SB1->B1_DESC 				, Nil}) //descr produto origem
 		aadd(_aLinha,{"D3_UM"     	, SB1->B1_UM				, Nil}) //unidade medida origem
 		aadd(_aLinha,{"D3_LOCAL"  	, _cArmorig					, Nil}) //armazem origem
-		aadd(_aLinha,{"D3_LOCALIZ"	, PadR(_cArmorig, tamsx3('D3_LOCALIZ') [1])	,Nil}) //Informar endereço origem
+		aadd(_aLinha,{"D3_LOCALIZ"	, PadR(_cArmorig, tamsx3('D3_LOCALIZ') [1])	,Nil}) //Informar endereï¿½o origem
 		//aAdd(_aLinha,{"D3_TM"     , Alltrim(cCodMov)		, Nil }) //Tipo Movimento
 		//aAdd(_aLinha,{"D3_DOC"    , Alltrim(cDoc)			, Nil }) //Documento
 		//aAdd(_aLinha,{"D3_EMISSAO", dDtaTransf			, Nil }) //EMISSAO
@@ -3405,7 +3406,7 @@ User Function XMOVA261(_cNumOrc, _cCodProd, _cArmorig, _cArmdes, _nQtde, _nRegvs
 		aadd(_aLinha,{"D3_DESCRI"	, SB1->B1_DESC				, Nil}) //descr produto destino
 		aadd(_aLinha,{"D3_UM"		, SB1->B1_UM				, Nil}) //unidade medida destino
 		aadd(_aLinha,{"D3_LOCAL"	, _cArmdes					, Nil}) //armazem destino  era  SB1->B1_LOCPAD
-		aadd(_aLinha,{"D3_LOCALIZ"	, PadR(_cArmdes, tamsx3('D3_LOCALIZ') [1]),	Nil}) //Informar endereço destino
+		aadd(_aLinha,{"D3_LOCALIZ"	, PadR(_cArmdes, tamsx3('D3_LOCALIZ') [1]),	Nil}) //Informar endereï¿½o destino
 
 		aadd(_aLinha,{"D3_NUMSERI"	, ""						, Nil}) //Numero serie
 		aadd(_aLinha,{"D3_LOTECTL"	, IIf(!Empty(VS3->VS3_LOTECT),VS3->VS3_LOTECT,"")		, Nil}) //Lote Origem
@@ -3457,14 +3458,14 @@ User Function XMOVA261(_cNumOrc, _cCodProd, _cArmorig, _cArmdes, _nQtde, _nRegvs
 		EndIf
 			
 	End Sequence	
-	//Caso tenha o numero de orçamento atualizar VS1
+	//Caso tenha o numero de orï¿½amento atualizar VS1
 	If !Empty(_cNumOrc)
 		//verifico se ja esta pocicionado no VS1
 		If AllTrim(_cNumOrc) <> AllTrim(VS1->VS1_NUMORC)
 			If !VS1->(DbSeek(XFILIAL("VS1"+_cNumOrc)))
-				_cErro := "não localizado o orçamento "+AllTrim(_cNumOrc)+", não sera atualizado divergencia comunicar o ADM do Sistema!!! "
+				_cErro := "nï¿½o localizado o orï¿½amento "+AllTrim(_cNumOrc)+", nï¿½o sera atualizado divergencia comunicar o ADM do Sistema!!! "
 				AAdd(_aMsgErro,_cErro)
-				MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
+				MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenï¿½ï¿½o" )
 				Return .F.
 			Endif
 		EndIf	
@@ -3477,16 +3478,16 @@ User Function XMOVA261(_cNumOrc, _cCodProd, _cArmorig, _cArmdes, _nQtde, _nRegvs
 	EndIf
 	_cObs := ""
 	_cObs += "[ZPECF013_MANUTENCAO ITENS DIVERGENCIA EM "+DtoC(Date())+" as "+SubsTr(Time(),1,5)+"]"
-	_cObs += "Ocorrencias na movimentação do armazem de divergencia !"+ CRLF
+	_cObs += "Ocorrencias na movimentaï¿½ï¿½o do armazem de divergencia !"+ CRLF
 	If 	Len(_aMsgErro) > 0
 		For _nPos := 1 To Len(_aMsgErro)
 			_cObs += _aMsgErro[_nPos] + CRLF
 		Next _nPos
 	ElseIf Len(_aMsgErro) == 0 .and. _lRet
-		_cObs += "Gravado movimentação do produto "+AllTrim(_cCodProd)+" qtde "+AllTrim(Str(_nQtde))+" do armazem "+_cArmorig+" para o armazem "+_cArmdes + CRLF
-		_cObs += "Dcto movimentação "+_cDocumento	+ CRLF
+		_cObs += "Gravado movimentaï¿½ï¿½o do produto "+AllTrim(_cCodProd)+" qtde "+AllTrim(Str(_nQtde))+" do armazem "+_cArmorig+" para o armazem "+_cArmdes + CRLF
+		_cObs += "Dcto movimentaï¿½ï¿½o "+_cDocumento	+ CRLF
 	Else
-		_cObs += "Ocorreram erros na mivimentação de armazem  do produto "+_cCodProd + CRLF
+		_cObs += "Ocorreram erros na mivimentaï¿½ï¿½o de armazem  do produto "+_cCodProd + CRLF
 	Endif
 
 	VS1->(RecLock("VS1",.F.))
@@ -3495,7 +3496,7 @@ User Function XMOVA261(_cNumOrc, _cCodProd, _cArmorig, _cArmdes, _nQtde, _nRegvs
 Return _lRet
 
 
-//Verifica se pernite ou não cancelar a NFe avaliando o prazo maximo para cancelamento
+//Verifica se pernite ou nï¿½o cancelar a NFe avaliando o prazo maximo para cancelamento
 User Function XVERCANFe( _cDoc, _cSerie,  _cCli,  _cLoja, _cMens)
 	Local _lRet 	:= .T.
 	Local _nSpedExc	:= SuperGetMV("MV_SPEDEXC", , 72)   //Indica a quantidade de horas q a NFe pode ser cancelada 
@@ -3510,22 +3511,22 @@ User Function XVERCANFe( _cDoc, _cSerie,  _cCli,  _cLoja, _cMens)
 
 	Begin Sequence
 		If Empty(_cDoc)
-			_cMens := "Numero da Nota Fiscal não informado para validação de cancelamento !"
+			_cMens := "Numero da Nota Fiscal nï¿½o informado para validaï¿½ï¿½o de cancelamento !"
 			_lRet  := .F.
 			Break
 		Endif
 		If Empty(_cSerie)
-			_cMens := "Serie da Nota Fiscal não informado para validação de cancelamento !"
+			_cMens := "Serie da Nota Fiscal nï¿½o informado para validaï¿½ï¿½o de cancelamento !"
 			_lRet  := .F.
 			Break
 		Endif
 		If Empty(_cCli)
-			_cMens := "Cliente da Nota Fiscal não informado para validação de cancelamento !"
+			_cMens := "Cliente da Nota Fiscal nï¿½o informado para validaï¿½ï¿½o de cancelamento !"
 			_lRet  := .F.
 			Break
 		Endif
 		If Empty(_cLoja)
-			_cMens := "Loja ref. ao Cliente da Nota Fiscal não informado para validação de cancelamento !"
+			_cMens := "Loja ref. ao Cliente da Nota Fiscal nï¿½o informado para validaï¿½ï¿½o de cancelamento !"
 			_lRet  := .F.
 			Break
 		Endif
@@ -3536,7 +3537,7 @@ User Function XVERCANFe( _cDoc, _cSerie,  _cCli,  _cLoja, _cMens)
 		If _cDoc <> SF2->F2_DOC .or. _cSerie <> SF2->F2_SERIE .or. _cCli <> SF2->F2_CLIENTE .or. _cLoja <> SF2->F2_LOJA
 			If !SF2->(DbSeek(xFilial("SF2") + _cDoc + _cSerie + _cCli + _cLoja))
 				_lRet	 := .F.
-				_cMens 	:= "Nao localizado NFe "+ _cDoc +" serie "+ _cSerie +" do Cliente "+ _cCli +" loja "+ _cLoja +" para excluisão !"						
+				_cMens 	:= "Nao localizado NFe "+ _cDoc +" serie "+ _cSerie +" do Cliente "+ _cCli +" loja "+ _cLoja +" para excluisï¿½o !"						
 				Break
 			EndIf
 		EndIf								
@@ -3545,7 +3546,7 @@ User Function XVERCANFe( _cDoc, _cSerie,  _cCli,  _cLoja, _cMens)
 			_cMens :=  "Nao se pode excluir uma nota fiscal quando o mes ou ano de sua emissao for diferente da database do sistema !"
 			Break
 		EndIf
-		//Caso seja "N"  Status N Ã© não autorizada pode cancelar DAC 24/05/2022
+		//Caso seja "N"  Status N Ã© nï¿½o autorizada pode cancelar DAC 24/05/2022
 		If Empty(SF2->F2_FIMP) .Or. AllTrim(SF2->F2_FIMP) == "N"
 			Break
 		Endif
@@ -3559,8 +3560,8 @@ User Function XVERCANFe( _cDoc, _cSerie,  _cCli,  _cLoja, _cMens)
 			//If  !SF2->F2_FIMP $ "D|T|S" //verificacao apenas da especie como SPED e notas que foram transmitidas ou impressao DANFE
 			_lRet	 := .F.
 
-			_cMens 	 := "NFe "+ _cDoc +" serie "+ _cSerie +" do Cliente "+ _cCli +" loja "+ _cLoja +" não possui status para excluisão, Status atual"+If(Empty(SF2->F2_FIMP),"não enviada [",SF2->F2_FIMP)+"] !"						
-			Break  //não Ã© NFE e ou ainda não foi transmitida posso sair
+			_cMens 	 := "NFe "+ _cDoc +" serie "+ _cSerie +" do Cliente "+ _cCli +" loja "+ _cLoja +" nï¿½o possui status para excluisï¿½o, Status atual"+If(Empty(SF2->F2_FIMP),"nï¿½o enviada [",SF2->F2_FIMP)+"] !"						
+			Break  //nï¿½o Ã© NFE e ou ainda nï¿½o foi transmitida posso sair
 
 		Endif
 		If !Empty(SF2->F2_CODNFE) .Or. !Empty(SF2->F2_CHVNFE)	
@@ -3601,7 +3602,7 @@ User Function XAPAVM5VM6Carregamento(_cNumOrc, _aMsg)
 		Endif
 		If !VM5->(RecLock("VM5", .F.))
 			_lRet := .F.
-			Aadd(_aMsg, "não foi possivel selecionar VM6 Exclusivo !")
+			Aadd(_aMsg, "nï¿½o foi possivel selecionar VM6 Exclusivo !")
 			Break
 		EndIf
 		//Apaga itens
@@ -3609,7 +3610,7 @@ User Function XAPAVM5VM6Carregamento(_cNumOrc, _aMsg)
 			While VM6->(!Eof()) .and. VM6->VM6_CODVM5 == VM5->VM5_CODIGO
 				If !VM6->(RecLock("VM6", .F.))
 					_lRet := .F.
-					Aadd(_aMsg, "não foi possivel selecionar VM6 Exclusivo !")
+					Aadd(_aMsg, "nï¿½o foi possivel selecionar VM6 Exclusivo !")
 					Break
 				EndIf
 				VM6->(DbDelete())
@@ -3623,7 +3624,7 @@ User Function XAPAVM5VM6Carregamento(_cNumOrc, _aMsg)
 			While VM2->(!Eof()) .and. VM2->VM2_CODIGO == VM5->VM5_CODIGO
 				If !VM2->(RecLock("VM2", .F.))
 					_lRet := .F.
-					Aadd(_aMsg, "não foi possivel selecionar VM2 Exclusivo !")
+					Aadd(_aMsg, "nï¿½o foi possivel selecionar VM2 Exclusivo !")
 					Break
 				EndIf
 				VM2->(DbDelete())
@@ -3648,7 +3649,7 @@ User Function XAPAVM5VM6Carregamento(_cNumOrc, _aMsg)
 		Endif
 
 		If _lRet
-			Aadd(_aMsg, "Retirado carregamento orçamento(s) !")
+			Aadd(_aMsg, "Retirado carregamento orï¿½amento(s) !")
 		EndIf
 	End Sequence
 Return _lRet
@@ -3679,7 +3680,7 @@ Responsavel por localizar saldo em estoque
 User Function XSLDCAOAEstoque(_cCodProd, _cArmazem, _cGrupo, _nSaldoSB2, _cMarca )
 	Local _lRet 		:= .T.
 	Local _nSaldo		:= 0
-	Local _aMens		:= {}	//se enviar na função pode retornar mensagens
+	Local _aMens		:= {}	//se enviar na funï¿½ï¿½o pode retornar mensagens
 	Local _cCodProdRet 	:= _cCodProd
 	Local _cArmazemRet	:= _cArmazem
 	Local _cGrupoRet	:= _cGrupo
@@ -3693,7 +3694,7 @@ User Function XSLDCAOAEstoque(_cCodProd, _cArmazem, _cGrupo, _nSaldoSB2, _cMarca
 	Default _cMarca		:= VS1->VS1_XMARCA
 
 	Begin Sequence
-		//Caso ja venha com saldo e não Ã© necessario avaliação Wis pode sair
+		//Caso ja venha com saldo e nï¿½o Ã© necessario avaliaï¿½ï¿½o Wis pode sair
 		If !_lAvaliaWis .and. _nSaldoSB2 > 0
 			_nSaldo		:= _nSaldoSB2
 			Break
@@ -3709,7 +3710,7 @@ User Function XSLDCAOAEstoque(_cCodProd, _cArmazem, _cGrupo, _nSaldoSB2, _cMarca
 		//GAP_PECCD01 - Controle de Validade de Produtos com Inm V1.
 		SB1->(DbSetOrder(1))
 		If !SB1->(MsSeek(XFilial("SB1")+_cCodProdRet))
-			Aadd(_aMens,"Produto "+ AllTrim(_cCodProdRet) +" não localizado no cadastro de Produtos !")
+			Aadd(_aMens,"Produto "+ AllTrim(_cCodProdRet) +" nï¿½o localizado no cadastro de Produtos !")
 			_lRet := .F.
 			Break
 		Endif	
@@ -3719,9 +3720,9 @@ User Function XSLDCAOAEstoque(_cCodProd, _cArmazem, _cGrupo, _nSaldoSB2, _cMarca
 		If Empty(_cGrupoRet)
 			_cGrupoRet := SB1->B1_GRUPO
 		EndIf
-		//quando vem informado o saldo não sera validado novamente, isto ocorrera no similar, kit
+		//quando vem informado o saldo nï¿½o sera validado novamente, isto ocorrera no similar, kit
 		If _nSaldoSB2 <= 0
-			//Função no padrão SIGAPEC		
+			//Funï¿½ï¿½o no padrï¿½o SIGAPEC		
 			oZPEC08Peca:SetGrupo(_cGrupoRet)
 			oZPEC08Peca:SetCodigo(_cCodProdRet)
 			_nSaldoSB2 	:= 0
@@ -3734,7 +3735,7 @@ User Function XSLDCAOAEstoque(_cCodProd, _cArmazem, _cGrupo, _nSaldoSB2, _cMarca
 				Endif	
 			Next
 		Endif
-		//Caso não seja para avaliar WIS
+		//Caso nï¿½o seja para avaliar WIS
 		If !_lAvaliaWis 
 			_nSaldo		:= _nSaldoSB2
 			Break
@@ -3763,7 +3764,7 @@ Return {_lRet, _nSaldo, AllTrim(_cMens), _cCodProdRet, _cArmazemRet, _cGrupoRet}
 
 
 /*/{Protheus.doc} zSaldoWis
-Responsavel por verificar limite de crÃ©dito na liberação
+Responsavel por verificar limite de crÃ©dito na liberaï¿½ï¿½o
 @author 	DAC-Denilso
 @since 		15/02/2022
 @version 	undefined
@@ -3774,7 +3775,7 @@ Responsavel por verificar limite de crÃ©dito na liberação
 @project    
 @return		_nSaldoWis - Saldo existente no WIS
 @ Obs		
-@history    Evandro 		26/05/2022	- Localizar Saldo WiS conexão Tclink 
+@history    Evandro 		26/05/2022	- Localizar Saldo WiS conexï¿½o Tclink 
 			DAC Denilso 	19/05/2023 	- PEC042 - Controle de saldo e e-mail apos integracao de armazenagem 
 										  ZÃ© ajustou a funcionalidade para localizar resserva de acordo com parametro _lResIntegr
 /*/
@@ -3869,9 +3870,9 @@ User Function XVALIDPasta(_aDir,_lJob)
 	Begin Sequence
 		If Len(_aDir) == 0               
 			If _lJob
-				Conout("[XVALIDPasta] não existe pasta informadas nos parametros verificar")
+				Conout("[XVALIDPasta] nï¿½o existe pasta informadas nos parametros verificar")
 			Else
-				Aviso("ATENCAO","não existe pasta informadas nos parametros verificar [XVALIDPasta] !",{"Sair"})
+				Aviso("ATENCAO","nï¿½o existe pasta informadas nos parametros verificar [XVALIDPasta] !",{"Sair"})
 			Endif
 			Break
 		Endif
@@ -3891,9 +3892,9 @@ User Function XVALIDPasta(_aDir,_lJob)
 			Aadd(_aPasta,_cVar) 
 			If Len(_aPasta) == 0                                                     
 				If _lJob
-					Conout("[XVALIDPasta] não existe pasta informadas nos parametros verificar !")
+					Conout("[XVALIDPasta] nï¿½o existe pasta informadas nos parametros verificar !")
 				Else
-					Aviso("XVALIDPasta","não existe pasta informadas nos parametros verificar [XVERPasta] !",{"Sair"})
+					Aviso("XVALIDPasta","nï¿½o existe pasta informadas nos parametros verificar [XVERPasta] !",{"Sair"})
 				Endif
 				Break
 			Endif       
@@ -3910,9 +3911,9 @@ User Function XVALIDPasta(_aDir,_lJob)
 				If !ExistDir( _cVar )
 					If MakeDir( _cVar ) != 0                                       
 						If _lJob                                                     
-							Conout("[XVALIDPasta] não foi possivel cria a pasta "+_cVar)
+							Conout("[XVALIDPasta] nï¿½o foi possivel cria a pasta "+_cVar)
 						Else						
-							Aviso("ATENCAO","não foi possivel cria a pasta "+_cVar +" [XVALIDPasta] !",{"Sair"})
+							Aviso("ATENCAO","nï¿½o foi possivel cria a pasta "+_cVar +" [XVALIDPasta] !",{"Sair"})
 						Endif
 						Break
 					Endif				
@@ -3939,7 +3940,7 @@ User Function XVERNUMeracao( _cTab, _cCampo, _cNum )
 
 	Begin Sequence
 		_cNumRet	:= _cNum  //guardo o numero que foi enviado
-		If _cAliasPesq == Nil  //pode acontecer de não gerar o arquivo normalmente quando esta recebendo um rest
+		If _cAliasPesq == Nil  //pode acontecer de nï¿½o gerar o arquivo normalmente quando esta recebendo um rest
 			Break			
 		EndIf
 		If Empty(_cTab) .or. Empty(_cCampo)
@@ -3989,11 +3990,11 @@ Return _cNumRet
 
 
 /*/{Protheus.doc} zTpOper
-//Verifica informaçÃµes de campos obrigatÃ³rios 
+//Verifica informaï¿½Ãµes de campos obrigatÃ³rios 
 @author Evandro Mariano
 @since 06/05/2022
 @version undefined
-@param _aMsg, array, descrição
+@param _aMsg, array, descriï¿½ï¿½o
 @type function
 /*/
 User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
@@ -4006,7 +4007,7 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 	//Local lGRTrib			:= .F.
 	Local _cRet 			:= " "
 	Local _aAreaSA1			:= SA1->(GetArea())
-	Local _cTipoOrc			:= AllTrim(Posicione("VX5", 1, XFilial("VX5") + "Z02" + PadR( AllTrim(_cTipoPed), TamSX3("VX5_CODIGO")[1] ), "VX5_DESCRI")) //Tipo do orçamento (Venda/Transferencia/Remessa)
+	Local _cTipoOrc			:= AllTrim(Posicione("VX5", 1, XFilial("VX5") + "Z02" + PadR( AllTrim(_cTipoPed), TamSX3("VX5_CODIGO")[1] ), "VX5_DESCRI")) //Tipo do orï¿½amento (Venda/Transferencia/Remessa)
 	Local _cCnpjTransf  	:= AllTrim(SuperGetMV( "CMV_WSR019"  ,,"03471344"))	//Raiz CNPJ de transferencia
 
 	//Local _cZFVenda		:= AllTrim(SuperGetMV( "CMV_WSR021"  ,,"AC|93;AP|92;AM|93;RO|93;RR|93"))	//Zona Franca - Venda
@@ -4016,29 +4017,29 @@ User Function zTpOper(_cCliente, _cLoja, _cTipoPed)
 	//Local _cGRTrib			:= AllTrim(SuperGetMV( "CMV_WSR052"  ,,"100;200"))	//Zona Franca
 
 	Local _cBxInter 		:= AllTrim(SuperGetMV( "CMV_WSR039"  ,,"011"))		//Codigo Baixa Interna
-	Local _cOpUsoInt		:= AllTrim(SuperGetMV( "CMV_WSR043"  ,,"75"))		//Operação Uso Interno
+	Local _cOpUsoInt		:= AllTrim(SuperGetMV( "CMV_WSR043"  ,,"75"))		//Operaï¿½ï¿½o Uso Interno
 
 	Local _cBxScrap			:= AllTrim(SuperGetMV( "CMV_WSR027"  ,,"013"))		//Codigo Scrap
-	Local _cOpRefugo		:= AllTrim(SuperGetMV( "CMV_WSR022"  ,,"59"))		//Operação Refugo
+	Local _cOpRefugo		:= AllTrim(SuperGetMV( "CMV_WSR022"  ,,"59"))		//Operaï¿½ï¿½o Refugo
 
 	Local _cBxTfUso			:= AllTrim(SuperGetMV( "CMV_WSR040"  ,,"014"))		//Codigo Transferencia Uso
-	Local _cOpTfUso			:= AllTrim(SuperGetMV( "CMV_WSR044"  ,,"98"))		//Operação Transferencia Uso
+	Local _cOpTfUso			:= AllTrim(SuperGetMV( "CMV_WSR044"  ,,"98"))		//Operaï¿½ï¿½o Transferencia Uso
 
 	Local _cBxRemAr			:= AllTrim(SuperGetMV( "CMV_WSR046"  ,,"015"))		//Codigo Remessa Armazenamento
-	Local _cOpRemAr			:= AllTrim(SuperGetMV( "CMV_WSR048"  ,,"XA"))		//Operação Remessa Armazenamento
+	Local _cOpRemAr			:= AllTrim(SuperGetMV( "CMV_WSR048"  ,,"XA"))		//Operaï¿½ï¿½o Remessa Armazenamento
 
 	Local _cBxRemTs			:= AllTrim(SuperGetMV( "CMV_WSR047"  ,,"016"))		//Codigo Remessa Teste
-	Local _cOpRemTs			:= AllTrim(SuperGetMV( "CMV_WSR049"  ,,"XB"))		//Operação Remessa Teste
+	Local _cOpRemTs			:= AllTrim(SuperGetMV( "CMV_WSR049"  ,,"XB"))		//Operaï¿½ï¿½o Remessa Teste
 
-	Local _cOpTransf		:= AllTrim(SuperGetMV( "CMV_WSR020"  ,,"81"))		//Operação Transferencia
-	Local _cOpVenda			:= AllTrim(SuperGetMV( "CMV_WSR023"  ,,"90"))		//Operação Venda
-	Local _cOpVdUso			:= AllTrim(SuperGetMV( "CMV_WSR041"  ,,"XX"))		//Operação Venda/uso
-	Local _cOpRemessa		:= AllTrim(SuperGetMV( "CMV_WSR025"  ,,"77"))		//Operação Remessa
+	Local _cOpTransf		:= AllTrim(SuperGetMV( "CMV_WSR020"  ,,"81"))		//Operaï¿½ï¿½o Transferencia
+	Local _cOpVenda			:= AllTrim(SuperGetMV( "CMV_WSR023"  ,,"90"))		//Operaï¿½ï¿½o Venda
+	Local _cOpVdUso			:= AllTrim(SuperGetMV( "CMV_WSR041"  ,,"XX"))		//Operaï¿½ï¿½o Venda/uso
+	Local _cOpRemessa		:= AllTrim(SuperGetMV( "CMV_WSR025"  ,,"77"))		//Operaï¿½ï¿½o Remessa
 
-	Local _cOpVEndaZF		:= AllTrim(SuperGetMV( "CMV_WSR021"  ,,"ZF|93;ZD|92"))		//Operação Venda/uso ZF
-	Local _cOpVdUsoZF		:= AllTrim(SuperGetMV( "CMV_WSR042"  ,,"ZF|xx;ZD|xy"))		//Operação Venda/uso ZF
-	Local _cOpRemessaZF		:= AllTrim(SuperGetMV( "CMV_WSR024"  ,,"ZF|77;ZD|77"))		//Operação Venda/uso ZF
-	Local _cOpGarantia		:= AllTrim(SuperGetMV( "CMV_WSR051"  ,,"012|95;022|95"))		//Operação Venda/uso ZF
+	Local _cOpVEndaZF		:= AllTrim(SuperGetMV( "CMV_WSR021"  ,,"ZF|93;ZD|92"))		//Operaï¿½ï¿½o Venda/uso ZF
+	Local _cOpVdUsoZF		:= AllTrim(SuperGetMV( "CMV_WSR042"  ,,"ZF|xx;ZD|xy"))		//Operaï¿½ï¿½o Venda/uso ZF
+	Local _cOpRemessaZF		:= AllTrim(SuperGetMV( "CMV_WSR024"  ,,"ZF|77;ZD|77"))		//Operaï¿½ï¿½o Venda/uso ZF
+	Local _cOpGarantia		:= AllTrim(SuperGetMV( "CMV_WSR051"  ,,"012|95;022|95"))		//Operaï¿½ï¿½o Venda/uso ZF
 	Local _cOpVendaZFFM     := ' '
 	Local _cUFCliente		:= ' '
 
@@ -4180,7 +4181,7 @@ Valida verifica se Tipo do Pedido faz parte do grupo de Grantia
 @author 	CAOA - CAOA - Sandro
 @version  	P12.1.23
 @since  	07/10/2024
-@return  	_cRet -- Retorno o Grupo se contiver no parametro CMV_PEC51 senão retornará vazio
+@return  	_cRet -- Retorno o Grupo se contiver no parametro CMV_PEC51 senï¿½o retornarï¿½ vazio
 @project
 @history    
 			
@@ -4215,9 +4216,9 @@ Return(_cRet)
 	Ã‰ necessario que:
 	O parametro MV_LOCALIZ = S
 	O produto com codigo PA001 tenha controle de endereco ativo
-	O armazem padrao definido no produto deve ter 2 endereços: ENDER01 (61) e ENDER02 (65)
+	O armazem padrao definido no produto deve ter 2 endereï¿½os: ENDER01 (61) e ENDER02 (65)
 	Saldo inicial igual ou superior a 1
-	E este saldo deve ser endereçado ao ENDER01
+	E este saldo deve ser endereï¿½ado ao ENDER01
 /*/
 User Function XRESCAOAPEC(_cNumOrc, _lReserva, _aRegVS3, _cArmOrig, _cArmDes, _lTela)
 		
@@ -4238,7 +4239,7 @@ User Function XRESCAOAPEC(_cNumOrc, _lReserva, _aRegVS3, _cArmOrig, _cArmDes, _l
 
 	Default _cNumOrc	:= ""
 	Default _cArmOrig  	:= ""    //'61' Codigo do Armazem de Pecas RESERVADAS             
-	Default _cArmDes   	:= ""    //'65' ArmazÃ©m para Peças com divergencia                
+	Default _cArmDes   	:= ""    //'65' ArmazÃ©m para Peï¿½as com divergencia                
 	Default _aRegVS3 	:= {}
 	Default _lTela		:= .F.
 	Default _lReserva	:= .T.
@@ -4251,23 +4252,23 @@ User Function XRESCAOAPEC(_cNumOrc, _lReserva, _aRegVS3, _cArmOrig, _cArmDes, _l
 
 	Begin Sequence
 
-		//Verificar orçamento
+		//Verificar orï¿½amento
 		If Empty(_cNumOrc)
-			AAdd(_aMsg,"não informado o numero orçamento, não sera realizada a Reserva comunicar ADM Sistemas!!! ")
+			AAdd(_aMsg,"nï¿½o informado o numero orï¿½amento, nï¿½o sera realizada a Reserva comunicar ADM Sistemas!!! ")
 			_lRet := .F.
 			Break
 		Endif	
 		If VS1->VS1_NUMORC <> _cNumOrc
 			VS1->(DbSetOrder(1))
 			If !VS1->(DbSeek(XFilial("VS1")+_cNumOrc))
-				AAdd(_aMsg,"não localizado orçamento " +_cNumOrc+ ", não sera realizada a Reserva comunicar ADM Sistemas!!! ")
+				AAdd(_aMsg,"nï¿½o localizado orï¿½amento " +_cNumOrc+ ", nï¿½o sera realizada a Reserva comunicar ADM Sistemas!!! ")
 				_cNumOrc := ""
 				_lRet := .F.
 				Break
 			EndIf
 		EndIf
 		If VS1->VS1_STATUS $ "X_C"  //VS1->VS1_STATUS $ "X_C"ja esta faturado
-			Aadd(_aMsg, "orçamento " +_cNumOrc+ " com status "+VS1->VS1_STATUS+", que nao permite este cancelamento !" )
+			Aadd(_aMsg, "orï¿½amento " +_cNumOrc+ " com status "+VS1->VS1_STATUS+", que nao permite este cancelamento !" )
 			_lRet := .F.
 			Break
 		Endif
@@ -4277,8 +4278,8 @@ User Function XRESCAOAPEC(_cNumOrc, _lReserva, _aRegVS3, _cArmOrig, _cArmDes, _l
 		Begin Transaction
 			//incluir itens VS3
 			//montar por numero de registro	
-			//_cDocumento := GetSxeNum("SD3","D3_DOC")  //não pode ser pelo SX
-			//Implementado pois em alguns casos não esta conseguindo localizar numeração
+			//_cDocumento := GetSxeNum("SD3","D3_DOC")  //nï¿½o pode ser pelo SX
+			//Implementado pois em alguns casos nï¿½o esta conseguindo localizar numeraï¿½ï¿½o
 			_cDocumento := ""
 			For _nPos := 1 To 10
 				_cDocumento  := Criavar("D3_DOC")
@@ -4288,7 +4289,7 @@ User Function XRESCAOAPEC(_cNumOrc, _lReserva, _aRegVS3, _cArmOrig, _cArmDes, _l
 				Endif 
 			Next 	
 			If Empty(_cDocumento)
-				_cMens := "não foi possivel montar numeração SD3, para gerar movimentação." 
+				_cMens := "nï¿½o foi possivel montar numeraï¿½ï¿½o SD3, para gerar movimentaï¿½ï¿½o." 
 				Aadd(_aMsg,_cErro)
 				_lRet := .F.
 				Disarmtransaction()
@@ -4300,7 +4301,7 @@ User Function XRESCAOAPEC(_cNumOrc, _lReserva, _aRegVS3, _cArmOrig, _cArmDes, _l
 				//Prepara itens para ExecAuto MATA261
 				_aItens 	:= XRESCAOATR(_cNumOrc, _lReserva, @_aRegVS3, _cArmorig, _cArmdes, _cDocumento, @_aMsg)
 				If Len(_aItens) == 0
-					AAdd(_aMsg,"Não foi possivel fazer transferencias ref  orçamento " +_cNumOrc+ ", não sera realizada a Reserva comunicar ADM Sistemas!!! ")
+					AAdd(_aMsg,"Nï¿½o foi possivel fazer transferencias ref  orï¿½amento " +_cNumOrc+ ", nï¿½o sera realizada a Reserva comunicar ADM Sistemas!!! ")
 					_lRet := .F.
 					Disarmtransaction()
 				EndIf
@@ -4328,7 +4329,7 @@ User Function XRESCAOAPEC(_cNumOrc, _lReserva, _aRegVS3, _cArmOrig, _cArmDes, _l
 		End Transaction
 	End Sequence	
 	If !_lRet
-		AAdd(_aMsg, "Ocorreram problemas na movimentação de armazem  para o orçamento "+_cNumOrc )
+		AAdd(_aMsg, "Ocorreram problemas na movimentaï¿½ï¿½o de armazem  para o orï¿½amento "+_cNumOrc )
 		_cDocumento := "NA"			
 	EndIf
 	_cMens := ""
@@ -4338,7 +4339,7 @@ User Function XRESCAOAPEC(_cNumOrc, _lReserva, _aRegVS3, _cArmOrig, _cArmDes, _l
 		Next	
 	EndIf
 
-	//Caso não tenha o numero de orçamento atualizar VS1
+	//Caso nï¿½o tenha o numero de orï¿½amento atualizar VS1
 	If !Empty(_cNumOrc)
 		VS1->(RecLock("VS1",.F.))
 		VS1->VS1_OBSAGL		:= _cMens + AllTrim(VS1->VS1_OBSAGL)
@@ -4354,7 +4355,7 @@ User Function XRESCAOAPEC(_cNumOrc, _lReserva, _aRegVS3, _cArmOrig, _cArmDes, _l
 	Endif	
 	//caso possa mostrar na tela
 	If _lTela
-		MSGINFO( _cMens, "[ XRESCAOAPEC ] - Atenção" )
+		MSGINFO( _cMens, "[ XRESCAOAPEC ] - Atenï¿½ï¿½o" )
 		Conout("XRESCAOAPEC - "+ _cMens)
 	Else
 		Conout("XRESCAOAPEC - "+ _cMens)
@@ -4415,12 +4416,12 @@ Static Function XRESCAOATR(_cNumOrc, _lReserva, _aRegVS3, _cArmorig, _cArmdes, _
 			//Itens a Incluir
 			SB1->(DbSetOrder(1))
 			If !SB1->(DbSeek(xFilial("SB1")+_cCodProd))
-				AAdd(_aMsg,"Não localizado codigo do produto "+_cCodProd+" !!! ")
+				AAdd(_aMsg,"Nï¿½o localizado codigo do produto "+_cCodProd+" !!! ")
 				_lRet := .F.
 				Break
 			Endif	
 
-			//caso seja para reservar e exista uma reserva não executar
+			//caso seja para reservar e exista uma reserva nï¿½o executar
 			_nQtde 		:= VS3->VS3_QTDITE
 			_nQtdeItem 	:= U_XLOCVE6O(VS3->VS3_NUMORC, VS3->VS3_CODITE)	
 			//Se for maior que zero e a quantidade total a ser reservada for maior ou igual VE6 ja esta reservado, se for menor Ã© parcial	
@@ -4430,13 +4431,13 @@ Static Function XRESCAOATR(_cNumOrc, _lReserva, _aRegVS3, _cArmorig, _cArmdes, _
 					_lRet := .F.
 					Break
 				Endif	
-			//Se for igual a zero e a quantidade total a ser reservada for menor VE6 não considerar como reservado 
+			//Se for igual a zero e a quantidade total a ser reservada for menor VE6 nï¿½o considerar como reservado 
 			ElseIf !_lReserva //.and. VS3->VS3_RESERV == "0" 
 				If _nQtdeItem > 0 .or. VS3->VS3_QTDITE < _nQtdeItem  //ja tem reserva para este item
 					//Apagar o parcial que esta reservado
 					_nQtde := _nQtdeItem   //If(_nQtdeItem > 0, _nQtdeItem, VS3->VS3_QTDITE)
 				ElseIf _nQtdeItem == 0 
-					AAdd(_aMsg,"Item não possui reserva codigo do produto "+_cCodProd+" !!! ")
+					AAdd(_aMsg,"Item nï¿½o possui reserva codigo do produto "+_cCodProd+" !!! ")
 					_lRet := .F.
 					Break
 				Endif	
@@ -4456,11 +4457,11 @@ Static Function XRESCAOATR(_cNumOrc, _lReserva, _aRegVS3, _cArmorig, _cArmdes, _
 				_cObs		:= "Retirada reserva ref. orcamento " +_cNumOrc
 			Endif
 			If Empty(_cOrigem) .or. Empty(_cDestino)
-				AAdd(_aMsg,"não informado armazem origem e ou destino para orçamento " +_cNumOrc+ ", não sera realizada processo de Reserva comunicar ADM Sistemas!!! ")
+				AAdd(_aMsg,"nï¿½o informado armazem origem e ou destino para orï¿½amento " +_cNumOrc+ ", nï¿½o sera realizada processo de Reserva comunicar ADM Sistemas!!! ")
 				_lRet := .F.
 				Break
 			ElseIf _cOrigem == _cDestino
-				AAdd(_aMsg,"Verificar armazem origem "+_cOrigem+" e ou destino "+_cDestino+" para orçamento " +_cNumOrc+ " os mesmos estão iguais, não sera realizada processo de Reserva comunicar ADM Sistemas!!! ")
+				AAdd(_aMsg,"Verificar armazem origem "+_cOrigem+" e ou destino "+_cDestino+" para orï¿½amento " +_cNumOrc+ " os mesmos estï¿½o iguais, nï¿½o sera realizada processo de Reserva comunicar ADM Sistemas!!! ")
 				_lRet := .F.
 				Break
 			EndIf
@@ -4471,18 +4472,18 @@ Static Function XRESCAOATR(_cNumOrc, _lReserva, _aRegVS3, _cArmorig, _cArmdes, _
 				_nSaldo := SaldoSB2()
 				
 				if _nSaldo <= 0
-					_cErro := "Produto " + _cCodProd + "  não Possue saldo no Armazem " + _cOrigem + "  !!! " 
+					_cErro := "Produto " + _cCodProd + "  nï¿½o Possue saldo no Armazem " + _cOrigem + "  !!! " 
 					AAdd(_aMsg,_cErro)
-					//MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
+					//MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenï¿½ï¿½o" )
 					_lRet := .F.
 					(_cAliasPesq)->(DbSkip())
 					Loop
 				endif
 			
 			Else
-				_cErro := "Produto " + _cCodProd + "  não encontrado no Armazem " + _cOrigem + "  !!! " 
+				_cErro := "Produto " + _cCodProd + "  nï¿½o encontrado no Armazem " + _cOrigem + "  !!! " 
 				AAdd(_aMsg,_cErro)
-				//MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenção" )
+				//MSGINFO( _cErro, "[ZPECF013_MANUTENCAO] - Atenï¿½ï¿½o" )
 				_lRet := .F.
 				Break
 			EndIf
@@ -4492,7 +4493,7 @@ Static Function XRESCAOATR(_cNumOrc, _lReserva, _aRegVS3, _cArmorig, _cArmdes, _
 			aadd(_aItem,{"D3_DESCRI" 	, SB1->B1_DESC 				, Nil}) //descr produto origem
 			aadd(_aItem,{"D3_UM"     	, SB1->B1_UM				, Nil}) //unidade medida origem
 			aadd(_aItem,{"D3_LOCAL"  	, _cOrigem					, Nil}) //armazem origem
-			aadd(_aItem,{"D3_LOCALIZ"	, PadR(_cOrigem, tamsx3('D3_LOCALIZ') [1])	,Nil}) //Informar endereço origem
+			aadd(_aItem,{"D3_LOCALIZ"	, PadR(_cOrigem, tamsx3('D3_LOCALIZ') [1])	,Nil}) //Informar endereï¿½o origem
 			//aAdd(_aItem,{"D3_TM"     , Alltrim(cCodMov)		, Nil }) //Tipo Movimento
 			//aAdd(_aItem,{"D3_DOC"    , Alltrim(cDoc)			, Nil }) //Documento
 			//aAdd(_aItem,{"D3_EMISSAO", dDtaTransf				, Nil }) //EMISSAO
@@ -4501,7 +4502,7 @@ Static Function XRESCAOATR(_cNumOrc, _lReserva, _aRegVS3, _cArmorig, _cArmdes, _
 			aadd(_aItem,{"D3_DESCRI"	, SB1->B1_DESC				, Nil}) //descr produto destino
 			aadd(_aItem,{"D3_UM"		, SB1->B1_UM				, Nil}) //unidade medida destino
 			aadd(_aItem,{"D3_LOCAL"		, _cDestino					, Nil}) //armazem destino  era  SB1->B1_LOCPAD
-			aadd(_aItem,{"D3_LOCALIZ"	, PadR(_cDestino, tamsx3('D3_LOCALIZ') [1]),	Nil}) //Informar endereço destino
+			aadd(_aItem,{"D3_LOCALIZ"	, PadR(_cDestino, tamsx3('D3_LOCALIZ') [1]),	Nil}) //Informar endereï¿½o destino
 	
 			aadd(_aItem,{"D3_NUMSERI"	, ""						, Nil}) //Numero serie
 			aadd(_aItem,{"D3_LOTECTL"	, IIf(!Empty(VS3->VS3_LOTECT),VS3->VS3_LOTECT,"")		, Nil}) //Lote Origem
@@ -4538,7 +4539,7 @@ Static Function XRESCAOATR(_cNumOrc, _lReserva, _aRegVS3, _cArmorig, _cArmdes, _
 			aadd(_aItem,{"D3_STATUS"	,"SERVICO NAO EXECUTADO"	, Nil}) //SATATUS registro
 			*/
 			aAdd(_aRet, _aItem)
-			//Gravar e ou retirar  VS6 com informaçoes de reserva 
+			//Gravar e ou retirar  VS6 com informaï¿½oes de reserva 
 			//Gravar dados no VS3
 			VS3->(DbGoto( (_cAliasPesq)->NREGVS3 ))
 			If !VS3->(Reclock("VS3",.F.))
@@ -4556,14 +4557,14 @@ Static Function XRESCAOATR(_cNumOrc, _lReserva, _aRegVS3, _cArmorig, _cArmdes, _
 					VS3->VS3_QTDRES	:= 0
 				EndIf	
 			EndIf
-			//VS3->VS3_LOCAL  := _cDestino  //o armazem não muda deve ser o inicial (colocado pelo SB1) no SIGAPEC faturamento não muda o armazem apÃ³s faturar DAC 12/10/2022
+			//VS3->VS3_LOCAL  := _cDestino  //o armazem nï¿½o muda deve ser o inicial (colocado pelo SB1) no SIGAPEC faturamento nï¿½o muda o armazem apÃ³s faturar DAC 12/10/2022
 			VS3->(MsUnlock())
 			//Atualizar VE6
 			OX001VE6(_cNumOrc, _lReserva) // RESERVA / DESRESERVA DO ITEM
 			//Reposiciono para grarantir que esta no registro correto
 			VS3->(DbGoto( (_cAliasPesq)->NREGVS3 ))
-			AAdd(_aMsg, "Gravado movimentação do produto "+AllTrim(VS3->VS3_CODITE)+" qtde "+AllTrim(Str(VS3->VS3_QTDITE))+" do Armazem "+_cOrigem+" para armazem "+_cDestino)
-			AAdd(_aMsg, "Dcto movimentação "+_cDocumento)	
+			AAdd(_aMsg, "Gravado movimentaï¿½ï¿½o do produto "+AllTrim(VS3->VS3_CODITE)+" qtde "+AllTrim(Str(VS3->VS3_QTDITE))+" do Armazem "+_cOrigem+" para armazem "+_cDestino)
+			AAdd(_aMsg, "Dcto movimentaï¿½ï¿½o "+_cDocumento)	
 			(_cAliasPesq)->(DbSkip())
 		EndDo
 	End Sequence
@@ -4615,7 +4616,7 @@ User Function XRCAOVS3(_cNumOrc)
 Return _cStatus
 
 
-//localisar a situação Tributaria
+//localisar a situaï¿½ï¿½o Tributaria
 User Function XFUNSITT(_cCodTES, _cCodItem, _cGrupo)
 	Local _cSitTrib := "" //VS3->VS3_SITTRI  
 
@@ -4676,7 +4677,7 @@ Return _nQtdeItem
 
 
 /*/{Protheus.doc} XFUNPRRGlog
-Responsavel por reenviar Pixking não transmitido para RGLOG
+Responsavel por reenviar Pixking nï¿½o transmitido para RGLOG
 @author 	DAC-Denilso
 @since 		11/07/2022
 @version 	undefined
@@ -4686,8 +4687,8 @@ Responsavel por reenviar Pixking não transmitido para RGLOG
 @obs 		
 @menu       Nao Informado
 @return		_lRet		- Verdadeiro ou falso
-@history    18/07/2022 	- Conforme solicitação JC Ã© para realizar o processo de reenvio com todos os orçamentos que estão com data
-						- em banco pois Ã© para automatizar para Barueri, não fazer perguntas e tentar reenviar
+@history    18/07/2022 	- Conforme solicitaï¿½ï¿½o JC Ã© para realizar o processo de reenvio com todos os orï¿½amentos que estï¿½o com data
+						- em banco pois Ã© para automatizar para Barueri, nï¿½o fazer perguntas e tentar reenviar
 /*/
 User Function XFUNPRRGlog(_cAglutina, _cEmpresa, _cFilial, _nReprocessado, _oSay)
 	Local _lRet 		:= .T.
@@ -4701,7 +4702,7 @@ User Function XFUNPRRGlog(_cAglutina, _cEmpresa, _cFilial, _nReprocessado, _oSay
 
 	Begin Sequence
 
-		//se não For pro JOB	
+		//se nï¿½o For pro JOB	
 		If _lJob 
 			//Tratar abertura da empresa conforme enviado no parametro
 			Conout("XFUNPRRGlog - Iniciando JOB")
@@ -4713,14 +4714,14 @@ User Function XFUNPRRGlog(_cAglutina, _cEmpresa, _cFilial, _nReprocessado, _oSay
 			EndIf
 			_lRet := XENCPICKRGlog(_cAglutina, @_nReprocessado, _oSay, _lJob)
 		Else
-			FwMsgRun(, {|oSay| _lRet := XENCPICKRGlog(_cAglutina, @_nReprocessado, _oSay, _lJob )}, "Envio de separação", "Por favor aguarde...")
+			FwMsgRun(, {|oSay| _lRet := XENCPICKRGlog(_cAglutina, @_nReprocessado, _oSay, _lJob )}, "Envio de separaï¿½ï¿½o", "Por favor aguarde...")
 		EndIf
 	End Sequence
 	Conout("XFUNPRRGlog - TÃ©rmino JOB")
 Return _lRet
 
 
-//função responsavel pelo reenvio de picking RGLOG
+//funï¿½ï¿½o responsavel pelo reenvio de picking RGLOG
 Static Function XENCPICKRGlog(_cAglutina, _nReprocessado, _oSay, _lJob)
 	Local _lRet			:= .T.
 	Local _lProcessa	:= .T.
@@ -4757,13 +4758,13 @@ Static Function XENCPICKRGlog(_cAglutina, _nReprocessado, _oSay, _lJob)
 		//		AND VS1.VS1_XAGLU  	= %Exp:_cAglutina%  //anteriormente tratava somente a onda DAC 18/07/2022
 		Count To _nRegPicking 
 		(_cAliasPesq)->(DbGotop())
-		//Caso não localizou sair 
+		//Caso nï¿½o localizou sair 
 		If (_cAliasPesq)->(Eof()) 	
 			Break
 		Endif
 		//Caso exista algun registro informar se quer tentar reenvio
-		// não fazer pegunta processar automaticamente
-		// 	If !MsgYesNo( "Existe(m) "+StrZero(_nRegPicking,7)+" Picking ainda não transmitido para RG LOG, ref. a esta onda "+_cAglutina+", Deseja tentar trasmitir novamente ? " )
+		// nï¿½o fazer pegunta processar automaticamente
+		// 	If !MsgYesNo( "Existe(m) "+StrZero(_nRegPicking,7)+" Picking ainda nï¿½o transmitido para RG LOG, ref. a esta onda "+_cAglutina+", Deseja tentar trasmitir novamente ? " )
 		//		_lProcessa := .F. 
 		//	EndIf
 		_lAborta  := .F.
@@ -4773,7 +4774,7 @@ Static Function XENCPICKRGlog(_cAglutina, _nReprocessado, _oSay, _lJob)
 			ProcessMessage()
 		Endif	 
 		While (_cAliasPesq)->(!Eof())
-			//preparar todos os orçamentos com o picking para processamento
+			//preparar todos os orï¿½amentos com o picking para processamento
 			_cPicking := AllTrim((_cAliasPesq)->VS1_XPICKI)
 			If _lProcessa .and. !U_ZWSR007(/*_cAglutina*/, _cPicking, /*_lDataEnv*/ , cEmpAnt, cFilAnt, @_aRetMens )
 				If ValType(_aRetMens)  == "A"
@@ -4782,9 +4783,9 @@ Static Function XENCPICKRGlog(_cAglutina, _nReprocessado, _oSay, _lJob)
 					_cObs += " Picking: "   	+ _cPicking	
 					_cObs += " Ocorrencias: "   	
 					For _nPos := 1 To Len(_aRetMens)
-						//caso não validou o envio posso deixar como falso para retorno	
+						//caso nï¿½o validou o envio posso deixar como falso para retorno	
 						_cObs += Upper(AllTrim(_aRetMens[_nPos,2]))+ " "
-						If _aRetMens[_nPos,1] == 999  //respectivo a conexão irei abortar o processo caso tenham muitos para ser enviados
+						If _aRetMens[_nPos,1] == 999  //respectivo a conexï¿½o irei abortar o processo caso tenham muitos para ser enviados
 							_cObs += CRLF+ "Sera abortado envio para evitar recorrencia do mesmo erro, Verificar com ADM Sistema !"
 							_lAborta  := .T.
 						Endif
@@ -4802,7 +4803,7 @@ Static Function XENCPICKRGlog(_cAglutina, _nReprocessado, _oSay, _lJob)
 				_oSay:SetText(" Reprocessamento - Reg. a Reprocessar " + StrZero(_nRegPicking,7)+ " Reg. Enviados "+StrZero(_nLidos,7)  )
 				ProcessMessage() 
 			Endif
-			//Abortar referente a falta de conexão
+			//Abortar referente a falta de conexï¿½o
 			If _lAborta
 				Exit
 			Endif
@@ -4817,7 +4818,7 @@ Static Function XENCPICKRGlog(_cAglutina, _nReprocessado, _oSay, _lJob)
 		If _lJob
 			Conout("XFUNPRRGlog - "+ _cObs)
 		Else
-			MSGINFO( Upper(_cObs), "[ZPECF008] - Atenção" )
+			MSGINFO( Upper(_cObs), "[ZPECF008] - Atenï¿½ï¿½o" )
 		Endif
 	Endif
 	If Select(_cAliasPesq) <> 0
@@ -4854,10 +4855,10 @@ User Function XFUNIPOSTO(_cNumOrc, _cEmpresa, _cFilial, _lJob )
 		If Empty(_cNumOrc)
 			Break
 		EndIf
-		//se não For pro JOB	
+		//se nï¿½o For pro JOB	
 		If _lJob 
 			//Tratar abertura da empresa conforme enviado no parametro
-			Conout("XFUNIPOSTO - Iniciando JOB orçamento "+_cNumOrc)
+			Conout("XFUNIPOSTO - Iniciando JOB orï¿½amento "+_cNumOrc)
 			If Type("cEmpAnt") <> "C" .or. cEmpAnt <> _cEmpresa .or. cFilAnt <> _cFilial
 				Conout("XFUNIPOSTO - Abrindo empresa "+_cEmpresa+" Filial "+_cFilial)
 				RpcClearEnv() 
@@ -4869,30 +4870,30 @@ User Function XFUNIPOSTO(_cNumOrc, _cEmpresa, _cFilial, _lJob )
 			_lRet :=  U_ORCCALFIS( _cNumOrc /*_cNumOrc*/,/*_lAtuaPreco*/)  
 		EndIf
 	End Sequence
-	Conout("XFUNIPOSTO - TÃ©rmino JOB orçamento "+_cNumOrc)
+	Conout("XFUNIPOSTO - TÃ©rmino JOB orï¿½amento "+_cNumOrc)
 Return _lRet
 
 /*/{Protheus.doc} XVERTABPreco
-Responsavel por verificar se existe algum item com valor divergente na tabela de preço
+Responsavel por verificar se existe algum item com valor divergente na tabela de preï¿½o
 @author 	DAC-Denilso
 @since 		06/10/2022
 @version 	undefined
 @param 		_cCLi 	= Cliente Faturamento 
 			_cLoja  = Loja Faturamento
-			_cNumOrc= Numero do orçamento a ser pesquisado
+			_cNumOrc= Numero do orï¿½amento a ser pesquisado
 @project    BARUERI
 @type 		user function
 @obs 		
 @menu       Nao Informado
 @return		_lRet		- Verdadeiro possui itens com divergencia de tabela 
-						  Falso não possui itens com divergencia de tabela
+						  Falso nï¿½o possui itens com divergencia de tabela
 @history    
 /*/
 User Function XVERTABPreco( _cCLi, _cLoja, _cNumOrc )
 	//Local _nValTab		:= 0
 	Local _cAliasPesq	:= GetNextAlias()   
 	Local _cAtivo		:= '1'
-	Local _lRet			:= .F.  //indica não ocorreu alteração
+	Local _lRet			:= .F.  //indica nï¿½o ocorreu alteraï¿½ï¿½o
 	Local _cData		:= DtOS(dDataBase)  //DtOS(Date()) //06/10/2022 conforme ZÃ© utilizar o database
 	Local _cCampo 		 
     Local _Tipo         := " "
@@ -4906,7 +4907,7 @@ User Function XVERTABPreco( _cCLi, _cLoja, _cNumOrc )
 			If SA1->A1_COD <> _cCLi .AND. SA1->A1_LOJA <> _cLoja 
 				SA1->(DbSetOrder(1))
 				If !SA1->(DbSeek(XFilial("SA1")+_cCLi+_cLoja))
-					_lRet := .T.  //caso não localize SA1 retorno tru para forçar calculo em tabela
+					_lRet := .T.  //caso nï¿½o localize SA1 retorno tru para forï¿½ar calculo em tabela
 					Break
 				EndIf	
 			Endif
@@ -4968,7 +4969,7 @@ USER FUNCTION  zFormula(_cCliFor,_cLoja,_cTipo)
 		If Substring(SA1->A1_CGC,1,8) == _cCnpjTransf //'03471344'
 			cRet := StrTran(AllTrim(GetNewPar("MV_FMLTRAN","000005")), '"')   		//indica formula de Transferencia
 		Else
-			cRet := StrTran(AllTrim(GetNewPar("MV_FMLPECA","000001")), '"')   		//indica formula padrão
+			cRet := StrTran(AllTrim(GetNewPar("MV_FMLPECA","000001")), '"')   		//indica formula padrï¿½o
 		EndIf
 
 	EndIf
@@ -4977,7 +4978,7 @@ RETURN cRet
 
 
 
-//função responsavel pela Verificação de orçamentos com status de BO XBO = "S"  para transferencia para outra filial
+//funï¿½ï¿½o responsavel pela Verificaï¿½ï¿½o de orï¿½amentos com status de BO XBO = "S"  para transferencia para outra filial
 //Funcionalidade devera funcionar por start JOB
 //PEC030 - [ CaoaSp ] - Tratamento da Onda para nova Filial_V1
 User Function CAOA_TRFO( _cAglutina, _cEmpresa, _cFilial )
@@ -5014,18 +5015,18 @@ User Function CAOA_TRFO( _cAglutina, _cEmpresa, _cFilial )
 		_cAliasPesq := GetNextAlias()
 		_cFilTransf	:= SuperGetMV( "CMV_PEC030"  ,,"" )
 		If Empty(_cFilTransf)
-			Aadd(_aMens,"Parametro( CMV_PEC030) para transferencia de orçamentos BO's não informado " )
+			Aadd(_aMens,"Parametro( CMV_PEC030) para transferencia de orï¿½amentos BO's nï¿½o informado " )
 			//_lRet := .F.
 			Break
 		EndIf
 		If AllTrim(_cFilTransf) == AllTrim(cFilAnt)
-			Aadd(_aMens,"Filial "+_cFilTransf+" não pode ser a mesma filail de origem, referente transferencia de orçamentos BO's não informado " )
+			Aadd(_aMens,"Filial "+_cFilTransf+" nï¿½o pode ser a mesma filail de origem, referente transferencia de orï¿½amentos BO's nï¿½o informado " )
 			_lRet := .F.
 			Break
 		Endif
 		aSM0Fil := FWSM0Util():GetSM0Data( cEmpAnt , _cFilTransf , { "M0_CODFIL" } ) //Retorna o M0_CODFIL do grupo  e filial 
 		If Len(aSM0Fil) == 0
-			Aadd(_aMens,"Filial "+_cFilTransf+" não cadastrada nesta Empresa, para transferencia de orçamentos BO's não informado " )
+			Aadd(_aMens,"Filial "+_cFilTransf+" nï¿½o cadastrada nesta Empresa, para transferencia de orï¿½amentos BO's nï¿½o informado " )
 			_lRet := .F.
 			Break
 		Endif
@@ -5042,15 +5043,15 @@ User Function CAOA_TRFO( _cAglutina, _cEmpresa, _cFilial )
 				AND VS1.%notDel%		 
 		EndSql
 		If (_cAliasPesq)->(Eof()) 	
-			Aadd(_aMens,"não encontrou Registro" )
+			Aadd(_aMens,"nï¿½o encontrou Registro" )
 			Break
 		EndIf	
 		While (_cAliasPesq)->(!Eof()) 
 			VS1->(DbGoto((_cAliasPesq)->NREGVS1))
-			Aadd(_aMens,"Processando filial/orçamento "+VS1->VS1_FILIAL+"/"+VS1->VS1_NUMORC )
+			Aadd(_aMens,"Processando filial/orï¿½amento "+VS1->VS1_FILIAL+"/"+VS1->VS1_NUMORC )
 			If AllTrim(VS1->VS1_FILIAL) <> AllTrim(_cFilTransfer)
 				If U_CAOA_OCTrannsfer(VS1->VS1_NUMORC, VS1->VS1_FILIAL, _cFilTransfer)
-					Aadd(_aMens,"Processado com sucesso filial/orçamento "+VS1->VS1_FILIAL+"/"+VS1->VS1_NUMORC )
+					Aadd(_aMens,"Processado com sucesso filial/orï¿½amento "+VS1->VS1_FILIAL+"/"+VS1->VS1_NUMORC )
 				Endif
 			EndIf	
 			(_cAliasPesq)->(DbSkip())
@@ -5069,13 +5070,13 @@ User Function CAOA_TRFO( _cAglutina, _cEmpresa, _cFilial )
 		Conout(_aMens[_nPos])
 	Next _nPos
 	If !_lJob
-		Help( , ,"Atenção",,_cObs,4,1) //Atenção / Necessario informar os parametros 
+		Help( , ,"Atenï¿½ï¿½o",,_cObs,4,1) //Atenï¿½ï¿½o / Necessario informar os parametros 
 	EndIf
 Return _lRet
 
 
 
-//Transferir o orçamento de uma filial para outra
+//Transferir o orï¿½amento de uma filial para outra
 //PEC030 - [ CaoaSp ] - Tratamento da Onda para nova Filial_V1
 User Function CAOA_OCTrannsfer(_cNumOrc, _cFilAtu, _cFilTransfer)
 	Local _lRet 		:= .T.
@@ -5097,7 +5098,7 @@ User Function CAOA_OCTrannsfer(_cNumOrc, _cFilAtu, _cFilTransfer)
 			Break
 		EndIf
 		If VS1->VS1_FILIAL <> _cFilAtu  .Or. VS1->VS1_NUMORC  <> _cNumOrc 
-			//Verificar se existe orçamento
+			//Verificar se existe orï¿½amento
 			BeginSql Alias _cAliasPesq //Define o nome do alias temporario 
 				SELECT 	ISNULL(VS1.R_E_C_N_O_,0) NREGVS1
 				FROM  %Table:VS1% VS1
@@ -5111,7 +5112,7 @@ User Function CAOA_OCTrannsfer(_cNumOrc, _cFilAtu, _cFilTransfer)
 			EndIf
 			VS1->(DbGoto((_cAliasPesq)->NREGVS1))
 		EndIf
-		//bloquear o orçamento
+		//bloquear o orï¿½amento
 		If !VS1->(RecLock("VS1",.F.))
 			_lRet := .F.
 			Conout("[CAOA_OCTrannsfer] NAO FOI POSSIVEL UTILIZAR EXCLUSIVO TABELA VS2")
@@ -5121,7 +5122,7 @@ User Function CAOA_OCTrannsfer(_cNumOrc, _cFilAtu, _cFilTransfer)
 		If _cFilTransfer <> cFilAnt
 			cFilAnt := _cFilTransfer
 		EndIf
-		//Verifico o numero do orçamento na filail de transferencia
+		//Verifico o numero do orï¿½amento na filail de transferencia
 		_cOrcNovo 		:= VS1->(GetSXENum("VS1","VS1_NUMORC"))
 		_cOrcConf		:= U_XVERNUMeracao("VS1", "VS1_NUMORC", _cOrcNovo )
 		If AllTrim(_cOrcNovo) <> AllTrim(_cOrcConf)
@@ -5143,7 +5144,7 @@ User Function CAOA_OCTrannsfer(_cNumOrc, _cFilAtu, _cFilTransfer)
 		Begin Transaction	
 			_nStatus := TcSqlExec(_cQuery)
 			if (_nStatus < 0)
-				//MSGINFO("Erro ao gravar Status na tabela VS1 "+ TCSQLError() , "[ZPECF0008] - Atenção" )
+				//MSGINFO("Erro ao gravar Status na tabela VS1 "+ TCSQLError() , "[ZPECF0008] - Atenï¿½ï¿½o" )
 				Conout("[CAOA_OCTrannsfer] PROBLEMAS NO SELECT "+ CRLF + TCSQLError())
 				_lRet := .F.
 			Else
@@ -5167,23 +5168,23 @@ Return _lRet
 
 
 /*/{Protheus.doc} ZPECWFLC
-Validação para permitir o Usuario alterar ou não a condição especial quando a mesma existir e estiver cadastrado
-Esta funcionalidade deve ser utilizada na valiação do campo VS1_FORPAG em X3_WHEN 
+Validaï¿½ï¿½o para permitir o Usuario alterar ou nï¿½o a condiï¿½ï¿½o especial quando a mesma existir e estiver cadastrado
+Esta funcionalidade deve ser utilizada na valiaï¿½ï¿½o do campo VS1_FORPAG em X3_WHEN 
 @param      _cForPagVS1 	- Forma de Pagamento  
 @return     Logico
 @author     DAC Denilso
 @version    12.1.17 / Superior
-@project	GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (Revitalização Limite de CrÃ©dito)
+@project	GRUPO CAOA - GAP FIN100 - Campo Matriz Clientes (Revitalizaï¿½ï¿½o Limite de CrÃ©dito)
 @since      13/03/2023
 /*/
 User Function ZPECWFLC(_cForPagVS1)
 Local _lRet 		:= .T. 
-Local _cTpPgtoEsp	:= SuperGetMV( "CMV_PEC039"  ,,"" )  //Condição de Pagamento a qual liberara sem avaliação do Limite de CrÃ©dito
+Local _cTpPgtoEsp	:= SuperGetMV( "CMV_PEC039"  ,,"" )  //Condiï¿½ï¿½o de Pagamento a qual liberara sem avaliaï¿½ï¿½o do Limite de CrÃ©dito
 
 Default _cForPagVS1	:= If(Type("M->VS1_FORPAG") 	== "C",M->VS1_FORPAG	,VS1->VS1_FORPAG)
 
 Begin Sequence
-	//somente ateração
+	//somente ateraï¿½ï¿½o
 	If (!INCLUI .And. !ALTERA) .Or. Empty(_cTpPgtoEsp)
 		Break
 	EndIf
@@ -5198,7 +5199,7 @@ Begin Sequence
 				M->VS1_FORPAG	:= Space(Len(VS1->VS1_FORPAG))
 			Endif	
 		EnDif
-		//Caso não deixe alterar e voltando a confição antiga
+		//Caso nï¿½o deixe alterar e voltando a confiï¿½ï¿½o antiga
 		If Empty(M->VS1_FORPAG) .Or. !AllTrim(M->VS1_FORPAG) $ AllTrim(_cTpPgtoEsp)
 			_lRet := .T.
 		Endif
@@ -5210,15 +5211,15 @@ Return _lRet
 /*/{Protheus.doc} ZPECREGFI
 Atualiza TES inteligente e recalcula Picking 29/03/2023
 @param      cZK_XPICKI 	- Numero Picking 	
-			_cNumOrc	- Numero do orçamento VS1
+			_cNumOrc	- Numero do orï¿½amento VS1
 @return     Logico
-@author     não informado
+@author     nï¿½o informado
 @version    12.1.17 / Superior
 @project	
 @since      29/03/2023
-@history    DAC - 23/06/2022 - Ajuste funcionalidade e implementação registro VS1  
+@history    DAC - 23/06/2022 - Ajuste funcionalidade e implementaï¿½ï¿½o registro VS1  
 				Break antes de iniciar o Sequence
-				Implementado parametro _cNumOrc para permitir que a função possa receber somente um orçamento para refazer calculo
+				Implementado parametro _cNumOrc para permitir que a funï¿½ï¿½o possa receber somente um orï¿½amento para refazer calculo
 				Alterado Select ja trazendo os registros da VS3		
 				Acresentado no SELECT VS3->VS3_XREGFI igual a "T"	
 /*/
@@ -5243,17 +5244,17 @@ Local _nRegVS1 		:= VS1->(Recno())
 Default cZK_XPICKI	:= ""
 Default _cNumOrc	:= ""
 
-Begin sequence  //Ajuste Select não estava dentro do Begin GAP002  DAC 09/08/2023 
+Begin sequence  //Ajuste Select nï¿½o estava dentro do Begin GAP002  DAC 09/08/2023 
 	If Empty(cZK_XPICKI) .and. Empty(_cNumOrc)
-		_cMens := "[ZPECREGFI] não Informado Picking e ou orçamento !"
+		_cMens := "[ZPECREGFI] nï¿½o Informado Picking e ou orï¿½amento !"
 		If !_lJob
-			MsgInfo(_cMens,"Atenção") 
+			MsgInfo(_cMens,"Atenï¿½ï¿½o") 
 		Endif 
 		Conout(_cMens) 
 		_lRet := .F. 
 		Break
 	Endif 
-	//Trata somente o orçamento caso seja informado o numero do orçamento //DAC GAP002
+	//Trata somente o orï¿½amento caso seja informado o numero do orï¿½amento //DAC GAP002
 	If !Empty(_cNumOrc)
 		_cWhere +=   " AND VS1.VS1_NUMORC = '"+_cNumOrc+"' "
 	Else
@@ -5285,15 +5286,15 @@ Begin sequence  //Ajuste Select não estava dentro do Begin GAP002  DAC 09/08/202
 
 	If (_cAliasPesq)->(Eof())
 		//Avaliando saida DAC 09/08/2023 GAP002
-		_cMens := "[ZPECREGFI] não localizado orçamentos com Picking "+cZK_XPICKI+" para alterar TES, com referencia VS3_XREGFI igual a [T] !"
+		_cMens := "[ZPECREGFI] nï¿½o localizado orï¿½amentos com Picking "+cZK_XPICKI+" para alterar TES, com referencia VS3_XREGFI igual a [T] !"
 		//If !_lJob
-		//	MsgInfo(_cMens,"Atenção") 
+		//	MsgInfo(_cMens,"Atenï¿½ï¿½o")  
 		//Endif 
 		Conout(_cMens) 
 		Break //Por erro na chamada pelo ZWSR009
 	EndIf	
 
-	// Inicio *************** Cintia Araujo em 04/10/24 - 
+	// Inicio *************** Cintia Araujo em 04/10/24 - MODIFICACAO 23/10/24
 	//                        Recalculos fiscais antes de efetivar o faturamento quando o VS3->VS3_XREGFI for diferente de TES considera a Operacao e 
 	While !(_cAliasPesq)->(Eof())
 		_cMens    := ""
@@ -5368,7 +5369,7 @@ Begin sequence  //Ajuste Select não estava dentro do Begin GAP002  DAC 09/08/202
 					If (!(_cXREGFI = "T") .and. !(_cTESVS3 = cTES) .and. !Empty(cTES))
 						VS1->(RecLock("VS1",.F.))
 						VS3->(RecLock("VS3",.F.))
-						_cMens += "O produto " +_cCodIte+ " teve a TES " +_cTESVS3+ " alterada para " +cTES+ " conforme Operação " +_cOperVS3+ " no momento do faturamento em " +DtoC(date()) + " ÃƒÂ s " + Time() + CRLF
+						_cMens += "O produto " +_cCodIte+ " teve a TES " +_cTESVS3+ " alterada para " +cTES+ " conforme Operaï¿½ï¿½o " +_cOperVS3+ " no momento do faturamento em " +DtoC(date()) + " ÃƒÂ s " + Time() + CRLF
 						VS1->VS1_OBSAGL	:= Upper(_cMens) + CRLF + AllTrim(VS1->VS1_OBSAGL)
 						VS3->VS3_CODTES := cTES
 						VS3->VS3_SITTRI := U_XFUNSITT(cTES, VS3->VS3_CODITE, VS3->VS3_GRUITE)
@@ -5399,11 +5400,11 @@ Return _lRet
 
 
 /*/{Protheus.doc} XFVERORC
-Mostrat orçamento 
+Mostrat orï¿½amento 
 @author DAC - Denilso 
 @since 31/05/2023
 @version 2.0
-@project	PEC044 - Revitalização Consulta Peças - Abri consulta orçamento
+@project	PEC044 - Revitalizaï¿½ï¿½o Consulta Peï¿½as - Abri consulta orï¿½amento
 /*/
 /* Descontinuada GAP098 DAC 24/11/2023
 User Function XFVERORC(_cAliasPesq,_ObrW)
@@ -5411,8 +5412,8 @@ Local _lRet     := .T.
 Local _nOpc     := 2
 Local _aArea := GetArea()
 Local _nReg
-//infelizmente Ã© necessario carregar as variaveis abaixo para que abra a tela de orçamento DAC
-Private cCadastro := "orçamento"
+//infelizmente Ã© necessario carregar as variaveis abaixo para que abra a tela de orï¿½amento DAC
+Private cCadastro := "orï¿½amento"
 Private aItensKit := {}
 Private aPedTransf := {}
 Private cGruFor   := "04" 										// Grupo de Formulas que podem ser utilizadas nos orcamentos
@@ -5488,14 +5489,14 @@ Return Nil
 */
 
 /*/{Protheus.doc} MILAXTABELA
-Mostrar orçamento 
+Mostrar orï¿½amento 
 @author DAC - Denilso 
 @since 31/05/2023
 @version 2.0
-@project	PEC044 - Revitalização Consulta Peças - Abri consulta orçamento
-@Obs		Devido a forma de tratamento oficna/peças não Ã© possivel chamar a 
-			consulta de oramentos a não ser passando por esta função MILAXTABELA
-			caso não passe ai ira tratar CNPJs que estão hard cold no programa
+@project	PEC044 - Revitalizaï¿½ï¿½o Consulta Peï¿½as - Abri consulta orï¿½amento
+@Obs		Devido a forma de tratamento oficna/peï¿½as nï¿½o Ã© possivel chamar a 
+			consulta de oramentos a nï¿½o ser passando por esta funï¿½ï¿½o MILAXTABELA
+			caso nï¿½o passe ai ira tratar CNPJs que estï¿½o hard cold no programa
 /*/
 
 USER Function MILAXTABELA(_nRegVS1)
